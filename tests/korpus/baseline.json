@@ -131,14 +131,21 @@
           "note": "Rein syntaktisch: zeigt jeder Anker in eine Zeile, die es in der Quelle gibt?"
         },
         {
-          "name": "fachsatzinhalt",
+          "name": "fachsatzabdeckung",
           "status": "not_checked",
           "compared": 0,
           "total": 3,
-          "note": "Die Engine erzeugt keine Fachsätze — nicht geprüft, Roadmap 2.4. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+        },
+        {
+          "name": "fachsatzinhalt",
+          "status": "not_checked",
+          "compared": 0,
+          "total": 0,
+          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
         }
       ],
-      "reason": "3 Fachsatz/Fachsätze mit 4 Anker(n); 0 zeigen nicht in den Quelltext: —. anchor_validation_passed — mehr wurde hier nicht geprüft: die Engine führt diese Aussage nicht, und ein bestandener Ankercheck ist keine Übereinstimmung."
+      "reason": "3 Sollfachsatz/-sätze mit 4 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
     },
     {
       "case": "CC-002",
@@ -266,14 +273,21 @@
           "note": "Rein syntaktisch: zeigt jeder Anker in eine Zeile, die es in der Quelle gibt?"
         },
         {
-          "name": "fachsatzinhalt",
+          "name": "fachsatzabdeckung",
           "status": "not_checked",
           "compared": 0,
           "total": 3,
-          "note": "Die Engine erzeugt keine Fachsätze — nicht geprüft, Roadmap 2.4. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+        },
+        {
+          "name": "fachsatzinhalt",
+          "status": "not_checked",
+          "compared": 0,
+          "total": 0,
+          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
         }
       ],
-      "reason": "3 Fachsatz/Fachsätze mit 5 Anker(n); 0 zeigen nicht in den Quelltext: —. anchor_validation_passed — mehr wurde hier nicht geprüft: die Engine führt diese Aussage nicht, und ein bestandener Ankercheck ist keine Übereinstimmung."
+      "reason": "3 Sollfachsatz/-sätze mit 5 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
     },
     {
       "case": "CC-003",
@@ -401,14 +415,21 @@
           "note": "Rein syntaktisch: zeigt jeder Anker in eine Zeile, die es in der Quelle gibt?"
         },
         {
-          "name": "fachsatzinhalt",
+          "name": "fachsatzabdeckung",
           "status": "not_checked",
           "compared": 0,
           "total": 3,
-          "note": "Die Engine erzeugt keine Fachsätze — nicht geprüft, Roadmap 2.4. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+        },
+        {
+          "name": "fachsatzinhalt",
+          "status": "not_checked",
+          "compared": 0,
+          "total": 0,
+          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
         }
       ],
-      "reason": "3 Fachsatz/Fachsätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. anchor_validation_passed — mehr wurde hier nicht geprüft: die Engine führt diese Aussage nicht, und ein bestandener Ankercheck ist keine Übereinstimmung."
+      "reason": "3 Sollfachsatz/-sätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
     },
     {
       "case": "CC-004",
@@ -536,14 +557,21 @@
           "note": "Rein syntaktisch: zeigt jeder Anker in eine Zeile, die es in der Quelle gibt?"
         },
         {
-          "name": "fachsatzinhalt",
+          "name": "fachsatzabdeckung",
           "status": "not_checked",
           "compared": 0,
           "total": 2,
-          "note": "Die Engine erzeugt keine Fachsätze — nicht geprüft, Roadmap 2.4. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+        },
+        {
+          "name": "fachsatzinhalt",
+          "status": "not_checked",
+          "compared": 0,
+          "total": 0,
+          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
         }
       ],
-      "reason": "2 Fachsatz/Fachsätze mit 3 Anker(n); 0 zeigen nicht in den Quelltext: —. anchor_validation_passed — mehr wurde hier nicht geprüft: die Engine führt diese Aussage nicht, und ein bestandener Ankercheck ist keine Übereinstimmung."
+      "reason": "2 Sollfachsatz/-sätze mit 3 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
     },
     {
       "case": "CC-005",
@@ -671,14 +699,21 @@
           "note": "Rein syntaktisch: zeigt jeder Anker in eine Zeile, die es in der Quelle gibt?"
         },
         {
-          "name": "fachsatzinhalt",
+          "name": "fachsatzabdeckung",
           "status": "not_checked",
           "compared": 0,
           "total": 2,
-          "note": "Die Engine erzeugt keine Fachsätze — nicht geprüft, Roadmap 2.4. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+        },
+        {
+          "name": "fachsatzinhalt",
+          "status": "not_checked",
+          "compared": 0,
+          "total": 0,
+          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
         }
       ],
-      "reason": "2 Fachsatz/Fachsätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. anchor_validation_passed — mehr wurde hier nicht geprüft: die Engine führt diese Aussage nicht, und ein bestandener Ankercheck ist keine Übereinstimmung."
+      "reason": "2 Sollfachsatz/-sätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
     },
     {
       "case": "CC-006",
@@ -806,14 +841,21 @@
           "note": "Rein syntaktisch: zeigt jeder Anker in eine Zeile, die es in der Quelle gibt?"
         },
         {
-          "name": "fachsatzinhalt",
+          "name": "fachsatzabdeckung",
           "status": "not_checked",
           "compared": 0,
           "total": 2,
-          "note": "Die Engine erzeugt keine Fachsätze — nicht geprüft, Roadmap 2.4. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+        },
+        {
+          "name": "fachsatzinhalt",
+          "status": "not_checked",
+          "compared": 0,
+          "total": 0,
+          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
         }
       ],
-      "reason": "2 Fachsatz/Fachsätze mit 3 Anker(n); 0 zeigen nicht in den Quelltext: —. anchor_validation_passed — mehr wurde hier nicht geprüft: die Engine führt diese Aussage nicht, und ein bestandener Ankercheck ist keine Übereinstimmung."
+      "reason": "2 Sollfachsatz/-sätze mit 3 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
     },
     {
       "case": "CC-007",
@@ -941,14 +983,21 @@
           "note": "Rein syntaktisch: zeigt jeder Anker in eine Zeile, die es in der Quelle gibt?"
         },
         {
-          "name": "fachsatzinhalt",
+          "name": "fachsatzabdeckung",
           "status": "not_checked",
           "compared": 0,
           "total": 2,
-          "note": "Die Engine erzeugt keine Fachsätze — nicht geprüft, Roadmap 2.4. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+        },
+        {
+          "name": "fachsatzinhalt",
+          "status": "not_checked",
+          "compared": 0,
+          "total": 0,
+          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
         }
       ],
-      "reason": "2 Fachsatz/Fachsätze mit 3 Anker(n); 0 zeigen nicht in den Quelltext: —. anchor_validation_passed — mehr wurde hier nicht geprüft: die Engine führt diese Aussage nicht, und ein bestandener Ankercheck ist keine Übereinstimmung."
+      "reason": "2 Sollfachsatz/-sätze mit 3 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
     },
     {
       "case": "CC-008",
@@ -1076,14 +1125,21 @@
           "note": "Rein syntaktisch: zeigt jeder Anker in eine Zeile, die es in der Quelle gibt?"
         },
         {
-          "name": "fachsatzinhalt",
+          "name": "fachsatzabdeckung",
           "status": "not_checked",
           "compared": 0,
           "total": 2,
-          "note": "Die Engine erzeugt keine Fachsätze — nicht geprüft, Roadmap 2.4. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+        },
+        {
+          "name": "fachsatzinhalt",
+          "status": "not_checked",
+          "compared": 0,
+          "total": 0,
+          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
         }
       ],
-      "reason": "2 Fachsatz/Fachsätze mit 4 Anker(n); 0 zeigen nicht in den Quelltext: —. anchor_validation_passed — mehr wurde hier nicht geprüft: die Engine führt diese Aussage nicht, und ein bestandener Ankercheck ist keine Übereinstimmung."
+      "reason": "2 Sollfachsatz/-sätze mit 4 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
     },
     {
       "case": "CC-009",
@@ -1211,14 +1267,21 @@
           "note": "Rein syntaktisch: zeigt jeder Anker in eine Zeile, die es in der Quelle gibt?"
         },
         {
-          "name": "fachsatzinhalt",
+          "name": "fachsatzabdeckung",
           "status": "not_checked",
           "compared": 0,
           "total": 3,
-          "note": "Die Engine erzeugt keine Fachsätze — nicht geprüft, Roadmap 2.4. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+        },
+        {
+          "name": "fachsatzinhalt",
+          "status": "not_checked",
+          "compared": 0,
+          "total": 0,
+          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
         }
       ],
-      "reason": "3 Fachsatz/Fachsätze mit 5 Anker(n); 0 zeigen nicht in den Quelltext: —. anchor_validation_passed — mehr wurde hier nicht geprüft: die Engine führt diese Aussage nicht, und ein bestandener Ankercheck ist keine Übereinstimmung."
+      "reason": "3 Sollfachsatz/-sätze mit 5 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
     },
     {
       "case": "CC-010",
@@ -1346,14 +1409,21 @@
           "note": "Rein syntaktisch: zeigt jeder Anker in eine Zeile, die es in der Quelle gibt?"
         },
         {
-          "name": "fachsatzinhalt",
+          "name": "fachsatzabdeckung",
           "status": "not_checked",
           "compared": 0,
           "total": 2,
-          "note": "Die Engine erzeugt keine Fachsätze — nicht geprüft, Roadmap 2.4. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+        },
+        {
+          "name": "fachsatzinhalt",
+          "status": "not_checked",
+          "compared": 0,
+          "total": 0,
+          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
         }
       ],
-      "reason": "2 Fachsatz/Fachsätze mit 3 Anker(n); 0 zeigen nicht in den Quelltext: —. anchor_validation_passed — mehr wurde hier nicht geprüft: die Engine führt diese Aussage nicht, und ein bestandener Ankercheck ist keine Übereinstimmung."
+      "reason": "2 Sollfachsatz/-sätze mit 3 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
     },
     {
       "case": "CC-011",
@@ -1481,14 +1551,21 @@
           "note": "Rein syntaktisch: zeigt jeder Anker in eine Zeile, die es in der Quelle gibt?"
         },
         {
-          "name": "fachsatzinhalt",
+          "name": "fachsatzabdeckung",
           "status": "not_checked",
           "compared": 0,
           "total": 2,
-          "note": "Die Engine erzeugt keine Fachsätze — nicht geprüft, Roadmap 2.4. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+        },
+        {
+          "name": "fachsatzinhalt",
+          "status": "not_checked",
+          "compared": 0,
+          "total": 0,
+          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
         }
       ],
-      "reason": "2 Fachsatz/Fachsätze mit 3 Anker(n); 0 zeigen nicht in den Quelltext: —. anchor_validation_passed — mehr wurde hier nicht geprüft: die Engine führt diese Aussage nicht, und ein bestandener Ankercheck ist keine Übereinstimmung."
+      "reason": "2 Sollfachsatz/-sätze mit 3 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
     },
     {
       "case": "CC-012",
@@ -1616,14 +1693,21 @@
           "note": "Rein syntaktisch: zeigt jeder Anker in eine Zeile, die es in der Quelle gibt?"
         },
         {
-          "name": "fachsatzinhalt",
+          "name": "fachsatzabdeckung",
           "status": "not_checked",
           "compared": 0,
           "total": 3,
-          "note": "Die Engine erzeugt keine Fachsätze — nicht geprüft, Roadmap 2.4. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+        },
+        {
+          "name": "fachsatzinhalt",
+          "status": "not_checked",
+          "compared": 0,
+          "total": 0,
+          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
         }
       ],
-      "reason": "3 Fachsatz/Fachsätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. anchor_validation_passed — mehr wurde hier nicht geprüft: die Engine führt diese Aussage nicht, und ein bestandener Ankercheck ist keine Übereinstimmung."
+      "reason": "3 Sollfachsatz/-sätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
     },
     {
       "case": "CC-013",
@@ -1751,14 +1835,21 @@
           "note": "Rein syntaktisch: zeigt jeder Anker in eine Zeile, die es in der Quelle gibt?"
         },
         {
-          "name": "fachsatzinhalt",
+          "name": "fachsatzabdeckung",
           "status": "not_checked",
           "compared": 0,
           "total": 3,
-          "note": "Die Engine erzeugt keine Fachsätze — nicht geprüft, Roadmap 2.4. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+        },
+        {
+          "name": "fachsatzinhalt",
+          "status": "not_checked",
+          "compared": 0,
+          "total": 0,
+          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
         }
       ],
-      "reason": "3 Fachsatz/Fachsätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. anchor_validation_passed — mehr wurde hier nicht geprüft: die Engine führt diese Aussage nicht, und ein bestandener Ankercheck ist keine Übereinstimmung."
+      "reason": "3 Sollfachsatz/-sätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
     },
     {
       "case": "CC-014",
@@ -1886,14 +1977,21 @@
           "note": "Rein syntaktisch: zeigt jeder Anker in eine Zeile, die es in der Quelle gibt?"
         },
         {
-          "name": "fachsatzinhalt",
+          "name": "fachsatzabdeckung",
           "status": "not_checked",
           "compared": 0,
           "total": 2,
-          "note": "Die Engine erzeugt keine Fachsätze — nicht geprüft, Roadmap 2.4. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+        },
+        {
+          "name": "fachsatzinhalt",
+          "status": "not_checked",
+          "compared": 0,
+          "total": 0,
+          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
         }
       ],
-      "reason": "2 Fachsatz/Fachsätze mit 2 Anker(n); 0 zeigen nicht in den Quelltext: —. anchor_validation_passed — mehr wurde hier nicht geprüft: die Engine führt diese Aussage nicht, und ein bestandener Ankercheck ist keine Übereinstimmung."
+      "reason": "2 Sollfachsatz/-sätze mit 2 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
     },
     {
       "case": "CC-015",
@@ -2021,14 +2119,21 @@
           "note": "Rein syntaktisch: zeigt jeder Anker in eine Zeile, die es in der Quelle gibt?"
         },
         {
-          "name": "fachsatzinhalt",
+          "name": "fachsatzabdeckung",
           "status": "not_checked",
           "compared": 0,
           "total": 2,
-          "note": "Die Engine erzeugt keine Fachsätze — nicht geprüft, Roadmap 2.4. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+        },
+        {
+          "name": "fachsatzinhalt",
+          "status": "not_checked",
+          "compared": 0,
+          "total": 0,
+          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
         }
       ],
-      "reason": "2 Fachsatz/Fachsätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. anchor_validation_passed — mehr wurde hier nicht geprüft: die Engine führt diese Aussage nicht, und ein bestandener Ankercheck ist keine Übereinstimmung."
+      "reason": "2 Sollfachsatz/-sätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
     },
     {
       "case": "CC-016",
@@ -2156,14 +2261,21 @@
           "note": "Rein syntaktisch: zeigt jeder Anker in eine Zeile, die es in der Quelle gibt?"
         },
         {
-          "name": "fachsatzinhalt",
+          "name": "fachsatzabdeckung",
           "status": "not_checked",
           "compared": 0,
           "total": 2,
-          "note": "Die Engine erzeugt keine Fachsätze — nicht geprüft, Roadmap 2.4. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+        },
+        {
+          "name": "fachsatzinhalt",
+          "status": "not_checked",
+          "compared": 0,
+          "total": 0,
+          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
         }
       ],
-      "reason": "2 Fachsatz/Fachsätze mit 3 Anker(n); 0 zeigen nicht in den Quelltext: —. anchor_validation_passed — mehr wurde hier nicht geprüft: die Engine führt diese Aussage nicht, und ein bestandener Ankercheck ist keine Übereinstimmung."
+      "reason": "2 Sollfachsatz/-sätze mit 3 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
     },
     {
       "case": "CC-017",
@@ -2291,14 +2403,21 @@
           "note": "Rein syntaktisch: zeigt jeder Anker in eine Zeile, die es in der Quelle gibt?"
         },
         {
-          "name": "fachsatzinhalt",
+          "name": "fachsatzabdeckung",
           "status": "not_checked",
           "compared": 0,
           "total": 3,
-          "note": "Die Engine erzeugt keine Fachsätze — nicht geprüft, Roadmap 2.4. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+        },
+        {
+          "name": "fachsatzinhalt",
+          "status": "not_checked",
+          "compared": 0,
+          "total": 0,
+          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
         }
       ],
-      "reason": "3 Fachsatz/Fachsätze mit 7 Anker(n); 0 zeigen nicht in den Quelltext: —. anchor_validation_passed — mehr wurde hier nicht geprüft: die Engine führt diese Aussage nicht, und ein bestandener Ankercheck ist keine Übereinstimmung."
+      "reason": "3 Sollfachsatz/-sätze mit 7 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
     },
     {
       "case": "CC-018",
@@ -2426,14 +2545,21 @@
           "note": "Rein syntaktisch: zeigt jeder Anker in eine Zeile, die es in der Quelle gibt?"
         },
         {
-          "name": "fachsatzinhalt",
+          "name": "fachsatzabdeckung",
           "status": "not_checked",
           "compared": 0,
           "total": 2,
-          "note": "Die Engine erzeugt keine Fachsätze — nicht geprüft, Roadmap 2.4. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+        },
+        {
+          "name": "fachsatzinhalt",
+          "status": "not_checked",
+          "compared": 0,
+          "total": 0,
+          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
         }
       ],
-      "reason": "2 Fachsatz/Fachsätze mit 2 Anker(n); 0 zeigen nicht in den Quelltext: —. anchor_validation_passed — mehr wurde hier nicht geprüft: die Engine führt diese Aussage nicht, und ein bestandener Ankercheck ist keine Übereinstimmung."
+      "reason": "2 Sollfachsatz/-sätze mit 2 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
     },
     {
       "case": "CC-019",
@@ -2561,14 +2687,21 @@
           "note": "Rein syntaktisch: zeigt jeder Anker in eine Zeile, die es in der Quelle gibt?"
         },
         {
-          "name": "fachsatzinhalt",
+          "name": "fachsatzabdeckung",
           "status": "not_checked",
           "compared": 0,
           "total": 3,
-          "note": "Die Engine erzeugt keine Fachsätze — nicht geprüft, Roadmap 2.4. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+        },
+        {
+          "name": "fachsatzinhalt",
+          "status": "not_checked",
+          "compared": 0,
+          "total": 0,
+          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
         }
       ],
-      "reason": "3 Fachsatz/Fachsätze mit 5 Anker(n); 0 zeigen nicht in den Quelltext: —. anchor_validation_passed — mehr wurde hier nicht geprüft: die Engine führt diese Aussage nicht, und ein bestandener Ankercheck ist keine Übereinstimmung."
+      "reason": "3 Sollfachsatz/-sätze mit 5 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
     },
     {
       "case": "CC-020",
@@ -2696,14 +2829,21 @@
           "note": "Rein syntaktisch: zeigt jeder Anker in eine Zeile, die es in der Quelle gibt?"
         },
         {
-          "name": "fachsatzinhalt",
+          "name": "fachsatzabdeckung",
           "status": "not_checked",
           "compared": 0,
           "total": 3,
-          "note": "Die Engine erzeugt keine Fachsätze — nicht geprüft, Roadmap 2.4. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+        },
+        {
+          "name": "fachsatzinhalt",
+          "status": "not_checked",
+          "compared": 0,
+          "total": 0,
+          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
         }
       ],
-      "reason": "3 Fachsatz/Fachsätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. anchor_validation_passed — mehr wurde hier nicht geprüft: die Engine führt diese Aussage nicht, und ein bestandener Ankercheck ist keine Übereinstimmung."
+      "reason": "3 Sollfachsatz/-sätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
     },
     {
       "case": "CC-021",
@@ -2831,14 +2971,21 @@
           "note": "Rein syntaktisch: zeigt jeder Anker in eine Zeile, die es in der Quelle gibt?"
         },
         {
-          "name": "fachsatzinhalt",
+          "name": "fachsatzabdeckung",
           "status": "not_checked",
           "compared": 0,
           "total": 2,
-          "note": "Die Engine erzeugt keine Fachsätze — nicht geprüft, Roadmap 2.4. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+        },
+        {
+          "name": "fachsatzinhalt",
+          "status": "not_checked",
+          "compared": 0,
+          "total": 0,
+          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
         }
       ],
-      "reason": "2 Fachsatz/Fachsätze mit 2 Anker(n); 0 zeigen nicht in den Quelltext: —. anchor_validation_passed — mehr wurde hier nicht geprüft: die Engine führt diese Aussage nicht, und ein bestandener Ankercheck ist keine Übereinstimmung."
+      "reason": "2 Sollfachsatz/-sätze mit 2 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
     },
     {
       "case": "CC-022",
@@ -2966,14 +3113,21 @@
           "note": "Rein syntaktisch: zeigt jeder Anker in eine Zeile, die es in der Quelle gibt?"
         },
         {
-          "name": "fachsatzinhalt",
+          "name": "fachsatzabdeckung",
           "status": "not_checked",
           "compared": 0,
           "total": 2,
-          "note": "Die Engine erzeugt keine Fachsätze — nicht geprüft, Roadmap 2.4. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+        },
+        {
+          "name": "fachsatzinhalt",
+          "status": "not_checked",
+          "compared": 0,
+          "total": 0,
+          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
         }
       ],
-      "reason": "2 Fachsatz/Fachsätze mit 2 Anker(n); 0 zeigen nicht in den Quelltext: —. anchor_validation_passed — mehr wurde hier nicht geprüft: die Engine führt diese Aussage nicht, und ein bestandener Ankercheck ist keine Übereinstimmung."
+      "reason": "2 Sollfachsatz/-sätze mit 2 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
     },
     {
       "case": "CC-023",
@@ -3101,14 +3255,21 @@
           "note": "Rein syntaktisch: zeigt jeder Anker in eine Zeile, die es in der Quelle gibt?"
         },
         {
-          "name": "fachsatzinhalt",
+          "name": "fachsatzabdeckung",
           "status": "not_checked",
           "compared": 0,
           "total": 3,
-          "note": "Die Engine erzeugt keine Fachsätze — nicht geprüft, Roadmap 2.4. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+        },
+        {
+          "name": "fachsatzinhalt",
+          "status": "not_checked",
+          "compared": 0,
+          "total": 0,
+          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
         }
       ],
-      "reason": "3 Fachsatz/Fachsätze mit 12 Anker(n); 0 zeigen nicht in den Quelltext: —. anchor_validation_passed — mehr wurde hier nicht geprüft: die Engine führt diese Aussage nicht, und ein bestandener Ankercheck ist keine Übereinstimmung."
+      "reason": "3 Sollfachsatz/-sätze mit 12 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
     },
     {
       "case": "CC-024",
@@ -3236,14 +3397,21 @@
           "note": "Rein syntaktisch: zeigt jeder Anker in eine Zeile, die es in der Quelle gibt?"
         },
         {
-          "name": "fachsatzinhalt",
+          "name": "fachsatzabdeckung",
           "status": "not_checked",
           "compared": 0,
           "total": 3,
-          "note": "Die Engine erzeugt keine Fachsätze — nicht geprüft, Roadmap 2.4. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+        },
+        {
+          "name": "fachsatzinhalt",
+          "status": "not_checked",
+          "compared": 0,
+          "total": 0,
+          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
         }
       ],
-      "reason": "3 Fachsatz/Fachsätze mit 5 Anker(n); 0 zeigen nicht in den Quelltext: —. anchor_validation_passed — mehr wurde hier nicht geprüft: die Engine führt diese Aussage nicht, und ein bestandener Ankercheck ist keine Übereinstimmung."
+      "reason": "3 Sollfachsatz/-sätze mit 5 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
     },
     {
       "case": "CC-025",
@@ -3371,14 +3539,21 @@
           "note": "Rein syntaktisch: zeigt jeder Anker in eine Zeile, die es in der Quelle gibt?"
         },
         {
-          "name": "fachsatzinhalt",
+          "name": "fachsatzabdeckung",
           "status": "not_checked",
           "compared": 0,
           "total": 5,
-          "note": "Die Engine erzeugt keine Fachsätze — nicht geprüft, Roadmap 2.4. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+        },
+        {
+          "name": "fachsatzinhalt",
+          "status": "not_checked",
+          "compared": 0,
+          "total": 0,
+          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
         }
       ],
-      "reason": "5 Fachsatz/Fachsätze mit 11 Anker(n); 0 zeigen nicht in den Quelltext: —. anchor_validation_passed — mehr wurde hier nicht geprüft: die Engine führt diese Aussage nicht, und ein bestandener Ankercheck ist keine Übereinstimmung."
+      "reason": "5 Sollfachsatz/-sätze mit 11 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
     },
     {
       "case": "CC-026",
@@ -3506,14 +3681,21 @@
           "note": "Rein syntaktisch: zeigt jeder Anker in eine Zeile, die es in der Quelle gibt?"
         },
         {
-          "name": "fachsatzinhalt",
+          "name": "fachsatzabdeckung",
           "status": "not_checked",
           "compared": 0,
           "total": 4,
-          "note": "Die Engine erzeugt keine Fachsätze — nicht geprüft, Roadmap 2.4. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+        },
+        {
+          "name": "fachsatzinhalt",
+          "status": "not_checked",
+          "compared": 0,
+          "total": 0,
+          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
         }
       ],
-      "reason": "4 Fachsatz/Fachsätze mit 11 Anker(n); 0 zeigen nicht in den Quelltext: —. anchor_validation_passed — mehr wurde hier nicht geprüft: die Engine führt diese Aussage nicht, und ein bestandener Ankercheck ist keine Übereinstimmung."
+      "reason": "4 Sollfachsatz/-sätze mit 11 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
     },
     {
       "case": "CC-027",
@@ -3641,14 +3823,21 @@
           "note": "Rein syntaktisch: zeigt jeder Anker in eine Zeile, die es in der Quelle gibt?"
         },
         {
-          "name": "fachsatzinhalt",
+          "name": "fachsatzabdeckung",
           "status": "not_checked",
           "compared": 0,
           "total": 2,
-          "note": "Die Engine erzeugt keine Fachsätze — nicht geprüft, Roadmap 2.4. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+        },
+        {
+          "name": "fachsatzinhalt",
+          "status": "not_checked",
+          "compared": 0,
+          "total": 0,
+          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
         }
       ],
-      "reason": "2 Fachsatz/Fachsätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. anchor_validation_passed — mehr wurde hier nicht geprüft: die Engine führt diese Aussage nicht, und ein bestandener Ankercheck ist keine Übereinstimmung."
+      "reason": "2 Sollfachsatz/-sätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
     },
     {
       "case": "CC-028",
@@ -3776,14 +3965,21 @@
           "note": "Rein syntaktisch: zeigt jeder Anker in eine Zeile, die es in der Quelle gibt?"
         },
         {
-          "name": "fachsatzinhalt",
+          "name": "fachsatzabdeckung",
           "status": "not_checked",
           "compared": 0,
           "total": 3,
-          "note": "Die Engine erzeugt keine Fachsätze — nicht geprüft, Roadmap 2.4. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+        },
+        {
+          "name": "fachsatzinhalt",
+          "status": "not_checked",
+          "compared": 0,
+          "total": 0,
+          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
         }
       ],
-      "reason": "3 Fachsatz/Fachsätze mit 10 Anker(n); 0 zeigen nicht in den Quelltext: —. anchor_validation_passed — mehr wurde hier nicht geprüft: die Engine führt diese Aussage nicht, und ein bestandener Ankercheck ist keine Übereinstimmung."
+      "reason": "3 Sollfachsatz/-sätze mit 10 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
     },
     {
       "case": "CC-029",
@@ -3911,14 +4107,21 @@
           "note": "Rein syntaktisch: zeigt jeder Anker in eine Zeile, die es in der Quelle gibt?"
         },
         {
-          "name": "fachsatzinhalt",
+          "name": "fachsatzabdeckung",
           "status": "not_checked",
           "compared": 0,
           "total": 3,
-          "note": "Die Engine erzeugt keine Fachsätze — nicht geprüft, Roadmap 2.4. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+        },
+        {
+          "name": "fachsatzinhalt",
+          "status": "not_checked",
+          "compared": 0,
+          "total": 0,
+          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
         }
       ],
-      "reason": "3 Fachsatz/Fachsätze mit 11 Anker(n); 0 zeigen nicht in den Quelltext: —. anchor_validation_passed — mehr wurde hier nicht geprüft: die Engine führt diese Aussage nicht, und ein bestandener Ankercheck ist keine Übereinstimmung."
+      "reason": "3 Sollfachsatz/-sätze mit 11 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
     },
     {
       "case": "CC-030",
@@ -4046,14 +4249,21 @@
           "note": "Rein syntaktisch: zeigt jeder Anker in eine Zeile, die es in der Quelle gibt?"
         },
         {
-          "name": "fachsatzinhalt",
+          "name": "fachsatzabdeckung",
           "status": "not_checked",
           "compared": 0,
           "total": 3,
-          "note": "Die Engine erzeugt keine Fachsätze — nicht geprüft, Roadmap 2.4. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+        },
+        {
+          "name": "fachsatzinhalt",
+          "status": "not_checked",
+          "compared": 0,
+          "total": 0,
+          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
         }
       ],
-      "reason": "3 Fachsatz/Fachsätze mit 9 Anker(n); 0 zeigen nicht in den Quelltext: —. anchor_validation_passed — mehr wurde hier nicht geprüft: die Engine führt diese Aussage nicht, und ein bestandener Ankercheck ist keine Übereinstimmung."
+      "reason": "3 Sollfachsatz/-sätze mit 9 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
     },
     {
       "case": "CC-031",
@@ -4181,14 +4391,21 @@
           "note": "Rein syntaktisch: zeigt jeder Anker in eine Zeile, die es in der Quelle gibt?"
         },
         {
-          "name": "fachsatzinhalt",
+          "name": "fachsatzabdeckung",
           "status": "not_checked",
           "compared": 0,
           "total": 4,
-          "note": "Die Engine erzeugt keine Fachsätze — nicht geprüft, Roadmap 2.4. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+        },
+        {
+          "name": "fachsatzinhalt",
+          "status": "not_checked",
+          "compared": 0,
+          "total": 0,
+          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
         }
       ],
-      "reason": "4 Fachsatz/Fachsätze mit 13 Anker(n); 0 zeigen nicht in den Quelltext: —. anchor_validation_passed — mehr wurde hier nicht geprüft: die Engine führt diese Aussage nicht, und ein bestandener Ankercheck ist keine Übereinstimmung."
+      "reason": "4 Sollfachsatz/-sätze mit 13 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
     },
     {
       "case": "CC-032",
@@ -4316,14 +4533,21 @@
           "note": "Rein syntaktisch: zeigt jeder Anker in eine Zeile, die es in der Quelle gibt?"
         },
         {
-          "name": "fachsatzinhalt",
+          "name": "fachsatzabdeckung",
           "status": "not_checked",
           "compared": 0,
           "total": 3,
-          "note": "Die Engine erzeugt keine Fachsätze — nicht geprüft, Roadmap 2.4. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+        },
+        {
+          "name": "fachsatzinhalt",
+          "status": "not_checked",
+          "compared": 0,
+          "total": 0,
+          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
         }
       ],
-      "reason": "3 Fachsatz/Fachsätze mit 12 Anker(n); 0 zeigen nicht in den Quelltext: —. anchor_validation_passed — mehr wurde hier nicht geprüft: die Engine führt diese Aussage nicht, und ein bestandener Ankercheck ist keine Übereinstimmung."
+      "reason": "3 Sollfachsatz/-sätze mit 12 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
     },
     {
       "case": "CC-033",
@@ -4451,14 +4675,21 @@
           "note": "Rein syntaktisch: zeigt jeder Anker in eine Zeile, die es in der Quelle gibt?"
         },
         {
-          "name": "fachsatzinhalt",
+          "name": "fachsatzabdeckung",
           "status": "not_checked",
           "compared": 0,
           "total": 3,
-          "note": "Die Engine erzeugt keine Fachsätze — nicht geprüft, Roadmap 2.4. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+        },
+        {
+          "name": "fachsatzinhalt",
+          "status": "not_checked",
+          "compared": 0,
+          "total": 0,
+          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
         }
       ],
-      "reason": "3 Fachsatz/Fachsätze mit 11 Anker(n); 0 zeigen nicht in den Quelltext: —. anchor_validation_passed — mehr wurde hier nicht geprüft: die Engine führt diese Aussage nicht, und ein bestandener Ankercheck ist keine Übereinstimmung."
+      "reason": "3 Sollfachsatz/-sätze mit 11 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
     },
     {
       "case": "CC-034",
@@ -4586,14 +4817,21 @@
           "note": "Rein syntaktisch: zeigt jeder Anker in eine Zeile, die es in der Quelle gibt?"
         },
         {
-          "name": "fachsatzinhalt",
+          "name": "fachsatzabdeckung",
           "status": "not_checked",
           "compared": 0,
           "total": 4,
-          "note": "Die Engine erzeugt keine Fachsätze — nicht geprüft, Roadmap 2.4. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+        },
+        {
+          "name": "fachsatzinhalt",
+          "status": "not_checked",
+          "compared": 0,
+          "total": 0,
+          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
         }
       ],
-      "reason": "4 Fachsatz/Fachsätze mit 16 Anker(n); 0 zeigen nicht in den Quelltext: —. anchor_validation_passed — mehr wurde hier nicht geprüft: die Engine führt diese Aussage nicht, und ein bestandener Ankercheck ist keine Übereinstimmung."
+      "reason": "4 Sollfachsatz/-sätze mit 16 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
     },
     {
       "case": "CC-035",
@@ -4721,14 +4959,21 @@
           "note": "Rein syntaktisch: zeigt jeder Anker in eine Zeile, die es in der Quelle gibt?"
         },
         {
-          "name": "fachsatzinhalt",
+          "name": "fachsatzabdeckung",
           "status": "not_checked",
           "compared": 0,
           "total": 3,
-          "note": "Die Engine erzeugt keine Fachsätze — nicht geprüft, Roadmap 2.4. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+        },
+        {
+          "name": "fachsatzinhalt",
+          "status": "not_checked",
+          "compared": 0,
+          "total": 0,
+          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
         }
       ],
-      "reason": "3 Fachsatz/Fachsätze mit 9 Anker(n); 0 zeigen nicht in den Quelltext: —. anchor_validation_passed — mehr wurde hier nicht geprüft: die Engine führt diese Aussage nicht, und ein bestandener Ankercheck ist keine Übereinstimmung."
+      "reason": "3 Sollfachsatz/-sätze mit 9 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
     },
     {
       "case": "CC-036",
@@ -4856,14 +5101,21 @@
           "note": "Rein syntaktisch: zeigt jeder Anker in eine Zeile, die es in der Quelle gibt?"
         },
         {
-          "name": "fachsatzinhalt",
+          "name": "fachsatzabdeckung",
           "status": "not_checked",
           "compared": 0,
           "total": 3,
-          "note": "Die Engine erzeugt keine Fachsätze — nicht geprüft, Roadmap 2.4. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+        },
+        {
+          "name": "fachsatzinhalt",
+          "status": "not_checked",
+          "compared": 0,
+          "total": 0,
+          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
         }
       ],
-      "reason": "3 Fachsatz/Fachsätze mit 7 Anker(n); 0 zeigen nicht in den Quelltext: —. anchor_validation_passed — mehr wurde hier nicht geprüft: die Engine führt diese Aussage nicht, und ein bestandener Ankercheck ist keine Übereinstimmung."
+      "reason": "3 Sollfachsatz/-sätze mit 7 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
     },
     {
       "case": "CC-037",
@@ -4991,14 +5243,21 @@
           "note": "Rein syntaktisch: zeigt jeder Anker in eine Zeile, die es in der Quelle gibt?"
         },
         {
-          "name": "fachsatzinhalt",
+          "name": "fachsatzabdeckung",
           "status": "not_checked",
           "compared": 0,
           "total": 2,
-          "note": "Die Engine erzeugt keine Fachsätze — nicht geprüft, Roadmap 2.4. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+        },
+        {
+          "name": "fachsatzinhalt",
+          "status": "not_checked",
+          "compared": 0,
+          "total": 0,
+          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
         }
       ],
-      "reason": "2 Fachsatz/Fachsätze mit 5 Anker(n); 0 zeigen nicht in den Quelltext: —. anchor_validation_passed — mehr wurde hier nicht geprüft: die Engine führt diese Aussage nicht, und ein bestandener Ankercheck ist keine Übereinstimmung."
+      "reason": "2 Sollfachsatz/-sätze mit 5 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
     },
     {
       "case": "CC-038",
@@ -5126,14 +5385,21 @@
           "note": "Rein syntaktisch: zeigt jeder Anker in eine Zeile, die es in der Quelle gibt?"
         },
         {
-          "name": "fachsatzinhalt",
+          "name": "fachsatzabdeckung",
           "status": "not_checked",
           "compared": 0,
           "total": 3,
-          "note": "Die Engine erzeugt keine Fachsätze — nicht geprüft, Roadmap 2.4. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+        },
+        {
+          "name": "fachsatzinhalt",
+          "status": "not_checked",
+          "compared": 0,
+          "total": 0,
+          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
         }
       ],
-      "reason": "3 Fachsatz/Fachsätze mit 11 Anker(n); 0 zeigen nicht in den Quelltext: —. anchor_validation_passed — mehr wurde hier nicht geprüft: die Engine führt diese Aussage nicht, und ein bestandener Ankercheck ist keine Übereinstimmung."
+      "reason": "3 Sollfachsatz/-sätze mit 11 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
     },
     {
       "case": "CC-039",
@@ -5261,14 +5527,21 @@
           "note": "Rein syntaktisch: zeigt jeder Anker in eine Zeile, die es in der Quelle gibt?"
         },
         {
-          "name": "fachsatzinhalt",
+          "name": "fachsatzabdeckung",
           "status": "not_checked",
           "compared": 0,
           "total": 3,
-          "note": "Die Engine erzeugt keine Fachsätze — nicht geprüft, Roadmap 2.4. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+        },
+        {
+          "name": "fachsatzinhalt",
+          "status": "not_checked",
+          "compared": 0,
+          "total": 0,
+          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
         }
       ],
-      "reason": "3 Fachsatz/Fachsätze mit 9 Anker(n); 0 zeigen nicht in den Quelltext: —. anchor_validation_passed — mehr wurde hier nicht geprüft: die Engine führt diese Aussage nicht, und ein bestandener Ankercheck ist keine Übereinstimmung."
+      "reason": "3 Sollfachsatz/-sätze mit 9 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
     },
     {
       "case": "CC-040",
@@ -5396,14 +5669,21 @@
           "note": "Rein syntaktisch: zeigt jeder Anker in eine Zeile, die es in der Quelle gibt?"
         },
         {
-          "name": "fachsatzinhalt",
+          "name": "fachsatzabdeckung",
           "status": "not_checked",
           "compared": 0,
           "total": 2,
-          "note": "Die Engine erzeugt keine Fachsätze — nicht geprüft, Roadmap 2.4. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+        },
+        {
+          "name": "fachsatzinhalt",
+          "status": "not_checked",
+          "compared": 0,
+          "total": 0,
+          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
         }
       ],
-      "reason": "2 Fachsatz/Fachsätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. anchor_validation_passed — mehr wurde hier nicht geprüft: die Engine führt diese Aussage nicht, und ein bestandener Ankercheck ist keine Übereinstimmung."
+      "reason": "2 Sollfachsatz/-sätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
     },
     {
       "case": "CC-041",
@@ -5531,14 +5811,21 @@
           "note": "Rein syntaktisch: zeigt jeder Anker in eine Zeile, die es in der Quelle gibt?"
         },
         {
-          "name": "fachsatzinhalt",
+          "name": "fachsatzabdeckung",
           "status": "not_checked",
           "compared": 0,
           "total": 2,
-          "note": "Die Engine erzeugt keine Fachsätze — nicht geprüft, Roadmap 2.4. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+        },
+        {
+          "name": "fachsatzinhalt",
+          "status": "not_checked",
+          "compared": 0,
+          "total": 0,
+          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
         }
       ],
-      "reason": "2 Fachsatz/Fachsätze mit 5 Anker(n); 0 zeigen nicht in den Quelltext: —. anchor_validation_passed — mehr wurde hier nicht geprüft: die Engine führt diese Aussage nicht, und ein bestandener Ankercheck ist keine Übereinstimmung."
+      "reason": "2 Sollfachsatz/-sätze mit 5 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
     },
     {
       "case": "CC-042",
@@ -5666,14 +5953,21 @@
           "note": "Rein syntaktisch: zeigt jeder Anker in eine Zeile, die es in der Quelle gibt?"
         },
         {
-          "name": "fachsatzinhalt",
+          "name": "fachsatzabdeckung",
           "status": "not_checked",
           "compared": 0,
           "total": 2,
-          "note": "Die Engine erzeugt keine Fachsätze — nicht geprüft, Roadmap 2.4. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+        },
+        {
+          "name": "fachsatzinhalt",
+          "status": "not_checked",
+          "compared": 0,
+          "total": 0,
+          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
         }
       ],
-      "reason": "2 Fachsatz/Fachsätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. anchor_validation_passed — mehr wurde hier nicht geprüft: die Engine führt diese Aussage nicht, und ein bestandener Ankercheck ist keine Übereinstimmung."
+      "reason": "2 Sollfachsatz/-sätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
     },
     {
       "case": "CC-043",
@@ -5801,14 +6095,21 @@
           "note": "Rein syntaktisch: zeigt jeder Anker in eine Zeile, die es in der Quelle gibt?"
         },
         {
-          "name": "fachsatzinhalt",
+          "name": "fachsatzabdeckung",
           "status": "not_checked",
           "compared": 0,
           "total": 3,
-          "note": "Die Engine erzeugt keine Fachsätze — nicht geprüft, Roadmap 2.4. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+        },
+        {
+          "name": "fachsatzinhalt",
+          "status": "not_checked",
+          "compared": 0,
+          "total": 0,
+          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
         }
       ],
-      "reason": "3 Fachsatz/Fachsätze mit 8 Anker(n); 0 zeigen nicht in den Quelltext: —. anchor_validation_passed — mehr wurde hier nicht geprüft: die Engine führt diese Aussage nicht, und ein bestandener Ankercheck ist keine Übereinstimmung."
+      "reason": "3 Sollfachsatz/-sätze mit 8 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
     },
     {
       "case": "CC-044",
@@ -5936,14 +6237,21 @@
           "note": "Rein syntaktisch: zeigt jeder Anker in eine Zeile, die es in der Quelle gibt?"
         },
         {
-          "name": "fachsatzinhalt",
+          "name": "fachsatzabdeckung",
           "status": "not_checked",
           "compared": 0,
           "total": 2,
-          "note": "Die Engine erzeugt keine Fachsätze — nicht geprüft, Roadmap 2.4. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+        },
+        {
+          "name": "fachsatzinhalt",
+          "status": "not_checked",
+          "compared": 0,
+          "total": 0,
+          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
         }
       ],
-      "reason": "2 Fachsatz/Fachsätze mit 7 Anker(n); 0 zeigen nicht in den Quelltext: —. anchor_validation_passed — mehr wurde hier nicht geprüft: die Engine führt diese Aussage nicht, und ein bestandener Ankercheck ist keine Übereinstimmung."
+      "reason": "2 Sollfachsatz/-sätze mit 7 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
     },
     {
       "case": "CC-045",
@@ -6071,14 +6379,21 @@
           "note": "Rein syntaktisch: zeigt jeder Anker in eine Zeile, die es in der Quelle gibt?"
         },
         {
-          "name": "fachsatzinhalt",
+          "name": "fachsatzabdeckung",
           "status": "not_checked",
           "compared": 0,
           "total": 2,
-          "note": "Die Engine erzeugt keine Fachsätze — nicht geprüft, Roadmap 2.4. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+        },
+        {
+          "name": "fachsatzinhalt",
+          "status": "not_checked",
+          "compared": 0,
+          "total": 0,
+          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
         }
       ],
-      "reason": "2 Fachsatz/Fachsätze mit 7 Anker(n); 0 zeigen nicht in den Quelltext: —. anchor_validation_passed — mehr wurde hier nicht geprüft: die Engine führt diese Aussage nicht, und ein bestandener Ankercheck ist keine Übereinstimmung."
+      "reason": "2 Sollfachsatz/-sätze mit 7 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
     },
     {
       "case": "CC-046",
@@ -6206,14 +6521,21 @@
           "note": "Rein syntaktisch: zeigt jeder Anker in eine Zeile, die es in der Quelle gibt?"
         },
         {
-          "name": "fachsatzinhalt",
+          "name": "fachsatzabdeckung",
           "status": "not_checked",
           "compared": 0,
           "total": 4,
-          "note": "Die Engine erzeugt keine Fachsätze — nicht geprüft, Roadmap 2.4. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+        },
+        {
+          "name": "fachsatzinhalt",
+          "status": "not_checked",
+          "compared": 0,
+          "total": 0,
+          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
         }
       ],
-      "reason": "4 Fachsatz/Fachsätze mit 12 Anker(n); 0 zeigen nicht in den Quelltext: —. anchor_validation_passed — mehr wurde hier nicht geprüft: die Engine führt diese Aussage nicht, und ein bestandener Ankercheck ist keine Übereinstimmung."
+      "reason": "4 Sollfachsatz/-sätze mit 12 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
     },
     {
       "case": "CC-047",
@@ -6341,14 +6663,21 @@
           "note": "Rein syntaktisch: zeigt jeder Anker in eine Zeile, die es in der Quelle gibt?"
         },
         {
-          "name": "fachsatzinhalt",
+          "name": "fachsatzabdeckung",
           "status": "not_checked",
           "compared": 0,
           "total": 2,
-          "note": "Die Engine erzeugt keine Fachsätze — nicht geprüft, Roadmap 2.4. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+        },
+        {
+          "name": "fachsatzinhalt",
+          "status": "not_checked",
+          "compared": 0,
+          "total": 0,
+          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
         }
       ],
-      "reason": "2 Fachsatz/Fachsätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. anchor_validation_passed — mehr wurde hier nicht geprüft: die Engine führt diese Aussage nicht, und ein bestandener Ankercheck ist keine Übereinstimmung."
+      "reason": "2 Sollfachsatz/-sätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
     },
     {
       "case": "CC-048",
@@ -6476,14 +6805,21 @@
           "note": "Rein syntaktisch: zeigt jeder Anker in eine Zeile, die es in der Quelle gibt?"
         },
         {
-          "name": "fachsatzinhalt",
+          "name": "fachsatzabdeckung",
           "status": "not_checked",
           "compared": 0,
           "total": 4,
-          "note": "Die Engine erzeugt keine Fachsätze — nicht geprüft, Roadmap 2.4. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+        },
+        {
+          "name": "fachsatzinhalt",
+          "status": "not_checked",
+          "compared": 0,
+          "total": 0,
+          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
         }
       ],
-      "reason": "4 Fachsatz/Fachsätze mit 12 Anker(n); 0 zeigen nicht in den Quelltext: —. anchor_validation_passed — mehr wurde hier nicht geprüft: die Engine führt diese Aussage nicht, und ein bestandener Ankercheck ist keine Übereinstimmung."
+      "reason": "4 Sollfachsatz/-sätze mit 12 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
     },
     {
       "case": "CC-049",
@@ -6611,14 +6947,21 @@
           "note": "Rein syntaktisch: zeigt jeder Anker in eine Zeile, die es in der Quelle gibt?"
         },
         {
-          "name": "fachsatzinhalt",
+          "name": "fachsatzabdeckung",
           "status": "not_checked",
           "compared": 0,
           "total": 3,
-          "note": "Die Engine erzeugt keine Fachsätze — nicht geprüft, Roadmap 2.4. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+        },
+        {
+          "name": "fachsatzinhalt",
+          "status": "not_checked",
+          "compared": 0,
+          "total": 0,
+          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
         }
       ],
-      "reason": "3 Fachsatz/Fachsätze mit 8 Anker(n); 0 zeigen nicht in den Quelltext: —. anchor_validation_passed — mehr wurde hier nicht geprüft: die Engine führt diese Aussage nicht, und ein bestandener Ankercheck ist keine Übereinstimmung."
+      "reason": "3 Sollfachsatz/-sätze mit 8 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
     },
     {
       "case": "CC-050",
@@ -6746,14 +7089,21 @@
           "note": "Rein syntaktisch: zeigt jeder Anker in eine Zeile, die es in der Quelle gibt?"
         },
         {
-          "name": "fachsatzinhalt",
+          "name": "fachsatzabdeckung",
           "status": "not_checked",
           "compared": 0,
           "total": 3,
-          "note": "Die Engine erzeugt keine Fachsätze — nicht geprüft, Roadmap 2.4. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+        },
+        {
+          "name": "fachsatzinhalt",
+          "status": "not_checked",
+          "compared": 0,
+          "total": 0,
+          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
         }
       ],
-      "reason": "3 Fachsatz/Fachsätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. anchor_validation_passed — mehr wurde hier nicht geprüft: die Engine führt diese Aussage nicht, und ein bestandener Ankercheck ist keine Übereinstimmung."
+      "reason": "3 Sollfachsatz/-sätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
     },
     {
       "case": "CC-051",
@@ -6881,14 +7231,21 @@
           "note": "Rein syntaktisch: zeigt jeder Anker in eine Zeile, die es in der Quelle gibt?"
         },
         {
-          "name": "fachsatzinhalt",
+          "name": "fachsatzabdeckung",
           "status": "not_checked",
           "compared": 0,
           "total": 3,
-          "note": "Die Engine erzeugt keine Fachsätze — nicht geprüft, Roadmap 2.4. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+        },
+        {
+          "name": "fachsatzinhalt",
+          "status": "not_checked",
+          "compared": 0,
+          "total": 0,
+          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
         }
       ],
-      "reason": "3 Fachsatz/Fachsätze mit 8 Anker(n); 0 zeigen nicht in den Quelltext: —. anchor_validation_passed — mehr wurde hier nicht geprüft: die Engine führt diese Aussage nicht, und ein bestandener Ankercheck ist keine Übereinstimmung."
+      "reason": "3 Sollfachsatz/-sätze mit 8 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
     },
     {
       "case": "CC-052",
@@ -7016,14 +7373,21 @@
           "note": "Rein syntaktisch: zeigt jeder Anker in eine Zeile, die es in der Quelle gibt?"
         },
         {
-          "name": "fachsatzinhalt",
+          "name": "fachsatzabdeckung",
           "status": "not_checked",
           "compared": 0,
           "total": 3,
-          "note": "Die Engine erzeugt keine Fachsätze — nicht geprüft, Roadmap 2.4. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+        },
+        {
+          "name": "fachsatzinhalt",
+          "status": "not_checked",
+          "compared": 0,
+          "total": 0,
+          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
         }
       ],
-      "reason": "3 Fachsatz/Fachsätze mit 8 Anker(n); 0 zeigen nicht in den Quelltext: —. anchor_validation_passed — mehr wurde hier nicht geprüft: die Engine führt diese Aussage nicht, und ein bestandener Ankercheck ist keine Übereinstimmung."
+      "reason": "3 Sollfachsatz/-sätze mit 8 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
     },
     {
       "case": "CC-053",
@@ -7151,14 +7515,21 @@
           "note": "Rein syntaktisch: zeigt jeder Anker in eine Zeile, die es in der Quelle gibt?"
         },
         {
-          "name": "fachsatzinhalt",
+          "name": "fachsatzabdeckung",
           "status": "not_checked",
           "compared": 0,
           "total": 2,
-          "note": "Die Engine erzeugt keine Fachsätze — nicht geprüft, Roadmap 2.4. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+        },
+        {
+          "name": "fachsatzinhalt",
+          "status": "not_checked",
+          "compared": 0,
+          "total": 0,
+          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
         }
       ],
-      "reason": "2 Fachsatz/Fachsätze mit 4 Anker(n); 0 zeigen nicht in den Quelltext: —. anchor_validation_passed — mehr wurde hier nicht geprüft: die Engine führt diese Aussage nicht, und ein bestandener Ankercheck ist keine Übereinstimmung."
+      "reason": "2 Sollfachsatz/-sätze mit 4 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
     },
     {
       "case": "CC-054",
@@ -7286,14 +7657,21 @@
           "note": "Rein syntaktisch: zeigt jeder Anker in eine Zeile, die es in der Quelle gibt?"
         },
         {
-          "name": "fachsatzinhalt",
+          "name": "fachsatzabdeckung",
           "status": "not_checked",
           "compared": 0,
           "total": 2,
-          "note": "Die Engine erzeugt keine Fachsätze — nicht geprüft, Roadmap 2.4. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+        },
+        {
+          "name": "fachsatzinhalt",
+          "status": "not_checked",
+          "compared": 0,
+          "total": 0,
+          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
         }
       ],
-      "reason": "2 Fachsatz/Fachsätze mit 5 Anker(n); 0 zeigen nicht in den Quelltext: —. anchor_validation_passed — mehr wurde hier nicht geprüft: die Engine führt diese Aussage nicht, und ein bestandener Ankercheck ist keine Übereinstimmung."
+      "reason": "2 Sollfachsatz/-sätze mit 5 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
     },
     {
       "case": "CC-055",
@@ -7421,14 +7799,21 @@
           "note": "Rein syntaktisch: zeigt jeder Anker in eine Zeile, die es in der Quelle gibt?"
         },
         {
-          "name": "fachsatzinhalt",
+          "name": "fachsatzabdeckung",
           "status": "not_checked",
           "compared": 0,
           "total": 2,
-          "note": "Die Engine erzeugt keine Fachsätze — nicht geprüft, Roadmap 2.4. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+        },
+        {
+          "name": "fachsatzinhalt",
+          "status": "not_checked",
+          "compared": 0,
+          "total": 0,
+          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
         }
       ],
-      "reason": "2 Fachsatz/Fachsätze mit 8 Anker(n); 0 zeigen nicht in den Quelltext: —. anchor_validation_passed — mehr wurde hier nicht geprüft: die Engine führt diese Aussage nicht, und ein bestandener Ankercheck ist keine Übereinstimmung."
+      "reason": "2 Sollfachsatz/-sätze mit 8 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
     },
     {
       "case": "CC-056",
@@ -7556,14 +7941,21 @@
           "note": "Rein syntaktisch: zeigt jeder Anker in eine Zeile, die es in der Quelle gibt?"
         },
         {
-          "name": "fachsatzinhalt",
+          "name": "fachsatzabdeckung",
           "status": "not_checked",
           "compared": 0,
           "total": 2,
-          "note": "Die Engine erzeugt keine Fachsätze — nicht geprüft, Roadmap 2.4. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+        },
+        {
+          "name": "fachsatzinhalt",
+          "status": "not_checked",
+          "compared": 0,
+          "total": 0,
+          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
         }
       ],
-      "reason": "2 Fachsatz/Fachsätze mit 7 Anker(n); 0 zeigen nicht in den Quelltext: —. anchor_validation_passed — mehr wurde hier nicht geprüft: die Engine führt diese Aussage nicht, und ein bestandener Ankercheck ist keine Übereinstimmung."
+      "reason": "2 Sollfachsatz/-sätze mit 7 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
     },
     {
       "case": "CC-057",
@@ -7691,14 +8083,21 @@
           "note": "Rein syntaktisch: zeigt jeder Anker in eine Zeile, die es in der Quelle gibt?"
         },
         {
-          "name": "fachsatzinhalt",
+          "name": "fachsatzabdeckung",
           "status": "not_checked",
           "compared": 0,
           "total": 2,
-          "note": "Die Engine erzeugt keine Fachsätze — nicht geprüft, Roadmap 2.4. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+        },
+        {
+          "name": "fachsatzinhalt",
+          "status": "not_checked",
+          "compared": 0,
+          "total": 0,
+          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
         }
       ],
-      "reason": "2 Fachsatz/Fachsätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. anchor_validation_passed — mehr wurde hier nicht geprüft: die Engine führt diese Aussage nicht, und ein bestandener Ankercheck ist keine Übereinstimmung."
+      "reason": "2 Sollfachsatz/-sätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
     },
     {
       "case": "CC-058",
@@ -7826,14 +8225,21 @@
           "note": "Rein syntaktisch: zeigt jeder Anker in eine Zeile, die es in der Quelle gibt?"
         },
         {
-          "name": "fachsatzinhalt",
+          "name": "fachsatzabdeckung",
           "status": "not_checked",
           "compared": 0,
           "total": 3,
-          "note": "Die Engine erzeugt keine Fachsätze — nicht geprüft, Roadmap 2.4. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+        },
+        {
+          "name": "fachsatzinhalt",
+          "status": "not_checked",
+          "compared": 0,
+          "total": 0,
+          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
         }
       ],
-      "reason": "3 Fachsatz/Fachsätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. anchor_validation_passed — mehr wurde hier nicht geprüft: die Engine führt diese Aussage nicht, und ein bestandener Ankercheck ist keine Übereinstimmung."
+      "reason": "3 Sollfachsatz/-sätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
     },
     {
       "case": "CC-059",
@@ -7961,14 +8367,21 @@
           "note": "Rein syntaktisch: zeigt jeder Anker in eine Zeile, die es in der Quelle gibt?"
         },
         {
-          "name": "fachsatzinhalt",
+          "name": "fachsatzabdeckung",
           "status": "not_checked",
           "compared": 0,
           "total": 3,
-          "note": "Die Engine erzeugt keine Fachsätze — nicht geprüft, Roadmap 2.4. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+        },
+        {
+          "name": "fachsatzinhalt",
+          "status": "not_checked",
+          "compared": 0,
+          "total": 0,
+          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
         }
       ],
-      "reason": "3 Fachsatz/Fachsätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. anchor_validation_passed — mehr wurde hier nicht geprüft: die Engine führt diese Aussage nicht, und ein bestandener Ankercheck ist keine Übereinstimmung."
+      "reason": "3 Sollfachsatz/-sätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
     },
     {
       "case": "CC-060",
@@ -8096,14 +8509,21 @@
           "note": "Rein syntaktisch: zeigt jeder Anker in eine Zeile, die es in der Quelle gibt?"
         },
         {
-          "name": "fachsatzinhalt",
+          "name": "fachsatzabdeckung",
           "status": "not_checked",
           "compared": 0,
           "total": 3,
-          "note": "Die Engine erzeugt keine Fachsätze — nicht geprüft, Roadmap 2.4. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+        },
+        {
+          "name": "fachsatzinhalt",
+          "status": "not_checked",
+          "compared": 0,
+          "total": 0,
+          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
         }
       ],
-      "reason": "3 Fachsatz/Fachsätze mit 8 Anker(n); 0 zeigen nicht in den Quelltext: —. anchor_validation_passed — mehr wurde hier nicht geprüft: die Engine führt diese Aussage nicht, und ein bestandener Ankercheck ist keine Übereinstimmung."
+      "reason": "3 Sollfachsatz/-sätze mit 8 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
     },
     {
       "case": "CC-061",
@@ -8231,14 +8651,21 @@
           "note": "Rein syntaktisch: zeigt jeder Anker in eine Zeile, die es in der Quelle gibt?"
         },
         {
-          "name": "fachsatzinhalt",
+          "name": "fachsatzabdeckung",
           "status": "not_checked",
           "compared": 0,
           "total": 2,
-          "note": "Die Engine erzeugt keine Fachsätze — nicht geprüft, Roadmap 2.4. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+        },
+        {
+          "name": "fachsatzinhalt",
+          "status": "not_checked",
+          "compared": 0,
+          "total": 0,
+          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
         }
       ],
-      "reason": "2 Fachsatz/Fachsätze mit 3 Anker(n); 0 zeigen nicht in den Quelltext: —. anchor_validation_passed — mehr wurde hier nicht geprüft: die Engine führt diese Aussage nicht, und ein bestandener Ankercheck ist keine Übereinstimmung."
+      "reason": "2 Sollfachsatz/-sätze mit 3 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
     },
     {
       "case": "CC-062",
@@ -8366,14 +8793,21 @@
           "note": "Rein syntaktisch: zeigt jeder Anker in eine Zeile, die es in der Quelle gibt?"
         },
         {
-          "name": "fachsatzinhalt",
+          "name": "fachsatzabdeckung",
           "status": "not_checked",
           "compared": 0,
           "total": 2,
-          "note": "Die Engine erzeugt keine Fachsätze — nicht geprüft, Roadmap 2.4. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+        },
+        {
+          "name": "fachsatzinhalt",
+          "status": "not_checked",
+          "compared": 0,
+          "total": 0,
+          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
         }
       ],
-      "reason": "2 Fachsatz/Fachsätze mit 4 Anker(n); 0 zeigen nicht in den Quelltext: —. anchor_validation_passed — mehr wurde hier nicht geprüft: die Engine führt diese Aussage nicht, und ein bestandener Ankercheck ist keine Übereinstimmung."
+      "reason": "2 Sollfachsatz/-sätze mit 4 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
     },
     {
       "case": "CC-063",
@@ -8501,14 +8935,21 @@
           "note": "Rein syntaktisch: zeigt jeder Anker in eine Zeile, die es in der Quelle gibt?"
         },
         {
-          "name": "fachsatzinhalt",
+          "name": "fachsatzabdeckung",
           "status": "not_checked",
           "compared": 0,
           "total": 2,
-          "note": "Die Engine erzeugt keine Fachsätze — nicht geprüft, Roadmap 2.4. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+        },
+        {
+          "name": "fachsatzinhalt",
+          "status": "not_checked",
+          "compared": 0,
+          "total": 0,
+          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
         }
       ],
-      "reason": "2 Fachsatz/Fachsätze mit 4 Anker(n); 0 zeigen nicht in den Quelltext: —. anchor_validation_passed — mehr wurde hier nicht geprüft: die Engine führt diese Aussage nicht, und ein bestandener Ankercheck ist keine Übereinstimmung."
+      "reason": "2 Sollfachsatz/-sätze mit 4 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
     },
     {
       "case": "CC-064",
@@ -8636,14 +9077,21 @@
           "note": "Rein syntaktisch: zeigt jeder Anker in eine Zeile, die es in der Quelle gibt?"
         },
         {
-          "name": "fachsatzinhalt",
+          "name": "fachsatzabdeckung",
           "status": "not_checked",
           "compared": 0,
           "total": 2,
-          "note": "Die Engine erzeugt keine Fachsätze — nicht geprüft, Roadmap 2.4. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+        },
+        {
+          "name": "fachsatzinhalt",
+          "status": "not_checked",
+          "compared": 0,
+          "total": 0,
+          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
         }
       ],
-      "reason": "2 Fachsatz/Fachsätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. anchor_validation_passed — mehr wurde hier nicht geprüft: die Engine führt diese Aussage nicht, und ein bestandener Ankercheck ist keine Übereinstimmung."
+      "reason": "2 Sollfachsatz/-sätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
     },
     {
       "case": "CC-065",
@@ -8771,14 +9219,21 @@
           "note": "Rein syntaktisch: zeigt jeder Anker in eine Zeile, die es in der Quelle gibt?"
         },
         {
-          "name": "fachsatzinhalt",
+          "name": "fachsatzabdeckung",
           "status": "not_checked",
           "compared": 0,
           "total": 1,
-          "note": "Die Engine erzeugt keine Fachsätze — nicht geprüft, Roadmap 2.4. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+        },
+        {
+          "name": "fachsatzinhalt",
+          "status": "not_checked",
+          "compared": 0,
+          "total": 0,
+          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
         }
       ],
-      "reason": "1 Fachsatz/Fachsätze mit 2 Anker(n); 0 zeigen nicht in den Quelltext: —. anchor_validation_passed — mehr wurde hier nicht geprüft: die Engine führt diese Aussage nicht, und ein bestandener Ankercheck ist keine Übereinstimmung."
+      "reason": "1 Sollfachsatz/-sätze mit 2 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
     },
     {
       "case": "CC-066",
@@ -8906,14 +9361,21 @@
           "note": "Rein syntaktisch: zeigt jeder Anker in eine Zeile, die es in der Quelle gibt?"
         },
         {
-          "name": "fachsatzinhalt",
+          "name": "fachsatzabdeckung",
           "status": "not_checked",
           "compared": 0,
           "total": 1,
-          "note": "Die Engine erzeugt keine Fachsätze — nicht geprüft, Roadmap 2.4. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+        },
+        {
+          "name": "fachsatzinhalt",
+          "status": "not_checked",
+          "compared": 0,
+          "total": 0,
+          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
         }
       ],
-      "reason": "1 Fachsatz/Fachsätze mit 2 Anker(n); 0 zeigen nicht in den Quelltext: —. anchor_validation_passed — mehr wurde hier nicht geprüft: die Engine führt diese Aussage nicht, und ein bestandener Ankercheck ist keine Übereinstimmung."
+      "reason": "1 Sollfachsatz/-sätze mit 2 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
     },
     {
       "case": "CC-067",
@@ -9041,14 +9503,21 @@
           "note": "Rein syntaktisch: zeigt jeder Anker in eine Zeile, die es in der Quelle gibt?"
         },
         {
-          "name": "fachsatzinhalt",
+          "name": "fachsatzabdeckung",
           "status": "not_checked",
           "compared": 0,
           "total": 1,
-          "note": "Die Engine erzeugt keine Fachsätze — nicht geprüft, Roadmap 2.4. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+        },
+        {
+          "name": "fachsatzinhalt",
+          "status": "not_checked",
+          "compared": 0,
+          "total": 0,
+          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
         }
       ],
-      "reason": "1 Fachsatz/Fachsätze mit 2 Anker(n); 0 zeigen nicht in den Quelltext: —. anchor_validation_passed — mehr wurde hier nicht geprüft: die Engine führt diese Aussage nicht, und ein bestandener Ankercheck ist keine Übereinstimmung."
+      "reason": "1 Sollfachsatz/-sätze mit 2 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
     },
     {
       "case": "CC-068",
@@ -9176,14 +9645,21 @@
           "note": "Rein syntaktisch: zeigt jeder Anker in eine Zeile, die es in der Quelle gibt?"
         },
         {
-          "name": "fachsatzinhalt",
+          "name": "fachsatzabdeckung",
           "status": "not_checked",
           "compared": 0,
           "total": 1,
-          "note": "Die Engine erzeugt keine Fachsätze — nicht geprüft, Roadmap 2.4. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+        },
+        {
+          "name": "fachsatzinhalt",
+          "status": "not_checked",
+          "compared": 0,
+          "total": 0,
+          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
         }
       ],
-      "reason": "1 Fachsatz/Fachsätze mit 3 Anker(n); 0 zeigen nicht in den Quelltext: —. anchor_validation_passed — mehr wurde hier nicht geprüft: die Engine führt diese Aussage nicht, und ein bestandener Ankercheck ist keine Übereinstimmung."
+      "reason": "1 Sollfachsatz/-sätze mit 3 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
     }
   ]
 }

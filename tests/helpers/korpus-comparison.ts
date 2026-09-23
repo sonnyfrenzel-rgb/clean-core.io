@@ -343,6 +343,16 @@ export interface EngineReading {
   worst: CloudReadinessGrade;
   /** Nur als Lebenszeichen: die Route ist im Korpus ohne Gegenstück. */
   routeCount: number;
+  /**
+   * Die Fachsätze, die dieser Lauf erzeugt hat — heute keine (Roadmap 17.5).
+   *
+   * Sie stehen hier und nicht im Vergleicher, weil der Vergleicher sonst
+   * beides wäre: Erzeuger und Richter. Wer 17.6 entscheidet, hängt seinen
+   * Erzeuger an `readWithEngine` und ändert an der Facette nichts.
+   */
+  businessStatements: GeneratedStatement[];
+  /** Wer sie erzeugt hat. Steht in jedem Beleg der Facette `fachsaetze`. */
+  producer: StatementProducer;
 }
 
 /**
@@ -354,7 +364,11 @@ export interface EngineReading {
  */
 export type SkeletonMutation = (skeleton: ProcessSkeleton, file: string) => ProcessSkeleton;
 
-export function readWithEngine(korpusCase: KorpusCase, mutate?: SkeletonMutation): EngineReading {
+export function readWithEngine(
+  korpusCase: KorpusCase,
+  mutate?: SkeletonMutation,
+  producer: StatementProducer = NO_PRODUCER,
+): EngineReading {
   const deployment = deploymentOf(korpusCase.profile);
   const objectNames = new Set<string>();
   const uses = new Map<string, ObjectUse>();
@@ -383,7 +397,8 @@ export function readWithEngine(korpusCase: KorpusCase, mutate?: SkeletonMutation
     return { file: source.name, evidence, facts, skeleton, statements: readStatements(source.code), tables };
   });
   const grades = [...objectNames].map((name) => gradeSapObjectUse(name, uses.get(name) ?? null).grade);
-  return { perFile, objectNames, worst: worstGrade(grades), routeCount };
+  const base = { perFile, objectNames, worst: worstGrade(grades), routeCount };
+  return { ...base, producer, businessStatements: producer.produce(korpusCase, base) };
 }
 
 // ---------------------------------------------------------------------------
@@ -1273,17 +1288,223 @@ function compareSkeleton(korpusCase: KorpusCase, reading: EngineReading): ClassR
   return done({ case: korpusCase.id, class: 'skelett', state: 'agree', verdict: null, evidence: `${head}${tail}` });
 }
 
+// ---------------------------------------------------------------------------
+// Fachsätze: das Textmaß, der Ankerschlüssel und der Erzeuger (Roadmap 17.5)
+// ---------------------------------------------------------------------------
+
 /**
- * Fachsätze — und warum diese Facette nie `agree` sagt.
+ * Die Funktionswörter, die aus einem Fachsatz nichts über den Code sagen.
  *
- * Die Engine erzeugt keine Fachsätze; das ist der Stand von Phase 2 und kein
- * Fehler. Bis 1.9 stand die Klasse trotzdem 68-mal auf `agree`, weil die
- * einzige Prüfung — zeigen die Anker in den Quelltext? — bestanden wurde. Ein
- * rein syntaktischer Ankercheck heißt jetzt, was er ist:
- * `anchor_validation_passed`. Er bleibt wertvoll (ein Anker außerhalb der Datei
- * ist ein Fehler im Fallbuch), aber er ist keine Übereinstimmung mit der Engine.
+ * Eine Streichliste ist eine Auslegung, und sie steht deshalb hier, sichtbar und
+ * vollständig, statt in einer Ähnlichkeitszahl zu verschwinden. Sie enthält
+ * ausschließlich deutsche Funktionswörter — kein Fachwort, kein ABAP-Bezeichner,
+ * nichts, was zwei Sätze inhaltlich unterscheiden könnte.
  */
-function compareBusinessStatements(korpusCase: KorpusCase): ClassResult {
+export const STATEMENT_STOPWORDS: ReadonlySet<string> = new Set([
+  'der', 'die', 'das', 'den', 'dem', 'des', 'ein', 'eine', 'einer', 'einem', 'einen', 'eines',
+  'und', 'oder', 'aber', 'nicht', 'kein', 'keine', 'wird', 'werden', 'wurde', 'worden', 'sind',
+  'ist', 'war', 'sein', 'seine', 'hat', 'haben', 'als', 'wie', 'mit', 'ohne', 'von', 'vom',
+  'zum', 'zur', 'fuer', 'ueber', 'unter', 'auf', 'aus', 'bei', 'nach', 'vor', 'durch', 'gegen',
+  'nur', 'auch', 'noch', 'dann', 'wenn', 'dass', 'sich', 'ihre', 'ihr', 'alle', 'jeder', 'jede',
+  'jedes', 'man', 'pro', 'dabei', 'damit', 'dadurch',
+]);
+
+/**
+ * Ein Fachsatz in Inhaltswörter zerlegt.
+ *
+ * Normalisierung, offen und in dieser Reihenfolge: Kleinschreibung, Umlaute und
+ * ß aufgelöst (`ä`→`ae` … `ß`→`ss`), alles außer `a–z`, `0–9` und `_` zu
+ * Trennern, Wörter unter drei Zeichen und die Streichliste oben entfernt.
+ * `_` bleibt, weil ABAP-Bezeichner wie `lv_count` genau das Wort sind, an dem
+ * zwei Sätze sich unterscheiden.
+ */
+export function statementTokens(text: string): Set<string> {
+  return new Set(
+    (text ?? '')
+      .toLowerCase()
+      .replace(/ä/g, 'ae')
+      .replace(/ö/g, 'oe')
+      .replace(/ü/g, 'ue')
+      .replace(/ß/g, 'ss')
+      .replace(/[^a-z0-9_]+/g, ' ')
+      .split(' ')
+      .filter((token) => token.length >= 3 && !STATEMENT_STOPWORDS.has(token)),
+  );
+}
+
+/**
+ * Das Maß: der Dice-Koeffizient über diese Inhaltswörter, `2·|A∩B| / (|A|+|B|)`.
+ *
+ * Warum dieses und kein cleveres: es ist von Hand nachrechenbar, es braucht kein
+ * Modell, keine Einbettung und keinen Schlüssel, und es sagt bei jedem Wert, aus
+ * welchen Wörtern er kommt. Eine Zahl, deren Zustandekommen niemand nachprüfen
+ * kann, wäre hier genau der Fehler, den die Zweitmessung vom 23.09. gemacht hat.
+ */
+export function statementSimilarity(a: string, b: string): number {
+  const left = statementTokens(a);
+  const right = statementTokens(b);
+  if (left.size === 0 || right.size === 0) return 0;
+  let shared = 0;
+  for (const token of left) if (right.has(token)) shared += 1;
+  return (2 * shared) / (left.size + right.size);
+}
+
+/**
+ * Die Schwelle — **am Korpus kalibriert, nicht geraten.**
+ *
+ * Gemessen am 23.09.2026 über alle 173 Sollsätze (nachzurechnen mit dem Test
+ * „die Schwelle liegt in der gemessenen Lücke" in `tests/korpus-facets.spec.ts`,
+ * der dieselben Zahlen bei jedem Lauf neu bildet):
+ *
+ * - Zwei **verschiedene** Sollsätze desselben Falls über **verschiedene** Anker:
+ *   115 Paare, höchster Wert **0,400**, 95. Perzentil 0,267, Median 0,051.
+ * - Derselbe Satz, um seine letzten zwei Wörter gekürzt — die mildeste
+ *   Umformulierung, die noch dasselbe meint: 173 Paare, **niedrigster** Wert
+ *   **0,571**, Median 0,909.
+ *
+ * Zwischen 0,400 und 0,571 liegt eine Lücke, und `0.50` liegt in ihr: über jedem
+ * gemessenen Paar, das **nicht** dasselbe meint, und unter jedem, das es tut.
+ * Das ist die ganze Begründung; sie ist reproduzierbar und sie kann kippen, wenn
+ * das Fallbuch wächst — dann fällt der Test, und die Schwelle wird neu begründet
+ * statt nachgezogen.
+ *
+ * **Die ehrliche Grenze:** zwei Sollsätze am *selben* Anker können sich näher
+ * stehen als 0,50 — CC-042-B01/B02 liegen bei 0,667 und unterscheiden sich nur
+ * in `KNA1`/`KNB1`. Deshalb ist die Zuordnung eins zu eins und gierig; ein
+ * erzeugter Satz kann nicht zwei Sollsätze gutschreiben. Ein Erzeuger, der von
+ * zwei Sätzen nur einen liefert, bekommt für den anderen kein Gegenstück und
+ * damit kein `compared`.
+ */
+export const STATEMENT_MATCH_THRESHOLD = 0.5;
+
+/**
+ * Der Schlüssel, über den zwei Sätze überhaupt vergleichbar sind: die
+ * **ABAP-Anweisung**, in der die Ankerzeile liegt — nicht die Zeile selbst.
+ *
+ * Grund: das Fallbuch verankert denselben Satz mal auf `source.abap:6`, mal auf
+ * `source.abap:6–7`, weil ein `SELECT` über zwei Zeilen geht. Zwei Sätze über
+ * dieselbe Anweisung sprechen über dieselbe Sache; zwei Sätze über verschiedene
+ * Anweisungen nicht. Findet sich an der Zeile keine Anweisung (Kommentar,
+ * Leerzeile), bleibt die Zeile selbst der Schlüssel — geraten wird nichts.
+ */
+export function anchorKeys(
+  anchors: Array<{ file: string | null; line: number | null }>,
+  reading: Pick<EngineReading, 'perFile'>,
+): Set<string> {
+  const keys = new Set<string>();
+  for (const anchor of anchors) {
+    if (!anchor.file || anchor.line == null) continue;
+    const file = reading.perFile.find((entry) => entry.file === anchor.file);
+    const statement = file ? statementAt(file.statements, anchor.line) : null;
+    keys.add(statement ? `${anchor.file}#${statement.lineStart}-${statement.lineEnd}` : `${anchor.file}@${anchor.line}`);
+  }
+  return keys;
+}
+
+/** Ein Fachsatz, wie ein Erzeuger ihn liefert. */
+export interface GeneratedStatement {
+  id: string;
+  text: string;
+  anchors: Array<{ file: string | null; line: number | null }>;
+}
+
+/**
+ * Wer die Fachsätze erzeugt — die Naht, die 17.6 füllt.
+ *
+ * Sie ist ausdrücklich **leer**, weil heute niemand sie füllt, und sie ist
+ * ausdrücklich **da**, damit der erste echte Erzeuger gemessen wird, ohne dass
+ * an dieser Facette noch etwas umgebaut werden muss. Einen Erzeuger hier zu
+ * erfinden wäre 17.6 vorweggenommen und eine Produktentscheidung, die Sonny
+ * gehört.
+ */
+export interface StatementProducer {
+  /** Steht im Beleg jedes Ergebnisses; ohne Namen weiß niemand, was gemessen wurde. */
+  name: string;
+  /** Warum es (nicht) etwas gibt — geht wörtlich in die Begründung der Teilprüfung. */
+  note: string;
+  produce(korpusCase: KorpusCase, reading: Omit<EngineReading, 'businessStatements' | 'producer'>): GeneratedStatement[];
+}
+
+/**
+ * Der heutige Stand, gemessen und nicht behauptet: **niemand erzeugt Fachsätze.**
+ *
+ * Nachgeprüft am 23.09.2026 über `lib/`, `app/` und `components/` — kein Treffer
+ * auf `businessStatement`, `business_statement` oder `Fachsatz`; `readWithEngine`
+ * ruft `buildAbapEvidence`, `buildProcessFacts`, `buildProcessSkeleton`,
+ * `readStatements`, `extractDataCoupling`, `routeExtensibility` und
+ * `gradeSapObjectUse`, und keine davon gibt einen Satz zurück.
+ * `process-skeleton.ts` sagt über seine Knotenbeschriftung ausdrücklich: „A token
+ * out of the source. Never a phrase this engine made up (rule 6)." Das Modell
+ * bestellt in `lib/analysis-prompt.ts` eine „business executive summary" — keinen
+ * verankerten Einzelsatz, und der Weg dorthin führt über das Netz und ist damit
+ * hier ohnehin nicht messbar.
+ */
+export const NO_PRODUCER: StatementProducer = {
+  name: 'kein-erzeuger',
+  note:
+    'Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). ' +
+    'Diese Facette misst den ersten Erzeuger ohne Umbau.',
+  produce: () => [],
+};
+
+/**
+ * Proben für die Empfindlichkeitsmessung — **nie im Normallauf.**
+ *
+ * Sie sind kein Erzeuger des Produkts und dürfen nie einer werden: `SOLL_ECHO`
+ * schreibt das Fallbuch ab und wüsste über fremden Code nichts. Ihr einziger
+ * Zweck ist die Frage, die 17.5 beantworten muss — *bewegt sich die Zahl, wenn
+ * man den Erzeuger ändert, und wird die Facette rot, wenn er schlechter wird?*
+ * `tests/korpus-mutation.spec.ts` fährt sie.
+ */
+export const PROBE_PRODUCERS = {
+  /** Der perfekte Erzeuger: er schreibt die Sollsätze ab. Die Obergrenze der Messung. */
+  echo: (transform?: (text: string, index: number) => string, shift = 0, keep?: (index: number) => boolean): StatementProducer => ({
+    name: 'probe:soll-echo',
+    note: 'Empfindlichkeitsprobe — schreibt das Fallbuch ab und ist kein Erzeuger des Produkts.',
+    produce: (korpusCase) =>
+      korpusCase.expected.businessStatements
+        .filter((_, index) => (keep ? keep(index) : true))
+        .map((statement, index) => ({
+          id: `G-${statement.id}`,
+          text: transform ? transform(statement.text ?? '', index) : (statement.text ?? ''),
+          anchors: statement.anchors.map((anchor) => ({
+            file: anchor.file,
+            line: anchor.line == null ? null : anchor.line + shift,
+          })),
+        })),
+  }),
+} as const;
+
+/**
+ * Fachsätze — der Vergleich, der bis zum 23.09.2026 keiner war.
+ *
+ * Bis 1.9 stand die Klasse 68-mal auf `agree`, weil die einzige Prüfung — zeigen
+ * die Anker in den Quelltext? — bestanden wurde. 1.9 hat daraus ein ehrliches
+ * `anchor_validation_passed` gemacht und die Facette hart auf `disagree`
+ * verdrahtet. Ehrlich, aber blind: 0 agree / 68 disagree hieß nicht „das Produkt
+ * versagt", sondern „es wurde nichts verglichen", und solange das so steht, kann
+ * keine Prompt- und keine Modelländerung zeigen, ob sie etwas verbessert hat
+ * (Roadmap 17.5).
+ *
+ * Dieser Vergleich misst wirklich, und zwar **deterministisch**: kein Modell als
+ * Richter, kein Netz, kein Schlüssel. Er hat drei Teile, und jeder steht offen:
+ *
+ * 1. **Der Anker ist der Schlüssel** (`anchorKeys`). Zwei Sätze über dieselbe
+ *    ABAP-Anweisung sind vergleichbar, zwei Sätze über verschiedene nicht. Ein
+ *    Satz ohne Gegenstück am selben Anker ist **nicht verglichen** — er zählt in
+ *    den Nenner, nie in den Zähler.
+ * 2. **Das Textmaß** (`statementSimilarity`) ist ein Dice-Koeffizient über
+ *    normalisierte Inhaltswörter. Simpel und nachrechenbar, mit einer Schwelle,
+ *    die am Korpus selbst kalibriert ist (siehe `STATEMENT_MATCH_THRESHOLD`).
+ * 3. **Der Erzeuger** (`StatementProducer`) ist austauschbar und heute leer:
+ *    `NO_PRODUCER`. Kein Modul in `lib/`, `app/` oder `components/` erzeugt
+ *    Fachsätze — eine Suche nach `businessStatement`/`Fachsatz` findet dort
+ *    nichts, und `process-skeleton.ts` sagt über seine Knotenbeschriftung
+ *    ausdrücklich „a token out of the source, never a phrase this engine made
+ *    up". Wer der Erzeuger wird, ist eine Produktentscheidung (17.6). Diese
+ *    Facette misst ihn, sobald es ihn gibt, ohne Umbau.
+ */
+function compareBusinessStatements(korpusCase: KorpusCase, reading: EngineReading): ClassResult {
   const statements = korpusCase.expected.businessStatements;
   const byName = new Map(korpusCase.sources.map((source) => [source.name, source.lineCount]));
   const done = (core: ClassCore, aspects: FacetAspect[], scope: { compared: number; total: number }): ClassResult => ({
@@ -1307,6 +1528,7 @@ function compareBusinessStatements(korpusCase: KorpusCase): ClassResult {
     );
   }
 
+  // --- Teil 1: der Ankercheck, unverändert seit 1.9 -------------------------
   const broken: string[] = [];
   let checked = 0;
   for (const statement of statements) {
@@ -1319,6 +1541,54 @@ function compareBusinessStatements(korpusCase: KorpusCase): ClassResult {
       }
     }
   }
+
+  // --- Teil 2: der Inhalt, über den Anker als Schlüssel ---------------------
+  const produced = reading.businessStatements;
+  const keysOf = (anchors: Array<{ file: string | null; line: number | null }>) => anchorKeys(anchors, reading);
+
+  /**
+   * Alle Paare, die überhaupt über dieselbe Stelle sprechen, mit ihrem Maß.
+   * Die Zuordnung ist **eins zu eins und gierig**: das beste Paar zuerst, dann
+   * sind beide Seiten verbraucht. Ohne diese Regel könnte ein einziger erzeugter
+   * Satz zwei Sollsätze am selben Anker gutschreiben — im Korpus gibt es genau
+   * solche Paare (CC-042-B01/B02 teilen Zeile 4 und unterscheiden sich nur im
+   * Tabellennamen, Dice 0,67). Bei Gleichstand entscheidet die Zahl der geteilten
+   * Ankerschlüssel, dann die ID; der Lauf ist damit reproduzierbar.
+   */
+  const pairs: Array<{ expected: number; produced: number; score: number; shared: number }> = [];
+  const expectedKeys = statements.map((statement) => keysOf(statement.anchors));
+  const producedKeys = produced.map((statement) => keysOf(statement.anchors));
+  for (let e = 0; e < statements.length; e += 1) {
+    for (let p = 0; p < produced.length; p += 1) {
+      const shared = [...expectedKeys[e]].filter((key) => producedKeys[p].has(key)).length;
+      if (shared === 0) continue;
+      pairs.push({ expected: e, produced: p, score: statementSimilarity(statements[e].text ?? '', produced[p].text), shared });
+    }
+  }
+  pairs.sort(
+    (a, b) =>
+      b.score - a.score ||
+      b.shared - a.shared ||
+      statements[a.expected].id.localeCompare(statements[b.expected].id) ||
+      (produced[a.produced].id ?? '').localeCompare(produced[b.produced].id ?? ''),
+  );
+  const takenExpected = new Set<number>();
+  const takenProduced = new Set<number>();
+  const hits: string[] = [];
+  const misses: string[] = [];
+  for (const pair of pairs) {
+    if (takenExpected.has(pair.expected) || takenProduced.has(pair.produced)) continue;
+    takenExpected.add(pair.expected);
+    takenProduced.add(pair.produced);
+    const label = `${statements[pair.expected].id}↔${produced[pair.produced].id ?? '?'} ${pair.score.toFixed(2)}`;
+    if (pair.score >= STATEMENT_MATCH_THRESHOLD) hits.push(label);
+    else misses.push(label);
+  }
+  const uncovered = statements.filter((_, index) => !takenExpected.has(index)).map((statement) => statement.id);
+  const comparedCount = takenExpected.size;
+  const extra = produced.filter((_, index) => !takenProduced.has(index)).length;
+
+  // --- Teil 3: Status, Zähler, Nenner --------------------------------------
   const aspects: FacetAspect[] = [
     facet(
       'ankerpruefung',
@@ -1328,28 +1598,66 @@ function compareBusinessStatements(korpusCase: KorpusCase): ClassResult {
       broken.length === 0 ? 'anchor_validation_passed' : 'compared',
     ),
     facet(
-      'fachsatzinhalt',
-      0,
+      'fachsatzabdeckung',
+      comparedCount,
       statements.length,
-      'Die Engine erzeugt keine Fachsätze — nicht geprüft, Roadmap 2.4. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf.',
-      'not_checked',
+      produced.length === 0
+        ? `Kein Erzeuger: ${reading.producer.note} Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf.`
+        : `Wie viele Sollsätze haben überhaupt einen erzeugten Satz an derselben ABAP-Anweisung? Erzeuger: ${reading.producer.name}.`,
+      comparedCount > 0 ? 'compared' : 'not_checked',
+    ),
+    facet(
+      'fachsatzinhalt',
+      hits.length,
+      comparedCount,
+      comparedCount === 0
+        ? `Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. ${reading.producer.note}`
+        : `Dice über normalisierte Inhaltswörter, Schwelle ${STATEMENT_MATCH_THRESHOLD.toFixed(2)} (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD).`,
+      comparedCount > 0 ? 'compared' : 'not_checked',
     ),
   ];
+
+  /**
+   * **Warum hier die halbe Deckung nicht reicht, anders als in `skelett`.**
+   *
+   * Dort steht die 50-%-Regel, weil die Engine ganze Knotenarten nicht führt —
+   * das ist Unvergleichbarkeit und keine Abweichung. Hier ist es umgekehrt: ein
+   * Sollsatz ohne erzeugtes Gegenstück an derselben Anweisung heißt, dass der
+   * Erzeuger dieselbe Quelle gelesen und an dieser Stelle nichts gesagt hat.
+   * Ein Grün über einem Erzeuger, der ein Drittel der Aussagen still auslässt,
+   * wäre genau das Grün, das „nicht geprüft" heißt (1.9, CR-05).
+   *
+   * Was hier bewusst **nicht** zählt: erzeugte Sätze ohne Sollsatz an derselben
+   * Stelle (`extra`). Das Fallbuch erklärt seine Fachsatzliste nirgends für
+   * vollständig — `declaredEmpty` gibt es für Befunde und Objekte, nicht für
+   * Fachsätze —, und was der Korpus nicht behauptet, darf dieser Vergleich
+   * nicht gegen einen Erzeuger verwenden. Die Zahl steht deshalb im Beleg, und
+   * sie ist die Größe, über die 17.6 zu entscheiden hat.
+   */
+  const agree = broken.length === 0 && comparedCount === statements.length && misses.length === 0;
+  const verdict: Verdict | null = agree
+    ? null
+    : broken.length > 0
+      ? 'korpus-offen'
+      : produced.length === 0 || comparedCount === 0
+        ? 'nicht-vergleichbar'
+        : 'engine-defekt';
+
+  const head =
+    `${statements.length} Sollfachsatz/-sätze mit ${checked} Anker(n); ${broken.length} zeigen nicht in den Quelltext: ${sample(broken)}. ` +
+    `Erzeuger „${reading.producer.name}" lieferte ${produced.length} Satz/Sätze. `;
+  const tail =
+    produced.length === 0
+      ? `Nichts zu vergleichen — ${reading.producer.note} Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed).`
+      : comparedCount === 0
+        ? `Kein erzeugter Satz steht an einer ABAP-Anweisung, die auch ein Sollsatz nennt — nicht verglichen, nicht verfehlt.`
+        : `${comparedCount} von ${statements.length} Sollsätzen vergleichbar (Anker geteilt), davon ${hits.length} über der Schwelle: ${sample(hits)}. ` +
+          `Darunter: ${sample(misses)}. Ohne Gegenstück: ${sample(uncovered)}. Erzeugte Sätze ohne Sollsatz an derselben Stelle: ${extra}.`;
+
   return done(
-    {
-      case: korpusCase.id,
-      class: 'fachsaetze',
-      // Nie `agree`: der Inhalt der Fachsätze wurde nicht verglichen.
-      state: 'disagree',
-      verdict: broken.length === 0 ? 'nicht-vergleichbar' : 'korpus-offen',
-      evidence:
-        `${statements.length} Fachsatz/Fachsätze mit ${checked} Anker(n); ${broken.length} zeigen nicht in den Quelltext: ${sample(broken)}. ` +
-        (broken.length === 0
-          ? 'anchor_validation_passed — mehr wurde hier nicht geprüft: die Engine führt diese Aussage nicht, und ein bestandener Ankercheck ist keine Übereinstimmung.'
-          : 'Der Ankercheck ist gefallen; das ist eine Frage an die Fallautoren, kein Engine-Defekt.'),
-    },
+    { case: korpusCase.id, class: 'fachsaetze', state: agree ? 'agree' : 'disagree', verdict, evidence: `${head}${tail}` },
     aspects,
-    { compared: 0, total: statements.length },
+    { compared: comparedCount, total: statements.length },
   );
 }
 
@@ -1359,14 +1667,14 @@ export function compareCase(korpusCase: KorpusCase, reading: EngineReading): Cla
     compareLevel(korpusCase, reading),
     compareObjects(korpusCase, reading),
     compareSkeleton(korpusCase, reading),
-    compareBusinessStatements(korpusCase),
+    compareBusinessStatements(korpusCase, reading),
   ];
 }
 
-export function compareAll(mutate?: SkeletonMutation): ClassResult[] {
+export function compareAll(mutate?: SkeletonMutation, producer: StatementProducer = NO_PRODUCER): ClassResult[] {
   const results: ClassResult[] = [];
   for (const korpusCase of readCases()) {
-    results.push(...compareCase(korpusCase, readWithEngine(korpusCase, mutate)));
+    results.push(...compareCase(korpusCase, readWithEngine(korpusCase, mutate, producer)));
   }
   return results;
 }

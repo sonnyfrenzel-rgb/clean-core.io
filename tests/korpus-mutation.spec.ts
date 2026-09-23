@@ -1,5 +1,11 @@
 import { test, expect } from '@playwright/test';
-import { compareAll, type SkeletonMutation } from './helpers/korpus-comparison';
+import {
+  compareAll,
+  PROBE_PRODUCERS,
+  type ClassResult,
+  type SkeletonMutation,
+  type StatementProducer,
+} from './helpers/korpus-comparison';
 import type { SkeletonEdge, SkeletonNode, ProcessSkeleton } from '../lib/abap/process-skeleton';
 
 /**
@@ -152,3 +158,125 @@ for (const probe of PROBES) {
     ).toBeGreaterThan(0);
   });
 }
+
+// ---------------------------------------------------------------------------
+// Dieselbe Frage an die Facette `fachsaetze` (Roadmap 17.5)
+// ---------------------------------------------------------------------------
+
+/**
+ * Die Facette `fachsaetze` hatte bis zum 23.09.2026 dasselbe Problem wie
+ * `skelett` vor 1.9 — schlimmer sogar: sie war hart auf `disagree` verdrahtet
+ * und verglich den Inhalt überhaupt nicht. „0 agree / 68 disagree" hieß deshalb
+ * nicht „das Produkt versagt", sondern „es wurde nichts verglichen".
+ *
+ * Diese Proben beantworten die Abnahmefrage aus 17.5: **bewegt sich die Zahl,
+ * wenn man den Erzeuger ändert, und wird die Facette rot, wenn er schlechter
+ * wird?** Der Erzeuger der Proben ist `PROBE_PRODUCERS.echo` — er schreibt das
+ * Fallbuch ab und ist ausdrücklich kein Erzeuger des Produkts; ohne ihn gäbe es
+ * nichts, an dem sich rot werden ließe, weil heute niemand Fachsätze erzeugt.
+ */
+type StatementProbe = {
+  name: string;
+  why: string;
+  producer: StatementProducer;
+  /** Auf `true`, wenn diese Probe absichtlich **nicht** rot werden darf. */
+  stayGreen?: true;
+};
+
+const drop = (text: string) => text.split(' ').slice(0, -2).join(' ');
+
+const STATEMENT_PROBES: StatementProbe[] = [
+  {
+    name: 'F0 — derselbe Satz, um zwei Wörter gekürzt (Gegenprobe, muss grün bleiben)',
+    why: 'Ein Maß, das jede Umformulierung bestraft, misst die Wortwahl und nicht die Aussage.',
+    producer: PROBE_PRODUCERS.echo(drop),
+    stayGreen: true,
+  },
+  {
+    name: 'F1 — jeder Satz wandert drei Zeilen weiter',
+    why: 'Der Anker ist der Schlüssel; ein Satz an der falschen Anweisung ist ein falscher Beleg, egal wie gut er klingt.',
+    producer: PROBE_PRODUCERS.echo(undefined, 3),
+  },
+  {
+    name: 'F2 — der Satz des Nachbarn steht am eigenen Anker',
+    why: 'Richtig verankert, falsch gesagt: genau der Fehler, den ein reiner Ankercheck nie gesehen hat.',
+    producer: {
+      name: 'probe:nachbarsatz',
+      note: 'Empfindlichkeitsprobe — verschiebt die Texte gegen die Anker.',
+      produce: (korpusCase) => {
+        const statements = korpusCase.expected.businessStatements;
+        return statements.map((statement, index) => ({
+          id: `G-${statement.id}`,
+          text: statements[(index + 1) % statements.length].text ?? '',
+          anchors: statement.anchors.map((anchor) => ({ file: anchor.file, line: anchor.line })),
+        }));
+      },
+    },
+  },
+  {
+    name: 'F3 — jeder zweite Satz entfällt',
+    why: 'Ein Erzeuger, der die Hälfte still auslässt, hat nicht zugestimmt — er hat geschwiegen.',
+    producer: PROBE_PRODUCERS.echo(undefined, 0, (index) => index % 2 === 0),
+  },
+  {
+    name: 'F4 — aus jedem Satz wird die Executive Summary',
+    why:
+      'Das ist, was `lib/analysis-prompt.ts` heute beim Modell bestellt: eine „business executive summary" statt ' +
+      'der verankerten Einzelaussage. Diese Probe misst den Unterschied, um den es in 17.6 geht.',
+    producer: PROBE_PRODUCERS.echo(() => 'Das Programm verarbeitet Daten und gibt ein Ergebnis aus.'),
+  },
+];
+
+const fachsaetze = (results: ClassResult[]) => results.filter((result) => result.class === 'fachsaetze');
+const green = (results: ClassResult[]) => new Set(fachsaetze(results).filter((r) => r.state === 'agree').map((r) => r.case));
+const compared = (results: ClassResult[]) => fachsaetze(results).reduce((sum, r) => sum + r.scope.compared, 0);
+const hits = (results: ClassResult[]) =>
+  fachsaetze(results).reduce((sum, r) => sum + (r.aspects.find((a) => a.name === 'fachsatzinhalt')?.compared ?? 0), 0);
+
+const NO_PRODUCER_RUN = compareAll();
+const ECHO_RUN = compareAll(undefined, PROBE_PRODUCERS.echo());
+
+test('die Zahl bewegt sich, wenn man den Erzeuger ändert', () => {
+  // Die Abnahmebedingung aus 17.5, als Messung. Heute erzeugt niemand
+  // Fachsätze, und genau deshalb steht in `tests/korpus/baseline.json` eine
+  // Null — keine Behauptung über das Produkt, sondern der gemessene Stand.
+  expect(compared(NO_PRODUCER_RUN), 'ohne Erzeuger darf nichts als verglichen gelten').toBe(0);
+  expect(hits(NO_PRODUCER_RUN), 'ohne Erzeuger darf es keinen Treffer geben').toBe(0);
+  expect(green(NO_PRODUCER_RUN).size, 'ohne Erzeuger darf kein Fall grün sein').toBe(0);
+
+  expect(compared(ECHO_RUN), 'mit einem Erzeuger muss die Zahl sich bewegen').toBeGreaterThan(150);
+  expect(hits(ECHO_RUN)).toBe(compared(ECHO_RUN));
+  expect(green(ECHO_RUN).size, 'ein perfekter Erzeuger muss grün werden können').toBeGreaterThan(60);
+});
+
+for (const probe of STATEMENT_PROBES) {
+  test(`${probe.name}`, () => {
+    const mutated = compareAll(undefined, probe.producer);
+    const before = green(ECHO_RUN);
+    const after = green(mutated);
+
+    if (probe.stayGreen) {
+      const lost = [...before].filter((id) => !after.has(id));
+      expect(
+        lost.join(', '),
+        `${probe.why}\nDiese Fälle sind gefallen, obwohl die Aussage dieselbe geblieben ist.`,
+      ).toEqual('');
+      return;
+    }
+
+    const fell = [...before].filter((id) => !after.has(id));
+    expect(
+      fell.length,
+      `${probe.why}\nKein einziger übereinstimmender Fall ist gefallen — die Facette sieht diese ` +
+        `Verschlechterung nicht. Das ist ein Defekt in tests/helpers/korpus-comparison.ts.`,
+    ).toBeGreaterThan(0);
+  });
+}
+
+test('die vier anderen Facetten bewegen sich nicht, wenn nur der Erzeuger wechselt', () => {
+  // Ein Erzeuger für Fachsätze darf an `befunde`, `level`, `objekte` und
+  // `skelett` nichts ändern; täte er es, wäre die Naht undicht.
+  const key = (result: ClassResult) => `${result.case}|${result.class}|${result.state}|${result.verdict}`;
+  const other = (results: ClassResult[]) => results.filter((r) => r.class !== 'fachsaetze').map(key);
+  expect(other(ECHO_RUN)).toEqual(other(NO_PRODUCER_RUN));
+});

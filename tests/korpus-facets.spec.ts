@@ -11,6 +11,10 @@ import {
   type ClassResult,
   type FacetAspect,
   type KorpusCase,
+  NO_PRODUCER,
+  STATEMENT_MATCH_THRESHOLD,
+  statementSimilarity,
+  statementTokens,
 } from './helpers/korpus-comparison';
 
 /**
@@ -60,10 +64,29 @@ test.describe('kein Grün ohne Deckung', () => {
   });
 
   test('die Facette fachsaetze führt „nicht geprüft" nie als Grün', () => {
-    // Die Engine erzeugt keine Fachsätze (Roadmap 2.4). Was der Vergleich hier
-    // tut, ist ein rein syntaktischer Ankercheck, und der heißt jetzt so.
-    const green = LIVE.filter((result) => result.class === 'fachsaetze' && result.state === 'agree');
-    expect(green.map(show).join('\n')).toEqual('');
+    // Bis 17.5 stand hier „kein fachsaetze-Ergebnis ist je grün". Das war
+    // richtig gemessen und falsch formuliert: die Facette war hart auf
+    // `disagree` verdrahtet, und ein Test, der eine Verdrahtung bestätigt,
+    // misst die Verdrahtung. Die Regel, die wirklich gilt, ist die aus 1.9:
+    // grün nur, wenn der **Inhalt** verglichen wurde und die Deckung
+    // vollständig ist. Solange niemand Fachsätze erzeugt (17.6), fällt darunter
+    // kein einziger Fall — geprüft wird aber die Regel, nicht das Ergebnis.
+    const unearned = LIVE.filter((result) => {
+      if (result.class !== 'fachsaetze' || result.state !== 'agree') return false;
+      const content = result.aspects.find((aspect) => aspect.name === 'fachsatzinhalt');
+      return (
+        content == null ||
+        content.status !== 'compared' ||
+        content.compared === 0 ||
+        content.compared !== content.total ||
+        result.scope.compared !== result.scope.total
+      );
+    });
+    expect(
+      unearned.map(show).join('\n'),
+      'Grün in fachsaetze heißt: jeder Sollsatz hatte ein erzeugtes Gegenstück an derselben ABAP-Anweisung, ' +
+        'und jedes davon lag über der Schwelle. Alles andere ist „nicht geprüft".',
+    ).toEqual('');
     const withoutName = LIVE.filter(
       (result) =>
         result.class === 'fachsaetze' &&
@@ -278,5 +301,127 @@ test.describe('die Skelettbrücken sind nachlesbar', () => {
     // 18,2 % war der Stand vor 1.9. Die Schwelle ist bewusst weit unter dem
     // gemessenen Wert: sie hält die Regression fest, nicht das Optimum.
     expect(compared / total, `nur ${compared} von ${total} Sollknoten vergleichbar`).toBeGreaterThan(0.5);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Das Textmaß der Fachsätze (Roadmap 17.5)
+// ---------------------------------------------------------------------------
+
+test.describe('das Fachsatzmaß ist offengelegt und begründet', () => {
+  const STATEMENTS = readCases().flatMap((korpusCase) =>
+    korpusCase.expected.businessStatements.map((statement) => ({
+      case: korpusCase.id,
+      id: statement.id,
+      text: statement.text ?? '',
+      lines: new Set(statement.anchors.map((anchor) => `${anchor.file}:${anchor.line}`)),
+    })),
+  );
+
+  test('der Korpus trägt die 173 Sollsätze, an denen gemessen wird', () => {
+    expect(STATEMENTS.length, 'ohne Sollsätze misst diese Facette nichts').toBeGreaterThan(150);
+    expect(STATEMENTS.every((statement) => statement.text.length > 10)).toBe(true);
+  });
+
+  test('die Schwelle liegt in der gemessenen Lücke', () => {
+    // Die Begründung der Schwelle, bei jedem Lauf neu gerechnet statt als Prosa
+    // im Kommentar. Fällt dieser Test, weil das Fallbuch gewachsen ist, dann
+    // wird die Schwelle **neu begründet** — nicht nachgezogen.
+    let worstUnrelated = 0;
+    let worstUnrelatedPair = '';
+    for (let i = 0; i < STATEMENTS.length; i += 1) {
+      for (let j = i + 1; j < STATEMENTS.length; j += 1) {
+        const a = STATEMENTS[i];
+        const b = STATEMENTS[j];
+        if (a.case !== b.case) continue;
+        // Nur Paare, die über **verschiedene** Stellen sprechen: die sollen
+        // niemals als „dasselbe gesagt" durchgehen.
+        if ([...a.lines].some((line) => b.lines.has(line))) continue;
+        const score = statementSimilarity(a.text, b.text);
+        if (score > worstUnrelated) {
+          worstUnrelated = score;
+          worstUnrelatedPair = `${a.id}/${b.id}`;
+        }
+      }
+    }
+    // Die mildeste Umformulierung, die noch dasselbe meint: derselbe Satz ohne
+    // seine letzten zwei Wörter. Sie muss über der Schwelle bleiben.
+    let mildestParaphrase = 1;
+    let mildestParaphraseId = '';
+    for (const statement of STATEMENTS) {
+      const score = statementSimilarity(statement.text, statement.text.split(' ').slice(0, -2).join(' '));
+      if (score < mildestParaphrase) {
+        mildestParaphrase = score;
+        mildestParaphraseId = statement.id;
+      }
+    }
+    expect(
+      worstUnrelated,
+      `Zwei Sollsätze über verschiedene Stellen (${worstUnrelatedPair}) erreichen ${worstUnrelated.toFixed(3)} — ` +
+        `über der Schwelle ${STATEMENT_MATCH_THRESHOLD}. Dann zählt das Maß Verschiedenes als dasselbe.`,
+    ).toBeLessThan(STATEMENT_MATCH_THRESHOLD);
+    expect(
+      mildestParaphrase,
+      `Die mildeste Umformulierung (${mildestParaphraseId}) fällt auf ${mildestParaphrase.toFixed(3)} — ` +
+        `unter der Schwelle ${STATEMENT_MATCH_THRESHOLD}. Dann ist das Maß spröde und bestraft die Wortwahl.`,
+    ).toBeGreaterThan(STATEMENT_MATCH_THRESHOLD);
+  });
+
+  test('das Maß ist nachrechenbar und hat keine versteckte Klugheit', () => {
+    expect(statementSimilarity('Der Kunde wird gelesen.', 'Der Kunde wird gelesen.')).toBe(1);
+    expect(statementSimilarity('Der Kunde wird gelesen.', '')).toBe(0);
+    expect(statementSimilarity('', '')).toBe(0);
+    // Funktionswörter allein sind kein Inhalt.
+    expect(statementSimilarity('Der die das und oder', 'Der die das und oder')).toBe(0);
+    // Dice von Hand: {kunde, gelesen} gegen {kunde, geschrieben} = 2·1/4 = 0,5.
+    expect(statementSimilarity('Der Kunde wird gelesen.', 'Der Kunde wird geschrieben.')).toBeCloseTo(0.5, 6);
+    // Der ABAP-Bezeichner unterscheidet, der Unterstrich bleibt deshalb stehen.
+    expect(statementTokens('lv_count wird überschrieben').has('lv_count')).toBe(true);
+  });
+
+  test('der Vergleich fragt wirklich einen Erzeuger — und heute gibt es keinen', () => {
+    // Die Naht für 17.6. Ein Vergleicher, der den Erzeuger nie aufruft, kann
+    // dessen Änderung nicht fangen; das ist derselbe Befund, der 1.9 an der
+    // Facette `skelett` ausgelöst hat.
+    let asked = 0;
+    const spy = {
+      name: 'probe:zaehler',
+      note: 'Zählt nur, ob überhaupt gefragt wird.',
+      produce: () => {
+        asked += 1;
+        return [];
+      },
+    };
+    const korpusCase = readCases()[0];
+    compareCase(korpusCase, readWithEngine(korpusCase, undefined, spy));
+    expect(asked, 'der Lauf hat den Erzeuger nie gefragt').toBe(1);
+
+    // Und was er liefert, muss in der Facette **ankommen**. Vor 17.5 war
+    // `compareBusinessStatements` hart auf `disagree` verdrahtet und nahm die
+    // Engine-Lesung gar nicht entgegen; ein Erzeuger hätte dort nichts bewegt.
+    const first = korpusCase.expected.businessStatements[0];
+    expect(first, 'der erste Fall trägt keinen Sollsatz — die Probe misst sonst nichts').toBeTruthy();
+    const oneHit = {
+      name: 'probe:ein-treffer',
+      note: 'Legt genau einen Sollsatz wortgleich an seinen eigenen Anker.',
+      produce: () => [{ id: 'G-1', text: first.text ?? '', anchors: first.anchors }],
+    };
+    const withOne = compareCase(korpusCase, readWithEngine(korpusCase, undefined, oneHit)).find(
+      (result) => result.class === 'fachsaetze',
+    );
+    expect(withOne?.scope.compared, 'der erzeugte Satz kommt in der Facette nicht an').toBe(1);
+    expect(
+      withOne?.aspects.find((aspect) => aspect.name === 'fachsatzinhalt')?.compared,
+      'der Inhalt wurde nicht gemessen',
+    ).toBe(1);
+
+    // Und der Normallauf sagt ehrlich, dass es keinen gibt.
+    expect(NO_PRODUCER.produce(korpusCase, readWithEngine(korpusCase))).toEqual([]);
+    const live = LIVE.filter((result) => result.class === 'fachsaetze');
+    for (const result of live) {
+      expect(result.evidence, `${result.case}: der Beleg nennt den Erzeuger nicht`).toContain(NO_PRODUCER.name);
+    }
+    const total = live.reduce((sum, result) => sum + result.scope.total, 0);
+    expect(total, 'der Korpus führt keine Sollfachsätze mehr').toBeGreaterThan(150);
   });
 });
