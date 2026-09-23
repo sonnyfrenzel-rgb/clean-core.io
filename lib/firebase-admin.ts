@@ -1115,6 +1115,15 @@ export async function adminRevokeUser(adminUid: string, targetUid: string) {
   // (`auth.revokeRefreshTokens` above); this is the same act for the account
   // itself. Disabling the sign-in as well means a new sign-in cannot mint a fresh
   // token either — without it, revocation only costs the holder one login.
+  //
+  // What this does **not** do, said plainly because the first version of this
+  // comment claimed otherwise: it does not end the session at once. An ID token
+  // already in the browser stays valid until it expires, up to an hour, and no
+  // rule in `firestore.rules` consults `status` — the project rules ask
+  // `resource.data.userId == request.auth.uid` and nothing else. So these two
+  // lines turn an unbounded hole into an hour-long one; closing it needs a rule
+  // that reads the account's state, and therefore a manual rules deploy (QA
+  // review of 4d6f35c59546, 2a9864f3b52e — scheduled, not done here).
   const auth = await getAdminAuth();
   await auth.revokeRefreshTokens(targetUid);
   await auth.updateUser(targetUid, { disabled: true });

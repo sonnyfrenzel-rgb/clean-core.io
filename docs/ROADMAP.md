@@ -1423,6 +1423,36 @@ den Regeln nehmen, nur noch über gehärtete Routen. Die Übertragung auf die ü
 Sammlungen ist ein eigener Schritt und braucht Sonnys Entscheidung, weil sie die Admin-Konsole
 berührt.
 
+### Vollprüfung von 3131afa (v2.14.0), triagiert am 23.09.2026
+
+**Die fünf kritischen Befunde waren derselbe Fehlalarm** — drei localStorage-Schlüssel, eine
+interpolierte Vorlage und eine öffentliche URL, jeder als „Zugangsdaten rotieren" gemeldet und jeder
+als `RE-RAISED after refutation`, weil die Widerlegung im Register liegt und der Treffer bei jedem
+Lauf neu im Scanner entsteht. Die Regel entscheidet seit `953575f` am Wert statt am Pfad.
+
+**Wichtiger als jeder einzelne Befund ist die Abdeckung:** der Lauf blieb bei 14 Aufrufen am
+Aufrufzähler stehen — nicht am Geld, 4,46 von 10 USD blieben liegen — und meldete **470 Dateien mit
+5,4 MB als NOT REVIEWED**, darunter jede Komponente der Prozesskarte, der Prozessrevisionen, der
+Prozesszustände und der Arbeitsraum-Schale. Rund die Hälfte des Codes, und zwar die neueste.
+`maxBatches` steht jetzt auf 24; eine Release-Prüfung kostet damit rund 9,50 statt 5,50 USD. **Volle
+Abdeckung wären etwa 28 Aufrufe und rund 11 USD — das ist eine Entscheidung über die Obergrenze und
+liegt bei Sonny.**
+
+Von den 59 hohen Befunden sind 16 verschiedene Sachverhalte bestätigt, 13 widerlegt und eingetragen
+(darunter fünf, die einen dokumentierten Entwurf als Fehler melden, und `f9b0a7417acd`, dessen
+Fingerabdruck als bereits behoben im Code steht — die Datei stand in der NOT-REVIEWED-Liste desselben
+Berichts). Behoben in `4d6f35c`: `2878b5f8fae3`/`dfa0816bc852` (Zielplattform als Parameter),
+`b97e45a2976d` (Sitzung einer gesperrten Anmeldung), `3e32d011b3c6` (Schreibvorgang auf ein
+gelöschtes Projekt). Eingeplant, nach Gewicht: `67ac19222d96`, `45a8a7cf4a0c`, `f9695d22d124`,
+`0d8443fae823`, `c816fed880a9`, `827cf6758637`, `66f75a3d4632`, `6db23bf69b81`, `a63e125a5dc2`,
+`8bf84ca5d67c`, `773af92784d5`, `b5825ac75816`, `ae206f1937c6`.
+
+**`2a9864f3b52e`** (Delta-Prüfung von `4d6f35c`, `lib/firebase-admin.ts`) gehört zu derselben
+Architekturfrage wie der Absatz darüber und ist die ehrliche Grenze der Reparatur in `4d6f35c`: ein
+bereits ausgestelltes ID-Token bleibt bis zu einer Stunde gültig, und keine Regel liest den
+Kontostatus. Aus unbegrenzt wird damit eine Stunde; geschlossen wird es erst mit der Regeländerung —
+und die braucht einen manuellen Rules-Deploy.
+
 **Vollprüfung von b88c77b4b5d1 (v2.13.0, 18.09.2026, `openai/gpt-5.6-sol`, 769 Dateien, 5,70 $):**
 1446 Befunde — 49 kritisch, 226 hoch, 1129 mittel, 42 niedrig — Verdikt `no_go`, **INCOMPLETE**. Erste
 Sichtung am Abend: **47 der 49 kritischen mit Beleg widerlegt** — 34 Workflow-Befunde (Prämisse ist ein

@@ -955,11 +955,21 @@ test.describe('fewer rounds for the same quality (Sonny, 15.09.2026)', () => {
     // And the half that matters more: a value with a credential's shape is still
     // reported under exactly the same names. A JWT has dots too; its segments
     // mix letters and digits, which a word does not.
+    // Built here rather than written out, and for the reason this test exists.
+    // The first version of it pasted four credential-shaped literals into the
+    // file, and the next delta review duly reported this spec as `critical`
+    // (4d6f35c59546, e2dc0d97f488) — correctly, by its own rule, which is the
+    // rule this test defends. A scanner that cannot be made to trip by its own
+    // test data is worth more than four convincing strings in the repository.
+    const bytes = require('crypto').randomBytes as (n: number) => Buffer;
+    const b64 = (n: number) => bytes(n).toString('base64url');
     const secrets = [
-      "const API_KEY = 'AIzaSyD9aBcDeFgHiJkLmNoPqRsTuVwXyZ0123456';",
-      "const SESSION_TOKEN = 'eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.dBjftJeZ4CVPmB92K27uhbUJU1p1r0';",
-      "AUDIT_SIGNING_KEY = 'k8Fq2Lm9Xp4Rt7Yv1Zb6Nc3Hd5Jg0Ws8Ae2Bu4Ci';",
-      "const PASSWORD = 'Sup3rSecretProdPassw0rdValue!!';",
+      `const API_KEY = '${`AIza${b64(27).slice(0, 35)}`}';`,
+      `const SESSION_TOKEN = '${[b64(12), b64(20), b64(24)].join('.')}';`,
+      `AUDIT_SIGNING_KEY = '${bytes(24).toString('hex')}';`,
+      // Hex plus punctuation: long enough for the 24-character floor, and with
+      // a character no identifier carries, so it cannot drift into the exemption.
+      `const PASSWORD = '${`${bytes(10).toString('hex')}Aa1!${bytes(6).toString('hex')}`}';`,
     ];
     for (const line of secrets) {
       const { hits, text } = redactSecrets(line);
