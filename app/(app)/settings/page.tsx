@@ -1025,10 +1025,16 @@ export default function SettingsPage() {
 
                 <div className="sm:col-span-2">
                   <label className="block text-[10px] md:text-xs font-black text-gray-500 uppercase tracking-widest mb-2.5">
-                    Desktop Chatbot (Ask AI) Button
+                    Floating assistant button
                   </label>
                   <div className="flex items-center justify-between h-[46px] bg-gray-50 border border-gray-200 px-4 rounded-xl">
-                    <span className="text-xs font-bold text-gray-700">Show floating "Ask AI" assistant button on desktop screens</span>
+                    {/* What the switch really does, and nothing more: it adds
+                        `md:hidden` to the floating toggle in
+                        `components/GlossaryChatbot.tsx`. The assistant itself
+                        stays, and so does the button in the header — saying
+                        otherwise here would be the one lie a settings page
+                        cannot afford. */}
+                    <span className="text-xs font-bold text-gray-700">Show the floating assistant button on desktop screens. The button in the header stays either way.</span>
                     <button
                       type="button"
                       onClick={() => setDesktopChatbotEnabled(!desktopChatbotEnabled)}
@@ -1546,7 +1552,9 @@ export default function SettingsPage() {
                       onClick={() => window.dispatchEvent(new CustomEvent('open-chatbot'))}
                       className="inline-flex items-center gap-1.5 text-[10px] font-black text-emerald-700 uppercase tracking-widest bg-white hover:bg-emerald-100 border border-emerald-200 px-3.5 py-2 rounded-xl transition-all hover:shadow-sm"
                     >
-                      <HelpCircle className="w-3 h-3" /> Ask AI for Help
+                      {/* Outside a project the assistant answers product and
+                          SAP questions, which is what this block is about. */}
+                      <HelpCircle className="w-3 h-3" /> Ask the assistant
                     </button>
                   </div>
                 </div>

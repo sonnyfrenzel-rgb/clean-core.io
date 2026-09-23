@@ -18,7 +18,7 @@ import { GET as llmsTxt } from '../app/llms.txt/route';
  * will read one of the two the wrong way round. So three surfaces have to carry
  * the distinction — the surfaces a person, a crawler and a chatbot each land on:
  *
- *   1. the Ask AI knowledge base (lib/chatbot-knowledge.ts)
+ *   1. the assistant's knowledge base (lib/chatbot-knowledge.ts)
  *   2. /llms.txt
  *   3. /clean-core-score itself, in the copy AND in the JSON-LD an answer engine
  *      lifts its answer from

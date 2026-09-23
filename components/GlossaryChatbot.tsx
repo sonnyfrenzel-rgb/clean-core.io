@@ -129,6 +129,14 @@ export default function GlossaryChatbot() {
     return match ? decodeURIComponent(match[1]) : null;
   }, [pathname]);
 
+  /**
+   * One name for the assistant, derived from the one thing that decides what it
+   * does. `app/(app)/layout.tsx` builds the same label from the same regex for
+   * the header and the account menu; keeping the expression identical is the
+   * point — two spellings of "am I in a project" drift apart.
+   */
+  const assistantLabel = projectId ? 'Ask this case' : 'Ask the assistant';
+
   const [caseContext, setCaseContext] = useState<CaseContext | null>(null);
   const caseContextRef = useRef<Promise<CaseContext> | null>(null);
   const caseProjectRef = useRef<string | null>(null);
@@ -406,15 +414,21 @@ CRITICAL GUARDRAILS AND SAFETY RULES:
             : "bg-emerald-600 hover:bg-emerald-500 text-white border-emerald-500/30",
           (!isOpen && profile?.desktopChatbotEnabled === false) && "md:hidden"
         )}
-        title={isOpen ? 'Close the assistant' : 'Ask this case'}
+        title={isOpen ? 'Close the assistant' : assistantLabel}
         data-chatbot-toggle=""
       >
         {isOpen ? <X size={20} /> : <MessageSquare size={20} className="group-hover:rotate-6 transition-transform" />}
         {/* `DESIGN.md` §3.1, in so many words: „Ask AI" heißt „Ask this case".
             The old label was also the reason `findAiSymbolism` fires on the
-            exact string "Ask AI about this case" in `lib/model-text.ts`. */}
+            exact string "Ask AI about this case" in `lib/model-text.ts`.
+
+            It travels with the path, like the header trigger and like the panel
+            three lines down: outside a project there is no case, and the
+            assistant answers from the general knowledge base — a button that
+            said "Ask this case" on /knowledge promised evidence about code the
+            reader has not uploaded. */}
         <span className="text-xs font-black uppercase tracking-wider hidden sm:inline-block pr-1">
-          {isOpen ? 'Close' : 'Ask this case'}
+          {isOpen ? 'Close' : assistantLabel}
         </span>
       </button>
 

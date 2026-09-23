@@ -51,6 +51,24 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
     setShowBanner(false);
   };
 
+  /**
+   * What the assistant is called where the reader is standing.
+   *
+   * There is one assistant (ADR-043) and it has two boundaries, and
+   * `components/GlossaryChatbot.tsx` picks between them from exactly this
+   * value: a `/project/<id>` path gives it a project, and it then answers only
+   * from that project's evidence, with anchors; anywhere else it answers
+   * product and SAP questions out of `lib/chatbot-knowledge.ts`. A single
+   * label cannot be true for both — „Ask this case" on the workspace overview
+   * would name a case that does not exist — so the trigger says which of the
+   * two will open. „Ask AI" is what it may not say (`DESIGN.md` §3.1).
+   *
+   * The test is `tests/assistant-label.spec.ts`: it clicks this button in both
+   * places and reads the panel that opens.
+   */
+  const inProject = /^\/project\/[^/]+/.test(pathname ?? '');
+  const assistantLabel = inProject ? 'Ask this case' : 'Ask the assistant';
+
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [pathname]);
@@ -177,9 +195,10 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
 
             <button
               onClick={() => window.dispatchEvent(new CustomEvent('open-chatbot'))}
+              data-assistant-trigger="header"
               className="hidden sm:flex items-center gap-2 text-sm font-black text-green-700 hover:text-white bg-green-50 hover:bg-green-600 px-5 py-2.5 rounded-full border border-green-200 hover:border-green-600 hover:shadow-lg transition-all"
             >
-              <HelpCircle size={14} /> Ask AI
+              <HelpCircle size={14} /> {assistantLabel}
             </button>
 
             <div className="relative">
@@ -224,9 +243,10 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
 
                     <button 
                       onClick={() => { setShowUserDropdown(false); window.dispatchEvent(new CustomEvent('open-chatbot')); }}
+                      data-assistant-trigger="menu"
                       className="flex items-center gap-3 w-full p-3 text-sm font-bold text-gray-700 hover:bg-gray-50 hover:text-green-600 rounded-xl transition-all text-left"
                     >
-                      <HelpCircle size={18} /> Ask AI
+                      <HelpCircle size={18} /> {assistantLabel}
                     </button>
 
                     <button 

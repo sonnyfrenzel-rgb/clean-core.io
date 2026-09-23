@@ -1086,7 +1086,16 @@ export default function TestingSandboxPage() {
                               onClick={() => window.dispatchEvent(new CustomEvent('open-chatbot'))}
                               className="inline-flex items-center gap-1.5 text-[10px] font-black text-emerald-700 uppercase tracking-widest bg-white hover:bg-emerald-100 border border-emerald-200 px-3.5 py-2 rounded-xl transition-all hover:shadow-sm"
                             >
-                              <HelpCircle className="w-3 h-3" /> Ask AI for Help
+                              {/* This button is inside a project, so the one
+                                  assistant it opens is the case-bound one: it
+                                  answers from this project's evidence with
+                                  anchors, and from nothing else. It cannot
+                                  help with the S/4 connection this block is
+                                  about — the Knowledge Hub link next to it
+                                  can. Named for what opens, not for what one
+                                  would wish for here; see the report on this
+                                  step. */}
+                              <HelpCircle className="w-3 h-3" /> Ask this case
                             </button>
                             <Link
                               href="/settings"

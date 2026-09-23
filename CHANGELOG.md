@@ -10,6 +10,89 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+## [Unveröffentlicht] — auf `dev`, seit 2026-09-23
+
+### Zwei Prüfagenten urteilten über Code, den sie nie gesehen haben
+
+Der Security-Audit zu v2.14.0 meldete **„Risiko kritisch: 7 kritisch, 18 hoch"**. Alle
+154 Befunde sind gegen den Code geprüft — **kein einziger kritischer hat gehalten.**
+Der Consultant, dessen Zuständigkeitsbereich `firestore.rules` ist, hat die Datei nie
+bekommen (zehn von einundfünfzig Modellaufrufen waren fehlgeschlagen) und schreibt das
+in fünf seiner Befunde selbst hin; der Frontend-Consultant hat `lib/sanitize-html.ts`
+nie bekommen und bewertete fünf XSS-Befunde mit „Sanitizer nicht einsehbar". **19 der
+46 mittleren Befunde fallen aus demselben Grund geschlossen.**
+
+Die QA-Vollprüfung hatte dieselbe Bauart: fünf kritische „Zugangsdaten rotieren" waren
+drei localStorage-Schlüssel, eine interpolierte Vorlage und eine öffentliche URL — jeder
+als `RE-RAISED after refutation`, weil die Widerlegung im Register liegt und der Treffer
+bei jedem Lauf neu im Scanner entsteht. Und sie meldete **470 Dateien mit 5,4 MB als
+NOT REVIEWED**: die Hälfte des Bestands, und zwar die neueste.
+
+Beides ist an der Ursache repariert, nicht per Ausnahmeliste. Eine Datei auf der neuen
+`PINNED`-Liste fährt in *jedem* Aufruf ihres Consultants mit; die Secret-Regel
+entscheidet am Wert statt am Pfad; und die Vollprüfung läuft auf einem Modell, dessen
+Preis nicht mehr darüber entscheidet, wie viel vom Produkt gelesen wird.
+
+### Der signierte Run lief unter der falschen Edition
+
+Im Analyse-Dialog standen `setTargetDeployment(x)` und `handleAnalyze(code)` im selben
+Handler — ein State-Setter ändert aber nicht den Wert, den diese Closure schon gefangen
+hat. Beim **ersten** Lauf war die Zielplattform deshalb `null`, beim Wechsel die alte.
+Und zwar überall: Evidenzlauf, Extensibility-Routing, Prompt und `s4Deployment` auf dem
+**signierten Run** — während der Bildschirm die neue Auswahl zeigte. Ein Ergebnis, das
+nicht zu dem Run gehört, der es bezeugt. Die Edition ist jetzt ein Argument.
+
+Dazu: ein gesperrtes Konto behielt Schreibzugriff über das Client-SDK (`adminRevokeUser`
+markierte nur, entzog keine Tokens — das Fenster ist jetzt eine Stunde statt unbegrenzt,
+geschlossen wird es mit einer Regeländerung), und eine Leserechts-Rücknahme konnte ein
+gelöschtes Projekt als Geisterdokument wiederauferstehen lassen.
+
+### 367 Objekte ohne freigegebenen Pfad hießen „clean-core-ready" (7.9)
+
+`buildMerged()` besuchte die Klassifikationsdatei nie. Was das im Produkt heißt, zeigt
+der Test: eine SCMON-Einspielung mit 90.000 Aufrufen auf eine solche BAPI landete im
+Quadranten `prioritize` — grün, „das kannst du verschieben". Jetzt `no-released-api-path`
+und `danger`. Die Katalogseite beantwortet außerdem zwei Fragen getrennt statt einer
+unklaren, und **183 der 259 `deprecated`-Objekte nennen gar keinen Nachfolger** — sie
+werden als Prüfung ausgewiesen, nicht als fertiges Urteil.
+
+### Der Rückgabecode gehört an den Schritt (2.15)
+
+Ein `CALL FUNCTION … EXCEPTIONS` und ein `IF sy-subrc <> 0` dahinter waren zwei
+Zeichnungen derselben Sache. 20 technische Gateways sind jetzt Randereignisse am Schritt;
+der Anteil rein technischer XOR fällt von **32,7 % auf 14,6 %**. Die Setzung von ≤ 10 %
+ist damit bewusst korrigiert: von den sieben Übriggebliebenen setzen vier den
+Rückgabecode, **ohne einen Knoten zu zeichnen** — es fehlen Schritte, nicht Bedingungen.
+
+Der Korpus hat dabei einen echten Defekt gefangen, bevor er ausgeliefert wurde: an
+CC-055 hätte die Faltung „Fehlermeldung vorhanden?" als *Fehler der Transaktion*
+ausgegeben — einen Satz, den die Quelle nicht enthält.
+
+### Der Arbeitsraum sagt, auf welchem Stand er steht (6.9)
+
+Revisionsanzeige neben dem Titel, ein Hinweis mit zwei gleichwertigen Auswegen, wenn
+sich der Stand bewegt, und eine Rückfrage vor der einzigen schreibenden Aktion — eine
+Rücknahme von Leserecht ist nicht rückgängig zu machen. Kosten: sechs Lesevorgänge je
+Minute je offenem Tab, unter jeder Nebenläufigkeit. Der Fragmentanker überlebt jetzt
+auch gerendert den Sichtwechsel.
+
+### „Ask this case" (6.8)
+
+Im Projekt antwortet der Assistent aus verankerter Evidenz über den hochgeladenen Code —
+oder er antwortet nicht. Ohne Evidenz gibt es kein `prompt`-Feld, also nichts zu senden;
+im Browser mit abgefangenem `/api/gemini` gemessen: kein Aufruf. Eine Antwort, die keinen
+der übergebenen Anker zitiert, wird verworfen und durch die Evidenz ersetzt.
+
+### Kleinere Änderungen
+
+- Der Wochenbericht nennt neue Konten nicht mehr namentlich, sondern zählt sie.
+- Ein Audit-Paket mit `"files": null` meldet sich als ungültig, statt zu werfen.
+- `render()` in der Rundmail escapt den Vornamen, den der Browser schreiben darf.
+- Zwei rote Workflows: die Ausnahmeliste des Secret-Scanners zitierte den Namen, den sie
+  entschuldigte; und ein `HTTP 503` **4,5 Sekunden** nach dem Start hat die ganze
+  UX-Prüfung einer Version gekostet — ein sofortiger Gateway-Fehler wird jetzt wiederholt,
+  ein später weiterhin nicht.
+
 ## [v2.14.0] — 2026-09-22
 
 ### Beide Prüfagenten haben ihren Posteingang geleert — und die Engine ist tausendmal schneller
