@@ -558,11 +558,28 @@ export async function POST(req: NextRequest) {
     // Now the project's source is re-read at commit time: if it moved, nothing
     // is written at all. The conservative direction is to lose the late result,
     // not the current state.
+    //
+    // A deleted project is the other way the target can move, and it was not
+    // the same question. `fresh.exists` was folded into an empty object, so the
+    // only remaining bar was `nowSource !== readSource` — and when the source
+    // came from the request body while the stored one was empty (the analyze
+    // stage's normal shape: `body.legacyCode || projectData?.legacyCode`), both
+    // sides were `''`. The comparison passed, and `tx.set(…, { merge: true })`
+    // on a document that no longer exists *creates* it: the project came back
+    // complete, ABAP source included, with a freshly signed run under it, after
+    // account deletion had finished removing both. The window is the evidence
+    // build plus the model call — many seconds — and no race is even needed for
+    // the profile half of the same defect (see request-tenant-access).
     const projectRef = db.collection('projects').doc(projectId);
     let sourceMoved = false;
+    let projectGone = false;
     await db.runTransaction(async (tx: any) => {
       const fresh = await tx.get(projectRef);
-      const freshData = (fresh.exists ? fresh.data() : {}) || {};
+      if (!fresh.exists) {
+        projectGone = true;
+        return;
+      }
+      const freshData = fresh.data() || {};
       const readSource = typeof projectData?.legacyCode === 'string' ? projectData.legacyCode : '';
       const nowSource = typeof freshData.legacyCode === 'string' ? freshData.legacyCode : '';
       if (nowSource !== readSource) {
@@ -634,6 +651,36 @@ export async function POST(req: NextRequest) {
         tx.update(projectRef, { 'auditMetadata.sourceChange': sourceChange });
       }
     });
+
+    if (projectGone) {
+      // The same rule as `sourceMoved`: nothing was written, so nothing is
+      // charged. Answered as 404 rather than as the 409 above, and with a code
+      // of its own, because the two are different facts and the caller acts on
+      // them differently. "The source moved" invites a re-run on the current
+      // source; there is no current source here and no project to put one on,
+      // so a re-run would do nothing but produce the same refusal. 404 is also
+      // the answer this very route gives at its first read for exactly this
+      // condition (`Project not found.`) — the project is simply found to be
+      // gone later, and one condition should not have two status codes.
+      if (chargedUid && chargedHash) {
+        await refundRunQuota(chargedUid, chargedHash, reservation ?? undefined);
+        chargedUid = null;
+        chargedHash = null;
+        reservation = null;
+      }
+      logger.warn('runs/create refused: the project was deleted while the analysis ran', {
+        route: 'api/runs/create',
+        projectId,
+      });
+      return NextResponse.json(
+        {
+          error:
+            'This project no longer exists. Nothing was written — the analysis was discarded rather than recreating a deleted project.',
+          code: 'project-gone',
+        },
+        { status: 404 },
+      );
+    }
 
     if (sourceMoved) {
       // Nothing was written. The unit goes back, because the analysis did not

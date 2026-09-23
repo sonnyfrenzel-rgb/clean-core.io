@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createApprovalToken } from '@/lib/approval-token';
 import { APP_VERSION } from '@/lib/version';
-import { verifyRequestAuth, getAdminDb } from '@/lib/firebase-admin';
+import { verifyRequestAuth, getAdminDb, assertAccountActive, QuotaError } from '@/lib/firebase-admin';
 import { APP_BASE_URL, CONTACT_EMAIL } from '@/lib/constants';
 import { escapeHtml } from '@/lib/utils';
 import { assertRateLimit, getClientIp } from '@/lib/rate-limit';
@@ -28,6 +28,30 @@ export async function POST(request: NextRequest) {
         { error: rateErr.message || 'Too many requests. Please wait and try again.' },
         { status: rateErr.status || 429 },
       );
+    }
+
+    // The account still has to be there.
+    //
+    // This route wrote `users/{uid}` with `{ merge: true }`, and a merge onto a
+    // document that no longer exists creates it. `verifyIdToken` only asks
+    // Firebase whether a token was revoked when it carries `admin: true`, so an
+    // ordinary ID token stays valid for up to an hour after the account behind
+    // it was deleted — no race required, just a token from before. One request
+    // in that hour brought the profile back, with `s4TenantAccessRequested` on
+    // it, and mailed an approval link naming a uid whose Auth record is gone.
+    //
+    // The gate is the one every other write in this codebase uses, with no
+    // options: a missing profile is 403 `User profile not found`, a suspended
+    // or disabled one is refused too, and `pending` — which is what every
+    // applicant for tenant access is — still gets through, because asking for
+    // access is precisely what a not-yet-approved account does here.
+    try {
+      await assertAccountActive(decodedToken.uid);
+    } catch (gateErr: any) {
+      if (gateErr instanceof QuotaError) {
+        return NextResponse.json({ error: gateErr.message }, { status: gateErr.status });
+      }
+      throw gateErr;
     }
 
     const body = await request.json();
