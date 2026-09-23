@@ -29,6 +29,20 @@ const VERDICT_ORDER = ['no_go', 'go_with_notes', 'go'];
  * before it — and nothing raised later. Without the time bound, a regression
  * re-raised after a refutation would survive one review and vanish on the next
  * push (QA reviews of 221f2d11768c and 2f9b128bafd4).
+ *
+ * The cost of that bound, written down because it looks like a bug from the
+ * outside: one re-raise voids a refutation **for good**. The finding is raised
+ * again with a fresh `raisedAt`, carries forward keeping it, and every earlier
+ * refutation now fails `refutedAt >= raisedAt` — so it stays open in every
+ * report until somebody refutes it a second time. `a8eca70f6c7b` sat in the
+ * criticals for four reviews that way on 23.09.2026: a fixture password the
+ * secret scanner had found again in the *removed* line of the diff that took it
+ * out, long after the file itself was clean.
+ *
+ * That is the rule working as intended for a model finding — the note above
+ * says why — and it reads as a stuck report for a deterministic one, where a
+ * re-raise carries no new judgement. If this keeps costing time, the fix is to
+ * separate the two rather than to loosen the bound.
  */
 export function isSuppressed(finding, refuted) {
   return refuted.some((r) => r.fingerprint === finding.fingerprint && (!finding.raisedAt || String(r.refutedAt) >= String(finding.raisedAt)));
