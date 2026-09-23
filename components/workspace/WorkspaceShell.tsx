@@ -14,6 +14,7 @@ import NotDeterminedCard from './NotDeterminedCard';
 import NextStepCard from './NextStepCard';
 import PublicCloudFitPanel from './PublicCloudFitPanel';
 import ManagementAnswers from './ManagementAnswers';
+import ItAnswers from './ItAnswers';
 import FirstLook from './FirstLook';
 import AskThisCase from './AskThisCase';
 import CoachMarkNote from './CoachMarks';
@@ -92,10 +93,12 @@ export default function WorkspaceShell({
   onViewChange: (view: WorkspaceView) => void;
   /**
    * IT's secondary focus (roadmap 6.1) — Application · Solution · Enterprise.
-   * Meaningless outside IT, and not read there either: nothing yet scopes to
-   * it, because the layers that would (findings, roadmap 8.1) are not built.
-   * It is ordering infrastructure, held the same way the view is, ahead of the
-   * content it will one day order.
+   * Meaningless outside IT, and still not read there: roadmap 8.1 built the
+   * findings the Focus would scope, and scoping them is a separate step that
+   * needs a notion of what an Application, a Solution and an Enterprise are on
+   * a project that holds one program. It is ordering infrastructure, held the
+   * same way the view is, ahead of the content it will one day order — and
+   * `VIEW_ABOUT.it` says so rather than letting the control imply otherwise.
    */
   focus: ItFocus;
   onFocusChange: (focus: ItFocus) => void;
@@ -449,6 +452,21 @@ export default function WorkspaceShell({
         />
         <NotDeterminedCard data={open} />
       </div>
+
+      {/* IT's own answer (ADR-029, `DESIGN.md` §5.6: *"die Kette gehört zu einem
+          gewählten Befund … und die Abdeckung steht dabei"*) — roadmap 8.1: the
+          findings with both catalog views, the level distribution, and the trace
+          Requirement → Anchor → Finding → Target draft. Rendered only in that
+          view, for the same reason the two Management panels below are: a stub
+          of somebody else's answer in the other two views is a promise the page
+          does not keep. It reads the findings from its own route, because the
+          engine behind them reaches a 4.3 MB catalog that has no business in a
+          browser (`lib/first-look.ts`). */}
+      {view === 'it' && (
+        <div className="mt-5">
+          <ItAnswers projectId={projectId} />
+        </div>
+      )}
 
       {/* Management begins with its answer, above every card (ADR-029,
           `DESIGN.md` §5.6: *"Management beginnt mit einem Satz über allen

@@ -100,11 +100,14 @@ export const VIEW_ABOUT: Record<WorkspaceView, string> = {
     'rule-based next step and what could not be determined; it does not show line ' +
     'numbers, a findings table or a cost figure — those belong to IT and to Economics.',
   it: 'IT opens the meta line, all seven statuses and every tool as its own link, ' +
-    'rather than folding them behind a summary or a menu. The Focus above will scope ' +
-    'the same evidence to one Application, the Solution it belongs to, or the wider ' +
-    'Enterprise landscape once the layers that carry findings do. It does not decide ' +
-    'anything, and switching either the view or the Focus calls no model and stores ' +
-    'nothing.',
+    'rather than folding them behind a summary or a menu. It shows the findings with both ' +
+    'SAP catalog views, the clean core levels across them, and the trace from a requirement ' +
+    'through the anchor and the finding to a target draft — for the finding you select, and ' +
+    'it says how many findings that trace is complete for. The Focus above still scopes ' +
+    'nothing: it will narrow the same evidence to one Application, the Solution it belongs ' +
+    'to, or the wider Enterprise landscape, and today it only records where you are looking. ' +
+    'It does not decide anything, and switching either the view or the Focus calls no model ' +
+    'and stores nothing.',
   management:
     'Management opens the seven statuses — what is confirmed, what is missing — ' +
     'while the meta line stays behind "Details", the same as Business. It does not ' +
