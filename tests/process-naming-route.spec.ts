@@ -200,14 +200,17 @@ test('an answer for another reading of the source is refused with 409', async ({
 });
 
 test('only the owner reads or writes the names, and no browser reads them out of Firestore', async ({ request }) => {
+  // 404, not 403: the route answers a non-owner exactly as it answers an id
+  // that names nothing, so a refusal cannot be used to ask whether a project
+  // exists (tests/project-access-matrix.spec.ts, '403-vs-404').
   const read = await request.get(path, { headers: headers(otherToken) });
-  expect(read.status()).toBe(403);
+  expect(read.status()).toBe(404);
   expect(JSON.stringify(await read.json())).not.toContain('Access denied?');
 
   const text = JSON.stringify({ names: [{ id: DENIED, name: 'Somebody else decides' }] });
   const receipt = issueModelReceipt({ uid: otherUid, text, modelId: 'gemini-2.5-flash', byok: false }, signingKey());
   const write = await request.post(path, { headers: headers(otherToken), data: { digest: CONTEXT.digest, text, receipt } });
-  expect(write.status()).toBe(403);
+  expect(write.status()).toBe(404);
   expect((await stored(request))?.names.map((n) => n.name)).toEqual(['Access denied?']);
 
   // Not even the owner reads the document directly: the route is the only way in.

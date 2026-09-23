@@ -331,14 +331,17 @@ test('Change and Drop need a reason, and a refused confirmation writes nothing',
 });
 
 test('only the owner reads or writes, and no browser reads the confirmations out of Firestore', async ({ request }) => {
+  // 404, not 403: the route answers a non-owner exactly as it answers an id
+  // that names nothing, so a refusal cannot be used to ask whether a project
+  // exists (tests/project-access-matrix.spec.ts, '403-vs-404').
   const read = await request.get(path, { headers: headers(otherToken) });
-  expect(read.status()).toBe(403);
+  expect(read.status()).toBe(404);
 
   const write = await request.post(path, {
     headers: headers(otherToken),
     data: { baseRevision: 0, choices: [{ subject: 'BR-001', kind: 'rule', state: 'keep' }] },
   });
-  expect(write.status()).toBe(403);
+  expect(write.status()).toBe(404);
 
   // Not even the owner reaches the documents directly: the route is the only way in.
   const auth = getAuth(app);

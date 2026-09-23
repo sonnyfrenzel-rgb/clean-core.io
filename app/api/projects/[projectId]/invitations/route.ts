@@ -148,12 +148,22 @@ async function openProject(req: NextRequest, params: Promise<{ projectId: string
 
   const { db } = await getAdminDb();
   const snap = await db.collection('projects').doc(projectId).get();
+  // Same answer for "no such project" and "not yours": a 404 that only appears
+  // for projects that exist is a way to ask whether one does. The wording is
+  // the one `app/api/projects/[projectId]/route.ts:56` and
+  // `readers/route.ts:144` already use, so that the three do not drift apart.
+  //
+  // Inviting is the owner's alone, so an invited reader is a non-owner here and
+  // gets that same sentence — which is what `readers/route.ts` does with every
+  // non-owner too. It used to be 403 on a project that was found and 404 on one
+  // that was not, and those two together let a stranger holding a guessed id
+  // learn from the status code alone whether it names a real project.
   if (!snap.exists) {
     return { ok: false, response: NextResponse.json({ error: 'Project not found.' }, { status: 404 }) };
   }
   const project = (snap.data() || {}) as ProjectShape;
   if (project.userId !== decodedToken.uid) {
-    return { ok: false, response: NextResponse.json({ error: 'Unauthorized.' }, { status: 403 }) };
+    return { ok: false, response: NextResponse.json({ error: 'Project not found.' }, { status: 404 }) };
   }
   return {
     ok: true,

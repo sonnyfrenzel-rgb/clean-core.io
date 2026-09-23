@@ -91,9 +91,10 @@ interface RouteCase {
   path: (projectId: string) => string;
   body?: Record<string, unknown>;
   /**
-   * What a role with no claim on this project is told. 404 where the route
-   * refuses to say whether the project exists, 403 where it answers
-   * "Unauthorized" on a project it has already found.
+   * What a role with no claim on this project is told. 404 everywhere under
+   * `app/api/projects/[projectId]`: no route says whether the project exists.
+   * The one 403 left is the accept route, which answers everyone — the owner
+   * included — the same thing and therefore tells nobody anything.
    */
   refusal: number;
   /**
@@ -131,7 +132,7 @@ const CASES: RouteCase[] = [
     method: 'POST',
     path: (p) => `/api/projects/${p}/commands`,
     body: { command: 'revoke-architecture' },
-    refusal: 403,
+    refusal: 404,
     // Nothing to withdraw on a project that was never signed off: `not-approved`.
     owner: [409],
     readerAdmitted: false,
@@ -141,7 +142,7 @@ const CASES: RouteCase[] = [
     what: 'the traceability quote of the process map',
     method: 'GET',
     path: (p) => `/api/projects/${p}/process-map`,
-    refusal: 403,
+    refusal: 404,
     owner: [200],
     readerAdmitted: true,
   },
@@ -152,7 +153,7 @@ const CASES: RouteCase[] = [
     path: (p) => `/api/projects/${p}/process-map`,
     body: {},
     // No active run on this fixture, so the owner is refused for a reason of state.
-    refusal: 403,
+    refusal: 404,
     owner: [409],
     readerAdmitted: false,
   },
@@ -161,7 +162,7 @@ const CASES: RouteCase[] = [
     what: 'the business names of the process',
     method: 'GET',
     path: (p) => `/api/projects/${p}/process-naming`,
-    refusal: 403,
+    refusal: 404,
     owner: [200],
     readerAdmitted: true,
   },
@@ -171,7 +172,7 @@ const CASES: RouteCase[] = [
     method: 'POST',
     path: (p) => `/api/projects/${p}/process-naming`,
     body: {},
-    refusal: 403,
+    refusal: 404,
     owner: [400],
     readerAdmitted: false,
   },
@@ -180,7 +181,7 @@ const CASES: RouteCase[] = [
     what: 'the revision history of the process model',
     method: 'GET',
     path: (p) => `/api/projects/${p}/process-revisions`,
-    refusal: 403,
+    refusal: 404,
     owner: [200],
     readerAdmitted: true,
   },
@@ -190,7 +191,7 @@ const CASES: RouteCase[] = [
     method: 'POST',
     path: (p) => `/api/projects/${p}/process-revisions`,
     body: {},
-    refusal: 403,
+    refusal: 404,
     owner: [409],
     readerAdmitted: false,
   },
@@ -199,7 +200,7 @@ const CASES: RouteCase[] = [
     what: 'what the business has confirmed, per element',
     method: 'GET',
     path: (p) => `/api/projects/${p}/process-states`,
-    refusal: 403,
+    refusal: 404,
     // No revision 1 on this fixture: `no-baseline`. The owner and the reader
     // must be told the same thing, which is what the equality below checks.
     owner: [409],
@@ -211,7 +212,7 @@ const CASES: RouteCase[] = [
     method: 'POST',
     path: (p) => `/api/projects/${p}/process-states`,
     body: { baseRevision: 0, choices: [] },
-    refusal: 403,
+    refusal: 404,
     owner: [409],
     readerAdmitted: false,
   },
@@ -243,7 +244,7 @@ const CASES: RouteCase[] = [
     // The owner's own address: refused as `self-invite` after the gate, so the
     // gate is proven and no mail is sent.
     body: { email: EMAIL.owner },
-    refusal: 403,
+    refusal: 404,
     owner: [400],
     readerAdmitted: false,
   },
@@ -330,21 +331,34 @@ async function readersOf(projectId = PROJECT_ID): Promise<string[]> {
   return Array.isArray(readers) ? readers : [];
 }
 
+async function ask(request: APIRequestContext, role: Role, routeCase: RouteCase, projectId: string) {
+  const url = routeCase.path(projectId);
+  const options = { headers: headers(role), ...(routeCase.body ? { data: routeCase.body } : {}) };
+  return routeCase.method === 'GET'
+    ? request.get(url, options)
+    : routeCase.method === 'DELETE'
+      ? request.delete(url, options)
+      : request.post(url, options);
+}
+
 async function knock(
   request: APIRequestContext,
   role: Role,
   routeCase: RouteCase,
   projectId = PROJECT_ID,
 ): Promise<number> {
-  const url = routeCase.path(projectId);
-  const options = { headers: headers(role), ...(routeCase.body ? { data: routeCase.body } : {}) };
-  const res =
-    routeCase.method === 'GET'
-      ? await request.get(url, options)
-      : routeCase.method === 'DELETE'
-        ? await request.delete(url, options)
-        : await request.post(url, options);
-  return res.status();
+  return (await ask(request, role, routeCase, projectId)).status();
+}
+
+/** The refusal as the caller reads it: the code and the sentence under it. */
+async function knockBody(
+  request: APIRequestContext,
+  role: Role,
+  routeCase: RouteCase,
+  projectId = PROJECT_ID,
+): Promise<string> {
+  const res = await ask(request, role, routeCase, projectId);
+  return `${res.status()} ${await res.text()}`;
 }
 
 test.beforeAll(async () => {
@@ -488,20 +502,28 @@ test('none of those knocks moved anything — the project and its access list ar
 /**
  * What a stranger can find out by asking — measured, not assumed.
  *
- * Two routes refuse a non-member with the same 404 they give for a project id
- * that was never used, and both say in a comment why: *"a 404 that only appears
- * for projects that exist is a way to ask whether one does"*
- * (`app/api/projects/[projectId]/route.ts:56`, `readers/route.ts:145`). The
- * other six answer 404 for a missing project and 403 for one they found and
- * would not hand over, which is exactly the difference those two routes were
- * written to remove: a stranger holding a guessed id learns from the status
- * code alone whether it names a real project.
+ * Nothing, now. Every route under `app/api/projects/[projectId]` refuses a
+ * non-member with the same 404 it gives for a project id that was never used,
+ * and says in a comment why: *"a 404 that only appears for projects that exist
+ * is a way to ask whether one does"* (`app/api/projects/[projectId]/route.ts:56`,
+ * `readers/route.ts:144`).
  *
- * It is a weak oracle — the ids are 20-odd random characters and nothing but
- * existence leaks — and closing it is a deliberate change across six files that
- * touches what the workspace does with a refusal, so it is not made here.
- * What is done here is to stop it being invisible: the split is written down as
- * the fact it is, and a route that changes sides makes this red.
+ * Until 23.09.2026 only those two did. The other six answered 404 for a missing
+ * project and 403 for one they had found and would not hand over, which is
+ * exactly the difference those two routes were written to remove: one request
+ * per guessed id told a stranger whether it named a real project. The earlier
+ * version of this test held that split as a recorded finding rather than a
+ * defect to fix, on the reasoning that closing it would change what the
+ * workspace does with a refusal. It does not: no caller of the six compares a
+ * status code — `lib/process-states-client.ts:140`, `process-revisions-client.ts:231`
+ * and `process-naming-client.ts:84` carry `res.status` into a message and
+ * nothing branches on it — so the six were brought in line and this test now
+ * holds the result instead of the finding.
+ *
+ * The list below is therefore exhaustive and `oracle` must stay empty: a route
+ * that starts answering 403 on a project it found makes this red on the day it
+ * is written, which is the whole point of measuring it rather than trusting the
+ * comment at the top of each file.
  */
 test('403-vs-404: what a refusal tells a stranger about a project they cannot see', async ({ request }) => {
   const nowhere = `matrix-nowhere-${STAMP}`;
@@ -525,22 +547,30 @@ test('403-vs-404: what a refusal tells a stranger about a project they cannot se
       'app/api/projects/[projectId]/route.ts#DELETE → 404 vs 404',
       'app/api/projects/[projectId]/readers/route.ts#GET → 404 vs 404',
       'app/api/projects/[projectId]/readers/route.ts#DELETE → 404 vs 404',
+      'app/api/projects/[projectId]/commands/route.ts#POST → 404 vs 404',
+      'app/api/projects/[projectId]/invitations/route.ts#POST → 404 vs 404',
+      'app/api/projects/[projectId]/process-map/route.ts#GET → 404 vs 404',
+      'app/api/projects/[projectId]/process-map/route.ts#POST → 404 vs 404',
+      'app/api/projects/[projectId]/process-naming/route.ts#GET → 404 vs 404',
+      'app/api/projects/[projectId]/process-naming/route.ts#POST → 404 vs 404',
+      'app/api/projects/[projectId]/process-revisions/route.ts#GET → 404 vs 404',
+      'app/api/projects/[projectId]/process-revisions/route.ts#POST → 404 vs 404',
+      'app/api/projects/[projectId]/process-states/route.ts#GET → 404 vs 404',
+      'app/api/projects/[projectId]/process-states/route.ts#POST → 404 vs 404',
     ].sort(),
   );
-  expect(oracle.sort(), 'these tell a stranger whether the project exists — open finding, roadmap 5.6').toEqual(
-    [
-      'app/api/projects/[projectId]/commands/route.ts#POST → 403 vs 404',
-      'app/api/projects/[projectId]/invitations/route.ts#POST → 403 vs 404',
-      'app/api/projects/[projectId]/process-map/route.ts#GET → 403 vs 404',
-      'app/api/projects/[projectId]/process-map/route.ts#POST → 403 vs 404',
-      'app/api/projects/[projectId]/process-naming/route.ts#GET → 403 vs 404',
-      'app/api/projects/[projectId]/process-naming/route.ts#POST → 403 vs 404',
-      'app/api/projects/[projectId]/process-revisions/route.ts#GET → 403 vs 404',
-      'app/api/projects/[projectId]/process-revisions/route.ts#POST → 403 vs 404',
-      'app/api/projects/[projectId]/process-states/route.ts#GET → 403 vs 404',
-      'app/api/projects/[projectId]/process-states/route.ts#POST → 403 vs 404',
-    ].sort(),
-  );
+  expect(oracle.sort(), 'a route told a stranger whether the project exists').toEqual([]);
+
+  // The status code is the loudest half, not the only one: a fixed code with
+  // two different sentences under it is the same oracle read one line lower.
+  for (const routeCase of CASES) {
+    if (routeCase.key.includes('/accept/')) continue;
+    const [existing, missing] = await Promise.all([
+      knockBody(request, 'stranger', routeCase, PROJECT_ID),
+      knockBody(request, 'stranger', routeCase, nowhere),
+    ]);
+    expect(existing, `${routeCase.key} words its refusal differently for a project that exists`).toEqual(missing);
+  }
 });
 
 /* ------------------------------------------------------------------ */

@@ -636,7 +636,9 @@ test.describe('the live emulator rules refuse every one of the six', () => {
       headers: { Authorization: `Bearer ${idToken}`, 'Content-Type': 'application/json' },
       data: { command: 'approve-architecture', targetArchitecture: 'rap' },
     });
-    expect(res.status()).toBe(403);
+    // 404, not 403: the route answers a foreign project exactly as it answers
+    // an id that names nothing (tests/project-access-matrix.spec.ts, '403-vs-404').
+    expect(res.status()).toBe(404);
   });
 
   test('the route refuses a caller with no token at all', async ({ request }: { request: APIRequestContext }) => {

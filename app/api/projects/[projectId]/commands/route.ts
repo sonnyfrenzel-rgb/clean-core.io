@@ -116,13 +116,19 @@ export async function POST(
         set: (r: unknown, data: Record<string, unknown>, opts?: { merge: boolean }) => void;
       }): Promise<CommandOutcome> => {
         const snap = await tx.get(ref);
+        // Same answer for "no such project" and "not yours": a 404 that only
+        // appears for projects that exist is a way to ask whether one does. The
+        // wording is the one `app/api/projects/[projectId]/route.ts:56` and
+        // `readers/route.ts:144` already use, so that the three do not drift
+        // apart. Both refusals carry no `code`, so the body is the same too.
         if (!snap.exists) return { status: 404, error: 'Project not found.' };
         const project = snap.data() || {};
         // Owner only. An operator recording somebody else's sign-off is the worse
         // half of an operator reading their code, and the rules stopped allowing
-        // that on 16.09.2026.
+        // that on 16.09.2026. An invited reader is a non-owner here and is told
+        // the same as everyone else, exactly as `readers/route.ts` tells one.
         if (project.userId !== decodedToken.uid) {
-          return { status: 403, error: 'Unauthorized.' };
+          return { status: 404, error: 'Project not found.' };
         }
 
         const state: ProjectCommandState = {

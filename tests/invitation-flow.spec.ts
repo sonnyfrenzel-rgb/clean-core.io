@@ -254,7 +254,9 @@ test('only the owner may invite anybody to this project', async ({ request }) =>
     headers: headers(accounts[STRANGER_EMAIL].token),
     data: { email: STRANGER_EMAIL },
   });
-  expect(res.status()).toBe(403);
+  // 404, not 403: inviting refuses a non-owner exactly as it refuses an id that
+  // names nothing (tests/project-access-matrix.spec.ts, '403-vs-404').
+  expect(res.status()).toBe(404);
   const unauthenticated = await request.post(`/api/projects/${PROJECT_ID}/invitations`, {
     data: { email: STRANGER_EMAIL },
   });

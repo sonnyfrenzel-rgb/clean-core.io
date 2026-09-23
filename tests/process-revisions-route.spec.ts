@@ -336,12 +336,15 @@ test('the same bytes again add no revision, and a save from a stale revision is 
 });
 
 test('only the owner reads or writes, and no browser reads the revisions out of Firestore', async ({ request }) => {
+  // 404, not 403: the route answers a non-owner exactly as it answers an id
+  // that names nothing, so a refusal cannot be used to ask whether a project
+  // exists (tests/project-access-matrix.spec.ts, '403-vs-404').
   const read = await request.get(path, { headers: headers(otherToken) });
-  expect(read.status()).toBe(403);
+  expect(read.status()).toBe(404);
   expect(JSON.stringify(await read.json())).not.toContain('bpmn:definitions');
 
   const write = await request.post(path, { headers: headers(otherToken), data: {} });
-  expect(write.status()).toBe(403);
+  expect(write.status()).toBe(404);
 
   // Not even the owner reads the documents directly: the route is the only way in.
   const auth = getAuth(app);

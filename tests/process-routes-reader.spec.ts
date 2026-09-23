@@ -52,18 +52,25 @@ for (const route of ROUTES) {
   test(`${route}: the invited reader reads, the stranger does not, and neither writes`, async ({ request }: { request: APIRequestContext }) => {
     const url = `/api/projects/${PROJECT_ID}/${route}`;
 
+    // 404 is in the refusal list as well: since 23.09.2026 these routes refuse
+    // a non-owner with the same "Project not found." they answer for an id that
+    // names nothing, so a reader who is wrongly turned away is turned away with
+    // a 404 and would otherwise slip past this check.
+    const REFUSALS = [401, 403, 404];
+
     const asReader = await request.get(url, { headers: headersOf('reader') });
-    expect([401, 403], `${route}: the invited reader was refused (${asReader.status()}: ${(await asReader.text()).slice(0, 120)})`).not.toContain(asReader.status());
+    expect(REFUSALS, `${route}: the invited reader was refused (${asReader.status()}: ${(await asReader.text()).slice(0, 120)})`).not.toContain(asReader.status());
 
     const asOwner = await request.get(url, { headers: headersOf('owner') });
-    expect([401, 403], `${route}: the owner was refused`).not.toContain(asOwner.status());
+    expect(REFUSALS, `${route}: the owner was refused`).not.toContain(asOwner.status());
 
     const asStranger = await request.get(url, { headers: headersOf('stranger') });
-    expect(asStranger.status(), `${route}: a stranger read the process`).toBe(403);
+    expect(asStranger.status(), `${route}: a stranger read the process`).toBe(404);
 
     // Writing stays the owner's — the reader's POST is refused at the gate,
-    // before any body is looked at.
+    // before any body is looked at. The reader is told what a stranger is told:
+    // they may see the project, and the refusal still says nothing about it.
     const readerWrites = await request.post(url, { headers: headersOf('reader'), data: {} });
-    expect(readerWrites.status(), `${route}: the reader was allowed to write`).toBe(403);
+    expect(readerWrites.status(), `${route}: the reader was allowed to write`).toBe(404);
   });
 }

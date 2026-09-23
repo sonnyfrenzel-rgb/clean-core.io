@@ -174,6 +174,10 @@ async function openProject(
 
   const { db } = await getAdminDb();
   const snap = await db.collection('projects').doc(projectId).get();
+  // Same answer for "no such project" and "not yours": a 404 that only appears
+  // for projects that exist is a way to ask whether one does. The wording is
+  // the one `app/api/projects/[projectId]/route.ts:56` and
+  // `readers/route.ts:144` already use, so that the three do not drift apart.
   if (!snap.exists) {
     return { ok: false, response: NextResponse.json({ error: 'Project not found.' }, { status: 404 }) };
   }
@@ -183,7 +187,13 @@ async function openProject(
   // 19.09.2026 this asked for the owner on GET as well, so a valid invitation
   // opened the project and hid its process (Gegenreview c5085bb, CR-13).
   if (mutating ? project.userId !== decodedToken.uid : !mayReadProject(project, decodedToken.uid)) {
-    return { ok: false, response: NextResponse.json({ error: 'Unauthorized.' }, { status: 403 }) };
+    // Not the route's 'Unauthorized.' any more: a stranger who was told 403
+    // here and 404 above could read off the status code alone whether a
+    // guessed id names a real project. An invited reader reaching for a write
+    // is answered the same, exactly as `readers/route.ts` answers every
+    // non-owner — they lose a distinction they never acted on, and the
+    // refusal keeps saying nothing.
+    return { ok: false, response: NextResponse.json({ error: 'Project not found.' }, { status: 404 }) };
   }
   return { ok: true, uid: decodedToken.uid, projectId, project };
 }
