@@ -14,20 +14,24 @@ import { getAdminDb, QuotaError } from '@/lib/firebase-admin';
 // request instead of pseudonymising with a public value, which is the same
 // no-fallback rule `lib/audit-signing-key.ts` already follows.
 //
-// `AUDIT_SIGNING_KEY` stays as the second branch because it is what production
-// actually uses today — `RATE_LIMIT_PEPPER` is in no env_vars line of
-// `.github/workflows/deploy.yml`. Sharing one secret across two purposes is
-// hygiene, not a hole, and it is scheduled separately; removing the branch
-// before the dedicated secret exists would take rate limiting off production.
+// It had a second branch too, `AUDIT_SIGNING_KEY`, because that is what
+// production actually used: `RATE_LIMIT_PEPPER` existed in no env_vars line of
+// `.github/workflows/deploy.yml`, and removing the branch before the dedicated
+// secret existed would have taken rate limiting off production. Sonny created
+// the repository secret on 23.09.2026 and the same commit passes it to Cloud
+// Run, so the branch went with it. One secret for two purposes was hygiene
+// rather than a hole — but the audit signing key signs what an outsider is
+// invited to verify, and a second reader of it is a second way for it to end up
+// somewhere it should not be.
 //
 // Resolved per call, not at module load: throwing while the module is imported
 // would take down every route that merely imports it, including the ones that
 // never reach a limited path.
 function rateLimitPepper(): string {
-  const pepper = process.env.RATE_LIMIT_PEPPER || process.env.AUDIT_SIGNING_KEY;
+  const pepper = process.env.RATE_LIMIT_PEPPER;
   if (!pepper) {
     throw new Error(
-      'Neither RATE_LIMIT_PEPPER nor AUDIT_SIGNING_KEY is set — the rate limiter refuses to pseudonymise with a known value.',
+      'RATE_LIMIT_PEPPER is not set — the rate limiter refuses to pseudonymise with a known value.',
     );
   }
   return pepper;

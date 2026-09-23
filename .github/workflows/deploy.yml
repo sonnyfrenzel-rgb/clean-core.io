@@ -254,6 +254,7 @@ jobs:
             AUDIT_SIGNING_PRIVATE_KEY=${{ secrets.AUDIT_SIGNING_PRIVATE_KEY }}
             AUDIT_SIGNING_PUBLIC_KEYS_RETIRED=${{ secrets.AUDIT_SIGNING_PUBLIC_KEYS_RETIRED }}
             MFA_BACKUP_CODE_PEPPER=${{ secrets.MFA_BACKUP_CODE_PEPPER }}
+            RATE_LIMIT_PEPPER=${{ secrets.RATE_LIMIT_PEPPER }}
             PILOT_APPROVAL_SECRET=${{ secrets.PILOT_APPROVAL_SECRET }}
             NODE_OPTIONS=--max-old-space-size=4096
             COMMIT_SHA=${{ github.sha }}

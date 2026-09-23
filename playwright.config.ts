@@ -9,6 +9,14 @@ process.env.FIRESTORE_EMULATOR_HOST = '127.0.0.1:8080';
 if (!process.env.PILOT_APPROVAL_SECRET) {
   process.env.PILOT_APPROVAL_SECRET = 'test-approval-secret-key-1234567890';
 }
+// The rate limiter lost its fallback on 23.09.2026: it read `AUDIT_SIGNING_KEY`
+// when `RATE_LIMIT_PEPPER` was unset, and that branch went when the dedicated
+// repository secret arrived. Without a value here every limited route would
+// throw in the suite — which is the right behaviour in production and useless
+// noise in a test run, so the suite brings its own visibly-test pepper.
+if (!process.env.RATE_LIMIT_PEPPER) {
+  process.env.RATE_LIMIT_PEPPER = 'test-rate-limit-pepper-for-ci-test-runner-32';
+}
 if (!process.env.MFA_BACKUP_CODE_PEPPER) {
   process.env.MFA_BACKUP_CODE_PEPPER = 'test-mfa-pepper-value-for-ci-test-runner-32';
 }
@@ -63,6 +71,7 @@ export default defineConfig({
       FIRESTORE_EMULATOR_HOST: '127.0.0.1:8080',
       PILOT_APPROVAL_SECRET: process.env.PILOT_APPROVAL_SECRET || 'test-approval-secret-key-12345',
       MFA_BACKUP_CODE_PEPPER: process.env.MFA_BACKUP_CODE_PEPPER || 'test-mfa-pepper-value-for-ci-test-runner-32',
+      RATE_LIMIT_PEPPER: process.env.RATE_LIMIT_PEPPER || 'test-rate-limit-pepper-for-ci-test-runner-32',
       // Suppress real email dispatch during E2E tests — API routes check `if (resendApiKey)` and skip when empty
       RESEND_API_KEY: '',
     },

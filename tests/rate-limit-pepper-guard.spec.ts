@@ -13,10 +13,13 @@ import path from 'path';
  * replace. That is the whole of F-10 undone by its own default (security audit
  * of b88c77b, SEC-b88c77b-132).
  *
- * What has to keep holding is narrow, and deliberately not "there must be a
- * dedicated secret": production runs on `AUDIT_SIGNING_KEY` today, and removing
- * that branch before `RATE_LIMIT_PEPPER` exists in `deploy.yml` would take rate
- * limiting off the live service. Sharing one secret is scheduled on its own.
+ * It then had a second branch, `AUDIT_SIGNING_KEY`, and that one was not a
+ * defect but a sequence: production ran on it, and removing it before a
+ * dedicated secret existed would have taken rate limiting off the live service.
+ * Sonny created the repository secret on 23.09.2026, the same commit passes it
+ * to Cloud Run, and the branch went with it — so the pepper is now one named
+ * secret and the audit signing key is read by the one module that signs.
+ *
  * What must never come back is a value that is *in* the source.
  */
 const ROOT = path.resolve(__dirname, '..');
@@ -24,8 +27,11 @@ const source = fs.readFileSync(path.join(ROOT, 'lib/rate-limit.ts'), 'utf8');
 
 test.describe('the rate limiter never pseudonymises with a value from the source', () => {
   test('the pepper comes from the environment, and from nowhere else', () => {
-    // The two branches that are allowed, both environment reads.
-    expect(source).toContain('process.env.RATE_LIMIT_PEPPER || process.env.AUDIT_SIGNING_KEY');
+    // One branch, one environment read, one named secret.
+    expect(source).toContain('const pepper = process.env.RATE_LIMIT_PEPPER;');
+    // And the signing key is not a pepper: it signs what an outsider is invited
+    // to verify, and a second reader of it is a second way for it to travel.
+    expect(source, 'the limiter reads the audit signing key again').not.toContain('process.env.AUDIT_SIGNING_KEY');
 
     // The line that resolves the pepper must not fall back to a literal. Read the
     // expression itself rather than searching the file for a banned word: a
@@ -36,7 +42,7 @@ test.describe('the rate limiter never pseudonymises with a value from the source
     expect(expression, 'a literal fallback is a published pepper').not.toMatch(/\|\|\s*['"`]/);
   });
 
-  test('a deployment with neither variable fails loudly instead of using a known value', () => {
+  test('a deployment without the secret fails loudly instead of using a known value', () => {
     expect(source, 'the missing-secret case throws').toMatch(
       /if \(!pepper\) \{[\s\S]*?throw new Error\(/,
     );
