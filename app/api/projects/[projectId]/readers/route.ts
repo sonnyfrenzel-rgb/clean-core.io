@@ -216,6 +216,17 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ p
     const revokedAt = new Date().toISOString();
     await gate.db.runTransaction(async (tx: Tx) => {
       const fresh = await tx.get(projectRef);
+      // A revocation against a project that is gone must not bring it back.
+      //
+      // The transaction already read the document; it simply did not ask whether
+      // it was there. `tx.set(..., { merge: true })` on a missing document
+      // *creates* it, so a revocation racing a project deletion — or an account
+      // erasure, which deletes projects recursively — left behind a projects
+      // document holding nothing but a `readers` array. It has no `userId`, so
+      // `firestore.rules:204` hides it from the owner who thought it deleted,
+      // while the row sits in the database (QA full review of 3131afa,
+      // 3e32d011b3c6).
+      if (!fresh.exists) throw new Error('project-gone');
       const project = (fresh.data() || {}) as Record<string, unknown>;
       // The list is recomputed inside the transaction, so two revocations at
       // once cannot put back what the other took away.
@@ -234,6 +245,13 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ p
 
     return NextResponse.json({ ok: true, uid, revokedAt, invitationsRevoked: affected.length });
   } catch (err: unknown) {
+    // The project disappeared under the revocation. Not a fault of this server,
+    // and not a 5xx: a client that retries transient errors would send the same
+    // doomed request again. The caller asked to take access away from something
+    // that no longer exists, which is the outcome it wanted.
+    if (errMessage(err) === 'project-gone') {
+      return NextResponse.json({ error: 'This project no longer exists.' }, { status: 404 });
+    }
     logger.error('project readers revoke failed', {
       route: 'api/projects/[projectId]/readers',
       error: errMessage(err),

@@ -1068,6 +1068,15 @@ export async function adminApproveUser(adminUid: string, targetUid: string) {
   await db.collection('registration_requests').doc(targetUid).set({
     status: 'approved',
   }, { merge: true });
+
+  // The other half of `adminRevokeUser`, which disables the sign-in. Without
+  // this line a revoked account could be approved again in the console, read
+  // `status: 'approved'` everywhere, and still fail to sign in — a lockout with
+  // no symptom an admin could see, because every screen would say the account is
+  // fine. Re-enabling is idempotent for an account that was never disabled.
+  const auth = await getAdminAuth();
+  await auth.updateUser(targetUid, { disabled: false });
+
   await logAuditEvent(db, adminUid, 'APPROVE_USER', targetUid);
 }
 
@@ -1091,6 +1100,25 @@ export async function adminRevokeUser(adminUid: string, targetUid: string) {
   await db.collection('registration_requests').doc(targetUid).set({
     status: 'suspended',
   }, { merge: true });
+
+  // Suspending an account has to end its sessions, not only mark it.
+  //
+  // `status: 'suspended'` is read by `assertAccountActive`, which every mutating
+  // API route passes through — so the server half closed immediately. The client
+  // half did not: the browser keeps a refresh token, renews its ID token for as
+  // long as it likes, and `firestore.rules` asks only `userId == request.auth.uid`
+  // for the account's own projects. A revoked account therefore kept direct read
+  // and write access to its own data through the client SDK, indefinitely (QA
+  // full review of 3131afa, b97e45a2976d).
+  //
+  // `setAdminClaim` has revoked tokens on withdrawal since it was written
+  // (`auth.revokeRefreshTokens` above); this is the same act for the account
+  // itself. Disabling the sign-in as well means a new sign-in cannot mint a fresh
+  // token either — without it, revocation only costs the holder one login.
+  const auth = await getAdminAuth();
+  await auth.revokeRefreshTokens(targetUid);
+  await auth.updateUser(targetUid, { disabled: true });
+
   await logAuditEvent(db, adminUid, 'REVOKE_USER', targetUid);
 }
 

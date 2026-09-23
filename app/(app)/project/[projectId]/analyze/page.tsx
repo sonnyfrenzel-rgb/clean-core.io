@@ -297,7 +297,24 @@ export default function AnalyzePage() {
   };
 
 
-  const handleAnalyze = async (codeToAnalyze: string = legacyCode) => {
+  /**
+   * The deployment is an argument, not a closure read.
+   *
+   * The dialog used to do `setTargetDeployment(modalSelection)` and call this
+   * function in the same handler. A state setter does not change the value this
+   * closure already captured, so the run below used whatever the *previous*
+   * render held: `null` the first time anybody analyses (the dialog is how the
+   * deployment gets set at all), and the old edition when somebody opens the
+   * dialog again and switches. Everything downstream took it — the evidence
+   * scan, the extensibility routing, the prompt, and `s4Deployment` on the
+   * signed run — while the screen re-rendered with the new choice. That is a
+   * result that does not belong to the run that attests it, which is the one
+   * thing this product may not do (QA full review of 3131afa, 2878b5f8fae3).
+   */
+  const handleAnalyze = async (
+    codeToAnalyze: string = legacyCode,
+    deployment: 'public' | 'private' | null = targetDeployment,
+  ) => {
     setError('');
     // The scan runs here, on exactly the text that is about to leave the
     // browser. The upload path scanned the file, and the screen scanned what
@@ -320,8 +337,8 @@ export default function AnalyzePage() {
 
     try {
       // 1. Gather deterministic evidence and perform extensibility routing (instant)
-      const evidenceReport = buildAbapEvidence(codeToAnalyze, uploadedFileName || 'main.abap', targetDeployment as 'public' | 'private');
-      const computedRouteReport = routeExtensibility(evidenceReport, targetDeployment || 'private');
+      const evidenceReport = buildAbapEvidence(codeToAnalyze, uploadedFileName || 'main.abap', deployment as 'public' | 'private');
+      const computedRouteReport = routeExtensibility(evidenceReport, deployment || 'private');
       setRouteReport(computedRouteReport);
 
       // 2. Start Evidence Sweep animation
@@ -330,7 +347,7 @@ export default function AnalyzePage() {
       setSweepActive(true);
       setLoadingMessage('Evidence Scanner active — scanning code...');
 
-      const prompt = buildAnalysisPrompt({ targetDeployment, evidenceReport, routeReport: computedRouteReport, code: codeToAnalyze });
+      const prompt = buildAnalysisPrompt({ targetDeployment: deployment, evidenceReport, routeReport: computedRouteReport, code: codeToAnalyze });
 
       // 3. The narrative, if this account has a model for this stage.
       //
@@ -443,7 +460,7 @@ export default function AnalyzePage() {
           body: JSON.stringify({
             projectId,
             legacyCode: codeToAnalyze,
-            s4Deployment: targetDeployment,
+            s4Deployment: deployment,
             // The model's text as the proxy returned it, byte for byte. The
             // receipt is issued over exactly that, so anything rewritten here
             // would make an honest run fail the origin check; the route performs
@@ -489,7 +506,7 @@ export default function AnalyzePage() {
                 legacyCode: codeToAnalyze,
                 analysis: normalizedAnalysis, 
                 extensibilityRoute: recommendedRoute, 
-                s4Deployment: targetDeployment, 
+                s4Deployment: deployment, 
                 cleanCoreScore,
                 charged: true,
                 transformationBypass: true,
@@ -2639,7 +2656,9 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
                   if (modalSelection) {
                     setTargetDeployment(modalSelection);
                     setShowConceptQuestion(false);
-                    handleAnalyze(legacyCode);
+                    // The choice goes with the call. `setTargetDeployment` above
+                    // is for the screen; this closure still holds the old value.
+                    handleAnalyze(legacyCode, modalSelection);
                   }
                 }}
                 disabled={!modalSelection || !acceptedTerms || personalDataPending}
