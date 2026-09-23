@@ -111,8 +111,16 @@ test.describe('a private report goes to one address, and no input reaches a shel
     // `tailwind-merge` — every one a production dependency, so nothing it needs
     // is lost.
     expect(wf, 'the OIDC job installs its dev dependencies again').toMatch(/npm ci --omit=dev --ignore-scripts/);
+
+    // And the runner is called by path. `npx` downloads a package it cannot
+    // find, and this step runs *after* the Google authentication — so a
+    // package.json edit that moved `tsx` out of `dependencies` would not break
+    // the report, it would fetch a runner from the registry and execute it
+    // beside the OIDC permission. The local binary fails loudly instead.
+    expect(wf, 'the report is started through npx again, which downloads what it cannot find').not.toMatch(/npx\s+tsx/);
+    expect(wf).toMatch(/\.\/node_modules\/\.bin\/tsx scripts\/send-usage-report\.ts/);
     expect(wf).not.toMatch(/\$\{\{\s*inputs\./);
-    expect(wf).toContain('npx tsx scripts/send-usage-report.ts --apply');
+    expect(wf).toContain('./node_modules/.bin/tsx scripts/send-usage-report.ts --apply');
     expect(wf, 'and no override on the command line either').not.toMatch(/--to\s/);
   });
 
