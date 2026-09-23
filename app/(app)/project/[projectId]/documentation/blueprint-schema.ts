@@ -52,6 +52,24 @@ export interface BlueprintCheck {
 const TASK_LIST_FIELDS = ['inputs', 'outputs', 'systems'] as const;
 
 /**
+ * A value React can put on the screen.
+ *
+ * The outer shapes were checked and the leaves inside them were not, which
+ * leaves exactly the defect this module exists to prevent one level down: a
+ * flow node with a string `id` and an array `next` passes, and then
+ * `<span>{data.label}</span>` is handed an object and React throws *Objects are
+ * not valid as a React child* — same crash, same unusable stage, same stored
+ * document (QA review of 0cb64a5bd6e5, bc2a0948dafe).
+ *
+ * Only the leaves that really are React children are checked. `task.inputs`
+ * elements go through `.join(', ')` and `stepId` through a template literal;
+ * both turn an object into `[object Object]`, which is wrong on screen but does
+ * not take the page down, and rejecting a whole blueprint over it would refuse
+ * documents the stage can draw. Numbers are fine — React renders them.
+ */
+const isRenderable = (value: unknown): boolean => typeof value === 'string' || typeof value === 'number';
+
+/**
  * Does this parsed blueprint have the shape the documentation stage renders?
  *
  * Absent fields are allowed wherever the page already guards for absence: the
@@ -77,6 +95,14 @@ export function checkBlueprintShape(parsed: unknown): BlueprintCheck {
       problems.push(`The process group (\`l2_group\`) is ${typeName(parsed.l2_group)}, not an object.`);
     } else if (parsed.l2_group.kpis !== undefined && !Array.isArray(parsed.l2_group.kpis)) {
       problems.push(`The KPIs (\`l2_group.kpis\`) are ${typeName(parsed.l2_group.kpis)}, not a list.`);
+    } else if (Array.isArray(parsed.l2_group.kpis)) {
+      // Each KPI is rendered on its own, `{kpi}` inside a pill — an object there
+      // is the React-child crash, not a cosmetic wrong value.
+      parsed.l2_group.kpis.forEach((kpi, i) => {
+        if (!isRenderable(kpi)) {
+          problems.push(`KPI ${i + 1} (\`l2_group.kpis[${i}]\`) is ${typeName(kpi)}, not text.`);
+        }
+      });
     }
   }
 
@@ -94,6 +120,23 @@ export function checkBlueprintShape(parsed: unknown): BlueprintCheck {
         }
         if (node.next !== undefined && !Array.isArray(node.next)) {
           problems.push(`The successors of flow element ${i + 1} (\`l3_flow[${i}].next\`) are ${typeName(node.next)}, not a list.`);
+        } else if (Array.isArray(node.next)) {
+          // Each one is looked up with `flow.find(n => n.id === nextId)` and used
+          // as a key in the level map. A non-string never matches any node, so
+          // the diagram silently loses an edge rather than crashing — still not
+          // something to store as a drawing of this process.
+          node.next.forEach((nextId, k) => {
+            if (typeof nextId !== 'string') {
+              problems.push(`Successor ${k + 1} of flow element ${i + 1} (\`l3_flow[${i}].next[${k}]\`) is ${typeName(nextId)}, not a name.`);
+            }
+          });
+        }
+        // `name` is the element's caption and `role` becomes its swimlane label
+        // — both go straight into JSX in `components/ProcessFlow.tsx`.
+        for (const field of ['name', 'role'] as const) {
+          if (node[field] !== undefined && !isRenderable(node[field])) {
+            problems.push(`The ${field === 'name' ? 'caption' : 'role'} of flow element ${i + 1} (\`l3_flow[${i}].${field}\`) is ${typeName(node[field])}, not text.`);
+          }
         }
       });
     }

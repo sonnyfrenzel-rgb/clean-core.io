@@ -95,6 +95,56 @@ test.describe('the shape check itself', () => {
     expect(result.problems).toHaveLength(2);
   });
 
+  test('a leaf React would choke on is caught, one level below the shapes', () => {
+    // The first version of this gate checked the containers and not what is in
+    // them, which left the same crash one level down: a flow node with a string
+    // `id` and an array `next` passed, and then `<span>{data.label}</span>` got
+    // an object and React threw *Objects are not valid as a React child* — same
+    // stage, same stored document, same dead end (QA review of 0cb64a5bd6e5,
+    // bc2a0948dafe).
+    const objectRole = checkBlueprintShape({
+      ...GOOD_BLUEPRINT,
+      l3_flow: [{ id: 'n1', name: 'Check credit', role: { title: 'Clerk' }, next: [] }],
+    });
+    expect(objectRole.ok, 'an object where a swimlane label is rendered').toBe(false);
+    expect(objectRole.problems.join(' ')).toContain('l3_flow[0].role');
+
+    const objectCaption = checkBlueprintShape({
+      ...GOOD_BLUEPRINT,
+      l3_flow: [{ id: 'n1', name: { text: 'Check credit' }, next: [] }],
+    });
+    expect(objectCaption.ok, 'an object where the element caption is rendered').toBe(false);
+
+    // A KPI is rendered on its own inside a pill.
+    const objectKpi = checkBlueprintShape({
+      ...GOOD_BLUEPRINT,
+      l2_group: { kpis: ['Lead time', { value: 42 }] },
+    });
+    expect(objectKpi.ok, 'an object in the KPI list').toBe(false);
+    expect(objectKpi.problems.join(' ')).toContain('l2_group.kpis[1]');
+
+    // A successor that is not a name never matches a node, so the diagram loses
+    // an edge silently — wrong to store as a drawing of this process.
+    const badSuccessor = checkBlueprintShape({
+      ...GOOD_BLUEPRINT,
+      l3_flow: [{ id: 'n1', name: 'Start', next: ['n2', { id: 'n3' }] }],
+    });
+    expect(badSuccessor.ok).toBe(false);
+    expect(badSuccessor.problems.join(' ')).toContain('l3_flow[0].next[1]');
+
+    // And the other half: numbers render, so they are not a defect, and the
+    // leaves that only ever reach `.join()` or a template literal are left
+    // alone — refusing those would reject blueprints the stage can draw.
+    expect(
+      checkBlueprintShape({
+        ...GOOD_BLUEPRINT,
+        l2_group: { kpis: [98, 'Lead time'] },
+        l3_flow: [{ id: 'n1', name: 42, role: 7, next: [] }],
+      }).ok,
+      'a number is a thing React renders',
+    ).toBe(true);
+  });
+
   test('absent optional levels are not a defect — the page already guards for absence', () => {
     expect(checkBlueprintShape({ l1_domain: { name: 'x' } }).ok).toBe(true);
   });
