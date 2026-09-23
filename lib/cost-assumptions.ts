@@ -657,17 +657,28 @@ export interface WinnerRefusal {
   sentence: string;
 }
 
-export interface SensitivityProbe {
-  /** The assumption that was varied. */
-  field: 'devDayRate' | 'testDayRate' | 'releaseCadence' | 'horizonYears';
+/** The four assumptions a tipping point can be asked about. */
+export type TippingField = 'devDayRate' | 'testDayRate' | 'releaseCadence' | 'horizonYears';
+
+/**
+ * How far one assumption has to move before the cheapest option stops being
+ * the cheapest one — a computed distance, never a set radius (roadmap 7.12).
+ */
+export interface TippingPoint {
+  field: TippingField;
   label: string;
-  /** The factor applied downwards and upwards. */
-  factor: number;
-  /** The cheapest option at the lower and the upper variation, or `null` where there is none. */
-  cheapestLow: string | null;
-  cheapestHigh: string | null;
-  /** True when varying this one assumption alone moves the cheapest option. */
-  changesWinner: boolean;
+  /**
+   * The relative rise at which the lead ends, as a fraction of the stated
+   * figure: `0.38` means *38 % above what you stated*. `null` when no rise
+   * ends it.
+   */
+  risesBy: number | null;
+  /** The relative fall at which the lead ends. `null` when no fall ends it. */
+  fallsBy: number | null;
+  /** The option whose lower bound the leader's upper bound meets there. */
+  metOnRise: string | null;
+  metOnFall: string | null;
+  /** Never empty: either a tipping point, or why this assumption has none. */
   sentence: string;
 }
 
@@ -680,10 +691,10 @@ export interface CostComparison {
   /** The option id, or `null` — and then `refusal` says why. */
   winner: string | null;
   refusal: WinnerRefusal | null;
-  /** Empty whenever there is no winner to be sensitive about. */
-  sensitivity: SensitivityProbe[];
-  /** Why the sensitivity list is empty, or `''` when it is not. */
-  sensitivitySentence: string;
+  /** Empty whenever there is no lead for an assumption to overturn. */
+  tippingPoints: TippingPoint[];
+  /** Why the list is empty, or `''` when it is not. */
+  tippingPointsSentence: string;
 }
 
 const REFUSAL_SENTENCES: Record<WinnerRefusalCode, (detail: string) => string> = {
@@ -696,21 +707,11 @@ const REFUSAL_SENTENCES: Record<WinnerRefusalCode, (detail: string) => string> =
     `The two lowest options overlap: ${d} The difference is inside the range of the one-off effort, so which is cheaper is not established.`,
 };
 
-/** The cheapest option id under one set of assumptions, or `null` when none is established. */
-function cheapest(a: CostAssumptions): string | null {
-  const priced = (a.options || []).map((o) => optionCost(a, o)).filter((c) => c.total !== null);
-  if (priced.length < 2) return null;
-  const sorted = [...priced].sort((x, y) => (x.total as AmountRange).low - (y.total as AmountRange).low);
-  const first = sorted[0].total as AmountRange;
-  const second = sorted[1].total as AmountRange;
-  return first.high < second.low ? sorted[0].optionId : null;
-}
-
 const money = (v: number, currency: string): string =>
   `${currency} ${Math.round(v).toLocaleString('en-GB')}`;
 
 const PROBES: ReadonlyArray<{
-  field: SensitivityProbe['field'];
+  field: TippingField;
   label: string;
   apply: (a: CostAssumptions, factor: number) => CostAssumptions;
 }> = [
@@ -739,42 +740,174 @@ const PROBES: ReadonlyArray<{
   },
 ];
 
-/** How far each assumption is varied when asking whether it decides the answer. */
-export const SENSITIVITY_FACTOR = 0.25;
+/* ---------- tipping points, and no radius anywhere ---------- */
 
 /**
- * Which assumption decides the comparison.
+ * A straight line in the multiplier: `value = a + b·m`, where `m = 1` is the
+ * figure the reader stated.
  *
- * One assumption at a time, down and up by `SENSITIVITY_FACTOR`, asking only
- * whether the cheapest option is still the same one. Not a confidence interval
- * and not a probability — there is no distribution behind any of these figures
- * to draw one from. It answers a question a reader can act on: *if this rate
- * were a quarter off, would the answer change?*
+ * Every total here *is* such a line in each of the four assumptions: a one-off
+ * effort priced at a day rate is that rate times a number of days, a running
+ * total is a price times releases times years, a baseline is a price times
+ * years. Nothing squares, nothing divides by the varied field. Two evaluations
+ * therefore determine the line exactly — and a third checks that claim rather
+ * than trusting it (`fitsLine`).
  */
-export function assumptionSensitivity(a: CostAssumptions, baseWinner: string | null): SensitivityProbe[] {
-  if (!baseWinner) return [];
-  const f = SENSITIVITY_FACTOR;
-  return PROBES.map((probe) => {
-    const low = cheapest(probe.apply(a, 1 - f));
-    const high = cheapest(probe.apply(a, 1 + f));
-    const changes = low !== baseWinner || high !== baseWinner;
-    const pct = Math.round(f * 100);
-    const name = (id: string | null) =>
-      id === null
-        ? 'no established cheapest option'
-        : `"${(a.options.find((o) => o.id === id)?.label) || id}"`;
-    return {
-      field: probe.field,
-      label: probe.label,
-      factor: f,
-      cheapestLow: low,
-      cheapestHigh: high,
-      changesWinner: changes,
-      sentence: changes
-        ? `A ${pct} % change in the ${probe.label} decides the comparison: down it is ${name(low)}, up it is ${name(high)}.`
-        : `A ${pct} % change in the ${probe.label} either way leaves the same option cheapest.`,
-    };
+interface Line {
+  a: number;
+  b: number;
+}
+
+const lineThrough = (atOne: number, atTwo: number): Line => {
+  const b = atTwo - atOne;
+  return { a: atOne - b, b };
+};
+
+const valueAt = (l: Line, m: number): number => l.a + l.b * m;
+
+/** Whether the line predicts a third measured point. Relative, because the amounts are money. */
+const fitsLine = (l: Line, m: number, actual: number): boolean =>
+  Math.abs(valueAt(l, m) - actual) <= 1e-6 * Math.max(1, Math.abs(actual));
+
+/**
+ * A percentage the reader can read back. A short distance keeps its decimals:
+ * rounding 4.99 % to "5 %" turns a computed number back into the round one this
+ * step exists to remove.
+ */
+function pct(fraction: number): string {
+  const p = fraction * 100;
+  const shown = p < 10 ? Number(p.toFixed(2)) : p < 100 ? Number(p.toFixed(1)) : Math.round(p);
+  return `${shown.toLocaleString('en-GB')} %`;
+}
+
+/** Every option's cost range under one multiplier of one assumption. */
+function totalsUnder(
+  a: CostAssumptions,
+  probe: (typeof PROBES)[number],
+  m: number,
+): Map<string, AmountRange> {
+  const scaled = probe.apply(a, m);
+  const out = new Map<string, AmountRange>();
+  for (const o of scaled.options || []) {
+    const c = optionCost(scaled, o);
+    if (c.total) out.set(c.optionId, c.total);
+  }
+  return out;
+}
+
+/**
+ * How far one assumption has to move before the leader stops leading.
+ *
+ * The leader leads while its upper bound is below every other option's lower
+ * bound — the same test `costComparison` applies, applied to the lines rather
+ * than to one point. Each rival contributes one inequality `c + d·m < 0`, which
+ * is a half-line; their intersection is the interval of multipliers on which
+ * the lead holds, and its two ends are the tipping points. They are solved, not
+ * searched for, so there is no search radius to pick and no round number to
+ * defend — which is the whole of step 7.12.
+ *
+ * What this is not: a confidence interval. It says where the answer flips, not
+ * how likely it is to be there. Nothing in this repository knows the
+ * distribution of a day rate.
+ */
+function tippingPoint(a: CostAssumptions, winner: string, probe: (typeof PROBES)[number]): TippingPoint {
+  const label = probe.label;
+  const nameOf = (id: string) => `"${(a.options || []).find((o) => o.id === id)?.label || id}"`;
+  const give = (sentence: string): TippingPoint => ({
+    field: probe.field,
+    label,
+    risesBy: null,
+    fallsBy: null,
+    metOnRise: null,
+    metOnFall: null,
+    sentence,
   });
+
+  const t1 = totalsUnder(a, probe, 1);
+  const t2 = totalsUnder(a, probe, 2);
+  const t3 = totalsUnder(a, probe, 3);
+  const lead = t1.get(winner);
+  if (!lead) return give(`The ${label} cannot be varied here: the leading option carries no amount.`);
+
+  const lineOf = (id: string, bound: 'low' | 'high'): Line | null => {
+    const one = t1.get(id);
+    const two = t2.get(id);
+    const three = t3.get(id);
+    if (!one || !two || !three) return null;
+    const l = lineThrough(one[bound], two[bound]);
+    return fitsLine(l, 3, three[bound]) ? l : null;
+  };
+
+  const high = lineOf(winner, 'high');
+  if (!high) {
+    return give(
+      `The ${label} is not varied here: the cost of ${nameOf(winner)} does not move with it in a straight line, and a tipping point read off a curve would be wrong.`,
+    );
+  }
+
+  let lowestRise = Infinity;
+  let highestFall = 0;
+  let metOnRise: string | null = null;
+  let metOnFall: string | null = null;
+  let entersTheComparison = false;
+
+  for (const id of t1.keys()) {
+    if (id === winner) continue;
+    const rivalLow = lineOf(id, 'low');
+    if (!rivalLow) {
+      return give(
+        `The ${label} is not varied here: the cost of ${nameOf(id)} does not move with it in a straight line, and a tipping point read off a curve would be wrong.`,
+      );
+    }
+    // The lead over this rival holds while c + d·m < 0.
+    const c = high.a - rivalLow.a;
+    const d = high.b - rivalLow.b;
+    const flat = Math.abs(d) <= 1e-9 * Math.max(1, Math.abs(c), Math.abs(high.a), Math.abs(rivalLow.a));
+    if (flat) continue; // the gap to this rival never closes, whatever the assumption does
+    entersTheComparison = true;
+    const root = -c / d;
+    if (d > 0) {
+      if (root < lowestRise) {
+        lowestRise = root;
+        metOnRise = id;
+      }
+    } else if (root > highestFall) {
+      highestFall = root;
+      metOnFall = id;
+    }
+  }
+
+  const risesBy = Number.isFinite(lowestRise) && lowestRise > 1 ? lowestRise - 1 : null;
+  const fallsBy = highestFall > 0 && highestFall < 1 ? 1 - highestFall : null;
+  const meets = (id: string | null) =>
+    id ? `, where its upper bound meets ${nameOf(id)}'s lower bound` : '';
+
+  let sentence: string;
+  if (risesBy !== null && fallsBy !== null) {
+    sentence =
+      `${nameOf(winner)} keeps the lead while the ${label} stays between ${pct(fallsBy)} below and ` +
+      `${pct(risesBy)} above the figure you stated. Outside that, the ordering is no longer established.`;
+  } else if (risesBy !== null) {
+    sentence = `${nameOf(winner)} keeps the lead until the ${label} rises by ${pct(risesBy)}${meets(metOnRise)} and the ordering is no longer established.`;
+  } else if (fallsBy !== null) {
+    sentence = `${nameOf(winner)} keeps the lead until the ${label} falls by ${pct(fallsBy)}${meets(metOnFall)} and the ordering is no longer established.`;
+  } else if (!entersTheComparison) {
+    sentence = `The ${label} has no tipping point here: it moves every option by the same amount, so no value of it changes the lead.`;
+  } else {
+    sentence = `The ${label} has no tipping point: ${nameOf(winner)} keeps the lead at every value of it, however far you move it.`;
+  }
+
+  return { field: probe.field, label, risesBy, fallsBy, metOnRise, metOnFall, sentence };
+}
+
+/**
+ * One tipping point per assumption — or, per assumption, one sentence saying
+ * why there is none. Never an empty place: an assumption listed without a
+ * statement reads as an assumption that was checked and found harmless.
+ */
+export function assumptionTippingPoints(a: CostAssumptions, baseWinner: string | null): TippingPoint[] {
+  if (!baseWinner) return [];
+  return PROBES.map((probe) => tippingPoint(a, baseWinner, probe));
 }
 
 /**
@@ -787,18 +920,19 @@ export function costComparison(a: CostAssumptions): CostComparison {
   const revision = costAssumptionsRevision(a);
   const currency = a.currency || '';
 
-  const shell = (winner: string | null, refusal: WinnerRefusal | null, sensitivity: SensitivityProbe[], why: string): CostComparison => ({
+  const shell = (winner: string | null, refusal: WinnerRefusal | null, tippingPoints: TippingPoint[], why: string): CostComparison => ({
     revision,
     coverage,
     currency,
     costs,
     winner,
     refusal,
-    sensitivity,
-    sensitivitySentence: why,
+    tippingPoints,
+    tippingPointsSentence: why,
   });
 
-  const NO_WINNER_NO_SENSITIVITY = 'The assumptions are only varied once there is an answer to vary. There is none.';
+  const NO_LEAD_NO_TIPPING_POINT =
+    'No assumption has a tipping point here: a tipping point is the distance to losing a lead, and no option holds one.';
 
   if (coverage.state === 'rejected') {
     const incomplete = costs.filter((c) => c.coverage.state === 'rejected');
@@ -812,20 +946,20 @@ export function costComparison(a: CostAssumptions): CostComparison {
           ),
         },
         [],
-        NO_WINNER_NO_SENSITIVITY,
+        NO_LEAD_NO_TIPPING_POINT,
       );
     }
     return shell(
       null,
       { code: 'assumptions-incomplete', sentence: REFUSAL_SENTENCES['assumptions-incomplete'](coverage.sentence) },
       [],
-      NO_WINNER_NO_SENSITIVITY,
+      NO_LEAD_NO_TIPPING_POINT,
     );
   }
 
   const priced = costs.filter((c) => c.total !== null);
   if (priced.length < 2) {
-    return shell(null, { code: 'too-few-options', sentence: REFUSAL_SENTENCES['too-few-options']('') }, [], NO_WINNER_NO_SENSITIVITY);
+    return shell(null, { code: 'too-few-options', sentence: REFUSAL_SENTENCES['too-few-options']('') }, [], NO_LEAD_NO_TIPPING_POINT);
   }
 
   const sorted = [...priced].sort((x, y) => (x.total as AmountRange).low - (y.total as AmountRange).low);
@@ -843,12 +977,12 @@ export function costComparison(a: CostAssumptions): CostComparison {
         ),
       },
       [],
-      'A comparison with no established cheapest option has no assumption to test for it.',
+      'No assumption has a tipping point here: the two lowest options already overlap, so there is no lead to tip.',
     );
   }
 
   const winner = first.optionId;
-  return shell(winner, null, assumptionSensitivity(a, winner), '');
+  return shell(winner, null, assumptionTippingPoints(a, winner), '');
 }
 
 /* ---------- display ---------- */

@@ -15,12 +15,13 @@ import { workflowSteps } from '@/lib/workflow-steps';
 import { Calculator, ShieldCheck, Printer, BarChart3, AlertCircle } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import OptionComparison from '@/components/tco/OptionComparison';
+import { formatAmount } from '@/lib/cost-assumptions';
 
 // Lazy-load recharts to reduce initial bundle size (~312KB)
 const RechartsChart = dynamic(() => import('recharts').then(mod => {
   const { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } = mod;
   
-  function TcoChart({ data }: { data: any[] }) {
+  function TcoChart({ data, currency }: { data: any[]; currency: string }) {
     return (
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart
@@ -35,8 +36,8 @@ const RechartsChart = dynamic(() => import('recharts').then(mod => {
           </defs>
           <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
           <XAxis dataKey="year" stroke="#94a3b8" tick={{ fontSize: 11 }} />
-          <YAxis stroke="#94a3b8" tickFormatter={v => `€${(v / 1000)}k`} width={55} tick={{ fontSize: 11 }} />
-          <Tooltip formatter={(value) => [value ? `€${Number(value).toLocaleString()}` : '', '']} labelStyle={{ color: '#0f172a', fontWeight: 'bold' }} />
+          <YAxis stroke="#94a3b8" tickFormatter={v => `${currency} ${(v / 1000)}k`} width={68} tick={{ fontSize: 11 }} />
+          <Tooltip formatter={(value) => [value ? formatAmount(Number(value), currency) : '', '']} labelStyle={{ color: '#0f172a', fontWeight: 'bold' }} />
           <Area type="monotone" dataKey="Net Financial Benefit" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorNet)" />
         </AreaChart>
       </ResponsiveContainer>
@@ -64,13 +65,26 @@ export default function TcoCalculatorPage() {
   // the moment it opened. Figures a reader never entered cannot become their
   // business case by default.
   const [loc, setLoc] = useState(8500); // Lines of custom code
-  const [devRate, setDevRate] = useState<number | null>(null); // Developer daily rate (€)
-  const [userRate, setUserRate] = useState<number | null>(null); // Key-user daily rate (€)
+  const [devRate, setDevRate] = useState<number | null>(null); // Developer daily rate, in the currency stated below
+  const [userRate, setUserRate] = useState<number | null>(null); // Key-user daily rate, in the same currency
   const [upgradeFreq, setUpgradeFreq] = useState(1); // Major release upgrades per year
   const [fpFreq, setFpFreq] = useState(2); // Feature Pack updates per year
   const [oneTimeCost, setOneTimeCost] = useState<number | null>(null); // Refactoring Implementation investment
 
+  // The currency, stated once for the whole stage (roadmap 7.11).
+  //
+  // This half of the page used to print a fixed euro sign at six places and had
+  // no field for it, while the option comparison below asked for a currency and
+  // assumed none (ADR-035). Two money units on one screen, one of them
+  // invented. The reader states it in "Options and costs" below: that panel
+  // owns the input, this state owns the value, and both halves format through
+  // `formatAmount` from the same module. Until it is stated, this half says
+  // "Not determined" rather than a number, exactly as it already does for a
+  // missing day rate.
+  const [currency, setCurrency] = useState('');
+
   const missingCosts = [
+    !currency && 'currency',
     devRate === null && 'developer day rate',
     userRate === null && 'key-user day rate',
     oneTimeCost === null && 'modernisation investment',
@@ -169,7 +183,7 @@ export default function TcoCalculatorPage() {
         {/* The option comparison needs no Clean Core score — its figures are the
             reader's own, not derived from one — so it stands here too. Roadmap 7.4. */}
         <div className="max-w-6xl mx-auto mt-8">
-          <OptionComparison loc={loc} />
+          <OptionComparison loc={loc} currency={currency} onCurrencyChange={setCurrency} />
         </div>
         <div className="max-w-2xl mx-auto">
           <NavigationButtons
@@ -245,6 +259,7 @@ export default function TcoCalculatorPage() {
             {/* Inputs 2, 3 and 6 are yours to state. Sliders cannot be empty,
                 which is how €900, €15,000 and €650 came to be "your" figures. */}
             <CostField
+              currency={currency}
               field="dev-rate"
               label="Developer Day Rate"
               unit=" / day"
@@ -254,6 +269,7 @@ export default function TcoCalculatorPage() {
             />
 
             <CostField
+              currency={currency}
               field="investment"
               label="Modernization Investment"
               unit=""
@@ -297,6 +313,7 @@ export default function TcoCalculatorPage() {
             </div>
 
             <CostField
+              currency={currency}
               field="user-rate"
               label="Key-User Day Rate"
               unit=" / day"
@@ -318,7 +335,7 @@ export default function TcoCalculatorPage() {
         </div>
 
         {/* No forecast from figures nobody entered (E12-F01-US02). */}
-        {!calculations && (
+        {!(calculations && currency) && (
           <div className="bg-white border border-slate-200 rounded-[2rem] p-8 shadow-sm" data-tco-no-forecast>
             <h3 className="text-lg font-black text-[#0b1c30]">No savings forecast yet</h3>
             <p className="text-sm text-slate-600 mt-2 leading-relaxed">
@@ -326,6 +343,7 @@ export default function TcoCalculatorPage() {
                 <>
                   The model needs your own cost figures and has no defaults for them. Missing:{' '}
                   <strong>{missingCosts.join(', ')}</strong>.
+                  {!currency ? ' The currency is stated once, in "Options and costs" below, and both halves of this stage use it.' : ''}
                 </>
               ) : (
                 <>
@@ -342,7 +360,7 @@ export default function TcoCalculatorPage() {
           </div>
         )}
 
-        {calculations && (<>
+        {calculations && currency && (<>
 
         {/* C-Level Executive ROI KPI Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -354,7 +372,7 @@ export default function TcoCalculatorPage() {
             <span className="text-[10px] font-black text-green-400 uppercase tracking-widest block">Annual Net Savings · Scenario</span>
             <div>
               <h3 className="text-4xl font-black tracking-tight mt-2 flex items-baseline">
-                €{calculations.annualSavings.toLocaleString()}
+                {formatAmount(calculations.annualSavings, currency)}
                 <span className="text-xs text-gray-400 font-semibold ml-1">/ year</span>
               </h3>
               <p className="text-xs text-gray-400 font-semibold mt-1">Maintenance overhead reduced by {calculations.overheadReductionPct}%.</p>
@@ -426,7 +444,7 @@ export default function TcoCalculatorPage() {
                   <span className="text-[10px] text-gray-500 font-semibold">Tightly-coupled code modifications</span>
                 </div>
                 <div className="text-right">
-                  <span className="font-extrabold text-gray-900 block">€{Math.round(calculations.legacyDevDaysTotal * calculations.devRate).toLocaleString()}</span>
+                  <span className="font-extrabold text-gray-900 block">{formatAmount(calculations.legacyDevDaysTotal * calculations.devRate, currency)}</span>
                   <span className="text-[10px] text-gray-500 font-semibold">{Math.round(calculations.legacyDevDaysTotal)} Dev-Days / yr</span>
                 </div>
               </div>
@@ -437,14 +455,14 @@ export default function TcoCalculatorPage() {
                   <span className="text-[10px] text-gray-500 font-semibold">Business Key-User manual execution</span>
                 </div>
                 <div className="text-right">
-                  <span className="font-extrabold text-gray-900 block">€{Math.round(calculations.legacyTestDaysTotal * calculations.userRate).toLocaleString()}</span>
+                  <span className="font-extrabold text-gray-900 block">{formatAmount(calculations.legacyTestDaysTotal * calculations.userRate, currency)}</span>
                   <span className="text-[10px] text-gray-500 font-semibold">{Math.round(calculations.legacyTestDaysTotal)} Tester-Days / yr</span>
                 </div>
               </div>
 
               <div className="flex justify-between items-center pt-2">
                 <span className="font-black text-gray-900 uppercase text-xs">Total Legacy TCO</span>
-                <span className="text-xl font-black text-red-600">€{calculations.legacyAnnualTotal.toLocaleString()} <span className="text-xs text-gray-500 font-semibold">/ yr</span></span>
+                <span className="text-xl font-black text-red-600">{formatAmount(calculations.legacyAnnualTotal, currency)} <span className="text-xs text-gray-500 font-semibold">/ yr</span></span>
               </div>
             </div>
           </div>
@@ -464,7 +482,7 @@ export default function TcoCalculatorPage() {
                   <span className="text-[10px] text-gray-500 font-semibold">Decoupled standard API routing</span>
                 </div>
                 <div className="text-right">
-                  <span className="font-extrabold text-gray-900 block">€{Math.round(calculations.modernDevDaysTotal * calculations.devRate).toLocaleString()}</span>
+                  <span className="font-extrabold text-gray-900 block">{formatAmount(calculations.modernDevDaysTotal * calculations.devRate, currency)}</span>
                   <span className="text-[10px] text-gray-500 font-semibold">{Math.round(calculations.modernDevDaysTotal)} Dev-Days / yr</span>
                 </div>
               </div>
@@ -475,14 +493,14 @@ export default function TcoCalculatorPage() {
                   <span className="text-[10px] text-gray-500 font-semibold">Sandboxed unit test suite validations</span>
                 </div>
                 <div className="text-right">
-                  <span className="font-extrabold text-gray-900 block">€{Math.round(calculations.modernTestDaysTotal * calculations.userRate).toLocaleString()}</span>
+                  <span className="font-extrabold text-gray-900 block">{formatAmount(calculations.modernTestDaysTotal * calculations.userRate, currency)}</span>
                   <span className="text-[10px] text-gray-500 font-semibold">{Math.round(calculations.modernTestDaysTotal)} Tester-Days / yr</span>
                 </div>
               </div>
 
               <div className="flex justify-between items-center pt-2">
                 <span className="font-black text-gray-900 uppercase text-xs">Total Modernized TCO</span>
-                <span className="text-xl font-black text-green-600">€{calculations.modernAnnualTotal.toLocaleString()} <span className="text-xs text-gray-500 font-semibold">/ yr</span></span>
+                <span className="text-xl font-black text-green-600">{formatAmount(calculations.modernAnnualTotal, currency)} <span className="text-xs text-gray-500 font-semibold">/ yr</span></span>
               </div>
             </div>
           </div>
@@ -497,11 +515,11 @@ export default function TcoCalculatorPage() {
           </h3>
           <div className="h-64 md:h-72 w-full text-xs font-semibold overflow-x-auto">
             <div className="min-w-[400px] h-full">
-              <RechartsChart data={calculations.cumulativeSavings5Yr} />
+              <RechartsChart data={calculations.cumulativeSavings5Yr} currency={currency} />
             </div>
           </div>
           <span className="text-[10px] text-gray-400 font-semibold block text-center mt-4">
-            Cumulative financial dividend (annual savings minus one-time investment). 5-year net return: <span className="text-green-600 font-bold">€{calculations.cumulativeSavings5Yr[5]?.['Net Financial Benefit']?.toLocaleString() || '0'}</span>.
+            Cumulative financial dividend (annual savings minus one-time investment). 5-year net return: <span className="text-green-600 font-bold">{formatAmount(calculations.cumulativeSavings5Yr[5]?.['Net Financial Benefit'], currency)}</span>.
           </span>
         </div>
         </>)}
@@ -511,7 +529,7 @@ export default function TcoCalculatorPage() {
             modernisation against assumed coefficients, this one prices options
             against each other out of one revision of stated assumptions, and it
             names no cheapest option while any of them is incomplete. */}
-        <OptionComparison loc={loc} />
+        <OptionComparison loc={loc} currency={currency} onCurrencyChange={setCurrency} />
 
         {/* Printed with the estimate, so a copy cannot leave without it. It
             used to read "Business Value Report" under figures from defaults. */}
@@ -535,10 +553,12 @@ export default function TcoCalculatorPage() {
 }
 
 /**
- * A euro figure the reader states. Empty until they do — there is no default to
- * fall back on, which is the point: an empty field keeps the forecast away.
+ * A figure the reader states, in the currency they stated. Empty until they do
+ * — there is no default to fall back on, which is the point: an empty field
+ * keeps the forecast away. It used to print a euro sign nobody chose.
  */
 function CostField({
+  currency,
   field,
   label,
   unit,
@@ -546,6 +566,7 @@ function CostField({
   value,
   onChange,
 }: {
+  currency: string;
   field: string;
   label: string;
   unit: string;
@@ -558,7 +579,7 @@ function CostField({
       <span className="flex justify-between text-xs font-bold text-gray-700 uppercase">
         <span>{label}</span>
         <span className={value === null ? 'text-amber-600' : 'text-blue-650'}>
-          {value === null ? 'Your figure' : `€${value.toLocaleString()}${unit}`}
+          {value === null ? 'Your figure' : `${formatAmount(value, currency)}${unit}`}
         </span>
       </span>
       <input
@@ -567,7 +588,7 @@ function CostField({
         min={0}
         step="any"
         value={value ?? ''}
-        placeholder="€ — enter your figure"
+        placeholder="— enter your figure"
         data-tco-cost={field}
         onChange={(e) => {
           const raw = e.target.value;

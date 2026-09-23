@@ -14,7 +14,6 @@ import {
   formatAmountRange,
   optionCost,
   proposeEffort,
-  SENSITIVITY_FACTOR,
   type CostAssumptions,
   type CostOption,
 } from '../lib/cost-assumptions';
@@ -258,46 +257,129 @@ test.describe('naming a cheapest option', () => {
   });
 });
 
-/* ── the sensitivity of the assumptions ── */
+/* ── how far an assumption has to move before the answer changes ── */
 
-test.describe('how much the answer depends on the assumptions', () => {
-  test('nothing is varied while there is no answer to vary', () => {
-    const c = costComparison(emptyCostAssumptions());
-    expect(c.sensitivity).toEqual([]);
-    expect(c.sensitivitySentence).not.toBe('');
+test.describe('tipping points', () => {
+  /**
+   * Two options that differ only in how the effort splits: one is almost all
+   * development, the other almost all testing. Which is cheaper is then a
+   * question about the two day rates and nothing else.
+   *
+   * 100 x 800 = 80,000 against 127 x 600 = 76,200 — test-heavy leads, by 3,800.
+   */
+  const devHeavy = option({
+    id: 'dev-heavy',
+    kind: 'standard',
+    oneOff: { low: { devDays: 100, testDays: 0 }, high: { devDays: 100, testDays: 0 } },
+    perRelease: { devDays: 0, testDays: 0 },
   });
-
-  test('it reports the assumption that decides the comparison', () => {
-    // Two options that differ only in how the effort splits: one is almost all
-    // development, the other almost all testing. Which is cheaper is then a
-    // question about the two day rates and nothing else.
-    const devHeavy = option({
-      id: 'dev-heavy',
-      kind: 'standard',
-      oneOff: { low: { devDays: 100, testDays: 0 }, high: { devDays: 100, testDays: 0 } },
-      perRelease: { devDays: 0, testDays: 0 },
-    });
-    const testHeavy = option({
-      id: 'test-heavy',
-      kind: 'rebuild',
-      oneOff: { low: { devDays: 0, testDays: 127 }, high: { devDays: 0, testDays: 127 } },
-      perRelease: { devDays: 0, testDays: 0 },
-    });
-    const a = complete({
+  const testHeavy = option({
+    id: 'test-heavy',
+    kind: 'rebuild',
+    oneOff: { low: { devDays: 0, testDays: 127 }, high: { devDays: 0, testDays: 127 } },
+    perRelease: { devDays: 0, testDays: 0 },
+  });
+  const splitRates = (over: Partial<CostAssumptions> = {}) =>
+    complete({
       devDayRate: 800,
       testDayRate: 600,
       options: [doNothing({ perRelease: { devDays: 99, testDays: 99 } }), devHeavy, testHeavy],
+      ...over,
     });
-    const c = costComparison(a);
-    // 100 x 800 = 80,000 against 127 x 600 = 76,200 — test-heavy is cheaper.
+
+  test('nothing is tipped while there is no lead to tip', () => {
+    const c = costComparison(emptyCostAssumptions());
+    expect(c.tippingPoints).toEqual([]);
+    expect(c.tippingPointsSentence).not.toBe('');
+  });
+
+  test('every assumption gets a statement, and none is left blank', () => {
+    const c = costComparison(splitRates());
     expect(c.winner).toBe('test-heavy');
-    const byField = Object.fromEntries(c.sensitivity.map((p) => [p.field, p]));
-    // A quarter off the test rate and the other option wins; the observation
-    // period scales both equally and decides nothing.
-    expect(byField.testDayRate.changesWinner, byField.testDayRate.sentence).toBe(true);
-    expect(byField.horizonYears.changesWinner, byField.horizonYears.sentence).toBe(false);
-    expect(byField.testDayRate.sentence).toContain(`${Math.round(SENSITIVITY_FACTOR * 100)} %`);
-    expect(c.sensitivity.map((p) => p.field)).toEqual(['devDayRate', 'testDayRate', 'releaseCadence', 'horizonYears']);
+    expect(c.tippingPoints.map((t) => t.field)).toEqual([
+      'devDayRate',
+      'testDayRate',
+      'releaseCadence',
+      'horizonYears',
+    ]);
+    // Roadmap 7.12: per assumption either a tipping point or a sentence saying
+    // why there is none. An empty place is not a result.
+    for (const t of c.tippingPoints) expect(t.sentence.length, t.field).toBeGreaterThan(20);
+  });
+
+  test('the distance is computed, and the comparison flips exactly there', () => {
+    const c = costComparison(splitRates());
+    const byField = Object.fromEntries(c.tippingPoints.map((t) => [t.field, t]));
+
+    // Worked out by hand: test-heavy leads while 127 x testRate < 80,000, so
+    // the rate tips at 629.92 — 4.99 % above the 600 that was stated.
+    const expected = 80_000 / (127 * 600) - 1;
+    expect(byField.testDayRate.risesBy).toBeCloseTo(expected, 12);
+    expect(byField.testDayRate.metOnRise).toBe('dev-heavy');
+    expect(byField.testDayRate.fallsBy, 'a cheaper test day never costs it the lead').toBeNull();
+    expect(byField.testDayRate.sentence).toContain('4.99 %');
+    expect(byField.testDayRate.sentence, 'no set radius survives anywhere').not.toContain('25 %');
+
+    // The claim, checked against the comparison itself rather than against the
+    // arithmetic that produced it: a hair below the tipping point the lead
+    // holds, a hair above it is gone.
+    const rate = (factor: number) => costComparison(splitRates({ testDayRate: 600 * factor }));
+    expect(rate((1 + expected) * 0.999).winner).toBe('test-heavy');
+    expect(rate((1 + expected) * 1.001).winner).not.toBe('test-heavy');
+  });
+
+  test('a fall counts as well as a rise, and it names what it meets', () => {
+    const c = costComparison(splitRates());
+    const horizon = c.tippingPoints.find((t) => t.field === 'horizonYears')!;
+    // "Do nothing" is the only option here whose cost grows with the period:
+    // 1,400,000 over five years against test-heavy's flat 76,200. Shorten the
+    // period far enough and doing nothing is the cheapest thing there is.
+    expect(horizon.risesBy, 'a longer period never costs test-heavy the lead').toBeNull();
+    expect(horizon.fallsBy).toBeCloseTo(1 - 76_200 / 1_400_000, 12);
+    expect(horizon.metOnFall).toBe('do-nothing');
+    const shorter = (factor: number) => costComparison(splitRates({ horizonYears: 5 * factor }));
+    expect(shorter((1 - horizon.fallsBy!) * 1.001).winner).toBe('test-heavy');
+    expect(shorter((1 - horizon.fallsBy!) * 0.999).winner).not.toBe('test-heavy');
+  });
+
+  test('an assumption with no tipping point says why it has none', () => {
+    // A "Do nothing" that costs nothing at all: no one-off, no effort per
+    // release, a baseline of zero days. It leads at every day rate and over
+    // every period, so there is no distance to report — and the panel has to
+    // say that rather than leave the line empty.
+    const free = costComparison(
+      splitRates({
+        options: [
+          doNothing({
+            oneOff: { low: { devDays: 0, testDays: 0 }, high: { devDays: 0, testDays: 0 } },
+            perRelease: { devDays: 0, testDays: 0 },
+            maintenanceBaselinePerYear: { devDays: 0, testDays: 0 },
+          }),
+          devHeavy,
+          testHeavy,
+        ],
+      }),
+    );
+    expect(free.winner).toBe('do-nothing');
+    const byField = Object.fromEntries(free.tippingPoints.map((t) => [t.field, t]));
+    for (const t of free.tippingPoints) {
+      expect([t.risesBy, t.fallsBy], t.field).toEqual([null, null]);
+    }
+    // Two different reasons, and they are not the same statement: a day rate
+    // moves the other options and still never overturns the lead; the period
+    // moves nothing at all here.
+    expect(byField.devDayRate.sentence).toContain('keeps the lead at every value');
+    expect(byField.horizonYears.sentence).toContain('moves every option by the same amount');
+  });
+
+  test('no radius is left in the module, and none is reintroduced', () => {
+    const src = fs.readFileSync(path.resolve(__dirname, '..', 'lib/cost-assumptions.ts'), 'utf8');
+    // Roadmap 7.12: the ±25 % radius goes "ersatzlos". A sampled spread is
+    // what this step removed; a constant standing in for one is the same defect
+    // under a new name.
+    expect(src).not.toMatch(/SENSITIVITY_FACTOR|sensitivityRadius/);
+    expect(src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, ''))
+      .not.toMatch(/(FACTOR|RADIUS|SPREAD|STEP)\s*=\s*[0-9]/);
   });
 });
 

@@ -5,6 +5,7 @@ import firebaseConfig from '../firebase-config.json';
 import { TERMS_VERSION } from '../lib/constants';
 import { adminSetDoc, adminMergeDoc } from './helpers/admin-seed';
 import { tcoForecast } from '../lib/tco-model';
+import { formatAmount } from '../lib/cost-assumptions';
 
 /**
  * The Economics stage, opened.
@@ -37,11 +38,21 @@ const SCORE = 62;
 const DEV_RATE = 900;
 const USER_RATE = 650;
 const INVESTMENT = 15_000;
+/**
+ * Deliberately not the euro (roadmap 7.11): this half of the page used to print
+ * a euro sign it had no field for. The figures below are stated in whatever the
+ * reader names, once, and both halves of the stage use that.
+ */
+const CURRENCY = 'CHF';
 
 async function enterCostFigures(page: import('@playwright/test').Page) {
   await page.fill('[data-tco-cost="dev-rate"]', String(DEV_RATE));
   await page.fill('[data-tco-cost="user-rate"]', String(USER_RATE));
   await page.fill('[data-tco-cost="investment"]', String(INVESTMENT));
+  // Three figures and no unit: the page has no currency of its own any more, so
+  // it still shows no amount.
+  await expect(page.locator('[data-tco-no-forecast]')).toBeVisible({ timeout: 15000 });
+  await page.fill('[data-cost-field="currency"]', CURRENCY);
   // Not a sleep: wait for the state the figures produce. A fixed pause is a
   // guess about how fast the page recomputes, and it reads whatever is on
   // screen when it expires (QA review of 84f183b16761, c83ea117ce56).
@@ -104,6 +115,8 @@ test('a scored project shows the figures this model computes', async ({ page }) 
   const empty = await page.locator('body').innerText();
   expect(empty).toContain('No savings forecast yet');
   expect(empty).toContain('developer day rate');
+  // And the unit is one of the things it is missing, rather than one it invents.
+  expect(empty, 'the currency is asked for, not assumed').toContain('currency');
 
   await enterCostFigures(page);
   const body = await page.locator('body').innerText();
@@ -114,14 +127,19 @@ test('a scored project shows the figures this model computes', async ({ page }) 
   })!;
   expect(expected, 'the model produces a forecast for these inputs').not.toBeNull();
 
-  // The figures on the screen are the model's, to the euro. A page that
-  // rendered its own arithmetic, or mapped a field wrongly, fails here.
+  // The figures on the screen are the model's, to the last unit. A page that
+  // rendered its own arithmetic, or mapped a field wrongly, fails here. The
+  // amounts are written by `formatAmount` because the page writes them with it
+  // (roadmap 7.11) — the unit comes from the one source both use, and the
+  // number is still the model's own, compared in full.
   expect(body, 'the Year-1 return').toContain(`${expected.roiYear1}%`);
-  expect(body, 'the annual saving').toContain(`€${expected.annualSavings.toLocaleString('en-US')}`);
+  expect(body, 'the annual saving').toContain(formatAmount(expected.annualSavings, CURRENCY));
   expect(body, 'the overhead reduction').toContain(`${expected.overheadReductionPct}%`);
   expect(body, 'and the five-year net benefit').toContain(
-    `€${expected.cumulativeSavings5Yr[5]['Net Financial Benefit'].toLocaleString('en-US')}`,
+    formatAmount(expected.cumulativeSavings5Yr[5]['Net Financial Benefit'], CURRENCY),
   );
+  // The unit the reader named, and no other: the six fixed euro signs are gone.
+  expect(body, 'no currency the reader did not name').not.toContain('€');
 });
 
 test('a project nothing scored gets no forecast, and says so', async ({ page }) => {
@@ -190,4 +208,51 @@ test('the option comparison names nothing until every option is complete', async
   const body = await page.locator('[data-cost-comparison]').innerText();
   expect(body, 'no amount is invented from the rates alone').not.toMatch(/CHF\s*0\b/);
   expect(body).toContain('one-off effort range');
+});
+
+/**
+ * Roadmap 7.12, on the screen: what the panel says once there *is* a lead.
+ *
+ * The model spec solves the distances; this checks that the panel asks for them
+ * and prints one statement per assumption. The old panel printed four sentences
+ * about a set spread of ±25 %, so "four lines are there" is not enough — the
+ * lines have to be the computed kind, and none of them may name a radius.
+ */
+test('once an option leads, the panel says how far each assumption may move', async ({ page }) => {
+  test.setTimeout(180 * 1000);
+  await openEconomics(page, SCORED);
+  await page.waitForSelector('[data-cost-comparison]');
+
+  await page.fill('[data-cost-field="currency"]', 'CHF');
+  await page.fill('[data-cost-field="dev-day-rate"]', '800');
+  await page.fill('[data-cost-field="test-day-rate"]', '600');
+  await page.fill('[data-cost-field="horizon-years"]', '5');
+  await page.fill('[data-cost-field="release-cadence"]', '2');
+  await page.check('[data-cost-field="release-cadence-confirmed"]');
+
+  // The same effort for every option, taken over from the proposal as the
+  // reader's own figure, so what separates them is the maintenance baseline
+  // that "Do nothing" and "Keep" carry and "Move to standard" does not.
+  for (const id of ['do-nothing', 'keep', 'standard']) {
+    await page.click(`[data-cost-apply-proposal="${id}"]`);
+  }
+  for (const id of ['do-nothing', 'keep']) {
+    await page.fill(`[data-cost-field="${id}-baseline-dev"]`, '1');
+    await page.fill(`[data-cost-field="${id}-baseline-test"]`, '0');
+  }
+  await page.fill('[data-cost-field="do-nothing-upgrade-delay"]', '2');
+
+  await expect(page.locator('[data-cost-winner="standard"]')).toBeVisible({ timeout: 15000 });
+
+  const points = page.locator('[data-cost-tipping-field]');
+  await expect(points).toHaveCount(4);
+  const sentences = await points.allInnerTexts();
+  for (const sentence of sentences) {
+    // Either a distance or the reason there is none — never a blank line.
+    expect(sentence, 'a tipping point or a reason').toMatch(/(rises by|falls by|stays between|no tipping point)/);
+    expect(sentence, 'and no set radius').not.toContain('25 %');
+  }
+  // At least one of the four is an actual distance; a panel that only ever
+  // explains itself would satisfy the loop above.
+  expect(sentences.join(' ')).toMatch(/(rises by|falls by|stays between)\s[\d.,]+\s%/);
 });

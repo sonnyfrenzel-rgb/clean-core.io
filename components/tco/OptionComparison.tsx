@@ -176,20 +176,39 @@ function EffortFields({
   );
 }
 
-export default function OptionComparison({ loc }: { loc: number | null }) {
-  const [assumptions, setAssumptions] = useState<CostAssumptions>(() => ({
+/**
+ * The currency is the stage's, not the panel's (roadmap 7.11).
+ *
+ * It is still stated exactly once, in the field below, and still has no
+ * default. What changed is where the value lives: the page holds it, so the
+ * forecast above this panel prices in the same unit instead of printing a euro
+ * sign nobody chose. Every other assumption here stays local to the panel —
+ * the forecast above does not read a day rate of this comparison.
+ */
+export default function OptionComparison({
+  loc,
+  currency,
+  onCurrencyChange,
+}: {
+  loc: number | null;
+  currency: string;
+  onCurrencyChange: (currency: string) => void;
+}) {
+  const [stated, setStated] = useState<CostAssumptions>(() => ({
     ...emptyCostAssumptions(),
     version: COST_ASSUMPTIONS_VERSION,
     options: SEED_OPTIONS,
   }));
 
+  // One record, and the currency in it is the stage's.
+  const assumptions = useMemo<CostAssumptions>(() => ({ ...stated, currency }), [stated, currency]);
+
   const proposal = useMemo(() => proposeEffort(loc), [loc]);
   const comparison = useMemo(() => costComparison(assumptions), [assumptions]);
-  const currency = assumptions.currency;
 
-  const patch = (p: Partial<CostAssumptions>) => setAssumptions((a) => ({ ...a, ...p }));
+  const patch = (p: Partial<CostAssumptions>) => setStated((a) => ({ ...a, ...p }));
   const patchOption = (id: string, p: Partial<CostOption>) =>
-    setAssumptions((a) => ({ ...a, options: a.options.map((o) => (o.id === id ? { ...o, ...p } : o)) }));
+    setStated((a) => ({ ...a, options: a.options.map((o) => (o.id === id ? { ...o, ...p } : o)) }));
 
   return (
     <section className="space-y-6" data-cost-comparison>
@@ -219,13 +238,14 @@ export default function OptionComparison({ loc }: { loc: number | null }) {
               maxLength={8}
               placeholder="e.g. EUR — no default"
               data-cost-field="currency"
-              onChange={(e) => patch({ currency: e.target.value.trim().toUpperCase() })}
+              onChange={(e) => onCurrencyChange(e.target.value.trim().toUpperCase())}
               className={`w-full rounded-lg border px-3 py-2 text-sm text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 ${
                 currency ? 'border-gray-200' : 'border-amber-300'
               }`}
             />
             <span className="block text-[10px] font-medium text-gray-400">
-              The currency your day rates are in. Nothing here assumes one.
+              The currency your day rates are in &mdash; for this panel and for the forecast above it.
+              Nothing here assumes one.
             </span>
           </label>
 
@@ -484,26 +504,33 @@ export default function OptionComparison({ loc }: { loc: number | null }) {
 
         <div className="mt-6 border-t border-gray-100 pt-5">
           <span className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-gray-400">
-            <Sigma className="w-4 h-4" /> How much the answer depends on the assumptions
+            <Sigma className="w-4 h-4" /> How far an assumption has to move before the answer changes
           </span>
-          {comparison.sensitivity.length > 0 ? (
-            <ul className="mt-3 space-y-2" data-cost-sensitivity>
-              {comparison.sensitivity.map((probe) => (
-                <li
-                  key={probe.field}
-                  data-cost-sensitivity-field={probe.field}
-                  data-cost-sensitivity-decides={probe.changesWinner ? 'yes' : 'no'}
-                  className={`text-[12px] leading-relaxed ${probe.changesWinner ? 'text-amber-700 font-semibold' : 'text-slate-600'}`}
-                >
-                  {probe.sentence}
-                </li>
-              ))}
+          {comparison.tippingPoints.length > 0 ? (
+            <ul className="mt-3 space-y-2" data-cost-tipping-points>
+              {comparison.tippingPoints.map((point) => {
+                const found = point.risesBy !== null || point.fallsBy !== null;
+                return (
+                  <li
+                    key={point.field}
+                    data-cost-tipping-field={point.field}
+                    data-cost-tipping-found={found ? 'yes' : 'no'}
+                    className={`text-[12px] leading-relaxed ${found ? 'text-amber-700 font-semibold' : 'text-slate-600'}`}
+                  >
+                    {point.sentence}
+                  </li>
+                );
+              })}
             </ul>
           ) : (
-            <p className="mt-3 text-[12px] leading-relaxed text-slate-500" data-cost-sensitivity-empty>
-              {comparison.sensitivitySentence}
+            <p className="mt-3 text-[12px] leading-relaxed text-slate-500" data-cost-tipping-points-empty>
+              {comparison.tippingPointsSentence}
             </p>
           )}
+          <p className="mt-3 text-[11px] leading-relaxed text-slate-400">
+            Each distance is solved from the figures you stated, not sampled at a chosen spread. It says
+            where the answer flips, not how likely that is &mdash; nothing here knows the distribution of a day rate.
+          </p>
         </div>
 
         <p className="mt-6 border-t border-gray-100 pt-4 text-[11px] font-semibold text-slate-500">

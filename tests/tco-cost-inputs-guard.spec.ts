@@ -41,6 +41,10 @@ test.describe('the page', () => {
       expect(s, `${setter} starts from a number`).toMatch(new RegExp(`\\[\\w+, ${setter}\\] = useState<number \\| null>\\(null\\)`));
     }
     expect(s).not.toMatch(/useState\(900\)|useState\(650\)|useState\(15000\)/);
+    // The currency is the fourth figure nobody may supply for the reader
+    // (roadmap 7.11, ADR-035). It starts empty and there is no default.
+    expect(s).toMatch(/\[currency, setCurrency\] = useState\(''\)/);
+    expect(s, 'and no euro sign is printed beside an amount').not.toMatch(/€\$\{|€\{/);
   });
 
   test('computes nothing until all three are there', () => {
@@ -119,11 +123,26 @@ test.describe('rendered', () => {
     await expect(page.getByText('Annual Net Savings')).toHaveCount(0);
 
     await page.locator('[data-tco-cost="investment"]').fill('20000');
+    // Three of three and still nothing: the stage has no currency of its own
+    // either (roadmap 7.11). It used to print a fixed euro sign at six places
+    // with no field to state one.
+    await expect(noForecast).toContainText('currency');
+    await expect(page.getByText('Annual Net Savings')).toHaveCount(0);
+
+    await page.locator('[data-cost-field="currency"]').fill('CHF');
     await expect(noForecast).toHaveCount(0);
     await expect(page.getByText('Annual Net Savings · Scenario')).toBeVisible();
 
     // Clearing a figure takes the forecast away again.
     await page.locator('[data-tco-cost="user-rate"]').fill('');
+    await expect(page.locator('[data-tco-no-forecast]')).toBeVisible();
+    await expect(page.getByText('Annual Net Savings')).toHaveCount(0);
+
+    // And so does clearing the currency, for the same reason: an amount whose
+    // unit nobody stated is not an amount.
+    await page.locator('[data-tco-cost="user-rate"]').fill('700');
+    await expect(page.locator('[data-tco-no-forecast]')).toHaveCount(0);
+    await page.locator('[data-cost-field="currency"]').fill('');
     await expect(page.locator('[data-tco-no-forecast]')).toBeVisible();
     await expect(page.getByText('Annual Net Savings')).toHaveCount(0);
   });
