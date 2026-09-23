@@ -38,6 +38,11 @@ import type {
   SaveProcessModelResult,
 } from '@/components/process-map/BpmnEditor';
 import { PRODUCT_GEMINI_MODEL } from '@/lib/constants';
+import {
+  checkBlueprintShape,
+  blueprintRejectionMessage,
+  STORED_BLUEPRINT_REJECTED,
+} from './blueprint-schema';
 
 const addOrUpdateFileInWorkspace = (generatedCode: string | undefined, filePath: string, fileContent: string): string => {
   let files: Array<{ path: string, content: string }> = [];
@@ -151,6 +156,8 @@ export default function DocumentationPage() {
   const [documentation, setDocumentation] = useState('');
   const [isGeneratingDoc, setIsGeneratingDoc] = useState(false);
   const [docError, setDocError] = useState('');
+  /** True when `docError` is a refused model answer rather than a blocked start. */
+  const [docRejected, setDocRejected] = useState(false);
   const [highlightedTaskId, setHighlightedTaskId] = useState<string | null>(null);
   const [activeTask, setActiveTask] = useState<any | null>(null);
 
@@ -219,6 +226,7 @@ export default function DocumentationPage() {
     const blocked = generationBlockers(project, 'documentation');
     if (blocked.length > 0) {
       setDocError(blocked.join(' '));
+      setDocRejected(false);
       return;
     }
 
@@ -226,6 +234,7 @@ export default function DocumentationPage() {
 
     setIsGeneratingDoc(true);
     setDocError('');
+    setDocRejected(false);
     
     try {
       const context = `
@@ -287,9 +296,21 @@ ${context}`;
       }
       
       const jsonString = responseText || '';
-      // Validate parsing before saving
+      // Parsing is not validation. `extractJSON` proves the answer was JSON and
+      // nothing else; the page then reads `l4_tasks`, `l2_group.kpis` and the
+      // per-task lists with `.map`, `.find` and `.join`, and an object passes
+      // every `|| []` fallback on the way there. Checking the shape only before
+      // the *render* was too late: the document was already stored with
+      // `status: 'documented'`, so the crash came back on every reload
+      // (QA findings 0d8443fae823 / 58201e6aaedb). The gate belongs here,
+      // before the transaction, so a refused answer changes nothing.
       const parsed = extractJSON(jsonString);
-      
+      const shape = checkBlueprintShape(parsed);
+      if (!shape.ok) {
+        setDocRejected(true);
+        throw new Error(blueprintRejectionMessage(shape.problems));
+      }
+
       setDocumentation(jsonString);
       
       // Both generations rewrite the same `generatedCode` field. Reading it
@@ -316,20 +337,31 @@ ${context}`;
     }
   }, [projectId, project, profile?.byokConfigured]);
 
-  const parsedDoc = useMemo(() => {
-    if (!documentation) return null;
+  /**
+   * The stored blueprint, and — when there is one that cannot be drawn — the
+   * fact that it exists. The second half is what keeps a document written by an
+   * earlier build, before the gate above existed, from being silently
+   * indistinguishable from "nothing generated yet": the reader is told a
+   * blueprint is there, that it cannot be displayed, and that generating again
+   * replaces it. The same check as the write gate, so the two cannot drift.
+   */
+  const blueprint = useMemo<{ doc: any | null; rejected: boolean }>(() => {
+    if (!documentation) return { doc: null, rejected: false };
     try {
       const parsed = extractJSON(documentation);
-      // Basic validation of the structure
-      if (typeof parsed !== 'object' || parsed === null || !parsed.l1_domain) {
-        throw new Error("Invalid documentation structure");
+      const shape = checkBlueprintShape(parsed);
+      if (!shape.ok) {
+        console.error('Stored documentation rejected:', shape.problems);
+        return { doc: null, rejected: true };
       }
-      return parsed;
+      return { doc: parsed, rejected: false };
     } catch (e) {
       console.error("Parsed documentation is invalid:", e);
-      return null;
+      return { doc: null, rejected: true };
     }
   }, [documentation]);
+  const parsedDoc = blueprint.doc;
+  const storedBlueprintRejected = blueprint.rejected;
 
   const parsedBusinessDoc = useMemo(() => {
     if (!businessDocumentation) return null;
@@ -1076,13 +1108,23 @@ Structure the JSON exactly like this:
         </div>
       )}
 
+      {/* Two different things used to share one heading. A blocked start is a
+          refusal before the model is called; a refused answer is a generation
+          that happened and produced something this stage cannot display.
+          Calling the second one "blocked" told the reader the opposite of what
+          occurred, and neither told him he could simply try again. */}
       {docError && (
-        <div className="bg-red-50 border border-red-200 text-red-800 p-6 rounded-[2rem] mb-10 flex items-start gap-4 shadow-sm">
+        <div
+          data-doc-error={docRejected ? 'rejected' : 'blocked'}
+          className="bg-red-50 border border-red-200 text-red-800 p-6 rounded-[2rem] mb-10 flex items-start gap-4 shadow-sm"
+        >
           <div className="p-2 bg-red-100 rounded-xl text-red-600">
             <AlertCircle className="w-6 h-6 shrink-0" />
           </div>
           <div>
-            <h3 className="font-bold text-red-900 uppercase tracking-tight">Generation Blocked</h3>
+            <h3 className="font-bold text-red-900 uppercase tracking-tight">
+              {docRejected ? 'Generation failed' : 'Generation Blocked'}
+            </h3>
             <p className="text-sm text-red-700 font-medium mt-1 leading-relaxed">{docError}</p>
           </div>
         </div>
@@ -1561,6 +1603,14 @@ Structure the JSON exactly like this:
               server would refuse is not an empty state, it is a dead end. When
               this stage cannot call a model, the reason and the way back stand
               here instead of the button. */}
+          {/* Said before either branch, because it is true in both: a stored
+              blueprint that cannot be drawn is a fact about this project, not
+              about whether a model can be called right now. */}
+          {storedBlueprintRejected && (
+            <p data-stored-blueprint-rejected className="text-gray-600 mb-6 font-medium max-w-2xl mx-auto leading-relaxed">
+              {STORED_BLUEPRINT_REJECTED}
+            </p>
+          )}
           {!modelAvailability.enabled('documentation') ? (
             <NotGenerated
               what="Documentation and business blueprint"
@@ -1574,12 +1624,19 @@ Structure the JSON exactly like this:
             />
           ) : (
             <>
-              <p className="text-gray-500 mb-6 font-medium">No enterprise specifications yet.</p>
+              {/* A stored blueprint that cannot be drawn is not "nothing yet",
+                  and saying so would leave the reader to wonder where his
+                  documentation went. The button stays exactly where it is:
+                  regenerating is the way out, and it has to be reachable. */}
+              {!storedBlueprintRejected && (
+                <p className="text-gray-500 mb-6 font-medium">No enterprise specifications yet.</p>
+              )}
               <button
                 onClick={generateDocumentation}
+                data-generate-blueprint
                 className="bg-[#0b1c30] text-white px-10 py-4 rounded-2xl font-black uppercase tracking-widest hover:bg-[#006b2c] transition-all shadow-xl hover:shadow-green-600/20"
               >
-                Start Architectural Mapping
+                {storedBlueprintRejected ? 'Generate a new blueprint' : 'Start Architectural Mapping'}
               </button>
             </>
           )}
