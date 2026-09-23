@@ -701,7 +701,7 @@ function sentenceFor(
     const entity = raw ? tableTerm(raw) : null;
     const set = /\bSET\s+(\S+)\s*=/i.exec(text);
     const field = set ? termFor(set[1]).singular : null;
-    const keyed = /WHERE\s+\S+\s*=\s*@?[ps]_/i.test(text);
+    const keyed = /\bWHERE\s+\S+\s*=\s*@?[ps]_/i.test(text);
     const core = field
       ? `Die ${field} ${entity ? `des ${keyed ? 'angegebenen ' : ''}${entity.genitive}` : `in ${raw}`} wird geändert.`
       : `Eine Zeile ${entity ? `der ${entity.plural}` : `in ${raw}`} wird geändert.`;

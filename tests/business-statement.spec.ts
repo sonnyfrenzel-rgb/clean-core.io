@@ -282,3 +282,51 @@ test('die Abnahmezahl 120 liegt über dem, was ein Satzbaukasten erreichen kann'
       'oder 17.7 bleibt offen und 17.8 (das Modell) muss den Rest tragen.',
   ).toBeLessThan(120);
 });
+
+/**
+ * Ein UPDATE mit Schlüssel sagt „des angegebenen …", eines ohne nicht.
+ *
+ * Die Unterscheidung existierte bis zum 23.09.2026 nicht, ohne dass etwas rot
+ * wurde: in der Erkennung stand ein echtes Backspace-Zeichen (0x08) an der
+ * Stelle der Wortgrenze — `/<BS>WHERE…/` statt `/\bWHERE…/`. ABAP-Quelltext
+ * enthält keine Steuerzeichen, also traf die Regel nie und `keyed` war immer
+ * falsch. Gefunden hat es die QA-Delta-Prüfung von e24d1fb; kein Test des
+ * Erzeugers hatte den Zweig je betreten.
+ *
+ * Der Test prüft beide Seiten. Eine Prüfung nur auf den Schlüsselfall wäre
+ * wieder grün, wenn jemand `keyed` fest auf `true` setzt.
+ *
+ * Die Tabelle ist `KNA1`, weil der Unterschied nur bei einer Tabelle sichtbar
+ * wird, die das Wörterbuch kennt — bei einer unbekannten fällt der Satz auf den
+ * wörtlichen Namen zurück und spricht gar nicht von „angegeben".
+ */
+test('ein UPDATE mit Schlüssel wird als solches beschrieben, eines ohne nicht', () => {
+  const zeilen = (...z: string[]) => z.join('\n') + '\n';
+
+  const updateSatz = (quelle: string): BusinessStatement => {
+    const treffer = buildBusinessStatements(quelle).filter((s) => /wird geändert\./.test(s.core));
+    expect(treffer, `kein UPDATE-Satz für:\n${quelle}`).toHaveLength(1);
+    return treffer[0];
+  };
+
+  const mitSchluessel = updateSatz(
+    zeilen('REPORT z_t.', 'PARAMETERS p_kunnr TYPE kunnr.', 'UPDATE kna1 SET land1 = @lv_neu WHERE kunnr = p_kunnr.'),
+  );
+  const ohneSchluessel = updateSatz(zeilen('REPORT z_t.', 'UPDATE kna1 SET land1 = @lv_neu.'));
+
+  expect(
+    mitSchluessel.core,
+    'ein UPDATE mit WHERE auf einen Eingabeparameter trifft eine bestimmte Zeile — der Satz muss das sagen',
+  ).toContain('angegebenen');
+
+  expect(
+    ohneSchluessel.core,
+    'ein UPDATE ohne WHERE trifft alles; „des angegebenen" wäre hier eine Erfindung',
+  ).not.toContain('angegebenen');
+
+  // Der Vorbehalt bleibt in beiden Fällen: ein Schlüssel im WHERE sagt nicht,
+  // dass es die Zeile gibt.
+  for (const satz of [mitSchluessel, ohneSchluessel]) {
+    expect(satz.text).toContain('Ob eine Zeile getroffen wird');
+  }
+});

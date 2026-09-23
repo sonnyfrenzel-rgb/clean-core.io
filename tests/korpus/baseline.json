@@ -3411,7 +3411,7 @@
           "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
         }
       ],
-      "reason": "3 Sollfachsatz/-sätze mit 5 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 14 Satz/Sätze. 3 von 3 Sollsätzen vergleichbar (Anker geteilt), davon 0 über der Schwelle: —. Darunter: CC-024-B02↔source.abap:B16-write 0.35, CC-024-B03↔source.abap:B13-write 0.25, CC-024-B01↔source.abap:B10-update 0.14. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 11."
+      "reason": "3 Sollfachsatz/-sätze mit 5 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 14 Satz/Sätze. 3 von 3 Sollsätzen vergleichbar (Anker geteilt), davon 0 über der Schwelle: —. Darunter: CC-024-B02↔source.abap:B16-write 0.35, CC-024-B03↔source.abap:B13-write 0.25, CC-024-B01↔source.abap:B10-update 0.13. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 11."
     },
     {
       "case": "CC-025",
@@ -4121,7 +4121,7 @@
           "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
         }
       ],
-      "reason": "3 Sollfachsatz/-sätze mit 11 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 14 Satz/Sätze. 3 von 3 Sollsätzen vergleichbar (Anker geteilt), davon 1 über der Schwelle: CC-029-B02↔source.abap:B11-seq11 0.53. Darunter: CC-029-B03↔source.abap:B15-chain15 0.35, CC-029-B01↔source.abap:B14-update 0.27. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 11."
+      "reason": "3 Sollfachsatz/-sätze mit 11 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 14 Satz/Sätze. 3 von 3 Sollsätzen vergleichbar (Anker geteilt), davon 1 über der Schwelle: CC-029-B02↔source.abap:B11-seq11 0.53. Darunter: CC-029-B03↔source.abap:B15-chain15 0.35, CC-029-B01↔source.abap:B14-update 0.25. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 11."
     },
     {
       "case": "CC-030",
