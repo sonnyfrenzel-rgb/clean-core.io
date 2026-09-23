@@ -5,6 +5,7 @@ import CcCard from '@/components/cc/Card';
 import CcAnchor from '@/components/cc/Anchor';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import { t } from '@/lib/cc-messages';
+import GlossaryText from './GlossaryText';
 import type { PreAnswered } from '@/lib/ask-this-case';
 
 /**
@@ -30,6 +31,16 @@ import type { PreAnswered } from '@/lib/ask-this-case';
  *
  * **No branch means no question.** The card then says that, rather than
  * offering a general invitation dressed as an answer.
+ *
+ * **Fachwörter carry the glossary with them** (roadmap 6.6, `DESIGN.md` §6.1:
+ * "Fachwörter in Antworten tragen dieselbe Unterstreichung und dasselbe
+ * Popover"). Every string this card shows that a reader might not know a word
+ * in — the question, each branch target, each rule label, and the sentence
+ * that explains why there is no question — goes through `GlossaryText`, which
+ * underlines the terms it recognises and nothing else. It changes no text: a
+ * card whose words happen to name no glossary term renders exactly as before,
+ * which is why this cannot quietly rewrite a question that is supposed to be
+ * in the code's own words.
  */
 export default function AskThisCase({ answer }: { answer: PreAnswered }) {
   return (
@@ -49,12 +60,14 @@ export default function AskThisCase({ answer }: { answer: PreAnswered }) {
           data-ask-this-case="none"
           className="m-0 text-[13px] leading-snug font-medium text-cc-ink-muted"
         >
-          {answer.reason}
+          <GlossaryText>{answer.reason}</GlossaryText>
         </p>
       ) : (
         <div data-ask-this-case="answered" data-node={answer.nodeId} className="flex flex-col gap-2.5">
           <p className="m-0 flex flex-wrap items-center gap-2 text-[13px] leading-snug font-semibold text-cc-ink">
-            <span data-ask-question="">{answer.question}</span>
+            <span data-ask-question="">
+              <GlossaryText>{answer.question}</GlossaryText>
+            </span>
             {answer.anchor ? (
               <CcAnchor label={`Source line ${answer.anchor}`}>{answer.anchor}</CcAnchor>
             ) : (
@@ -75,7 +88,9 @@ export default function AskThisCase({ answer }: { answer: PreAnswered }) {
                 <span aria-hidden={true} className="text-cc-ink-muted">
                   &rarr;
                 </span>
-                <span className="font-cc-mono text-[12px]">{branch.target}</span>
+                <span className="font-cc-mono text-[12px]">
+                  <GlossaryText>{branch.target}</GlossaryText>
+                </span>
                 {branch.anchor ? (
                   <CcAnchor label={`Source line ${branch.anchor}`}>{branch.anchor}</CcAnchor>
                 ) : null}
@@ -97,7 +112,9 @@ export default function AskThisCase({ answer }: { answer: PreAnswered }) {
               </span>
               {answer.rules.map((rule) => (
                 <span key={rule.id} data-ask-rule={rule.id} className="flex items-center gap-1.5">
-                  <span className="font-cc-mono text-[12px] text-cc-ink">{rule.label}</span>
+                  <span className="font-cc-mono text-[12px] text-cc-ink">
+                    <GlossaryText>{rule.label}</GlossaryText>
+                  </span>
                   {rule.anchors.slice(0, 2).map((anchor) => (
                     <CcAnchor key={anchor} label={`Source line ${anchor}`}>
                       {anchor}

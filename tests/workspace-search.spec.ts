@@ -10,12 +10,13 @@ import {
 import firebaseConfig from '../firebase-config.json';
 import { adminSetDoc, adminSetCustomClaim } from './helpers/admin-seed';
 import { readSource } from '../lib/first-look';
-import { GLOSSARY_ITEMS } from '../lib/glossary';
+import { GLOSSARY_ITEMS, glossarySourceText, SAP_CATALOG_SOURCE } from '../lib/glossary';
 import {
   findGlossaryTerm,
   parseWhatIsQuestion,
   glossaryAnswerFor,
   glossaryAnswerText,
+  findGlossaryMentions,
 } from '../lib/glossary-lookup';
 import {
   buildWorkspaceSearchIndex,
@@ -338,6 +339,251 @@ test.describe('no model call — proven from the source, not just claimed in a c
   });
 });
 
+/* ====================================================== a source for every SAP term */
+
+/**
+ * Roadmap 6.6 and `DESIGN.md` §6.1: *„Glossar zum Start … SAP- und
+ * Produktbegriffe, **Quelle je SAP-Begriff**"*.
+ *
+ * The requirement has two halves and the second is the one that bites. A
+ * source where one exists is easy. A term where none has been recorded must
+ * **say so** — with a reason, in the product's own vocabulary for absence
+ * (`lib/first-look.ts`: `origin: 'absent'`, `absentReason`) — rather than go
+ * quiet or, worse, carry a plausible-looking SAP Help link nobody checked.
+ */
+test.describe('a source for every SAP term — and an honest blank where there is none', () => {
+  test('every entry declares which kind of term it is and where the definition comes from', () => {
+    const entries = Object.entries(GLOSSARY_ITEMS);
+    expect(entries.length).toBeGreaterThan(0);
+    for (const [key, item] of entries) {
+      expect(['sap', 'product'], `${key} does not say what kind of term it is`).toContain(item.kind);
+      expect(item.sourceRef, `${key} has no sourceRef`).toBeTruthy();
+      expect(
+        ['sap-catalog', 'product', 'absent'],
+        `${key} has an origin this product has no vocabulary for`,
+      ).toContain(item.sourceRef.origin);
+    }
+  });
+
+  test('a term with no recorded source says so, names a reason, and claims no citation', () => {
+    const unsourced = Object.entries(GLOSSARY_ITEMS).filter(
+      ([, item]) => item.sourceRef.origin === 'absent',
+    );
+    // There are such terms — that is the honest state of the glossary today,
+    // and the point of the assertion is what they do about it.
+    expect(unsourced.length).toBeGreaterThan(0);
+    for (const [key, item] of unsourced) {
+      expect(item.sourceRef.absentReason, `${key} is unsourced without saying why`).toBeTruthy();
+      expect(item.sourceRef.url, `${key} claims a URL while declaring no source`).toBeUndefined();
+      expect(
+        item.source,
+        `${key} declares no source and still hands one out as a citation string`,
+      ).toBeUndefined();
+      const line = glossarySourceText(item);
+      expect(line).toContain('Source not recorded');
+      expect(line).toContain(item.sourceRef.absentReason!);
+    }
+  });
+
+  test('a sourced term names the artefact it comes from, with a URL', () => {
+    const sourced = Object.entries(GLOSSARY_ITEMS).filter(
+      ([, item]) => item.sourceRef.origin === 'sap-catalog',
+    );
+    expect(sourced.length).toBeGreaterThan(0);
+    for (const [key, item] of sourced) {
+      expect(item.sourceRef.label, `${key} cites nothing`).toBeTruthy();
+      expect(item.sourceRef.url, `${key} cites a source with no address`).toMatch(/^https:\/\//);
+      expect(item.source, `${key} does not hand its citation to the surfaces that print it`).toBe(
+        item.sourceRef.label,
+      );
+      expect(glossarySourceText(item).startsWith('Source: ')).toBe(true);
+    }
+  });
+
+  test('the sourced terms are the ones this repository can actually back', () => {
+    // Release state and successor are read out of SAP's cloudification
+    // repository, whose synced copy lives in `lib/abap/generated/`. Those are
+    // the terms with a real source; everything else would be a citation typed
+    // from memory.
+    for (const key of ['Released API', 'Classic API', 'Cloudification Repository', 'Successor']) {
+      const item = GLOSSARY_ITEMS[key];
+      expect(item, `${key} is missing from the glossary`).toBeTruthy();
+      expect(item.sourceRef.origin).toBe('sap-catalog');
+      expect(item.sourceRef.url).toBe(SAP_CATALOG_SOURCE.url);
+    }
+  });
+
+  test("this product's own terms are marked as its own and cite nobody else", () => {
+    // `DESIGN.md` §6.1 group B — "niemand kann sie anderswo nachschlagen".
+    // Claiming an SAP source for one of these would be the same fabrication as
+    // inventing a URL, just pointed the other way.
+    for (const key of [
+      'Line anchor',
+      'Traceability',
+      'Signed run',
+      'Provenance',
+      'Not determined',
+      'Evidence level',
+      'Readiness',
+      'The four buckets',
+      'Simulation',
+      'Hard-coded rule',
+      'Check task',
+      'Confirmed',
+      'Unreached code',
+      'Sub-process level',
+    ]) {
+      const item = GLOSSARY_ITEMS[key];
+      expect(item, `${key} — a term of this product's own — is not in the glossary`).toBeTruthy();
+      expect(item.kind).toBe('product');
+      expect(item.sourceRef.origin).toBe('product');
+      expect(item.category).toBe('Product');
+    }
+  });
+
+  test('the SAP vocabulary `DESIGN.md` §6.1 lists is in the glossary, each marked as SAP', () => {
+    for (const key of [
+      'Clean Core',
+      'Clean core levels',
+      'Released API',
+      'Classic API',
+      'Cloudification Repository',
+      'Successor',
+      'ABAP Cloud',
+      'Key user extensibility',
+      'Developer extensibility',
+      'Side-by-side extensibility',
+      'BAdI',
+      'Modification',
+      'Customizing',
+      'Scope item',
+      'Fit-to-standard',
+      'Public and Private Edition',
+      'ATC',
+      'Usage data',
+      'BPMN',
+      'SAP Signavio',
+    ]) {
+      const item = GLOSSARY_ITEMS[key];
+      expect(item, `${key} is named on a 3.0 screen and is not in the glossary`).toBeTruthy();
+      expect(item.kind).toBe('sap');
+    }
+  });
+
+  test('a glossary hit carries the whole source line, ready to print, and says which kind it is', () => {
+    const index = buildWorkspaceSearchIndex({ projectId: 'p5', project: null, reading: null });
+    for (const [key, item] of Object.entries(GLOSSARY_ITEMS)) {
+      const hit = index.find((r) => r.id === `glossary:${key}`);
+      expect(hit, `${key} is missing from the index`).toBeTruthy();
+      expect(hit!.glossarySource).toBe(glossarySourceText(item));
+      expect(hit!.glossarySourceOrigin).toBe(item.sourceRef.origin);
+    }
+  });
+});
+
+/* ============================================ a hit with a line is worth more than one without */
+
+/**
+ * `lib/case-answer.ts` throws away a candidate with no line anchor. Search
+ * does not, and the difference is deliberate: an answer makes a claim, and a
+ * claim with nothing to point at is an assumption; a search result makes no
+ * claim at all, it is a way to reach a row the reader can already see. Two of
+ * the five kinds cannot carry an anchor — a glossary term is not in the code —
+ * so filtering would empty the glossary out of a glossary search.
+ *
+ * The preference is therefore expressed in the order.
+ */
+test.describe('anchored hits come first', () => {
+  const ANCHORED: WorklistItem = {
+    id: 'CC-100',
+    title: 'Approval limit check',
+    category: 'Finding',
+    severity: 'High',
+    location: 'FORM check',
+    recommendation: 'x',
+    status: 'open',
+    effort: 'Low',
+    targetAnchor: 'L9',
+  };
+  const UNANCHORED: WorklistItem = {
+    id: 'CC-101',
+    title: 'Approval limit note',
+    category: 'Finding',
+    severity: 'Low',
+    location: '',
+    recommendation: 'x',
+    status: 'open',
+    effort: 'Low',
+  };
+
+  test('two equally good name matches order the one with a line first', () => {
+    const project: Project = { name: 'Anchors', worklist: [UNANCHORED, ANCHORED] };
+    const index = buildWorkspaceSearchIndex({ projectId: 'p6', project, reading: null });
+    const hits = searchWorkspace(index, { projectId: 'p6' }, 'approval limit');
+    const ids = hits.filter((r) => r.kind === 'finding').map((r) => r.id);
+    expect(ids).toEqual(['finding:CC-100', 'finding:CC-101']);
+  });
+
+  test('an unanchored hit is still returned — it is a row on a page, not a claim', () => {
+    const project: Project = { name: 'Anchors', worklist: [UNANCHORED] };
+    const index = buildWorkspaceSearchIndex({ projectId: 'p7', project, reading: null });
+    const hits = searchWorkspace(index, { projectId: 'p7' }, 'approval limit note');
+    expect(hits.map((r) => r.id)).toContain('finding:CC-101');
+  });
+
+  test('a glossary hit is not ranked down for an anchor it cannot have', () => {
+    const project: Project = { name: 'Anchors', worklist: [UNANCHORED] };
+    const index = buildWorkspaceSearchIndex({ projectId: 'p8', project, reading: null });
+    // "provenance" names a glossary entry exactly and matches no finding.
+    // What matters is that the glossary hit is not pushed behind anchored
+    // hits of other kinds for lacking a line of its own.
+    const hits = searchWorkspace(index, { projectId: 'p8' }, 'provenance');
+    expect(hits.length).toBeGreaterThan(0);
+    expect(hits[0].kind).toBe('glossary');
+    expect(hits[0].anchor).toBeNull();
+  });
+});
+
+/* =========================================================== finding terms in running text */
+
+test.describe('marking up a sentence — which words get an underline', () => {
+  test('a term named as a whole word is found, with its position', () => {
+    const found = findGlossaryMentions('The check runs against Customizing only.');
+    expect(found.map((m) => m.key)).toEqual(['Customizing']);
+    const only = found[0];
+    expect('The check runs against Customizing only.'.slice(only.start, only.end)).toBe('Customizing');
+  });
+
+  test('a fragment of an identifier is not a term — `lv_badi` does not name BAdI', () => {
+    expect(findGlossaryMentions('IF lv_badi IS INITIAL.').map((m) => m.key)).toEqual([]);
+    expect(findGlossaryMentions('badis').map((m) => m.key)).toEqual([]);
+  });
+
+  test('the longest name wins where one contains another', () => {
+    const keys = findGlossaryMentions('We rely on Side-by-side extensibility here.').map((m) => m.key);
+    expect(keys).toEqual(['Side-by-side extensibility']);
+  });
+
+  test('a term repeated in one sentence is underlined once', () => {
+    const keys = findGlossaryMentions('Customizing beats Customizing every time.').map((m) => m.key);
+    expect(keys).toEqual(['Customizing']);
+  });
+
+  test('text that names no term produces nothing to mark up', () => {
+    expect(findGlossaryMentions('UPDATE zorders SET status = \'B\'.')).toEqual([]);
+    expect(findGlossaryMentions('')).toEqual([]);
+  });
+
+  test('mentions come back in reading order', () => {
+    const text = 'A Modification blocks ABAP Cloud, and Customizing does not.';
+    const found = findGlossaryMentions(text);
+    expect(found.map((m) => m.key)).toEqual(['Modification', 'ABAP Cloud', 'Customizing']);
+    for (let i = 1; i < found.length; i += 1) {
+      expect(found[i].start).toBeGreaterThanOrEqual(found[i - 1].end);
+    }
+  });
+});
+
 /* ================================================================ the dialog, in a browser */
 
 const app = getApps().find((a) => a.name === '[DEFAULT]') ?? initializeApp(firebaseConfig);
@@ -484,10 +730,132 @@ test.describe('the ⌘K dialog, opened by an administrator who turned the worksp
     await expect(glossaryHit).toBeVisible();
     await expect(glossaryHit.locator('[data-command-search-glossary-answer]')).toBeVisible();
     await expect(glossaryHit.locator('[data-command-search-no-model-call]')).toHaveText('No model call');
-    await expect(glossaryHit.locator('[data-command-search-glossary-source]')).toContainText('Source not yet recorded');
+    // "Clean Core" is an SAP term for which this repository records no
+    // publication, so the line says that and names the reason — it does not go
+    // quiet, and it does not invent a link. The wording is the glossary's own
+    // (`glossarySourceText`), not the component's.
+    const source = glossaryHit.locator('[data-command-search-glossary-source]');
+    await expect(source).toHaveAttribute('data-source-origin', 'absent');
+    await expect(source).toContainText('Source not recorded');
 
     // Give any accidental fire-and-forget call a moment to have shown up.
     await page.waitForTimeout(500);
     expect(geminiCalled, 'the glossary answer reached the Gemini proxy').toBe(false);
+  });
+});
+
+/* ================================== the Fachwort popover, in a browser */
+
+/**
+ * Roadmap 6.6 / `DESIGN.md` §6.1: *„Fachwörter in Antworten tragen dieselbe
+ * Unterstreichung und dasselbe Popover"*, and the explanation is *„per
+ * Tastatur erreichbar"*.
+ *
+ * Only a browser can show that. The three things checked here are the three a
+ * source guard cannot see: that the word is a real tab stop rather than a
+ * decorated `span`, that the popover carries the entry's own two sentences and
+ * its source line, and that opening it reaches no model.
+ *
+ * The seeded ABAP branches on a variable called `customizing`, so the
+ * pre-answered question the workspace shows — *What happens when IF
+ * customizing IS INITIAL?* — genuinely contains a glossary term, in the code's
+ * own words. Nothing about the card was adjusted to make that happen.
+ */
+const POPOVER_SOURCE = [
+  'REPORT z_glossary_popover_demo.',
+  '',
+  'DATA customizing TYPE abap_bool.',
+  '',
+  'START-OF-SELECTION.',
+  '  IF customizing IS INITIAL.',
+  "    MESSAGE 'No customizing found' TYPE 'E'.",
+  '  ELSE.',
+  '    PERFORM post_document.',
+  '  ENDIF.',
+  '',
+  'FORM post_document.',
+  "  UPDATE zdocs SET status = 'P'.",
+  'ENDFORM.',
+  '',
+].join('\n');
+
+test.describe('a Fachwort in the answer carries the glossary with it', () => {
+  const ADMIN = `${unique('glossary-admin')}@cleancore-test.io`;
+  const PROJECT_ID = unique('glossary-project');
+
+  test.beforeAll(async () => {
+    test.setTimeout(120 * 1000);
+    const cred = await createUserWithEmailAndPassword(clientAuth, ADMIN, PASSWORD);
+    await adminSetCustomClaim(cred.user.uid, { admin: true });
+    await adminSetDoc('users', cred.user.uid, {
+      firstName: 'Glossary', lastName: 'Admin', email: ADMIN,
+      tier: 'pilot', status: 'approved', isAdmin: true, workspaceShell: true,
+      transformationsUsed: 1, transformationsLimit: 5, createdAt: new Date(),
+    });
+    await adminSetDoc('projects', PROJECT_ID, {
+      name: 'Customizing check', userId: cred.user.uid,
+      createdAt: new Date(), status: 'created',
+      legacyCode: POPOVER_SOURCE,
+      worklist: [],
+    });
+  });
+
+  test('the term is a keyboard-reachable button, its popover names a source, and no model is called', async ({ page }) => {
+    test.setTimeout(180 * 1000);
+
+    let geminiCalled = false;
+    await page.route('**/api/gemini', async (route) => {
+      geminiCalled = true;
+      await route.fulfill({ status: 500, body: 'a glossary popover must never reach this route' });
+    });
+
+    await signIn(page, ADMIN);
+    await page.goto(`/project/${PROJECT_ID}`, { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('[data-workspace-shell]', { timeout: 60000 });
+
+    const card = page.locator('[data-ask-this-case="answered"]');
+    await expect(card).toBeVisible();
+
+    const term = card.locator('[data-glossary-term="Customizing"]').first();
+    await expect(term, 'the Fachwort in the pre-answered question carries no glossary trigger').toBeVisible();
+    // A tab stop, not a decorated span: it takes focus and opens on Enter.
+    await expect(term).toHaveAttribute('aria-expanded', 'false');
+    await term.focus();
+    await expect(term).toBeFocused();
+    await page.keyboard.press('Enter');
+    await expect(term).toHaveAttribute('aria-expanded', 'true');
+
+    const popover = card.locator('[data-glossary-popover]').first();
+    await expect(popover).toBeVisible();
+    await expect(popover.locator('[data-glossary-popover-body]')).toContainText(
+      GLOSSARY_ITEMS.Customizing.definition,
+    );
+    const source = popover.locator('[data-glossary-popover-source]');
+    await expect(source).toHaveAttribute('data-source-origin', 'absent');
+    await expect(source).toContainText('Source not recorded');
+
+    // Escape closes it and hands the focus back to the word it came from.
+    await page.keyboard.press('Escape');
+    await expect(card.locator('[data-glossary-popover]')).toHaveCount(0);
+    await expect(term).toBeFocused();
+
+    await page.waitForTimeout(500);
+    expect(geminiCalled, 'opening a glossary popover reached the Gemini proxy').toBe(false);
+  });
+
+  test('a sourced term prints its citation instead of the blank', async ({ page }) => {
+    test.setTimeout(180 * 1000);
+    await signIn(page, ADMIN);
+    await page.goto(`/project/${PROJECT_ID}`, { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('[data-workspace-shell]', { timeout: 60000 });
+
+    // Through ⌘K, the one surface that can reach any entry on demand.
+    await page.locator('[data-command-search-trigger]').click();
+    await page.fill('[data-command-search-input]', 'Cloudification Repository');
+    const hit = page.locator('[data-command-search-hit="glossary"]').first();
+    await expect(hit).toBeVisible();
+    const source = hit.locator('[data-command-search-glossary-source]');
+    await expect(source).toHaveAttribute('data-source-origin', 'sap-catalog');
+    await expect(source).toContainText('abap-atc-cr-cv-s4hc');
   });
 });

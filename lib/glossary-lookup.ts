@@ -122,3 +122,68 @@ export function glossaryAnswerFor(question: string): (GlossaryMatch & { answer: 
   if (!match) return null;
   return { ...match, answer: glossaryAnswerText(match.item) };
 }
+
+/**
+ * Every glossary term named in a piece of running text, with where it sits —
+ * the scan behind the underlined Fachwort of `DESIGN.md` §6.1 ("Glossar im
+ * Text", ADR-034).
+ *
+ * Three rules, each there to stop a specific kind of noise:
+ *
+ *   1. **Whole words only.** `lv_badi` does not name *BAdI* and `scoped` does
+ *      not name *Scope item*; an underline on a fragment of an identifier
+ *      would teach the reader to distrust every other underline on the page.
+ *   2. **The longest name wins.** In "side-by-side extensibility" the reader
+ *      is owed that entry, not the shorter *Extensibility* one it contains.
+ *   3. **Once per term.** The fifth underline on the same word in one card
+ *      is decoration; the first is help.
+ *
+ * Pure and synchronous, like everything else in this module: marking up text
+ * is a lookup, never a model call.
+ */
+export interface GlossaryMention {
+  key: string;
+  item: GlossaryItem;
+  /** Index of the first character of the mention in the text handed in. */
+  start: number;
+  /** Index just past its last character. */
+  end: number;
+}
+
+const WORDISH = /[A-Za-z0-9_]/;
+
+const isBoundary = (text: string, index: number): boolean =>
+  index < 0 || index >= text.length || !WORDISH.test(text[index]);
+
+export function findGlossaryMentions(text: string): GlossaryMention[] {
+  if (!text) return [];
+  const haystack = text.toLowerCase();
+
+  // Longest name first, so rule 2 falls out of the order rather than needing
+  // a second pass to undo a shorter match already taken.
+  const candidates = Object.entries(GLOSSARY_ITEMS)
+    .map(([key, item]) => ({ key, item, needle: item.shortName.toLowerCase() }))
+    .filter((candidate) => candidate.needle.length > 0)
+    .sort((a, b) => b.needle.length - a.needle.length);
+
+  const found: GlossaryMention[] = [];
+  const taken: boolean[] = new Array(text.length).fill(false);
+
+  for (const { key, item, needle } of candidates) {
+    let from = 0;
+    for (;;) {
+      const at = haystack.indexOf(needle, from);
+      if (at < 0) break;
+      const end = at + needle.length;
+      const free = !taken.slice(at, end).some(Boolean);
+      if (free && isBoundary(text, at - 1) && isBoundary(text, end)) {
+        for (let i = at; i < end; i += 1) taken[i] = true;
+        found.push({ key, item, start: at, end });
+        break; // rule 3 — only the first mention of this term is marked
+      }
+      from = at + 1;
+    }
+  }
+
+  return found.sort((a, b) => a.start - b.start);
+}

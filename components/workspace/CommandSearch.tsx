@@ -48,9 +48,13 @@ import type { Project } from '@/lib/types';
  * not navigate at all — the answer is already the whole of what selecting it
  * would show, so it is simply printed in place, with **"No model call"** next
  * to it in the same words `run.noModelCall` uses everywhere else in the
- * product, and the source `DESIGN.md` §6.1 requires for an SAP term, printed
- * honestly as "Source not yet recorded" where the entry does not carry one
- * rather than left silent.
+ * product, and the source `DESIGN.md` §6.1 requires for an SAP term.
+ *
+ * **The source line is printed as the glossary wrote it.** Where SAP's synced
+ * catalog backs the term it reads "Source: SAP, abap-atc-cr-cv-s4hc …"; where
+ * nothing is recorded it reads "Source not recorded — …" with the reason. The
+ * component does not prefix it with "Source:" of its own, because on the
+ * second kind that prefix would turn a refusal into a claim.
  */
 export interface CommandSearchProps {
   projectId: string;
@@ -315,8 +319,11 @@ export default function CommandSearch({ projectId, project, reading }: CommandSe
                             <p className="m-0 flex flex-wrap items-center gap-1.5 text-[11px] font-semibold text-cc-ink-muted">
                               <span data-command-search-no-model-call="">{t('run.noModelCall')}</span>
                               <span aria-hidden={true}>·</span>
-                              <span data-command-search-glossary-source="">
-                                {result.glossarySource ? `Source: ${result.glossarySource}` : 'Source not yet recorded'}
+                              <span
+                                data-command-search-glossary-source=""
+                                data-source-origin={result.glossarySourceOrigin ?? 'absent'}
+                              >
+                                {result.glossarySource}
                               </span>
                             </p>
                           </div>

@@ -98,6 +98,26 @@ async function loadCaseContext(projectId: string): Promise<CaseContext> {
   }
 }
 
+/**
+ * The glossary in the prompt: the names, not the definitions.
+ *
+ * It used to be `JSON.stringify(GLOSSARY_ITEMS, null, 2)` — every entry, indented,
+ * in the system prompt of **every** model call. Measured on 23.09.2026 after 6.6
+ * grew the glossary from 13 entries to 45: **30,044 characters, about 8,584
+ * tokens, on every single call.** The names alone are 308.
+ *
+ * What makes the definitions unnecessary is a change one step earlier: since 6.6
+ * and 6.8 a glossary question is answered *from the entry*, without a model
+ * (`glossaryAnswerFor`, and the case branch in `handleSend` returns before any
+ * call). The model was carrying the text of answers it no longer gives. What it
+ * still needs is to know which terms are spoken for, so it does not define one
+ * differently in passing — and that is a list of names.
+ */
+const glossaryTermList = (): string =>
+  Object.values(GLOSSARY_ITEMS)
+    .map((item) => item.term)
+    .join(', ');
+
 export default function GlossaryChatbot() {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
@@ -335,8 +355,11 @@ Do not invent features, metrics, or success percentages that are not in the know
 
 You have access to the Clean-Core.io platform knowledge base below. Use it to answer questions about any part of the platform accurately and in detail.
 
-## GLOSSARY OF S/4HANA & BTP TERMS
-${JSON.stringify(GLOSSARY_ITEMS, null, 2)}
+## GLOSSARY TERMS THIS PRODUCT DEFINES
+These are answered from the glossary itself, without you. Do not contradict them,
+and do not define them yourself — if one is asked about plainly, the entry has
+already answered before this prompt was built.
+${glossaryTermList()}
 
 ${knowledgeBase}
 

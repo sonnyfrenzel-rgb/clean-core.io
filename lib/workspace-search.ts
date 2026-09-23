@@ -29,7 +29,7 @@ import { anchorLabel, type SourceReading } from './first-look';
 import type { Project, WorklistItem } from './types';
 import type { SkeletonNode } from './abap/process-skeleton';
 import type { BusinessRule } from './abap/business-rule-set';
-import { GLOSSARY_ITEMS } from './glossary';
+import { GLOSSARY_ITEMS, glossarySourceText, type GlossarySourceOrigin } from './glossary';
 import { glossaryAnswerText } from './glossary-lookup';
 
 export type SearchResultKind = 'element' | 'rule' | 'finding' | 'source-line' | 'glossary';
@@ -54,7 +54,16 @@ export interface SearchResult {
   href: string | null;
   /** Set only on a glossary hit — the answer itself, so no navigation is needed. */
   glossaryAnswer?: string;
+  /**
+   * Set only on a glossary hit — one line naming where the definition comes
+   * from, or, where nothing is recorded, saying that and why. Already a whole
+   * sentence: a caller prints it as it stands and never prefixes it with
+   * "Source:", because for an unsourced term that prefix would be the claim
+   * the sentence is there to refuse.
+   */
   glossarySource?: string;
+  /** Set only on a glossary hit — `absent` where no publication is recorded. */
+  glossarySourceOrigin?: GlossarySourceOrigin;
 }
 
 export interface WorkspaceSearchIndexInput {
@@ -119,7 +128,8 @@ function glossaryResults(): SearchResult[] {
     anchor: null,
     href: null,
     glossaryAnswer: glossaryAnswerText(item),
-    glossarySource: item.source,
+    glossarySource: glossarySourceText(item),
+    glossarySourceOrigin: item.sourceRef.origin,
   }));
 }
 
@@ -192,6 +202,32 @@ const rank = (result: SearchResult, q: string): number => {
 };
 
 /**
+ * A hit that carries a line anchor comes first among equally good name
+ * matches — roadmap 6.6, and the product's own ordering of what is worth more.
+ *
+ * **Why ranked and not filtered.** `lib/case-answer.ts` *discards* a candidate
+ * with no anchor, and is right to: it makes claims about the case, and a claim
+ * with nothing to point at is exactly the assumption-as-fact this product
+ * refuses. A search result claims nothing. It is a way to reach something the
+ * reader can already see on a page, so dropping an unanchored one would not
+ * protect them from a false statement — it would hide a real row. Two of the
+ * five kinds cannot have an anchor at all: a glossary term is not in the code,
+ * and a finding imported from ATC or entered by hand may carry none until
+ * someone joins it to a line. Filtering would empty the glossary out of a
+ * glossary search.
+ *
+ * So the difference is expressed where it belongs — in the order, and on the
+ * row itself, where the absence is printed rather than left to be inferred
+ * from a missing chip. A glossary hit is exempt from the penalty entirely: it
+ * lacks an anchor by construction, not by omission, and ranking it below a
+ * source line for that would punish it for what it is.
+ */
+const anchorRank = (result: SearchResult): number => {
+  if (result.kind === 'glossary') return 0;
+  return result.anchor ? 0 : 1;
+};
+
+/**
  * Every hit for a query, best first — the fixed index plus, when the project's
  * source is available, whatever source lines match.
  *
@@ -218,5 +254,7 @@ export function searchWorkspace(
   );
   const lines = context.legacyCode ? sourceLineResults(context.projectId, context.legacyCode, raw) : [];
 
-  return [...fixed, ...lines].sort((a, b) => rank(a, q) - rank(b, q));
+  return [...fixed, ...lines].sort(
+    (a, b) => rank(a, q) - rank(b, q) || anchorRank(a) - anchorRank(b),
+  );
 }
