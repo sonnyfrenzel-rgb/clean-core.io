@@ -500,7 +500,32 @@ Mockup Screen 2.
 | 7.8 | **Anpassungsoptionen zum Standard, direkt am Element** (Entscheidung Sonny 16.09.2026): in der Business-Sicht zeigt jedes Element mit Standardkandidat unmittelbar, welche Anpassung des Prozesses näher an Fit-to-Standard führt — in der Prozesskarte (Map wie Steps, 2.5), in der Prozesskette bzw. Phasenübersicht (2.9) und in den Standard-Fit-Tabellen (7.2; Screens s1 und s3). **Je Betriebsmodell:** in Public Edition nur, was mit dem Scope Item und Key-User-/Developer-Extensibility ohne Modifikation geht; in Private Edition/RISE zusätzlich die Wege, die dort erlaubt bleiben (klassische Erweiterung, Modifikation als benannte Abweichung mit Upgrade-Folge). Jede Option nennt den Prozessschritt, der sich ändert, das Scope Item als zu prüfende ID, die Evidenzstufe E0–E4 aus 7.2, was sich für Nutzer ändert (7.6) und, sobald 7.4 eine Annahmenrevision hat, ihre Kosten neben „Nichts tun"; ohne Standardkandidat steht *Not determined* mit Grund (7.5), nie ein erfundener Weg. Eine gewählte Option wird Soll-Vorschlag in 3.6 (Ist und Soll) und Entscheidung je Element in 3.5 — nie eine automatische Änderung. Abgestimmt mit den vier Töpfen aus 6.7: „Blocked by SAP" hat keine Anpassungsoption, nur den Verweis auf SAPs Roadmap. Deterministisch aus Katalog, Level und Scope-Item-Zuordnung; das Modell formuliert höchstens die Klarsprache, mit Anker und Herkunft *Model proposal*. **Vergleichsberechtigung je Element, ergänzt 22.09.2026 (§16 V6):** **vor** jeder Standardzuordnung bekommt jedes Element deterministisch eine Vergleichsklasse — *fachlich vergleichbar* (Task, Teilprozess, Aufruf-Aktivität, Business-Rule-Task, Gateway auf einem Geschäftsfeld) · *technisch* (Lese-/Schreibschritt, technisches Gateway aus 2.15, Randereignis, Fehler-Ende, Helfer) · *strukturell* (Start, Ende, Lane, Pool, Datenobjekt, Anmerkung) · *unbekannt* (`call-opaque`, dynamisches Ziel). Nur *fachlich vergleichbar* trägt einen Standardkandidaten oder *Not determined*; *technisch* und *strukturell* tragen **nie** „kein Standardkandidat", sondern „nicht vergleichbar"; *unbekannt* heißt unbekannt. **Drei Ergebnisse, nie zwei:** belegt abgedeckt · belegt nicht abgedeckt · unbekannt. Die Klasse steht am Element, **nie** im signierten Pack — wie das Level. Warum hier und nicht in 7.2: 7.2 arbeitet auf Fähigkeiten aus Regeln, 7.8 bringt den Standardkandidaten erstmals ans Element, und dort entsteht das Risiko. Gemessen: im 1.000-Zeilen-Beispiel sind **15 von 65 Flussknoten (23 %) Endereignisse**, sechs davon mit Fehlerdefinition; über die acht Beispiele 14 `errorEventDefinition`, 5 `boundaryEvent`, 115 Datenelemente. Im Referenzbestand: typisierte Endereignisse 3 von 2.172, Datenobjekte 24 von 19.876 — **aber Abwesenheit im Diagramm ist kein negativer Funktionsnachweis**, der Bestand abstrahiert Implementierungsdetails, und wie vollständig, ist nicht gemessen. Genau deshalb drei Ergebnisse. **Fertig, wenn** über die acht Beispiele kein Endereignis, Gateway, Randereignis und kein Datenspeicher einen Standardkandidaten oder „nicht abgedeckt" trägt, jedes `call-opaque` als unbekannt steht und die Klassenfunktion rein ist (ohne Import aus `lib/bpmn`, wie `abcd-classification.ts`) | M |
 | 7.7 | **Prüfhinweise Compliance:** deterministische Hinweise auf personenbezogene, steuer- oder revisionsrelevante Daten aus den gelesenen Tabellen — sie bestimmen Prüftiefe und Testpflicht, sind aber Hinweise, keine Einstufung (Feedback 15.09.2026) | S |
 | 7.9 | **Zwei Dimensionen je Katalogobjekt** (CR-01): klassischer Freigabestatus und ABAP-Cloud-Verwendbarkeit getrennt sichtbar, Nachfolger benannt (CL_HTTP_UTILITY: klassisch freigegeben · Cloud: nicht freizugeben · Nachfolger CL_WEB_HTTP_UTILITY); der Grad bleibt der Clean-Core-Zielbezug (Entscheidung §9 Nr. 18) und sagt das am Objekt; `deprecated` ohne Nachfolger ist eine Prüfung, kein automatisches D | S |
-| 7.10 | **Zielprofil als Eingabe** (CR-02): Edition, Sprachversion je Objekt, Release-/Komponentenstand, Katalogsnapshot und Regelversion als versioniertes `AssessmentProfile` durch Analyse, Kataloglookup, Ergebnis, Entscheidung und Receipt; nicht abgedeckte Profile werden sichtbar abgelehnt oder als unbestätigt geführt; ein Profilwechsel ändert den Subject-Hash und entwertet abhängige Freigaben; ein Latest-Eintrag ersetzt keinen älteren Release-Snapshot still | L |
+| 7.10 | **Modell gebaut 23.09.2026 (14fcac9), Verdrahtung offen.** **Zielprofil als Eingabe** (CR-02): Edition, Sprachversion je Objekt, Release-/Komponentenstand, Katalogsnapshot und Regelversion als versioniertes `AssessmentProfile` durch Analyse, Kataloglookup, Ergebnis, Entscheidung und Receipt; nicht abgedeckte Profile werden sichtbar abgelehnt oder als unbestätigt geführt; ein Profilwechsel ändert den Subject-Hash und entwertet abhängige Freigaben; ein Latest-Eintrag ersetzt keinen älteren Release-Snapshot still | L |
+
+**Stand 7.10 (23.09.2026).** `lib/assessment-profile.ts` steht mit 21 Prüfungen:
+drei Abdeckungszustände (`covered`, `unconfirmed`, `rejected`), neun Lückencodes,
+`profileRevision()` als `edition@release/snapshot#rule+fp12`,
+`assessmentSubjectHash()`. `profileManifestInput()` wirft bei `rejected` — eine
+Ablehnung, die sich trotzdem signieren lässt, ist keine. Der Ungültigkeitspfad
+nutzt das bestehende `source-artefact`-Muster. Die Verdrahtung durch die fünf
+Stationen ist bewusst nicht Teil davon.
+
+**Dabei aufgefallen, und heute wirksam:** `lib/abap/catalog-service.ts` kennt
+weder `deployment` noch `edition` — kein einziges Vorkommen —, und der einzige
+Schnappschuss ist `abap-atc-cr-cv-s4hc`, die Freigabeliste der **Public** Cloud.
+Ein Private-Edition-Projekt wird gegen sie beurteilt, und das Ergebnis sagt
+nicht, welcher Schnappschuss geantwortet hat. Genau die stille Ersetzung, die
+CR-02 benennt. Station 2 (Kataloglookup) ist deshalb das eigentliche **L**: der
+Snapshot muss ein Argument werden, und `pce-latest` muss synchronisiert und
+ausgeliefert werden (~3 MB).
+
+**Zwei Entscheidungen gehören vor die Verdrahtung, nicht danach:**
+1. **Private Edition.** Solange nur die Public-Liste vorliegt, trägt jedes
+   Private-Projekt dauerhaft einen Unbestätigt-Vermerk im signierten Manifest.
+   Ist das richtig — oder wird `pce-latest` Voraussetzung für Station 1?
+2. **Bestandsläufe.** Am Tag, an dem Station 1 gebaut wird, hat kein vorhandener
+   Run einen Profileintrag im Manifest; jedes bestehende Projekt stünde auf
+   „unbestätigt". Dieselbe Frage wie C23-A02.
 
 **Fertig, wenn** V25-A02 (beide Katalogsichten mit Vorrangregel und Regelversion),
 V25-A05 (zu kurzes Fenster erzeugt einen Prüfauftrag), V25-A06 und W22-A15/A16
@@ -2038,8 +2063,31 @@ verankerte Einzelaussage.
 
 | Nr. | Schritt | Größe |
 |---|---|---|
-| 17.5 | **Die Facette vergleicht wirklich.** `compareBusinessStatements` prüft heute nur, ob Anker in existierende Zeilen zeigen, und ist hart auf `disagree` verdrahtet; das Verdikt heißt `nicht-vergleichbar`. Künftig vergleicht sie die erzeugten Sätze gegen die 173 Sollsätze — **deterministisch**, über den Anker als Schlüssel und ein offengelegtes Textmaß, **kein Modell als Richter** (die Zweitmessung vom 23.09. hat genau das getan und trägt deshalb nichts). Je Fall Zähler und Nenner wie in 1.9; „nicht geprüft" bleibt verboten als `agree`. **Fertig, wenn** `baseline.json` für `fachsaetze` eine Zahl nennt, die sich bewegt, wenn man den Prompt ändert — und wenn ein absichtlich verschlechterter Prompt die Facette rot macht. | M |
+| 17.5 | **Erledigt 23.09.2026 (adb6d7d).** **Die Facette vergleicht wirklich.** `compareBusinessStatements` prüft heute nur, ob Anker in existierende Zeilen zeigen, und ist hart auf `disagree` verdrahtet; das Verdikt heißt `nicht-vergleichbar`. Künftig vergleicht sie die erzeugten Sätze gegen die 173 Sollsätze — **deterministisch**, über den Anker als Schlüssel und ein offengelegtes Textmaß, **kein Modell als Richter** (die Zweitmessung vom 23.09. hat genau das getan und trägt deshalb nichts). Je Fall Zähler und Nenner wie in 1.9; „nicht geprüft" bleibt verboten als `agree`. **Fertig, wenn** `baseline.json` für `fachsaetze` eine Zahl nennt, die sich bewegt, wenn man den Prompt ändert — und wenn ein absichtlich verschlechterter Prompt die Facette rot macht. | M |
 | 17.6 | **Entscheiden, wer die Fachsätze erzeugt** — heute niemand, und das ist eine Produktentscheidung, keine Technikfrage. Zwei Wege, und sie schließen sich nicht aus: **(a) die Engine** aus dem Skelett, deterministisch und damit ohne Modellkosten und ohne Halluzination, aber auf das begrenzt, was der Kontrollfluss hergibt; **(b) das Modell** mit einem Prompt, der genau danach fragt, statt nach einer Zusammenfassung — verankert, und durch 17.5 messbar. Gehört **vor** den Ausbau der Business-Sicht beantwortet, weil er bestimmt, was sie eigentlich sagt. Die Entscheidung gehört Sonny; dieser Schritt bereitet sie mit gemessenen Zahlen aus 17.5 vor, statt sie vorwegzunehmen. | M |
+
+**Ergebnis 17.5 (gemessen, 23.09.2026).** Die Facette hat vorher nichts
+verglichen: kein Modul in `lib/`, `app/` oder `components/` erzeugt heute
+überhaupt einen Fachsatz, und die Facette prüfte nur den Anker — ein Satz, der
+richtig verankert und inhaltlich falsch war, kam durch. `0/173` war Verdrahtung,
+jetzt ist es eine Messung. Drei Teilprüfungen (`ankerpruefung`,
+`fachsatzabdeckung`, `fachsatzinhalt`), Schlüssel ist die ABAP-Anweisung an der
+Ankerzeile, Textmaß Dice über normalisierte Inhaltswörter. Die Schwelle 0,50 ist
+am Korpus kalibriert und wird bei jedem Lauf neu nachgerechnet: verschiedene
+Sollsätze erreichen höchstens 0,400, die mildeste Umformulierung fällt nicht
+unter 0,571; 0,30 und 0,65 gehen beide rot.
+
+**Die Zahl für 17.6:** was `lib/analysis-prompt.ts` heute bestellt — eine
+Executive Summary — trifft **0 von 173** Sollsätzen bei 173/173 verglichenen
+Sätzen. Nicht „unvergleichbar", sondern vergleichbar und daneben. Obergrenze des
+Maßes ist 173/173 (Soll-Echo). Eine Zielzahl für den ersten Erzeuger fehlt noch
+und gehört in 17.6, sonst misst man wieder ohne Sollwert.
+
+**Offen in 17.6, zusätzlich zur Wegfrage:** zählt Erfindung als Fehler? Heute
+nicht — erzeugte Sätze ohne Sollsatz bleiben straffrei, weil das Fallbuch seine
+Fachsatzliste nirgends für vollständig erklärt. Bei Weg (b) ist genau das das
+Halluzinationsrisiko. Soll es zählen, muss **der Korpus** die Vollständigkeit je
+Fall erklären (analog `declaredEmpty` bei Befunden und Objekten).
 
 **Reihenfolge:** 17.5 vor 17.6, und beide vor jeder weiteren Modellentscheidung —
 sonst optimiert man eine Größe, die niemand misst. 17.5 ist unabhängig von der
