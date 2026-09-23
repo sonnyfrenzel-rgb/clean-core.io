@@ -12,8 +12,42 @@
 export const AUDIT = {
   /** Pinned: an alias such as `~deepseek/deepseek-flash-latest` would change the auditor without a commit. */
   model: 'deepseek/deepseek-v4.1-flash',
-  /** OpenRouter list price per million tokens, 15.09.2026. */
-  price: { input: 0.15, output: 0.6 },
+  /**
+   * Which of OpenRouter's twenty-six endpoints for that model may serve it.
+   *
+   * The release audit of 2170cf35ea5e (run 35842725923, 23.09.2026) lost 51 of
+   * 60 consultant calls and both CISO calls. Every failure had the same shape:
+   * HTTP 200, `finish_reason=length`, `completion_tokens` exactly equal to
+   * `reasoning_tokens` at about 4,600 — far below the 24,000 and 40,000 asked
+   * for — and no content at all. Reproduced here on 23.09.2026 at 5,000,
+   * 20,000 and 100,000 characters of input: four for four, always the same
+   * endpoint, once with a single character of content and otherwise none.
+   *
+   * It was not the budget and not the model. The *identical* request — same
+   * model, same system prompt, same strict schema, same 100,000 characters —
+   * answered with 6,930 to 10,202 characters of valid JSON and
+   * `finish_reason=stop` on Fireworks (four of four) and on CoreWeave, and with
+   * 19,085 characters on Together. The endpoint that served every failed call
+   * is OpenInference: the cheapest of the twenty-six ($0.10/$0.50 against
+   * Fireworks' $0.22/$0.66) and the only one quantised to fp4. OpenRouter sorts
+   * by price, and `allow_fallbacks: false` then pinned the audit to it — and a
+   * 200 with an empty body is not an error OpenRouter would fall back from, so
+   * nothing could have rescued it.
+   *
+   * Hence a named list instead of a price ranking. The model is unchanged; only
+   * the machine serving it is now one of three this repository has measured, in
+   * the order it measured them. The floor under coverage
+   * (`minDeepReadRatio`) is what catches the next endpoint that goes bad
+   * without being on this list's radar.
+   */
+  providers: ['Fireworks', 'CoreWeave', 'Together'],
+  /**
+   * OpenRouter list price per million tokens of the first provider above
+   * (Fireworks, 23.09.2026). It was 0.15/0.60 while the audit routed by price;
+   * leaving it there would under-reserve the budget, and the calls the cap then
+   * dropped at the end of the run would be the ones `minDeepReadRatio` fails on.
+   */
+  price: { input: 0.22, output: 0.66 },
   /**
    * Estimated budget per main release, checked before every call against what was actually spent (as in the QA
    * agent). The whole repository is about 1.2 million input tokens in some fifty calls — under $1 at worst — so the cap catches outliers,
@@ -31,6 +65,17 @@ export const AUDIT = {
   batchChars: 100_000,
   /** Calls for all consultants together; what does not fit is named in the report as not read in depth. */
   maxConsultantCalls: 60,
+  /**
+   * The share of the files this run planned to read in depth that must actually
+   * have been read, or the audit fails instead of reporting (scripts/security/audit.mjs).
+   *
+   * Not a taste: 10 of 51 failed calls at v2.14.0 produced an audit whose
+   * headline was "Risiko kritisch" on files the model never saw (PINNED below),
+   * so a fifth lost is already too much. 0.85 leaves room for the odd provider
+   * hiccup and stops everything past that. Files beyond `maxConsultantCalls`
+   * are not counted against it — those are named in the report, by design.
+   */
+  minDeepReadRatio: 0.85,
   /** Includes reasoning tokens. */
   consultantOutputTokens: 24_000,
   cisoOutputTokens: 40_000,

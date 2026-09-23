@@ -18,7 +18,7 @@ import { isPublicByDesign, publicByDesignValues } from '../qa/lib/config.mjs';
 import { callReviewer } from '../qa/lib/openrouter.mjs';
 import { redactSecrets } from '../qa/lib/redact.mjs';
 import { AUDIT_PUBLIC_PEM, sealFor } from './lib/envelope.mjs';
-import { askAgainIfTruncated, cisoMessage, coerceConsultant, coerceConsultantFindings, coerceFindings, coerceNarrative, consultantMessage, narrativeMessage, numbered, planBatches, reportWithoutNarrative, runConsultants, withCountedCoverage } from './lib/pipeline.mjs';
+import { askAgainIfTruncated, cisoMessage, coerceConsultant, coerceConsultantFindings, coerceFindings, coerceNarrative, consultantMessage, deepReadCoverage, narrativeMessage, numbered, planBatches, reportWithoutNarrative, runConsultants, withCountedCoverage } from './lib/pipeline.mjs';
 import { surfaceMap } from './lib/surface.mjs';
 import { AUDIT, CONSULTANTS, CONSULTANT_SCHEMA, FINDINGS_SCHEMA, NARRATIVE_SCHEMA } from './lib/team.mjs';
 
@@ -100,9 +100,12 @@ async function main() {
     fits: (committed, chars) => committed + estimate(chars, consultantTokens) + cisoReserve <= cap,
     worstCase: (chars) => estimate(chars, consultantTokens),
     call: ({ system, user }) =>
-      callReviewer({ apiKey, system, user, schema: CONSULTANT_SCHEMA, effort: SELF_TEST ? 'low' : AUDIT.consultantEffort, model: AUDIT.model, maxTokens: consultantTokens, name: 'security_consultant', title: 'Clean-Core.io Security Audit', timeoutMs: AUDIT.requestTimeoutMs, retries: AUDIT.rateLimitRetries, retryDelayMs: AUDIT.rateLimitDelayMs, coerce: coerceConsultant }),
+      callReviewer({ apiKey, system, user, schema: CONSULTANT_SCHEMA, effort: SELF_TEST ? 'low' : AUDIT.consultantEffort, model: AUDIT.model, providers: AUDIT.providers, maxTokens: consultantTokens, name: 'security_consultant', title: 'Clean-Core.io Security Audit', timeoutMs: AUDIT.requestTimeoutMs, retries: AUDIT.rateLimitRetries, retryDelayMs: AUDIT.rateLimitDelayMs, coerce: coerceConsultant }),
   });
   const { results } = run;
+  // Why the calls that failed, failed — a fixed word per reason and a count, never
+  // a message and never a finding (lib/pipeline.mjs failureReason).
+  for (const { reason, count } of run.failureReasons) console.warn(`Consultant calls failed: ${reason} ×${count}`);
   const notRead = [...plan.notRead, ...run.notReviewed];
   const unread = new Set(notRead.map((n) => n.path));
   // A file in parts counts once, and only if none of its parts failed.
@@ -124,6 +127,29 @@ async function main() {
     notes: SELF_TEST ? 'Selbsttest: nur zwei Dateien, ein Berater.' : `Tiefe Lektüre durch fünf Berater in ${plan.batches.length} Aufrufen; Testdateien nur über das Muster-Scanning der Angriffsflächenkarte.`,
   };
 
+  // An audit that read a sixth of what it set out to read is not an audit.
+  //
+  // Until now the only thing that could stop the run was both CISO calls
+  // failing. In run 35842725923 (23.09.2026) 51 of 60 consultant calls failed,
+  // and had either CISO call come back, a report would have gone out under the
+  // CISO's name with a verdict on the ninth of the code that was read — the
+  // coverage numbers are in the sealed report, but they are three integers
+  // beside an executive summary that reads like a full audit. The precedent is
+  // on record: at v2.14.0 ten of fifty-one calls failed and the model rated
+  // three findings `kritisch` on files it never received (lib/team.mjs PINNED).
+  //
+  // The floor is on what this run planned to read, not on the repository: files
+  // beyond the `maxConsultantCalls` limit are a designed limitation, named in
+  // the report, and never enter a batch. So this measures exactly the loss that
+  // is not by design. Below the floor the job fails loudly and no mail goes out;
+  // a re-run costs minutes and a few cents, a believed report costs more.
+  const planned = deepReadCoverage({ batches: plan.batches, deepRead });
+  if (planned.ratio < AUDIT.minDeepReadRatio) {
+    throw new Error(
+      `too little was read for this to be an audit (${planned.read} of ${planned.planned} planned files, ${Math.round(planned.ratio * 100)}% < ${Math.round(AUDIT.minDeepReadRatio * 100)}%; consultant calls ${results.length}, failed ${run.failedCalls})`,
+    );
+  }
+
   const cisoUser = clean('outgoing message', `${CISO_FINDINGS_TASK}\n\n${cisoMessage({ surface, results, coverage, notRead, failed: run.failedCalls, readLines })}`);
   // Each CISO call is asked once more when its 200 arrives with a body that is
   // not JSON (askAgainIfTruncated in lib/pipeline.mjs says why, and
@@ -135,7 +161,7 @@ async function main() {
   let verifiedNote = '';
   try {
     verified = await askAgainIfTruncated(
-      () => callReviewer({ apiKey, system: clean('outgoing message', brief), user: cisoUser, schema: FINDINGS_SCHEMA, effort: SELF_TEST ? 'low' : AUDIT.cisoEffort, model: AUDIT.model, maxTokens: cisoTokens, timeoutMs: AUDIT.requestTimeoutMs, retries: AUDIT.rateLimitRetries, retryDelayMs: AUDIT.rateLimitDelayMs, coerce: (answer) => ({ findings: coerceFindings(answer), notes: String(answer?.notes || '') }) }),
+      () => callReviewer({ apiKey, system: clean('outgoing message', brief), user: cisoUser, schema: FINDINGS_SCHEMA, effort: SELF_TEST ? 'low' : AUDIT.cisoEffort, model: AUDIT.model, providers: AUDIT.providers, maxTokens: cisoTokens, timeoutMs: AUDIT.requestTimeoutMs, retries: AUDIT.rateLimitRetries, retryDelayMs: AUDIT.rateLimitDelayMs, coerce: (answer) => ({ findings: coerceFindings(answer), notes: String(answer?.notes || '') }) }),
       { retries: CISO_TRUNCATED_RETRIES, warn: (n) => console.warn(`CISO findings call ${n} answered with a body that is not JSON — asking once more.`) },
     );
     verifiedNote = verified.review.notes || '';
@@ -171,7 +197,7 @@ async function main() {
   let narrative = null;
   try {
     narrative = await askAgainIfTruncated(
-      () => callReviewer({ apiKey, system: clean('outgoing message', brief), user: narrativeUser, schema: NARRATIVE_SCHEMA, effort: SELF_TEST ? 'low' : AUDIT.cisoEffort, model: AUDIT.model, maxTokens: SELF_TEST ? 6_000 : AUDIT.narrativeOutputTokens, timeoutMs: AUDIT.requestTimeoutMs, retries: AUDIT.rateLimitRetries, retryDelayMs: AUDIT.rateLimitDelayMs, coerce: coerceNarrative }),
+      () => callReviewer({ apiKey, system: clean('outgoing message', brief), user: narrativeUser, schema: NARRATIVE_SCHEMA, effort: SELF_TEST ? 'low' : AUDIT.cisoEffort, model: AUDIT.model, providers: AUDIT.providers, maxTokens: SELF_TEST ? 6_000 : AUDIT.narrativeOutputTokens, timeoutMs: AUDIT.requestTimeoutMs, retries: AUDIT.rateLimitRetries, retryDelayMs: AUDIT.rateLimitDelayMs, coerce: coerceNarrative }),
       { retries: CISO_TRUNCATED_RETRIES, warn: (n) => console.warn(`CISO narrative call ${n} answered with a body that is not JSON — asking once more.`) },
     );
   } catch (err) {

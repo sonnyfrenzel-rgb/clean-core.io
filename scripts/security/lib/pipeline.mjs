@@ -128,6 +128,7 @@ export function splitText(text, limit) {
 export async function runConsultants({ batches, messageFor, call, fits, worstCase, capUsd, concurrency = 1 }) {
   const results = new Array(batches.length);
   const notReviewed = [];
+  const failures = new Map();
   const started = new Set();
   const pending = new Set();
   let spent = 0;
@@ -166,7 +167,10 @@ export async function runConsultants({ batches, messageFor, call, fits, worstCas
         } catch (err) {
           failedCalls++;
           spent += worst;
-          for (const f of batches[i].files) notReviewed.push({ path: f.path, reason: `model call failed: ${String(err?.message || err).split('\n')[0]}` });
+          const message = String(err?.message || err).split('\n')[0];
+          const code = failureReason(message);
+          failures.set(code, (failures.get(code) || 0) + 1);
+          for (const f of batches[i].files) notReviewed.push({ path: f.path, reason: `model call failed: ${message}` });
         } finally {
           inFlight -= worst;
           pending.delete(task);
@@ -180,7 +184,59 @@ export async function runConsultants({ batches, messageFor, call, fits, worstCas
   batches.forEach((b, i) => {
     if (!started.has(i)) for (const f of b.files) notReviewed.push({ path: f.path, reason: `outside the $${capUsd} cost cap` });
   });
-  return { results: results.filter(Boolean), notReviewed, failedCalls, spent };
+  return {
+    results: results.filter(Boolean),
+    notReviewed,
+    failedCalls,
+    spent,
+    failureReasons: [...failures].map(([reason, count]) => ({ reason, count })).sort((a, b) => b.count - a.count),
+  };
+}
+
+/**
+ * How much of what the run planned to read in depth it actually read.
+ *
+ * `planned` is every file that entered a batch, pinned references included —
+ * not the repository. Files beyond `maxConsultantCalls` never enter one: they
+ * are a designed limitation, named in the report, and counting them here would
+ * make the floor fire on a healthy run. So this measures only the coverage that
+ * was lost to failure, which is the thing audit.mjs refuses to publish.
+ */
+export function deepReadCoverage({ batches, deepRead }) {
+  const planned = new Set(batches.flatMap((b) => [...b.files.map((f) => f.path), ...(b.pinned || []).map((p) => p.path)]));
+  const read = deepRead.filter((p) => planned.has(p)).length;
+  return { planned: planned.size, read, ratio: planned.size ? read / planned.size : 1 };
+}
+
+/**
+ * One of a closed set of words for why a call failed — the only thing about a
+ * failure that may reach the public Actions log.
+ *
+ * The release audit of 2170cf35ea5e (run 35842725923, 23.09.2026) lost 51 of 60
+ * consultant calls and said so in a single number at the very end. Between
+ * 09:25 and 10:30 the job printed nothing at all, so the reason had to be
+ * reconstructed from OpenRouter's billing. That is a broken log.
+ *
+ * The obvious repair — print the message `callReviewer` threw — is refused
+ * here even though that module promises fixed text plus numbers
+ * (scripts/qa/lib/openrouter.mjs, header). `runConsultants` catches every
+ * throw, not only that module's, and a public repository is the wrong place to
+ * find out that some other error carried a fragment of the code under review.
+ * So the message is mapped onto a fixed vocabulary and only the word and the
+ * count are printed: enough to tell a dead provider from a rate limit from a
+ * timeout, and incapable of carrying a finding.
+ */
+export function failureReason(message) {
+  const text = String(message || '');
+  if (/no review content/.test(text)) return /finish_reason=length/.test(text) ? 'no-content-cut-at-length' : 'no-content';
+  if (/not valid JSON/.test(text)) return /finish_reason=length/.test(text) ? 'not-json-cut-at-length' : 'not-json';
+  if (/did not match the schema/.test(text)) return 'schema-mismatch';
+  if (/response that is not JSON/.test(text)) return 'body-not-json';
+  if (/did not answer within/.test(text)) return 'timeout';
+  if (/could not be reached/.test(text)) return 'unreachable';
+  const status = /OpenRouter answered HTTP (\d{3})/.exec(text);
+  if (status) return `http-${status[1]}`;
+  return 'other';
 }
 
 /** The attack-surface entries a consultant needs for the files of one call — plus, for the rules, every client write. */

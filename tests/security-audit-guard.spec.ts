@@ -28,7 +28,9 @@ test.describe('the agent has no tools and a small budget', () => {
     const { AUDIT } = await lib('team.mjs');
     // Sonny, 15.09.2026: DeepSeek V4.1 Flash replaces Claude Fable 5.1 in Claude Code.
     expect(AUDIT.model).toBe('deepseek/deepseek-v4.1-flash');
-    expect(AUDIT.price).toEqual({ input: 0.15, output: 0.6 });
+    // 0.15/0.60 until 23.09.2026, when the audit stopped routing by price: the
+    // cheapest endpoint was the one answering nothing (AUDIT.providers).
+    expect(AUDIT.price).toEqual({ input: 0.22, output: 0.66 });
     expect(AUDIT.maxCostUsd).toBeLessThanOrEqual(3);
     expect(AUDIT.selfTestCostUsd).toBeLessThanOrEqual(0.2);
     // Read, never imported: audit.mjs is an entry point and would start an audit.
@@ -729,8 +731,63 @@ test.describe('the audit pipeline', () => {
     // All three model calls wait the same way: the two consultants' and the two
     // halves of the CISO's answer.
     expect(src.match(/retries: AUDIT\.rateLimitRetries, retryDelayMs: AUDIT\.rateLimitDelayMs, coerce: /g)).toHaveLength(3);
-    // Longer waits, not a looser policy: the request still allows no fallback and no provider that keeps prompts.
-    expect(read('scripts/qa/lib/openrouter.mjs')).toContain("provider: { allow_fallbacks: false, data_collection: 'deny' }");
+    // Longer waits, not a looser policy: without a named provider list the
+    // request still allows no fallback, and no caller may reach a provider that
+    // keeps prompts — with a list or without one.
+    const or = read('scripts/qa/lib/openrouter.mjs');
+    expect(or).toContain("{ allow_fallbacks: false, data_collection: 'deny' }");
+    expect(or.match(/data_collection: 'deny'/g)).toHaveLength(2);
+    expect(or).not.toMatch(/data_collection: '(?!deny)/);
+    // Fallbacks are allowed only inside an explicit allowlist of providers, so
+    // the model itself can still never be substituted.
+    expect(or).toMatch(/allow_fallbacks: true, data_collection: 'deny', only: providers/);
+  });
+
+  test('the audit names the providers that may serve its model, because price alone picked one that answers nothing', async () => {
+    /**
+     * Run 35842725923 (2170cf35ea5e, 23.09.2026): 51 of 60 consultant calls and
+     * both CISO calls came back HTTP 200 with `finish_reason=length`,
+     * `completion_tokens` equal to `reasoning_tokens` at about 4,600 — a fraction
+     * of the 24,000 and 40,000 asked for — and no content.
+     *
+     * Measured against OpenRouter on 23.09.2026 with the real system prompt and
+     * the real strict schema: OpenInference failed four times out of four, at
+     * 5,000, 20,000 and 100,000 characters of input. The identical request
+     * answered with valid JSON and `finish_reason=stop` on Fireworks (4/4),
+     * CoreWeave (2/2) and Together (1/1). OpenInference is the cheapest of the
+     * twenty-six endpoints and the only fp4 one; OpenRouter sorts by price and
+     * `allow_fallbacks: false` pinned the audit to it.
+     */
+    const { AUDIT } = await lib('team.mjs');
+    expect(AUDIT.providers.length).toBeGreaterThan(1);
+    expect(AUDIT.providers).not.toContain('OpenInference');
+    // The price the budget reserves is the first provider's, not the one the
+    // price ranking used to find — otherwise the cap drops the calls at the end
+    // of the run and the coverage floor fails on the arithmetic, not the model.
+    expect(AUDIT.price).toEqual({ input: 0.22, output: 0.66 });
+
+    // Every model call of the audit goes through the list; none of them routes by price.
+    const src = read('scripts/security/audit.mjs');
+    expect(src.match(/providers: AUDIT\.providers,/g), 'all three model calls name the providers').toHaveLength(3);
+    expect(src.match(/callReviewer\(\{/g)).toHaveLength(3);
+
+    // And the list reaches the request body as OpenRouter's own field.
+    const { buildRequest } = await import(path.resolve(ROOT, 'scripts/qa/lib/openrouter.mjs'));
+    const body = buildRequest({ system: 's', user: 'u', schema: {}, effort: 'medium', model: AUDIT.model, maxTokens: 10, providers: AUDIT.providers });
+    expect(body.provider.only).toEqual(AUDIT.providers);
+    expect(body.provider.data_collection).toBe('deny');
+    expect(body.model).toBe(AUDIT.model);
+    // No list, no change: the QA and UX reviewers keep the request they had.
+    expect(buildRequest({ system: 's', user: 'u', schema: {}, effort: 'medium', model: 'x', maxTokens: 10 }).provider).toEqual({ allow_fallbacks: false, data_collection: 'deny' });
+
+    // The budget still fits after the price rise, or the run ends in the floor instead of a report.
+    const perCall = (AUDIT.batchChars / 3.5 / 1e6) * AUDIT.price.input + (AUDIT.consultantOutputTokens / 1e6) * AUDIT.price.output;
+    const ciso = (AUDIT.cisoInputChars / 3.5 / 1e6) * AUDIT.price.input + (AUDIT.cisoOutputTokens / 1e6) * AUDIT.price.output
+      + (AUDIT.narrativeInputChars / 3.5 / 1e6) * AUDIT.price.input + (AUDIT.narrativeOutputTokens / 1e6) * AUDIT.price.output;
+    const worst = perCall * AUDIT.maxConsultantCalls + ciso;
+    expect(worst, 'the worst case of a full run no longer fits the cap').toBeLessThan(AUDIT.maxCostUsd);
+    // And it fits with room, so a batch that redaction grew does not start dropping calls.
+    expect(worst).toBeLessThan(AUDIT.maxCostUsd * 0.8);
   });
 
   test('consultants run a few at a time, the cap counts every call still running, and a failure stops nobody else', async () => {
@@ -809,6 +866,102 @@ test.describe('the audit pipeline', () => {
     calls = 0;
     await expect(askAgainIfTruncated(async () => { calls++; throw truncated(); }, { retries: 0 })).rejects.toThrow();
     expect(calls).toBe(1);
+  });
+
+  test('a failed consultant call leaves a reason in the log — a word from a closed list, never a message', async () => {
+    /**
+     * Run 35842725923 (2170cf35ea5e, 23.09.2026) lost 51 of 60 consultant calls
+     * and printed nothing between 09:25 and 10:30; the only trace was
+     * `failed 51` in the line that ended the job. The cause had to be
+     * reconstructed from OpenRouter's billing.
+     *
+     * The repository is public, so the repair may not print the thrown message:
+     * `runConsultants` catches every throw, not only the fixed text
+     * `scripts/qa/lib/openrouter.mjs` promises. A closed vocabulary can name the
+     * cause and cannot carry a finding.
+     */
+    const { runConsultants, failureReason } = await lib('pipeline.mjs');
+
+    // Every message the model call can throw maps onto a word; none of them is the message.
+    const cases: [string, string][] = [
+      ['OpenRouter returned no review content (finish_reason=length, completion_tokens=4624, reasoning_tokens=4624, max_tokens=40000).', 'no-content-cut-at-length'],
+      ['OpenRouter returned no review content (finish_reason=content_filter, completion_tokens=12, reasoning_tokens=0, max_tokens=40000).', 'no-content'],
+      ['The review was not valid JSON cut off at max_tokens (finish_reason=length, completion_tokens=1, reasoning_tokens=1, max_tokens=24000).', 'not-json-cut-at-length'],
+      ['The review was not valid JSON despite the schema (finish_reason=stop, completion_tokens=1, reasoning_tokens=1, max_tokens=24000).', 'not-json'],
+      ['The review did not match the schema at findings.0.severity.', 'schema-mismatch'],
+      ['OpenRouter returned a response that is not JSON.', 'body-not-json'],
+      ['OpenRouter did not answer within 20 min.', 'timeout'],
+      ['OpenRouter could not be reached.', 'unreachable'],
+      ['OpenRouter answered HTTP 429', 'http-429'],
+      ['OpenRouter answered HTTP 402 (credit limit of the key reached)', 'http-402'],
+    ];
+    for (const [message, code] of cases) expect(failureReason(message), message).toBe(code);
+
+    // A word can carry no code, whatever the error said.
+    const leak = failureReason('const AUDIT_SIGNING_KEY = "hunter2"; // app/api/runs/create/route.ts:88');
+    expect(leak).toBe('other');
+    for (const [, code] of [...cases, ['', leak]] as [string, string][]) expect(code).toMatch(/^[a-z0-9-]+$/);
+
+    // And the run counts them per reason, so the log can say what happened and how often.
+    const batches = Array.from({ length: 5 }, (_, i) => ({ consultant: 'appsec-api', files: [{ path: `a${i}.ts` }], pinned: [] }));
+    let n = 0;
+    const run = await runConsultants({
+      batches,
+      messageFor: () => ({ system: 's', user: 'u' }),
+      call: async () => {
+        n++;
+        if (n <= 3) throw new Error('OpenRouter returned no review content (finish_reason=length, completion_tokens=4624, reasoning_tokens=4624, max_tokens=24000).');
+        if (n === 4) throw new Error('OpenRouter did not answer within 20 min.');
+        return { review: { findings: [] }, usage: { cost: 0.01 } };
+      },
+      fits: () => true,
+      worstCase: () => 0.01,
+      capUsd: 5,
+    });
+    expect(run.failedCalls).toBe(4);
+    expect(run.failureReasons).toEqual([{ reason: 'no-content-cut-at-length', count: 3 }, { reason: 'timeout', count: 1 }]);
+
+    // The audit prints exactly that, and nothing else about a failure.
+    const src = read('scripts/security/audit.mjs');
+    expect(src).toMatch(/for \(const \{ reason, count \} of run\.failureReasons\) console\.warn\(`Consultant calls failed: \$\{reason\} ×\$\{count\}`\);/);
+  });
+
+  test('an audit that lost most of its calls fails instead of reporting', async () => {
+    /**
+     * `audit.mjs` used to stop only when *both* CISO calls failed. In run
+     * 35842725923 nine of sixty consultant calls came back; had either CISO call
+     * answered, a sealed report would have gone to Sonny with a verdict on a
+     * seventh of the code and three integers of coverage buried in it. At
+     * v2.14.0 a fifth of the calls was already enough to produce
+     * "Risiko kritisch" on files nobody had read.
+     */
+    const { deepReadCoverage } = await lib('pipeline.mjs');
+    const { AUDIT } = await lib('team.mjs');
+
+    // The floor is a real floor: below every audit, above nothing.
+    expect(AUDIT.minDeepReadRatio).toBeGreaterThan(0.5);
+    expect(AUDIT.minDeepReadRatio).toBeLessThan(1);
+
+    const batches = [
+      { files: [{ path: 'a.ts' }, { path: 'b.ts' }], pinned: [{ path: 'firestore.rules' }] },
+      { files: [{ path: 'c.ts' }, { path: 'd.ts' }], pinned: [{ path: 'firestore.rules' }] },
+    ];
+    // Pinned files count once, on both sides of the fraction.
+    expect(deepReadCoverage({ batches, deepRead: ['a.ts', 'b.ts', 'c.ts', 'd.ts', 'firestore.rules'] })).toEqual({ planned: 5, read: 5, ratio: 1 });
+    // The run that failed: one batch of two came back.
+    const lost = deepReadCoverage({ batches, deepRead: ['a.ts', 'b.ts', 'firestore.rules'] });
+    expect(lost).toEqual({ planned: 5, read: 3, ratio: 0.6 });
+    expect(lost.ratio).toBeLessThan(AUDIT.minDeepReadRatio);
+    // A file the plan never contained cannot be counted towards coverage of it.
+    expect(deepReadCoverage({ batches, deepRead: ['a.ts', 'b.ts', 'c.ts', 'd.ts', 'firestore.rules', 'not-planned.ts'] }).read).toBe(5);
+    // Files left out by the call limit never enter a batch, so a healthy run is not punished for them.
+    expect(deepReadCoverage({ batches: [], deepRead: [] }).ratio).toBe(1);
+
+    // And the audit throws on it, before it pays for a CISO that would dress it up as a report.
+    const src = read('scripts/security/audit.mjs');
+    expect(src).toMatch(/const planned = deepReadCoverage\(\{ batches: plan\.batches, deepRead \}\);/);
+    expect(src).toMatch(/if \(planned\.ratio < AUDIT\.minDeepReadRatio\) \{\s+throw new Error\(/);
+    expect(src.indexOf('AUDIT.minDeepReadRatio')).toBeLessThan(src.indexOf('const cisoUser'));
   });
 
   test('the CISO call is reserved before any consultant spends, and the audit runs its consultants through the bounded runner', () => {

@@ -42,7 +42,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
  *               image_url) for a reviewer that also looks at screenshots
  * @param model  pinned per agent; defaults to the QA reviewer
  */
-export function buildRequest({ system, user, schema, effort, model = QA_MODEL, maxTokens = BUDGET.maxOutputTokens, name = 'qa_review' }) {
+export function buildRequest({ system, user, schema, effort, model = QA_MODEL, maxTokens = BUDGET.maxOutputTokens, name = 'qa_review', providers = null }) {
   return {
     model,
     messages: [
@@ -57,7 +57,17 @@ export function buildRequest({ system, user, schema, effort, model = QA_MODEL, m
     // No fallback models: a review from a different model than the one pinned is
     // not the review that was asked for. No provider that stores or trains on
     // prompts: the delta is public code, but the reasoning about its weaknesses is not.
-    provider: { allow_fallbacks: false, data_collection: 'deny' },
+    //
+    // `providers`, when given, is an ordered allowlist of OpenRouter *providers*
+    // for that same pinned model, and fallbacks are then allowed inside it. That
+    // is not the thing the paragraph above forbids: the model is unchanged, only
+    // the machine serving it moves, and it moves only among names this repository
+    // has measured. Without the list OpenRouter picks by price, which is how the
+    // release audit of 2170cf35ea5e ended up on an fp4 endpoint that answered 200
+    // with reasoning and no content (scripts/security/lib/team.mjs providers).
+    provider: providers
+      ? { allow_fallbacks: true, data_collection: 'deny', only: providers }
+      : { allow_fallbacks: false, data_collection: 'deny' },
   };
 }
 
@@ -85,9 +95,9 @@ const STATUS_HINTS = {
  *                 severity written in English or a number sent as text. The result is still validated; coercion
  *                 fixes types and empties an absent field, it never writes a statement.
  */
-export async function callReviewer({ apiKey, system, user, schema, effort, model, maxTokens, name, title = 'Clean-Core.io QA Review', fetchImpl = fetch, timeoutMs = BUDGET.requestTimeoutMs, retries = BUDGET.retries, retryDelayMs = (attempt) => 5_000 * (attempt + 1), earlyFailureMs = EARLY_FAILURE_MS, coerce = null }) {
+export async function callReviewer({ apiKey, system, user, schema, effort, model, maxTokens, name, providers = null, title = 'Clean-Core.io QA Review', fetchImpl = fetch, timeoutMs = BUDGET.requestTimeoutMs, retries = BUDGET.retries, retryDelayMs = (attempt) => 5_000 * (attempt + 1), earlyFailureMs = EARLY_FAILURE_MS, coerce = null }) {
   if (!apiKey) throw new Error('OPENROUTER_API_KEY is not set — the review cannot run.');
-  const body = JSON.stringify(buildRequest({ system, user, schema, effort, model, maxTokens, name }));
+  const body = JSON.stringify(buildRequest({ system, user, schema, effort, model, maxTokens, name, providers }));
 
   for (let attempt = 0; ; attempt++) {
     const controller = new AbortController();
