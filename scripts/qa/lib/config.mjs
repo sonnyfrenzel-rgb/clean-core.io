@@ -105,10 +105,32 @@ export const BUDGET = {
  * $3 of input and at most $6 of output across its calls; high reasoning effort needs the larger output
  * allowance. It never gates a release; its findings are fixed on `dev` like any other (docs/QA-REVIEW-LOOP.md §10).
  */
+/**
+ * The full review of a release. `maxCostUsd` is the ceiling that matters;
+ * `maxBatches` exists so a runaway plan cannot sit in a queue for hours.
+ *
+ * Measured on v2.14.0 (3131afa): the run spent $5.5388 in 14 calls at effort
+ * high — $0.396 a call — and stopped on the call count with **470 files and
+ * 5.4 MB listed as NOT REVIEWED**, among them every component of the new
+ * process map, the process revisions, the process states and the workspace
+ * shell. That is roughly half the code base, and the half that is newest. The
+ * money was not what stopped it: $4.46 of the approved $10 was left.
+ *
+ * So the blunt limit moves and the ceiling does not. 24 calls at the measured
+ * rate is about $9.50, inside the cap, and `withinBudget` still refuses the
+ * first call that would cross $10 — the spend cannot run past the number Sonny
+ * set, whatever this number says. Expect a release review to cost around $9.50
+ * rather than $5.50 from now on.
+ *
+ * It is still not full coverage: all 10.8 MB would need about 28 calls, roughly
+ * $11, and that is a decision about the cap rather than about this line. What
+ * the run does not read, it names — the NOT REVIEWED list above is how this was
+ * found at all.
+ */
 export const FULL_BUDGET = {
   maxCostUsd: 10,
   maxBatchChars: 400_000,
-  maxBatches: 14,
+  maxBatches: 24,
   maxOutputTokens: 48_000,
   requestTimeoutMs: 20 * 60_000,
   effort: 'high',

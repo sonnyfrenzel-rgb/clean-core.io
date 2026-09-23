@@ -955,7 +955,14 @@ test.describe('the reference cases, seeded and opened', () => {
 
   const STAMP = Date.now();
   const EMAIL = `register-${STAMP}@cleancore-test.io`;
-  const PASSWORD = 'PreservationRegister123!';
+  // The `test-` prefix is the project's marker for a fixture, and the secret
+  // scanner in `scripts/qa/lib/redact.mjs` reads it: without it, a 24-character
+  // literal assigned to a name containing PASSWORD is a committed credential,
+  // and the full review of v2.14.0 duly reported this line as `critical` —
+  // "rotate the credential first". It was right about the shape and wrong about
+  // the thing. The fixture carries the marker rather than the detector carrying
+  // an exception for `tests/`, where a real pasted key should still be caught.
+  const PASSWORD = 'test-preservation-register-emulator';
   const projectIdOf = (rc: ReferenceCase) => `${rc.id}-${STAMP}`;
 
   test.beforeAll(async () => {

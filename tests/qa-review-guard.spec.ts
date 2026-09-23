@@ -931,6 +931,42 @@ test.describe('fewer rounds for the same quality (Sonny, 15.09.2026)', () => {
     const value = require('crypto').randomBytes(32).toString('hex');
     expect(redactSecrets(`const SIGNING_KEY = '${value}';`).text).not.toContain(value);
   });
+
+  test('a storage key named …_KEY is a name, not a credential — and the files that raised five criticals are clean', async () => {
+    const { redactSecrets } = await lib('redact.mjs');
+
+    // The five `critical` findings of the full review of v2.14.0 (3131afa), each
+    // marked RE-RAISED after refutation: the register remembers a refutation,
+    // this scanner does not, so a suppression that lives only in the register
+    // puts the same five criticals at the head of every release report.
+    for (const file of ['components/TermsReacceptGate.tsx', 'lib/coach-marks.ts', 'lib/first-look.ts', 'scripts/verify-pack.mjs', 'tests/preservation-register.spec.ts'])
+      expect(redactSecrets(read(file)).hits, `${file} still reports a committed credential`).toEqual([]);
+
+    // The shapes, named rather than only tested through those files, so this
+    // keeps holding when the files change.
+    const clean = [
+      "const COACH_MARK_STORAGE_KEY = 'cc.workspace.coachMarks.dismissed';",
+      "const FIRST_LOOK_SEEN_KEY = 'cc.workspace.firstLook.seen';",
+      'const DECLINE_KEY = `cc.terms.declined.${TERMS_VERSION}`;',
+      "const TRUSTED_KEY_URL = 'https://clean-core.io/.well-known/clean-core-io-signing.json';",
+    ];
+    for (const line of clean) expect(redactSecrets(line).hits, line).toEqual([]);
+
+    // And the half that matters more: a value with a credential's shape is still
+    // reported under exactly the same names. A JWT has dots too; its segments
+    // mix letters and digits, which a word does not.
+    const secrets = [
+      "const API_KEY = 'AIzaSyD9aBcDeFgHiJkLmNoPqRsTuVwXyZ0123456';",
+      "const SESSION_TOKEN = 'eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.dBjftJeZ4CVPmB92K27uhbUJU1p1r0';",
+      "AUDIT_SIGNING_KEY = 'k8Fq2Lm9Xp4Rt7Yv1Zb6Nc3Hd5Jg0Ws8Ae2Bu4Ci';",
+      "const PASSWORD = 'Sup3rSecretProdPassw0rdValue!!';",
+    ];
+    for (const line of secrets) {
+      const { hits, text } = redactSecrets(line);
+      expect(hits.length, `a credential under a secret name went unreported: ${line.slice(0, 30)}…`).toBeGreaterThan(0);
+      expect(text).toContain('[REDACTED:');
+    }
+  });
 });
 
 test.describe('the full review of a release on main', () => {
@@ -979,6 +1015,23 @@ test.describe('the full review of a release on main', () => {
     expect(files.map((f: { path: string }) => f.path)).toEqual(['app/api/x/route.ts']);
     expect(files[0]).toMatchObject({ lines: 2, tags: ['security'] });
     expect(numbered('first\r\nsecond')).toBe('1|first\n2|second');
+  });
+
+  test('the call count of a release review is a number the cap can pay for', async () => {
+    // The two limits on a full review pull in opposite directions, and only one
+    // of them protects the bill. `maxCostUsd` does; `maxBatches` is there so a
+    // runaway plan cannot sit in a queue for hours. On v2.14.0 the call count
+    // was what stopped the run — at $5.5388 of an approved $10, with 470 files
+    // and 5.4 MB reported as NOT REVIEWED, which is about half the code base and
+    // the newest half. Raising it is right; raising it past what the cap can pay
+    // for would buy nothing, because `withinBudget` would refuse the extra calls
+    // and the review would end in the same place with a different reason.
+    const { FULL_BUDGET } = await lib('config.mjs');
+    const MEASURED_COST_PER_CALL = 0.3956; // $5.5388 / 14 calls, effort high, 3131afa
+    expect(FULL_BUDGET.maxBatches * MEASURED_COST_PER_CALL).toBeLessThanOrEqual(FULL_BUDGET.maxCostUsd);
+    // And the count is worth having: one call reads at most `maxBatchChars`, so
+    // this many of them has to reach past the 5.6 MB the 14-call run managed.
+    expect(FULL_BUDGET.maxBatches * FULL_BUDGET.maxBatchChars).toBeGreaterThan(5_600_000);
   });
 
   test('a failed batch is named as not reviewed, the others still count, and the cap sees its worst case', async () => {
