@@ -46,6 +46,45 @@ function skeletonOf(file: string) {
   return buildProcessSkeleton(readFileSync(join(EXAMPLES, file), 'utf8'));
 }
 
+/**
+ * Every `SkeletonNodeKind` of 2.3, and the kind the comparability table decides
+ * it by — a compile-time exhaustiveness check: 2.3 growing a kind breaks the
+ * build here instead of landing silently as "not classified" in the product.
+ *
+ * All but one row is the identity. `parallel-gateway` (roadmap 2.17 (a)) is the
+ * exception: `lib/abap/element-comparability.ts` does not name it yet, and 2.17
+ * must not write in that file — the class table is 7.8's and 2.15 reads its
+ * condition rule, so a kind added there is a decision taken in its own step.
+ * Until then a parallel gateway is classified as the gateway it is, and the
+ * translation stands here where a reader can see it rather than in a cast.
+ */
+const COMPARABLE_KIND: Record<SkeletonNodeKind, ComparableElementKind> = {
+  start: 'start',
+  end: 'end',
+  'end-error': 'end-error',
+  gateway: 'gateway',
+  'parallel-gateway': 'gateway',
+  loop: 'loop',
+  'sub-process': 'sub-process',
+  'call-activity': 'call-activity',
+  transaction: 'transaction',
+  'call-opaque': 'call-opaque',
+  task: 'task',
+  'service-task': 'service-task',
+  'send-task': 'send-task',
+  'user-task': 'user-task',
+  'business-rule-task': 'business-rule-task',
+  read: 'read',
+  write: 'write',
+  output: 'output',
+  'error-boundary': 'error-boundary',
+};
+
+/** A skeleton node in the shape the class table reads, kind translated once. */
+function comparable(node: { id: string; kind: SkeletonNodeKind; label?: string; detail?: Record<string, unknown> }) {
+  return { id: node.id, kind: COMPARABLE_KIND[node.kind], label: node.label, detail: node.detail };
+}
+
 /** Every element of the eight examples, with its verdict. */
 function allVerdicts() {
   const rows: Array<{
@@ -59,7 +98,7 @@ function allVerdicts() {
   }> = [];
   for (const file of exampleFiles()) {
     const skeleton = skeletonOf(file);
-    const verdicts = classifyElements(skeleton.nodes, skeleton.edges);
+    const verdicts = classifyElements(skeleton.nodes.map(comparable), skeleton.edges);
     for (const node of skeleton.nodes) {
       const verdict = verdicts.get(node.id)!;
       rows.push({ file, id: node.id, kind: node.kind, label: node.label, ...verdict });
@@ -95,10 +134,20 @@ test.describe('7.8 / §16 V6 — comparability per element', () => {
     // that was already drawn — which is the only reason the total moved at all.
     // Nothing changed class: `technical` 110 → 105 is those 5 elements and no
     // reclassification, gateway → boundary is technical either way.
+    //
+    // 302 since roadmap 2.17 (b), and the two movements in it are separable.
+    // **+15 `structural`**: fifteen `LOOP AT` bodies became regions of their own
+    // and a region ends at an end event — `end` 61 → 76 and nothing else.
+    // **3 elements from `technical` to `business-comparable`**: three call sites
+    // that used to collapse into the one read or the one write their routine
+    // does are built around a `LOOP AT`, and a routine that repeats a step per
+    // row is a phase rather than one step, so they stand as `sub-process`
+    // (`read` 30 → 27, `write` 23 → 20, `sub-process` 22 → 25). Not one element
+    // was reclassified by the table; the skeleton drew different elements.
     expect(byClass).toEqual({
-      structural: 91,
-      technical: 105,
-      'business-comparable': 67,
+      structural: 106,
+      technical: 102,
+      'business-comparable': 70,
       unknown: 24,
     });
     // 48 gateways: 7 still technical by condition (14,6 %, from 27 of 68 before
@@ -112,10 +161,11 @@ test.describe('7.8 / §16 V6 — comparability per element', () => {
     // stands between the call and the `IF` (`BAPI_PO_CREATE1`), so the return
     // code is the table read's and not the call's.
     expect(byKind['gateway']).toEqual({ technical: 7, 'business-comparable': 18, unknown: 23 });
-    // The shapes the reference holding almost never draws — 61 end events, 10
+    // The shapes the reference holding almost never draws — 76 end events (61
+    // before 2.17 (b) gave fifteen loop bodies a plane, and a plane an end), 10
     // error ends, 19 data objects, 21 boundary events (6 before 2.15) — and not
     // one of them is business-comparable.
-    expect(byKind['end']).toEqual({ structural: 61 });
+    expect(byKind['end']).toEqual({ structural: 76 });
     expect(byKind['end-error']).toEqual({ technical: 10 });
     expect(byKind['output']).toEqual({ structural: 19 });
     expect(byKind['error-boundary']).toEqual({ technical: 21 });
@@ -174,7 +224,7 @@ test.describe('7.8 / §16 V6 — comparability per element', () => {
       '  WRITE / \'done\'.',
     ].join('\n');
     const skeleton = buildProcessSkeleton(withOpaqueCall);
-    const verdicts = classifyElements(skeleton.nodes, skeleton.edges);
+    const verdicts = classifyElements(skeleton.nodes.map(comparable), skeleton.edges);
     const calls = skeleton.nodes.filter((n) => n.kind === 'call-opaque');
     expect(calls.length).toBeGreaterThan(0);
     for (const node of calls) {
@@ -194,13 +244,17 @@ test.describe('7.8 / §16 V6 — comparability per element', () => {
     const ends = skeleton.nodes.filter((n) => n.kind === 'end' || n.kind === 'end-error');
     const errorEnds = skeleton.nodes.filter((n) => n.kind === 'end-error');
     console.log(`ZLEGACY: ${ends.length} end events (${errorEnds.length} with an error definition) of ${skeleton.nodes.length} nodes`);
-    expect(ends.length).toBe(27);
+    // 27 until roadmap 2.17 (b): nine of this program's eleven `LOOP AT` bodies
+    // are levels of their own now, and a level ends at an end event anchored at
+    // its `ENDLOOP`.
+    expect(ends.length).toBe(36);
     expect(errorEnds.length).toBe(4);
     // 105 since 2.15: one of this program's five technical gateways sat behind a
     // `CALL FUNCTION … EXCEPTIONS` that already carried a boundary event, and
-    // the two of them are now one element.
-    expect(skeleton.nodes.length).toBe(105);
-    const verdicts = classifyElements(skeleton.nodes, skeleton.edges);
+    // the two of them are now one element. 114 since 2.17 (b) — nine loop-body
+    // regions, each with an end event of its own.
+    expect(skeleton.nodes.length).toBe(114);
+    const verdicts = classifyElements(skeleton.nodes.map(comparable), skeleton.edges);
     for (const node of ends) {
       expect(verdicts.get(node.id)!.mayCarryStandardCandidate).toBe(false);
     }
@@ -217,28 +271,9 @@ test.describe('7.8 / §16 V6 — comparability per element', () => {
   });
 
   test('every SkeletonNodeKind of 2.3 is named in the table', () => {
-    // A compile-time exhaustiveness check: 2.3 growing a kind breaks the build
-    // here instead of landing silently as "not classified" in the product.
-    const kinds: Record<SkeletonNodeKind, ComparableElementKind> = {
-      start: 'start',
-      end: 'end',
-      'end-error': 'end-error',
-      gateway: 'gateway',
-      loop: 'loop',
-      'sub-process': 'sub-process',
-      'call-activity': 'call-activity',
-      transaction: 'transaction',
-      'call-opaque': 'call-opaque',
-      task: 'task',
-      'service-task': 'service-task',
-      'send-task': 'send-task',
-      'user-task': 'user-task',
-      'business-rule-task': 'business-rule-task',
-      read: 'read',
-      write: 'write',
-      output: 'output',
-      'error-boundary': 'error-boundary',
-    };
+    // The table is `COMPARABLE_KIND` at the head of this file; this is what it
+    // buys — every kind the skeleton can write reaches a row of the class table.
+    const kinds = COMPARABLE_KIND;
     for (const kind of Object.values(kinds)) {
       const verdict = classifyElement({ id: 'x', kind }, { conditions: ['ls_a-b = 1'] });
       expect(verdict.reason).not.toContain('is not classified');
@@ -337,7 +372,7 @@ test.describe('the condition rule — written here so 2.15 can use it', () => {
     for (const file of exampleFiles()) {
       const skeleton = skeletonOf(file);
       const kindById = new Map<string, ComparableElementKind>();
-      for (const node of skeleton.nodes) kindById.set(node.id, node.kind);
+      for (const node of skeleton.nodes) kindById.set(node.id, COMPARABLE_KIND[node.kind]);
       const outgoing = new Map<string, string[]>();
       const incoming = new Map<string, ComparableElementKind[]>();
       for (const edge of skeleton.edges) {

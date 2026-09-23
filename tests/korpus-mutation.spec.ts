@@ -26,7 +26,19 @@ import type { SkeletonEdge, SkeletonNode, ProcessSkeleton } from '../lib/abap/pr
  * bleiben offen, bis das Prüfpaket vorliegt.
  */
 
-type Probe = { name: string; why: string; mutate: SkeletonMutation };
+type Probe = {
+  name: string;
+  why: string;
+  mutate: SkeletonMutation;
+  /**
+   * Auf `false`, wenn die Verfälschung keinen übereinstimmenden Fall mehr zum
+   * Fallen bringen **kann**, weil keiner der grünen Fälle das Konstrukt noch
+   * enthält. Die Probe misst dann, dass der Vergleicher die Verfälschung
+   * überhaupt sieht — schwächer, und mit einer Begründung an der Probe, die
+   * sagt warum.
+   */
+  green?: false;
+};
 
 const withNodes = (skeleton: ProcessSkeleton, nodes: SkeletonNode[]): ProcessSkeleton => ({ ...skeleton, nodes });
 const withEdges = (skeleton: ProcessSkeleton, edges: SkeletonEdge[]): ProcessSkeleton => ({ ...skeleton, edges });
@@ -35,6 +47,20 @@ const PROBES: Probe[] = [
   {
     name: 'S1 — die Rücksprungkante wird eine gewöhnliche Sequenz',
     why: 'Ohne `loop-back` ist eine Schleife im Export ein Faden, der zurückzeigt, und kein Zyklus (2.17 b).',
+    // **Seit Roadmap 2.17 (b) kann diese Probe keinen grünen Fall mehr fällen,
+    // und das ist gemessen, nicht vermutet.** Ein `LOOP AT` über eine Tabelle,
+    // dessen Körper den Block nicht verlässt, ist keine Schleife mit
+    // Rücksprungkante mehr, sondern eine Mehrfach-Instanz-Aktivität, die ihren
+    // Körper enthält. Im Korpus bleiben genau vier `loop-back`-Kanten übrig, in
+    // CC-030 und CC-048 — beide stimmen in der Facette `skelett` ohnehin nicht
+    // überein. Von den 16 grünen Fällen trägt **keiner** noch einen
+    // Schleifenknoten; der einzige, der einen trug, war CC-007, und der ist mit
+    // 2.17 (b) selbst auf `disagree` gegangen (siehe `tests/korpus/baseline.json`).
+    // Die Probe misst deshalb, dass der Vergleicher die Verfälschung überhaupt
+    // noch sieht. Sie hier grün zu machen, indem man eine andere Verfälschung
+    // unter denselben Namen setzt, wäre die Empfindlichkeitsprobe an der eigenen
+    // Erfindung gemessen — genau das, was der Kopf dieser Datei verbietet.
+    green: false,
     mutate: (skeleton) =>
       withEdges(
         skeleton,
@@ -96,9 +122,28 @@ test('der ungestörte Lauf hat überhaupt etwas Grünes, an dem sich rot werden 
   expect(GREEN.size, 'ohne einen einzigen übereinstimmenden Fall misst diese Probe nichts').toBeGreaterThan(5);
 });
 
+const BASE_BY_CASE = new Map(BASE.map((result) => [result.case, result]));
+
 for (const probe of PROBES) {
   test(`${probe.name} wird in der Facette skelett rot`, () => {
     const mutated = compareAll(probe.mutate).filter((result) => result.class === 'skelett');
+
+    if (probe.green === false) {
+      // Kein grüner Fall trägt das Konstrukt mehr. Gemessen wird, dass der
+      // Vergleicher die Verfälschung sieht: mindestens ein Fall berichtet nach
+      // der Verfälschung etwas anderes als davor.
+      const moved = mutated.filter((result) => {
+        const before = BASE_BY_CASE.get(result.case);
+        return before != null && (before.state !== result.state || before.evidence !== result.evidence);
+      });
+      expect(
+        moved.map((result) => result.case),
+        `${probe.why}\nDer Vergleicher sieht diese Verfälschung an keinem einzigen Fall mehr — weder an ` +
+          `einem übereinstimmenden noch an einem abweichenden. Dann misst diese Probe nichts.`,
+      ).not.toEqual([]);
+      return;
+    }
+
     const fell = mutated.filter((result) => GREEN.has(result.case) && result.state === 'disagree');
     expect(
       fell.length,

@@ -145,38 +145,37 @@ function isReconstructed(element: { trace: { status: string | null; lineStart: n
 }
 
 /**
- * The skeleton kinds 2.17 will write for a multi-instance activity.
+ * **Rule 2 needed no exception in the end — roadmap 2.17 (b), and this is the
+ * record of why.**
  *
- * Empty today on purpose: 2.6 draws `LOOP AT` as a cycle with a real gateway, so
- * there is no kind to name yet. When 2.17 lands, the kind it writes goes in
- * here and rule 2 falls silent at those gateways — one line, one place.
+ * This is where 2.17 was going to hang a "do not report a multi-instance
+ * activity" test, because until then 2.6 drew every `LOOP AT` as an exclusive
+ * gateway with a cycle behind it and rule 2 reported six of them on our own
+ * reconstruction of the 1.000-line example — the product warning about a
+ * decision it had drawn where the code takes none.
+ *
+ * 2.17 (b) did not silence the rule, it stopped drawing the gateway: a
+ * `LOOP AT` whose body stays inside the block is now a collapsed
+ * `subProcess` carrying `multiInstanceLoopCharacteristics`
+ * (`lib/abap/process-skeleton.ts`, `bodyStaysInLoop`). A sub-process is not in
+ * `DECIDING_TAGS`, so rule 2 never looks at it, and the count on the
+ * 1.000-line example went 6 → 0 without this file gaining a line.
+ *
+ * What still reaches rule 2 is a real cycle — `DO`, `WHILE`,
+ * `SELECT … ENDSELECT` and a `LOOP AT` the body leaves — and there the hint is
+ * right: those gateways carry no condition because the source writes none.
  */
-const MULTI_INSTANCE_KINDS: ReadonlySet<string> = new Set<string>();
-
-/**
- * **The place where 2.17 hangs its exception in.**
- *
- * Step 2.17 turns `LOOP AT` from a cycle into a multi-instance marker. From then
- * on a gateway that only closes a loop is not a decision at all, and rule 2 must
- * not report it: this predicate is where that test goes, and it is the only
- * place rule 2 asks.
- *
- * Today it answers false for every element, deliberately, because 2.17 is not
- * built and nothing on an element says "multi-instance". The six hints rule 2
- * produces on our own reconstruction of the 1.000-line example are *all six*
- * `LOOP AT` gateways — `tests/process-editor.spec.ts` pins the number at 6 — and
- * they disappear with 2.17, not before. Defining them away now would hide the
- * finding instead of fixing it.
- */
-function isMultiInstance(element: { trace: { kind: string | null } | null }): boolean {
-  const kind = element.trace?.kind;
-  return kind != null && MULTI_INSTANCE_KINDS.has(kind);
-}
 
 /** A lane as the file states it. */
 interface ParsedLane {
   id: string;
   name: string;
+  /**
+   * True when the lane carries the trace 2.6 writes. Roadmap 2.16 reconstructs
+   * a lane from four kinds of evidence in the code and gives it a line anchor,
+   * and that changes the **wording** of the hint, never whether there is one.
+   */
+  reconstructed: boolean;
 }
 
 /**
@@ -189,10 +188,16 @@ interface ParsedLane {
  */
 function parseLanes(xml: string): ParsedLane[] {
   const out: ParsedLane[] = [];
-  for (const match of xml.matchAll(/<(?:\w+:)?lane\b([^>]*)>/g)) {
-    const id = /\bid\s*=\s*"([^"]*)"/.exec(match[1])?.[1] ?? '';
-    const name = /\bname\s*=\s*"([^"]*)"/.exec(match[1])?.[1] ?? '';
-    if (id) out.push({ id, name });
+  // The opening tag carries id and name; what stands between it and the closing
+  // tag carries the trace. A lane 2.16 reconstructed has one, a lane somebody
+  // drew in the editor of 3.1 has nothing to point at and carries none.
+  const LANE = /<(?:\w+:)?lane\b([^>]*?)\/>|<(?:\w+:)?lane\b([^>]*?)>([\s\S]*?)<\/(?:\w+:)?lane>/g;
+  for (const match of xml.matchAll(LANE)) {
+    const attrs = match[1] ?? match[2] ?? '';
+    const body = match[3] ?? '';
+    const id = /\bid\s*=\s*"([^"]*)"/.exec(attrs)?.[1] ?? '';
+    const name = /\bname\s*=\s*"([^"]*)"/.exec(attrs)?.[1] ?? '';
+    if (id) out.push({ id, name, reconstructed: /status\s*=\s*"reconstructed"/.test(body) });
   }
   return out;
 }
@@ -268,7 +273,6 @@ export function cleanCoreHints(input: CleanCoreHintInput): ProcessHint[] {
   }
   for (const element of parsed.elements) {
     if (!DECIDING_TAGS.has(element.tag)) continue;
-    if (isMultiInstance(element)) continue;
     const branches = outgoing.get(element.id) ?? [];
     if (branches.length < 2) continue;
     // Exactly one branch without a condition is the default branch, and BPMN
@@ -319,7 +323,17 @@ export function cleanCoreHints(input: CleanCoreHintInput): ProcessHint[] {
       severity: 'info',
       elementId: lane.id,
       elementLabel: label,
-      message: `Lane “${label}” is a proposal: nobody has confirmed that this is who does the work.`,
+      // Roadmap 2.16 changed half of this sentence and left the other half
+      // standing. A lane is no longer *Model proposal*: it is reconstructed from
+      // `AUTHORITY-CHECK`, a dynpro, an update task or a destination, it is
+      // named after the token the source writes and it carries a line anchor —
+      // so calling it a proposal is a sentence about it that is no longer true.
+      // What is still true, and is the whole reason rule 3 exists, is that
+      // nobody has confirmed it: §8 of the roadmap forbids a role mandate, and a
+      // lane is the one element of this file that could quietly become one.
+      message: lane.reconstructed
+        ? `Lane “${label}” is reconstructed from the code: nobody has confirmed that this is who does the work.`
+        : `Lane “${label}” is a proposal: nobody has confirmed that this is who does the work.`,
     });
   }
   for (const lane of proposedLanes) {

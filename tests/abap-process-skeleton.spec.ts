@@ -58,14 +58,26 @@ const SHIPPED: Array<[string, number, number, number, number, number, number, nu
   // BP_SYNC 17→16 / 17→15, PO 113→110 / 122→116. Nothing was dropped from the
   // map: every arm of every folded gateway is still a flow, see the 2.15 block
   // at the end of this file.
-  [LEGACY, 105, 127, 23, 4, 19, 323, 6, 1],
-  ['Z_BUSINESS_PARTNER_SYNC.txt', 16, 15, 4, 2, 0, 0, 1, 0],
-  ['Z_EMPLOYEE_EXPENSE_VAL.txt', 12, 13, 2, 1, 0, 0, 1, 0],
-  ['Z_INVOICE_EXTRACTOR.txt', 16, 14, 3, 1, 0, 0, 0, 0],
-  ['Z_MATERIAL_STOCK_CALC.txt', 16, 17, 4, 1, 0, 0, 0, 0],
+  //
+  // Roadmap 2.17 (b) moved them again, and in one direction only. A `LOOP AT`
+  // whose body stays inside the block is no longer a gateway with a cycle behind
+  // it but a multi-instance activity whose **body is a region**, so each such
+  // loop adds one region and one end node for that region and removes its
+  // loop-back edge. A loop whose body draws no element at all — a calculation —
+  // gets no region and no end node: it is §5.8's other half, one activity with
+  // the marker on it. Counted: LEGACY 105→114 nodes / 127→116 edges / 23→32
+  // regions (11 loops, 9 of them with a body that draws something), and one node
+  // and one region per loop everywhere else. Not one step was dropped and not
+  // one was added: every node of every loop body is still in the skeleton, one
+  // plane further in.
+  [LEGACY, 114, 116, 32, 4, 19, 323, 6, 1],
+  ['Z_BUSINESS_PARTNER_SYNC.txt', 17, 14, 5, 2, 0, 0, 1, 0],
+  ['Z_EMPLOYEE_EXPENSE_VAL.txt', 13, 12, 3, 1, 0, 0, 1, 0],
+  ['Z_INVOICE_EXTRACTOR.txt', 17, 13, 4, 1, 0, 0, 0, 0],
+  ['Z_MATERIAL_STOCK_CALC.txt', 18, 15, 6, 1, 0, 0, 0, 0],
   [PO, 110, 116, 23, 1, 13, 147, 0, 0],
   ['Z_ORDER_INTEGRITY_CHECK.txt', 0, 0, 0, 0, 1, 15, 0, 0],
-  ['Z_SALES_ORDER_CREATOR.txt', 12, 12, 2, 1, 0, 0, 1, 0],
+  ['Z_SALES_ORDER_CREATOR.txt', 13, 11, 3, 1, 0, 0, 1, 0],
 ];
 
 test.describe('the eight programs this product ships', () => {
@@ -104,22 +116,36 @@ test.describe('the eight programs this product ships', () => {
     // elements it produces without a model being asked anything.
     expect(countKinds(skeletonOf(LEGACY))).toEqual({
       start: 4,
-      end: 23,
+      // 2.17 (b): 23 → 34. Each of the eleven `LOOP AT` bodies is a region of
+      // its own now, and a region ends at an end node — anchored at its
+      // `ENDLOOP`, which is a line of the source like any other. Nine of the
+      // eleven; the two whose body is a calculation draw no element inside and
+      // get no plane, so they get no end event either.
+      end: 32,
       'end-error': 4,
       // 2.15: 28 → 23. Five gateways here decided on a return code behind a
       // call, a read or a write; four of them became the boundary event on that
       // step (2 → 6), the fifth joined one that was already drawn.
       gateway: 23,
+      // 2.17 (b) does not change how many loops there are, only how they are
+      // drawn: all eleven are `LOOP AT` over a table whose body stays inside
+      // the block, so all eleven carry `detail.multiInstance` and none of them
+      // reaches the export as an exclusive gateway. See the 2.17 block below.
       loop: 11,
-      'sub-process': 7,
+      // 2.17 (b): 7 → 9, and `read` 8 → 7, `write` 4 → 3 with it. `SELECT_ITEMS`
+      // used to collapse to the one read it does and `PERSIST_RUN_LOG` to the
+      // one write; both are built around a `LOOP AT`, and a routine that
+      // iterates a business table is a phase and not a step — §5.8 collapses a
+      // routine that *is* one step, and this one repeats.
+      'sub-process': 9,
       'business-rule-task': 3,
       'service-task': 5,
       'send-task': 2,
       'user-task': 2,
       'error-boundary': 6,
       transaction: 2,
-      read: 8,
-      write: 4,
+      read: 7,
+      write: 3,
       output: 1,
     });
   });
@@ -1288,6 +1314,262 @@ test.describe('roadmap 2.16 — lanes', () => {
     ).not.toContain(111);
     // And no node was added anywhere: the counts are the ones 2.15 left behind.
     expect(skeleton.nodes).toHaveLength(110);
-    expect(skeletonOf(LEGACY).nodes).toHaveLength(105);
+    // 105 → 114 with 2.17 (b) — nine loop-body regions, each with an end event.
+    // `Z_MM_PO_APPROVAL` has no `LOOP AT` at all and is untouched, which is what
+    // makes it the right program for this assertion.
+    expect(skeletonOf(LEGACY).nodes).toHaveLength(114);
+  });
+});
+
+test.describe('roadmap 2.17 — DESIGN.md §5.8 and the code in agreement', () => {
+  /* ---------------- (a) the parallel gateway ---------------- */
+
+  /**
+   * The parallel probe. Two asynchronous calls, a callback that receives the
+   * result, and a `WAIT UNTIL` that holds the caller for both.
+   */
+  const PARALLEL = [
+    'REPORT z_parallel.',
+    'DATA gv_done TYPE i.',
+    'START-OF-SELECTION.',
+    "  CALL FUNCTION 'Z_CC_PRICE' STARTING NEW TASK 'T1'",
+    '    PERFORMING on_end ON END OF TASK.',
+    "  CALL FUNCTION 'Z_CC_STOCK' STARTING NEW TASK 'T2'",
+    '    PERFORMING on_end ON END OF TASK.',
+    '  WAIT UNTIL gv_done >= 2.',
+    "  WRITE / 'both back'.",
+    'FORM on_end USING p_task TYPE clike.',
+    "  RECEIVE RESULTS FROM FUNCTION 'Z_CC_PRICE'.",
+    '  gv_done = gv_done + 1.',
+    'ENDFORM.',
+  ].join('\n');
+
+  const forks = (s: ProcessSkeleton) =>
+    s.nodes.filter((n) => n.kind === 'parallel-gateway' && n.detail?.direction === 'diverging');
+  const joins = (s: ProcessSkeleton) =>
+    s.nodes.filter((n) => n.kind === 'parallel-gateway' && n.detail?.direction === 'converging');
+
+  test('two STARTING NEW TASK and a WAIT UNTIL: one fork, one join, two parallel service tasks', () => {
+    const skeleton = buildProcessSkeleton(PARALLEL);
+    expect(forks(skeleton)).toHaveLength(1);
+    expect(joins(skeleton)).toHaveLength(1);
+
+    const fork = forks(skeleton)[0];
+    const join = joins(skeleton)[0];
+    // Rule 6: three words that stand in the source, and the `WAIT` statement as
+    // the source writes it. Rule 1: both anchored, the fork at the `STARTING`
+    // token of the first call, which is the evidence it is drawn from.
+    expect(fork.label).toBe('STARTING NEW TASK');
+    expect(fork.anchor?.lineStart).toBe(4);
+    expect(fork.anchor?.tokenOffset).toBe(3);
+    expect(join.label).toBe('WAIT UNTIL gv_done >= 2');
+    expect(join.anchor?.lineStart).toBe(8);
+
+    // Two branches, each exactly one asynchronous call, and both join again.
+    const branches = skeleton.edges.filter((e) => e.from === fork.id);
+    expect(branches).toHaveLength(2);
+    const tasks = branches.map((e) => skeleton.nodes.find((n) => n.id === e.to)!);
+    expect(tasks.map((t) => t.kind)).toEqual(['service-task', 'service-task']);
+    expect(tasks.map((t) => t.label)).toEqual(['Z_CC_PRICE', 'Z_CC_STOCK']);
+    for (const task of tasks) expect(task.detail?.startingNewTask).toBe(true);
+    expect(skeleton.edges.filter((e) => e.to === join.id).map((e) => e.from).sort())
+      .toEqual(tasks.map((t) => t.id).sort());
+
+    // A parallel gateway never carries a condition — it is not a decision.
+    for (const edge of skeleton.edges.filter((e) => e.from === fork.id || e.from === join.id)) {
+      expect(edge.condition).toBe('');
+    }
+  });
+
+  test('without WAIT UNTIL there is a fork and no join — the source writes one half', () => {
+    // `DESIGN.md` §5.8 and the reference holding both allow it: of 172 diagrams
+    // with parallelism, 91 carry only one of the two halves. Without the wait
+    // the caller does not wait, so a join would be a sentence the code does not
+    // make. The `RECEIVE RESULTS` in the callback is what still proves the fork.
+    const skeleton = buildProcessSkeleton(PARALLEL.replace('  WAIT UNTIL gv_done >= 2.' + '\n', ''));
+    expect(forks(skeleton)).toHaveLength(1);
+    expect(joins(skeleton)).toHaveLength(0);
+    const fork = forks(skeleton)[0];
+    expect(skeleton.edges.filter((e) => e.from === fork.id)).toHaveLength(2);
+  });
+
+  test('one STARTING NEW TASK stays a service task, and two without a proof stay two', () => {
+    const single = buildProcessSkeleton([
+      'REPORT z_single.',
+      'START-OF-SELECTION.',
+      "  CALL FUNCTION 'Z_CC_PRICE' STARTING NEW TASK 'T1'",
+      '    PERFORMING on_end ON END OF TASK.',
+      "  WRITE / 'started'.",
+      'FORM on_end USING p_task TYPE clike.',
+      "  RECEIVE RESULTS FROM FUNCTION 'Z_CC_PRICE'.",
+      'ENDFORM.',
+    ].join('\n'));
+    expect(single.nodes.filter((n) => n.kind === 'parallel-gateway')).toHaveLength(0);
+    expect(single.nodes.filter((n) => n.kind === 'service-task')).toHaveLength(1);
+
+    // Two calls, but nothing in the source waits for them and no callback takes
+    // a result: §5.8 draws a parallel gateway *only* where the code proves
+    // parallelism, and "two tasks were started" is not that proof.
+    const unproven = buildProcessSkeleton([
+      'REPORT z_noproof.',
+      'START-OF-SELECTION.',
+      "  CALL FUNCTION 'Z_CC_PRICE' STARTING NEW TASK 'T1'.",
+      "  CALL FUNCTION 'Z_CC_STOCK' STARTING NEW TASK 'T2'.",
+      "  WRITE / 'started'.",
+    ].join('\n'));
+    expect(unproven.nodes.filter((n) => n.kind === 'parallel-gateway')).toHaveLength(0);
+    expect(unproven.nodes.filter((n) => n.kind === 'service-task')).toHaveLength(2);
+  });
+
+  test('a step between the two calls means no fork — the branch would be invented', () => {
+    // Which branch would the `UPDATE` belong to? Neither: it runs on the
+    // caller's own line. Picking one would be a sentence the source does not
+    // write, so the calls stay two service tasks in a row, each anchored.
+    const skeleton = buildProcessSkeleton([
+      'REPORT z_between.',
+      'DATA gv_done TYPE i.',
+      'START-OF-SELECTION.',
+      "  CALL FUNCTION 'Z_CC_PRICE' STARTING NEW TASK 'T1'",
+      '    PERFORMING on_end ON END OF TASK.',
+      '  UPDATE vbak SET loekz = 1.',
+      "  CALL FUNCTION 'Z_CC_STOCK' STARTING NEW TASK 'T2'",
+      '    PERFORMING on_end ON END OF TASK.',
+      '  WAIT UNTIL gv_done >= 2.',
+      'FORM on_end USING p_task TYPE clike.',
+      "  RECEIVE RESULTS FROM FUNCTION 'Z_CC_PRICE'.",
+      'ENDFORM.',
+    ].join('\n'));
+    expect(skeleton.nodes.filter((n) => n.kind === 'parallel-gateway')).toHaveLength(0);
+    expect(skeleton.nodes.filter((n) => n.kind === 'service-task')).toHaveLength(2);
+    expect(skeleton.nodes.filter((n) => n.kind === 'write')).toHaveLength(1);
+  });
+
+  /* ---------------- (b) LOOP AT as a multi-instance activity ---------------- */
+
+  const body = (head: string, ...lines: string[]) => buildProcessSkeleton(
+    ['REPORT z_loop.', 'START-OF-SELECTION.', `  ${head}`, ...lines.map((l) => `    ${l}`), '  ENDLOOP.'].join('\n'),
+  );
+
+  test('a LOOP AT whose body stays inside it is one multi-instance activity', () => {
+    const skeleton = body('LOOP AT gt_orders INTO ls_order.', 'UPDATE vbak SET loekz = 1.');
+    const loop = skeleton.nodes.find((n) => n.kind === 'loop')!;
+    expect(loop.detail?.multiInstance).toBe(true);
+    expect(loop.detail?.isSequential).toBe(true);
+    expect(loop.detail?.over).toBe('GT_ORDERS');
+    // The body is a region — the marker sits on the element that contains it.
+    const region = skeleton.regions.find((r) => r.key === loop.expandsTo)!;
+    expect(region.multiInstance).toBe(true);
+    expect(region.kind).toBe('sub-process');
+    expect(skeleton.nodes.filter((n) => n.region === region.key).map((n) => n.kind).sort())
+      .toEqual(['end', 'write']);
+    // And no cycle: nothing flows back into the loop element.
+    expect(skeleton.edges.filter((e) => e.to === loop.id && e.kind === 'loop-back')).toHaveLength(0);
+  });
+
+  test('a body that leaves the block stays a cycle — the exception keeps its argument', () => {
+    // `lib/bpmn/model.ts` decision 2 refused the marker for every loop on this
+    // argument: a sequence flow cannot leave a sub-process boundary. 2.17 keeps
+    // the argument exactly where it holds.
+    const leaves: Array<[string, string]> = [
+      ['EXIT', 'EXIT.'],
+      ['CHECK', 'CHECK ls_order-netwr > 100.'],
+      ['RETURN', 'RETURN.'],
+      ['an error MESSAGE', 'MESSAGE e001(zz).'],
+    ];
+    for (const [name, statement] of leaves) {
+      const skeleton = body('LOOP AT gt_orders INTO ls_order.', 'UPDATE vbak SET loekz = 1.', statement);
+      const loop = skeleton.nodes.find((n) => n.kind === 'loop')!;
+      expect(loop.detail?.multiInstance, `${name} leaves the block`).toBeUndefined();
+      expect(loop.expandsTo, `${name} opens no plane`).toBeUndefined();
+      // No plane means the body stays where it was: beside the loop, in the
+      // region of the entry, which is what makes the loop a cycle rather than a
+      // container.
+      expect(skeleton.nodes.find((n) => n.kind === 'write')?.region, name).toBe(loop.region);
+      expect(skeleton.regions.some((r) => r.multiInstance), name).toBe(false);
+    }
+
+    // And the cycle is really drawn where a path comes back. `EXIT` as the last
+    // statement of the body is the one that does not: it breaks past the loop,
+    // so there is nothing left to flow back — the loop is still a gateway, and
+    // saying otherwise would be pinning a shape the source does not have.
+    const withCheck = body('LOOP AT gt_orders INTO ls_order.', 'UPDATE vbak SET loekz = 1.', 'CHECK ls_order-netwr > 100.');
+    const checkLoop = withCheck.nodes.find((n) => n.kind === 'loop')!;
+    expect(withCheck.edges.some((e) => e.to === checkLoop.id && e.kind === 'loop-back')).toBe(true);
+  });
+
+  test('DO and WHILE stay cycles, and an EXIT in a nested loop leaves that one', () => {
+    for (const head of ['DO 5 TIMES.', 'WHILE lv_done = abap_false.']) {
+      const close = head.startsWith('DO') ? 'ENDDO.' : 'ENDWHILE.';
+      const skeleton = buildProcessSkeleton(
+        ['REPORT z.', 'START-OF-SELECTION.', `  ${head}`, '    UPDATE vbak SET loekz = 1.', `  ${close}`].join('\n'),
+      );
+      const loop = skeleton.nodes.find((n) => n.kind === 'loop')!;
+      expect(loop.detail?.loopKind, head).toBe('standard');
+      expect(loop.detail?.multiInstance, head).toBeUndefined();
+    }
+
+    // `EXIT` acts on the innermost enclosing loop. The `DO` is the one it
+    // leaves; the `LOOP AT` around it never sees it.
+    const nested = buildProcessSkeleton([
+      'REPORT z.', 'START-OF-SELECTION.',
+      '  LOOP AT gt_orders INTO ls_order.',
+      '    DO 3 TIMES.', '      EXIT.', '    ENDDO.',
+      '    UPDATE vbak SET loekz = 1.',
+      '  ENDLOOP.',
+    ].join('\n'));
+    const outer = nested.nodes.find((n) => n.kind === 'loop' && n.label === 'gt_orders')!;
+    const inner = nested.nodes.find((n) => n.kind === 'loop' && n.label === 'DO')!;
+    expect(outer.detail?.multiInstance).toBe(true);
+    expect(inner.detail?.multiInstance).toBeUndefined();
+  });
+
+  test('a LOOP AT whose body draws nothing is one activity, not a plane with an end event alone', () => {
+    // §5.8 gives a calculation no element, so the region would hold an end event
+    // and nothing that reaches it. The other half of the same row answers it:
+    // *eine Aktivität* with the marker.
+    const skeleton = body('LOOP AT gt_orders INTO ls_order.', 'lv_sum = lv_sum + ls_order-netwr.');
+    const loop = skeleton.nodes.find((n) => n.kind === 'loop')!;
+    expect(loop.detail?.multiInstance).toBe(true);
+    expect(loop.expandsTo).toBeUndefined();
+    expect(skeleton.regions.filter((r) => r.multiInstance)).toHaveLength(0);
+    // Every node still has a way in, which is what the empty region broke.
+    const entries = new Set(skeleton.regions.map((r) => r.entryNodeId));
+    for (const node of skeleton.nodes) {
+      if (skeleton.edges.some((e) => e.to === node.id)) continue;
+      expect(entries.has(node.id), `${node.kind} ${node.label} has no incoming flow`).toBe(true);
+    }
+  });
+
+  test('the 1.000-line example: all eleven loops are markers, and nine of them open a plane', () => {
+    const skeleton = skeletonOf(LEGACY);
+    const loops = skeleton.nodes.filter((n) => n.kind === 'loop');
+    expect(loops).toHaveLength(11);
+    expect(loops.filter((n) => n.detail?.multiInstance)).toHaveLength(11);
+    // Measured, not assumed: not one loop of this program leaves its block, and
+    // two of them do nothing a BPMN element stands for.
+    expect(loops.filter((n) => n.expandsTo)).toHaveLength(9);
+    expect(skeleton.edges.filter((e) => e.kind === 'loop-back')).toHaveLength(0);
+    // §5.8's right-hand column, per line: je Auftrag (L423), je Position
+    // (L320), je Kunde (L287).
+    for (const line of [423, 320, 287]) {
+      expect(loops.find((n) => n.anchor?.lineStart === line)?.detail?.multiInstance,
+        `L${line}`).toBe(true);
+    }
+  });
+
+  test('a routine built around a LOOP AT is a phase, not one box', () => {
+    // The body moved one plane in, so the routine around it counts two elements
+    // where it counted twelve. §5.8 collapses a routine that *is* one step; one
+    // that repeats a step per row is not one.
+    const skeleton = skeletonOf(LEGACY);
+    const callSite = (name: string) =>
+      skeleton.nodes.find((n) => n.label === name && n.expandsTo === `form:${name}`);
+    for (const name of ['SELECT_ITEMS', 'PERSIST_RUN_LOG', 'CALCULATE_RISK_SCORES']) {
+      expect(callSite(name)?.collapsed, name).toBe(false);
+    }
+    expect(callSite('SELECT_ITEMS')?.kind).toBe('sub-process');
+    expect(callSite('PERSIST_RUN_LOG')?.kind).toBe('sub-process');
+    // A decision table stays a decision table — only its collapsing changed.
+    expect(callSite('CALCULATE_RISK_SCORES')?.kind).toBe('business-rule-task');
   });
 });

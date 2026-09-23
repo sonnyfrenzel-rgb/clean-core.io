@@ -80,7 +80,23 @@ export type SkeletonNodeKind =
   | 'end-error'
   /** Exclusive gateway — `IF`, `CASE`, and a `CHECK` that is not a run switch. */
   | 'gateway'
-  /** Multi-instance (`LOOP AT`) or standard loop (`DO`, `WHILE`). */
+  /**
+   * Parallel gateway — roadmap 2.17 (a). Two or more `STARTING NEW TASK` calls
+   * that the source proves are waited for or answered: a fork before them, and
+   * a join at the `WAIT UNTIL` when the source writes one. `detail.direction`
+   * says which of the two this node is. Never a decision: it carries no
+   * condition, and `lib/first-look.ts` and `lib/ask-this-case.ts` count
+   * decisions by the kind `gateway`, which is why this is a kind of its own and
+   * not a `gateway` with a flag on it.
+   */
+  | 'parallel-gateway'
+  /**
+   * Loop drawn as a cycle — `DO`, `WHILE`, `SELECT … ENDSELECT`, and a `LOOP AT`
+   * whose body leaves the block (`EXIT`, `RETURN`, an error end). A `LOOP AT`
+   * whose body stays inside it is drawn as a multi-instance activity instead:
+   * same kind, `detail.multiInstance` set, and `expandsTo` the region that holds
+   * the body — roadmap 2.17 (b), see `walkLoop`.
+   */
   | 'loop'
   /** Collapsed sub-process — a `FORM` with an effect of its own. */
   | 'sub-process'
@@ -214,6 +230,13 @@ export interface SkeletonRegion {
   guard?: { condition: string; anchor: NodeAnchor };
   /** Effects that make this routine a step rather than a technical helper. */
   effects?: FormEffect[];
+  /**
+   * The body of a `LOOP AT` drawn as a multi-instance activity — roadmap 2.17
+   * (b). It is a region like a routine's, so everything downstream draws it as
+   * a collapsed sub-process without knowing what opened it; the flag is what
+   * keeps `collapseSmallRegions` from dissolving the marker back into one step.
+   */
+  multiInstance?: boolean;
 }
 
 export type FormEffect =
@@ -442,6 +465,13 @@ const SWITCH_CONSTANTS = new Set([
 const FLOW_BLOCKS = new Set(['if', 'case', 'loop', 'do', 'while', 'select', 'try', 'at', 'provide']);
 
 /**
+ * The flow blocks `walkLoop` opens, and therefore the ones an `EXIT`, a
+ * `CONTINUE` or a `CHECK` inside them acts on (`ctx.loops`). Roadmap 2.17 (b)
+ * asks which loop a statement leaves, and this is the list that answers it.
+ */
+const LOOP_BLOCKS = new Set(['loop', 'do', 'while', 'select']);
+
+/**
  * How many `PERFORM`s deep the walk opens a routine before it says so instead.
  *
  * The walk follows a chain of calls by recursing once per link, so the chain's
@@ -615,6 +645,16 @@ interface Exit {
   condition: string;
   kind: SkeletonEdgeKind;
   reason?: SkeletonEdgeReason;
+}
+
+/** A fork of parallel tasks the walk found in one range — roadmap 2.17 (a). */
+interface ParallelGroup {
+  /** Statement indices of the `STARTING NEW TASK` calls, in source order. */
+  members: number[];
+  /** Statement index of the `WAIT UNTIL` that joins them, or `null` for a fork without one. */
+  joinIndex: number | null;
+  /** Where the walk of the range carries on. */
+  resumeIndex: number;
 }
 
 interface WalkContext {
@@ -1267,12 +1307,142 @@ class SkeletonBuilder {
         continue;
       }
 
+      // Roadmap 2.17 (a), before the single statement: two or more
+      // `STARTING NEW TASK` calls the source proves are waited for are one
+      // fork, not a chain of service tasks.
+      const parallel = this.parallelGroupAt(i, to);
+      if (parallel) {
+        outputRun = null;
+        live = this.walkParallel(parallel, ctx, live);
+        i = parallel.resumeIndex;
+        continue;
+      }
+
       const produced = this.walkStatement(statement, ctx, live, outputRun);
       outputRun = produced.outputRun;
       live = produced.exits;
       i += 1;
     }
     return live;
+  }
+
+  /* ---------------- roadmap 2.17 (a) — parallelism ---------------- */
+
+  /**
+   * `CALL FUNCTION … STARTING NEW TASK` — the one statement ABAP proves
+   * parallelism with.
+   */
+  private isAsyncCall(statement: AbapStatement): boolean {
+    return /^CALL\s+FUNCTION\b/i.test(statement.text)
+      && /\bSTARTING\s+NEW\s+TASK\b/i.test(statement.text);
+  }
+
+  /**
+   * `PERFORMING <form> ON END OF TASK` whose routine receives the result.
+   *
+   * The second of the two proofs 2.17 (a) accepts. The callback alone is not
+   * one: a routine named on the statement says the runtime will call *something*
+   * back, and only a `RECEIVE RESULTS` inside it says the result is taken.
+   */
+  private hasResultCallback(statement: AbapStatement): boolean {
+    const name = /\bPERFORMING\s+'?([\w/]+)'?\s+ON\s+END\s+OF\s+TASK\b/i.exec(statement.text)?.[1];
+    const block = name ? this.formBlocks.get(name.toUpperCase()) : undefined;
+    if (!block) return false;
+    const [from, to] = bodyRange(block);
+    for (let i = from; i <= to; i++) {
+      if (/^RECEIVE\s+RESULTS\b/i.test(this.statements[i].text)) return true;
+    }
+    return false;
+  }
+
+  /**
+   * A fork of parallel tasks starting at `index` — roadmap 2.17 (a), or `null`.
+   *
+   * `DESIGN.md` §5.8 draws a parallel gateway *"nur wo der Code Parallelität
+   * beweist"*, and 2.17 says what that proof is: **two or more**
+   * `STARTING NEW TASK` calls, and either a `WAIT UNTIL` that holds the caller
+   * for them or a `RECEIVE RESULTS` in the routine one of them names
+   * `ON END OF TASK`. A single `STARTING NEW TASK` stays a service task — one
+   * task beside the caller is not a fork of the process.
+   *
+   * **The join is a separate question and needs the `WAIT UNTIL`.** Without one
+   * the caller does not wait, so there is nothing to join at, and the reference
+   * holding writes that shape: of 172 diagrams with parallelism, 91 carry only
+   * one of the two halves. A join this reader added would be a statement about
+   * the program that the program does not make.
+   *
+   * **The calls have to stand together.** Only declarative statements may come
+   * between them, and between the last of them and the `WAIT UNTIL`. A step with
+   * an effect in between means the caller does something on its own line that
+   * this reader would have to put on one branch or another — and picking one
+   * would be a sentence the source does not write. Then there is no fork and the
+   * calls stay what they were: service tasks in a row, each anchored, nothing
+   * lost. Corpus case CC-055 is the standing reminder of what the alternative
+   * costs.
+   */
+  private parallelGroupAt(index: number, to: number): ParallelGroup | null {
+    if (!this.isAsyncCall(this.statements[index])) return null;
+    const members: number[] = [];
+    let i = index;
+    for (; i <= to; i++) {
+      if (this.blockAt.has(i)) break;
+      const statement = this.statements[i];
+      if (DECLARATIVE.has(statement.keyword)) continue;
+      if (!this.isAsyncCall(statement)) break;
+      members.push(i);
+    }
+    if (members.length < 2) return null;
+
+    let joinIndex: number | null = null;
+    for (let j = members[members.length - 1] + 1; j <= to; j++) {
+      if (this.blockAt.has(j)) break;
+      const statement = this.statements[j];
+      if (DECLARATIVE.has(statement.keyword)) continue;
+      if (/^WAIT\b/i.test(statement.text)
+        && (/\bUNTIL\b/i.test(statement.text) || /\bFOR\s+ASYNCHRONOUS\s+TASKS\b/i.test(statement.text))) {
+        joinIndex = j;
+      }
+      break;
+    }
+    if (joinIndex === null && !members.some((m) => this.hasResultCallback(this.statements[m]))) return null;
+
+    return {
+      members,
+      joinIndex,
+      resumeIndex: (joinIndex ?? members[members.length - 1]) + 1,
+    };
+  }
+
+  /**
+   * The fork, its branches and — where the source waits — the join.
+   *
+   * Rule 6 holds for both gateways. The fork is named `STARTING NEW TASK`,
+   * three words that stand in the source, and is anchored at the `STARTING`
+   * token of the first call, which is the evidence it is drawn from; the join
+   * carries the `WAIT` statement as the source writes it, anchored at it. A
+   * parallel gateway carries no condition, here or in the file — it is not a
+   * decision, which is why the kind is `parallel-gateway` and not `gateway`.
+   */
+  private walkParallel(group: ParallelGroup, ctx: WalkContext, incoming: Exit[]): Exit[] {
+    const first = this.statements[group.members[0]];
+    const fork = this.addNode('parallel-gateway', 'STARTING NEW TASK',
+      anchorOf(first, tokenIndexOf(first, /^STARTING$/i)), ctx.region, ctx.container, {
+        detail: { direction: 'diverging', branches: group.members.length },
+      });
+    this.connect(incoming, fork.id);
+
+    const branchExits: Exit[] = [];
+    for (const member of group.members) {
+      branchExits.push(...this.walkStatement(this.statements[member], ctx,
+        [{ from: fork.id, condition: '', kind: 'sequence' }], null).exits);
+    }
+    if (group.joinIndex === null) return branchExits;
+
+    const wait = this.statements[group.joinIndex];
+    const join = this.addNode('parallel-gateway', snippet(wait.text), anchorOf(wait),
+      ctx.region, ctx.container, { detail: { direction: 'converging', branches: group.members.length } });
+    this.connect(branchExits, join.id);
+    return [{ from: join.id, condition: '', kind: 'sequence' }];
   }
 
   private walkBranch(block: Block, ctx: WalkContext, incoming: Exit[]): Exit[] {
@@ -1332,10 +1502,154 @@ class SkeletonBuilder {
     return [...body, { from: gateway.id, condition: '', kind: 'default' }];
   }
 
+  /**
+   * The block kinds that make a `ctx.loops` entry — the ones `walkLoop` opens.
+   * `EXIT`, `CONTINUE` and `CHECK` act on the innermost of them, which is what
+   * `bodyStaysInLoop` has to know.
+   */
+  private innermostLoopBlock(index: number): Block | null {
+    const enclosing = this.structure.enclosing[index] ?? [];
+    for (let i = enclosing.length - 1; i >= 0; i--) {
+      if (LOOP_BLOCKS.has(enclosing[i].kind)) return enclosing[i];
+    }
+    return null;
+  }
+
+  /**
+   * Does the body of this `LOOP AT` stay inside the block — roadmap 2.17 (b)?
+   *
+   * This is the whole criterion of 2.17 (b), and it is asked of the
+   * **statements**, not of the graph: a multi-instance activity contains its
+   * body, and a sequence flow cannot leave a sub-process boundary, so the
+   * marker is only honest where no statement of the body transfers control out
+   * of the loop. `lib/bpmn/model.ts` decision 2 used to refuse the marker for
+   * every loop on exactly that argument; 2.17 keeps the argument and narrows it
+   * to the loops it is actually about.
+   *
+   * Three groups leave, and nothing else does:
+   *
+   * - `RETURN`, `STOP`, `RAISE`, an error `MESSAGE`, `LEAVE PROGRAM`,
+   *   `LEAVE TO TRANSACTION` and a `SUBMIT` that does not come back: each of
+   *   them leaves the routine or the program from wherever it stands;
+   * - `EXIT` and `CHECK` and `CONTINUE` **of this loop** — `walkStatement` and
+   *   `walkCheck` send all three at the innermost enclosing loop, so the ones
+   *   that belong to a loop nested inside this one leave that one, not this;
+   * - nothing else. A gateway, a `PERFORM`, a call, a read, a write and a
+   *   nested loop all come back to the next statement of the body.
+   */
+  private bodyStaysInLoop(block: Block): boolean {
+    for (let i = block.openIndex + 1; i < block.closeIndex; i++) {
+      const statement = this.statements[i];
+      if (DECLARATIVE.has(statement.keyword) || statement.nativeSql) continue;
+      const text = statement.text;
+      if (statement.keyword === 'RETURN' || statement.keyword === 'STOP'
+        || statement.keyword === 'RAISE' || isErrorMessage(text)
+        || /^LEAVE\s+PROGRAM\b/i.test(text) || /^LEAVE\s+TO\s+TRANSACTION\b/i.test(text)) {
+        return false;
+      }
+      if (statement.keyword === 'SUBMIT'
+        && !/\bAND\s+RETURN\b/i.test(text) && !/\bVIA\s+JOB\b/i.test(text)) {
+        return false;
+      }
+      if ((statement.keyword === 'EXIT' || statement.keyword === 'CONTINUE' || statement.keyword === 'CHECK')
+        && this.innermostLoopBlock(i) === block) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  /**
+   * `LOOP AT <table> … ENDLOOP` whose body stays inside it — roadmap 2.17 (b).
+   *
+   * `DESIGN.md` §5.8 draws this as *Mehrfach-Instanz, sequenziell*: one activity
+   * that contains the body and repeats it per row, not a gateway with a cycle
+   * hanging off it. The body becomes a **region** of its own, exactly the way a
+   * `FORM` does, so every reader downstream — the export model, the layout, the
+   * navigation of 2.9 — draws it as a collapsed sub-process without needing to
+   * know that a loop rather than a routine opened it. What makes it a
+   * *multi-instance* sub-process rather than a plain one is `detail`, which
+   * `lib/bpmn/export.ts` turns into `multiInstanceLoopCharacteristics`.
+   *
+   * The anchor is the `LOOP AT` statement and the label is the table token, as
+   * before; the region's end node is anchored at the `ENDLOOP`. No node here
+   * says anything the source does not write (rule 6).
+   */
+  private walkMultiInstanceLoop(
+    block: Block,
+    ctx: WalkContext,
+    incoming: Exit[],
+    table: string,
+  ): Exit[] {
+    const opener = this.statements[block.openIndex];
+    const region: SkeletonRegion = {
+      key: `loop:${table.toUpperCase()}@${opener.lineStart}`,
+      kind: 'sub-process',
+      label: table,
+      anchor: anchorOf(opener),
+      endNodeId: '',
+      entryNodeId: null,
+      multiInstance: true,
+    };
+    this.regions.push(region);
+
+    const node = this.addNode('loop', table, anchorOf(opener), ctx.region, ctx.container, {
+      expandsTo: region.key,
+      detail: {
+        loopKind: 'multi-instance',
+        over: table.toUpperCase(),
+        multiInstance: true,
+        isSequential: true,
+      },
+    });
+    this.connect(incoming, node.id);
+
+    // The body is walked before the region gets an end node, because whether it
+    // needs one is what the walk answers. Nothing in the body can read
+    // `region.endNodeId` on the way: every statement that would — `CHECK`,
+    // `RETURN`, `STOP`, a `SUBMIT` that does not come back — is a statement
+    // `bodyStaysInLoop` has already refused.
+    const before = this.nodes.length;
+    const exits = this.walkRange(block.openIndex + 1, block.closeIndex - 1, {
+      region, container: ctx.container, loops: [], loopBreaks: [],
+    }, []);
+    const body = this.nodes.slice(before).filter((n) => n.region === region.key);
+
+    // **A body that draws nothing gets no plane.** `LOOP AT gt_orders … lv_sum
+    // = lv_sum + ls-netwr … ENDLOOP` is a calculation, and §5.8 gives a
+    // calculation no element — so the region would hold one end event and
+    // nothing to reach it. §5.8 offers the other half of the same row for
+    // exactly this: *eine Aktivität* with the marker on it, no sub-process. The
+    // loop keeps its anchor, its table and its marker and stops expanding.
+    if (!body.length) {
+      this.regions = this.regions.filter((r) => r !== region);
+      delete node.expandsTo;
+      return [{ from: node.id, condition: '', kind: 'sequence' }];
+    }
+
+    const closer = this.statements[block.closeIndex];
+    const end = block.terminated
+      ? this.addNode('end', table, anchorOf(closer), region, ctx.container)
+      : this.addNode('end', table, null, region, ctx.container, {
+        unanchoredReason: `LOOP AT ${table} is not closed by ENDLOOP in this source, so its body has no end to anchor to.`,
+      });
+    region.endNodeId = end.id;
+    region.entryNodeId = body[0].id;
+    this.connect(exits, end.id);
+
+    return [{ from: node.id, condition: '', kind: 'sequence' }];
+  }
+
   private walkLoop(block: Block, ctx: WalkContext, incoming: Exit[]): Exit[] {
     const opener = this.statements[block.openIndex];
     const table = /^LOOP\s+AT\s+([\w/<>]+)/i.exec(opener.text)?.[1];
     const isSelect = block.kind === 'select';
+    // Roadmap 2.17 (b): the default of `DESIGN.md` §5.8 for a `LOOP AT` over a
+    // table, and the exception `lib/bpmn/model.ts` argued for stays where its
+    // argument holds — a body that leaves the block.
+    if (block.kind === 'loop' && table && this.bodyStaysInLoop(block)) {
+      return this.walkMultiInstanceLoop(block, ctx, incoming, table);
+    }
     const tables = isSelect ? selectTables(opener.text) : [];
     const node = isSelect && tables.length
       ? this.addNode('read', tables[0], anchorOf(opener, tokenIndexOf(opener, /^FROM$/i) + 1),
@@ -1819,9 +2133,28 @@ class SkeletonBuilder {
       let changed = false;
       for (const region of this.regions) {
         if (region.kind !== 'sub-process') continue;
+        // Roadmap 2.17 (b): the body of a `LOOP AT` is a region, but it is not a
+        // routine small enough to be one step. Collapsing it would put the
+        // dominant kind of the body on the loop element and take the
+        // multi-instance marker off the only element that can carry it — the one
+        // that contains the body. §5.8 collapses a `FORM`, never a loop.
+        if (region.multiInstance) continue;
         const inner = (inRegion.get(region.key) ?? []).filter((n) => n.id !== region.endNodeId);
         const callers = callersOf.get(region.key) ?? [];
         if (!callers.length) continue;
+        // Roadmap 2.17 (b): a routine that iterates a business table is a phase,
+        // not a step — and that holds for a decision table too. Since the body
+        // of that `LOOP AT` is a region of its own, the routine around it can
+        // count two elements where it used to count ten
+        // (`AUDIT_TRAVEL_EXPENSES` of `Z_EMPLOYEE_EXPENSE_VAL` went from seven
+        // inner nodes to two, `CALCULATE_RISK_SCORES` of the 1.000-line example
+        // from twelve to two), and §5.8's "more than three elements" would fold
+        // a whole iteration into one box. The marker is what says there are
+        // many: a region holding one is never one step.
+        if (inner.some((n) => n.detail?.multiInstance === true)) {
+          for (const caller of callers) caller.collapsed = false;
+          continue;
+        }
         if (callers[0].kind === 'business-rule-task') {
           for (const caller of callers) caller.collapsed = inner.length <= 3;
           continue;

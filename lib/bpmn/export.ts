@@ -4,6 +4,7 @@ import { APP_VERSION } from '../version';
 import { layoutModel, type Bounds, type PlaneLayout, type Point } from './layout';
 import {
   buildExportModel,
+  isMultiInstanceLoop,
   type ExportContainer,
   type ExportModel,
   type ExportNode,
@@ -378,6 +379,13 @@ function flowNode(node: ExportNode, container: ExportContainer, options: BpmnExp
   const attrs: Array<[string, string | undefined]> = [['id', node.id], ['name', node.name]];
   if (node.tag === 'exclusiveGateway') attrs.push(['default', node.defaultFlow]);
   if (node.tag === 'boundaryEvent') attrs.push(['attachedToRef', node.attachedTo]);
+  // Roadmap 2.17 (a). The direction is what the source proves: two or more
+  // `STARTING NEW TASK` make the fork, a `WAIT UNTIL` makes the join — and
+  // `DESIGN.md` §5.8 draws a fork without a join, because the code can write one
+  // without the other.
+  if (node.tag === 'parallelGateway') {
+    attrs.push(['gatewayDirection', node.source.detail?.direction === 'converging' ? 'Converging' : 'Diverging']);
+  }
 
   const children: XmlElement[] = [
     el('bpmn:extensionElements', [], [nodeTrace(node.source, options.sourceFileName, node.fallback ? { fallback: node.fallback } : {})]),
@@ -402,6 +410,16 @@ function flowNode(node: ExportNode, container: ExportContainer, options: BpmnExp
     children.push(el('bpmn:dataOutputAssociation', [['id', a.id]], [textEl('bpmn:targetRef', a.storeRefId)]));
   }
   if (node.error) children.push(el('bpmn:errorEventDefinition', [['id', `${node.id}-error`]]));
+  // Roadmap 2.17 (b): `DESIGN.md` §5.8's *Mehrfach-Instanz, sequenziell*. ABAP
+  // runs the rows of a `LOOP AT` one after another, so `isSequential` is not a
+  // choice — it is what the statement does. The element it sits on is the
+  // collapsed sub-process that **contains** the body, which is the only shape
+  // BPMN gives the marker a meaning on.
+  if (isMultiInstanceLoop(node.source)) {
+    children.push(el('bpmn:multiInstanceLoopCharacteristics', [
+      ['id', `${node.id}-mi`], ['isSequential', true],
+    ]));
+  }
   if (node.inner) children.push(...containerContent(node.inner, options));
 
   return el(`bpmn:${node.tag}`, attrs, children);

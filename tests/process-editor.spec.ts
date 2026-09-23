@@ -75,7 +75,7 @@ function labelsOf(model: ProcessMapModel): Map<string, string> {
  * ------------------------------------------------------------------ */
 
 test.describe('the four rules of roadmap 3.3', () => {
-  test('on the reconstruction they report six decisions and nothing else', () => {
+  test('on the reconstruction they report the two lanes and nothing else', () => {
     const model = exampleModel();
     const hints = cleanCoreHints({
       xml: model.xml,
@@ -85,25 +85,40 @@ test.describe('the four rules of roadmap 3.3', () => {
     const counts = countHints(hints);
 
     // Every element of this example carries a line anchor — the navigation spec
-    // asserts the same 64 of 64 — so the two rules about a missing anchor have
+    // asserts the same 77 of 77 (64 until roadmap 2.17 (b) gave nine loop bodies
+    // a plane of their own) — so the two rules about a missing anchor have
     // nothing to say, and saying nothing is the right answer rather than a gap.
     expect(model.traceability.unanchored).toBe(0);
+    expect(model.traceability.anchored).toBe(77);
     expect(counts.byRule.get(TASK_WITHOUT_ANCHOR) ?? 0).toBe(0);
     expect(counts.byRule.get(DEVIATES_WITHOUT_STATE) ?? 0).toBe(0);
-    expect(counts.byRule.get(LANE_RECONSTRUCTED_ONLY) ?? 0).toBe(0);
 
-    // What it does have to say: six decisions where the code gives no condition
-    // on any branch, so the model does not state what is decided there.
-    expect(counts.byRule.get(GATEWAY_WITHOUT_CONDITION)).toBe(6);
-    expect(counts.total).toBe(6);
+    // **Two numbers moved here, in two different steps, and they are worth
+    // keeping apart.**
+    //
+    // Roadmap 2.16 put a `laneSet` in the file: two lanes, reconstructed from
+    // an `AUTHORITY-CHECK` object and an `IN UPDATE TASK`. Rule 3 reports every
+    // lane nobody has confirmed, so 0 → 2, and it is the rule working rather
+    // than a defect — §8 forbids a role mandate and this is where the file says
+    // so out loud.
+    //
+    // Roadmap 2.17 (b) took the other six away. They were all six `LOOP AT`
+    // gateways: the product warning that a decision it had drawn itself says
+    // nothing, at a place where the code takes no decision at all. 2.17 stopped
+    // drawing the gateway — a `LOOP AT` over a table is a multi-instance
+    // activity now — so 6 → 0 without rule 2 being touched.
+    expect(counts.byRule.get(LANE_RECONSTRUCTED_ONLY)).toBe(2);
+    expect(counts.byRule.get(GATEWAY_WITHOUT_CONDITION) ?? 0).toBe(0);
+    expect(counts.total).toBe(2);
 
-    // A hint is named, readable and points at something that exists.
-    const byId = new Map(model.elements.map((element) => [element.id, element]));
+    // A hint is named and readable. A lane is not a flow node, so it is not in
+    // `model.elements` — the name it carries is the evidence token 2.16 read
+    // out of the source, and the hint has to say it.
+    expect(hints.map((hint) => hint.elementLabel).sort()).toEqual(['UPDATE TASK', 'V_VBAK_VKO']);
     for (const hint of hints) {
       expect(hint.elementId, 'a hint without an element').toBeTruthy();
-      expect(byId.has(hint.elementId as string), `${hint.elementId} is not in the model`).toBe(true);
-      expect(hint.elementLabel).toBe(byId.get(hint.elementId as string)?.label);
       expect(hint.message).toContain(hint.elementLabel);
+      expect(hint.message).toContain('nobody has confirmed');
       expect(hint.message.length).toBeGreaterThan(30);
     }
   });
@@ -117,17 +132,21 @@ test.describe('the four rules of roadmap 3.3', () => {
     );
     const decisions = model.elements.filter((element) => element.tag === 'exclusiveGateway');
 
-    // 17 decisions, 11 of them with a condition on one branch and none on the
-    // other. That is what BPMN means by a default flow and the rule leaves it
-    // alone — a rule that reported all 17 would be a rule nobody reads twice.
-    //
     // 19 and 13 until roadmap 2.15: two of this level's decisions only read a
-    // return code behind a step and are now the boundary event on it. The six
-    // the rule does report are untouched by that — all six are `LOOP AT`
-    // gateways (2.17), and the test above still counts exactly six.
-    expect(decisions).toHaveLength(17);
+    // return code behind a step and became the boundary event on it. 17 and 11
+    // until roadmap 2.17 (b), where the six the rule reported were **all six**
+    // `LOOP AT` gateways and stopped being gateways at all.
+    //
+    // 12 and 12 since: the nine loops left the count, and two routines that used
+    // to collapse into a single step — `SELECT_ITEMS` and `PERSIST_RUN_LOG`,
+    // both built around a `LOOP AT` — now stand as phases and bring four
+    // decisions of their own onto a plane of the file. Every one of the twelve
+    // is quiet, and the assertion below is what makes that mean something: each
+    // of them carries a condition on all but at most one branch, which is what
+    // BPMN calls a default flow and what the rule is written to leave alone.
+    expect(decisions).toHaveLength(12);
     const quiet = decisions.filter((element) => !reported.has(element.id));
-    expect(quiet).toHaveLength(11);
+    expect(quiet).toHaveLength(12);
     for (const element of quiet) {
       const conditions = element.branches.map((branch) => branch.condition);
       expect(
@@ -148,12 +167,14 @@ test.describe('the four rules of roadmap 3.3', () => {
     const model = exampleModel();
     const labels = labelsOf(model);
 
-    // Reconstructed: every one of the six carries a line anchor from 2.6 and
-    // stays the strongest word the list uses.
-    const reconstructed = cleanCoreHints({ xml: model.xml, labels })
-      .filter((hint) => hint.ruleId === GATEWAY_WITHOUT_CONDITION);
-    expect(reconstructed.length).toBeGreaterThan(0);
-    for (const hint of reconstructed) expect(hint.severity).toBe('warn');
+    // Reconstructed: a gateway the engine drew and could not put a condition on
+    // stays the strongest word the list uses. Since 2.17 (b) the 1.000-line
+    // example has none — its six were all `LOOP AT` gateways, and a loop is no
+    // longer a gateway — so the reconstructed half is measured on a drawing
+    // that carries the trace 2.6 writes, further down in this test.
+    expect(
+      cleanCoreHints({ xml: model.xml, labels }).filter((hint) => hint.ruleId === GATEWAY_WITHOUT_CONDITION),
+    ).toEqual([]);
 
     // Modelled: a decision drawn in the editor of 3.1, two branches, neither
     // says what decides. It carries no `cc:trace`, because there is nothing in
@@ -200,7 +221,10 @@ test.describe('the four rules of roadmap 3.3', () => {
     // collects two hints saying the same thing.
     expect(counts.byRule.get(TASK_WITHOUT_ANCHOR)).toBe(1);
     expect(counts.byRule.get(DEVIATES_WITHOUT_STATE)).toBe(1);
-    expect(counts.total).toBe(8);
+    // 8 until 2.16 added the two lanes (→ 10) and 2.17 (b) took the six
+    // `LOOP AT` gateways away (→ 4): the two drawn elements plus the two lanes.
+    expect(counts.total).toBe(4);
+    expect(counts.byRule.get(LANE_RECONSTRUCTED_ONLY)).toBe(2);
 
     const task = hints.find((hint) => hint.elementId === 'Task_hand');
     expect(task?.ruleId).toBe(TASK_WITHOUT_ANCHOR);
@@ -238,11 +262,27 @@ test.describe('the four rules of roadmap 3.3', () => {
     });
     const lanes = hints.filter((hint) => hint.ruleId === LANE_RECONSTRUCTED_ONLY);
 
-    // The lane in the file and the unanchored proposal; the anchored proposal
-    // rests on something in the code and is left alone.
-    expect(lanes.map((hint) => hint.elementLabel).sort()).toEqual(['Operations', 'Sales']);
+    // Four, and they are three different things. `Operations` is a lane drawn
+    // into the file by hand; `Sales` is an unanchored proposal; `UPDATE TASK`
+    // and `V_VBAK_VKO` are the two lanes roadmap 2.16 reconstructs from this
+    // program's own `IN UPDATE TASK` and `AUTHORITY-CHECK OBJECT`. The anchored
+    // proposal `Finance` rests on something in the code and is left alone.
+    expect(lanes.map((hint) => hint.elementLabel).sort())
+      .toEqual(['Operations', 'Sales', 'UPDATE TASK', 'V_VBAK_VKO']);
     for (const hint of lanes) expect(hint.severity).toBe('info');
     expect(lanes.some((hint) => hint.elementLabel === 'Finance')).toBe(false);
+
+    // **What 2.16 shifted in this rule, and what it did not.** A reconstructed
+    // lane is not a proposal any more — it is read out of a statement, named
+    // after the token that statement writes and anchored at its line — so the
+    // hint stopped calling it one. It is still reported, and at the same
+    // strength, because the half of the sentence that matters is the other
+    // half: nobody has confirmed that this is who does the work, and §8 of the
+    // roadmap forbids the product from saying they did.
+    const reconstructed = lanes.find((hint) => hint.elementLabel === 'V_VBAK_VKO');
+    expect(reconstructed?.message).toContain('is reconstructed from the code');
+    expect(reconstructed?.message).toContain('nobody has confirmed');
+    expect(lanes.find((hint) => hint.elementLabel === 'Operations')?.message).toContain('is a proposal');
   });
 
   test('the four rules are the four the roadmap names, and a hint never blocks', () => {
@@ -256,7 +296,9 @@ test.describe('the four rules of roadmap 3.3', () => {
     const model = exampleModel();
     const counts = countHints(cleanCoreHints({ xml: model.xml, labels: labelsOf(model) }));
     // Countable, and the sentence that carries the count says what a hint is not.
-    expect(hintSentence(counts)).toContain('6 check hints');
+    // 6 until 2.16 put two lanes in the file and 2.17 (b) took the six `LOOP AT`
+    // gateways out of it.
+    expect(hintSentence(counts)).toContain('2 check hints');
     expect(hintSentence(counts)).toContain('never stop you saving');
     expect(hintSentence(countHints([]))).toBe('No check hints on this model.');
 
@@ -440,13 +482,15 @@ test.describe('the editor of roadmap 3.1', () => {
     await openMap(page);
     await openEditor(page);
 
-    // The reconstruction's own six decisions are there before anything is drawn,
-    // and the standard rules of bpmnlint arrive beside them.
+    // The reconstruction's own hints are there before anything is drawn, and
+    // the standard rules of bpmnlint arrive beside them. Until 2.17 (b) these
+    // were six `LOOP AT` gateways; they are the two lanes of 2.16 now, which is
+    // what the source half of this file counts too.
     await expect
       .poll(async () => Number(await page.locator('[data-hints-count]').innerText()), { timeout: 60000 })
-      .toBeGreaterThanOrEqual(6);
+      .toBeGreaterThanOrEqual(2);
     await page.locator('[data-hints-toggle]').click();
-    await expect(page.locator(`[data-hint-rule="${GATEWAY_WITHOUT_CONDITION}"]`).first()).toBeVisible();
+    await expect(page.locator(`[data-hint-rule="${LANE_RECONSTRUCTED_ONLY}"]`).first()).toBeVisible();
     // bpmnlint and its rule modules are a dynamic import, so the standard rules
     // arrive after the four. Polled rather than read once: a count taken in the
     // gap would be zero here and non-zero on a machine that compiled faster.

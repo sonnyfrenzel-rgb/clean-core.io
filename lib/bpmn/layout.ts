@@ -67,6 +67,8 @@ const SIZE: Record<BpmnTag, [number, number]> = {
   intermediateCatchEvent: [36, 36],
   boundaryEvent: [36, 36],
   exclusiveGateway: [50, 50],
+  // Roadmap 2.17 (a). A gateway is a gateway on the canvas, whatever it decides.
+  parallelGateway: [50, 50],
   task: [100, 80],
   serviceTask: [100, 80],
   sendTask: [100, 80],

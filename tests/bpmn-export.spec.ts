@@ -10,6 +10,8 @@ import {
 } from '../lib/bpmn/export';
 import { buildExportModel, MAX_NODES } from '../lib/bpmn/model';
 import { escapeAttribute, escapeText, ncName } from '../lib/bpmn/xml';
+import { cleanCoreHints, countHints, GATEWAY_WITHOUT_CONDITION } from '../lib/process-hints';
+import { parseBpmn } from '../lib/process-map';
 
 /**
  * The BPMN export — roadmap 2.6.
@@ -142,14 +144,24 @@ const SHIPPED: Array<[string, number, number, number, number, number, number, nu
   // PO 73→71. The flows drop by two per folded double drawing plus nothing else:
   // both arms survive, they only start one node further up (LEGACY 76→73,
   // BP_SYNC 16→14, PO 82→72).
-  [LEGACY, 64, 73, 7, 8, 8, 1, 1],
-  ['Z_BUSINESS_PARTNER_SYNC.txt', 16, 14, 2, 3, 3, 0, 0],
-  ['Z_EMPLOYEE_EXPENSE_VAL.txt', 12, 13, 1, 2, 0, 0, 0],
-  ['Z_INVOICE_EXTRACTOR.txt', 12, 11, 1, 2, 2, 0, 0],
-  ['Z_MATERIAL_STOCK_CALC.txt', 10, 9, 1, 2, 4, 0, 0],
+  //
+  // Roadmap 2.17 (b) moved every row with a `LOOP AT` in it, and one way: the
+  // loop is a collapsed `subProcess` with the body inside it instead of a
+  // gateway with a cycle, so each loop that has a drawable body adds one plane
+  // and one sub-process, adds the end event of that plane, and takes its
+  // loop-back flow away. `Z_MM_PO_APPROVAL` has no `LOOP AT` and does not move
+  // at all, which is the control. LEGACY 64→77 nodes / 73→74 flows / 7→15
+  // sub-processes / 8→16 planes; the data store count went 8→8 with two
+  // routines that used to collapse into a read and a write now standing as
+  // phases (see `abap-process-skeleton.spec.ts`).
+  [LEGACY, 77, 74, 15, 16, 8, 1, 1],
+  ['Z_BUSINESS_PARTNER_SYNC.txt', 17, 13, 3, 4, 3, 0, 0],
+  ['Z_EMPLOYEE_EXPENSE_VAL.txt', 13, 12, 2, 3, 0, 0, 0],
+  ['Z_INVOICE_EXTRACTOR.txt', 13, 10, 2, 3, 2, 0, 0],
+  ['Z_MATERIAL_STOCK_CALC.txt', 16, 14, 4, 5, 4, 0, 0],
   [PO, 71, 72, 9, 10, 11, 0, 0],
   ['Z_ORDER_INTEGRITY_CHECK.txt', 0, 0, 0, 1, 0, 0, 0],
-  ['Z_SALES_ORDER_CREATOR.txt', 12, 12, 1, 2, 0, 0, 0],
+  ['Z_SALES_ORDER_CREATOR.txt', 13, 11, 2, 3, 0, 0, 0],
 ];
 
 test.describe('the eight programs this product ships', () => {
@@ -363,7 +375,10 @@ test.describe('a syntactically valid model is never presented as an evidenced as
     expect(String(note?.text)).toContain('Not confirmed by anyone, and not evidence of how the process runs in production.');
     // 64 since 2.15: one gateway of this program was drawn twice — once as the
     // boundary event on the call, once as the `IF sy-subrc` behind it.
-    expect(String(note?.text)).toContain('64 of 64 elements carry a line anchor.');
+    // 77 since 2.17 (b): nine `LOOP AT` bodies became planes of their own, and a
+    // plane ends at an end event anchored at its `ENDLOOP`. Still every element
+    // of the file, and still every one of them anchored.
+    expect(String(note?.text)).toContain('77 of 77 elements carry a line anchor.');
     expect(diIndex(parsed.rootElement).get('note-reconstruction')).toBe(1);
 
     // No promise about a target tool (roadmap 4.3 has not happened).
@@ -383,9 +398,19 @@ test.describe('the palette, as BPMN', () => {
     const phase = elements.find((e) => e.$type === 'bpmn:SubProcess' && e.name === 'PROCESS_ACTIONS') as ModdleElement;
     expect(phase.id).toBe('nd-160-0');
     const inside = list<ModdleElement>(phase.flowElements).filter((e) => e.$instanceOf('bpmn:FlowNode'));
-    expect(inside.map((e) => e.name)).toEqual([
-      'PROCESS_ACTIONS', 'LOOP AT gt_orders', '<fs_order>-action', 'IF p_upd = abap_true AND p_bdc = abap_true',
-      'CHANGE_SALES_ORDER_BDC', 'CREATE_LEGACY_REVIEW_TASK', 'UPDATE_LEGACY_LOG_TASK',
+    // 2.17 (b): the phase holds its end event and the iteration, and the
+    // iteration holds what happens per order — one plane deeper, because a
+    // multi-instance marker belongs on the element that **contains** the body.
+    expect(inside.map((e) => e.name)).toEqual(['PROCESS_ACTIONS', 'LOOP AT gt_orders']);
+    const iteration = inside.find((e) => e.name === 'LOOP AT gt_orders') as ModdleElement;
+    expect(iteration.$type).toBe('bpmn:SubProcess');
+    expect(list<ModdleElement>(iteration.loopCharacteristics ? [iteration.loopCharacteristics as ModdleElement] : [])
+      .map((c) => [c.$type, c.isSequential]))
+      .toEqual([['bpmn:MultiInstanceLoopCharacteristics', true]]);
+    const perOrder = list<ModdleElement>(iteration.flowElements).filter((e) => e.$instanceOf('bpmn:FlowNode'));
+    expect(perOrder.map((e) => e.name)).toEqual([
+      '<fs_order>-action', 'IF p_upd = abap_true AND p_bdc = abap_true',
+      'CHANGE_SALES_ORDER_BDC', 'CREATE_LEGACY_REVIEW_TASK', 'UPDATE_LEGACY_LOG_TASK', 'gt_orders',
     ]);
     const plane = list<ModdleElement>(parsed.rootElement.diagrams)
       .map((d) => d.plane as ModdleElement)
@@ -566,14 +591,23 @@ test.describe('the palette, as BPMN', () => {
     const guarded = elements.find((e) => e.name === 'WRITE_LOG') as ModdleElement;
     const into = list<ModdleElement>(guarded.incoming)[0];
     expect((into.conditionExpression as { body: string }).body).toBe('p_log = abap_true');
-    const loop = (list<ModdleElement>(guarded.outgoing)[0].targetRef as ModdleElement);
-    expect(loop.name).toBe('LOOP AT gt');
+    // 2.17 (b): what the guarded step leads to is no longer the loop gateway
+    // above it but the end of the iteration — the `LOOP AT` is a multi-instance
+    // sub-process now, and the last step of its body ends the round. The point
+    // of this test is unchanged and it is the reason decision 7 exists: with
+    // `p_log` off, `WRITE_LOG` does nothing and the round still finishes, so the
+    // file has to carry a second way on. It does.
+    const onwards = (list<ModdleElement>(guarded.outgoing)[0].targetRef as ModdleElement);
+    expect(onwards.$type).toBe('bpmn:EndEvent');
+    expect(onwards.name).toBe('gt');
+    const iteration = elements.find((e) => e.name === 'LOOP AT gt') as ModdleElement;
+    expect(iteration.$type).toBe('bpmn:SubProcess');
 
     const bypass = elements.find((e) => e.$type === 'bpmn:SequenceFlow' && traceOf(e)?.reason === 'guard-bypass') as ModdleElement;
     expect((bypass.sourceRef as ModdleElement).id).toBe((into.sourceRef as ModdleElement).id);
-    expect((bypass.targetRef as ModdleElement).id).toBe(loop.id);
+    expect((bypass.targetRef as ModdleElement).id).toBe(onwards.id);
     expect((bypass.conditionExpression as { body: string }).body).toBe('NOT ( p_log = abap_true )');
-    expect(traceOf(bypass)).toMatchObject({ kind: 'loop-back', bypasses: guarded.id as string });
+    expect(traceOf(bypass)).toMatchObject({ kind: 'conditional', bypasses: guarded.id as string });
     expect(exported.stats.guardBypasses).toBe(1);
   });
 
@@ -618,12 +652,20 @@ test.describe('the palette, as BPMN', () => {
     expect((boundary?.attachedToRef as ModdleElement).$type).toBe('bpmn:ServiceTask');
     expect(list<ModdleElement>(boundary?.eventDefinitions).map((d) => d.$type)).toEqual(['bpmn:ErrorEventDefinition']);
 
-    // A loop is a gateway the body returns to.
+    // 2.17 (b): a `LOOP AT` over a table is a sequential multi-instance
+    // activity, not a gateway the body returns to. `DESIGN.md` §5.8 wrote it
+    // that way from the start — *Mehrfach-Instanz, sequenziell* — and until 2.17
+    // the code did the opposite.
     const loop = elements.find((e) => e.name === 'LOOP AT gt_orders' && traceOf(e)?.container === 'REMOTE_CREDIT_CHECK') as ModdleElement;
-    expect(loop.$type).toBe('bpmn:ExclusiveGateway');
+    expect(loop.$type).toBe('bpmn:SubProcess');
     expect(traceOf(loop)?.loopKind).toBe('multi-instance');
-    const backs = list<ModdleElement>(loop.incoming).filter((f) => traceOf(f)?.kind === 'loop-back');
-    expect(backs).toHaveLength(3);
+    expect(traceOf(loop)?.multiInstance).toBe('true');
+    const marker = loop.loopCharacteristics as ModdleElement | undefined;
+    expect(marker?.$type).toBe('bpmn:MultiInstanceLoopCharacteristics');
+    expect(marker?.isSequential).toBe(true);
+    // Nothing flows back into it any more, here or anywhere in the file.
+    expect(list<ModdleElement>(loop.incoming).filter((f) => traceOf(f)?.kind === 'loop-back')).toHaveLength(0);
+    expect(elements.filter((e) => e.$type === 'bpmn:SequenceFlow' && traceOf(e)?.kind === 'loop-back')).toHaveLength(0);
 
     // DESIGN.md §5.8: reads VBAK, VBAP, KNA1, KNB1, MARA, MARD; writes ZSD_ORD_RISK, ZSD_LEGACY_LOG.
     const stores = list<ModdleElement>(parsed.rootElement.rootElements).filter((r) => r.$type === 'bpmn:DataStore');
@@ -855,13 +897,18 @@ test('the documentation stage exports the skeleton of the signed run, not a mode
 test.describe('roadmap 2.15 — a return code is not an exclusive gateway', () => {
   const TECHNICAL = /\bSY-SUBRC\b|\bSY-TABIX\b|\bIS\s+(?:NOT\s+)?ASSIGNED\b|\bIS\s+(?:NOT\s+)?BOUND\b|\bLINES\s*\(/i;
 
-  test('6 of 41 exclusive gateways in the eight files are purely technical, from 17 of 52', () => {
+  test('6 of 32 exclusive gateways in the eight files are purely technical, from 17 of 52', () => {
     // Counted out of the XML, like every other number in this file, and counted
     // over the whole export rather than over the skeleton: an `exclusiveGateway`
     // is what a reader of the file sees, and `model.ts` draws a loop as one too.
     //
     // 2.15 sets the bar at ≤ 10 % and says that is a setting, not a measured
-    // optimum. **It is not reached: 14,6 %.** The six that are left all fail the
+    // optimum. **It is not reached: 18,8 %** — and 2.17 (b) is why the figure
+    // moved, not a new technical gateway. The numerator is the same six it was;
+    // the denominator lost the nine `LOOP AT` gateways that were never decisions
+    // at all, so 6 of 41 (14,6 %) became 6 of 32 (18,8 %). The old share was the
+    // truer-looking one and the more wrong: it counted iterations as decisions
+    // and read better for it. The six that are left all fail the
     // rule 2.15 writes, and five of them for one reason — the statement that set
     // `sy-subrc` is not the step in front of the branch (`AUTHORITY-CHECK` and
     // `READ TABLE` draw no node at all, `OPEN DATASET` draws an `output`), so
@@ -888,7 +935,7 @@ test.describe('roadmap 2.15 — a return code is not an exclusive gateway', () =
       }
     }
     console.log(`2.15: ${technical} of ${gateways} exclusive gateways in the eight files are purely technical (${(technical / gateways * 100).toFixed(1)} %)`);
-    expect(gateways).toBe(41);
+    expect(gateways).toBe(32);
     expect(technical).toBe(6);
   });
 
@@ -1005,5 +1052,138 @@ test.describe('roadmap 2.16 — lanes in the exported file', () => {
     );
     const { process } = countOf(rootElement);
     expect(list(process.laneSets)).toHaveLength(0);
+  });
+});
+
+
+/* ---------------------------------------------------------------- *
+ * Roadmap 2.17 — DESIGN.md §5.8 and the file in agreement
+ * ---------------------------------------------------------------- */
+
+test.describe('roadmap 2.17 — the palette rows the file did not have', () => {
+  const PARALLEL = [
+    'REPORT z_parallel.',
+    'DATA gv_done TYPE i.',
+    'START-OF-SELECTION.',
+    "  CALL FUNCTION 'Z_CC_PRICE' STARTING NEW TASK 'T1'",
+    '    PERFORMING on_end ON END OF TASK.',
+    "  CALL FUNCTION 'Z_CC_STOCK' STARTING NEW TASK 'T2'",
+    '    PERFORMING on_end ON END OF TASK.',
+    '  WAIT UNTIL gv_done >= 2.',
+    "  WRITE / 'both back'.",
+    'FORM on_end USING p_task TYPE clike.',
+    "  RECEIVE RESULTS FROM FUNCTION 'Z_CC_PRICE'.",
+    '  gv_done = gv_done + 1.',
+    'ENDFORM.',
+  ].join('\n');
+
+  test('(a) the parallel probe is a fork, two service tasks and a join in the file', async () => {
+    const exported = buildBpmnExportFromSource(PARALLEL, { processName: 'Parallel', sourceFileName: 'p.abap' });
+    const parsed = await (await moddle()).fromXML(exported.xml);
+    expect(parsed.warnings.map((w) => w.message)).toEqual([]);
+    const { elements } = countOf(parsed.rootElement);
+
+    const gateways = elements.filter((e) => e.$type === 'bpmn:ParallelGateway');
+    expect(gateways.map((g) => [g.name, g.gatewayDirection])).toEqual([
+      ['STARTING NEW TASK', 'Diverging'],
+      ['WAIT UNTIL gv_done >= 2', 'Converging'],
+    ]);
+    const [fork, join] = gateways;
+    const branches = list<ModdleElement>(fork.outgoing).map((f) => f.targetRef as ModdleElement);
+    expect(branches.map((b) => [b.$type, b.name])).toEqual([
+      ['bpmn:ServiceTask', 'Z_CC_PRICE'],
+      ['bpmn:ServiceTask', 'Z_CC_STOCK'],
+    ]);
+    expect(list<ModdleElement>(join.incoming).map((f) => (f.sourceRef as ModdleElement).id).sort())
+      .toEqual(branches.map((b) => b.id as string).sort());
+
+    // Not a decision: no arm of either gateway carries a condition, and both
+    // carry an anchor like every other element of the file.
+    for (const gateway of gateways) {
+      for (const flow of list<ModdleElement>(gateway.outgoing)) {
+        expect(flow.conditionExpression).toBeUndefined();
+      }
+      expect(Number(traceOf(gateway)?.lineStart)).toBeGreaterThan(0);
+      expect(traceOf(gateway)?.status).toBe('reconstructed');
+    }
+    // A parallel gateway is never reported as a decision without a condition —
+    // `lib/process-hints.ts` excludes the tag by definition.
+    expect(exported.xml).not.toContain('<bpmn:exclusiveGateway');
+  });
+
+  test('(a) without WAIT UNTIL the file carries a fork and no join', async () => {
+    const source = PARALLEL.replace('  WAIT UNTIL gv_done >= 2.' + '\n', '');
+    const exported = buildBpmnExportFromSource(source, { processName: 'Parallel', sourceFileName: 'p.abap' });
+    const parsed = await (await moddle()).fromXML(exported.xml);
+    expect(parsed.warnings.map((w) => w.message)).toEqual([]);
+    const gateways = countOf(parsed.rootElement).elements.filter((e) => e.$type === 'bpmn:ParallelGateway');
+    expect(gateways.map((g) => g.gatewayDirection)).toEqual(['Diverging']);
+  });
+
+  test('(b) every LOOP AT in the eight files is a multi-instance activity, and no flow goes back', async () => {
+    let markers = 0;
+    let loopElements = 0;
+    for (const [file] of SHIPPED) {
+      const exported = buildBpmnExportFromSource(read(file), OPTIONS(file));
+      const parsed = await (await moddle()).fromXML(exported.xml);
+      expect(parsed.warnings.map((w) => w.message), file).toEqual([]);
+      const { elements } = countOf(parsed.rootElement);
+      for (const element of elements) {
+        if (traceOf(element)?.kind !== 'loop') continue;
+        loopElements += 1;
+        // Every one of them: §5.8's *Mehrfach-Instanz, sequenziell*, on an
+        // activity — a sub-process where the body draws something, a task where
+        // it draws nothing.
+        expect(['bpmn:SubProcess', 'bpmn:Task'], `${file} ${String(element.name)}`).toContain(element.$type);
+        const marker = element.loopCharacteristics as ModdleElement | undefined;
+        expect(marker?.$type, `${file} ${String(element.name)}`).toBe('bpmn:MultiInstanceLoopCharacteristics');
+        expect(marker?.isSequential).toBe(true);
+        markers += 1;
+      }
+      // Not one loop-back flow is left in any of the eight files.
+      expect(elements.filter((e) => e.$type === 'bpmn:SequenceFlow' && traceOf(e)?.kind === 'loop-back'), file)
+        .toHaveLength(0);
+    }
+    // Measured: fourteen loop elements reach the files over the eight programs
+    // and every one of them carries the marker. The skeleton holds 17 — the
+    // other three sit in a routine performed from more than one place, whose
+    // later instances share the count, or in code no entry point reaches, which
+    // §5.8 names under the map rather than drawing.
+    console.log(`2.17: ${markers} multi-instance activities of ${loopElements} loop elements in the eight files`);
+    expect(loopElements).toBe(14);
+    expect(markers).toBe(14);
+  });
+
+  test('(b) a loop the body leaves is still an exclusive gateway with a cycle', async () => {
+    const source = [
+      'REPORT z_cycle.',
+      'START-OF-SELECTION.',
+      '  LOOP AT gt_orders INTO ls_order.',
+      '    UPDATE vbak SET loekz = 1.',
+      '    CHECK ls_order-netwr > 100.',
+      '    INSERT zlog FROM ls_order.',
+      '  ENDLOOP.',
+    ].join('\n');
+    const exported = buildBpmnExportFromSource(source, { processName: 'Cycle', sourceFileName: 'c.abap' });
+    const parsed = await (await moddle()).fromXML(exported.xml);
+    expect(parsed.warnings.map((w) => w.message)).toEqual([]);
+    const { elements } = countOf(parsed.rootElement);
+    const loop = elements.find((e) => traceOf(e)?.kind === 'loop') as ModdleElement;
+    expect(loop.$type).toBe('bpmn:ExclusiveGateway');
+    expect(loop.loopCharacteristics).toBeUndefined();
+    expect(elements.some((e) => e.$type === 'bpmn:SequenceFlow' && traceOf(e)?.kind === 'loop-back')).toBe(true);
+  });
+
+  test('(b) the 1.000-line example carries no "gateway without a condition" any more', () => {
+    // The finding that decided 2.17 (b), measured the way the product measures
+    // it: our own rule fired six times on our own reconstruction, and all six
+    // were `LOOP AT` gateways. The rule was not silenced — the gateway stopped
+    // being drawn, so there is nothing left for it to report.
+    const exported = buildBpmnExportFromSource(read(LEGACY), OPTIONS(LEGACY));
+    const parsed = parseBpmn(exported.xml);
+    const labels = new Map(parsed.elements.map((element) => [element.id, element.name]));
+    const hints = cleanCoreHints({ xml: exported.xml, labels });
+    const byRule = countHints(hints).byRule;
+    expect(byRule.get(GATEWAY_WITHOUT_CONDITION) ?? 0).toBe(0);
   });
 });

@@ -18,6 +18,7 @@ import {
   miniMap,
   parseMapAddress,
   pathsToHere,
+  levelOf,
   planePath,
   planeProblems,
   readRunSwitches,
@@ -34,7 +35,7 @@ import {
  * > **At the 1.000-line example, every step is reachable in at most three
  * > actions, by keyboard as by mouse.**
  *
- * So this file counts them. Not three of them: **all 64 flow nodes of that
+ * So this file counts them. Not three of them: **all 77 flow nodes of that
  * example, one at a time, in the browser, on both paths.** The count is
  * asserted per node and the worst case is asserted at the end, which is the
  * only way a claim like that survives the next change to the tree.
@@ -94,7 +95,7 @@ function rulesByNode(source: string, model: ProcessMapModel): Map<string, string
  * ------------------------------------------------------------------ */
 
 test.describe('the outline of the 1.000-line example', () => {
-  test('it is the 64 flow nodes on 8 levels, each with one address', () => {
+  test('it is the 77 flow nodes on 16 levels, each with one address', () => {
     const source = exampleSource();
     const model = exampleModel(source);
     const nav = buildNavigation(model);
@@ -105,9 +106,16 @@ test.describe('the outline of the 1.000-line example', () => {
     // 65 until roadmap 2.15: one `IF sy-subrc` of this program stood behind a
     // `CALL FUNCTION … EXCEPTIONS` that already carried a boundary event, and
     // the two of them are now the one element they always were.
-    expect(model.elements).toHaveLength(64);
-    expect(model.planes).toHaveLength(8);
-    expect(model.traceability.anchored).toBe(64);
+    //
+    // 64 on 8 levels until roadmap 2.17 (b). A `LOOP AT` over a table is a
+    // collapsed sub-process with the body inside it now, so this program's nine
+    // drawable loops each open a level of their own and each bring the end event
+    // of that level with them; two routines that used to collapse into one step
+    // stand as phases beside them. The depth the reader has to walk is measured
+    // further down and is **unchanged**: three actions, never more.
+    expect(model.elements).toHaveLength(77);
+    expect(model.planes).toHaveLength(16);
+    expect(model.traceability.anchored).toBe(77);
     expect(model.traceability.unanchored).toBe(0);
 
     expect(nav.order, 'an element of the model is not in the outline').toHaveLength(model.elements.length);
@@ -312,7 +320,11 @@ test.describe('the parts of the navigation say what the file says', () => {
     const rfc = runVariant(model, nav, switches, withoutRfc);
     const dimmed = [...rfc.excluded].map((id) => nav.entries.get(id)?.outline).sort();
     expect(dimmed).toContain('14');
-    expect(dimmed.filter((outline) => outline?.startsWith('14.'))).toHaveLength(5);
+    // 5 until roadmap 2.17 (b): the `LOOP AT gt_orders` inside
+    // `REMOTE_CREDIT_CHECK` is a level of its own now, so the routine the guard
+    // closes has one address more under it. The guard still dims its own step
+    // and what it opens, and still nothing after it.
+    expect(dimmed.filter((outline) => outline?.startsWith('14.'))).toHaveLength(6);
     expect(dimmed, 'the step after the guard was declared unreachable').not.toContain('15');
     expect(dimmed).not.toContain('16');
     expect(rfc.sentence).toContain('p_rfc off');
@@ -322,13 +334,16 @@ test.describe('the parts of the navigation say what the file says', () => {
     // arm reaches, are out.
     const withoutBdc = new Map(declared).set('p_bdc', false);
     const bdc = runVariant(model, nav, switches, withoutBdc);
-    expect([...bdc.excluded].map((id) => nav.entries.get(id)?.outline)).toContain('16.5');
+    // 16.5 until roadmap 2.17 (b): the step sits inside the `LOOP AT gt_orders`
+    // of `PROCESS_ACTIONS`, and that loop is a level of its own now, so its
+    // address grew a segment. Which step it is did not change.
+    expect([...bdc.excluded].map((id) => nav.entries.get(id)?.outline)).toContain('16.1.3');
 
     // And the positions the code declares are themselves a run: `p_upd` is
     // `DEFAULT ' '`, so two steps inside the authority check do not run.
     const asDeclared = runVariant(model, nav, switches, declared);
     expect([...asDeclared.excluded].map((id) => nav.entries.get(id)?.outline).sort())
-      .toEqual(['16.5', '19', '7.4', '7.5']);
+      .toEqual(['16.1.3', '19', '7.4', '7.5']);
     expect(asDeclared.sentence).toContain('the run the code declares');
   });
 
@@ -461,7 +476,7 @@ test.describe('the parts of the navigation say what the file says', () => {
 });
 
 /* ------------------------------------------------------------------ *
- * The acceptance, in the browser, on all 64 steps.
+ * The acceptance, in the browser, on all 77 steps.
  * ------------------------------------------------------------------ */
 
 const STAMP = Date.now();
@@ -599,7 +614,7 @@ test.describe('every step of the 1.000-line example, in at most three actions', 
     }
   });
 
-  test('the measured acceptance: 64 steps, mouse and keyboard, both at most three', async ({ page }) => {
+  test('the measured acceptance: 77 steps, mouse and keyboard, both at most three', async ({ page }) => {
     test.setTimeout(900 * 1000);
     await page.setViewportSize({ width: 1600, height: 1100 });
     await signIn(page);
@@ -630,8 +645,15 @@ test.describe('every step of the 1.000-line example, in at most three actions', 
       await expect(card, `${entry.outline}: the code card did not open with the mouse`).toHaveCount(1);
       const afterMouse = await page.evaluate(() => window.location.hash);
       expect(afterMouse, `${entry.outline}: the address does not name the step`).toContain(`node=${id}`);
-      if (entry.plane) {
-        expect(afterMouse, `${entry.outline}: the address does not name the level`).toContain(`map=${entry.plane}`);
+      // `levelOf`, not `entry.plane`: §5.9 item 1 says a collapsed sub-process
+      // **opens** as its own level, so selecting one lands inside it. Until
+      // 2.17 (b) the only sub-processes were routines on the top plane, whose
+      // `plane` is null and which this guard therefore never looked at; a
+      // `LOOP AT` is a sub-process one level in, and it made the difference
+      // visible. The product has one rule for it and this is that rule.
+      const level = levelOf(nav, id);
+      if (level) {
+        expect(afterMouse, `${entry.outline}: the address does not name the level`).toContain(`map=${level}`);
       }
 
       /* ---- with the keyboard, from a page whose focus is on nothing ---- */
@@ -655,16 +677,16 @@ test.describe('every step of the 1.000-line example, in at most three actions', 
       // §5.9 item 9 — the search opens the level of the hit.
       const afterKeys = await page.evaluate(() => window.location.hash);
       expect(afterKeys, `${entry.outline}: the address does not name the step`).toContain(`node=${id}`);
-      if (entry.plane) {
+      if (level) {
         expect(afterKeys, `${entry.outline}: the search did not open the level of the hit`)
-          .toContain(`map=${entry.plane}`);
+          .toContain(`map=${level}`);
       }
 
       counts.push({ outline: entry.outline, id, mouse, keyboard });
     }
 
     /* ---- the measurement, stated ---- */
-    expect(counts.length, 'not every step of the example was measured').toBe(64);
+    expect(counts.length, 'not every step of the example was measured').toBe(77);
     const worstMouse = Math.max(...counts.map((count) => count.mouse));
     const worstKeyboard = Math.max(...counts.map((count) => count.keyboard));
     const over = counts.filter((count) => count.mouse > 3 || count.keyboard > 3);

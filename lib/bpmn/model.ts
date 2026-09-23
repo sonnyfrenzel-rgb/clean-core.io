@@ -22,12 +22,28 @@ import { ncName } from './xml';
  *    skeleton already reduced to one step (`collapsed`, kind of its dominant
  *    step) stays that one step; a business-rule routine stays a
  *    `businessRuleTask` — its decision table is roadmap 2.8, not a diagram.
- * 2. **A loop is an exclusive gateway with its body as a cycle**, not a
- *    multi-instance marker. A marker belongs on an activity that *contains* the
- *    body, and the body of an ABAP loop can leave it — `EXIT`, `RETURN`, an error
- *    message — which a sequence flow cannot do across a sub-process boundary. The
- *    kind of loop (`multi-instance` over a table, or `standard`) travels in the
- *    trace, and the gateway is named `LOOP AT <table>`.
+ * 2. **A `LOOP AT` is a multi-instance sub-process; every other loop is an
+ *    exclusive gateway with its body as a cycle** — roadmap 2.17 (b).
+ *
+ *    The argument this decision used to make against the marker still holds,
+ *    and it is now the exception rather than the rule: a marker belongs on an
+ *    activity that *contains* the body, and the body of an ABAP loop **can**
+ *    leave it — `EXIT`, `RETURN`, an error message — which a sequence flow
+ *    cannot do across a sub-process boundary. So the marker is drawn exactly
+ *    where that cannot happen. `lib/abap/process-skeleton.ts` decides it, on
+ *    the statements and not on the graph (`bodyStaysInLoop`): a `LOOP AT` over
+ *    a table whose body stays inside the block becomes a `loop` node with
+ *    `detail.multiInstance` and a region of its own, and it is drawn here as a
+ *    collapsed `subProcess` with `multiInstanceLoopCharacteristics
+ *    isSequential="true"` (`DESIGN.md` §5.8, *Mehrfach-Instanz, sequenziell*).
+ *    A `DO`, a `WHILE`, a `SELECT … ENDSELECT` and a `LOOP AT` that the body
+ *    leaves stay a cycle. Either way the kind of loop travels in the trace and
+ *    the element is named `LOOP AT <table>`.
+ *
+ *    What decided it was our own rule colliding with our own drawing: the hint
+ *    `gateway-without-condition` of `lib/process-hints.ts` fired six times on
+ *    the 1.000-line example and all six were `LOOP AT` gateways — the product
+ *    warning about a decision it had drawn where the code takes none.
  * 3. **An error boundary needs an activity to sit on.** A `TRY` whose protected
  *    part draws nothing, or starts with a decision, has none; its handler is then
  *    an error catch event that is not attached, and says so in its trace.
@@ -66,7 +82,9 @@ export type BpmnTag =
   | 'callActivity'
   | 'subProcess'
   | 'boundaryEvent'
-  | 'intermediateCatchEvent';
+  | 'intermediateCatchEvent'
+  /** Roadmap 2.17 (a). Carries no condition, ever — it is a fork or a join. */
+  | 'parallelGateway';
 
 export const ACTIVITY_TAGS: ReadonlySet<BpmnTag> = new Set<BpmnTag>([
   'task', 'serviceTask', 'sendTask', 'userTask', 'businessRuleTask', 'callActivity', 'subProcess',
@@ -210,11 +228,24 @@ export interface ExportModel {
   droppedEdges: number;
 }
 
-function tagOf(kind: SkeletonNode['kind']): BpmnTag {
-  switch (kind) {
+/**
+ * Is this the multi-instance activity of 2.17 (b) rather than a cycle?
+ *
+ * The skeleton decided it and said so on the node; nothing is re-derived here.
+ */
+export function isMultiInstanceLoop(node: SkeletonNode): boolean {
+  return node.kind === 'loop' && node.detail?.multiInstance === true;
+}
+
+function tagOf(node: SkeletonNode): BpmnTag {
+  // A multi-instance `LOOP AT` whose body draws no element is the other half of
+  // §5.8's row — *eine Aktivität* with the marker, and no plane behind it.
+  if (isMultiInstanceLoop(node)) return node.expandsTo ? 'subProcess' : 'task';
+  switch (node.kind) {
     case 'start': return 'startEvent';
     case 'end':
     case 'end-error': return 'endEvent';
+    case 'parallel-gateway': return 'parallelGateway';
     case 'gateway':
     case 'loop': return 'exclusiveGateway';
     case 'sub-process': return 'subProcess';
@@ -412,7 +443,7 @@ class ModelBuilder {
       const { reads, writes } = this.tablesOf(source);
       const node: ExportNode = {
         id,
-        tag: tagOf(source.kind),
+        tag: tagOf(source),
         name: nameOf(source),
         source,
         error: source.kind === 'end-error' || source.kind === 'error-boundary',
@@ -427,7 +458,10 @@ class ModelBuilder {
       local.set(source.id, node);
       this.nodeCount += 1;
 
-      if (source.kind !== 'sub-process' || !source.expandsTo) continue;
+      // Roadmap 2.17 (b): a multi-instance `LOOP AT` opens a plane exactly the
+      // way a routine does — the body is a region, and the marker rides on the
+      // element that contains it.
+      if ((source.kind !== 'sub-process' && !isMultiInstanceLoop(source)) || !source.expandsTo) continue;
       const sub = this.regionByKey.get(source.expandsTo);
       if (!sub) {
         node.tag = 'callActivity';

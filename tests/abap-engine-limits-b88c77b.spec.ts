@@ -217,12 +217,21 @@ test.describe('the business rules of a large source', () => {
   });
 
   test('the rules of the eight shipped programs are unchanged, byte for byte', () => {
+    // **Roadmap 2.17 (b) moved three of these digests and nothing inside them.**
+    // A `LOOP AT` body is a region of its own now, so a rule whose statement
+    // stands inside a loop names that region instead of the routine around it:
+    // `form:CALCULATE_RISK_SCORES` → `loop:GT_ORDERS@342` and nine more like it
+    // in the 1.000-line example, one each in `Z_EMPLOYEE_EXPENSE_VAL` and
+    // `Z_MATERIAL_STOCK_CALC`. Counted against the digest before the change:
+    // **the rule count is identical in all eight programs** (16 · 0 · 1 · 0 · 1
+    // · 11 · 1 · 0) and the only differing field anywhere in the three sets is
+    // `region`. No rule was gained, lost, re-anchored or re-worded.
     const pinned: Record<string, string> = {
-      'ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC.abap': '8a1f534de8e3bd84b92183d2a4675a4262bf5e80f90a886456b8ea0f6dc1f162',
+      'ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC.abap': 'd83a38a7ca1e1033df59b53f4bf577c86b6fc2f17db4dcfbdcce384218ba6756',
       'Z_BUSINESS_PARTNER_SYNC.txt': '9a1e899f8ffd59c50e81c7d18470accd28c53f9c2ee86d40ba639822f0692b1e',
-      'Z_EMPLOYEE_EXPENSE_VAL.txt': '40a8fb42ed60085d1c0e96c0a2ddbc46a50ccc7aae1cce1a1d1ca8002dd96bf7',
+      'Z_EMPLOYEE_EXPENSE_VAL.txt': '778f3a442c623d3e30eaab88fd1f5befe19b207b928512c7f653eb3af198b276',
       'Z_INVOICE_EXTRACTOR.txt': '35d9750084364efced78c549d1813632fd7e28dbf81e3ed5052601ce693a8b19',
-      'Z_MATERIAL_STOCK_CALC.txt': 'c1461014e95b819f62741c8c8c914c0abba8c6cfbf5d701b2d3fc9ceabfd5d32',
+      'Z_MATERIAL_STOCK_CALC.txt': '2212a619e000b96735210221c2535e23d076c65f23cbd5f1c3f8c99e3f500a1b',
       'Z_MM_PO_APPROVAL.abap': '0a209e8c7c13b96c1921e4a60784bafd768465c4304583b485fee3b991c78d6f',
       'Z_ORDER_INTEGRITY_CHECK.txt': '74408766ed94e42280d8085bfd3f67d139652bf88a8706bc91e843f191e6554f',
       'Z_SALES_ORDER_CREATOR.txt': '7b079dd80f1dc957a1c6c298de9e68cc6fb21515621ff38b0948fb8c6626f177',
@@ -235,8 +244,12 @@ test.describe('the business rules of a large source', () => {
   test('and so is the reading of a 172 kB source that does hit the indexed lookup', () => {
     const composite = legacyWithCheckGuards(400);
     const set = deriveBusinessRules(composite);
+    // Unmoved by 2.17 (b) — the count is the measurement here, and the digest
+    // moved for the one reason the test above names: the 1.000-line program at
+    // the head of this composite carries ten rules inside a `LOOP AT`, and they
+    // name the loop's region now.
     expect(set.rules).toHaveLength(817);
-    expect(sha(set)).toBe('cc443f914faeec48366e6884c49ee3966429850a8c61c8428e651929d88fe1f4');
+    expect(sha(set)).toBe('6fd381e019dcd72c30944d69837b986e3c9ab673a20119ece4bc82b3c908ec21');
   });
 });
 

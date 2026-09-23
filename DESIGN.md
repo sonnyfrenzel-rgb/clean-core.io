@@ -652,11 +652,30 @@ komplexeste Beispiel des Produkts, `ZLEGACY_ORDER_FULFILLMENT_AUDIT` (1.000 Zeil
 | **Exklusives Gateway** | `IF`/`CASE`/`CHECK` auf Geschäftsdaten, Bedingung wörtlich an jeder Kante | Risikopunkte ≥ 80 · ≥ 50 · sonst (L424–431) |
 | **Paralleles Gateway** | nur wo der Code Parallelität beweist: `STARTING NEW TASK` mit `WAIT UNTIL`/`RECEIVE RESULTS`, bgRFC | — |
 | **Bedingter Fluss** | Schalter des Selektionsbilds (`CHECK p_x = abap_true`) — als Bedingung am Fluss, nicht als eigenes Gateway | Kreditprüfung nur mit „RFC" (L399), Mail nur mit „Mail" (L558) |
-| **Mehrfach-Instanz, sequenziell** | `LOOP AT <Tabelle>` über Geschäftsobjekte | je Auftrag (L423), je Position (L320), je Kunde (L287) |
-| **Schleife** | `DO`/`WHILE` ohne Tabelle | — |
+| **Mehrfach-Instanz, sequenziell** | `LOOP AT <Tabelle>` über Geschäftsobjekte, **dessen Körper den Block nicht verlässt**; zeichnet der Körper kein Element, ist es eine Aktivität mit demselben Marker statt einer Ebene | je Auftrag (L423), je Position (L320), je Kunde (L287) |
+| **Schleife** | `DO`/`WHILE` ohne Tabelle — **und jedes `LOOP AT`, das der Körper verlässt** (`EXIT`, `CHECK`, `CONTINUE`, `RETURN`, `STOP`, Fehler-Ende, `SUBMIT` ohne Rückkehr) | — |
 | **Fehler-Randereignis** | behandelte Ausnahme: `EXCEPTIONS … = n` mit `sy-subrc`-Zweig, `TRY/CATCH` | RFC-Fehler: +10 Punkte, Warnung, weiter (L408–415) |
 | **Timer-Zwischenereignis** | `WAIT UP TO n SECONDS` | — |
 | **Nachrichten-Zwischenereignis (senden)** | Workflow-Ereignis (`SAP_WAPI_CREATE_EVENT`, `SWE_EVENT_CREATE`) | — |
+
+**Die Ausnahme in den zwei Zeilen darüber, weil sie nicht selbstverständlich ist**
+(2.17, 23.09.2026). Eine Mehrfach-Instanz sagt: *derselbe Ablauf, einmal je
+Element*. Ein `LOOP AT`, aus dem ein `EXIT` herausspringt, sagt etwas anderes —
+dort hängt der weitere Verlauf davon ab, **welche** Iteration abgebrochen hat, und
+genau das kann ein Behälter nicht darstellen. Ein Zyklus kann es. Die Regel
+entscheidet deshalb an den **Anweisungen** des Körpers, nicht am gezeichneten
+Graphen, und ein `EXIT` in einer verschachtelten Schleife verlässt nur diese.
+
+Gemessen an `ZLEGACY_ORDER_FULFILLMENT_AUDIT`: 11 Schleifen, 11 Marker, **0
+Zyklen**, davon 9 mit eigener Ebene und 2 ohne (reine Rechenschleifen). Über alle
+acht Beispiele 17 Schleifen und 17 Marker, und **keine `loop-back`-Kante mehr im
+Export**.
+
+Der Nebeneffekt, der die Regel fast verdorben hätte: `collapseSmallRegions` sah
+die neuen kleinen Regionen und faltete ganze Iterationen in eine Box —
+`AUDIT_TRAVEL_EXPENSES` verlor 7 von 13 Knoten. Eine Region, die eine
+Mehrfach-Instanz enthält, ist deshalb nie ein Schritt.
+
 | **Zugeklappter Pool + Nachrichtenfluss** | anderes System: `CALL FUNCTION … DESTINATION`, Mail-Empfänger, Dateisystem | Kreditsystem `PRD_CREDIT_RFC` (L401–402), Mail-Empfänger |
 | **Datenspeicher** | gelesene/geschriebene Tabellen; SAP-Tabellen und Z-Tabellen unterscheidbar. In Business über das Overlay „Data" (§5.9) eingeblendet, in IT und im Export immer da | liest VBAK, VBAP, KNA1, KNB1, MARA, MARD; schreibt ZSD_ORD_RISK, ZSD_LEGACY_LOG |
 | **Datenobjekt** | Datei, Ergebnisliste | CSV nach `C:\TEMP` (L538) |
