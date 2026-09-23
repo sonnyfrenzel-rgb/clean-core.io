@@ -7,7 +7,7 @@ import { INVITATION_COLLECTION, PROJECT_READERS_FIELD, normaliseInvitedEmail } f
 // Types only — erased at compile time, so the modules themselves still load
 // lazily below: Firestore through `getAdminDb`, Auth through `ensureAuthModule`.
 import type { Auth } from 'firebase-admin/auth';
-import type { Firestore } from 'firebase-admin/firestore';
+import type { DocumentReference, Firestore, Transaction } from 'firebase-admin/firestore';
 
 let adminAppModule: any = null;
 let adminAuthModule: any = null;
@@ -901,16 +901,35 @@ export async function approveTenantWithToken(
   const { db } = await getAdminDb();
 
   if (action === 'approve') {
-    // Update user profile in users/{uid}
-    await db.collection('users').doc(uid).set({
-      s4TenantAccessAllowed: true,
-      s4TenantAccessRequested: false
-    }, { merge: true });
+    // The request has to still be open, and this is what makes the token
+    // single-use in practice.
+    //
+    // `lib/approval-token.ts` signs `uid.requestType.action.exp` and nothing
+    // else: no nonce, no server state, seven days of validity. A rejection
+    // deletes the request document (below) but cannot invalidate the approve
+    // token that was minted beside it, so until this check an approve link for
+    // a request that had been rejected still worked for the rest of that week —
+    // a decision reversed without anyone deciding it again, and without the user
+    // asking again (security audit of v2.14.0, SEC-2026-343).
+    //
+    // Reaching this line already needs an admin claim and fresh step-up MFA
+    // (`app/api/admin/approve-tenant/route.ts:8,15`), so this is not the last
+    // line of defence; it is the one that makes a second use of the same link a
+    // no-op instead of an approval. Read and written in one transaction, so two
+    // arriving together cannot both find it pending.
+    const requestRef: DocumentReference = db.collection('tenant_access_requests').doc(uid);
+    await db.runTransaction(async (tx: Transaction) => {
+      const snapshot = await tx.get(requestRef);
+      const status = snapshot.exists ? (snapshot.data()?.status as string | undefined) : undefined;
+      if (!snapshot.exists) throw new Error('This tenant access request no longer exists.');
+      if (status && status !== 'pending') throw new Error(`This tenant access request is already ${status}.`);
 
-    // Update tenant access request
-    await db.collection('tenant_access_requests').doc(uid).set({
-      status: 'approved',
-    }, { merge: true });
+      tx.set(db.collection('users').doc(uid), {
+        s4TenantAccessAllowed: true,
+        s4TenantAccessRequested: false
+      }, { merge: true });
+      tx.set(requestRef, { status: 'approved' }, { merge: true });
+    });
   } else if (action === 'reject') {
     // Clean request status on user document
     await db.collection('users').doc(uid).set({

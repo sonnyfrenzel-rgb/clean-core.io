@@ -37,6 +37,7 @@ import { createUnsubscribeToken, normaliseEmail } from '../lib/unsubscribe-token
 import { isTestAccount } from '../lib/test-accounts';
 import { claimSend, completeSend, failSend, sendIdempotencyKey } from '../lib/survey/outbox';
 import { FIRESTORE_DB_ID } from '../lib/constants';
+import { escapeHtml } from '../lib/export-safety';
 
 const PROJECT_ID = 'cleancore-491216';
 // Imported rather than hardcoded so a database migration cannot leave the
@@ -111,9 +112,21 @@ function readEnv(key: string): string {
   throw new Error(`${key} is not set in .env.local or .env`);
 }
 
+/**
+ * Fill the placeholders — and escape what goes in, because one of the values is
+ * the recipient's own `firstName`, which the browser may write
+ * (`userClientUpdateKeys()` in firestore.rules). Until 23.09.2026 it was
+ * interpolated into the HTML mail as-is, so an account could put markup into
+ * the letter it received (security audit of v2.14.0, SEC-2026-353). It reaches
+ * only that one recipient and mail clients strip most of it, which is why this
+ * is one line rather than a template rewrite.
+ */
 function render(template: string, vars: Record<string, string>): string {
   return Object.entries(vars).reduce(
-    (out, [k, v]) => out.split(`{{${k}}}`).join(v),
+    // The unsubscribe link is built here, two lines from the token that signs
+    // it, and it goes into the plain-text letter as well as the HTML one, where
+    // an escaped `&` would be wrong. Everything else is account data.
+    (out, [k, v]) => out.split(`{{${k}}}`).join(/_URL$/.test(k) ? v : escapeHtml(v)),
     template,
   );
 }

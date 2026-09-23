@@ -165,7 +165,10 @@ export function useUserProfile() {
 
     const unsubscribeAuth = auth.onAuthStateChanged(async (user) => {
       const thisGeneration = ++generation;
-      console.log('[PROFILE HOOK LOG] onAuthStateChanged fired. user:', user ? user.email : 'null');
+      // The uid, never the address: this fires on every auth state change, so
+      // the e-mail of whoever is signed in was in the browser console for the
+      // whole session (security audit of v2.14.0, SEC-2026-352).
+      console.log('[PROFILE HOOK LOG] onAuthStateChanged fired. uid:', user ? user.uid : 'null');
       releaseProfile();
       if (!user) {
         setProfile(null);

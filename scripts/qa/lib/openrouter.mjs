@@ -11,13 +11,29 @@ import { firstViolation } from './validate.mjs';
  */
 
 /**
- * Only a rate limit is retried. It is a definitive rejection before any
- * generation, so a retry cannot bill twice. A timeout, a reset connection or a
- * 5xx may arrive after the model already generated — retrying those could pay
- * for the same review twice, outside the per-review cost cap (QA review of
- * 221f2d11768c, finding 3b4fedd019e8).
+ * Only a rate limit is retried unconditionally. It is a definitive rejection
+ * before any generation, so a retry cannot bill twice. A timeout, a reset
+ * connection or a 5xx may arrive after the model already generated — retrying
+ * those could pay for the same review twice, outside the per-review cost cap
+ * (QA review of 221f2d11768c, finding 3b4fedd019e8).
+ *
+ * That reasoning holds for a 5xx that arrives late and not for one that arrives
+ * at once, and the difference is the clock rather than the status. The UX review
+ * of v2.14.0 (run 35780745267, 22.09.2026) died on `HTTP 503` **4.5 seconds**
+ * after the job started its call: no model generates a review in four seconds,
+ * so nothing had been produced and nothing could be billed twice. One unlucky
+ * second at the provider cost the whole release's UX review, and the next
+ * release would have lost it again.
+ *
+ * So a gateway status is retried only when it comes back before any generation
+ * plausibly began. The window is deliberately far below the minutes a real
+ * review call takes and far above a gateway's own round trip. 500 is not in the
+ * list: it is the status a provider also returns for a request it will never
+ * accept, and retrying that is a slower way to fail.
  */
 const RETRYABLE = new Set([429]);
+const RETRYABLE_IF_EARLY = new Set([502, 503, 504]);
+const EARLY_FAILURE_MS = 20_000;
 const FINISH_REASONS = new Set(['stop', 'length', 'content_filter', 'tool_calls', 'function_call', 'error']);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -60,6 +76,7 @@ const STATUS_HINTS = {
 };
 
 /**
+ * @param earlyFailureMs how soon after the request a gateway status still counts as "before generation" and may be retried
  * @param retries  rate-limit retries; a pipeline of many calls to one provider (the security audit) needs more
  * @param retryDelayMs (attempt) => ms — the pause before retry `attempt` when the provider names no sane wait. The default
  *                 grows by 5 s per attempt; the security audit waits longer, because its report is lost when the last
@@ -68,13 +85,14 @@ const STATUS_HINTS = {
  *                 severity written in English or a number sent as text. The result is still validated; coercion
  *                 fixes types and empties an absent field, it never writes a statement.
  */
-export async function callReviewer({ apiKey, system, user, schema, effort, model, maxTokens, name, title = 'Clean-Core.io QA Review', fetchImpl = fetch, timeoutMs = BUDGET.requestTimeoutMs, retries = BUDGET.retries, retryDelayMs = (attempt) => 5_000 * (attempt + 1), coerce = null }) {
+export async function callReviewer({ apiKey, system, user, schema, effort, model, maxTokens, name, title = 'Clean-Core.io QA Review', fetchImpl = fetch, timeoutMs = BUDGET.requestTimeoutMs, retries = BUDGET.retries, retryDelayMs = (attempt) => 5_000 * (attempt + 1), earlyFailureMs = EARLY_FAILURE_MS, coerce = null }) {
   if (!apiKey) throw new Error('OPENROUTER_API_KEY is not set — the review cannot run.');
   const body = JSON.stringify(buildRequest({ system, user, schema, effort, model, maxTokens, name }));
 
   for (let attempt = 0; ; attempt++) {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
+    const startedAt = Date.now();
     let res;
     try {
       res = await fetchImpl(OPENROUTER_ENDPOINT, {
@@ -96,7 +114,8 @@ export async function callReviewer({ apiKey, system, user, schema, effort, model
     try {
       if (!res.ok) {
         // The body of an error response can echo the request; only the status leaves this function.
-        if (RETRYABLE.has(res.status) && attempt < retries) {
+        const early = Date.now() - startedAt < earlyFailureMs;
+        if ((RETRYABLE.has(res.status) || (RETRYABLE_IF_EARLY.has(res.status) && early)) && attempt < retries) {
           // The provider's own wait, when it names one in seconds and it is sane; otherwise a growing pause.
           const after = Number(res.headers?.get?.('retry-after'));
           await sleep(Number.isFinite(after) && after > 0 && after <= 120 ? after * 1_000 : retryDelayMs(attempt));

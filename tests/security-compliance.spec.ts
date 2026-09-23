@@ -208,6 +208,11 @@ test.describe('Clean-Core.io Security, Compliance & Onboarding Gates E2E Tests',
     // Generate valid approval token (Audit P2: action-bound, expiring)
     const validToken = createApprovalToken(normalUserUid, 'tenant', 'approve');
 
+    // The open request the approval answers. It was not here before 23.09.2026
+    // and the approval went through anyway, which is the shape of the hole
+    // below: the token alone was the whole decision.
+    await adminSetDoc('tenant_access_requests', normalUserUid, { userId: normalUserUid, status: 'pending' });
+
     // 2. Approve with valid token
     const validTokenRes = await request.post('/api/admin/approve-tenant', {
       headers: {
@@ -224,6 +229,40 @@ test.describe('Clean-Core.io Security, Compliance & Onboarding Gates E2E Tests',
     // Verify Firestore document was updated
     const userDoc = await getDoc(doc(firestoreDb, 'users', normalUserUid));
     expect(userDoc.data()?.s4TenantAccessAllowed).toBe(true);
+
+    // 3. The same link, a second time, after the decision was reversed.
+    //
+    // `lib/approval-token.ts` signs `uid.requestType.action.exp` and nothing
+    // else — no nonce, no server state, seven days. So the approve link minted
+    // for this request stays cryptographically valid after a rejection, and
+    // until 23.09.2026 replaying it silently granted tenant access again to a
+    // user who had been refused and had not asked twice (security audit of
+    // v2.14.0, SEC-2026-343). Nothing about the token changed; what changed is
+    // that the approval now needs the request to still be open.
+    const rejectRes = await request.post('/api/admin/approve-tenant', {
+      headers: { 'Authorization': `Bearer ${adminToken}` },
+      data: { uid: normalUserUid, token: createApprovalToken(normalUserUid, 'tenant', 'reject'), action: 'reject' },
+    });
+    expect(rejectRes.status()).toBe(200);
+    expect(await adminDocExists('tenant_access_requests', normalUserUid)).toBe(false);
+    expect((await adminGetDoc('users', normalUserUid))?.s4TenantAccessAllowed).toBe(false);
+
+    const replayRes = await request.post('/api/admin/approve-tenant', {
+      headers: { 'Authorization': `Bearer ${adminToken}` },
+      data: { uid: normalUserUid, token: validToken, action: 'approve' },
+    });
+    expect(replayRes.status(), 'the approve link worked again after the request was rejected').not.toBe(200);
+    expect((await adminGetDoc('users', normalUserUid))?.s4TenantAccessAllowed, 'access was granted a second time by a replayed link').toBe(false);
+
+    // And an approval that already happened is not repeatable either: the
+    // request is no longer `pending`, so a second use of the live link is a
+    // no-op rather than a second grant.
+    await adminSetDoc('tenant_access_requests', normalUserUid, { userId: normalUserUid, status: 'approved' });
+    const secondUse = await request.post('/api/admin/approve-tenant', {
+      headers: { 'Authorization': `Bearer ${adminToken}` },
+      data: { uid: normalUserUid, token: validToken, action: 'approve' },
+    });
+    expect(secondUse.status(), 'a link for an already-approved request was accepted again').not.toBe(200);
   });
 
   test('registration activates the account and records consent server-side', async ({ request }) => {

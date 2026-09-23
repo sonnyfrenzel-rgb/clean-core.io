@@ -106,7 +106,15 @@ async function main() {
   const notRead = [...plan.notRead, ...run.notReviewed];
   const unread = new Set(notRead.map((n) => n.path));
   // A file in parts counts once, and only if none of its parts failed.
-  const deepRead = [...new Set(plan.batches.flatMap((b) => b.files.map((f) => f.path)))].filter((p) => !unread.has(p));
+  // A pinned reference file (lib/team.mjs PINNED) rides along in every call of
+  // its consultant, so it counts as read as soon as one of those calls came
+  // back — that is the whole point of pinning it, and subtracting it because
+  // some other call failed would report the coverage the old packing had.
+  const pinnedRead = new Set(results.flatMap((r) => r?.pinned || []));
+  const deepRead = [...new Set(plan.batches.flatMap((b) => b.files.map((f) => f.path)))].filter(
+    (p) => !unread.has(p) || pinnedRead.has(p),
+  );
+  for (const p of pinnedRead) if (!deepRead.includes(p)) deepRead.push(p);
 
   const filesInScope = SELF_TEST ? AUDIT.selfTestFiles.length : surface.files.total;
   const coverage = {

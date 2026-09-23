@@ -49,13 +49,11 @@ export async function callGeminiWithReceipt(
    */
   signal?: AbortSignal,
 ): Promise<GeminiResult> {
-  let userId: string | undefined;
   let idToken: string | undefined;
 
   try {
     const auth = getAuth();
     if (auth.currentUser) {
-      userId = auth.currentUser.uid;
       idToken = await auth.currentUser.getIdToken();
     }
   } catch (err) {
@@ -74,8 +72,14 @@ export async function callGeminiWithReceipt(
       model: modelName,
       jsonResponse,
       ...(stage ? { stage } : {}),
-      userId,
-      idToken,
+      // No `userId` and no `idToken` in the body. The route has never read
+      // either — `app/api/gemini/route.ts:106` derives the identity from
+      // `verifyRequestAuth(request)` and the handler destructures only the four
+      // fields above — but a bearer credential travelling a second time, in a
+      // JSON body rather than a header, is one more place it can be logged or
+      // echoed, and a body field named `userId` next to a verified token is an
+      // invitation to read the wrong one later (security audit of v2.14.0,
+      // SEC-2026-340: the claim of spoofing is refuted, the second copy is not).
     }),
   });
 

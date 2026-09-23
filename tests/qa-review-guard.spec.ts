@@ -227,15 +227,56 @@ test.describe('the reviewer', () => {
 
   test('never retries what may already have been generated and billed', async () => {
     const { callReviewer } = await lib('openrouter.mjs');
+    // `earlyFailureMs: 0` is "the answer came back late": nothing counts as
+    // before generation, which is the state a real review call is in for all but
+    // its first seconds.
     for (const outcome of [() => new Response('upstream', { status: 503 }), () => Promise.reject(Object.assign(new Error('read ECONNRESET'), { code: 'ECONNRESET' }))]) {
       let calls = 0;
       const fetchImpl = async () => {
         calls++;
         return outcome();
       };
-      await expect(callReviewer({ apiKey: 'k', system: 's', user: 'u', schema: {}, effort: 'medium', fetchImpl })).rejects.toThrow();
+      await expect(callReviewer({ apiKey: 'k', system: 's', user: 'u', schema: {}, effort: 'medium', fetchImpl, earlyFailureMs: 0 })).rejects.toThrow();
       expect(calls).toBe(1);
     }
+  });
+
+  test('a gateway error that comes back before anything could be generated is retried', async () => {
+    // The UX review of v2.14.0 (run 35780745267) was lost to `HTTP 503` 4.5
+    // seconds into its call. Nothing generates a review in four seconds, so the
+    // double-billing reason for never retrying a 5xx did not apply and the
+    // release lost its review anyway.
+    const { callReviewer } = await lib('openrouter.mjs');
+    for (const status of [502, 503, 504]) {
+      let calls = 0;
+      const flaky = async () => {
+        calls++;
+        return calls === 1
+          ? new Response('{"error":"echo of the prompt"}', { status })
+          : new Response(JSON.stringify({ choices: [{ message: { content: '{"verdict":"go"}' } }] }), { status: 200 });
+      };
+      const review = await callReviewer({ apiKey: 'k', system: 's', user: 'u', schema: {}, effort: 'medium', fetchImpl: flaky, retries: 2, retryDelayMs: () => 10, earlyFailureMs: 60_000 });
+      expect(review.review, `HTTP ${status} arriving at once was not retried`).toEqual({ verdict: 'go' });
+      expect(calls).toBe(2);
+    }
+    // A 500 is not a gateway saying "not now" — it is also what a provider
+    // returns for a request it will never accept, so it is still final.
+    let fiveHundred = 0;
+    const always = async () => {
+      fiveHundred++;
+      return new Response('upstream', { status: 500 });
+    };
+    await expect(callReviewer({ apiKey: 'k', system: 's', user: 'u', schema: {}, effort: 'medium', fetchImpl: always, retries: 2, retryDelayMs: () => 10, earlyFailureMs: 60_000 })).rejects.toThrow(/HTTP 500/);
+    expect(fiveHundred).toBe(1);
+    // And the retry still gives up rather than looping: the status alone leaves the function.
+    let forever = 0;
+    const down = async () => {
+      forever++;
+      return new Response('{"error":"echo of the prompt"}', { status: 503 });
+    };
+    const err = await callReviewer({ apiKey: 'k', system: 's', user: 'u', schema: {}, effort: 'medium', fetchImpl: down, retries: 2, retryDelayMs: () => 10, earlyFailureMs: 60_000 }).catch((e: Error) => e);
+    expect(String((err as Error).message)).toBe('OpenRouter answered HTTP 503');
+    expect(forever).toBe(3);
   });
 
   test('a malformed answer never quotes itself into the error a public log prints', async () => {

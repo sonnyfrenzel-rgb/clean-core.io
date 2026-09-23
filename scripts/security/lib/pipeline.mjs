@@ -1,4 +1,4 @@
-import { AUDIT, CONSULTANTS, PATTERN_ONLY } from './team.mjs';
+import { AUDIT, CONSULTANTS, PATTERN_ONLY, PINNED } from './team.mjs';
 
 /**
  * The audit as a pipeline of model calls without tools: who reads which file, what each call is shown, and how
@@ -25,8 +25,9 @@ export function consultantFor(file) {
  * @param files    surface map `files.list`: [{ path, domain }]
  * @param prepare  (path) => the text the model receives (numbered and redacted by the caller)
  * @param only     self-test: the paths to include, everything else is left out of the run entirely
+ * @param pinned   consultant -> reference paths copied into every one of its calls (lib/team.mjs PINNED)
  */
-export function planBatches(files, prepare, { batchChars = AUDIT.batchChars, maxCalls = AUDIT.maxConsultantCalls, only = null } = {}) {
+export function planBatches(files, prepare, { batchChars = AUDIT.batchChars, maxCalls = AUDIT.maxConsultantCalls, only = null, pinned: pinnedFor = PINNED } = {}) {
   const assigned = new Map(Object.keys(CONSULTANTS).map((k) => [k, []]));
   const patternOnly = [];
   for (const f of files) {
@@ -39,10 +40,25 @@ export function planBatches(files, prepare, { batchChars = AUDIT.batchChars, max
   const batches = [];
   const notRead = [];
   for (const [consultant, list] of assigned) {
+    // The reference files of this consultant, read once and copied into every
+    // call it makes. They are charged against the batch budget like any other
+    // text, so a pinned file shrinks the batches rather than silently blowing
+    // past `batchChars`.
+    const pinnedPaths = (pinnedFor[consultant] || []).filter((p) => !only || only.includes(p));
+    const pinned = pinnedPaths.map((path) => ({ path, text: prepare(path) })).filter((p) => p.text);
+    const pinnedChars = pinned.reduce((n, p) => n + p.text.length + p.path.length + 64, 0);
+    const newBatch = () => {
+      const b = { consultant, files: [], pinned, chars: pinnedChars };
+      batches.push(b);
+      return b;
+    };
     let current = null;
     for (const f of [...list].sort((a, b) => a.path.localeCompare(b.path))) {
+      // A pinned file is already in every call of this consultant; packing it a
+      // second time would spend the budget on a duplicate.
+      if (pinned.some((p) => p.path === f.path)) continue;
       // A file larger than one call is read in consecutive parts; its line numbers are the file's own.
-      const parts = splitText(prepare(f.path), batchChars - f.path.length - 64);
+      const parts = splitText(prepare(f.path), batchChars - pinnedChars - f.path.length - 64);
       const skipped = [];
       parts.forEach((text, k) => {
         const size = text.length + f.path.length + 64;
@@ -51,8 +67,7 @@ export function planBatches(files, prepare, { batchChars = AUDIT.batchChars, max
             skipped.push(k);
             return;
           }
-          current = { consultant, files: [], chars: 0 };
-          batches.push(current);
+          current = newBatch();
         }
         current.files.push({ path: f.path, text, part: parts.length > 1 ? `${k + 1}/${parts.length}` : null });
         current.chars += size;
@@ -147,7 +162,7 @@ export async function runConsultants({ batches, messageFor, call, fits, worstCas
         try {
           const r = await call(message);
           spent += typeof r.usage?.cost === 'number' ? r.usage.cost : worst;
-          results[i] = { ...r, consultant: batches[i].consultant, files: batches[i].files.map((f) => f.path) };
+          results[i] = { ...r, consultant: batches[i].consultant, files: batches[i].files.map((f) => f.path), pinned: (batches[i].pinned || []).map((p) => p.path) };
         } catch (err) {
           failedCalls++;
           spent += worst;
@@ -170,7 +185,7 @@ export async function runConsultants({ batches, messageFor, call, fits, worstCas
 
 /** The attack-surface entries a consultant needs for the files of one call — plus, for the rules, every client write. */
 export function surfaceSlice(surface, batch) {
-  const paths = new Set(batch.files.map((f) => f.path));
+  const paths = new Set([...batch.files.map((f) => f.path), ...(batch.pinned || []).map((p) => p.path)]);
   const inBatch = (e) => paths.has(e.path);
   return {
     apiRoutes: (surface.apiRoutes || []).filter(inBatch),
@@ -190,6 +205,13 @@ export function consultantMessage({ surface, batch, index, count }) {
     '```json',
     JSON.stringify(surfaceSlice(surface, batch), null, 1),
     '```',
+    ...(batch.pinned?.length
+      ? [
+          '## Reference files — in every one of your calls',
+          'These are the files your whole domain is judged against. They are here in full, so a statement about them is never a guess: if you are about to write that a file "was not provided" or that a sanitiser or rule "could not be verified", read it below first. Findings about them belong in the call where you actually found something, not once per call.',
+          batch.pinned.map((p) => `### ${p.path}\n\n\`\`\`\n${p.text}\n\`\`\``).join('\n\n'),
+        ]
+      : []),
     '## Files',
     files,
   ].join('\n\n');

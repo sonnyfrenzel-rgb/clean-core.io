@@ -1051,6 +1051,104 @@ Einplanung: **kritisch** sofort als eigener Patch-Schritt vor jeder anderen Arbe
 | SEC-2026-234 | mittel | P2 | sofort | eingeplant |
 | SEC-2026-235 | mittel | P2 | sofort | behoben |
 | SEC-2026-236 | mittel | P1 | sofort | behoben |
+| SEC-2026-276 | niedrig | P2 | sofort | eingeplant |
+| SEC-2026-277 | niedrig | P2 | sofort | eingeplant |
+| SEC-2026-278 | niedrig | P2 | sofort | eingeplant |
+| SEC-2026-279 | niedrig | P2 | sofort | eingeplant |
+| SEC-2026-280 | niedrig | P2 | sofort | eingeplant |
+| SEC-2026-281 | niedrig | P2 | sofort | eingeplant |
+| SEC-2026-282 | niedrig | P2 | sofort | eingeplant |
+| SEC-2026-283 | niedrig | P2 | sofort | eingeplant |
+| SEC-2026-284 | niedrig | P2 | sofort | eingeplant |
+| SEC-2026-285 | niedrig | P2 | sofort | eingeplant |
+| SEC-2026-286 | niedrig | P3 | sofort | eingeplant |
+| SEC-2026-287 | niedrig | P3 | sofort | eingeplant |
+| SEC-2026-288 | niedrig | P3 | sofort | eingeplant |
+| SEC-2026-289 | niedrig | P3 | sofort | eingeplant |
+| SEC-2026-290 | niedrig | P3 | sofort | eingeplant |
+| SEC-2026-291 | niedrig | P3 | sofort | eingeplant |
+| SEC-2026-292 | niedrig | P3 | sofort | eingeplant |
+| SEC-2026-293 | niedrig | P3 | sofort | eingeplant |
+| SEC-2026-294 | niedrig | P3 | sofort | eingeplant |
+| SEC-2026-295 | niedrig | P3 | sofort | eingeplant |
+| SEC-2026-296 | niedrig | P2 | sofort | eingeplant |
+| SEC-2026-297 | niedrig | P2 | sofort | eingeplant |
+| SEC-2026-298 | niedrig | P3 | sofort | eingeplant |
+| SEC-2026-299 | niedrig | P3 | sofort | eingeplant |
+| SEC-2026-300 | niedrig | P3 | sofort | eingeplant |
+| SEC-2026-301 | niedrig | P3 | sofort | eingeplant |
+| SEC-2026-302 | niedrig | P3 | sofort | eingeplant |
+| SEC-2026-318 | niedrig | P1 | sofort | eingeplant |
+| SEC-2026-319 | niedrig | P2 | sofort | eingeplant |
+| SEC-2026-320 | niedrig | P2 | sofort | eingeplant |
+| SEC-2026-321 | niedrig | P2 | sofort - mit dem naechsten Regel-Deploy | eingeplant |
+| SEC-2026-322 | niedrig | P3 | 3.0 | eingeplant |
+| SEC-2026-323 | niedrig | P3 | 3.0 | eingeplant |
+| SEC-2026-324 | niedrig | P2 | sofort | eingeplant |
+| SEC-2026-325 | niedrig | P3 | 3.0 | eingeplant |
+| SEC-2026-336 | hoch | P1 | eigener Schritt: CSP ohne unsafe-inline (Nonce), mit Messung | eingeplant |
+| SEC-2026-337 | hoch | P2 | Phase 2 · Haertung neben verwandter Arbeit | eingeplant |
+| SEC-2026-338 | hoch | P2 | Phase 2 · Haertung neben verwandter Arbeit | eingeplant |
+| SEC-2026-343 | hoch | P1 | eigener Schritt: Approval-Token gegen Wiedereinsatz | eingeplant |
+| SEC-2026-344 | hoch | P3 | eigener Schritt: S/4-Schluesselhygiene mit Migration, braucht Sonnys Go | eingeplant |
+| SEC-2026-418 | mittel | P3 | Phase 2 - Haertung neben verwandter Arbeit | eingeplant |
+| SEC-2026-419 | mittel | P3 | Phase 2 - Haertung neben verwandter Arbeit | eingeplant |
+| SEC-2026-420 | mittel | P3 | Phase 2 - Haertung neben verwandter Arbeit | eingeplant |
+| SEC-2026-421 | mittel | P3 | Phase 2 - Haertung neben verwandter Arbeit | eingeplant |
+| SEC-2026-422 | mittel | P3 | Phase 2 - Haertung neben verwandter Arbeit | eingeplant |
+| SEC-2026-423 | mittel | P3 | Phase 2 - Haertung neben verwandter Arbeit | eingeplant |
+| SEC-2026-424 | mittel | P2 | Phase 2 - CI-Haertung, braucht Sonnys Go (eigenes Repository-Secret) | eingeplant |
+| SEC-2026-425 | mittel | P3 | Phase 2 - Haertung neben verwandter Arbeit | eingeplant |
+| SEC-2026-426 | mittel | P3 | Phase 2 - Datenschutz-Schritt | eingeplant |
+| SEC-2026-427 | mittel | P3 | Phase 2 - Datenschutz-Schritt | eingeplant |
+| SEC-2026-428 | mittel | P3 | nur falls die Jira-Integration je aktiviert wird | eingeplant |
+| SEC-2026-429 | niedrig | P3 | nur falls die Jira-Integration je aktiviert wird | eingeplant |
+| SEC-2026-430 | niedrig | P3 | nur falls die Jira-Integration je aktiviert wird | eingeplant |
+| SEC-2026-431 | niedrig | P3 | Phase 2 - Abhaengigkeitsschritt (firebase-tools, nur mit der Node-22- und npm-11-Toolchain) | eingeplant |
+| SEC-2026-432 | niedrig | P3 | Phase 2 - Abhaengigkeitsschritt (firebase-tools, nur mit der Node-22- und npm-11-Toolchain) | eingeplant |
+| SEC-2026-433 | niedrig | P3 | Phase 2 - Abhaengigkeitsschritt (firebase-tools, nur mit der Node-22- und npm-11-Toolchain) | eingeplant |
+| SEC-2026-434 | niedrig | P3 | Phase 2 - Abhaengigkeitsschritt (firebase-tools, nur mit der Node-22- und npm-11-Toolchain) | eingeplant |
+| SEC-2026-435 | niedrig | P3 | Phase 2 - Abhaengigkeitsschritt (firebase-tools, nur mit der Node-22- und npm-11-Toolchain) | eingeplant |
+| SEC-2026-436 | niedrig | P3 | Phase 2 - Abhaengigkeitsschritt (firebase-tools, nur mit der Node-22- und npm-11-Toolchain) | eingeplant |
+| SEC-2026-437 | niedrig | P3 | Phase 2 - Abhaengigkeitsschritt (firebase-tools, nur mit der Node-22- und npm-11-Toolchain) | eingeplant |
+| SEC-2026-438 | niedrig | P3 | Phase 2 - Abhaengigkeitsschritt (firebase-tools, nur mit der Node-22- und npm-11-Toolchain) | eingeplant |
+| SEC-2026-439 | niedrig | P3 | Phase 2 - Abhaengigkeitsschritt (firebase-tools, nur mit der Node-22- und npm-11-Toolchain) | eingeplant |
+| SEC-2026-440 | niedrig | P3 | Phase 2 - Abhaengigkeitsschritt (firebase-tools, nur mit der Node-22- und npm-11-Toolchain) | eingeplant |
+| SEC-2026-441 | niedrig | P3 | Phase 2 - Abhaengigkeitsschritt (firebase-tools, nur mit der Node-22- und npm-11-Toolchain) | eingeplant |
+| SEC-2026-442 | niedrig | P3 | Phase 2 - Abhaengigkeitsschritt (firebase-tools, nur mit der Node-22- und npm-11-Toolchain) | eingeplant |
+| SEC-2026-443 | niedrig | P3 | Phase 2 - Abhaengigkeitsschritt (firebase-tools, nur mit der Node-22- und npm-11-Toolchain) | eingeplant |
+| SEC-2026-444 | niedrig | P3 | Phase 2 - Abhaengigkeitsschritt (firebase-tools, nur mit der Node-22- und npm-11-Toolchain) | eingeplant |
+| SEC-2026-445 | niedrig | P3 | Phase 2 - Abhaengigkeitsschritt (firebase-tools, nur mit der Node-22- und npm-11-Toolchain) | eingeplant |
+| SEC-2026-446 | niedrig | P3 | Phase 2 - Abhaengigkeitsschritt (firebase-tools, nur mit der Node-22- und npm-11-Toolchain) | eingeplant |
+| SEC-2026-447 | niedrig | P3 | Phase 2 - Abhaengigkeitsschritt (firebase-tools, nur mit der Node-22- und npm-11-Toolchain) | eingeplant |
+| SEC-2026-448 | niedrig | P3 | Phase 2 - Abhaengigkeitsschritt (firebase-tools, nur mit der Node-22- und npm-11-Toolchain) | eingeplant |
+| SEC-2026-449 | niedrig | P3 | Phase 2 - Abhaengigkeitsschritt (firebase-tools, nur mit der Node-22- und npm-11-Toolchain) | eingeplant |
+| SEC-2026-450 | niedrig | P3 | Phase 2 - Abhaengigkeitsschritt (firebase-tools, nur mit der Node-22- und npm-11-Toolchain) | eingeplant |
+| SEC-2026-451 | niedrig | P3 | Phase 2 - Abhaengigkeitsschritt (firebase-tools, nur mit der Node-22- und npm-11-Toolchain) | eingeplant |
+| SEC-2026-452 | niedrig | P3 | Phase 2 - Abhaengigkeitsschritt (firebase-tools, nur mit der Node-22- und npm-11-Toolchain) | eingeplant |
+| SEC-2026-453 | niedrig | P3 | Phase 2 - Abhaengigkeitsschritt (firebase-tools, nur mit der Node-22- und npm-11-Toolchain) | eingeplant |
+| SEC-2026-454 | niedrig | P3 | Phase 2 - Abhaengigkeitsschritt (firebase-tools, nur mit der Node-22- und npm-11-Toolchain) | eingeplant |
+| SEC-2026-455 | niedrig | P3 | Phase 2 - Abhaengigkeitsschritt (firebase-tools, nur mit der Node-22- und npm-11-Toolchain) | eingeplant |
+| SEC-2026-456 | niedrig | P3 | Phase 2 - Abhaengigkeitsschritt (firebase-tools, nur mit der Node-22- und npm-11-Toolchain) | eingeplant |
+| SEC-2026-457 | niedrig | P3 | Phase 2 - Abhaengigkeitsschritt (firebase-tools, nur mit der Node-22- und npm-11-Toolchain) | eingeplant |
+| SEC-2026-458 | niedrig | P3 | Phase 2 - Abhaengigkeitsschritt (firebase-tools, nur mit der Node-22- und npm-11-Toolchain) | eingeplant |
+| SEC-2026-459 | niedrig | P3 | Phase 2 - Abhaengigkeitsschritt (firebase-tools, nur mit der Node-22- und npm-11-Toolchain) | eingeplant |
+| SEC-2026-460 | niedrig | P3 | Phase 2 - Abhaengigkeitsschritt (firebase-tools, nur mit der Node-22- und npm-11-Toolchain) | eingeplant |
+| SEC-2026-461 | niedrig | P3 | Phase 2 - Datenschutz-Schritt | eingeplant |
+| SEC-2026-462 | niedrig | P3 | Phase 2 - Haertung neben verwandter Arbeit | eingeplant |
+| SEC-2026-463 | niedrig | P3 | Phase 2 - Haertung neben verwandter Arbeit | eingeplant |
+| SEC-2026-464 | niedrig | P3 | Phase 2 - Haertung neben verwandter Arbeit | eingeplant |
+| SEC-2026-465 | niedrig | P3 | Phase 2 - Haertung neben verwandter Arbeit | eingeplant |
+| SEC-2026-466 | niedrig | P3 | Phase 2 - Haertung neben verwandter Arbeit | eingeplant |
+| SEC-2026-467 | niedrig | P3 | Phase 2 - Haertung neben verwandter Arbeit | eingeplant |
+| SEC-2026-468 | niedrig | P3 | Phase 2 - Haertung neben verwandter Arbeit | eingeplant |
+| SEC-2026-469 | niedrig | P3 | Phase 2 - Haertung neben verwandter Arbeit | eingeplant |
+| SEC-2026-470 | niedrig | P3 | Phase 2 - Haertung neben verwandter Arbeit | eingeplant |
+| SEC-2026-471 | niedrig | P3 | Phase 2 - Haertung neben verwandter Arbeit | eingeplant |
+| SEC-2026-472 | niedrig | P3 | Phase 2 - Haertung neben verwandter Arbeit | eingeplant |
+| SEC-2026-473 | niedrig | P2 | behoben in diesem Patch-Schritt | eingeplant |
+| SEC-2026-474 | niedrig | P2 | behoben in diesem Patch-Schritt | eingeplant |
+| SEC-2026-475 | mittel | P2 | behoben in diesem Patch-Schritt | eingeplant |
 
 **Nachtrag zum Audit von v2.13.0 (`b88c77b`), 22.09.2026: die letzten 90 Befunde (87 niedrig,
 3 info) sind triagiert — 54 widerlegt, 35 eingeplant, 89 Registereinträge, weil zwei Befunde

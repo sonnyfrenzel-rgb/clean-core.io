@@ -79,6 +79,34 @@ const shared = [
   'Answer compactly in the schema: one entry per root cause with every location, evidence of at most three quoted lines, a severity proposal in German words. Then list briefly what you checked and found sound.',
 ].join('\n');
 
+/**
+ * Files a consultant gets in *every* one of its calls, on top of its batch.
+ *
+ * The audit of v2.14.0 (3131afa) rated three findings `kritisch` and eleven
+ * `hoch` that were not findings at all: the `data-rules` consultant never
+ * received `firestore.rules` and said so in every one of them ("the rules file
+ * was not provided"), and the `frontend-supply-chain` consultant never received
+ * `lib/sanitize-html.ts` and rated five XSS findings `hoch` on "Sanitizer nicht
+ * einsehbar". Ten of fifty-one calls had failed and the cost cap had dropped the
+ * rest; both files are ordinary members of their domain, so they were packed
+ * into one batch each and that batch was one of the ones that went missing. The
+ * result was an audit whose headline said "Risiko kritisch" and whose substance
+ * was a model guessing about two files that sit in the repository.
+ *
+ * A file listed here is copied into every call of that consultant, so no batch
+ * boundary, cost cap or failed call can take it away. The rule for putting one
+ * here is narrow: the consultant's verdict on its whole domain is unreadable
+ * without it. Two files meet that today, and the cost is what they take out of
+ * every call of that consultant: `firestore.rules` is 23.8 kB against a
+ * `batchChars` of 100,000, so roughly a quarter of each data-rules call, and
+ * `lib/sanitize-html.ts` is 6.3 kB, about six per cent. That is the price of
+ * not guessing, and it is why this is not a longer list.
+ */
+export const PINNED = {
+  'data-rules': ['firestore.rules'],
+  'frontend-supply-chain': ['lib/sanitize-html.ts'],
+};
+
 /** The five domains, each with the surface-map domains whose files it reads in depth (lib/surface.mjs DOMAINS). */
 export const CONSULTANTS = {
   'appsec-api': {

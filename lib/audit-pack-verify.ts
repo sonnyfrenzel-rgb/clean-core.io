@@ -256,7 +256,13 @@ export async function verifyAuditPack(zipBlob: Blob | Buffer | Uint8Array): Prom
     // So the archive has to match the manifest exactly: an entry the manifest
     // does not account for is an integrity failure, not a curiosity.
     const attested = Array.isArray(manifest.attested) ? manifest.attested : [];
-    const listed = new Set([...manifest.files.map((f) => f.path), ...attested.map((a) => a.path)]);
+    // `files` is type-checked for the same reason `attested` is, one line above:
+    // a manifest is a file an outsider hands us, and `"files": null` in a
+    // hand-built archive threw a TypeError out of the verifier instead of
+    // reporting the pack as invalid — a crash where a verdict belongs
+    // (security audit of v2.14.0, SEC-2026-350).
+    const listedFiles = Array.isArray(manifest.files) ? manifest.files : [];
+    const listed = new Set([...listedFiles.map((f) => f.path), ...attested.map((a) => a.path)]);
     const unlisted = Object.values(zip.files)
       .filter((entry) => !entry.dir && entry.name !== 'manifest.json' && !listed.has(entry.name))
       .map((entry) => entry.name)
@@ -309,7 +315,7 @@ export async function verifyAuditPack(zipBlob: Blob | Buffer | Uint8Array): Prom
       }
     }
 
-    for (const entry of manifest.files) {
+    for (const entry of listedFiles) {
       const file = zip.file(entry.path);
       if (!file) {
         fileResults.push({
@@ -350,7 +356,7 @@ export async function verifyAuditPack(zipBlob: Blob | Buffer | Uint8Array): Prom
     let canonicalManifest: string | null = null;
     try {
       canonicalManifest = canonicalAuditManifest({
-        files: manifest.files,
+        files: listedFiles,
         attested,
         projectId: manifest.projectId,
         runId: manifest.runId,

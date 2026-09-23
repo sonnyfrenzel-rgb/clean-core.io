@@ -463,7 +463,10 @@ test.describe('the audit pipeline', () => {
     // lib/huge.ts: 50 numbered lines of 100 characters — far larger than one 800-character call.
     const huge = Array.from({ length: 50 }, (_, i) => `${String(i + 1).padStart(2, '0')}|${'y'.repeat(96)}`).join('\n');
     const prepare = (p: string) => (p === 'lib/huge.ts' ? huge : 'x'.repeat(400));
-    const full = planBatches(files, prepare, { batchChars: 800, maxCalls: 20 });
+    // No pinned reference files here: this test measures how the consultants' own
+    // files are packed, and a pinned file takes room out of every call (its own
+    // test is below).
+    const full = planBatches(files, prepare, { batchChars: 800, maxCalls: 20, pinned: {} });
     expect(full.patternOnly).toEqual(['tests/a.spec.ts']);
     expect(full.notRead).toEqual([]);
     // The large file is read in consecutive parts, labelled, and together they are the whole file with its own line numbers.
@@ -474,7 +477,7 @@ test.describe('the audit pipeline', () => {
     for (const b of full.batches as { chars: number }[]) expect(b.chars).toBeLessThanOrEqual(800);
 
     // With a call limit, what does not fit is named — never dropped.
-    const plan = planBatches(files, prepare, { batchChars: 800, maxCalls: hugeParts.length + 3 });
+    const plan = planBatches(files, prepare, { batchChars: 800, maxCalls: hugeParts.length + 3, pinned: {} });
     const read = plan.batches.flatMap((b: { consultant: string; files: { path: string }[] }) => b.files.map((f) => `${b.consultant}:${f.path}`));
     // Each small file needs its own call (400 characters plus path and header, 800 per call): the routes, every part of the large file, the component — then the limit.
     // Exact multiplicity, in order: every small file once, the large file once per part — a file sent twice would pass a set.
@@ -497,7 +500,71 @@ test.describe('the audit pipeline', () => {
     expect(oversized.at(-1)).toBe('413|b');
     expect(oversized.map((p: string, i: number) => (i === 0 ? p : p.replace(/^41[23]\|… /, ''))).join('').startsWith(`412|${'a'.repeat(30)}`)).toBe(true);
     // A self-test reads only its files.
-    expect(planBatches(files, () => 'x', { only: ['app/api/a/route.ts'] }).batches.map((b: { files: unknown[] }) => b.files.length)).toEqual([1]);
+    expect(planBatches(files, () => 'x', { only: ['app/api/a/route.ts'], pinned: {} }).batches.map((b: { files: unknown[] }) => b.files.length)).toEqual([1]);
+  });
+
+  test('a pinned reference file is in every call of its consultant, and a failed call cannot take it away', async () => {
+    // Why this exists, measured: the audit of v2.14.0 (3131afa) reported "Risiko
+    // kritisch" on the strength of three kritisch and eleven hoch findings whose
+    // own text said the deciding file had not been supplied — `firestore.rules`
+    // for data-rules ("the rules file was not provided", five findings) and
+    // `lib/sanitize-html.ts` for frontend-supply-chain ("Sanitizer nicht
+    // einsehbar", five findings). Both sit in the repository. They were packed
+    // into one batch each like any other file, ten of fifty-one calls failed,
+    // and a model then guessed about the two files that decide its domain.
+    const { planBatches, consultantMessage, runConsultants } = await lib('pipeline.mjs');
+    const { PINNED } = await lib('team.mjs');
+
+    // The list names files that exist — a pinned path with a typo would pin nothing and say nothing.
+    for (const paths of Object.values(PINNED) as string[][])
+      for (const p of paths) expect(fs.existsSync(path.resolve(ROOT, p)), `${p} is pinned but not in the repository`).toBe(true);
+
+    const files = [
+      file('firestore.rules', 'data-rules'),
+      file('hooks/useA.ts', 'data-rules'),
+      file('hooks/useB.ts', 'data-rules'),
+      file('hooks/useC.ts', 'data-rules'),
+      file('app/api/a/route.ts', 'appsec-api'),
+    ];
+    const prepare = (p: string) => (p === 'firestore.rules' ? 'RULES-TEXT' : 'x'.repeat(300));
+    const plan = planBatches(files, prepare, { batchChars: 500, maxCalls: 20, pinned: { 'data-rules': ['firestore.rules'] } });
+    const rules = plan.batches.filter((b: { consultant: string }) => b.consultant === 'data-rules');
+    expect(rules.length, 'the fixture is meant to need more than one call').toBeGreaterThan(1);
+
+    // In every call of its own consultant…
+    for (const b of rules as { pinned: { path: string }[] }[]) expect(b.pinned.map((p) => p.path)).toEqual(['firestore.rules']);
+    // …in no other consultant's…
+    for (const b of plan.batches.filter((b: { consultant: string }) => b.consultant !== 'data-rules') as { pinned: { path: string }[] }[])
+      expect(b.pinned.map((p) => p.path)).toEqual([]);
+    // …and never a second time as an ordinary file, which would spend the budget twice.
+    expect(plan.batches.flatMap((b: { files: { path: string }[] }) => b.files.map((f) => f.path))).not.toContain('firestore.rules');
+    // Its characters are charged, so pinning cannot quietly push a call over the batch size.
+    for (const b of plan.batches as { chars: number }[]) expect(b.chars).toBeLessThanOrEqual(500);
+
+    // The model is actually shown the text, under a heading that answers the sentence it kept writing.
+    const message = consultantMessage({ surface: { head: 'abc1234', apiRoutes: [], sinks: [], workflows: [] }, batch: rules[1], index: 1, count: 2 });
+    expect(message).toContain('RULES-TEXT');
+    expect(message).toContain('### firestore.rules');
+    expect(message).toMatch(/was not provided/);
+
+    // And the coverage claim holds: one call fails, the other returns, and the
+    // pinned file is not among the files the run reports as unread.
+    let calls = 0;
+    const run = await runConsultants({
+      batches: rules,
+      messageFor: () => ({ system: 's', user: 'u' }),
+      call: async () => {
+        calls++;
+        if (calls === 1) throw new Error('model call failed');
+        return { review: { findings: [] }, usage: { cost: 0.01 } };
+      },
+      fits: () => true,
+      worstCase: () => 0.01,
+      capUsd: 5,
+    });
+    expect(run.failedCalls).toBe(1);
+    expect(run.notReviewed.map((n: { path: string }) => n.path), 'the pinned file was reported unread because another call failed').not.toContain('firestore.rules');
+    expect(run.results.flatMap((r: { pinned: string[] }) => r.pinned)).toContain('firestore.rules');
   });
 
   test('the rules consultant sees every client write, wherever it is; others see the entries of their own files', async () => {

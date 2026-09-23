@@ -24,6 +24,17 @@ paths = [
   # .gitleaksignore stay for the history scan.
   '''docs/security/register\.enc\.json''',
   '''docs/qa/refuted-findings\.enc\.json''',
+  # The exception list itself. It holds two kinds of line and no third: an exact
+  # fingerprint (`<commit>:<path>:<rule>:<line>`, which carries no value at all)
+  # and prose saying why that finding is not a secret. The prose is the problem —
+  # an explanation of a false alarm names the thing that raised it, so on
+  # 21.09.2026 the comment for CC-056 quoted the ABAP program name it was
+  # excusing and `generic-api-key` fired on the excuse (run 35780745211, this
+  # file line 25 at 50ac4b64). Rewording that one comment fixed `main` and not
+  # the history scan, which keeps reading the old commit, and the next
+  # explanation would have done the same thing again. Path-scoped rather than a
+  # fingerprint per write, for the same reason as the two registers above.
+  '''\.gitleaksignore''',
 ]
 regexes = [
   # Deterministic CI test placeholders — not real credentials.

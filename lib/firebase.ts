@@ -87,22 +87,32 @@ export enum OperationType {
   WRITE = 'write',
 }
 
+/**
+ * What a Firestore failure is allowed to say about who hit it.
+ *
+ * It used to carry the signed-in account's e-mail address, every linked
+ * provider's display name, e-mail and photo URL, and the tenant id — into
+ * `console.error` **and** into the `Error.message` that `ErrorBoundary.tsx`
+ * then renders on screen. A support screenshot of a failed save therefore
+ * carried the person's identity, and so did any browser log shipped anywhere
+ * (security audit of v2.14.0, SEC-2026-352; GDPR Art. 5(1)(c) data
+ * minimisation).
+ *
+ * What debugging actually needs from the account is whether someone was signed
+ * in and whether the token was verified — which uid, which address and which
+ * provider identities do not change what the reader does next. The uid stays:
+ * it is the key the server logs use, and it is not a person's name.
+ */
 interface FirestoreErrorInfo {
   error: string;
   operationType: OperationType;
   path: string | null;
   authInfo: {
     userId: string | undefined;
-    email: string | null | undefined;
+    signedIn: boolean;
     emailVerified: boolean | undefined;
     isAnonymous: boolean | undefined;
-    tenantId: string | null | undefined;
-    providerInfo: {
-      providerId: string;
-      displayName: string | null;
-      email: string | null;
-      photoUrl: string | null;
-    }[];
+    providerIds: string[];
   }
 }
 
@@ -120,16 +130,11 @@ export function handleFirestoreError(error: unknown, operationType: OperationTyp
     error: message,
     authInfo: {
       userId: auth.currentUser?.uid,
-      email: auth.currentUser?.email,
+      signedIn: !!auth.currentUser,
       emailVerified: auth.currentUser?.emailVerified,
       isAnonymous: auth.currentUser?.isAnonymous,
-      tenantId: auth.currentUser?.tenantId,
-      providerInfo: auth.currentUser?.providerData.map(provider => ({
-        providerId: provider.providerId,
-        displayName: provider.displayName,
-        email: provider.email,
-        photoUrl: provider.photoURL
-      })) || []
+      // Which provider, not which identity at that provider.
+      providerIds: auth.currentUser?.providerData.map((provider) => provider.providerId) || [],
     },
     operationType,
     path
