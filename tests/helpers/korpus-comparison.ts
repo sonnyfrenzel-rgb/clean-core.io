@@ -35,6 +35,7 @@ import {
   type SkeletonNodeKind,
 } from '../../lib/abap/process-skeleton';
 import { readStatements, type AbapStatement } from '../../lib/abap/statement-reader';
+import { buildBusinessStatements } from '../../lib/abap/business-statement';
 import { gradeSapObjectUse } from '../../lib/abap/catalog-service';
 import {
   objectUseFromAccess,
@@ -344,11 +345,11 @@ export interface EngineReading {
   /** Nur als Lebenszeichen: die Route ist im Korpus ohne Gegenstück. */
   routeCount: number;
   /**
-   * Die Fachsätze, die dieser Lauf erzeugt hat — heute keine (Roadmap 17.5).
+   * Die Fachsätze, die dieser Lauf erzeugt hat.
    *
    * Sie stehen hier und nicht im Vergleicher, weil der Vergleicher sonst
-   * beides wäre: Erzeuger und Richter. Wer 17.6 entscheidet, hängt seinen
-   * Erzeuger an `readWithEngine` und ändert an der Facette nichts.
+   * beides wäre: Erzeuger und Richter. Seit 17.7 hängt `ENGINE_PRODUCER` an
+   * dieser Naht, und am Vergleich selbst ist dafür nichts geändert worden.
    */
   businessStatements: GeneratedStatement[];
   /** Wer sie erzeugt hat. Steht in jedem Beleg der Facette `fachsaetze`. */
@@ -367,7 +368,7 @@ export type SkeletonMutation = (skeleton: ProcessSkeleton, file: string) => Proc
 export function readWithEngine(
   korpusCase: KorpusCase,
   mutate?: SkeletonMutation,
-  producer: StatementProducer = NO_PRODUCER,
+  producer: StatementProducer = ENGINE_PRODUCER,
 ): EngineReading {
   const deployment = deploymentOf(korpusCase.profile);
   const objectNames = new Set<string>();
@@ -1448,6 +1449,35 @@ export const NO_PRODUCER: StatementProducer = {
 };
 
 /**
+ * **Der Erzeuger des Produkts** (Roadmap 17.7, Weg A — entschieden 23.09.2026).
+ *
+ * `lib/abap/business-statement.ts` bildet die Sätze deterministisch aus dem
+ * Quelltext: kein Modellaufruf, kein Netz, kein Schlüssel, und derselbe
+ * Quelltext ergibt denselben Satz. Er ist seit diesem Schritt die **Vorgabe**
+ * von `readWithEngine` — `NO_PRODUCER` bleibt exportiert, weil die
+ * Empfindlichkeitsprobe in `tests/korpus-mutation.spec.ts` den leeren Stand
+ * weiterhin gegen ihn misst.
+ *
+ * Diese Naht ist die einzige Verbindung zwischen Erzeuger und Vergleicher:
+ * am Vergleich selbst ist für 17.7 **nichts** geändert worden. Erzeuger und
+ * Richter bleiben zwei.
+ */
+export const ENGINE_PRODUCER: StatementProducer = {
+  name: 'engine:fachsatz',
+  note:
+    'Die Engine erzeugt die Fachsätze deterministisch aus dem Quelltext ' +
+    '(lib/abap/business-statement.ts, Roadmap 17.7, Herkunft „reconstructed").',
+  produce: (korpusCase) =>
+    korpusCase.sources.flatMap((source) =>
+      buildBusinessStatements(source.code).map((statement) => ({
+        id: `${source.name}:${statement.id}`,
+        text: statement.text,
+        anchors: statement.anchors.map((anchor) => ({ file: source.name, line: anchor.lineStart })),
+      })),
+    ),
+};
+
+/**
  * Proben für die Empfindlichkeitsmessung — **nie im Normallauf.**
  *
  * Sie sind kein Erzeuger des Produkts und dürfen nie einer werden: `SOLL_ECHO`
@@ -1496,13 +1526,12 @@ export const PROBE_PRODUCERS = {
  * 2. **Das Textmaß** (`statementSimilarity`) ist ein Dice-Koeffizient über
  *    normalisierte Inhaltswörter. Simpel und nachrechenbar, mit einer Schwelle,
  *    die am Korpus selbst kalibriert ist (siehe `STATEMENT_MATCH_THRESHOLD`).
- * 3. **Der Erzeuger** (`StatementProducer`) ist austauschbar und heute leer:
- *    `NO_PRODUCER`. Kein Modul in `lib/`, `app/` oder `components/` erzeugt
- *    Fachsätze — eine Suche nach `businessStatement`/`Fachsatz` findet dort
- *    nichts, und `process-skeleton.ts` sagt über seine Knotenbeschriftung
- *    ausdrücklich „a token out of the source, never a phrase this engine made
- *    up". Wer der Erzeuger wird, ist eine Produktentscheidung (17.6). Diese
- *    Facette misst ihn, sobald es ihn gibt, ohne Umbau.
+ * 3. **Der Erzeuger** (`StatementProducer`) ist austauschbar. Seit 17.7 ist die
+ *    Vorgabe `ENGINE_PRODUCER` — `lib/abap/business-statement.ts`, deterministisch
+ *    und ohne Modell. `NO_PRODUCER` bleibt daneben stehen, weil die
+ *    Empfindlichkeitsprobe den leeren Stand weiter gegen ihn misst. Regel 6 im
+ *    Skelett ist dabei unberührt: die Knotenbeschriftung bleibt ein wörtliches
+ *    Token, der Fachsatz ist eine eigene Ebene in einer eigenen Datei.
  */
 function compareBusinessStatements(korpusCase: KorpusCase, reading: EngineReading): ClassResult {
   const statements = korpusCase.expected.businessStatements;
@@ -1671,7 +1700,7 @@ export function compareCase(korpusCase: KorpusCase, reading: EngineReading): Cla
   ];
 }
 
-export function compareAll(mutate?: SkeletonMutation, producer: StatementProducer = NO_PRODUCER): ClassResult[] {
+export function compareAll(mutate?: SkeletonMutation, producer: StatementProducer = ENGINE_PRODUCER): ClassResult[] {
   const results: ClassResult[] = [];
   for (const korpusCase of readCases()) {
     results.push(...compareCase(korpusCase, readWithEngine(korpusCase, mutate, producer)));

@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import {
+  ENGINE_PRODUCER,
   compareAll,
   compareCase,
   readBaseline,
@@ -415,11 +416,15 @@ test.describe('das Fachsatzmaß ist offengelegt und begründet', () => {
       'der Inhalt wurde nicht gemessen',
     ).toBe(1);
 
-    // Und der Normallauf sagt ehrlich, dass es keinen gibt.
+    // Und jeder Beleg nennt den Erzeuger beim Namen — vor 17.7 war das
+    // `kein-erzeuger`, seitdem die Engine. Ein Beleg ohne Namen sagt nicht,
+    // **was** gemessen wurde, und genau das war der Befund CR-05.
     expect(NO_PRODUCER.produce(korpusCase, readWithEngine(korpusCase))).toEqual([]);
     const live = LIVE.filter((result) => result.class === 'fachsaetze');
     for (const result of live) {
-      expect(result.evidence, `${result.case}: der Beleg nennt den Erzeuger nicht`).toContain(NO_PRODUCER.name);
+      expect(result.evidence, `${result.case}: der Beleg nennt den Erzeuger nicht`).toContain(
+        ENGINE_PRODUCER.name,
+      );
     }
     const total = live.reduce((sum, result) => sum + result.scope.total, 0);
     expect(total, 'der Korpus führt keine Sollfachsätze mehr').toBeGreaterThan(150);

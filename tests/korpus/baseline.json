@@ -116,10 +116,10 @@
     {
       "case": "CC-001",
       "class": "fachsaetze",
-      "state": "disagree",
-      "verdict": "nicht-vergleichbar",
+      "state": "agree",
+      "verdict": null,
       "scope": {
-        "compared": 0,
+        "compared": 3,
         "total": 3
       },
       "aspects": [
@@ -132,20 +132,20 @@
         },
         {
           "name": "fachsatzabdeckung",
-          "status": "not_checked",
-          "compared": 0,
+          "status": "compared",
+          "compared": 3,
           "total": 3,
-          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Wie viele Sollsätze haben überhaupt einen erzeugten Satz an derselben ABAP-Anweisung? Erzeuger: engine:fachsatz."
         },
         {
           "name": "fachsatzinhalt",
-          "status": "not_checked",
-          "compared": 0,
-          "total": 0,
-          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
+          "status": "compared",
+          "compared": 3,
+          "total": 3,
+          "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
         }
       ],
-      "reason": "3 Sollfachsatz/-sätze mit 4 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
+      "reason": "3 Sollfachsatz/-sätze mit 4 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 9 Satz/Sätze. 3 von 3 Sollsätzen vergleichbar (Anker geteilt), davon 3 über der Schwelle: CC-001-B01↔source.abap:B4-select 1.00, CC-001-B03↔source.abap:B14-list 1.00, CC-001-B02↔source.abap:B9-guard 0.80. Darunter: —. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 6."
     },
     {
       "case": "CC-002",
@@ -259,9 +259,9 @@
       "case": "CC-002",
       "class": "fachsaetze",
       "state": "disagree",
-      "verdict": "nicht-vergleichbar",
+      "verdict": "engine-defekt",
       "scope": {
-        "compared": 0,
+        "compared": 3,
         "total": 3
       },
       "aspects": [
@@ -274,20 +274,20 @@
         },
         {
           "name": "fachsatzabdeckung",
-          "status": "not_checked",
-          "compared": 0,
+          "status": "compared",
+          "compared": 3,
           "total": 3,
-          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Wie viele Sollsätze haben überhaupt einen erzeugten Satz an derselben ABAP-Anweisung? Erzeuger: engine:fachsatz."
         },
         {
           "name": "fachsatzinhalt",
-          "status": "not_checked",
-          "compared": 0,
-          "total": 0,
-          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
+          "status": "compared",
+          "compared": 2,
+          "total": 3,
+          "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
         }
       ],
-      "reason": "3 Sollfachsatz/-sätze mit 5 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
+      "reason": "3 Sollfachsatz/-sätze mit 5 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 13 Satz/Sätze. 3 von 3 Sollsätzen vergleichbar (Anker geteilt), davon 2 über der Schwelle: CC-002-B03↔source.abap:B13-fields 0.83, CC-002-B01↔source.abap:B6-branch6 0.50. Darunter: CC-002-B02↔source.abap:B9-guard 0.00. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 10."
     },
     {
       "case": "CC-003",
@@ -400,10 +400,10 @@
     {
       "case": "CC-003",
       "class": "fachsaetze",
-      "state": "disagree",
-      "verdict": "nicht-vergleichbar",
+      "state": "agree",
+      "verdict": null,
       "scope": {
-        "compared": 0,
+        "compared": 3,
         "total": 3
       },
       "aspects": [
@@ -416,20 +416,20 @@
         },
         {
           "name": "fachsatzabdeckung",
-          "status": "not_checked",
-          "compared": 0,
+          "status": "compared",
+          "compared": 3,
           "total": 3,
-          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Wie viele Sollsätze haben überhaupt einen erzeugten Satz an derselben ABAP-Anweisung? Erzeuger: engine:fachsatz."
         },
         {
           "name": "fachsatzinhalt",
-          "status": "not_checked",
-          "compared": 0,
-          "total": 0,
-          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
+          "status": "compared",
+          "compared": 3,
+          "total": 3,
+          "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
         }
       ],
-      "reason": "3 Sollfachsatz/-sätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
+      "reason": "3 Sollfachsatz/-sätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 9 Satz/Sätze. 3 von 3 Sollsätzen vergleichbar (Anker geteilt), davon 3 über der Schwelle: CC-003-B02↔source.abap:B12-branch 0.92, CC-003-B01↔source.abap:B10-branch 0.75, CC-003-B03↔source.abap:B14-branch 0.50. Darunter: —. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 6."
     },
     {
       "case": "CC-004",
@@ -543,9 +543,9 @@
       "case": "CC-004",
       "class": "fachsaetze",
       "state": "disagree",
-      "verdict": "nicht-vergleichbar",
+      "verdict": "engine-defekt",
       "scope": {
-        "compared": 0,
+        "compared": 2,
         "total": 2
       },
       "aspects": [
@@ -558,20 +558,20 @@
         },
         {
           "name": "fachsatzabdeckung",
-          "status": "not_checked",
-          "compared": 0,
+          "status": "compared",
+          "compared": 2,
           "total": 2,
-          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Wie viele Sollsätze haben überhaupt einen erzeugten Satz an derselben ABAP-Anweisung? Erzeuger: engine:fachsatz."
         },
         {
           "name": "fachsatzinhalt",
-          "status": "not_checked",
+          "status": "compared",
           "compared": 0,
-          "total": 0,
-          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
+          "total": 2,
+          "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
         }
       ],
-      "reason": "2 Sollfachsatz/-sätze mit 3 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
+      "reason": "2 Sollfachsatz/-sätze mit 3 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 3 Satz/Sätze. 2 von 2 Sollsätzen vergleichbar (Anker geteilt), davon 0 über der Schwelle: —. Darunter: CC-004-B01↔source.abap:B10-method 0.24, CC-004-B02↔source.abap:B14-method 0.00. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 1."
     },
     {
       "case": "CC-005",
@@ -684,10 +684,10 @@
     {
       "case": "CC-005",
       "class": "fachsaetze",
-      "state": "disagree",
-      "verdict": "nicht-vergleichbar",
+      "state": "agree",
+      "verdict": null,
       "scope": {
-        "compared": 0,
+        "compared": 2,
         "total": 2
       },
       "aspects": [
@@ -700,20 +700,20 @@
         },
         {
           "name": "fachsatzabdeckung",
-          "status": "not_checked",
-          "compared": 0,
+          "status": "compared",
+          "compared": 2,
           "total": 2,
-          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Wie viele Sollsätze haben überhaupt einen erzeugten Satz an derselben ABAP-Anweisung? Erzeuger: engine:fachsatz."
         },
         {
           "name": "fachsatzinhalt",
-          "status": "not_checked",
-          "compared": 0,
-          "total": 0,
-          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
+          "status": "compared",
+          "compared": 2,
+          "total": 2,
+          "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
         }
       ],
-      "reason": "2 Sollfachsatz/-sätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
+      "reason": "2 Sollfachsatz/-sätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 7 Satz/Sätze. 2 von 2 Sollsätzen vergleichbar (Anker geteilt), davon 2 über der Schwelle: CC-005-B01↔source.abap:B6-call 1.00, CC-005-B02↔source.abap:B9-call 0.63. Darunter: —. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 5."
     },
     {
       "case": "CC-006",
@@ -826,10 +826,10 @@
     {
       "case": "CC-006",
       "class": "fachsaetze",
-      "state": "disagree",
-      "verdict": "nicht-vergleichbar",
+      "state": "agree",
+      "verdict": null,
       "scope": {
-        "compared": 0,
+        "compared": 2,
         "total": 2
       },
       "aspects": [
@@ -842,20 +842,20 @@
         },
         {
           "name": "fachsatzabdeckung",
-          "status": "not_checked",
-          "compared": 0,
+          "status": "compared",
+          "compared": 2,
           "total": 2,
-          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Wie viele Sollsätze haben überhaupt einen erzeugten Satz an derselben ABAP-Anweisung? Erzeuger: engine:fachsatz."
         },
         {
           "name": "fachsatzinhalt",
-          "status": "not_checked",
-          "compared": 0,
-          "total": 0,
-          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
+          "status": "compared",
+          "compared": 2,
+          "total": 2,
+          "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
         }
       ],
-      "reason": "2 Sollfachsatz/-sätze mit 3 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
+      "reason": "2 Sollfachsatz/-sätze mit 3 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 4 Satz/Sätze. 2 von 2 Sollsätzen vergleichbar (Anker geteilt), davon 2 über der Schwelle: CC-006-B01↔source.abap:B6-call 1.00, CC-006-B02↔source.abap:B6-result 1.00. Darunter: —. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 2."
     },
     {
       "case": "CC-007",
@@ -969,9 +969,9 @@
       "case": "CC-007",
       "class": "fachsaetze",
       "state": "disagree",
-      "verdict": "nicht-vergleichbar",
+      "verdict": "engine-defekt",
       "scope": {
-        "compared": 0,
+        "compared": 2,
         "total": 2
       },
       "aspects": [
@@ -984,20 +984,20 @@
         },
         {
           "name": "fachsatzabdeckung",
-          "status": "not_checked",
-          "compared": 0,
+          "status": "compared",
+          "compared": 2,
           "total": 2,
-          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Wie viele Sollsätze haben überhaupt einen erzeugten Satz an derselben ABAP-Anweisung? Erzeuger: engine:fachsatz."
         },
         {
           "name": "fachsatzinhalt",
-          "status": "not_checked",
+          "status": "compared",
           "compared": 0,
-          "total": 0,
-          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
+          "total": 2,
+          "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
         }
       ],
-      "reason": "2 Sollfachsatz/-sätze mit 3 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
+      "reason": "2 Sollfachsatz/-sätze mit 3 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 9 Satz/Sätze. 2 von 2 Sollsätzen vergleichbar (Anker geteilt), davon 0 über der Schwelle: —. Darunter: CC-007-B01↔source.abap:B4-select 0.25, CC-007-B02↔source.abap:B4-fields 0.00. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 7."
     },
     {
       "case": "CC-008",
@@ -1111,9 +1111,9 @@
       "case": "CC-008",
       "class": "fachsaetze",
       "state": "disagree",
-      "verdict": "nicht-vergleichbar",
+      "verdict": "engine-defekt",
       "scope": {
-        "compared": 0,
+        "compared": 2,
         "total": 2
       },
       "aspects": [
@@ -1126,20 +1126,20 @@
         },
         {
           "name": "fachsatzabdeckung",
-          "status": "not_checked",
-          "compared": 0,
+          "status": "compared",
+          "compared": 2,
           "total": 2,
-          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Wie viele Sollsätze haben überhaupt einen erzeugten Satz an derselben ABAP-Anweisung? Erzeuger: engine:fachsatz."
         },
         {
           "name": "fachsatzinhalt",
-          "status": "not_checked",
+          "status": "compared",
           "compared": 0,
-          "total": 0,
-          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
+          "total": 2,
+          "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
         }
       ],
-      "reason": "2 Sollfachsatz/-sätze mit 4 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
+      "reason": "2 Sollfachsatz/-sätze mit 4 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 7 Satz/Sätze. 2 von 2 Sollsätzen vergleichbar (Anker geteilt), davon 0 über der Schwelle: —. Darunter: CC-008-B01↔source.abap:B4-select 0.33, CC-008-B02↔source.abap:B4-fields 0.00. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 5."
     },
     {
       "case": "CC-009",
@@ -1253,9 +1253,9 @@
       "case": "CC-009",
       "class": "fachsaetze",
       "state": "disagree",
-      "verdict": "nicht-vergleichbar",
+      "verdict": "engine-defekt",
       "scope": {
-        "compared": 0,
+        "compared": 3,
         "total": 3
       },
       "aspects": [
@@ -1268,20 +1268,20 @@
         },
         {
           "name": "fachsatzabdeckung",
-          "status": "not_checked",
-          "compared": 0,
+          "status": "compared",
+          "compared": 3,
           "total": 3,
-          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Wie viele Sollsätze haben überhaupt einen erzeugten Satz an derselben ABAP-Anweisung? Erzeuger: engine:fachsatz."
         },
         {
           "name": "fachsatzinhalt",
-          "status": "not_checked",
-          "compared": 0,
-          "total": 0,
-          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
+          "status": "compared",
+          "compared": 2,
+          "total": 3,
+          "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
         }
       ],
-      "reason": "3 Sollfachsatz/-sätze mit 5 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
+      "reason": "3 Sollfachsatz/-sätze mit 5 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 8 Satz/Sätze. 3 von 3 Sollsätzen vergleichbar (Anker geteilt), davon 2 über der Schwelle: CC-009-B01↔source.abap:B6-get 1.00, CC-009-B02↔source.abap:B7-call 1.00. Darunter: CC-009-B03↔implementation.abap:B7-chain7 0.33. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 5."
     },
     {
       "case": "CC-010",
@@ -1394,10 +1394,10 @@
     {
       "case": "CC-010",
       "class": "fachsaetze",
-      "state": "disagree",
-      "verdict": "nicht-vergleichbar",
+      "state": "agree",
+      "verdict": null,
       "scope": {
-        "compared": 0,
+        "compared": 2,
         "total": 2
       },
       "aspects": [
@@ -1410,20 +1410,20 @@
         },
         {
           "name": "fachsatzabdeckung",
-          "status": "not_checked",
-          "compared": 0,
+          "status": "compared",
+          "compared": 2,
           "total": 2,
-          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Wie viele Sollsätze haben überhaupt einen erzeugten Satz an derselben ABAP-Anweisung? Erzeuger: engine:fachsatz."
         },
         {
           "name": "fachsatzinhalt",
-          "status": "not_checked",
-          "compared": 0,
-          "total": 0,
-          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
+          "status": "compared",
+          "compared": 2,
+          "total": 2,
+          "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
         }
       ],
-      "reason": "2 Sollfachsatz/-sätze mit 3 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
+      "reason": "2 Sollfachsatz/-sätze mit 3 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 6 Satz/Sätze. 2 von 2 Sollsätzen vergleichbar (Anker geteilt), davon 2 über der Schwelle: CC-010-B01↔source.abap:B8-set 0.67, CC-010-B02↔source.abap:B10-branch10 0.62. Darunter: —. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 4."
     },
     {
       "case": "CC-011",
@@ -1537,9 +1537,9 @@
       "case": "CC-011",
       "class": "fachsaetze",
       "state": "disagree",
-      "verdict": "nicht-vergleichbar",
+      "verdict": "engine-defekt",
       "scope": {
-        "compared": 0,
+        "compared": 2,
         "total": 2
       },
       "aspects": [
@@ -1552,20 +1552,20 @@
         },
         {
           "name": "fachsatzabdeckung",
-          "status": "not_checked",
-          "compared": 0,
+          "status": "compared",
+          "compared": 2,
           "total": 2,
-          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Wie viele Sollsätze haben überhaupt einen erzeugten Satz an derselben ABAP-Anweisung? Erzeuger: engine:fachsatz."
         },
         {
           "name": "fachsatzinhalt",
-          "status": "not_checked",
-          "compared": 0,
-          "total": 0,
-          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
+          "status": "compared",
+          "compared": 1,
+          "total": 2,
+          "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
         }
       ],
-      "reason": "2 Sollfachsatz/-sätze mit 3 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
+      "reason": "2 Sollfachsatz/-sätze mit 3 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 5 Satz/Sätze. 2 von 2 Sollsätzen vergleichbar (Anker geteilt), davon 1 über der Schwelle: CC-011-B02↔source.abap:B10-write 1.00. Darunter: CC-011-B01↔source.abap:B6-seq6 0.25. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 3."
     },
     {
       "case": "CC-012",
@@ -1679,9 +1679,9 @@
       "case": "CC-012",
       "class": "fachsaetze",
       "state": "disagree",
-      "verdict": "nicht-vergleichbar",
+      "verdict": "engine-defekt",
       "scope": {
-        "compared": 0,
+        "compared": 3,
         "total": 3
       },
       "aspects": [
@@ -1694,20 +1694,20 @@
         },
         {
           "name": "fachsatzabdeckung",
-          "status": "not_checked",
-          "compared": 0,
+          "status": "compared",
+          "compared": 3,
           "total": 3,
-          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Wie viele Sollsätze haben überhaupt einen erzeugten Satz an derselben ABAP-Anweisung? Erzeuger: engine:fachsatz."
         },
         {
           "name": "fachsatzinhalt",
-          "status": "not_checked",
-          "compared": 0,
-          "total": 0,
-          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
+          "status": "compared",
+          "compared": 2,
+          "total": 3,
+          "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
         }
       ],
-      "reason": "3 Sollfachsatz/-sätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
+      "reason": "3 Sollfachsatz/-sätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 5 Satz/Sätze. 3 von 3 Sollsätzen vergleichbar (Anker geteilt), davon 2 über der Schwelle: CC-012-B03↔source.abap:B16-write 0.53, CC-012-B01↔source.abap:B8-branch8 0.50. Darunter: CC-012-B02↔source.abap:B14-perform 0.25. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 2."
     },
     {
       "case": "CC-013",
@@ -1821,9 +1821,9 @@
       "case": "CC-013",
       "class": "fachsaetze",
       "state": "disagree",
-      "verdict": "nicht-vergleichbar",
+      "verdict": "engine-defekt",
       "scope": {
-        "compared": 0,
+        "compared": 3,
         "total": 3
       },
       "aspects": [
@@ -1836,20 +1836,20 @@
         },
         {
           "name": "fachsatzabdeckung",
-          "status": "not_checked",
-          "compared": 0,
+          "status": "compared",
+          "compared": 3,
           "total": 3,
-          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Wie viele Sollsätze haben überhaupt einen erzeugten Satz an derselben ABAP-Anweisung? Erzeuger: engine:fachsatz."
         },
         {
           "name": "fachsatzinhalt",
-          "status": "not_checked",
-          "compared": 0,
-          "total": 0,
-          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
+          "status": "compared",
+          "compared": 1,
+          "total": 3,
+          "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
         }
       ],
-      "reason": "3 Sollfachsatz/-sätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
+      "reason": "3 Sollfachsatz/-sätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 7 Satz/Sätze. 3 von 3 Sollsätzen vergleichbar (Anker geteilt), davon 1 über der Schwelle: CC-013-B01↔source.abap:B6-status 0.89. Darunter: CC-013-B03↔source.abap:B17-leave 0.40, CC-013-B02↔source.abap:B11-branch11 0.00. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 4."
     },
     {
       "case": "CC-014",
@@ -1963,9 +1963,9 @@
       "case": "CC-014",
       "class": "fachsaetze",
       "state": "disagree",
-      "verdict": "nicht-vergleichbar",
+      "verdict": "engine-defekt",
       "scope": {
-        "compared": 0,
+        "compared": 2,
         "total": 2
       },
       "aspects": [
@@ -1978,20 +1978,20 @@
         },
         {
           "name": "fachsatzabdeckung",
-          "status": "not_checked",
-          "compared": 0,
+          "status": "compared",
+          "compared": 2,
           "total": 2,
-          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Wie viele Sollsätze haben überhaupt einen erzeugten Satz an derselben ABAP-Anweisung? Erzeuger: engine:fachsatz."
         },
         {
           "name": "fachsatzinhalt",
-          "status": "not_checked",
-          "compared": 0,
-          "total": 0,
-          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
+          "status": "compared",
+          "compared": 1,
+          "total": 2,
+          "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
         }
       ],
-      "reason": "2 Sollfachsatz/-sätze mit 2 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
+      "reason": "2 Sollfachsatz/-sätze mit 2 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 2 Satz/Sätze. 2 von 2 Sollsätzen vergleichbar (Anker geteilt), davon 1 über der Schwelle: CC-014-B01↔source.abap:B4-call 0.75. Darunter: CC-014-B02↔source.abap:B5-write 0.18. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 0."
     },
     {
       "case": "CC-015",
@@ -2105,9 +2105,9 @@
       "case": "CC-015",
       "class": "fachsaetze",
       "state": "disagree",
-      "verdict": "nicht-vergleichbar",
+      "verdict": "engine-defekt",
       "scope": {
-        "compared": 0,
+        "compared": 2,
         "total": 2
       },
       "aspects": [
@@ -2120,20 +2120,20 @@
         },
         {
           "name": "fachsatzabdeckung",
-          "status": "not_checked",
-          "compared": 0,
+          "status": "compared",
+          "compared": 2,
           "total": 2,
-          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Wie viele Sollsätze haben überhaupt einen erzeugten Satz an derselben ABAP-Anweisung? Erzeuger: engine:fachsatz."
         },
         {
           "name": "fachsatzinhalt",
-          "status": "not_checked",
+          "status": "compared",
           "compared": 0,
-          "total": 0,
-          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
+          "total": 2,
+          "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
         }
       ],
-      "reason": "2 Sollfachsatz/-sätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
+      "reason": "2 Sollfachsatz/-sätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 5 Satz/Sätze. 2 von 2 Sollsätzen vergleichbar (Anker geteilt), davon 0 über der Schwelle: —. Darunter: CC-015-B02↔source.abap:B10-call 0.47, CC-015-B01↔source.abap:B6-guard 0.36. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 3."
     },
     {
       "case": "CC-016",
@@ -2247,9 +2247,9 @@
       "case": "CC-016",
       "class": "fachsaetze",
       "state": "disagree",
-      "verdict": "nicht-vergleichbar",
+      "verdict": "engine-defekt",
       "scope": {
-        "compared": 0,
+        "compared": 2,
         "total": 2
       },
       "aspects": [
@@ -2262,20 +2262,20 @@
         },
         {
           "name": "fachsatzabdeckung",
-          "status": "not_checked",
-          "compared": 0,
+          "status": "compared",
+          "compared": 2,
           "total": 2,
-          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Wie viele Sollsätze haben überhaupt einen erzeugten Satz an derselben ABAP-Anweisung? Erzeuger: engine:fachsatz."
         },
         {
           "name": "fachsatzinhalt",
-          "status": "not_checked",
+          "status": "compared",
           "compared": 0,
-          "total": 0,
-          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
+          "total": 2,
+          "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
         }
       ],
-      "reason": "2 Sollfachsatz/-sätze mit 3 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
+      "reason": "2 Sollfachsatz/-sätze mit 3 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 2 Satz/Sätze. 2 von 2 Sollsätzen vergleichbar (Anker geteilt), davon 0 über der Schwelle: —. Darunter: CC-016-B02↔source.abap:B8-write 0.29, CC-016-B01↔source.abap:B6-set 0.17. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 0."
     },
     {
       "case": "CC-017",
@@ -2389,9 +2389,9 @@
       "case": "CC-017",
       "class": "fachsaetze",
       "state": "disagree",
-      "verdict": "nicht-vergleichbar",
+      "verdict": "engine-defekt",
       "scope": {
-        "compared": 0,
+        "compared": 2,
         "total": 3
       },
       "aspects": [
@@ -2404,20 +2404,20 @@
         },
         {
           "name": "fachsatzabdeckung",
-          "status": "not_checked",
-          "compared": 0,
+          "status": "compared",
+          "compared": 2,
           "total": 3,
-          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Wie viele Sollsätze haben überhaupt einen erzeugten Satz an derselben ABAP-Anweisung? Erzeuger: engine:fachsatz."
         },
         {
           "name": "fachsatzinhalt",
-          "status": "not_checked",
+          "status": "compared",
           "compared": 0,
-          "total": 0,
-          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
+          "total": 2,
+          "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
         }
       ],
-      "reason": "3 Sollfachsatz/-sätze mit 7 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
+      "reason": "3 Sollfachsatz/-sätze mit 7 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 12 Satz/Sätze. 2 von 3 Sollsätzen vergleichbar (Anker geteilt), davon 0 über der Schwelle: —. Darunter: CC-017-B02↔source.abap:B24-branch 0.36, CC-017-B03↔source.abap:B23-branch23 0.29. Ohne Gegenstück: CC-017-B01. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 10."
     },
     {
       "case": "CC-018",
@@ -2531,9 +2531,9 @@
       "case": "CC-018",
       "class": "fachsaetze",
       "state": "disagree",
-      "verdict": "nicht-vergleichbar",
+      "verdict": "engine-defekt",
       "scope": {
-        "compared": 0,
+        "compared": 2,
         "total": 2
       },
       "aspects": [
@@ -2546,20 +2546,20 @@
         },
         {
           "name": "fachsatzabdeckung",
-          "status": "not_checked",
-          "compared": 0,
+          "status": "compared",
+          "compared": 2,
           "total": 2,
-          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Wie viele Sollsätze haben überhaupt einen erzeugten Satz an derselben ABAP-Anweisung? Erzeuger: engine:fachsatz."
         },
         {
           "name": "fachsatzinhalt",
-          "status": "not_checked",
-          "compared": 0,
-          "total": 0,
-          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
+          "status": "compared",
+          "compared": 1,
+          "total": 2,
+          "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
         }
       ],
-      "reason": "2 Sollfachsatz/-sätze mit 2 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
+      "reason": "2 Sollfachsatz/-sätze mit 2 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 3 Satz/Sätze. 2 von 2 Sollsätzen vergleichbar (Anker geteilt), davon 1 über der Schwelle: CC-018-B01↔source.abap:B2-class 0.63. Darunter: CC-018-B02↔source.abap:B8-method 0.38. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 1."
     },
     {
       "case": "CC-019",
@@ -2673,9 +2673,9 @@
       "case": "CC-019",
       "class": "fachsaetze",
       "state": "disagree",
-      "verdict": "nicht-vergleichbar",
+      "verdict": "engine-defekt",
       "scope": {
-        "compared": 0,
+        "compared": 3,
         "total": 3
       },
       "aspects": [
@@ -2688,20 +2688,20 @@
         },
         {
           "name": "fachsatzabdeckung",
-          "status": "not_checked",
-          "compared": 0,
+          "status": "compared",
+          "compared": 3,
           "total": 3,
-          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Wie viele Sollsätze haben überhaupt einen erzeugten Satz an derselben ABAP-Anweisung? Erzeuger: engine:fachsatz."
         },
         {
           "name": "fachsatzinhalt",
-          "status": "not_checked",
-          "compared": 0,
-          "total": 0,
-          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
+          "status": "compared",
+          "compared": 1,
+          "total": 3,
+          "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
         }
       ],
-      "reason": "3 Sollfachsatz/-sätze mit 5 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
+      "reason": "3 Sollfachsatz/-sätze mit 5 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 6 Satz/Sätze. 3 von 3 Sollsätzen vergleichbar (Anker geteilt), davon 1 über der Schwelle: CC-019-B01↔source.abap:B2-types 1.00. Darunter: CC-019-B03↔source.abap:B12-write 0.40, CC-019-B02↔source.abap:B9-method 0.11. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 3."
     },
     {
       "case": "CC-020",
@@ -2815,9 +2815,9 @@
       "case": "CC-020",
       "class": "fachsaetze",
       "state": "disagree",
-      "verdict": "nicht-vergleichbar",
+      "verdict": "engine-defekt",
       "scope": {
-        "compared": 0,
+        "compared": 3,
         "total": 3
       },
       "aspects": [
@@ -2830,20 +2830,20 @@
         },
         {
           "name": "fachsatzabdeckung",
-          "status": "not_checked",
-          "compared": 0,
+          "status": "compared",
+          "compared": 3,
           "total": 3,
-          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Wie viele Sollsätze haben überhaupt einen erzeugten Satz an derselben ABAP-Anweisung? Erzeuger: engine:fachsatz."
         },
         {
           "name": "fachsatzinhalt",
-          "status": "not_checked",
-          "compared": 0,
-          "total": 0,
-          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
+          "status": "compared",
+          "compared": 1,
+          "total": 3,
+          "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
         }
       ],
-      "reason": "3 Sollfachsatz/-sätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
+      "reason": "3 Sollfachsatz/-sätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 8 Satz/Sätze. 3 von 3 Sollsätzen vergleichbar (Anker geteilt), davon 1 über der Schwelle: CC-020-B01↔source.abap:B8-create 1.00. Darunter: CC-020-B03↔source.abap:B14-write 0.35, CC-020-B02↔source.abap:B10-assign 0.00. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 5."
     },
     {
       "case": "CC-021",
@@ -2957,9 +2957,9 @@
       "case": "CC-021",
       "class": "fachsaetze",
       "state": "disagree",
-      "verdict": "nicht-vergleichbar",
+      "verdict": "engine-defekt",
       "scope": {
-        "compared": 0,
+        "compared": 2,
         "total": 2
       },
       "aspects": [
@@ -2972,20 +2972,20 @@
         },
         {
           "name": "fachsatzabdeckung",
-          "status": "not_checked",
-          "compared": 0,
+          "status": "compared",
+          "compared": 2,
           "total": 2,
-          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Wie viele Sollsätze haben überhaupt einen erzeugten Satz an derselben ABAP-Anweisung? Erzeuger: engine:fachsatz."
         },
         {
           "name": "fachsatzinhalt",
-          "status": "not_checked",
-          "compared": 0,
-          "total": 0,
-          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
+          "status": "compared",
+          "compared": 1,
+          "total": 2,
+          "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
         }
       ],
-      "reason": "2 Sollfachsatz/-sätze mit 2 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
+      "reason": "2 Sollfachsatz/-sätze mit 2 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 4 Satz/Sätze. 2 von 2 Sollsätzen vergleichbar (Anker geteilt), davon 1 über der Schwelle: CC-021-B01↔source.abap:B4-include 0.67. Darunter: CC-021-B02↔source.abap:B6-seq6 0.18. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 2."
     },
     {
       "case": "CC-022",
@@ -3099,9 +3099,9 @@
       "case": "CC-022",
       "class": "fachsaetze",
       "state": "disagree",
-      "verdict": "nicht-vergleichbar",
+      "verdict": "engine-defekt",
       "scope": {
-        "compared": 0,
+        "compared": 2,
         "total": 2
       },
       "aspects": [
@@ -3114,20 +3114,20 @@
         },
         {
           "name": "fachsatzabdeckung",
-          "status": "not_checked",
-          "compared": 0,
+          "status": "compared",
+          "compared": 2,
           "total": 2,
-          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Wie viele Sollsätze haben überhaupt einen erzeugten Satz an derselben ABAP-Anweisung? Erzeuger: engine:fachsatz."
         },
         {
           "name": "fachsatzinhalt",
-          "status": "not_checked",
-          "compared": 0,
-          "total": 0,
-          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
+          "status": "compared",
+          "compared": 1,
+          "total": 2,
+          "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
         }
       ],
-      "reason": "2 Sollfachsatz/-sätze mit 2 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
+      "reason": "2 Sollfachsatz/-sätze mit 2 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 2 Satz/Sätze. 2 von 2 Sollsätzen vergleichbar (Anker geteilt), davon 1 über der Schwelle: CC-022-B02↔source.abap:B5-write 0.57. Darunter: CC-022-B01↔source.abap:B4-method 0.00. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 0."
     },
     {
       "case": "CC-023",
@@ -3241,9 +3241,9 @@
       "case": "CC-023",
       "class": "fachsaetze",
       "state": "disagree",
-      "verdict": "nicht-vergleichbar",
+      "verdict": "engine-defekt",
       "scope": {
-        "compared": 0,
+        "compared": 3,
         "total": 3
       },
       "aspects": [
@@ -3256,20 +3256,20 @@
         },
         {
           "name": "fachsatzabdeckung",
-          "status": "not_checked",
-          "compared": 0,
+          "status": "compared",
+          "compared": 3,
           "total": 3,
-          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Wie viele Sollsätze haben überhaupt einen erzeugten Satz an derselben ABAP-Anweisung? Erzeuger: engine:fachsatz."
         },
         {
           "name": "fachsatzinhalt",
-          "status": "not_checked",
+          "status": "compared",
           "compared": 0,
-          "total": 0,
-          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
+          "total": 3,
+          "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
         }
       ],
-      "reason": "3 Sollfachsatz/-sätze mit 12 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
+      "reason": "3 Sollfachsatz/-sätze mit 12 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 14 Satz/Sätze. 3 von 3 Sollsätzen vergleichbar (Anker geteilt), davon 0 über der Schwelle: —. Darunter: CC-023-B01↔source.abap:B6-guard 0.31, CC-023-B03↔source.abap:B11-chain11 0.29, CC-023-B02↔source.abap:B10-update 0.11. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 11."
     },
     {
       "case": "CC-024",
@@ -3383,9 +3383,9 @@
       "case": "CC-024",
       "class": "fachsaetze",
       "state": "disagree",
-      "verdict": "nicht-vergleichbar",
+      "verdict": "engine-defekt",
       "scope": {
-        "compared": 0,
+        "compared": 3,
         "total": 3
       },
       "aspects": [
@@ -3398,20 +3398,20 @@
         },
         {
           "name": "fachsatzabdeckung",
-          "status": "not_checked",
-          "compared": 0,
+          "status": "compared",
+          "compared": 3,
           "total": 3,
-          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Wie viele Sollsätze haben überhaupt einen erzeugten Satz an derselben ABAP-Anweisung? Erzeuger: engine:fachsatz."
         },
         {
           "name": "fachsatzinhalt",
-          "status": "not_checked",
+          "status": "compared",
           "compared": 0,
-          "total": 0,
-          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
+          "total": 3,
+          "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
         }
       ],
-      "reason": "3 Sollfachsatz/-sätze mit 5 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
+      "reason": "3 Sollfachsatz/-sätze mit 5 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 14 Satz/Sätze. 3 von 3 Sollsätzen vergleichbar (Anker geteilt), davon 0 über der Schwelle: —. Darunter: CC-024-B02↔source.abap:B16-write 0.35, CC-024-B03↔source.abap:B13-write 0.25, CC-024-B01↔source.abap:B10-update 0.14. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 11."
     },
     {
       "case": "CC-025",
@@ -3525,9 +3525,9 @@
       "case": "CC-025",
       "class": "fachsaetze",
       "state": "disagree",
-      "verdict": "nicht-vergleichbar",
+      "verdict": "engine-defekt",
       "scope": {
-        "compared": 0,
+        "compared": 5,
         "total": 5
       },
       "aspects": [
@@ -3540,20 +3540,20 @@
         },
         {
           "name": "fachsatzabdeckung",
-          "status": "not_checked",
-          "compared": 0,
+          "status": "compared",
+          "compared": 5,
           "total": 5,
-          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Wie viele Sollsätze haben überhaupt einen erzeugten Satz an derselben ABAP-Anweisung? Erzeuger: engine:fachsatz."
         },
         {
           "name": "fachsatzinhalt",
-          "status": "not_checked",
+          "status": "compared",
           "compared": 0,
-          "total": 0,
-          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
+          "total": 5,
+          "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
         }
       ],
-      "reason": "5 Sollfachsatz/-sätze mit 11 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
+      "reason": "5 Sollfachsatz/-sätze mit 11 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 15 Satz/Sätze. 5 von 5 Sollsätzen vergleichbar (Anker geteilt), davon 0 über der Schwelle: —. Darunter: CC-025-B01↔source.abap:B10-branch 0.33, CC-025-B03↔source.abap:B14-chain14 0.29, CC-025-B05↔source.abap:B9-chain9 0.26, CC-025-B02↔source.abap:B9-branch9 0.15 … (+1). Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 10."
     },
     {
       "case": "CC-026",
@@ -3667,9 +3667,9 @@
       "case": "CC-026",
       "class": "fachsaetze",
       "state": "disagree",
-      "verdict": "nicht-vergleichbar",
+      "verdict": "engine-defekt",
       "scope": {
-        "compared": 0,
+        "compared": 4,
         "total": 4
       },
       "aspects": [
@@ -3682,20 +3682,20 @@
         },
         {
           "name": "fachsatzabdeckung",
-          "status": "not_checked",
-          "compared": 0,
+          "status": "compared",
+          "compared": 4,
           "total": 4,
-          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Wie viele Sollsätze haben überhaupt einen erzeugten Satz an derselben ABAP-Anweisung? Erzeuger: engine:fachsatz."
         },
         {
           "name": "fachsatzinhalt",
-          "status": "not_checked",
-          "compared": 0,
-          "total": 0,
-          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
+          "status": "compared",
+          "compared": 1,
+          "total": 4,
+          "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
         }
       ],
-      "reason": "4 Sollfachsatz/-sätze mit 11 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
+      "reason": "4 Sollfachsatz/-sätze mit 11 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 12 Satz/Sätze. 4 von 4 Sollsätzen vergleichbar (Anker geteilt), davon 1 über der Schwelle: CC-026-B03↔source.abap:B12-seq12 0.63. Darunter: CC-026-B01↔source.abap:B6-call 0.42, CC-026-B04↔source.abap:B10-write 0.41, CC-026-B02↔source.abap:B15-seq15 0.38. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 8."
     },
     {
       "case": "CC-027",
@@ -3809,9 +3809,9 @@
       "case": "CC-027",
       "class": "fachsaetze",
       "state": "disagree",
-      "verdict": "nicht-vergleichbar",
+      "verdict": "engine-defekt",
       "scope": {
-        "compared": 0,
+        "compared": 2,
         "total": 2
       },
       "aspects": [
@@ -3824,20 +3824,20 @@
         },
         {
           "name": "fachsatzabdeckung",
-          "status": "not_checked",
-          "compared": 0,
+          "status": "compared",
+          "compared": 2,
           "total": 2,
-          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Wie viele Sollsätze haben überhaupt einen erzeugten Satz an derselben ABAP-Anweisung? Erzeuger: engine:fachsatz."
         },
         {
           "name": "fachsatzinhalt",
-          "status": "not_checked",
+          "status": "compared",
           "compared": 0,
-          "total": 0,
-          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
+          "total": 2,
+          "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
         }
       ],
-      "reason": "2 Sollfachsatz/-sätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
+      "reason": "2 Sollfachsatz/-sätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 4 Satz/Sätze. 2 von 2 Sollsätzen vergleichbar (Anker geteilt), davon 0 über der Schwelle: —. Darunter: CC-027-B01↔source.abap:B5-call 0.35, CC-027-B02↔source.abap:B5-seq5 0.13. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 2."
     },
     {
       "case": "CC-028",
@@ -3951,9 +3951,9 @@
       "case": "CC-028",
       "class": "fachsaetze",
       "state": "disagree",
-      "verdict": "nicht-vergleichbar",
+      "verdict": "engine-defekt",
       "scope": {
-        "compared": 0,
+        "compared": 3,
         "total": 3
       },
       "aspects": [
@@ -3966,20 +3966,20 @@
         },
         {
           "name": "fachsatzabdeckung",
-          "status": "not_checked",
-          "compared": 0,
+          "status": "compared",
+          "compared": 3,
           "total": 3,
-          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Wie viele Sollsätze haben überhaupt einen erzeugten Satz an derselben ABAP-Anweisung? Erzeuger: engine:fachsatz."
         },
         {
           "name": "fachsatzinhalt",
-          "status": "not_checked",
+          "status": "compared",
           "compared": 0,
-          "total": 0,
-          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
+          "total": 3,
+          "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
         }
       ],
-      "reason": "3 Sollfachsatz/-sätze mit 10 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
+      "reason": "3 Sollfachsatz/-sätze mit 10 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 12 Satz/Sätze. 3 von 3 Sollsätzen vergleichbar (Anker geteilt), davon 0 über der Schwelle: —. Darunter: CC-028-B02↔source.abap:B17-seq17 0.40, CC-028-B03↔source.abap:B20-seq20 0.33, CC-028-B01↔source.abap:B10-seq10 0.00. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 9."
     },
     {
       "case": "CC-029",
@@ -4093,9 +4093,9 @@
       "case": "CC-029",
       "class": "fachsaetze",
       "state": "disagree",
-      "verdict": "nicht-vergleichbar",
+      "verdict": "engine-defekt",
       "scope": {
-        "compared": 0,
+        "compared": 3,
         "total": 3
       },
       "aspects": [
@@ -4108,20 +4108,20 @@
         },
         {
           "name": "fachsatzabdeckung",
-          "status": "not_checked",
-          "compared": 0,
+          "status": "compared",
+          "compared": 3,
           "total": 3,
-          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Wie viele Sollsätze haben überhaupt einen erzeugten Satz an derselben ABAP-Anweisung? Erzeuger: engine:fachsatz."
         },
         {
           "name": "fachsatzinhalt",
-          "status": "not_checked",
-          "compared": 0,
-          "total": 0,
-          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
+          "status": "compared",
+          "compared": 1,
+          "total": 3,
+          "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
         }
       ],
-      "reason": "3 Sollfachsatz/-sätze mit 11 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
+      "reason": "3 Sollfachsatz/-sätze mit 11 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 14 Satz/Sätze. 3 von 3 Sollsätzen vergleichbar (Anker geteilt), davon 1 über der Schwelle: CC-029-B02↔source.abap:B11-seq11 0.53. Darunter: CC-029-B03↔source.abap:B15-chain15 0.35, CC-029-B01↔source.abap:B14-update 0.27. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 11."
     },
     {
       "case": "CC-030",
@@ -4235,9 +4235,9 @@
       "case": "CC-030",
       "class": "fachsaetze",
       "state": "disagree",
-      "verdict": "nicht-vergleichbar",
+      "verdict": "engine-defekt",
       "scope": {
-        "compared": 0,
+        "compared": 3,
         "total": 3
       },
       "aspects": [
@@ -4250,20 +4250,20 @@
         },
         {
           "name": "fachsatzabdeckung",
-          "status": "not_checked",
-          "compared": 0,
+          "status": "compared",
+          "compared": 3,
           "total": 3,
-          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Wie viele Sollsätze haben überhaupt einen erzeugten Satz an derselben ABAP-Anweisung? Erzeuger: engine:fachsatz."
         },
         {
           "name": "fachsatzinhalt",
-          "status": "not_checked",
+          "status": "compared",
           "compared": 0,
-          "total": 0,
-          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
+          "total": 3,
+          "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
         }
       ],
-      "reason": "3 Sollfachsatz/-sätze mit 9 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
+      "reason": "3 Sollfachsatz/-sätze mit 9 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 5 Satz/Sätze. 3 von 3 Sollsätzen vergleichbar (Anker geteilt), davon 0 über der Schwelle: —. Darunter: CC-030-B01↔source.abap:B8-update 0.22, CC-030-B03↔source.abap:B13-write 0.20, CC-030-B02↔source.abap:B10-commit 0.08. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 2."
     },
     {
       "case": "CC-031",
@@ -4377,9 +4377,9 @@
       "case": "CC-031",
       "class": "fachsaetze",
       "state": "disagree",
-      "verdict": "nicht-vergleichbar",
+      "verdict": "engine-defekt",
       "scope": {
-        "compared": 0,
+        "compared": 4,
         "total": 4
       },
       "aspects": [
@@ -4392,20 +4392,20 @@
         },
         {
           "name": "fachsatzabdeckung",
-          "status": "not_checked",
-          "compared": 0,
+          "status": "compared",
+          "compared": 4,
           "total": 4,
-          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Wie viele Sollsätze haben überhaupt einen erzeugten Satz an derselben ABAP-Anweisung? Erzeuger: engine:fachsatz."
         },
         {
           "name": "fachsatzinhalt",
-          "status": "not_checked",
-          "compared": 0,
-          "total": 0,
-          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
+          "status": "compared",
+          "compared": 3,
+          "total": 4,
+          "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
         }
       ],
-      "reason": "4 Sollfachsatz/-sätze mit 13 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
+      "reason": "4 Sollfachsatz/-sätze mit 13 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 13 Satz/Sätze. 4 von 4 Sollsätzen vergleichbar (Anker geteilt), davon 3 über der Schwelle: CC-031-B02↔source.abap:B11-call 0.80, CC-031-B04↔source.abap:B22-seq22 0.55, CC-031-B01↔source.abap:B8-seq8 0.50. Darunter: CC-031-B03↔source.abap:B18-seq18 0.38. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 9."
     },
     {
       "case": "CC-032",
@@ -4519,9 +4519,9 @@
       "case": "CC-032",
       "class": "fachsaetze",
       "state": "disagree",
-      "verdict": "nicht-vergleichbar",
+      "verdict": "engine-defekt",
       "scope": {
-        "compared": 0,
+        "compared": 3,
         "total": 3
       },
       "aspects": [
@@ -4534,20 +4534,20 @@
         },
         {
           "name": "fachsatzabdeckung",
-          "status": "not_checked",
-          "compared": 0,
+          "status": "compared",
+          "compared": 3,
           "total": 3,
-          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Wie viele Sollsätze haben überhaupt einen erzeugten Satz an derselben ABAP-Anweisung? Erzeuger: engine:fachsatz."
         },
         {
           "name": "fachsatzinhalt",
-          "status": "not_checked",
+          "status": "compared",
           "compared": 0,
-          "total": 0,
-          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
+          "total": 3,
+          "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
         }
       ],
-      "reason": "3 Sollfachsatz/-sätze mit 12 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
+      "reason": "3 Sollfachsatz/-sätze mit 12 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 5 Satz/Sätze. 3 von 3 Sollsätzen vergleichbar (Anker geteilt), davon 0 über der Schwelle: —. Darunter: CC-032-B01↔source.abap:B14-seq14 0.42, CC-032-B02↔source.abap:B17-write 0.25, CC-032-B03↔source.abap:B6-call 0.16. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 2."
     },
     {
       "case": "CC-033",
@@ -4661,9 +4661,9 @@
       "case": "CC-033",
       "class": "fachsaetze",
       "state": "disagree",
-      "verdict": "nicht-vergleichbar",
+      "verdict": "engine-defekt",
       "scope": {
-        "compared": 0,
+        "compared": 3,
         "total": 3
       },
       "aspects": [
@@ -4676,20 +4676,20 @@
         },
         {
           "name": "fachsatzabdeckung",
-          "status": "not_checked",
-          "compared": 0,
+          "status": "compared",
+          "compared": 3,
           "total": 3,
-          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Wie viele Sollsätze haben überhaupt einen erzeugten Satz an derselben ABAP-Anweisung? Erzeuger: engine:fachsatz."
         },
         {
           "name": "fachsatzinhalt",
-          "status": "not_checked",
-          "compared": 0,
-          "total": 0,
-          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
+          "status": "compared",
+          "compared": 2,
+          "total": 3,
+          "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
         }
       ],
-      "reason": "3 Sollfachsatz/-sätze mit 11 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
+      "reason": "3 Sollfachsatz/-sätze mit 11 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 11 Satz/Sätze. 3 von 3 Sollsätzen vergleichbar (Anker geteilt), davon 2 über der Schwelle: CC-033-B03↔source.abap:B14-seq14 0.77, CC-033-B01↔source.abap:B7-seq7 0.53. Darunter: CC-033-B02↔source.abap:B12-message 0.08. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 8."
     },
     {
       "case": "CC-034",
@@ -4803,9 +4803,9 @@
       "case": "CC-034",
       "class": "fachsaetze",
       "state": "disagree",
-      "verdict": "nicht-vergleichbar",
+      "verdict": "engine-defekt",
       "scope": {
-        "compared": 0,
+        "compared": 4,
         "total": 4
       },
       "aspects": [
@@ -4818,20 +4818,20 @@
         },
         {
           "name": "fachsatzabdeckung",
-          "status": "not_checked",
-          "compared": 0,
+          "status": "compared",
+          "compared": 4,
           "total": 4,
-          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Wie viele Sollsätze haben überhaupt einen erzeugten Satz an derselben ABAP-Anweisung? Erzeuger: engine:fachsatz."
         },
         {
           "name": "fachsatzinhalt",
-          "status": "not_checked",
-          "compared": 0,
-          "total": 0,
-          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
+          "status": "compared",
+          "compared": 1,
+          "total": 4,
+          "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
         }
       ],
-      "reason": "4 Sollfachsatz/-sätze mit 16 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
+      "reason": "4 Sollfachsatz/-sätze mit 16 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 16 Satz/Sätze. 4 von 4 Sollsätzen vergleichbar (Anker geteilt), davon 1 über der Schwelle: CC-034-B01↔source.abap:B7-guard 0.59. Darunter: CC-034-B03↔source.abap:B17-seq17 0.34, CC-034-B04↔source.abap:B21-branch21 0.28, CC-034-B02↔source.abap:B15-method 0.02. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 12."
     },
     {
       "case": "CC-035",
@@ -4945,9 +4945,9 @@
       "case": "CC-035",
       "class": "fachsaetze",
       "state": "disagree",
-      "verdict": "nicht-vergleichbar",
+      "verdict": "engine-defekt",
       "scope": {
-        "compared": 0,
+        "compared": 3,
         "total": 3
       },
       "aspects": [
@@ -4960,20 +4960,20 @@
         },
         {
           "name": "fachsatzabdeckung",
-          "status": "not_checked",
-          "compared": 0,
+          "status": "compared",
+          "compared": 3,
           "total": 3,
-          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Wie viele Sollsätze haben überhaupt einen erzeugten Satz an derselben ABAP-Anweisung? Erzeuger: engine:fachsatz."
         },
         {
           "name": "fachsatzinhalt",
-          "status": "not_checked",
-          "compared": 0,
-          "total": 0,
-          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
+          "status": "compared",
+          "compared": 1,
+          "total": 3,
+          "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
         }
       ],
-      "reason": "3 Sollfachsatz/-sätze mit 9 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
+      "reason": "3 Sollfachsatz/-sätze mit 9 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 9 Satz/Sätze. 3 von 3 Sollsätzen vergleichbar (Anker geteilt), davon 1 über der Schwelle: CC-035-B01↔source.abap:B6-guard 0.67. Darunter: CC-035-B03↔source.abap:B12-seq12 0.31, CC-035-B02↔source.abap:B12-update 0.20. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 6."
     },
     {
       "case": "CC-036",
@@ -5086,10 +5086,10 @@
     {
       "case": "CC-036",
       "class": "fachsaetze",
-      "state": "disagree",
-      "verdict": "nicht-vergleichbar",
+      "state": "agree",
+      "verdict": null,
       "scope": {
-        "compared": 0,
+        "compared": 3,
         "total": 3
       },
       "aspects": [
@@ -5102,20 +5102,20 @@
         },
         {
           "name": "fachsatzabdeckung",
-          "status": "not_checked",
-          "compared": 0,
+          "status": "compared",
+          "compared": 3,
           "total": 3,
-          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Wie viele Sollsätze haben überhaupt einen erzeugten Satz an derselben ABAP-Anweisung? Erzeuger: engine:fachsatz."
         },
         {
           "name": "fachsatzinhalt",
-          "status": "not_checked",
-          "compared": 0,
-          "total": 0,
-          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
+          "status": "compared",
+          "compared": 3,
+          "total": 3,
+          "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
         }
       ],
-      "reason": "3 Sollfachsatz/-sätze mit 7 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
+      "reason": "3 Sollfachsatz/-sätze mit 7 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 10 Satz/Sätze. 3 von 3 Sollsätzen vergleichbar (Anker geteilt), davon 3 über der Schwelle: CC-036-B01↔source.abap:B10-select 1.00, CC-036-B03↔source.abap:B20-list 1.00, CC-036-B02↔source.abap:B15-guard 0.80. Darunter: —. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 7."
     },
     {
       "case": "CC-037",
@@ -5229,9 +5229,9 @@
       "case": "CC-037",
       "class": "fachsaetze",
       "state": "disagree",
-      "verdict": "nicht-vergleichbar",
+      "verdict": "engine-defekt",
       "scope": {
-        "compared": 0,
+        "compared": 2,
         "total": 2
       },
       "aspects": [
@@ -5244,20 +5244,20 @@
         },
         {
           "name": "fachsatzabdeckung",
-          "status": "not_checked",
-          "compared": 0,
+          "status": "compared",
+          "compared": 2,
           "total": 2,
-          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Wie viele Sollsätze haben überhaupt einen erzeugten Satz an derselben ABAP-Anweisung? Erzeuger: engine:fachsatz."
         },
         {
           "name": "fachsatzinhalt",
-          "status": "not_checked",
-          "compared": 0,
-          "total": 0,
-          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
+          "status": "compared",
+          "compared": 1,
+          "total": 2,
+          "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
         }
       ],
-      "reason": "2 Sollfachsatz/-sätze mit 5 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
+      "reason": "2 Sollfachsatz/-sätze mit 5 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 7 Satz/Sätze. 2 von 2 Sollsätzen vergleichbar (Anker geteilt), davon 1 über der Schwelle: CC-037-B01↔source.abap:B6-seq6 0.89. Darunter: CC-037-B02↔source.abap:B9-select 0.43. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 5."
     },
     {
       "case": "CC-038",
@@ -5371,9 +5371,9 @@
       "case": "CC-038",
       "class": "fachsaetze",
       "state": "disagree",
-      "verdict": "nicht-vergleichbar",
+      "verdict": "engine-defekt",
       "scope": {
-        "compared": 0,
+        "compared": 3,
         "total": 3
       },
       "aspects": [
@@ -5386,20 +5386,20 @@
         },
         {
           "name": "fachsatzabdeckung",
-          "status": "not_checked",
-          "compared": 0,
+          "status": "compared",
+          "compared": 3,
           "total": 3,
-          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Wie viele Sollsätze haben überhaupt einen erzeugten Satz an derselben ABAP-Anweisung? Erzeuger: engine:fachsatz."
         },
         {
           "name": "fachsatzinhalt",
-          "status": "not_checked",
-          "compared": 0,
-          "total": 0,
-          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
+          "status": "compared",
+          "compared": 1,
+          "total": 3,
+          "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
         }
       ],
-      "reason": "3 Sollfachsatz/-sätze mit 11 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
+      "reason": "3 Sollfachsatz/-sätze mit 11 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 14 Satz/Sätze. 3 von 3 Sollsätzen vergleichbar (Anker geteilt), davon 1 über der Schwelle: CC-038-B01↔source.abap:B7-guard 1.00. Darunter: CC-038-B03↔source.abap:B15-chain15 0.45, CC-038-B02↔source.abap:B14-modify 0.00. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 11."
     },
     {
       "case": "CC-039",
@@ -5513,9 +5513,9 @@
       "case": "CC-039",
       "class": "fachsaetze",
       "state": "disagree",
-      "verdict": "nicht-vergleichbar",
+      "verdict": "engine-defekt",
       "scope": {
-        "compared": 0,
+        "compared": 3,
         "total": 3
       },
       "aspects": [
@@ -5528,20 +5528,20 @@
         },
         {
           "name": "fachsatzabdeckung",
-          "status": "not_checked",
-          "compared": 0,
+          "status": "compared",
+          "compared": 3,
           "total": 3,
-          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Wie viele Sollsätze haben überhaupt einen erzeugten Satz an derselben ABAP-Anweisung? Erzeuger: engine:fachsatz."
         },
         {
           "name": "fachsatzinhalt",
-          "status": "not_checked",
-          "compared": 0,
-          "total": 0,
-          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
+          "status": "compared",
+          "compared": 1,
+          "total": 3,
+          "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
         }
       ],
-      "reason": "3 Sollfachsatz/-sätze mit 9 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
+      "reason": "3 Sollfachsatz/-sätze mit 9 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 14 Satz/Sätze. 3 von 3 Sollsätzen vergleichbar (Anker geteilt), davon 1 über der Schwelle: CC-039-B02↔source.abap:B14-guard 0.57. Darunter: CC-039-B03↔source.abap:B18-seq18 0.21, CC-039-B01↔source.abap:B9-seq9 0.00. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 11."
     },
     {
       "case": "CC-040",
@@ -5655,9 +5655,9 @@
       "case": "CC-040",
       "class": "fachsaetze",
       "state": "disagree",
-      "verdict": "nicht-vergleichbar",
+      "verdict": "engine-defekt",
       "scope": {
-        "compared": 0,
+        "compared": 2,
         "total": 2
       },
       "aspects": [
@@ -5670,20 +5670,20 @@
         },
         {
           "name": "fachsatzabdeckung",
-          "status": "not_checked",
-          "compared": 0,
+          "status": "compared",
+          "compared": 2,
           "total": 2,
-          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Wie viele Sollsätze haben überhaupt einen erzeugten Satz an derselben ABAP-Anweisung? Erzeuger: engine:fachsatz."
         },
         {
           "name": "fachsatzinhalt",
-          "status": "not_checked",
+          "status": "compared",
           "compared": 0,
-          "total": 0,
-          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
+          "total": 2,
+          "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
         }
       ],
-      "reason": "2 Sollfachsatz/-sätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
+      "reason": "2 Sollfachsatz/-sätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 3 Satz/Sätze. 2 von 2 Sollsätzen vergleichbar (Anker geteilt), davon 0 über der Schwelle: —. Darunter: CC-040-B02↔source.abap:B9-assign 0.12, CC-040-B01↔source.abap:B10-branch10 0.00. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 1."
     },
     {
       "case": "CC-041",
@@ -5797,9 +5797,9 @@
       "case": "CC-041",
       "class": "fachsaetze",
       "state": "disagree",
-      "verdict": "nicht-vergleichbar",
+      "verdict": "engine-defekt",
       "scope": {
-        "compared": 0,
+        "compared": 2,
         "total": 2
       },
       "aspects": [
@@ -5812,20 +5812,20 @@
         },
         {
           "name": "fachsatzabdeckung",
-          "status": "not_checked",
-          "compared": 0,
+          "status": "compared",
+          "compared": 2,
           "total": 2,
-          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Wie viele Sollsätze haben überhaupt einen erzeugten Satz an derselben ABAP-Anweisung? Erzeuger: engine:fachsatz."
         },
         {
           "name": "fachsatzinhalt",
-          "status": "not_checked",
-          "compared": 0,
-          "total": 0,
-          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
+          "status": "compared",
+          "compared": 1,
+          "total": 2,
+          "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
         }
       ],
-      "reason": "2 Sollfachsatz/-sätze mit 5 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
+      "reason": "2 Sollfachsatz/-sätze mit 5 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 9 Satz/Sätze. 2 von 2 Sollsätzen vergleichbar (Anker geteilt), davon 1 über der Schwelle: CC-041-B02↔source.abap:B25-call 0.75. Darunter: CC-041-B01↔source.abap:B19-chain19 0.25. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 7."
     },
     {
       "case": "CC-042",
@@ -5939,9 +5939,9 @@
       "case": "CC-042",
       "class": "fachsaetze",
       "state": "disagree",
-      "verdict": "nicht-vergleichbar",
+      "verdict": "engine-defekt",
       "scope": {
-        "compared": 0,
+        "compared": 2,
         "total": 2
       },
       "aspects": [
@@ -5954,20 +5954,20 @@
         },
         {
           "name": "fachsatzabdeckung",
-          "status": "not_checked",
-          "compared": 0,
+          "status": "compared",
+          "compared": 2,
           "total": 2,
-          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Wie viele Sollsätze haben überhaupt einen erzeugten Satz an derselben ABAP-Anweisung? Erzeuger: engine:fachsatz."
         },
         {
           "name": "fachsatzinhalt",
-          "status": "not_checked",
-          "compared": 0,
-          "total": 0,
-          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
+          "status": "compared",
+          "compared": 1,
+          "total": 2,
+          "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
         }
       ],
-      "reason": "2 Sollfachsatz/-sätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
+      "reason": "2 Sollfachsatz/-sätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 7 Satz/Sätze. 2 von 2 Sollsätzen vergleichbar (Anker geteilt), davon 1 über der Schwelle: CC-042-B01↔source.abap:B4-select 0.60. Darunter: CC-042-B02↔source.abap:B10-list 0.27. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 5."
     },
     {
       "case": "CC-043",
@@ -6081,9 +6081,9 @@
       "case": "CC-043",
       "class": "fachsaetze",
       "state": "disagree",
-      "verdict": "nicht-vergleichbar",
+      "verdict": "engine-defekt",
       "scope": {
-        "compared": 0,
+        "compared": 3,
         "total": 3
       },
       "aspects": [
@@ -6096,20 +6096,20 @@
         },
         {
           "name": "fachsatzabdeckung",
-          "status": "not_checked",
-          "compared": 0,
+          "status": "compared",
+          "compared": 3,
           "total": 3,
-          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Wie viele Sollsätze haben überhaupt einen erzeugten Satz an derselben ABAP-Anweisung? Erzeuger: engine:fachsatz."
         },
         {
           "name": "fachsatzinhalt",
-          "status": "not_checked",
+          "status": "compared",
           "compared": 0,
-          "total": 0,
-          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
+          "total": 3,
+          "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
         }
       ],
-      "reason": "3 Sollfachsatz/-sätze mit 8 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
+      "reason": "3 Sollfachsatz/-sätze mit 8 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 10 Satz/Sätze. 3 von 3 Sollsätzen vergleichbar (Anker geteilt), davon 0 über der Schwelle: —. Darunter: CC-043-B02↔source.abap:B7-branch7 0.40, CC-043-B01↔source.abap:B6-seq6 0.40, CC-043-B03↔source.abap:B10-list 0.33. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 7."
     },
     {
       "case": "CC-044",
@@ -6222,10 +6222,10 @@
     {
       "case": "CC-044",
       "class": "fachsaetze",
-      "state": "disagree",
-      "verdict": "nicht-vergleichbar",
+      "state": "agree",
+      "verdict": null,
       "scope": {
-        "compared": 0,
+        "compared": 2,
         "total": 2
       },
       "aspects": [
@@ -6238,20 +6238,20 @@
         },
         {
           "name": "fachsatzabdeckung",
-          "status": "not_checked",
-          "compared": 0,
+          "status": "compared",
+          "compared": 2,
           "total": 2,
-          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Wie viele Sollsätze haben überhaupt einen erzeugten Satz an derselben ABAP-Anweisung? Erzeuger: engine:fachsatz."
         },
         {
           "name": "fachsatzinhalt",
-          "status": "not_checked",
-          "compared": 0,
-          "total": 0,
-          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
+          "status": "compared",
+          "compared": 2,
+          "total": 2,
+          "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
         }
       ],
-      "reason": "2 Sollfachsatz/-sätze mit 7 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
+      "reason": "2 Sollfachsatz/-sätze mit 7 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 7 Satz/Sätze. 2 von 2 Sollsätzen vergleichbar (Anker geteilt), davon 2 über der Schwelle: CC-044-B01↔source.abap:B6-seq6 0.73, CC-044-B02↔source.abap:B9-call 0.63. Darunter: —. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 5."
     },
     {
       "case": "CC-045",
@@ -6365,9 +6365,9 @@
       "case": "CC-045",
       "class": "fachsaetze",
       "state": "disagree",
-      "verdict": "nicht-vergleichbar",
+      "verdict": "engine-defekt",
       "scope": {
-        "compared": 0,
+        "compared": 2,
         "total": 2
       },
       "aspects": [
@@ -6380,20 +6380,20 @@
         },
         {
           "name": "fachsatzabdeckung",
-          "status": "not_checked",
-          "compared": 0,
+          "status": "compared",
+          "compared": 2,
           "total": 2,
-          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Wie viele Sollsätze haben überhaupt einen erzeugten Satz an derselben ABAP-Anweisung? Erzeuger: engine:fachsatz."
         },
         {
           "name": "fachsatzinhalt",
-          "status": "not_checked",
+          "status": "compared",
           "compared": 0,
-          "total": 0,
-          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
+          "total": 2,
+          "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
         }
       ],
-      "reason": "2 Sollfachsatz/-sätze mit 7 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
+      "reason": "2 Sollfachsatz/-sätze mit 7 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 8 Satz/Sätze. 2 von 2 Sollsätzen vergleichbar (Anker geteilt), davon 0 über der Schwelle: —. Darunter: CC-045-B02↔source.abap:B17-write 0.40, CC-045-B01↔source.abap:B14-branch14 0.31. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 6."
     },
     {
       "case": "CC-046",
@@ -6507,9 +6507,9 @@
       "case": "CC-046",
       "class": "fachsaetze",
       "state": "disagree",
-      "verdict": "nicht-vergleichbar",
+      "verdict": "engine-defekt",
       "scope": {
-        "compared": 0,
+        "compared": 4,
         "total": 4
       },
       "aspects": [
@@ -6522,20 +6522,20 @@
         },
         {
           "name": "fachsatzabdeckung",
-          "status": "not_checked",
-          "compared": 0,
+          "status": "compared",
+          "compared": 4,
           "total": 4,
-          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Wie viele Sollsätze haben überhaupt einen erzeugten Satz an derselben ABAP-Anweisung? Erzeuger: engine:fachsatz."
         },
         {
           "name": "fachsatzinhalt",
-          "status": "not_checked",
-          "compared": 0,
-          "total": 0,
-          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
+          "status": "compared",
+          "compared": 1,
+          "total": 4,
+          "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
         }
       ],
-      "reason": "4 Sollfachsatz/-sätze mit 12 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
+      "reason": "4 Sollfachsatz/-sätze mit 12 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 12 Satz/Sätze. 4 von 4 Sollsätzen vergleichbar (Anker geteilt), davon 1 über der Schwelle: CC-046-B02↔source.abap:B10-translate 0.91. Darunter: CC-046-B01↔source.abap:B8-set 0.29, CC-046-B04↔source.abap:B15-list 0.25, CC-046-B03↔source.abap:B4-write 0.21. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 8."
     },
     {
       "case": "CC-047",
@@ -6648,10 +6648,10 @@
     {
       "case": "CC-047",
       "class": "fachsaetze",
-      "state": "disagree",
-      "verdict": "nicht-vergleichbar",
+      "state": "agree",
+      "verdict": null,
       "scope": {
-        "compared": 0,
+        "compared": 2,
         "total": 2
       },
       "aspects": [
@@ -6664,20 +6664,20 @@
         },
         {
           "name": "fachsatzabdeckung",
-          "status": "not_checked",
-          "compared": 0,
+          "status": "compared",
+          "compared": 2,
           "total": 2,
-          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Wie viele Sollsätze haben überhaupt einen erzeugten Satz an derselben ABAP-Anweisung? Erzeuger: engine:fachsatz."
         },
         {
           "name": "fachsatzinhalt",
-          "status": "not_checked",
-          "compared": 0,
-          "total": 0,
-          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
+          "status": "compared",
+          "compared": 2,
+          "total": 2,
+          "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
         }
       ],
-      "reason": "2 Sollfachsatz/-sätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
+      "reason": "2 Sollfachsatz/-sätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 8 Satz/Sätze. 2 von 2 Sollsätzen vergleichbar (Anker geteilt), davon 2 über der Schwelle: CC-047-B02↔source.abap:B10-list 0.60, CC-047-B01↔source.abap:B6-get 0.57. Darunter: —. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 6."
     },
     {
       "case": "CC-048",
@@ -6791,9 +6791,9 @@
       "case": "CC-048",
       "class": "fachsaetze",
       "state": "disagree",
-      "verdict": "nicht-vergleichbar",
+      "verdict": "engine-defekt",
       "scope": {
-        "compared": 0,
+        "compared": 4,
         "total": 4
       },
       "aspects": [
@@ -6806,20 +6806,20 @@
         },
         {
           "name": "fachsatzabdeckung",
-          "status": "not_checked",
-          "compared": 0,
+          "status": "compared",
+          "compared": 4,
           "total": 4,
-          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Wie viele Sollsätze haben überhaupt einen erzeugten Satz an derselben ABAP-Anweisung? Erzeuger: engine:fachsatz."
         },
         {
           "name": "fachsatzinhalt",
-          "status": "not_checked",
-          "compared": 0,
-          "total": 0,
-          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
+          "status": "compared",
+          "compared": 1,
+          "total": 4,
+          "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
         }
       ],
-      "reason": "4 Sollfachsatz/-sätze mit 12 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
+      "reason": "4 Sollfachsatz/-sätze mit 12 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 7 Satz/Sätze. 4 von 4 Sollsätzen vergleichbar (Anker geteilt), davon 1 über der Schwelle: CC-048-B02↔source.abap:B9-check 0.74. Darunter: CC-048-B03↔source.abap:B17-write 0.40, CC-048-B04↔source.abap:B14-write 0.27, CC-048-B01↔source.abap:B7-check 0.00. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 3."
     },
     {
       "case": "CC-049",
@@ -6933,9 +6933,9 @@
       "case": "CC-049",
       "class": "fachsaetze",
       "state": "disagree",
-      "verdict": "nicht-vergleichbar",
+      "verdict": "engine-defekt",
       "scope": {
-        "compared": 0,
+        "compared": 3,
         "total": 3
       },
       "aspects": [
@@ -6948,20 +6948,20 @@
         },
         {
           "name": "fachsatzabdeckung",
-          "status": "not_checked",
-          "compared": 0,
+          "status": "compared",
+          "compared": 3,
           "total": 3,
-          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Wie viele Sollsätze haben überhaupt einen erzeugten Satz an derselben ABAP-Anweisung? Erzeuger: engine:fachsatz."
         },
         {
           "name": "fachsatzinhalt",
-          "status": "not_checked",
-          "compared": 0,
-          "total": 0,
-          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
+          "status": "compared",
+          "compared": 2,
+          "total": 3,
+          "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
         }
       ],
-      "reason": "3 Sollfachsatz/-sätze mit 8 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
+      "reason": "3 Sollfachsatz/-sätze mit 8 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 12 Satz/Sätze. 3 von 3 Sollsätzen vergleichbar (Anker geteilt), davon 2 über der Schwelle: CC-049-B03↔source.abap:B19-list 0.71, CC-049-B01↔source.abap:B7-guard 0.71. Darunter: CC-049-B02↔source.abap:B11-select 0.40. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 9."
     },
     {
       "case": "CC-050",
@@ -7074,10 +7074,10 @@
     {
       "case": "CC-050",
       "class": "fachsaetze",
-      "state": "disagree",
-      "verdict": "nicht-vergleichbar",
+      "state": "agree",
+      "verdict": null,
       "scope": {
-        "compared": 0,
+        "compared": 3,
         "total": 3
       },
       "aspects": [
@@ -7090,20 +7090,20 @@
         },
         {
           "name": "fachsatzabdeckung",
-          "status": "not_checked",
-          "compared": 0,
+          "status": "compared",
+          "compared": 3,
           "total": 3,
-          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Wie viele Sollsätze haben überhaupt einen erzeugten Satz an derselben ABAP-Anweisung? Erzeuger: engine:fachsatz."
         },
         {
           "name": "fachsatzinhalt",
-          "status": "not_checked",
-          "compared": 0,
-          "total": 0,
-          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
+          "status": "compared",
+          "compared": 3,
+          "total": 3,
+          "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
         }
       ],
-      "reason": "3 Sollfachsatz/-sätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
+      "reason": "3 Sollfachsatz/-sätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 9 Satz/Sätze. 3 von 3 Sollsätzen vergleichbar (Anker geteilt), davon 3 über der Schwelle: CC-050-B03↔source.abap:B14-list 1.00, CC-050-B02↔source.abap:B9-guard 0.80, CC-050-B01↔source.abap:B4-select 0.56. Darunter: —. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 6."
     },
     {
       "case": "CC-051",
@@ -7217,9 +7217,9 @@
       "case": "CC-051",
       "class": "fachsaetze",
       "state": "disagree",
-      "verdict": "nicht-vergleichbar",
+      "verdict": "engine-defekt",
       "scope": {
-        "compared": 0,
+        "compared": 3,
         "total": 3
       },
       "aspects": [
@@ -7232,20 +7232,20 @@
         },
         {
           "name": "fachsatzabdeckung",
-          "status": "not_checked",
-          "compared": 0,
+          "status": "compared",
+          "compared": 3,
           "total": 3,
-          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Wie viele Sollsätze haben überhaupt einen erzeugten Satz an derselben ABAP-Anweisung? Erzeuger: engine:fachsatz."
         },
         {
           "name": "fachsatzinhalt",
-          "status": "not_checked",
-          "compared": 0,
-          "total": 0,
-          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
+          "status": "compared",
+          "compared": 2,
+          "total": 3,
+          "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
         }
       ],
-      "reason": "3 Sollfachsatz/-sätze mit 8 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
+      "reason": "3 Sollfachsatz/-sätze mit 8 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 9 Satz/Sätze. 3 von 3 Sollsätzen vergleichbar (Anker geteilt), davon 2 über der Schwelle: CC-051-B03↔source.abap:B14-list 0.89, CC-051-B02↔source.abap:B10-guard 0.80. Darunter: CC-051-B01↔source.abap:B5-select 0.24. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 6."
     },
     {
       "case": "CC-052",
@@ -7358,10 +7358,10 @@
     {
       "case": "CC-052",
       "class": "fachsaetze",
-      "state": "disagree",
-      "verdict": "nicht-vergleichbar",
+      "state": "agree",
+      "verdict": null,
       "scope": {
-        "compared": 0,
+        "compared": 3,
         "total": 3
       },
       "aspects": [
@@ -7374,20 +7374,20 @@
         },
         {
           "name": "fachsatzabdeckung",
-          "status": "not_checked",
-          "compared": 0,
+          "status": "compared",
+          "compared": 3,
           "total": 3,
-          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Wie viele Sollsätze haben überhaupt einen erzeugten Satz an derselben ABAP-Anweisung? Erzeuger: engine:fachsatz."
         },
         {
           "name": "fachsatzinhalt",
-          "status": "not_checked",
-          "compared": 0,
-          "total": 0,
-          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
+          "status": "compared",
+          "compared": 3,
+          "total": 3,
+          "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
         }
       ],
-      "reason": "3 Sollfachsatz/-sätze mit 8 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
+      "reason": "3 Sollfachsatz/-sätze mit 8 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 9 Satz/Sätze. 3 von 3 Sollsätzen vergleichbar (Anker geteilt), davon 3 über der Schwelle: CC-052-B03↔source.abap:B8-guard 0.80, CC-052-B02↔source.abap:B13-write 0.75, CC-052-B01↔source.abap:B12-list 0.60. Darunter: —. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 6."
     },
     {
       "case": "CC-053",
@@ -7501,9 +7501,9 @@
       "case": "CC-053",
       "class": "fachsaetze",
       "state": "disagree",
-      "verdict": "nicht-vergleichbar",
+      "verdict": "engine-defekt",
       "scope": {
-        "compared": 0,
+        "compared": 1,
         "total": 2
       },
       "aspects": [
@@ -7516,20 +7516,20 @@
         },
         {
           "name": "fachsatzabdeckung",
-          "status": "not_checked",
-          "compared": 0,
+          "status": "compared",
+          "compared": 1,
           "total": 2,
-          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Wie viele Sollsätze haben überhaupt einen erzeugten Satz an derselben ABAP-Anweisung? Erzeuger: engine:fachsatz."
         },
         {
           "name": "fachsatzinhalt",
-          "status": "not_checked",
+          "status": "compared",
           "compared": 0,
-          "total": 0,
-          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
+          "total": 1,
+          "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
         }
       ],
-      "reason": "2 Sollfachsatz/-sätze mit 4 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
+      "reason": "2 Sollfachsatz/-sätze mit 4 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 2 Satz/Sätze. 1 von 2 Sollsätzen vergleichbar (Anker geteilt), davon 0 über der Schwelle: —. Darunter: CC-053-B01↔source.abap:B4-branch4 0.19. Ohne Gegenstück: CC-053-B02. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 1."
     },
     {
       "case": "CC-054",
@@ -7643,9 +7643,9 @@
       "case": "CC-054",
       "class": "fachsaetze",
       "state": "disagree",
-      "verdict": "nicht-vergleichbar",
+      "verdict": "engine-defekt",
       "scope": {
-        "compared": 0,
+        "compared": 2,
         "total": 2
       },
       "aspects": [
@@ -7658,20 +7658,20 @@
         },
         {
           "name": "fachsatzabdeckung",
-          "status": "not_checked",
-          "compared": 0,
+          "status": "compared",
+          "compared": 2,
           "total": 2,
-          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Wie viele Sollsätze haben überhaupt einen erzeugten Satz an derselben ABAP-Anweisung? Erzeuger: engine:fachsatz."
         },
         {
           "name": "fachsatzinhalt",
-          "status": "not_checked",
+          "status": "compared",
           "compared": 0,
-          "total": 0,
-          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
+          "total": 2,
+          "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
         }
       ],
-      "reason": "2 Sollfachsatz/-sätze mit 5 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
+      "reason": "2 Sollfachsatz/-sätze mit 5 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 4 Satz/Sätze. 2 von 2 Sollsätzen vergleichbar (Anker geteilt), davon 0 über der Schwelle: —. Darunter: CC-054-B02↔source.abap:B23-branch23 0.13, CC-054-B01↔source.abap:B14-call 0.00. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 2."
     },
     {
       "case": "CC-055",
@@ -7784,10 +7784,10 @@
     {
       "case": "CC-055",
       "class": "fachsaetze",
-      "state": "disagree",
-      "verdict": "nicht-vergleichbar",
+      "state": "agree",
+      "verdict": null,
       "scope": {
-        "compared": 0,
+        "compared": 2,
         "total": 2
       },
       "aspects": [
@@ -7800,20 +7800,20 @@
         },
         {
           "name": "fachsatzabdeckung",
-          "status": "not_checked",
-          "compared": 0,
+          "status": "compared",
+          "compared": 2,
           "total": 2,
-          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Wie viele Sollsätze haben überhaupt einen erzeugten Satz an derselben ABAP-Anweisung? Erzeuger: engine:fachsatz."
         },
         {
           "name": "fachsatzinhalt",
-          "status": "not_checked",
-          "compared": 0,
-          "total": 0,
-          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
+          "status": "compared",
+          "compared": 2,
+          "total": 2,
+          "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
         }
       ],
-      "reason": "2 Sollfachsatz/-sätze mit 8 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
+      "reason": "2 Sollfachsatz/-sätze mit 8 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 7 Satz/Sätze. 2 von 2 Sollsätzen vergleichbar (Anker geteilt), davon 2 über der Schwelle: CC-055-B02↔source.abap:B18-chain18 0.67, CC-055-B01↔source.abap:B14-call 0.55. Darunter: —. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 5."
     },
     {
       "case": "CC-056",
@@ -7926,10 +7926,10 @@
     {
       "case": "CC-056",
       "class": "fachsaetze",
-      "state": "disagree",
-      "verdict": "nicht-vergleichbar",
+      "state": "agree",
+      "verdict": null,
       "scope": {
-        "compared": 0,
+        "compared": 2,
         "total": 2
       },
       "aspects": [
@@ -7942,20 +7942,20 @@
         },
         {
           "name": "fachsatzabdeckung",
-          "status": "not_checked",
-          "compared": 0,
+          "status": "compared",
+          "compared": 2,
           "total": 2,
-          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Wie viele Sollsätze haben überhaupt einen erzeugten Satz an derselben ABAP-Anweisung? Erzeuger: engine:fachsatz."
         },
         {
           "name": "fachsatzinhalt",
-          "status": "not_checked",
-          "compared": 0,
-          "total": 0,
-          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
+          "status": "compared",
+          "compared": 2,
+          "total": 2,
+          "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
         }
       ],
-      "reason": "2 Sollfachsatz/-sätze mit 7 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
+      "reason": "2 Sollfachsatz/-sätze mit 7 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 6 Satz/Sätze. 2 von 2 Sollsätzen vergleichbar (Anker geteilt), davon 2 über der Schwelle: CC-056-B01↔source.abap:B4-guard 0.80, CC-056-B02↔source.abap:B9-submit 0.67. Darunter: —. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 4."
     },
     {
       "case": "CC-057",
@@ -8069,9 +8069,9 @@
       "case": "CC-057",
       "class": "fachsaetze",
       "state": "disagree",
-      "verdict": "nicht-vergleichbar",
+      "verdict": "engine-defekt",
       "scope": {
-        "compared": 0,
+        "compared": 1,
         "total": 2
       },
       "aspects": [
@@ -8084,20 +8084,20 @@
         },
         {
           "name": "fachsatzabdeckung",
-          "status": "not_checked",
-          "compared": 0,
+          "status": "compared",
+          "compared": 1,
           "total": 2,
-          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Wie viele Sollsätze haben überhaupt einen erzeugten Satz an derselben ABAP-Anweisung? Erzeuger: engine:fachsatz."
         },
         {
           "name": "fachsatzinhalt",
-          "status": "not_checked",
+          "status": "compared",
           "compared": 0,
-          "total": 0,
-          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
+          "total": 1,
+          "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
         }
       ],
-      "reason": "2 Sollfachsatz/-sätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
+      "reason": "2 Sollfachsatz/-sätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 1 Satz/Sätze. 1 von 2 Sollsätzen vergleichbar (Anker geteilt), davon 0 über der Schwelle: —. Darunter: CC-057-B01↔source.abap:B10-select 0.13. Ohne Gegenstück: CC-057-B02. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 0."
     },
     {
       "case": "CC-058",
@@ -8211,9 +8211,9 @@
       "case": "CC-058",
       "class": "fachsaetze",
       "state": "disagree",
-      "verdict": "nicht-vergleichbar",
+      "verdict": "engine-defekt",
       "scope": {
-        "compared": 0,
+        "compared": 3,
         "total": 3
       },
       "aspects": [
@@ -8226,20 +8226,20 @@
         },
         {
           "name": "fachsatzabdeckung",
-          "status": "not_checked",
-          "compared": 0,
+          "status": "compared",
+          "compared": 3,
           "total": 3,
-          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Wie viele Sollsätze haben überhaupt einen erzeugten Satz an derselben ABAP-Anweisung? Erzeuger: engine:fachsatz."
         },
         {
           "name": "fachsatzinhalt",
-          "status": "not_checked",
-          "compared": 0,
-          "total": 0,
-          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
+          "status": "compared",
+          "compared": 1,
+          "total": 3,
+          "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
         }
       ],
-      "reason": "3 Sollfachsatz/-sätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
+      "reason": "3 Sollfachsatz/-sätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 9 Satz/Sätze. 3 von 3 Sollsätzen vergleichbar (Anker geteilt), davon 1 über der Schwelle: CC-058-B02↔source.abap:B9-guard 0.80. Darunter: CC-058-B03↔source.abap:B14-list 0.43, CC-058-B01↔source.abap:B4-select 0.27. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 6."
     },
     {
       "case": "CC-059",
@@ -8353,9 +8353,9 @@
       "case": "CC-059",
       "class": "fachsaetze",
       "state": "disagree",
-      "verdict": "nicht-vergleichbar",
+      "verdict": "engine-defekt",
       "scope": {
-        "compared": 0,
+        "compared": 1,
         "total": 3
       },
       "aspects": [
@@ -8368,20 +8368,20 @@
         },
         {
           "name": "fachsatzabdeckung",
-          "status": "not_checked",
-          "compared": 0,
+          "status": "compared",
+          "compared": 1,
           "total": 3,
-          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Wie viele Sollsätze haben überhaupt einen erzeugten Satz an derselben ABAP-Anweisung? Erzeuger: engine:fachsatz."
         },
         {
           "name": "fachsatzinhalt",
-          "status": "not_checked",
+          "status": "compared",
           "compared": 0,
-          "total": 0,
-          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
+          "total": 1,
+          "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
         }
       ],
-      "reason": "3 Sollfachsatz/-sätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
+      "reason": "3 Sollfachsatz/-sätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 2 Satz/Sätze. 1 von 3 Sollsätzen vergleichbar (Anker geteilt), davon 0 über der Schwelle: —. Darunter: CC-059-B03↔source.abap:B13-modify 0.19. Ohne Gegenstück: CC-059-B01, CC-059-B02. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 1."
     },
     {
       "case": "CC-060",
@@ -8495,9 +8495,9 @@
       "case": "CC-060",
       "class": "fachsaetze",
       "state": "disagree",
-      "verdict": "nicht-vergleichbar",
+      "verdict": "engine-defekt",
       "scope": {
-        "compared": 0,
+        "compared": 3,
         "total": 3
       },
       "aspects": [
@@ -8510,20 +8510,20 @@
         },
         {
           "name": "fachsatzabdeckung",
-          "status": "not_checked",
-          "compared": 0,
+          "status": "compared",
+          "compared": 3,
           "total": 3,
-          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Wie viele Sollsätze haben überhaupt einen erzeugten Satz an derselben ABAP-Anweisung? Erzeuger: engine:fachsatz."
         },
         {
           "name": "fachsatzinhalt",
-          "status": "not_checked",
+          "status": "compared",
           "compared": 0,
-          "total": 0,
-          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
+          "total": 3,
+          "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
         }
       ],
-      "reason": "3 Sollfachsatz/-sätze mit 8 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
+      "reason": "3 Sollfachsatz/-sätze mit 8 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 6 Satz/Sätze. 3 von 3 Sollsätzen vergleichbar (Anker geteilt), davon 0 über der Schwelle: —. Darunter: CC-060-B01↔zcl_route_service.clas.abap:B13-seq13 0.17, CC-060-B02↔zcl_route_service.clas.abap:B12-branch12 0.06, CC-060-B03↔zcl_customer_api.clas.abap:B10-select 0.00. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 3."
     },
     {
       "case": "CC-061",
@@ -8637,9 +8637,9 @@
       "case": "CC-061",
       "class": "fachsaetze",
       "state": "disagree",
-      "verdict": "nicht-vergleichbar",
+      "verdict": "engine-defekt",
       "scope": {
-        "compared": 0,
+        "compared": 2,
         "total": 2
       },
       "aspects": [
@@ -8652,20 +8652,20 @@
         },
         {
           "name": "fachsatzabdeckung",
-          "status": "not_checked",
-          "compared": 0,
+          "status": "compared",
+          "compared": 2,
           "total": 2,
-          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Wie viele Sollsätze haben überhaupt einen erzeugten Satz an derselben ABAP-Anweisung? Erzeuger: engine:fachsatz."
         },
         {
           "name": "fachsatzinhalt",
-          "status": "not_checked",
+          "status": "compared",
           "compared": 0,
-          "total": 0,
-          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
+          "total": 2,
+          "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
         }
       ],
-      "reason": "2 Sollfachsatz/-sätze mit 3 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
+      "reason": "2 Sollfachsatz/-sätze mit 3 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 3 Satz/Sätze. 2 von 2 Sollsätzen vergleichbar (Anker geteilt), davon 0 über der Schwelle: —. Darunter: CC-061-B02↔source.abap:B15-write 0.33, CC-061-B01↔source.abap:B14-method 0.09. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 1."
     },
     {
       "case": "CC-062",
@@ -8779,9 +8779,9 @@
       "case": "CC-062",
       "class": "fachsaetze",
       "state": "disagree",
-      "verdict": "nicht-vergleichbar",
+      "verdict": "engine-defekt",
       "scope": {
-        "compared": 0,
+        "compared": 2,
         "total": 2
       },
       "aspects": [
@@ -8794,20 +8794,20 @@
         },
         {
           "name": "fachsatzabdeckung",
-          "status": "not_checked",
-          "compared": 0,
+          "status": "compared",
+          "compared": 2,
           "total": 2,
-          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Wie viele Sollsätze haben überhaupt einen erzeugten Satz an derselben ABAP-Anweisung? Erzeuger: engine:fachsatz."
         },
         {
           "name": "fachsatzinhalt",
-          "status": "not_checked",
-          "compared": 0,
-          "total": 0,
-          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
+          "status": "compared",
+          "compared": 1,
+          "total": 2,
+          "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
         }
       ],
-      "reason": "2 Sollfachsatz/-sätze mit 4 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
+      "reason": "2 Sollfachsatz/-sätze mit 4 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 3 Satz/Sätze. 2 von 2 Sollsätzen vergleichbar (Anker geteilt), davon 1 über der Schwelle: CC-062-B01↔source.abap:B5-select 0.61. Darunter: CC-062-B02↔source.abap:B6-list 0.20. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 1."
     },
     {
       "case": "CC-063",
@@ -8921,9 +8921,9 @@
       "case": "CC-063",
       "class": "fachsaetze",
       "state": "disagree",
-      "verdict": "nicht-vergleichbar",
+      "verdict": "engine-defekt",
       "scope": {
-        "compared": 0,
+        "compared": 2,
         "total": 2
       },
       "aspects": [
@@ -8936,20 +8936,20 @@
         },
         {
           "name": "fachsatzabdeckung",
-          "status": "not_checked",
-          "compared": 0,
+          "status": "compared",
+          "compared": 2,
           "total": 2,
-          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Wie viele Sollsätze haben überhaupt einen erzeugten Satz an derselben ABAP-Anweisung? Erzeuger: engine:fachsatz."
         },
         {
           "name": "fachsatzinhalt",
-          "status": "not_checked",
-          "compared": 0,
-          "total": 0,
-          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
+          "status": "compared",
+          "compared": 1,
+          "total": 2,
+          "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
         }
       ],
-      "reason": "2 Sollfachsatz/-sätze mit 4 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
+      "reason": "2 Sollfachsatz/-sätze mit 4 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 2 Satz/Sätze. 2 von 2 Sollsätzen vergleichbar (Anker geteilt), davon 1 über der Schwelle: CC-063-B01↔source.abap:B5-select 0.64. Darunter: CC-063-B02↔source.abap:B7-write 0.17. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 0."
     },
     {
       "case": "CC-064",
@@ -9062,10 +9062,10 @@
     {
       "case": "CC-064",
       "class": "fachsaetze",
-      "state": "disagree",
-      "verdict": "nicht-vergleichbar",
+      "state": "agree",
+      "verdict": null,
       "scope": {
-        "compared": 0,
+        "compared": 2,
         "total": 2
       },
       "aspects": [
@@ -9078,20 +9078,20 @@
         },
         {
           "name": "fachsatzabdeckung",
-          "status": "not_checked",
-          "compared": 0,
+          "status": "compared",
+          "compared": 2,
           "total": 2,
-          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Wie viele Sollsätze haben überhaupt einen erzeugten Satz an derselben ABAP-Anweisung? Erzeuger: engine:fachsatz."
         },
         {
           "name": "fachsatzinhalt",
-          "status": "not_checked",
-          "compared": 0,
-          "total": 0,
-          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
+          "status": "compared",
+          "compared": 2,
+          "total": 2,
+          "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
         }
       ],
-      "reason": "2 Sollfachsatz/-sätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
+      "reason": "2 Sollfachsatz/-sätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 5 Satz/Sätze. 2 von 2 Sollsätzen vergleichbar (Anker geteilt), davon 2 über der Schwelle: CC-064-B02↔source.abap:B9-write 0.80, CC-064-B01↔source.abap:B6-guard 0.73. Darunter: —. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 3."
     },
     {
       "case": "CC-065",
@@ -9204,10 +9204,10 @@
     {
       "case": "CC-065",
       "class": "fachsaetze",
-      "state": "disagree",
-      "verdict": "nicht-vergleichbar",
+      "state": "agree",
+      "verdict": null,
       "scope": {
-        "compared": 0,
+        "compared": 1,
         "total": 1
       },
       "aspects": [
@@ -9220,20 +9220,20 @@
         },
         {
           "name": "fachsatzabdeckung",
-          "status": "not_checked",
-          "compared": 0,
+          "status": "compared",
+          "compared": 1,
           "total": 1,
-          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Wie viele Sollsätze haben überhaupt einen erzeugten Satz an derselben ABAP-Anweisung? Erzeuger: engine:fachsatz."
         },
         {
           "name": "fachsatzinhalt",
-          "status": "not_checked",
-          "compared": 0,
-          "total": 0,
-          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
+          "status": "compared",
+          "compared": 1,
+          "total": 1,
+          "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
         }
       ],
-      "reason": "1 Sollfachsatz/-sätze mit 2 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
+      "reason": "1 Sollfachsatz/-sätze mit 2 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 3 Satz/Sätze. 1 von 1 Sollsätzen vergleichbar (Anker geteilt), davon 1 über der Schwelle: CC-065-B01↔caller.abap:B3-submit 0.64. Darunter: —. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 2."
     },
     {
       "case": "CC-066",
@@ -9365,17 +9365,17 @@
           "status": "not_checked",
           "compared": 0,
           "total": 1,
-          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Wie viele Sollsätze haben überhaupt einen erzeugten Satz an derselben ABAP-Anweisung? Erzeuger: engine:fachsatz."
         },
         {
           "name": "fachsatzinhalt",
           "status": "not_checked",
           "compared": 0,
           "total": 0,
-          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
+          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Die Engine erzeugt die Fachsätze deterministisch aus dem Quelltext (lib/abap/business-statement.ts, Roadmap 17.7, Herkunft „reconstructed\")."
         }
       ],
-      "reason": "1 Sollfachsatz/-sätze mit 2 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
+      "reason": "1 Sollfachsatz/-sätze mit 2 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 3 Satz/Sätze. Kein erzeugter Satz steht an einer ABAP-Anweisung, die auch ein Sollsatz nennt — nicht verglichen, nicht verfehlt."
     },
     {
       "case": "CC-067",
@@ -9489,9 +9489,9 @@
       "case": "CC-067",
       "class": "fachsaetze",
       "state": "disagree",
-      "verdict": "nicht-vergleichbar",
+      "verdict": "engine-defekt",
       "scope": {
-        "compared": 0,
+        "compared": 1,
         "total": 1
       },
       "aspects": [
@@ -9504,20 +9504,20 @@
         },
         {
           "name": "fachsatzabdeckung",
-          "status": "not_checked",
-          "compared": 0,
+          "status": "compared",
+          "compared": 1,
           "total": 1,
-          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Wie viele Sollsätze haben überhaupt einen erzeugten Satz an derselben ABAP-Anweisung? Erzeuger: engine:fachsatz."
         },
         {
           "name": "fachsatzinhalt",
-          "status": "not_checked",
+          "status": "compared",
           "compared": 0,
-          "total": 0,
-          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
+          "total": 1,
+          "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
         }
       ],
-      "reason": "1 Sollfachsatz/-sätze mit 2 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
+      "reason": "1 Sollfachsatz/-sätze mit 2 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 3 Satz/Sätze. 1 von 1 Sollsätzen vergleichbar (Anker geteilt), davon 0 über der Schwelle: —. Darunter: CC-067-B01↔source.abap:B5-assert 0.31. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 2."
     },
     {
       "case": "CC-068",
@@ -9631,9 +9631,9 @@
       "case": "CC-068",
       "class": "fachsaetze",
       "state": "disagree",
-      "verdict": "nicht-vergleichbar",
+      "verdict": "engine-defekt",
       "scope": {
-        "compared": 0,
+        "compared": 1,
         "total": 1
       },
       "aspects": [
@@ -9646,20 +9646,20 @@
         },
         {
           "name": "fachsatzabdeckung",
-          "status": "not_checked",
-          "compared": 0,
+          "status": "compared",
+          "compared": 1,
           "total": 1,
-          "note": "Kein Erzeuger: Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Dieser Nenner ist der Grund, warum die Facette nicht grün sein darf."
+          "note": "Wie viele Sollsätze haben überhaupt einen erzeugten Satz an derselben ABAP-Anweisung? Erzeuger: engine:fachsatz."
         },
         {
           "name": "fachsatzinhalt",
-          "status": "not_checked",
+          "status": "compared",
           "compared": 0,
-          "total": 0,
-          "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau."
+          "total": 1,
+          "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
         }
       ],
-      "reason": "1 Sollfachsatz/-sätze mit 3 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „kein-erzeuger\" lieferte 0 Satz/Sätze. Nichts zu vergleichen — Heute erzeugt kein Modul des Produkts verankerte Fachsätze (Roadmap 17.6 ist offen: Engine oder Modell). Diese Facette misst den ersten Erzeuger ohne Umbau. Der Ankercheck allein ist keine Übereinstimmung (anchor_validation_passed)."
+      "reason": "1 Sollfachsatz/-sätze mit 3 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 4 Satz/Sätze. 1 von 1 Sollsätzen vergleichbar (Anker geteilt), davon 0 über der Schwelle: —. Darunter: CC-068-B01↔source.abap:B11-branch11 0.14. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 3."
     }
   ]
 }

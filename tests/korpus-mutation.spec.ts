@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import {
   compareAll,
+  NO_PRODUCER,
   PROBE_PRODUCERS,
   type ClassResult,
   type SkeletonMutation,
@@ -233,13 +234,16 @@ const compared = (results: ClassResult[]) => fachsaetze(results).reduce((sum, r)
 const hits = (results: ClassResult[]) =>
   fachsaetze(results).reduce((sum, r) => sum + (r.aspects.find((a) => a.name === 'fachsatzinhalt')?.compared ?? 0), 0);
 
-const NO_PRODUCER_RUN = compareAll();
+// **Seit 17.7 ist die Vorgabe der Engine-Erzeuger.** Der leere Stand wird
+// deshalb ausdrücklich angefordert: er ist weiter der Nullpunkt, gegen den
+// diese Probe misst, aber nicht mehr der Normallauf.
+const NO_PRODUCER_RUN = compareAll(undefined, NO_PRODUCER);
 const ECHO_RUN = compareAll(undefined, PROBE_PRODUCERS.echo());
 
 test('die Zahl bewegt sich, wenn man den Erzeuger ändert', () => {
-  // Die Abnahmebedingung aus 17.5, als Messung. Heute erzeugt niemand
-  // Fachsätze, und genau deshalb steht in `tests/korpus/baseline.json` eine
-  // Null — keine Behauptung über das Produkt, sondern der gemessene Stand.
+  // Die Abnahmebedingung aus 17.5, als Messung: ohne Erzeuger null, mit dem
+  // Soll-Echo die Obergrenze. Seit 17.7 steht dazwischen der gemessene Stand
+  // der Engine in `tests/korpus/baseline.json`.
   expect(compared(NO_PRODUCER_RUN), 'ohne Erzeuger darf nichts als verglichen gelten').toBe(0);
   expect(hits(NO_PRODUCER_RUN), 'ohne Erzeuger darf es keinen Treffer geben').toBe(0);
   expect(green(NO_PRODUCER_RUN).size, 'ohne Erzeuger darf kein Fall grün sein').toBe(0);
