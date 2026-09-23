@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import {
   ENGINE_PRODUCER,
+  MIN_FORBIDDEN_CORE_TOKENS,
   compareAll,
   compareCase,
   readBaseline,
@@ -14,6 +15,7 @@ import {
   type KorpusCase,
   NO_PRODUCER,
   STATEMENT_MATCH_THRESHOLD,
+  readForbiddenConclusions,
   statementSimilarity,
   statementTokens,
 } from './helpers/korpus-comparison';
@@ -278,6 +280,109 @@ test.describe('jede Facette nennt Zähler, Nenner und Prüfstatus', () => {
       'Ein Prüfstatus hat sich geändert. Lesen Sie, warum, und schreiben Sie die Baseline neu ' +
         '(npx tsx tests/helpers/korpus-baseline-write.ts).',
     ).toEqual('');
+  });
+});
+
+test.describe('die verbotenen Aussagen werden verglichen (Roadmap 17.9)', () => {
+  const ALL = readCases().map((korpusCase) => ({ id: korpusCase.id, list: readForbiddenConclusions(korpusCase) }));
+  const FLAT = ALL.flatMap((entry) => entry.list.map((conclusion) => ({ case: entry.id, conclusion })));
+
+  test('jede Facette fachsaetze führt die Teilprüfung „verbotene-aussagen"', () => {
+    const missing = LIVE.filter(
+      (result) => result.class === 'fachsaetze' && !result.aspects.some((aspect) => aspect.name === 'verbotene-aussagen'),
+    );
+    expect(
+      missing.map(show).join('\n'),
+      'Ohne diese Teilprüfung steht in der Baseline keine Zahl gegen Erfindung — und genau das war der Zustand ' +
+        'bis zum 23.09.2026 (Roadmap 17.9).',
+    ).toEqual('');
+  });
+
+  test('die Kernbildung ist abzählbar: jeder Satz ist vergleichbar oder benannt nicht vergleichbar', () => {
+    // Es gibt keine dritte Kategorie und kein stilles Übergehen. Wo kein Kern
+    // gebildet werden kann, steht der Grund am Satz (`why`) und der Satz fällt
+    // aus dem Nenner — er gilt nie als bestanden.
+    const comparable = FLAT.filter((entry) => entry.conclusion.cores.length > 0);
+    const open = FLAT.filter((entry) => entry.conclusion.cores.length === 0);
+    expect(comparable.length + open.length).toBe(FLAT.length);
+    const silent = open.filter((entry) => entry.conclusion.why.length < 20);
+    expect(silent.map((entry) => entry.case).join(', '), 'ein nicht vergleichbarer Satz ohne Grund').toEqual('');
+    // Gemessen am 23.09.2026: 197 Sätze, 173 mit Kern, 24 ohne — die 24 sind
+    // durchweg Einstufungsurteile („Kein D", „Nicht A", „kein Unknown"), aus
+    // denen sich kein Fachsatz bilden lässt.
+    expect(FLAT.length, 'der Korpus führt keine verbotenen Aussagen mehr').toBeGreaterThan(190);
+    expect(
+      comparable.length,
+      `Von ${FLAT.length} verbotenen Aussagen haben nur ${comparable.length} einen Kern.`,
+    ).toBeGreaterThan(160);
+    for (const entry of comparable) {
+      for (const core of entry.conclusion.cores) {
+        expect(
+          statementTokens(core).size,
+          `${entry.case}: der Kern «${core}» hat weniger als ${MIN_FORBIDDEN_CORE_TOKENS} Inhaltswörter`,
+        ).toBeGreaterThanOrEqual(MIN_FORBIDDEN_CORE_TOKENS);
+      }
+    }
+  });
+
+  test('ein Satz ohne Ankerpräfix gilt für den ganzen Fall und wird nicht übergangen', () => {
+    // Die Handwerksfrage aus 17.9: 39 der 197 Sätze tragen kein Präfix
+    // `source.abap:NN`. 21 davon nennen ihren Anker hinter einer Profilangabe
+    // („Profil 2, source.abap:1"); 18 gelten wirklich für die gesamte Scheibe.
+    // Die werden gegen **jeden** erzeugten Satz des Falls gemessen — sonst
+    // wäre ein Fünftel des Sollwerts still abgewertet.
+    const wholeSlice = FLAT.filter(
+      (entry) => entry.conclusion.anchors.length === 0 && entry.conclusion.cores.length > 0,
+    );
+    expect(wholeSlice.length, 'kein einziger Satz gilt für die ganze Scheibe — dann misst diese Probe nichts').toBeGreaterThan(5);
+
+    const sample = wholeSlice[0];
+    const korpusCase = readCases().find((entry) => entry.id === sample.case)!;
+    const file = korpusCase.sources[0].name;
+    const said = {
+      name: 'probe:ganze-scheibe',
+      note: 'Sagt eine verbotene Aussage ohne Ankerpräfix an einer beliebigen Zeile des Falls.',
+      produce: () => [{ id: 'V-1', text: sample.conclusion.cores[0], anchors: [{ file, line: 1 }] }],
+    };
+    const result = compareCase(korpusCase, readWithEngine(korpusCase, undefined, said)).find(
+      (entry) => entry.class === 'fachsaetze',
+    );
+    const aspect = result?.aspects.find((entry) => entry.name === 'verbotene-aussagen');
+    expect(
+      aspect?.compared,
+      `${sample.case}: der Satz «${sample.conclusion.cores[0]}» gilt für die gesamte Scheibe und wurde an ` +
+        'Zeile 1 wörtlich gesagt — die Teilprüfung hat ihn trotzdem als eingehalten gezählt.',
+    ).toBeLessThan(aspect?.total ?? 0);
+  });
+
+  test('ein Satz **mit** Anker gilt nur dort — sonst wäre der Anker keine Bedingung', () => {
+    // Die Gegenprobe zur vorigen: derselbe Text an einer Anweisung, die der
+    // verbotene Satz nicht nennt, ist keine Verletzung. Ohne diese Hälfte
+    // wäre die Messung eine Wortsuche über den ganzen Fall.
+    const anchored = FLAT.find(
+      (entry) => entry.conclusion.anchors.length > 0 && entry.conclusion.cores.length > 0,
+    )!;
+    const korpusCase = readCases().find((entry) => entry.id === anchored.case)!;
+    const taken = new Set(anchored.conclusion.anchors.map((anchor) => anchor.line));
+    const free = Array.from({ length: korpusCase.sources[0].lineCount }, (_, index) => index + 1).find(
+      (line) => !taken.has(line),
+    )!;
+    const elsewhere = {
+      name: 'probe:falscher-anker',
+      note: 'Sagt eine verankerte verbotene Aussage an einer anderen Anweisung.',
+      produce: () => [
+        { id: 'V-1', text: anchored.conclusion.cores[0], anchors: [{ file: korpusCase.sources[0].name, line: free }] },
+      ],
+    };
+    const result = compareCase(korpusCase, readWithEngine(korpusCase, undefined, elsewhere)).find(
+      (entry) => entry.class === 'fachsaetze',
+    );
+    const aspect = result?.aspects.find((entry) => entry.name === 'verbotene-aussagen');
+    expect(
+      aspect?.compared,
+      `${anchored.case}: derselbe Text an Zeile ${free} statt an ${[...taken].join('/')} wurde als Verletzung ` +
+        'gezählt — dann ist der Anker keine Bedingung mehr.',
+    ).toBe(aspect?.total);
   });
 });
 

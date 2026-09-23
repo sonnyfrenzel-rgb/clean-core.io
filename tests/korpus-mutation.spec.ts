@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import {
   compareAll,
+  ENGINE_PRODUCER,
   NO_PRODUCER,
   PROBE_PRODUCERS,
   type ClassResult,
@@ -277,10 +278,92 @@ for (const probe of STATEMENT_PROBES) {
   });
 }
 
+// ---------------------------------------------------------------------------
+// Verbotene Aussagen: die Halluzinationsmessung (Roadmap 17.9)
+// ---------------------------------------------------------------------------
+
+/**
+ * Dieselbe Frage ein drittes Mal, und diesmal gegen **Erfindung**: sieht die
+ * Facette es, wenn ein Erzeuger genau das sagt, was der Fall ausdrücklich
+ * verbietet?
+ *
+ * Der Korpus führt in 47 von 68 Fällen 197 verbotene Aussagen. Die Probe
+ * `PROBE_PRODUCERS.forbidden` schreibt erst das Fallbuch ab — Abdeckung und
+ * Inhalt bleiben damit heil, und was fällt, fällt wirklich wegen der
+ * verbotenen Aussage — und sagt dann zusätzlich jeden ableitbaren Kern an
+ * dessen eigenem Anker.
+ */
+const FORBIDDEN_RUN = compareAll(undefined, PROBE_PRODUCERS.forbidden());
+
+const forbiddenAspect = (result: ClassResult) => result.aspects.find((a) => a.name === 'verbotene-aussagen');
+
+test('V1 — ein Erzeuger, der eine verbotene Aussage sagt, macht die Facette rot', () => {
+  const before = green(ECHO_RUN);
+  const after = green(FORBIDDEN_RUN);
+  const fell = [...before].filter((id) => !after.has(id));
+  expect(
+    fell.length,
+    'Kein einziger übereinstimmender Fall ist gefallen, obwohl der Erzeuger wörtlich sagt, was der Fall ' +
+      'verbietet. Dann misst die Teilprüfung „verbotene-aussagen" nichts.',
+  ).toBeGreaterThan(20);
+
+  // Und zwar **wegen** der verbotenen Aussage: Abdeckung und Inhalt sind in
+  // dieser Probe unverändert, weil sie die Sollsätze mitliefert.
+  expect(hits(FORBIDDEN_RUN), 'die Probe hat den Inhalt beschädigt — dann beweist ihr Rot nichts').toBe(
+    hits(ECHO_RUN),
+  );
+  const stillPassing = fachsaetze(FORBIDDEN_RUN).filter((result) => {
+    const aspect = forbiddenAspect(result);
+    return aspect != null && aspect.status === 'compared' && aspect.compared > 0;
+  });
+  expect(
+    stillPassing.map((r) => `${r.case}: ${forbiddenAspect(r)?.compared}/${forbiddenAspect(r)?.total}`).join('\n'),
+    'Jede vergleichbare verbotene Aussage wurde wörtlich gesagt; keine darf als eingehalten gelten.',
+  ).toEqual('');
+});
+
+test('V2 — das Fallbuch verletzt sich nicht selbst (die Kalibrierung der Kernbildung)', () => {
+  // Die Gegenprobe zu der Regel, die den **Kern** einer verbotenen Aussage
+  // bildet (`forbiddenCores`): wäre sie zu weitherzig, träfe sie die
+  // Sollsätze desselben Falls — die sprechen über dieselben Zeilen, mit
+  // denselben Bezeichnern, über dasselbe Thema. Der Soll-Echo-Erzeuger sagt
+  // genau die 173 Sollsätze; keine einzige verbotene Aussage darf anschlagen.
+  const violated = fachsaetze(ECHO_RUN).filter((result) => {
+    const aspect = forbiddenAspect(result);
+    return aspect != null && aspect.status === 'compared' && aspect.compared < aspect.total;
+  });
+  expect(
+    violated.map((result) => `  ${result.case}: ${result.evidence}`).join('\n'),
+    'Ein Sollsatz des Fallbuchs schlägt gegen eine verbotene Aussage desselben Falls an. Entweder ist die ' +
+      'Kernbildung in forbiddenCores zu weitherzig — dann wird sie enger begründet, nicht die Schwelle ' +
+      'verschoben — oder das Fallbuch widerspricht sich.',
+  ).toEqual('');
+});
+
+test('V3 — der Erzeuger des Produkts nennt seine Zahl', () => {
+  // Keine Abnahmeschwelle, sondern eine Ratsche: die Zahl wird **berichtet**
+  // und steht je Fall in `tests/korpus/baseline.json`. Steigt sie, ist das ein
+  // Befund am Erzeuger — und kein Grund, die Schranke oder die Schwelle zu
+  // verschieben (Roadmap 17.9).
+  const run = compareAll(undefined, ENGINE_PRODUCER);
+  const aspects = fachsaetze(run).map(forbiddenAspect);
+  const total = aspects.reduce((sum, a) => sum + (a?.total ?? 0), 0);
+  const kept = aspects.reduce((sum, a) => sum + (a?.compared ?? 0), 0);
+  const checked = aspects.filter((a) => a?.status === 'compared').length;
+  expect(total, 'der Korpus führt keine vergleichbaren verbotenen Aussagen mehr').toBeGreaterThan(150);
+  expect(checked, 'in keinem Fall wurde gegen eine verbotene Aussage gemessen').toBeGreaterThan(40);
+  expect(
+    total - kept,
+    `Der Engine-Erzeuger verletzt ${total - kept} von ${total} vergleichbaren verbotenen Aussagen.`,
+  ).toBeLessThanOrEqual(4);
+});
+
 test('die vier anderen Facetten bewegen sich nicht, wenn nur der Erzeuger wechselt', () => {
   // Ein Erzeuger für Fachsätze darf an `befunde`, `level`, `objekte` und
   // `skelett` nichts ändern; täte er es, wäre die Naht undicht.
   const key = (result: ClassResult) => `${result.case}|${result.class}|${result.state}|${result.verdict}`;
   const other = (results: ClassResult[]) => results.filter((r) => r.class !== 'fachsaetze').map(key);
   expect(other(ECHO_RUN)).toEqual(other(NO_PRODUCER_RUN));
+  // Auch die Halluzinationsprobe aus 17.9 darf an den vier anderen nichts rühren.
+  expect(other(FORBIDDEN_RUN)).toEqual(other(NO_PRODUCER_RUN));
 });

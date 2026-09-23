@@ -121,6 +121,16 @@ export interface KorpusExpected {
     /** 2.16: Lanes mit Beweis. Heute in keinem Fall gesetzt. */
     lanes?: Array<{ id: string; evidence?: string | null; anchor?: KorpusAnchor | null }> | null;
   };
+  /**
+   * Die ausdrücklich **verbotenen** Aussagen des Fallbuchs (Roadmap 17.9).
+   *
+   * 47 der 68 Fälle führen dieses Feld, zusammen 197 Sätze; bis zum 23.09.2026
+   * hat es niemand gelesen. Es ist der einzige Sollwert im Korpus, der sagt,
+   * was der Code an einer Stelle **nicht** trägt — und damit die einzige
+   * Grundlage, auf der sich Erfindung messen lässt, ohne Gründlichkeit zu
+   * bestrafen (siehe `compareBusinessStatements`, Teil 4).
+   */
+  forbiddenConclusions?: string[] | null;
   declaredEmpty: { findings: boolean; objects: boolean };
   expectedByProfile: Array<{ label: string; classic_level?: string }> | null;
 }
@@ -1503,7 +1513,366 @@ export const PROBE_PRODUCERS = {
           })),
         })),
   }),
+  /**
+   * **Der Erzeuger, der halluziniert** (Roadmap 17.9).
+   *
+   * Er schreibt erst das Fallbuch ab — damit Abdeckung und Inhalt heil bleiben
+   * und wirklich nur die neue Teilprüfung zuschlägt — und sagt dann zusätzlich
+   * zu jeder verbotenen Aussage des Falls genau deren Kern, an deren eigenem
+   * Anker. Eine Facette, die dabei grün bleibt, misst gegen Erfindung nichts.
+   *
+   * Aussagen ohne Anker gelten für den ganzen Fall (`FORBIDDEN_WHOLE_SLICE`);
+   * die Probe hängt sie deshalb an die erste Zeile der ersten Quelle — der
+   * Vergleich misst sie ohnehin gegen jeden erzeugten Satz.
+   */
+  forbidden: (): StatementProducer => ({
+    name: 'probe:verbotene-aussage',
+    note: 'Empfindlichkeitsprobe — sagt zusätzlich zu den Sollsätzen genau das, was der Fall verbietet.',
+    produce: (korpusCase) => {
+      const fallback = korpusCase.sources[0]?.name ?? null;
+      const echoed = korpusCase.expected.businessStatements.map((statement) => ({
+        id: `G-${statement.id}`,
+        text: statement.text ?? '',
+        anchors: statement.anchors.map((anchor) => ({ file: anchor.file, line: anchor.line })),
+      }));
+      const said = readForbiddenConclusions(korpusCase)
+        .filter((entry) => entry.cores.length > 0)
+        .map((entry, index) => ({
+          id: `V-${index + 1}`,
+          text: entry.cores[0],
+          anchors:
+            entry.anchors.length > 0
+              ? entry.anchors.map((anchor) => ({ file: anchor.file, line: anchor.line as number | null }))
+              : [{ file: fallback, line: 1 as number | null }],
+        }));
+      return [...echoed, ...said];
+    },
+  }),
 } as const;
+
+// ---------------------------------------------------------------------------
+// Verbotene Aussagen: die Halluzinationsmessung (Roadmap 17.9)
+// ---------------------------------------------------------------------------
+
+/**
+ * Eine verbotene Aussage, zerlegt in das, was sich messen lässt.
+ *
+ * Der Korpus führt in 47 von 68 Fällen ein Feld `forbiddenConclusions` mit
+ * zusammen **197 Sätzen**, 158 davon mit Ankerpräfix `source.abap:NN` — von
+ * Hand geschrieben, seit Monaten im Repository, und bis zum 23.09.2026 hat
+ * dieser Vergleicher das Feld kein einziges Mal genannt. Dasselbe Muster wie
+ * bei `businessStatements` vor 17.5: ein Sollwert liegt da, nichts vergleicht
+ * ihn.
+ *
+ * **Warum das die richtige Messung gegen Erfindung ist.** Ein erzeugter Satz
+ * *ohne* Sollsatz ist keine Halluzination, sondern mehr Abdeckung als das
+ * Fallbuch geschrieben hat; eine Regel „Extras sind Fehler" hätte 17.7 dafür
+ * bestraft, gründlicher zu sein. Eine Halluzination ist eine Aussage, die der
+ * Code **an ihrem Anker nicht trägt** — und genau die benennen diese 197 Sätze.
+ *
+ * **Die Maschine ist dieselbe wie in 17.5, nur umgedreht:** derselbe
+ * Dice-Koeffizient (`statementSimilarity`), dieselbe Schwelle
+ * (`STATEMENT_MATCH_THRESHOLD`), dieselbe Ankerlogik (`anchorKeys`, die
+ * ABAP-Anweisung und nicht die Zeile). Erreicht ein erzeugter Satz die Schwelle
+ * gegen eine verbotene Aussage, ist das ein **Fehler** statt eines Treffers.
+ */
+export interface ForbiddenConclusion {
+  /** Der Satz, wie er im Fallbuch steht. Er geht wörtlich in jeden Beleg. */
+  raw: string;
+  /** Das Präfix vor dem Gedankenstrich, wörtlich; `null`, wenn es keines gibt. */
+  scopeText: string | null;
+  /**
+   * Die Anker aus dem Präfix. **Leer heißt: der Satz gilt für den ganzen Fall**
+   * (siehe `FORBIDDEN_WHOLE_SLICE` unten) — nicht: er wird übergangen.
+   */
+  anchors: Array<{ file: string | null; line: number }>;
+  /** Der erste Teilsatz: alles vor der Begründung (siehe `forbiddenClause`). */
+  clause: string;
+  /**
+   * Die Kerne, gegen die gemessen wird. **Leer heißt `nicht vergleichbar`** —
+   * gezählt und benannt, nie stillschweigend als bestanden verbucht.
+   */
+  cores: string[];
+  /** Warum es keinen Kern gibt. Steht im Beleg, damit die Lücke sichtbar ist. */
+  why: string;
+}
+
+/**
+ * **Die 39 Sätze ohne Ankerpräfix** („gesamte Scheibe — …", „beide Profile — …",
+ * und die wenigen ganz ohne Präfix) gelten für den **ganzen Fall**.
+ *
+ * Die Alternative wäre, sie zu übergehen, weil der Vergleich über den Anker
+ * geht — und das wäre die stillschweigende Abwertung eines Fünftels des
+ * Sollwerts. Sie werden deshalb gegen **jeden** erzeugten Satz des Falls
+ * gemessen. Das ist die strengere Lesart, und sie ist die richtige: „im Slice
+ * ist keine Berechtigungsprüfung sichtbar" verbietet die Aussage überall im
+ * Fall, nicht an einer Zeile.
+ *
+ * Diese Konstante hat keinen technischen Zweck; sie steht hier, damit die
+ * Entscheidung einen Namen hat und in `compareBusinessStatements` zitiert
+ * werden kann.
+ */
+export const FORBIDDEN_WHOLE_SLICE = 'gesamte Scheibe';
+
+/**
+ * Das Präfix eines verbotenen Satzes ist ein **Geltungsbereich** und keine
+ * Aussage — aber nur, wenn es ausschließlich aus Geltungsangaben besteht.
+ *
+ * Geprüft wird durch Wegstreichen: Profilangaben, „gesamte Scheibe", Dateinamen
+ * mit Zeile, Zeilenlisten, Bereiche, Tokenoffsets (`+4`) und Satzzeichen
+ * werden entfernt. Bleibt etwas übrig, war der Gedankenstrich Teil des Satzes
+ * und kein Trenner — dann gibt es kein Präfix, und der Satz gilt für den ganzen
+ * Fall. Geraten wird nichts.
+ */
+function forbiddenScopeResidue(prefix: string): string {
+  return prefix
+    .replace(/Profile?\s*\d+(\s*(und|oder|,)\s*\d+)*/g, '')
+    .replace(/beide Profile/g, '')
+    .replace(new RegExp(FORBIDDEN_WHOLE_SLICE, 'g'), '')
+    .replace(/[A-Za-z0-9_.]+\.abap/g, '')
+    .replace(/[:\d+–—…\-\s,]/g, '')
+    .trim();
+}
+
+/** Die Anker eines Präfixes, in der Schreibweise, die das Fallbuch benutzt. */
+function forbiddenAnchors(prefix: string, fallbackFile: string | null): Array<{ file: string | null; line: number }> {
+  const anchors: Array<{ file: string | null; line: number }> = [];
+  let current: string | null = fallbackFile;
+  for (const rawPiece of prefix.split(',')) {
+    // Profilangaben zuerst weg: „Profil 1 und 2" darf keine Zeile 1 und keine
+    // Zeile 2 werden. Tokenoffsets (`+4`, `+1 … +3`) bezeichnen eine Stelle
+    // *innerhalb* der Anweisung an derselben Zeile und ändern den Anker nicht.
+    const piece = rawPiece
+      .replace(/Profile?\s*\d+(\s*(und|oder)\s*\d+)*/g, '')
+      .replace(/beide Profile/g, '')
+      .replace(/\+\s*\d+/g, '');
+    const file = /([A-Za-z0-9_.]+\.abap)\s*:/.exec(piece);
+    if (file) current = file[1];
+    const body = file ? piece.slice(file.index + file[0].length) : piece;
+    const range = /(\d+)\s*[–—-]\s*(\d+)/.exec(body);
+    if (range) {
+      for (let line = Number(range[1]); line <= Number(range[2]); line += 1) anchors.push({ file: current, line });
+      continue;
+    }
+    for (const match of body.matchAll(/\d+/g)) anchors.push({ file: current, line: Number(match[0]) });
+  }
+  return anchors;
+}
+
+/**
+ * **Der erste Teilsatz — und warum der Rest nicht mitgemessen werden darf.**
+ *
+ * Fast jeder verbotene Satz besteht aus zwei Teilen: dem Verbot und seiner
+ * Begründung, getrennt durch `;`, `:` oder einen Punkt. Die Begründung ist
+ * eine **wahre** Aussage über den Code:
+ *
+ * > „Kein ungesichertes Leertabellen-FAE melden**; Guard und Return sind
+ * > vorhanden.**"
+ *
+ * Wer den ganzen Satz als Kern nimmt, verbietet dem Erzeuger genau das, was er
+ * sagen *soll*. Der Kern kommt deshalb nur aus dem ersten Teilsatz; Klammern
+ * (Regelzitate wie `(R13a)`, `(REV2-04)`, `(Grok H-023)`) fallen weg, weil sie
+ * Herkunftsangaben sind und keine Aussage über den Code.
+ *
+ * Getrennt wird außerhalb von Anführungszeichen und Klammern — sonst zerschnitte
+ * ein Doppelpunkt innerhalb eines Zitats den Kern.
+ */
+function forbiddenClause(body: string): string {
+  let depth = 0;
+  let quoted = false;
+  let cut = body.length;
+  for (let i = 0; i < body.length; i += 1) {
+    const ch = body[i];
+    if (ch === '„') quoted = true;
+    else if (quoted && (ch === '"' || ch === '“' || ch === '”')) quoted = false;
+    else if (!quoted && ch === '(') depth += 1;
+    else if (!quoted && ch === ')') depth = Math.max(0, depth - 1);
+    else if (!quoted && depth === 0) {
+      if (ch === ';' || ch === ':' || (ch === '.' && /\s|^$/.test(body[i + 1] ?? ''))) {
+        cut = i;
+        break;
+      }
+    }
+  }
+  return body.slice(0, cut).replace(/\([^)]*\)/g, ' ').trim();
+}
+
+/**
+ * **Die Verpackung einer verbotenen Aussage — vollständig aufgezählt.**
+ *
+ * „Kein Befund X **melden**" ist sprachlich nicht die Aussage X. Gemessen wird
+ * aber gegen Sätze, die X *behaupten*, und deshalb braucht das Maß den Kern und
+ * nicht die Verpackung. Die Verpackung besteht aus zwei Sorten Wörtern, und
+ * beide stehen hier, sichtbar und abzählbar, statt in einer Zahl zu
+ * verschwinden — dieselbe Regel wie bei `STATEMENT_STOPWORDS` und
+ * `RULE_BRIDGES`:
+ *
+ * 1. **Verneinung.** `nicht`, `kein` und `keine` sind ohnehin schon
+ *    Streichwörter des Maßes; `keinen`, `keiner`, `keinem`, `keines`, `nie` und
+ *    `weder` fehlten dort und gehören hier dazu.
+ * 2. **Berichtsverben.** Sie machen aus einer Aussage eine Anweisung an den
+ *    Erzeuger — „melden", „ableiten", „behaupten", „erfinden". Kein Fachsatz
+ *    über ABAP-Code benutzt sie; sie stehen nur in der Verpackung.
+ *
+ * **Was hier bewusst *nicht* steht:** die Klassennomen „Befund", „Fachsatz",
+ * „Knoten", „Level". Sie sehen nach Verpackung aus, sind aber die einzige
+ * Stelle, an der manche Sätze überhaupt noch Inhalt tragen („Kein dritter
+ * Lesebefund"), und sie zu streichen wäre eine Auslegung, die sich nicht
+ * begründen lässt. Wo sie den Kern verwässern, steht die eigentliche Aussage
+ * ohnehin im Zitat (Regel 1 in `forbiddenCores`).
+ */
+export const FORBIDDEN_PACKAGING: ReadonlySet<string> = new Set([
+  'nicht', 'nie', 'kein', 'keine', 'keinen', 'keiner', 'keinem', 'keines', 'weder',
+  'melden', 'meldet', 'gemeldet', 'ableiten', 'abgeleitet', 'behaupten', 'behauptet',
+  'unterstellen', 'erfinden', 'erfundener', 'erfundenen', 'erfundene', 'kodieren',
+  'klassifizieren', 'bewerten', 'werten', 'gewertet', 'behandeln', 'modellieren',
+  'vorschlagen', 'verwerfen', 'darf', 'duerfen',
+]);
+
+/** Ein Wort so normalisieren, wie `statementTokens` es tut — für den Abgleich oben. */
+function normalizeWord(word: string): string {
+  return word
+    .toLowerCase()
+    .replace(/ä/g, 'ae')
+    .replace(/ö/g, 'oe')
+    .replace(/ü/g, 'ue')
+    .replace(/ß/g, 'ss')
+    .replace(/[^a-z0-9_]+/g, '');
+}
+
+/** Die Verpackung abziehen; der Rest ist der Kern, aus dem das Maß seine Wörter nimmt. */
+function stripPackaging(text: string): string {
+  return text
+    .split(/\s+/)
+    .filter((word) => !FORBIDDEN_PACKAGING.has(normalizeWord(word)))
+    .join(' ');
+}
+
+/**
+ * **Die Untergrenze eines Kerns: zwei Inhaltswörter.**
+ *
+ * Ein Kern aus einem einzigen Wort — „Kernelaufruf", „Level" — ist keine
+ * Aussage, sondern ein Wortnachschlag; das Dice-Maß gäbe dort einem beliebigen
+ * kurzen Satz mit diesem Wort einen Treffer. Zwei Wörter sind das Kürzeste, was
+ * das Maß als Behauptung ausdrücken kann, und die Schwelle 0,50 verlangt dann
+ * immer noch, dass der erzeugte Satz beide Wörter trägt **und** selbst höchstens
+ * sechs Inhaltswörter lang ist (`2·2 / (2+6) = 0,50`). Darunter wird nichts
+ * geraten: der Satz zählt als **nicht vergleichbar**, nicht als bestanden.
+ */
+export const MIN_FORBIDDEN_CORE_TOKENS = 2;
+
+/**
+ * Der Kern einer verbotenen Aussage, in zwei offengelegten Stufen.
+ *
+ * 1. **Das Zitat.** Wo das Fallbuch die verbotene Aussage in deutsche
+ *    Anführungszeichen setzt — „Berechtigungsprüfung fehlt", „die Verbuchung
+ *    läuft nach Programmende" —, ist sie wörtlich da, und das ist der sicherste
+ *    Kern, den es gibt. Jedes Zitat des ersten Teilsatzes wird ein eigener
+ *    Kern; ein erzeugter Satz, der einen davon erreicht, verletzt den Satz.
+ * 2. **Die Verneinung.** Ohne brauchbares Zitat bleibt der erste Teilsatz ohne
+ *    seine Verpackung (`FORBIDDEN_PACKAGING`).
+ *
+ * Bleibt danach weniger als `MIN_FORBIDDEN_CORE_TOKENS` übrig, gibt es keinen
+ * Kern — der Satz ist nicht vergleichbar und wird als solcher gezählt.
+ */
+/**
+ * Deutsche Anführungszeichen: „…" — geöffnet wird mit U+201E, geschlossen im
+ * Fallbuch mal mit U+201C, mal mit dem geraden `"`. Beides wird genommen.
+ */
+const QUOTED_CORE = /„([^„]*?)["“”]/g;
+
+export function forbiddenCores(clause: string): string[] {
+  const marks = clause.matchAll(QUOTED_CORE);
+  // Im Zitat wird **nichts** abgezogen: es steht wörtlich für die verbotene
+  // Aussage, und was darin steht, gehört zu ihr. Die Verpackung liegt immer
+  // außerhalb der Anführungszeichen — „Kein Fachsatz ‚NO_AUTH wird
+  // gemeldet'": „gemeldet" ist hier Teil der Aussage, nicht des Verbots.
+  const quoted = [...marks].map((match) => match[1]);
+  if (quoted.length > 0) {
+    // **Das Zitat ist abschließend.** Wo das Fallbuch die verbotene Aussage in
+    // Anführungszeichen gesetzt hat, hat es genau gesagt, welche Wörter
+    // verboten sind. Reicht das Zitat nicht für einen Kern, wird der Satz
+    // **nicht** auf seine Umgebung ausgeweitet — dann gäbe das Maß etwas
+    // vor, das der Fall so nicht verboten hat. Gemessen, nicht vermutet:
+    // genau diese Ausweitung hat am 23.09.2026 die Gegenprobe F0 in
+    // `tests/korpus-mutation.spec.ts` rot gemacht. Aus
+    // „Kein Fachsatz ‚es wird 0 ausgegeben'" (Zitat: ein Inhaltswort) wurde
+    // der Kern «Fachsatz es wird 0 ausgegeben», und der traf mit 0,50 den
+    // Sollsatz „Der Zählerstand wird ausgegeben" — eine wahre Aussage, als
+    // Halluzination gezählt. Das Wort „Fachsatz" kam aus der Verpackung.
+    return quoted.filter((core) => statementTokens(core).size >= MIN_FORBIDDEN_CORE_TOKENS);
+  }
+  const core = stripPackaging(clause);
+  return statementTokens(core).size >= MIN_FORBIDDEN_CORE_TOKENS ? [core] : [];
+}
+
+/** Ein Satz aus `forbiddenConclusions`, zerlegt. */
+export function parseForbiddenConclusion(raw: string, fallbackFile: string | null): ForbiddenConclusion {
+  const dash = raw.indexOf('—');
+  const prefix = dash > 0 ? raw.slice(0, dash).trim() : '';
+  const isScope = dash > 0 && forbiddenScopeResidue(prefix) === '';
+  const body = isScope ? raw.slice(dash + 1).trim() : raw.trim();
+  const anchors = isScope ? forbiddenAnchors(prefix, fallbackFile) : [];
+  const clause = forbiddenClause(body);
+  const cores = forbiddenCores(clause);
+  return {
+    raw,
+    scopeText: isScope ? prefix : null,
+    anchors,
+    clause,
+    cores,
+    why:
+      cores.length > 0
+        ? ''
+        : `nicht vergleichbar: aus „${clause}" lässt sich kein Kern mit ${MIN_FORBIDDEN_CORE_TOKENS} Inhaltswörtern bilden`,
+  };
+}
+
+/** Alle verbotenen Aussagen eines Falls, zerlegt. */
+export function readForbiddenConclusions(korpusCase: KorpusCase): ForbiddenConclusion[] {
+  const fallback = korpusCase.sources[0]?.name ?? null;
+  return (korpusCase.expected.forbiddenConclusions ?? []).map((raw) => parseForbiddenConclusion(raw, fallback));
+}
+
+/** Eine Verletzung: welcher verbotene Satz, von welchem erzeugten Satz, mit welchem Maß. */
+export interface ForbiddenViolation {
+  conclusion: ForbiddenConclusion;
+  statementId: string;
+  core: string;
+  score: number;
+}
+
+/**
+ * Der Vergleich selbst — dieselbe Schwelle, dieselben Anker, umgedrehtes
+ * Vorzeichen.
+ *
+ * Geltungsbereich: ein Satz **mit** Anker wird nur gegen erzeugte Sätze an
+ * derselben ABAP-Anweisung gemessen (`anchorKeys`, wie in 17.5); ein Satz
+ * **ohne** Anker gegen jeden erzeugten Satz des Falls (`FORBIDDEN_WHOLE_SLICE`).
+ */
+export function forbiddenViolations(
+  conclusions: ForbiddenConclusion[],
+  reading: EngineReading,
+): ForbiddenViolation[] {
+  const produced = reading.businessStatements;
+  const producedKeys = produced.map((statement) => anchorKeys(statement.anchors, reading));
+  const violations: ForbiddenViolation[] = [];
+  for (const conclusion of conclusions) {
+    if (conclusion.cores.length === 0) continue;
+    const keys = anchorKeys(conclusion.anchors, reading);
+    for (let p = 0; p < produced.length; p += 1) {
+      const inScope = keys.size === 0 || [...keys].some((key) => producedKeys[p].has(key));
+      if (!inScope) continue;
+      for (const core of conclusion.cores) {
+        const score = statementSimilarity(core, produced[p].text);
+        if (score >= STATEMENT_MATCH_THRESHOLD) {
+          violations.push({ conclusion, statementId: produced[p].id, core, score });
+        }
+      }
+    }
+  }
+  return violations;
+}
 
 /**
  * Fachsätze — der Vergleich, der bis zum 23.09.2026 keiner war.
@@ -1552,7 +1921,16 @@ function compareBusinessStatements(korpusCase: KorpusCase, reading: EngineReadin
         evidence:
           'Der Fall führt keine fachlichen Ground-Truth-Kandidaten; es gibt hier weder etwas zu prüfen noch etwas zu vergleichen.',
       },
-      [facet('fachsatzinhalt', 0, 0, 'Kein Sollfachsatz im Fall.', 'not_checked')],
+      [
+        facet('fachsatzinhalt', 0, 0, 'Kein Sollfachsatz im Fall.', 'not_checked'),
+        facet(
+          'verbotene-aussagen',
+          0,
+          0,
+          'Kein Sollfachsatz im Fall; ohne erzeugte Aussage gibt es auch keine verbotene zu verletzen.',
+          'not_checked',
+        ),
+      ],
       { compared: 0, total: 0 },
     );
   }
@@ -1617,7 +1995,20 @@ function compareBusinessStatements(korpusCase: KorpusCase, reading: EngineReadin
   const comparedCount = takenExpected.size;
   const extra = produced.filter((_, index) => !takenProduced.has(index)).length;
 
-  // --- Teil 3: Status, Zähler, Nenner --------------------------------------
+  // --- Teil 3: die verbotenen Aussagen (Roadmap 17.9) ----------------------
+  //
+  // Dieselbe Maschine, umgedreht: derselbe Dice-Koeffizient, dieselbe Schwelle,
+  // dieselbe Ankerlogik — nur ist ein Treffer hier ein **Fehler**. Was ein
+  // Kern ist und was nicht vergleichbar bleibt, steht in `forbiddenCores`;
+  // wie die Aussagen ohne Anker behandelt werden, in `FORBIDDEN_WHOLE_SLICE`.
+  const conclusions = readForbiddenConclusions(korpusCase);
+  const comparableConclusions = conclusions.filter((entry) => entry.cores.length > 0);
+  const uncomparableConclusions = conclusions.filter((entry) => entry.cores.length === 0);
+  const violations = forbiddenViolations(comparableConclusions, reading);
+  const violated = new Set(violations.map((entry) => entry.conclusion.raw));
+  const forbiddenChecked = produced.length > 0 && comparableConclusions.length > 0;
+
+  // --- Teil 4: Status, Zähler, Nenner --------------------------------------
   const aspects: FacetAspect[] = [
     facet(
       'ankerpruefung',
@@ -1644,6 +2035,25 @@ function compareBusinessStatements(korpusCase: KorpusCase, reading: EngineReadin
         : `Dice über normalisierte Inhaltswörter, Schwelle ${STATEMENT_MATCH_THRESHOLD.toFixed(2)} (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD).`,
       comparedCount > 0 ? 'compared' : 'not_checked',
     ),
+    facet(
+      'verbotene-aussagen',
+      forbiddenChecked ? comparableConclusions.length - violated.size : 0,
+      comparableConclusions.length,
+      conclusions.length === 0
+        ? 'Dieser Fall nennt keine verbotene Aussage; es gibt hier nichts zu verletzen und nichts zu belegen.'
+        : comparableConclusions.length === 0
+          ? `Alle ${conclusions.length} verbotenen Aussagen dieses Falls sind nicht vergleichbar: aus keiner ` +
+            `lässt sich ein Kern mit ${MIN_FORBIDDEN_CORE_TOKENS} Inhaltswörtern bilden (forbiddenCores). ` +
+            `${sample(uncomparableConclusions.map((entry) => entry.clause))}.`
+          : !forbiddenChecked
+            ? `${conclusions.length} verbotene Aussage(n), davon ${comparableConclusions.length} mit einem Kern — ` +
+              `aber kein erzeugter Satz, gegen den sich messen ließe. ${reading.producer.note}`
+            : `Zähler: eingehaltene verbotene Aussagen. Nenner: die ${comparableConclusions.length} von ` +
+              `${conclusions.length}, aus denen sich ein Kern bilden lässt (forbiddenCores). ` +
+              `Nicht vergleichbar und deshalb weder verletzt noch bestanden: ` +
+              `${uncomparableConclusions.length === 0 ? 'keine' : sample(uncomparableConclusions.map((entry) => entry.clause))}.`,
+      forbiddenChecked ? 'compared' : 'not_checked',
+    ),
   ];
 
   /**
@@ -1663,14 +2073,19 @@ function compareBusinessStatements(korpusCase: KorpusCase, reading: EngineReadin
    * nicht gegen einen Erzeuger verwenden. Die Zahl steht deshalb im Beleg, und
    * sie ist die Größe, über die 17.6 zu entscheiden hat.
    */
-  const agree = broken.length === 0 && comparedCount === statements.length && misses.length === 0;
+  const agree =
+    broken.length === 0 && comparedCount === statements.length && misses.length === 0 && violated.size === 0;
   const verdict: Verdict | null = agree
     ? null
     : broken.length > 0
       ? 'korpus-offen'
-      : produced.length === 0 || comparedCount === 0
-        ? 'nicht-vergleichbar'
-        : 'engine-defekt';
+      : violated.size > 0
+        ? // Eine verbotene Aussage ist ein Defekt des Erzeugers und keine offene
+          // Frage an den Korpus: der Fall hat sie ausdrücklich hingeschrieben.
+          'engine-defekt'
+        : produced.length === 0 || comparedCount === 0
+          ? 'nicht-vergleichbar'
+          : 'engine-defekt';
 
   const head =
     `${statements.length} Sollfachsatz/-sätze mit ${checked} Anker(n); ${broken.length} zeigen nicht in den Quelltext: ${sample(broken)}. ` +
@@ -1682,9 +2097,23 @@ function compareBusinessStatements(korpusCase: KorpusCase, reading: EngineReadin
         ? `Kein erzeugter Satz steht an einer ABAP-Anweisung, die auch ein Sollsatz nennt — nicht verglichen, nicht verfehlt.`
         : `${comparedCount} von ${statements.length} Sollsätzen vergleichbar (Anker geteilt), davon ${hits.length} über der Schwelle: ${sample(hits)}. ` +
           `Darunter: ${sample(misses)}. Ohne Gegenstück: ${sample(uncovered)}. Erzeugte Sätze ohne Sollsatz an derselben Stelle: ${extra}.`;
+  const forbidden =
+    conclusions.length === 0
+      ? ' Der Fall nennt keine verbotene Aussage.'
+      : ` Verbotene Aussagen: ${comparableConclusions.length} von ${conclusions.length} mit Kern` +
+        `${forbiddenChecked ? '' : ' (nichts erzeugt, also nichts gemessen)'}, ` +
+        `${violated.size} davon verletzt: ${sample(
+          violations.map((entry) => `${entry.statementId} → «${entry.core}» ${entry.score.toFixed(2)}`),
+        )}.`;
 
   return done(
-    { case: korpusCase.id, class: 'fachsaetze', state: agree ? 'agree' : 'disagree', verdict, evidence: `${head}${tail}` },
+    {
+      case: korpusCase.id,
+      class: 'fachsaetze',
+      state: agree ? 'agree' : 'disagree',
+      verdict,
+      evidence: `${head}${tail}${forbidden}`,
+    },
     aspects,
     { compared: comparedCount, total: statements.length },
   );

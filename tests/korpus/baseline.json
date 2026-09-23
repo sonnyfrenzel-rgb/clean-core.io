@@ -143,9 +143,16 @@
           "compared": 3,
           "total": 3,
           "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
+        },
+        {
+          "name": "verbotene-aussagen",
+          "status": "not_checked",
+          "compared": 0,
+          "total": 0,
+          "note": "Dieser Fall nennt keine verbotene Aussage; es gibt hier nichts zu verletzen und nichts zu belegen."
         }
       ],
-      "reason": "3 Sollfachsatz/-sätze mit 4 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 9 Satz/Sätze. 3 von 3 Sollsätzen vergleichbar (Anker geteilt), davon 3 über der Schwelle: CC-001-B01↔source.abap:B4-select 1.00, CC-001-B03↔source.abap:B14-list 1.00, CC-001-B02↔source.abap:B9-guard 0.80. Darunter: —. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 6."
+      "reason": "3 Sollfachsatz/-sätze mit 4 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 9 Satz/Sätze. 3 von 3 Sollsätzen vergleichbar (Anker geteilt), davon 3 über der Schwelle: CC-001-B01↔source.abap:B4-select 1.00, CC-001-B03↔source.abap:B14-list 1.00, CC-001-B02↔source.abap:B9-guard 0.80. Darunter: —. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 6. Der Fall nennt keine verbotene Aussage."
     },
     {
       "case": "CC-002",
@@ -285,9 +292,16 @@
           "compared": 2,
           "total": 3,
           "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
+        },
+        {
+          "name": "verbotene-aussagen",
+          "status": "compared",
+          "compared": 1,
+          "total": 1,
+          "note": "Zähler: eingehaltene verbotene Aussagen. Nenner: die 1 von 1, aus denen sich ein Kern bilden lässt (forbiddenCores). Nicht vergleichbar und deshalb weder verletzt noch bestanden: keine."
         }
       ],
-      "reason": "3 Sollfachsatz/-sätze mit 5 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 13 Satz/Sätze. 3 von 3 Sollsätzen vergleichbar (Anker geteilt), davon 2 über der Schwelle: CC-002-B03↔source.abap:B13-fields 0.83, CC-002-B01↔source.abap:B6-branch6 0.50. Darunter: CC-002-B02↔source.abap:B9-guard 0.00. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 10."
+      "reason": "3 Sollfachsatz/-sätze mit 5 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 13 Satz/Sätze. 3 von 3 Sollsätzen vergleichbar (Anker geteilt), davon 2 über der Schwelle: CC-002-B03↔source.abap:B13-fields 0.83, CC-002-B01↔source.abap:B6-branch6 0.50. Darunter: CC-002-B02↔source.abap:B9-guard 0.00. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 10. Verbotene Aussagen: 1 von 1 mit Kern, 0 davon verletzt: —."
     },
     {
       "case": "CC-003",
@@ -427,9 +441,16 @@
           "compared": 3,
           "total": 3,
           "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
+        },
+        {
+          "name": "verbotene-aussagen",
+          "status": "compared",
+          "compared": 1,
+          "total": 1,
+          "note": "Zähler: eingehaltene verbotene Aussagen. Nenner: die 1 von 1, aus denen sich ein Kern bilden lässt (forbiddenCores). Nicht vergleichbar und deshalb weder verletzt noch bestanden: keine."
         }
       ],
-      "reason": "3 Sollfachsatz/-sätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 9 Satz/Sätze. 3 von 3 Sollsätzen vergleichbar (Anker geteilt), davon 3 über der Schwelle: CC-003-B02↔source.abap:B12-branch 0.92, CC-003-B01↔source.abap:B10-branch 0.75, CC-003-B03↔source.abap:B14-branch 0.50. Darunter: —. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 6."
+      "reason": "3 Sollfachsatz/-sätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 9 Satz/Sätze. 3 von 3 Sollsätzen vergleichbar (Anker geteilt), davon 3 über der Schwelle: CC-003-B02↔source.abap:B12-branch 0.92, CC-003-B01↔source.abap:B10-branch 0.75, CC-003-B03↔source.abap:B14-branch 0.50. Darunter: —. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 6. Verbotene Aussagen: 1 von 1 mit Kern, 0 davon verletzt: —."
     },
     {
       "case": "CC-004",
@@ -569,9 +590,16 @@
           "compared": 0,
           "total": 2,
           "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
+        },
+        {
+          "name": "verbotene-aussagen",
+          "status": "compared",
+          "compared": 1,
+          "total": 1,
+          "note": "Zähler: eingehaltene verbotene Aussagen. Nenner: die 1 von 1, aus denen sich ein Kern bilden lässt (forbiddenCores). Nicht vergleichbar und deshalb weder verletzt noch bestanden: keine."
         }
       ],
-      "reason": "2 Sollfachsatz/-sätze mit 3 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 3 Satz/Sätze. 2 von 2 Sollsätzen vergleichbar (Anker geteilt), davon 0 über der Schwelle: —. Darunter: CC-004-B01↔source.abap:B10-method 0.24, CC-004-B02↔source.abap:B14-method 0.00. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 1."
+      "reason": "2 Sollfachsatz/-sätze mit 3 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 3 Satz/Sätze. 2 von 2 Sollsätzen vergleichbar (Anker geteilt), davon 0 über der Schwelle: —. Darunter: CC-004-B01↔source.abap:B10-method 0.24, CC-004-B02↔source.abap:B14-method 0.00. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 1. Verbotene Aussagen: 1 von 1 mit Kern, 0 davon verletzt: —."
     },
     {
       "case": "CC-005",
@@ -711,9 +739,16 @@
           "compared": 2,
           "total": 2,
           "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
+        },
+        {
+          "name": "verbotene-aussagen",
+          "status": "not_checked",
+          "compared": 0,
+          "total": 0,
+          "note": "Dieser Fall nennt keine verbotene Aussage; es gibt hier nichts zu verletzen und nichts zu belegen."
         }
       ],
-      "reason": "2 Sollfachsatz/-sätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 7 Satz/Sätze. 2 von 2 Sollsätzen vergleichbar (Anker geteilt), davon 2 über der Schwelle: CC-005-B01↔source.abap:B6-call 1.00, CC-005-B02↔source.abap:B9-call 0.63. Darunter: —. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 5."
+      "reason": "2 Sollfachsatz/-sätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 7 Satz/Sätze. 2 von 2 Sollsätzen vergleichbar (Anker geteilt), davon 2 über der Schwelle: CC-005-B01↔source.abap:B6-call 1.00, CC-005-B02↔source.abap:B9-call 0.63. Darunter: —. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 5. Der Fall nennt keine verbotene Aussage."
     },
     {
       "case": "CC-006",
@@ -853,9 +888,16 @@
           "compared": 2,
           "total": 2,
           "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
+        },
+        {
+          "name": "verbotene-aussagen",
+          "status": "compared",
+          "compared": 1,
+          "total": 1,
+          "note": "Zähler: eingehaltene verbotene Aussagen. Nenner: die 1 von 1, aus denen sich ein Kern bilden lässt (forbiddenCores). Nicht vergleichbar und deshalb weder verletzt noch bestanden: keine."
         }
       ],
-      "reason": "2 Sollfachsatz/-sätze mit 3 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 4 Satz/Sätze. 2 von 2 Sollsätzen vergleichbar (Anker geteilt), davon 2 über der Schwelle: CC-006-B01↔source.abap:B6-call 1.00, CC-006-B02↔source.abap:B6-result 1.00. Darunter: —. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 2."
+      "reason": "2 Sollfachsatz/-sätze mit 3 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 4 Satz/Sätze. 2 von 2 Sollsätzen vergleichbar (Anker geteilt), davon 2 über der Schwelle: CC-006-B01↔source.abap:B6-call 1.00, CC-006-B02↔source.abap:B6-result 1.00. Darunter: —. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 2. Verbotene Aussagen: 1 von 1 mit Kern, 0 davon verletzt: —."
     },
     {
       "case": "CC-007",
@@ -995,9 +1037,16 @@
           "compared": 0,
           "total": 2,
           "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
+        },
+        {
+          "name": "verbotene-aussagen",
+          "status": "not_checked",
+          "compared": 0,
+          "total": 0,
+          "note": "Dieser Fall nennt keine verbotene Aussage; es gibt hier nichts zu verletzen und nichts zu belegen."
         }
       ],
-      "reason": "2 Sollfachsatz/-sätze mit 3 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 9 Satz/Sätze. 2 von 2 Sollsätzen vergleichbar (Anker geteilt), davon 0 über der Schwelle: —. Darunter: CC-007-B01↔source.abap:B4-select 0.25, CC-007-B02↔source.abap:B4-fields 0.00. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 7."
+      "reason": "2 Sollfachsatz/-sätze mit 3 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 9 Satz/Sätze. 2 von 2 Sollsätzen vergleichbar (Anker geteilt), davon 0 über der Schwelle: —. Darunter: CC-007-B01↔source.abap:B4-select 0.25, CC-007-B02↔source.abap:B4-fields 0.00. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 7. Der Fall nennt keine verbotene Aussage."
     },
     {
       "case": "CC-008",
@@ -1137,9 +1186,16 @@
           "compared": 0,
           "total": 2,
           "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
+        },
+        {
+          "name": "verbotene-aussagen",
+          "status": "not_checked",
+          "compared": 0,
+          "total": 0,
+          "note": "Dieser Fall nennt keine verbotene Aussage; es gibt hier nichts zu verletzen und nichts zu belegen."
         }
       ],
-      "reason": "2 Sollfachsatz/-sätze mit 4 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 7 Satz/Sätze. 2 von 2 Sollsätzen vergleichbar (Anker geteilt), davon 0 über der Schwelle: —. Darunter: CC-008-B01↔source.abap:B4-select 0.33, CC-008-B02↔source.abap:B4-fields 0.00. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 5."
+      "reason": "2 Sollfachsatz/-sätze mit 4 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 7 Satz/Sätze. 2 von 2 Sollsätzen vergleichbar (Anker geteilt), davon 0 über der Schwelle: —. Darunter: CC-008-B01↔source.abap:B4-select 0.33, CC-008-B02↔source.abap:B4-fields 0.00. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 5. Der Fall nennt keine verbotene Aussage."
     },
     {
       "case": "CC-009",
@@ -1279,9 +1335,16 @@
           "compared": 2,
           "total": 3,
           "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
+        },
+        {
+          "name": "verbotene-aussagen",
+          "status": "not_checked",
+          "compared": 0,
+          "total": 0,
+          "note": "Dieser Fall nennt keine verbotene Aussage; es gibt hier nichts zu verletzen und nichts zu belegen."
         }
       ],
-      "reason": "3 Sollfachsatz/-sätze mit 5 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 8 Satz/Sätze. 3 von 3 Sollsätzen vergleichbar (Anker geteilt), davon 2 über der Schwelle: CC-009-B01↔source.abap:B6-get 1.00, CC-009-B02↔source.abap:B7-call 1.00. Darunter: CC-009-B03↔implementation.abap:B7-chain7 0.33. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 5."
+      "reason": "3 Sollfachsatz/-sätze mit 5 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 8 Satz/Sätze. 3 von 3 Sollsätzen vergleichbar (Anker geteilt), davon 2 über der Schwelle: CC-009-B01↔source.abap:B6-get 1.00, CC-009-B02↔source.abap:B7-call 1.00. Darunter: CC-009-B03↔implementation.abap:B7-chain7 0.33. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 5. Der Fall nennt keine verbotene Aussage."
     },
     {
       "case": "CC-010",
@@ -1421,9 +1484,16 @@
           "compared": 2,
           "total": 2,
           "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
+        },
+        {
+          "name": "verbotene-aussagen",
+          "status": "not_checked",
+          "compared": 0,
+          "total": 0,
+          "note": "Dieser Fall nennt keine verbotene Aussage; es gibt hier nichts zu verletzen und nichts zu belegen."
         }
       ],
-      "reason": "2 Sollfachsatz/-sätze mit 3 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 6 Satz/Sätze. 2 von 2 Sollsätzen vergleichbar (Anker geteilt), davon 2 über der Schwelle: CC-010-B01↔source.abap:B8-set 0.67, CC-010-B02↔source.abap:B10-branch10 0.62. Darunter: —. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 4."
+      "reason": "2 Sollfachsatz/-sätze mit 3 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 6 Satz/Sätze. 2 von 2 Sollsätzen vergleichbar (Anker geteilt), davon 2 über der Schwelle: CC-010-B01↔source.abap:B8-set 0.67, CC-010-B02↔source.abap:B10-branch10 0.62. Darunter: —. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 4. Der Fall nennt keine verbotene Aussage."
     },
     {
       "case": "CC-011",
@@ -1563,9 +1633,16 @@
           "compared": 1,
           "total": 2,
           "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
+        },
+        {
+          "name": "verbotene-aussagen",
+          "status": "compared",
+          "compared": 1,
+          "total": 1,
+          "note": "Zähler: eingehaltene verbotene Aussagen. Nenner: die 1 von 1, aus denen sich ein Kern bilden lässt (forbiddenCores). Nicht vergleichbar und deshalb weder verletzt noch bestanden: keine."
         }
       ],
-      "reason": "2 Sollfachsatz/-sätze mit 3 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 5 Satz/Sätze. 2 von 2 Sollsätzen vergleichbar (Anker geteilt), davon 1 über der Schwelle: CC-011-B02↔source.abap:B10-write 1.00. Darunter: CC-011-B01↔source.abap:B6-seq6 0.25. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 3."
+      "reason": "2 Sollfachsatz/-sätze mit 3 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 5 Satz/Sätze. 2 von 2 Sollsätzen vergleichbar (Anker geteilt), davon 1 über der Schwelle: CC-011-B02↔source.abap:B10-write 1.00. Darunter: CC-011-B01↔source.abap:B6-seq6 0.25. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 3. Verbotene Aussagen: 1 von 1 mit Kern, 0 davon verletzt: —."
     },
     {
       "case": "CC-012",
@@ -1705,9 +1782,16 @@
           "compared": 2,
           "total": 3,
           "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
+        },
+        {
+          "name": "verbotene-aussagen",
+          "status": "not_checked",
+          "compared": 0,
+          "total": 0,
+          "note": "Dieser Fall nennt keine verbotene Aussage; es gibt hier nichts zu verletzen und nichts zu belegen."
         }
       ],
-      "reason": "3 Sollfachsatz/-sätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 5 Satz/Sätze. 3 von 3 Sollsätzen vergleichbar (Anker geteilt), davon 2 über der Schwelle: CC-012-B03↔source.abap:B16-write 0.53, CC-012-B01↔source.abap:B8-branch8 0.50. Darunter: CC-012-B02↔source.abap:B14-perform 0.25. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 2."
+      "reason": "3 Sollfachsatz/-sätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 5 Satz/Sätze. 3 von 3 Sollsätzen vergleichbar (Anker geteilt), davon 2 über der Schwelle: CC-012-B03↔source.abap:B16-write 0.53, CC-012-B01↔source.abap:B8-branch8 0.50. Darunter: CC-012-B02↔source.abap:B14-perform 0.25. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 2. Der Fall nennt keine verbotene Aussage."
     },
     {
       "case": "CC-013",
@@ -1847,9 +1931,16 @@
           "compared": 1,
           "total": 3,
           "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
+        },
+        {
+          "name": "verbotene-aussagen",
+          "status": "compared",
+          "compared": 1,
+          "total": 1,
+          "note": "Zähler: eingehaltene verbotene Aussagen. Nenner: die 1 von 1, aus denen sich ein Kern bilden lässt (forbiddenCores). Nicht vergleichbar und deshalb weder verletzt noch bestanden: keine."
         }
       ],
-      "reason": "3 Sollfachsatz/-sätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 7 Satz/Sätze. 3 von 3 Sollsätzen vergleichbar (Anker geteilt), davon 1 über der Schwelle: CC-013-B01↔source.abap:B6-status 0.89. Darunter: CC-013-B03↔source.abap:B17-leave 0.40, CC-013-B02↔source.abap:B11-branch11 0.00. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 4."
+      "reason": "3 Sollfachsatz/-sätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 7 Satz/Sätze. 3 von 3 Sollsätzen vergleichbar (Anker geteilt), davon 1 über der Schwelle: CC-013-B01↔source.abap:B6-status 0.89. Darunter: CC-013-B03↔source.abap:B17-leave 0.40, CC-013-B02↔source.abap:B11-branch11 0.00. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 4. Verbotene Aussagen: 1 von 1 mit Kern, 0 davon verletzt: —."
     },
     {
       "case": "CC-014",
@@ -1989,9 +2080,16 @@
           "compared": 1,
           "total": 2,
           "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
+        },
+        {
+          "name": "verbotene-aussagen",
+          "status": "not_checked",
+          "compared": 0,
+          "total": 0,
+          "note": "Dieser Fall nennt keine verbotene Aussage; es gibt hier nichts zu verletzen und nichts zu belegen."
         }
       ],
-      "reason": "2 Sollfachsatz/-sätze mit 2 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 2 Satz/Sätze. 2 von 2 Sollsätzen vergleichbar (Anker geteilt), davon 1 über der Schwelle: CC-014-B01↔source.abap:B4-call 0.75. Darunter: CC-014-B02↔source.abap:B5-write 0.18. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 0."
+      "reason": "2 Sollfachsatz/-sätze mit 2 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 2 Satz/Sätze. 2 von 2 Sollsätzen vergleichbar (Anker geteilt), davon 1 über der Schwelle: CC-014-B01↔source.abap:B4-call 0.75. Darunter: CC-014-B02↔source.abap:B5-write 0.18. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 0. Der Fall nennt keine verbotene Aussage."
     },
     {
       "case": "CC-015",
@@ -2131,9 +2229,16 @@
           "compared": 0,
           "total": 2,
           "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
+        },
+        {
+          "name": "verbotene-aussagen",
+          "status": "not_checked",
+          "compared": 0,
+          "total": 0,
+          "note": "Dieser Fall nennt keine verbotene Aussage; es gibt hier nichts zu verletzen und nichts zu belegen."
         }
       ],
-      "reason": "2 Sollfachsatz/-sätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 5 Satz/Sätze. 2 von 2 Sollsätzen vergleichbar (Anker geteilt), davon 0 über der Schwelle: —. Darunter: CC-015-B02↔source.abap:B10-call 0.47, CC-015-B01↔source.abap:B6-guard 0.36. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 3."
+      "reason": "2 Sollfachsatz/-sätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 5 Satz/Sätze. 2 von 2 Sollsätzen vergleichbar (Anker geteilt), davon 0 über der Schwelle: —. Darunter: CC-015-B02↔source.abap:B10-call 0.47, CC-015-B01↔source.abap:B6-guard 0.36. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 3. Der Fall nennt keine verbotene Aussage."
     },
     {
       "case": "CC-016",
@@ -2273,9 +2378,16 @@
           "compared": 0,
           "total": 2,
           "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
+        },
+        {
+          "name": "verbotene-aussagen",
+          "status": "compared",
+          "compared": 4,
+          "total": 4,
+          "note": "Zähler: eingehaltene verbotene Aussagen. Nenner: die 4 von 4, aus denen sich ein Kern bilden lässt (forbiddenCores). Nicht vergleichbar und deshalb weder verletzt noch bestanden: keine."
         }
       ],
-      "reason": "2 Sollfachsatz/-sätze mit 3 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 2 Satz/Sätze. 2 von 2 Sollsätzen vergleichbar (Anker geteilt), davon 0 über der Schwelle: —. Darunter: CC-016-B02↔source.abap:B8-write 0.29, CC-016-B01↔source.abap:B6-set 0.17. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 0."
+      "reason": "2 Sollfachsatz/-sätze mit 3 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 2 Satz/Sätze. 2 von 2 Sollsätzen vergleichbar (Anker geteilt), davon 0 über der Schwelle: —. Darunter: CC-016-B02↔source.abap:B8-write 0.29, CC-016-B01↔source.abap:B6-set 0.17. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 0. Verbotene Aussagen: 4 von 4 mit Kern, 0 davon verletzt: —."
     },
     {
       "case": "CC-017",
@@ -2415,9 +2527,16 @@
           "compared": 0,
           "total": 2,
           "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
+        },
+        {
+          "name": "verbotene-aussagen",
+          "status": "not_checked",
+          "compared": 0,
+          "total": 0,
+          "note": "Dieser Fall nennt keine verbotene Aussage; es gibt hier nichts zu verletzen und nichts zu belegen."
         }
       ],
-      "reason": "3 Sollfachsatz/-sätze mit 7 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 12 Satz/Sätze. 2 von 3 Sollsätzen vergleichbar (Anker geteilt), davon 0 über der Schwelle: —. Darunter: CC-017-B02↔source.abap:B24-branch 0.36, CC-017-B03↔source.abap:B23-branch23 0.29. Ohne Gegenstück: CC-017-B01. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 10."
+      "reason": "3 Sollfachsatz/-sätze mit 7 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 12 Satz/Sätze. 2 von 3 Sollsätzen vergleichbar (Anker geteilt), davon 0 über der Schwelle: —. Darunter: CC-017-B02↔source.abap:B24-branch 0.36, CC-017-B03↔source.abap:B23-branch23 0.29. Ohne Gegenstück: CC-017-B01. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 10. Der Fall nennt keine verbotene Aussage."
     },
     {
       "case": "CC-018",
@@ -2557,9 +2676,16 @@
           "compared": 1,
           "total": 2,
           "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
+        },
+        {
+          "name": "verbotene-aussagen",
+          "status": "not_checked",
+          "compared": 0,
+          "total": 0,
+          "note": "Dieser Fall nennt keine verbotene Aussage; es gibt hier nichts zu verletzen und nichts zu belegen."
         }
       ],
-      "reason": "2 Sollfachsatz/-sätze mit 2 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 3 Satz/Sätze. 2 von 2 Sollsätzen vergleichbar (Anker geteilt), davon 1 über der Schwelle: CC-018-B01↔source.abap:B2-class 0.63. Darunter: CC-018-B02↔source.abap:B8-method 0.38. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 1."
+      "reason": "2 Sollfachsatz/-sätze mit 2 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 3 Satz/Sätze. 2 von 2 Sollsätzen vergleichbar (Anker geteilt), davon 1 über der Schwelle: CC-018-B01↔source.abap:B2-class 0.63. Darunter: CC-018-B02↔source.abap:B8-method 0.38. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 1. Der Fall nennt keine verbotene Aussage."
     },
     {
       "case": "CC-019",
@@ -2699,9 +2825,16 @@
           "compared": 1,
           "total": 3,
           "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
+        },
+        {
+          "name": "verbotene-aussagen",
+          "status": "compared",
+          "compared": 1,
+          "total": 1,
+          "note": "Zähler: eingehaltene verbotene Aussagen. Nenner: die 1 von 1, aus denen sich ein Kern bilden lässt (forbiddenCores). Nicht vergleichbar und deshalb weder verletzt noch bestanden: keine."
         }
       ],
-      "reason": "3 Sollfachsatz/-sätze mit 5 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 6 Satz/Sätze. 3 von 3 Sollsätzen vergleichbar (Anker geteilt), davon 1 über der Schwelle: CC-019-B01↔source.abap:B2-types 1.00. Darunter: CC-019-B03↔source.abap:B12-write 0.40, CC-019-B02↔source.abap:B9-method 0.11. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 3."
+      "reason": "3 Sollfachsatz/-sätze mit 5 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 6 Satz/Sätze. 3 von 3 Sollsätzen vergleichbar (Anker geteilt), davon 1 über der Schwelle: CC-019-B01↔source.abap:B2-types 1.00. Darunter: CC-019-B03↔source.abap:B12-write 0.40, CC-019-B02↔source.abap:B9-method 0.11. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 3. Verbotene Aussagen: 1 von 1 mit Kern, 0 davon verletzt: —."
     },
     {
       "case": "CC-020",
@@ -2841,9 +2974,16 @@
           "compared": 1,
           "total": 3,
           "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
+        },
+        {
+          "name": "verbotene-aussagen",
+          "status": "not_checked",
+          "compared": 0,
+          "total": 0,
+          "note": "Dieser Fall nennt keine verbotene Aussage; es gibt hier nichts zu verletzen und nichts zu belegen."
         }
       ],
-      "reason": "3 Sollfachsatz/-sätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 8 Satz/Sätze. 3 von 3 Sollsätzen vergleichbar (Anker geteilt), davon 1 über der Schwelle: CC-020-B01↔source.abap:B8-create 1.00. Darunter: CC-020-B03↔source.abap:B14-write 0.35, CC-020-B02↔source.abap:B10-assign 0.00. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 5."
+      "reason": "3 Sollfachsatz/-sätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 8 Satz/Sätze. 3 von 3 Sollsätzen vergleichbar (Anker geteilt), davon 1 über der Schwelle: CC-020-B01↔source.abap:B8-create 1.00. Darunter: CC-020-B03↔source.abap:B14-write 0.35, CC-020-B02↔source.abap:B10-assign 0.00. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 5. Der Fall nennt keine verbotene Aussage."
     },
     {
       "case": "CC-021",
@@ -2983,9 +3123,16 @@
           "compared": 1,
           "total": 2,
           "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
+        },
+        {
+          "name": "verbotene-aussagen",
+          "status": "not_checked",
+          "compared": 0,
+          "total": 0,
+          "note": "Dieser Fall nennt keine verbotene Aussage; es gibt hier nichts zu verletzen und nichts zu belegen."
         }
       ],
-      "reason": "2 Sollfachsatz/-sätze mit 2 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 4 Satz/Sätze. 2 von 2 Sollsätzen vergleichbar (Anker geteilt), davon 1 über der Schwelle: CC-021-B01↔source.abap:B4-include 0.67. Darunter: CC-021-B02↔source.abap:B6-seq6 0.18. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 2."
+      "reason": "2 Sollfachsatz/-sätze mit 2 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 4 Satz/Sätze. 2 von 2 Sollsätzen vergleichbar (Anker geteilt), davon 1 über der Schwelle: CC-021-B01↔source.abap:B4-include 0.67. Darunter: CC-021-B02↔source.abap:B6-seq6 0.18. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 2. Der Fall nennt keine verbotene Aussage."
     },
     {
       "case": "CC-022",
@@ -3125,9 +3272,16 @@
           "compared": 1,
           "total": 2,
           "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
+        },
+        {
+          "name": "verbotene-aussagen",
+          "status": "compared",
+          "compared": 1,
+          "total": 1,
+          "note": "Zähler: eingehaltene verbotene Aussagen. Nenner: die 1 von 1, aus denen sich ein Kern bilden lässt (forbiddenCores). Nicht vergleichbar und deshalb weder verletzt noch bestanden: keine."
         }
       ],
-      "reason": "2 Sollfachsatz/-sätze mit 2 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 2 Satz/Sätze. 2 von 2 Sollsätzen vergleichbar (Anker geteilt), davon 1 über der Schwelle: CC-022-B02↔source.abap:B5-write 0.57. Darunter: CC-022-B01↔source.abap:B4-method 0.00. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 0."
+      "reason": "2 Sollfachsatz/-sätze mit 2 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 2 Satz/Sätze. 2 von 2 Sollsätzen vergleichbar (Anker geteilt), davon 1 über der Schwelle: CC-022-B02↔source.abap:B5-write 0.57. Darunter: CC-022-B01↔source.abap:B4-method 0.00. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 0. Verbotene Aussagen: 1 von 1 mit Kern, 0 davon verletzt: —."
     },
     {
       "case": "CC-023",
@@ -3267,9 +3421,16 @@
           "compared": 0,
           "total": 3,
           "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
+        },
+        {
+          "name": "verbotene-aussagen",
+          "status": "not_checked",
+          "compared": 0,
+          "total": 0,
+          "note": "Dieser Fall nennt keine verbotene Aussage; es gibt hier nichts zu verletzen und nichts zu belegen."
         }
       ],
-      "reason": "3 Sollfachsatz/-sätze mit 12 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 14 Satz/Sätze. 3 von 3 Sollsätzen vergleichbar (Anker geteilt), davon 0 über der Schwelle: —. Darunter: CC-023-B01↔source.abap:B6-guard 0.31, CC-023-B03↔source.abap:B11-chain11 0.29, CC-023-B02↔source.abap:B10-update 0.11. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 11."
+      "reason": "3 Sollfachsatz/-sätze mit 12 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 14 Satz/Sätze. 3 von 3 Sollsätzen vergleichbar (Anker geteilt), davon 0 über der Schwelle: —. Darunter: CC-023-B01↔source.abap:B6-guard 0.31, CC-023-B03↔source.abap:B11-chain11 0.29, CC-023-B02↔source.abap:B10-update 0.11. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 11. Der Fall nennt keine verbotene Aussage."
     },
     {
       "case": "CC-024",
@@ -3409,9 +3570,16 @@
           "compared": 0,
           "total": 3,
           "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
+        },
+        {
+          "name": "verbotene-aussagen",
+          "status": "not_checked",
+          "compared": 0,
+          "total": 0,
+          "note": "Dieser Fall nennt keine verbotene Aussage; es gibt hier nichts zu verletzen und nichts zu belegen."
         }
       ],
-      "reason": "3 Sollfachsatz/-sätze mit 5 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 14 Satz/Sätze. 3 von 3 Sollsätzen vergleichbar (Anker geteilt), davon 0 über der Schwelle: —. Darunter: CC-024-B02↔source.abap:B16-write 0.35, CC-024-B03↔source.abap:B13-write 0.25, CC-024-B01↔source.abap:B10-update 0.13. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 11."
+      "reason": "3 Sollfachsatz/-sätze mit 5 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 14 Satz/Sätze. 3 von 3 Sollsätzen vergleichbar (Anker geteilt), davon 0 über der Schwelle: —. Darunter: CC-024-B02↔source.abap:B16-write 0.35, CC-024-B03↔source.abap:B13-write 0.25, CC-024-B01↔source.abap:B10-update 0.13. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 11. Der Fall nennt keine verbotene Aussage."
     },
     {
       "case": "CC-025",
@@ -3551,9 +3719,16 @@
           "compared": 0,
           "total": 5,
           "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
+        },
+        {
+          "name": "verbotene-aussagen",
+          "status": "compared",
+          "compared": 1,
+          "total": 1,
+          "note": "Zähler: eingehaltene verbotene Aussagen. Nenner: die 1 von 1, aus denen sich ein Kern bilden lässt (forbiddenCores). Nicht vergleichbar und deshalb weder verletzt noch bestanden: keine."
         }
       ],
-      "reason": "5 Sollfachsatz/-sätze mit 11 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 15 Satz/Sätze. 5 von 5 Sollsätzen vergleichbar (Anker geteilt), davon 0 über der Schwelle: —. Darunter: CC-025-B01↔source.abap:B10-branch 0.33, CC-025-B03↔source.abap:B14-chain14 0.29, CC-025-B05↔source.abap:B9-chain9 0.26, CC-025-B02↔source.abap:B9-branch9 0.15 … (+1). Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 10."
+      "reason": "5 Sollfachsatz/-sätze mit 11 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 15 Satz/Sätze. 5 von 5 Sollsätzen vergleichbar (Anker geteilt), davon 0 über der Schwelle: —. Darunter: CC-025-B01↔source.abap:B10-branch 0.33, CC-025-B03↔source.abap:B14-chain14 0.29, CC-025-B05↔source.abap:B9-chain9 0.26, CC-025-B02↔source.abap:B9-branch9 0.15 … (+1). Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 10. Verbotene Aussagen: 1 von 1 mit Kern, 0 davon verletzt: —."
     },
     {
       "case": "CC-026",
@@ -3693,9 +3868,16 @@
           "compared": 1,
           "total": 4,
           "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
+        },
+        {
+          "name": "verbotene-aussagen",
+          "status": "compared",
+          "compared": 3,
+          "total": 3,
+          "note": "Zähler: eingehaltene verbotene Aussagen. Nenner: die 3 von 4, aus denen sich ein Kern bilden lässt (forbiddenCores). Nicht vergleichbar und deshalb weder verletzt noch bestanden: kein synchroner call-opaque mit Kante „und damit erledigt\"."
         }
       ],
-      "reason": "4 Sollfachsatz/-sätze mit 11 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 12 Satz/Sätze. 4 von 4 Sollsätzen vergleichbar (Anker geteilt), davon 1 über der Schwelle: CC-026-B03↔source.abap:B12-seq12 0.63. Darunter: CC-026-B01↔source.abap:B6-call 0.42, CC-026-B04↔source.abap:B10-write 0.41, CC-026-B02↔source.abap:B15-seq15 0.38. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 8."
+      "reason": "4 Sollfachsatz/-sätze mit 11 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 12 Satz/Sätze. 4 von 4 Sollsätzen vergleichbar (Anker geteilt), davon 1 über der Schwelle: CC-026-B03↔source.abap:B12-seq12 0.63. Darunter: CC-026-B01↔source.abap:B6-call 0.42, CC-026-B04↔source.abap:B10-write 0.41, CC-026-B02↔source.abap:B15-seq15 0.38. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 8. Verbotene Aussagen: 3 von 4 mit Kern, 0 davon verletzt: —."
     },
     {
       "case": "CC-027",
@@ -3835,9 +4017,16 @@
           "compared": 0,
           "total": 2,
           "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
+        },
+        {
+          "name": "verbotene-aussagen",
+          "status": "compared",
+          "compared": 6,
+          "total": 6,
+          "note": "Zähler: eingehaltene verbotene Aussagen. Nenner: die 6 von 6, aus denen sich ein Kern bilden lässt (forbiddenCores). Nicht vergleichbar und deshalb weder verletzt noch bestanden: keine."
         }
       ],
-      "reason": "2 Sollfachsatz/-sätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 4 Satz/Sätze. 2 von 2 Sollsätzen vergleichbar (Anker geteilt), davon 0 über der Schwelle: —. Darunter: CC-027-B01↔source.abap:B5-call 0.35, CC-027-B02↔source.abap:B5-seq5 0.13. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 2."
+      "reason": "2 Sollfachsatz/-sätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 4 Satz/Sätze. 2 von 2 Sollsätzen vergleichbar (Anker geteilt), davon 0 über der Schwelle: —. Darunter: CC-027-B01↔source.abap:B5-call 0.35, CC-027-B02↔source.abap:B5-seq5 0.13. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 2. Verbotene Aussagen: 6 von 6 mit Kern, 0 davon verletzt: —."
     },
     {
       "case": "CC-028",
@@ -3977,9 +4166,16 @@
           "compared": 0,
           "total": 3,
           "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
+        },
+        {
+          "name": "verbotene-aussagen",
+          "status": "not_checked",
+          "compared": 0,
+          "total": 0,
+          "note": "Dieser Fall nennt keine verbotene Aussage; es gibt hier nichts zu verletzen und nichts zu belegen."
         }
       ],
-      "reason": "3 Sollfachsatz/-sätze mit 10 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 12 Satz/Sätze. 3 von 3 Sollsätzen vergleichbar (Anker geteilt), davon 0 über der Schwelle: —. Darunter: CC-028-B02↔source.abap:B17-seq17 0.40, CC-028-B03↔source.abap:B20-seq20 0.33, CC-028-B01↔source.abap:B10-seq10 0.00. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 9."
+      "reason": "3 Sollfachsatz/-sätze mit 10 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 12 Satz/Sätze. 3 von 3 Sollsätzen vergleichbar (Anker geteilt), davon 0 über der Schwelle: —. Darunter: CC-028-B02↔source.abap:B17-seq17 0.40, CC-028-B03↔source.abap:B20-seq20 0.33, CC-028-B01↔source.abap:B10-seq10 0.00. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 9. Der Fall nennt keine verbotene Aussage."
     },
     {
       "case": "CC-029",
@@ -4119,9 +4315,16 @@
           "compared": 1,
           "total": 3,
           "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
+        },
+        {
+          "name": "verbotene-aussagen",
+          "status": "not_checked",
+          "compared": 0,
+          "total": 0,
+          "note": "Dieser Fall nennt keine verbotene Aussage; es gibt hier nichts zu verletzen und nichts zu belegen."
         }
       ],
-      "reason": "3 Sollfachsatz/-sätze mit 11 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 14 Satz/Sätze. 3 von 3 Sollsätzen vergleichbar (Anker geteilt), davon 1 über der Schwelle: CC-029-B02↔source.abap:B11-seq11 0.53. Darunter: CC-029-B03↔source.abap:B15-chain15 0.35, CC-029-B01↔source.abap:B14-update 0.25. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 11."
+      "reason": "3 Sollfachsatz/-sätze mit 11 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 14 Satz/Sätze. 3 von 3 Sollsätzen vergleichbar (Anker geteilt), davon 1 über der Schwelle: CC-029-B02↔source.abap:B11-seq11 0.53. Darunter: CC-029-B03↔source.abap:B15-chain15 0.35, CC-029-B01↔source.abap:B14-update 0.25. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 11. Der Fall nennt keine verbotene Aussage."
     },
     {
       "case": "CC-030",
@@ -4261,9 +4464,16 @@
           "compared": 0,
           "total": 3,
           "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
+        },
+        {
+          "name": "verbotene-aussagen",
+          "status": "not_checked",
+          "compared": 0,
+          "total": 0,
+          "note": "Dieser Fall nennt keine verbotene Aussage; es gibt hier nichts zu verletzen und nichts zu belegen."
         }
       ],
-      "reason": "3 Sollfachsatz/-sätze mit 9 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 5 Satz/Sätze. 3 von 3 Sollsätzen vergleichbar (Anker geteilt), davon 0 über der Schwelle: —. Darunter: CC-030-B01↔source.abap:B8-update 0.22, CC-030-B03↔source.abap:B13-write 0.20, CC-030-B02↔source.abap:B10-commit 0.08. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 2."
+      "reason": "3 Sollfachsatz/-sätze mit 9 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 5 Satz/Sätze. 3 von 3 Sollsätzen vergleichbar (Anker geteilt), davon 0 über der Schwelle: —. Darunter: CC-030-B01↔source.abap:B8-update 0.22, CC-030-B03↔source.abap:B13-write 0.20, CC-030-B02↔source.abap:B10-commit 0.08. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 2. Der Fall nennt keine verbotene Aussage."
     },
     {
       "case": "CC-031",
@@ -4403,9 +4613,16 @@
           "compared": 3,
           "total": 4,
           "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
+        },
+        {
+          "name": "verbotene-aussagen",
+          "status": "not_checked",
+          "compared": 0,
+          "total": 0,
+          "note": "Dieser Fall nennt keine verbotene Aussage; es gibt hier nichts zu verletzen und nichts zu belegen."
         }
       ],
-      "reason": "4 Sollfachsatz/-sätze mit 13 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 13 Satz/Sätze. 4 von 4 Sollsätzen vergleichbar (Anker geteilt), davon 3 über der Schwelle: CC-031-B02↔source.abap:B11-call 0.80, CC-031-B04↔source.abap:B22-seq22 0.55, CC-031-B01↔source.abap:B8-seq8 0.50. Darunter: CC-031-B03↔source.abap:B18-seq18 0.38. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 9."
+      "reason": "4 Sollfachsatz/-sätze mit 13 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 13 Satz/Sätze. 4 von 4 Sollsätzen vergleichbar (Anker geteilt), davon 3 über der Schwelle: CC-031-B02↔source.abap:B11-call 0.80, CC-031-B04↔source.abap:B22-seq22 0.55, CC-031-B01↔source.abap:B8-seq8 0.50. Darunter: CC-031-B03↔source.abap:B18-seq18 0.38. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 9. Der Fall nennt keine verbotene Aussage."
     },
     {
       "case": "CC-032",
@@ -4545,9 +4762,16 @@
           "compared": 0,
           "total": 3,
           "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
+        },
+        {
+          "name": "verbotene-aussagen",
+          "status": "not_checked",
+          "compared": 0,
+          "total": 0,
+          "note": "Dieser Fall nennt keine verbotene Aussage; es gibt hier nichts zu verletzen und nichts zu belegen."
         }
       ],
-      "reason": "3 Sollfachsatz/-sätze mit 12 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 5 Satz/Sätze. 3 von 3 Sollsätzen vergleichbar (Anker geteilt), davon 0 über der Schwelle: —. Darunter: CC-032-B01↔source.abap:B14-seq14 0.42, CC-032-B02↔source.abap:B17-write 0.25, CC-032-B03↔source.abap:B6-call 0.16. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 2."
+      "reason": "3 Sollfachsatz/-sätze mit 12 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 5 Satz/Sätze. 3 von 3 Sollsätzen vergleichbar (Anker geteilt), davon 0 über der Schwelle: —. Darunter: CC-032-B01↔source.abap:B14-seq14 0.42, CC-032-B02↔source.abap:B17-write 0.25, CC-032-B03↔source.abap:B6-call 0.16. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 2. Der Fall nennt keine verbotene Aussage."
     },
     {
       "case": "CC-033",
@@ -4687,9 +4911,16 @@
           "compared": 2,
           "total": 3,
           "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
+        },
+        {
+          "name": "verbotene-aussagen",
+          "status": "not_checked",
+          "compared": 0,
+          "total": 0,
+          "note": "Dieser Fall nennt keine verbotene Aussage; es gibt hier nichts zu verletzen und nichts zu belegen."
         }
       ],
-      "reason": "3 Sollfachsatz/-sätze mit 11 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 11 Satz/Sätze. 3 von 3 Sollsätzen vergleichbar (Anker geteilt), davon 2 über der Schwelle: CC-033-B03↔source.abap:B14-seq14 0.77, CC-033-B01↔source.abap:B7-seq7 0.53. Darunter: CC-033-B02↔source.abap:B12-message 0.08. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 8."
+      "reason": "3 Sollfachsatz/-sätze mit 11 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 11 Satz/Sätze. 3 von 3 Sollsätzen vergleichbar (Anker geteilt), davon 2 über der Schwelle: CC-033-B03↔source.abap:B14-seq14 0.77, CC-033-B01↔source.abap:B7-seq7 0.53. Darunter: CC-033-B02↔source.abap:B12-message 0.08. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 8. Der Fall nennt keine verbotene Aussage."
     },
     {
       "case": "CC-034",
@@ -4829,9 +5060,16 @@
           "compared": 1,
           "total": 4,
           "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
+        },
+        {
+          "name": "verbotene-aussagen",
+          "status": "compared",
+          "compared": 5,
+          "total": 5,
+          "note": "Zähler: eingehaltene verbotene Aussagen. Nenner: die 5 von 6, aus denen sich ein Kern bilden lässt (forbiddenCores). Nicht vergleichbar und deshalb weder verletzt noch bestanden: Nicht Unknown."
         }
       ],
-      "reason": "4 Sollfachsatz/-sätze mit 16 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 16 Satz/Sätze. 4 von 4 Sollsätzen vergleichbar (Anker geteilt), davon 1 über der Schwelle: CC-034-B01↔source.abap:B7-guard 0.59. Darunter: CC-034-B03↔source.abap:B17-seq17 0.34, CC-034-B04↔source.abap:B21-branch21 0.28, CC-034-B02↔source.abap:B15-method 0.02. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 12."
+      "reason": "4 Sollfachsatz/-sätze mit 16 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 16 Satz/Sätze. 4 von 4 Sollsätzen vergleichbar (Anker geteilt), davon 1 über der Schwelle: CC-034-B01↔source.abap:B7-guard 0.59. Darunter: CC-034-B03↔source.abap:B17-seq17 0.34, CC-034-B04↔source.abap:B21-branch21 0.28, CC-034-B02↔source.abap:B15-method 0.02. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 12. Verbotene Aussagen: 5 von 6 mit Kern, 0 davon verletzt: —."
     },
     {
       "case": "CC-035",
@@ -4971,9 +5209,16 @@
           "compared": 1,
           "total": 3,
           "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
+        },
+        {
+          "name": "verbotene-aussagen",
+          "status": "compared",
+          "compared": 4,
+          "total": 4,
+          "note": "Zähler: eingehaltene verbotene Aussagen. Nenner: die 4 von 6, aus denen sich ein Kern bilden lässt (forbiddenCores). Nicht vergleichbar und deshalb weder verletzt noch bestanden: Kein Injektionsbefund, Kein Befund „mandantenübergreifend\"."
         }
       ],
-      "reason": "3 Sollfachsatz/-sätze mit 9 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 9 Satz/Sätze. 3 von 3 Sollsätzen vergleichbar (Anker geteilt), davon 1 über der Schwelle: CC-035-B01↔source.abap:B6-guard 0.67. Darunter: CC-035-B03↔source.abap:B12-seq12 0.31, CC-035-B02↔source.abap:B12-update 0.20. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 6."
+      "reason": "3 Sollfachsatz/-sätze mit 9 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 9 Satz/Sätze. 3 von 3 Sollsätzen vergleichbar (Anker geteilt), davon 1 über der Schwelle: CC-035-B01↔source.abap:B6-guard 0.67. Darunter: CC-035-B03↔source.abap:B12-seq12 0.31, CC-035-B02↔source.abap:B12-update 0.20. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 6. Verbotene Aussagen: 4 von 6 mit Kern, 0 davon verletzt: —."
     },
     {
       "case": "CC-036",
@@ -5113,9 +5358,16 @@
           "compared": 3,
           "total": 3,
           "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
+        },
+        {
+          "name": "verbotene-aussagen",
+          "status": "compared",
+          "compared": 3,
+          "total": 3,
+          "note": "Zähler: eingehaltene verbotene Aussagen. Nenner: die 3 von 3, aus denen sich ein Kern bilden lässt (forbiddenCores). Nicht vergleichbar und deshalb weder verletzt noch bestanden: keine."
         }
       ],
-      "reason": "3 Sollfachsatz/-sätze mit 7 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 10 Satz/Sätze. 3 von 3 Sollsätzen vergleichbar (Anker geteilt), davon 3 über der Schwelle: CC-036-B01↔source.abap:B10-select 1.00, CC-036-B03↔source.abap:B20-list 1.00, CC-036-B02↔source.abap:B15-guard 0.80. Darunter: —. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 7."
+      "reason": "3 Sollfachsatz/-sätze mit 7 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 10 Satz/Sätze. 3 von 3 Sollsätzen vergleichbar (Anker geteilt), davon 3 über der Schwelle: CC-036-B01↔source.abap:B10-select 1.00, CC-036-B03↔source.abap:B20-list 1.00, CC-036-B02↔source.abap:B15-guard 0.80. Darunter: —. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 7. Verbotene Aussagen: 3 von 3 mit Kern, 0 davon verletzt: —."
     },
     {
       "case": "CC-037",
@@ -5255,9 +5507,16 @@
           "compared": 1,
           "total": 2,
           "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
+        },
+        {
+          "name": "verbotene-aussagen",
+          "status": "compared",
+          "compared": 3,
+          "total": 3,
+          "note": "Zähler: eingehaltene verbotene Aussagen. Nenner: die 3 von 4, aus denen sich ein Kern bilden lässt (forbiddenCores). Nicht vergleichbar und deshalb weder verletzt noch bestanden: Nicht D als Level."
         }
       ],
-      "reason": "2 Sollfachsatz/-sätze mit 5 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 7 Satz/Sätze. 2 von 2 Sollsätzen vergleichbar (Anker geteilt), davon 1 über der Schwelle: CC-037-B01↔source.abap:B6-seq6 0.89. Darunter: CC-037-B02↔source.abap:B9-select 0.43. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 5."
+      "reason": "2 Sollfachsatz/-sätze mit 5 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 7 Satz/Sätze. 2 von 2 Sollsätzen vergleichbar (Anker geteilt), davon 1 über der Schwelle: CC-037-B01↔source.abap:B6-seq6 0.89. Darunter: CC-037-B02↔source.abap:B9-select 0.43. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 5. Verbotene Aussagen: 3 von 4 mit Kern, 0 davon verletzt: —."
     },
     {
       "case": "CC-038",
@@ -5397,9 +5656,16 @@
           "compared": 1,
           "total": 3,
           "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
+        },
+        {
+          "name": "verbotene-aussagen",
+          "status": "compared",
+          "compared": 5,
+          "total": 5,
+          "note": "Zähler: eingehaltene verbotene Aussagen. Nenner: die 5 von 6, aus denen sich ein Kern bilden lässt (forbiddenCores). Nicht vergleichbar und deshalb weder verletzt noch bestanden: Umgekehrt."
         }
       ],
-      "reason": "3 Sollfachsatz/-sätze mit 11 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 14 Satz/Sätze. 3 von 3 Sollsätzen vergleichbar (Anker geteilt), davon 1 über der Schwelle: CC-038-B01↔source.abap:B7-guard 1.00. Darunter: CC-038-B03↔source.abap:B15-chain15 0.45, CC-038-B02↔source.abap:B14-modify 0.00. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 11."
+      "reason": "3 Sollfachsatz/-sätze mit 11 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 14 Satz/Sätze. 3 von 3 Sollsätzen vergleichbar (Anker geteilt), davon 1 über der Schwelle: CC-038-B01↔source.abap:B7-guard 1.00. Darunter: CC-038-B03↔source.abap:B15-chain15 0.45, CC-038-B02↔source.abap:B14-modify 0.00. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 11. Verbotene Aussagen: 5 von 6 mit Kern, 0 davon verletzt: —."
     },
     {
       "case": "CC-039",
@@ -5539,9 +5805,16 @@
           "compared": 1,
           "total": 3,
           "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
+        },
+        {
+          "name": "verbotene-aussagen",
+          "status": "compared",
+          "compared": 4,
+          "total": 4,
+          "note": "Zähler: eingehaltene verbotene Aussagen. Nenner: die 4 von 4, aus denen sich ein Kern bilden lässt (forbiddenCores). Nicht vergleichbar und deshalb weder verletzt noch bestanden: keine."
         }
       ],
-      "reason": "3 Sollfachsatz/-sätze mit 9 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 14 Satz/Sätze. 3 von 3 Sollsätzen vergleichbar (Anker geteilt), davon 1 über der Schwelle: CC-039-B02↔source.abap:B14-guard 0.57. Darunter: CC-039-B03↔source.abap:B18-seq18 0.21, CC-039-B01↔source.abap:B9-seq9 0.00. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 11."
+      "reason": "3 Sollfachsatz/-sätze mit 9 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 14 Satz/Sätze. 3 von 3 Sollsätzen vergleichbar (Anker geteilt), davon 1 über der Schwelle: CC-039-B02↔source.abap:B14-guard 0.57. Darunter: CC-039-B03↔source.abap:B18-seq18 0.21, CC-039-B01↔source.abap:B9-seq9 0.00. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 11. Verbotene Aussagen: 4 von 4 mit Kern, 0 davon verletzt: —."
     },
     {
       "case": "CC-040",
@@ -5681,9 +5954,16 @@
           "compared": 0,
           "total": 2,
           "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
+        },
+        {
+          "name": "verbotene-aussagen",
+          "status": "compared",
+          "compared": 3,
+          "total": 3,
+          "note": "Zähler: eingehaltene verbotene Aussagen. Nenner: die 3 von 4, aus denen sich ein Kern bilden lässt (forbiddenCores). Nicht vergleichbar und deshalb weder verletzt noch bestanden: Nicht D als Level."
         }
       ],
-      "reason": "2 Sollfachsatz/-sätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 3 Satz/Sätze. 2 von 2 Sollsätzen vergleichbar (Anker geteilt), davon 0 über der Schwelle: —. Darunter: CC-040-B02↔source.abap:B9-assign 0.12, CC-040-B01↔source.abap:B10-branch10 0.00. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 1."
+      "reason": "2 Sollfachsatz/-sätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 3 Satz/Sätze. 2 von 2 Sollsätzen vergleichbar (Anker geteilt), davon 0 über der Schwelle: —. Darunter: CC-040-B02↔source.abap:B9-assign 0.12, CC-040-B01↔source.abap:B10-branch10 0.00. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 1. Verbotene Aussagen: 3 von 4 mit Kern, 0 davon verletzt: —."
     },
     {
       "case": "CC-041",
@@ -5823,9 +6103,16 @@
           "compared": 1,
           "total": 2,
           "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
+        },
+        {
+          "name": "verbotene-aussagen",
+          "status": "compared",
+          "compared": 3,
+          "total": 3,
+          "note": "Zähler: eingehaltene verbotene Aussagen. Nenner: die 3 von 5, aus denen sich ein Kern bilden lässt (forbiddenCores). Nicht vergleichbar und deshalb weder verletzt noch bestanden: Nicht Unknown, Nicht Singleton."
         }
       ],
-      "reason": "2 Sollfachsatz/-sätze mit 5 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 9 Satz/Sätze. 2 von 2 Sollsätzen vergleichbar (Anker geteilt), davon 1 über der Schwelle: CC-041-B02↔source.abap:B25-call 0.75. Darunter: CC-041-B01↔source.abap:B19-chain19 0.25. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 7."
+      "reason": "2 Sollfachsatz/-sätze mit 5 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 9 Satz/Sätze. 2 von 2 Sollsätzen vergleichbar (Anker geteilt), davon 1 über der Schwelle: CC-041-B02↔source.abap:B25-call 0.75. Darunter: CC-041-B01↔source.abap:B19-chain19 0.25. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 7. Verbotene Aussagen: 3 von 5 mit Kern, 0 davon verletzt: —."
     },
     {
       "case": "CC-042",
@@ -5965,9 +6252,16 @@
           "compared": 1,
           "total": 2,
           "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
+        },
+        {
+          "name": "verbotene-aussagen",
+          "status": "compared",
+          "compared": 5,
+          "total": 5,
+          "note": "Zähler: eingehaltene verbotene Aussagen. Nenner: die 5 von 5, aus denen sich ein Kern bilden lässt (forbiddenCores). Nicht vergleichbar und deshalb weder verletzt noch bestanden: keine."
         }
       ],
-      "reason": "2 Sollfachsatz/-sätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 7 Satz/Sätze. 2 von 2 Sollsätzen vergleichbar (Anker geteilt), davon 1 über der Schwelle: CC-042-B01↔source.abap:B4-select 0.60. Darunter: CC-042-B02↔source.abap:B10-list 0.27. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 5."
+      "reason": "2 Sollfachsatz/-sätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 7 Satz/Sätze. 2 von 2 Sollsätzen vergleichbar (Anker geteilt), davon 1 über der Schwelle: CC-042-B01↔source.abap:B4-select 0.60. Darunter: CC-042-B02↔source.abap:B10-list 0.27. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 5. Verbotene Aussagen: 5 von 5 mit Kern, 0 davon verletzt: —."
     },
     {
       "case": "CC-043",
@@ -6107,9 +6401,16 @@
           "compared": 0,
           "total": 3,
           "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
+        },
+        {
+          "name": "verbotene-aussagen",
+          "status": "compared",
+          "compared": 3,
+          "total": 4,
+          "note": "Zähler: eingehaltene verbotene Aussagen. Nenner: die 4 von 4, aus denen sich ein Kern bilden lässt (forbiddenCores). Nicht vergleichbar und deshalb weder verletzt noch bestanden: keine."
         }
       ],
-      "reason": "3 Sollfachsatz/-sätze mit 8 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 10 Satz/Sätze. 3 von 3 Sollsätzen vergleichbar (Anker geteilt), davon 0 über der Schwelle: —. Darunter: CC-043-B02↔source.abap:B7-branch7 0.40, CC-043-B01↔source.abap:B6-seq6 0.40, CC-043-B03↔source.abap:B10-list 0.33. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 7."
+      "reason": "3 Sollfachsatz/-sätze mit 8 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 10 Satz/Sätze. 3 von 3 Sollsätzen vergleichbar (Anker geteilt), davon 0 über der Schwelle: —. Darunter: CC-043-B02↔source.abap:B7-branch7 0.40, CC-043-B01↔source.abap:B6-seq6 0.40, CC-043-B03↔source.abap:B10-list 0.33. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 7. Verbotene Aussagen: 4 von 4 mit Kern, 1 davon verletzt: source.abap:B6-seq6 → «als PERFORM read_hdr mit den Parametern read_items, sum_items lesen» 0.60."
     },
     {
       "case": "CC-044",
@@ -6249,9 +6550,16 @@
           "compared": 2,
           "total": 2,
           "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
+        },
+        {
+          "name": "verbotene-aussagen",
+          "status": "compared",
+          "compared": 4,
+          "total": 4,
+          "note": "Zähler: eingehaltene verbotene Aussagen. Nenner: die 4 von 4, aus denen sich ein Kern bilden lässt (forbiddenCores). Nicht vergleichbar und deshalb weder verletzt noch bestanden: keine."
         }
       ],
-      "reason": "2 Sollfachsatz/-sätze mit 7 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 7 Satz/Sätze. 2 von 2 Sollsätzen vergleichbar (Anker geteilt), davon 2 über der Schwelle: CC-044-B01↔source.abap:B6-seq6 0.73, CC-044-B02↔source.abap:B9-call 0.63. Darunter: —. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 5."
+      "reason": "2 Sollfachsatz/-sätze mit 7 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 7 Satz/Sätze. 2 von 2 Sollsätzen vergleichbar (Anker geteilt), davon 2 über der Schwelle: CC-044-B01↔source.abap:B6-seq6 0.73, CC-044-B02↔source.abap:B9-call 0.63. Darunter: —. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 5. Verbotene Aussagen: 4 von 4 mit Kern, 0 davon verletzt: —."
     },
     {
       "case": "CC-045",
@@ -6391,9 +6699,16 @@
           "compared": 0,
           "total": 2,
           "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
+        },
+        {
+          "name": "verbotene-aussagen",
+          "status": "compared",
+          "compared": 6,
+          "total": 6,
+          "note": "Zähler: eingehaltene verbotene Aussagen. Nenner: die 6 von 6, aus denen sich ein Kern bilden lässt (forbiddenCores). Nicht vergleichbar und deshalb weder verletzt noch bestanden: keine."
         }
       ],
-      "reason": "2 Sollfachsatz/-sätze mit 7 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 8 Satz/Sätze. 2 von 2 Sollsätzen vergleichbar (Anker geteilt), davon 0 über der Schwelle: —. Darunter: CC-045-B02↔source.abap:B17-write 0.40, CC-045-B01↔source.abap:B14-branch14 0.31. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 6."
+      "reason": "2 Sollfachsatz/-sätze mit 7 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 8 Satz/Sätze. 2 von 2 Sollsätzen vergleichbar (Anker geteilt), davon 0 über der Schwelle: —. Darunter: CC-045-B02↔source.abap:B17-write 0.40, CC-045-B01↔source.abap:B14-branch14 0.31. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 6. Verbotene Aussagen: 6 von 6 mit Kern, 0 davon verletzt: —."
     },
     {
       "case": "CC-046",
@@ -6533,9 +6848,16 @@
           "compared": 1,
           "total": 4,
           "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
+        },
+        {
+          "name": "verbotene-aussagen",
+          "status": "compared",
+          "compared": 5,
+          "total": 5,
+          "note": "Zähler: eingehaltene verbotene Aussagen. Nenner: die 5 von 6, aus denen sich ein Kern bilden lässt (forbiddenCores). Nicht vergleichbar und deshalb weder verletzt noch bestanden: Kein D und kein R16."
         }
       ],
-      "reason": "4 Sollfachsatz/-sätze mit 12 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 12 Satz/Sätze. 4 von 4 Sollsätzen vergleichbar (Anker geteilt), davon 1 über der Schwelle: CC-046-B02↔source.abap:B10-translate 0.91. Darunter: CC-046-B01↔source.abap:B8-set 0.29, CC-046-B04↔source.abap:B15-list 0.25, CC-046-B03↔source.abap:B4-write 0.21. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 8."
+      "reason": "4 Sollfachsatz/-sätze mit 12 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 12 Satz/Sätze. 4 von 4 Sollsätzen vergleichbar (Anker geteilt), davon 1 über der Schwelle: CC-046-B02↔source.abap:B10-translate 0.91. Darunter: CC-046-B01↔source.abap:B8-set 0.29, CC-046-B04↔source.abap:B15-list 0.25, CC-046-B03↔source.abap:B4-write 0.21. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 8. Verbotene Aussagen: 5 von 6 mit Kern, 0 davon verletzt: —."
     },
     {
       "case": "CC-047",
@@ -6675,9 +6997,16 @@
           "compared": 2,
           "total": 2,
           "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
+        },
+        {
+          "name": "verbotene-aussagen",
+          "status": "compared",
+          "compared": 4,
+          "total": 4,
+          "note": "Zähler: eingehaltene verbotene Aussagen. Nenner: die 4 von 5, aus denen sich ein Kern bilden lässt (forbiddenCores). Nicht vergleichbar und deshalb weder verletzt noch bestanden: Nicht „keine Findings, B“, weil kein SELECT, kein CALL FUNCTION und keine Klasse vorkommt."
         }
       ],
-      "reason": "2 Sollfachsatz/-sätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 8 Satz/Sätze. 2 von 2 Sollsätzen vergleichbar (Anker geteilt), davon 2 über der Schwelle: CC-047-B02↔source.abap:B10-list 0.60, CC-047-B01↔source.abap:B6-get 0.57. Darunter: —. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 6."
+      "reason": "2 Sollfachsatz/-sätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 8 Satz/Sätze. 2 von 2 Sollsätzen vergleichbar (Anker geteilt), davon 2 über der Schwelle: CC-047-B02↔source.abap:B10-list 0.60, CC-047-B01↔source.abap:B6-get 0.57. Darunter: —. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 6. Verbotene Aussagen: 4 von 5 mit Kern, 0 davon verletzt: —."
     },
     {
       "case": "CC-048",
@@ -6817,9 +7146,16 @@
           "compared": 1,
           "total": 4,
           "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
+        },
+        {
+          "name": "verbotene-aussagen",
+          "status": "compared",
+          "compared": 5,
+          "total": 5,
+          "note": "Zähler: eingehaltene verbotene Aussagen. Nenner: die 5 von 6, aus denen sich ein Kern bilden lässt (forbiddenCores). Nicht vergleichbar und deshalb weder verletzt noch bestanden: Nicht „Programmende“ und nicht „Schleife“."
         }
       ],
-      "reason": "4 Sollfachsatz/-sätze mit 12 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 7 Satz/Sätze. 4 von 4 Sollsätzen vergleichbar (Anker geteilt), davon 1 über der Schwelle: CC-048-B02↔source.abap:B9-check 0.74. Darunter: CC-048-B03↔source.abap:B17-write 0.40, CC-048-B04↔source.abap:B14-write 0.27, CC-048-B01↔source.abap:B7-check 0.00. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 3."
+      "reason": "4 Sollfachsatz/-sätze mit 12 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 7 Satz/Sätze. 4 von 4 Sollsätzen vergleichbar (Anker geteilt), davon 1 über der Schwelle: CC-048-B02↔source.abap:B9-check 0.74. Darunter: CC-048-B03↔source.abap:B17-write 0.40, CC-048-B04↔source.abap:B14-write 0.27, CC-048-B01↔source.abap:B7-check 0.00. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 3. Verbotene Aussagen: 5 von 6 mit Kern, 0 davon verletzt: —."
     },
     {
       "case": "CC-049",
@@ -6959,9 +7295,16 @@
           "compared": 2,
           "total": 3,
           "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
+        },
+        {
+          "name": "verbotene-aussagen",
+          "status": "compared",
+          "compared": 2,
+          "total": 3,
+          "note": "Zähler: eingehaltene verbotene Aussagen. Nenner: die 3 von 3, aus denen sich ein Kern bilden lässt (forbiddenCores). Nicht vergleichbar und deshalb weder verletzt noch bestanden: keine."
         }
       ],
-      "reason": "3 Sollfachsatz/-sätze mit 8 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 12 Satz/Sätze. 3 von 3 Sollsätzen vergleichbar (Anker geteilt), davon 2 über der Schwelle: CC-049-B03↔source.abap:B19-list 0.71, CC-049-B01↔source.abap:B7-guard 0.71. Darunter: CC-049-B02↔source.abap:B11-select 0.40. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 9."
+      "reason": "3 Sollfachsatz/-sätze mit 8 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 12 Satz/Sätze. 3 von 3 Sollsätzen vergleichbar (Anker geteilt), davon 2 über der Schwelle: CC-049-B03↔source.abap:B19-list 0.71, CC-049-B01↔source.abap:B7-guard 0.71. Darunter: CC-049-B02↔source.abap:B11-select 0.40. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 9. Verbotene Aussagen: 3 von 3 mit Kern, 1 davon verletzt: source.abap:B16-auth → «nur mit F_KNA1_GEN-Berechtigung wird ausgegeben» 0.67."
     },
     {
       "case": "CC-050",
@@ -7101,9 +7444,16 @@
           "compared": 3,
           "total": 3,
           "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
+        },
+        {
+          "name": "verbotene-aussagen",
+          "status": "not_checked",
+          "compared": 0,
+          "total": 0,
+          "note": "Alle 3 verbotenen Aussagen dieses Falls sind nicht vergleichbar: aus keiner lässt sich ein Kern mit 2 Inhaltswörtern bilden (forbiddenCores). Kein R01-C, Kein D und kein „B mit Abschlag\", Kein A."
         }
       ],
-      "reason": "3 Sollfachsatz/-sätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 9 Satz/Sätze. 3 von 3 Sollsätzen vergleichbar (Anker geteilt), davon 3 über der Schwelle: CC-050-B03↔source.abap:B14-list 1.00, CC-050-B02↔source.abap:B9-guard 0.80, CC-050-B01↔source.abap:B4-select 0.56. Darunter: —. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 6."
+      "reason": "3 Sollfachsatz/-sätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 9 Satz/Sätze. 3 von 3 Sollsätzen vergleichbar (Anker geteilt), davon 3 über der Schwelle: CC-050-B03↔source.abap:B14-list 1.00, CC-050-B02↔source.abap:B9-guard 0.80, CC-050-B01↔source.abap:B4-select 0.56. Darunter: —. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 6. Verbotene Aussagen: 0 von 3 mit Kern (nichts erzeugt, also nichts gemessen), 0 davon verletzt: —."
     },
     {
       "case": "CC-051",
@@ -7243,9 +7593,16 @@
           "compared": 2,
           "total": 3,
           "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
+        },
+        {
+          "name": "verbotene-aussagen",
+          "status": "compared",
+          "compared": 2,
+          "total": 2,
+          "note": "Zähler: eingehaltene verbotene Aussagen. Nenner: die 2 von 3, aus denen sich ein Kern bilden lässt (forbiddenCores). Nicht vergleichbar und deshalb weder verletzt noch bestanden: Kein D."
         }
       ],
-      "reason": "3 Sollfachsatz/-sätze mit 8 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 9 Satz/Sätze. 3 von 3 Sollsätzen vergleichbar (Anker geteilt), davon 2 über der Schwelle: CC-051-B03↔source.abap:B14-list 0.89, CC-051-B02↔source.abap:B10-guard 0.80. Darunter: CC-051-B01↔source.abap:B5-select 0.24. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 6."
+      "reason": "3 Sollfachsatz/-sätze mit 8 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 9 Satz/Sätze. 3 von 3 Sollsätzen vergleichbar (Anker geteilt), davon 2 über der Schwelle: CC-051-B03↔source.abap:B14-list 0.89, CC-051-B02↔source.abap:B10-guard 0.80. Darunter: CC-051-B01↔source.abap:B5-select 0.24. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 6. Verbotene Aussagen: 2 von 3 mit Kern, 0 davon verletzt: —."
     },
     {
       "case": "CC-052",
@@ -7385,9 +7742,16 @@
           "compared": 3,
           "total": 3,
           "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
+        },
+        {
+          "name": "verbotene-aussagen",
+          "status": "compared",
+          "compared": 2,
+          "total": 2,
+          "note": "Zähler: eingehaltene verbotene Aussagen. Nenner: die 2 von 3, aus denen sich ein Kern bilden lässt (forbiddenCores). Nicht vergleichbar und deshalb weder verletzt noch bestanden: Kein D."
         }
       ],
-      "reason": "3 Sollfachsatz/-sätze mit 8 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 9 Satz/Sätze. 3 von 3 Sollsätzen vergleichbar (Anker geteilt), davon 3 über der Schwelle: CC-052-B03↔source.abap:B8-guard 0.80, CC-052-B02↔source.abap:B13-write 0.75, CC-052-B01↔source.abap:B12-list 0.60. Darunter: —. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 6."
+      "reason": "3 Sollfachsatz/-sätze mit 8 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 9 Satz/Sätze. 3 von 3 Sollsätzen vergleichbar (Anker geteilt), davon 3 über der Schwelle: CC-052-B03↔source.abap:B8-guard 0.80, CC-052-B02↔source.abap:B13-write 0.75, CC-052-B01↔source.abap:B12-list 0.60. Darunter: —. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 6. Verbotene Aussagen: 2 von 3 mit Kern, 0 davon verletzt: —."
     },
     {
       "case": "CC-053",
@@ -7527,9 +7891,16 @@
           "compared": 0,
           "total": 1,
           "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
+        },
+        {
+          "name": "verbotene-aussagen",
+          "status": "compared",
+          "compared": 7,
+          "total": 7,
+          "note": "Zähler: eingehaltene verbotene Aussagen. Nenner: die 7 von 7, aus denen sich ein Kern bilden lässt (forbiddenCores). Nicht vergleichbar und deshalb weder verletzt noch bestanden: keine."
         }
       ],
-      "reason": "2 Sollfachsatz/-sätze mit 4 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 2 Satz/Sätze. 1 von 2 Sollsätzen vergleichbar (Anker geteilt), davon 0 über der Schwelle: —. Darunter: CC-053-B01↔source.abap:B4-branch4 0.19. Ohne Gegenstück: CC-053-B02. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 1."
+      "reason": "2 Sollfachsatz/-sätze mit 4 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 2 Satz/Sätze. 1 von 2 Sollsätzen vergleichbar (Anker geteilt), davon 0 über der Schwelle: —. Darunter: CC-053-B01↔source.abap:B4-branch4 0.19. Ohne Gegenstück: CC-053-B02. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 1. Verbotene Aussagen: 7 von 7 mit Kern, 0 davon verletzt: —."
     },
     {
       "case": "CC-054",
@@ -7669,9 +8040,16 @@
           "compared": 0,
           "total": 2,
           "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
+        },
+        {
+          "name": "verbotene-aussagen",
+          "status": "compared",
+          "compared": 4,
+          "total": 4,
+          "note": "Zähler: eingehaltene verbotene Aussagen. Nenner: die 4 von 4, aus denen sich ein Kern bilden lässt (forbiddenCores). Nicht vergleichbar und deshalb weder verletzt noch bestanden: keine."
         }
       ],
-      "reason": "2 Sollfachsatz/-sätze mit 5 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 4 Satz/Sätze. 2 von 2 Sollsätzen vergleichbar (Anker geteilt), davon 0 über der Schwelle: —. Darunter: CC-054-B02↔source.abap:B23-branch23 0.13, CC-054-B01↔source.abap:B14-call 0.00. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 2."
+      "reason": "2 Sollfachsatz/-sätze mit 5 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 4 Satz/Sätze. 2 von 2 Sollsätzen vergleichbar (Anker geteilt), davon 0 über der Schwelle: —. Darunter: CC-054-B02↔source.abap:B23-branch23 0.13, CC-054-B01↔source.abap:B14-call 0.00. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 2. Verbotene Aussagen: 4 von 4 mit Kern, 0 davon verletzt: —."
     },
     {
       "case": "CC-055",
@@ -7811,9 +8189,16 @@
           "compared": 2,
           "total": 2,
           "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
+        },
+        {
+          "name": "verbotene-aussagen",
+          "status": "compared",
+          "compared": 3,
+          "total": 3,
+          "note": "Zähler: eingehaltene verbotene Aussagen. Nenner: die 3 von 4, aus denen sich ein Kern bilden lässt (forbiddenCores). Nicht vergleichbar und deshalb weder verletzt noch bestanden: Nicht „keine Befunde, B\"."
         }
       ],
-      "reason": "2 Sollfachsatz/-sätze mit 8 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 7 Satz/Sätze. 2 von 2 Sollsätzen vergleichbar (Anker geteilt), davon 2 über der Schwelle: CC-055-B02↔source.abap:B18-chain18 0.67, CC-055-B01↔source.abap:B14-call 0.55. Darunter: —. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 5."
+      "reason": "2 Sollfachsatz/-sätze mit 8 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 7 Satz/Sätze. 2 von 2 Sollsätzen vergleichbar (Anker geteilt), davon 2 über der Schwelle: CC-055-B02↔source.abap:B18-chain18 0.67, CC-055-B01↔source.abap:B14-call 0.55. Darunter: —. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 5. Verbotene Aussagen: 3 von 4 mit Kern, 0 davon verletzt: —."
     },
     {
       "case": "CC-056",
@@ -7953,9 +8338,16 @@
           "compared": 2,
           "total": 2,
           "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
+        },
+        {
+          "name": "verbotene-aussagen",
+          "status": "compared",
+          "compared": 2,
+          "total": 2,
+          "note": "Zähler: eingehaltene verbotene Aussagen. Nenner: die 2 von 4, aus denen sich ein Kern bilden lässt (forbiddenCores). Nicht vergleichbar und deshalb weder verletzt noch bestanden: Kein D, Kein C."
         }
       ],
-      "reason": "2 Sollfachsatz/-sätze mit 7 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 6 Satz/Sätze. 2 von 2 Sollsätzen vergleichbar (Anker geteilt), davon 2 über der Schwelle: CC-056-B01↔source.abap:B4-guard 0.80, CC-056-B02↔source.abap:B9-submit 0.67. Darunter: —. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 4."
+      "reason": "2 Sollfachsatz/-sätze mit 7 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 6 Satz/Sätze. 2 von 2 Sollsätzen vergleichbar (Anker geteilt), davon 2 über der Schwelle: CC-056-B01↔source.abap:B4-guard 0.80, CC-056-B02↔source.abap:B9-submit 0.67. Darunter: —. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 4. Verbotene Aussagen: 2 von 4 mit Kern, 0 davon verletzt: —."
     },
     {
       "case": "CC-057",
@@ -8095,9 +8487,16 @@
           "compared": 0,
           "total": 1,
           "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
+        },
+        {
+          "name": "verbotene-aussagen",
+          "status": "compared",
+          "compared": 3,
+          "total": 3,
+          "note": "Zähler: eingehaltene verbotene Aussagen. Nenner: die 3 von 5, aus denen sich ein Kern bilden lässt (forbiddenCores). Nicht vergleichbar und deshalb weder verletzt noch bestanden: kein Level C melden, kein Unknown."
         }
       ],
-      "reason": "2 Sollfachsatz/-sätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 1 Satz/Sätze. 1 von 2 Sollsätzen vergleichbar (Anker geteilt), davon 0 über der Schwelle: —. Darunter: CC-057-B01↔source.abap:B10-select 0.13. Ohne Gegenstück: CC-057-B02. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 0."
+      "reason": "2 Sollfachsatz/-sätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 1 Satz/Sätze. 1 von 2 Sollsätzen vergleichbar (Anker geteilt), davon 0 über der Schwelle: —. Darunter: CC-057-B01↔source.abap:B10-select 0.13. Ohne Gegenstück: CC-057-B02. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 0. Verbotene Aussagen: 3 von 5 mit Kern, 0 davon verletzt: —."
     },
     {
       "case": "CC-058",
@@ -8237,9 +8636,16 @@
           "compared": 1,
           "total": 3,
           "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
+        },
+        {
+          "name": "verbotene-aussagen",
+          "status": "compared",
+          "compared": 6,
+          "total": 6,
+          "note": "Zähler: eingehaltene verbotene Aussagen. Nenner: die 6 von 6, aus denen sich ein Kern bilden lässt (forbiddenCores). Nicht vergleichbar und deshalb weder verletzt noch bestanden: keine."
         }
       ],
-      "reason": "3 Sollfachsatz/-sätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 9 Satz/Sätze. 3 von 3 Sollsätzen vergleichbar (Anker geteilt), davon 1 über der Schwelle: CC-058-B02↔source.abap:B9-guard 0.80. Darunter: CC-058-B03↔source.abap:B14-list 0.43, CC-058-B01↔source.abap:B4-select 0.27. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 6."
+      "reason": "3 Sollfachsatz/-sätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 9 Satz/Sätze. 3 von 3 Sollsätzen vergleichbar (Anker geteilt), davon 1 über der Schwelle: CC-058-B02↔source.abap:B9-guard 0.80. Darunter: CC-058-B03↔source.abap:B14-list 0.43, CC-058-B01↔source.abap:B4-select 0.27. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 6. Verbotene Aussagen: 6 von 6 mit Kern, 0 davon verletzt: —."
     },
     {
       "case": "CC-059",
@@ -8379,9 +8785,16 @@
           "compared": 0,
           "total": 1,
           "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
+        },
+        {
+          "name": "verbotene-aussagen",
+          "status": "compared",
+          "compared": 3,
+          "total": 3,
+          "note": "Zähler: eingehaltene verbotene Aussagen. Nenner: die 3 von 4, aus denen sich ein Kern bilden lässt (forbiddenCores). Nicht vergleichbar und deshalb weder verletzt noch bestanden: kein A ohne S01."
         }
       ],
-      "reason": "3 Sollfachsatz/-sätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 2 Satz/Sätze. 1 von 3 Sollsätzen vergleichbar (Anker geteilt), davon 0 über der Schwelle: —. Darunter: CC-059-B03↔source.abap:B13-modify 0.19. Ohne Gegenstück: CC-059-B01, CC-059-B02. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 1."
+      "reason": "3 Sollfachsatz/-sätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 2 Satz/Sätze. 1 von 3 Sollsätzen vergleichbar (Anker geteilt), davon 0 über der Schwelle: —. Darunter: CC-059-B03↔source.abap:B13-modify 0.19. Ohne Gegenstück: CC-059-B01, CC-059-B02. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 1. Verbotene Aussagen: 3 von 4 mit Kern, 0 davon verletzt: —."
     },
     {
       "case": "CC-060",
@@ -8521,9 +8934,16 @@
           "compared": 0,
           "total": 3,
           "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
+        },
+        {
+          "name": "verbotene-aussagen",
+          "status": "compared",
+          "compared": 6,
+          "total": 6,
+          "note": "Zähler: eingehaltene verbotene Aussagen. Nenner: die 6 von 7, aus denen sich ein Kern bilden lässt (forbiddenCores). Nicht vergleichbar und deshalb weder verletzt noch bestanden: kein „A\" für den Scope extension und kein A-Label ohne Scope-Angabe."
         }
       ],
-      "reason": "3 Sollfachsatz/-sätze mit 8 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 6 Satz/Sätze. 3 von 3 Sollsätzen vergleichbar (Anker geteilt), davon 0 über der Schwelle: —. Darunter: CC-060-B01↔zcl_route_service.clas.abap:B13-seq13 0.17, CC-060-B02↔zcl_route_service.clas.abap:B12-branch12 0.06, CC-060-B03↔zcl_customer_api.clas.abap:B10-select 0.00. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 3."
+      "reason": "3 Sollfachsatz/-sätze mit 8 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 6 Satz/Sätze. 3 von 3 Sollsätzen vergleichbar (Anker geteilt), davon 0 über der Schwelle: —. Darunter: CC-060-B01↔zcl_route_service.clas.abap:B13-seq13 0.17, CC-060-B02↔zcl_route_service.clas.abap:B12-branch12 0.06, CC-060-B03↔zcl_customer_api.clas.abap:B10-select 0.00. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 3. Verbotene Aussagen: 6 von 7 mit Kern, 0 davon verletzt: —."
     },
     {
       "case": "CC-061",
@@ -8663,9 +9083,16 @@
           "compared": 0,
           "total": 2,
           "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
+        },
+        {
+          "name": "verbotene-aussagen",
+          "status": "compared",
+          "compared": 4,
+          "total": 5,
+          "note": "Zähler: eingehaltene verbotene Aussagen. Nenner: die 5 von 6, aus denen sich ein Kern bilden lässt (forbiddenCores). Nicht vergleichbar und deshalb weder verletzt noch bestanden: Kein Fachsatz „es wird 0 ausgegeben\"."
         }
       ],
-      "reason": "2 Sollfachsatz/-sätze mit 3 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 3 Satz/Sätze. 2 von 2 Sollsätzen vergleichbar (Anker geteilt), davon 0 über der Schwelle: —. Darunter: CC-061-B02↔source.abap:B15-write 0.33, CC-061-B01↔source.abap:B14-method 0.09. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 1."
+      "reason": "2 Sollfachsatz/-sätze mit 3 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 3 Satz/Sätze. 2 von 2 Sollsätzen vergleichbar (Anker geteilt), davon 0 über der Schwelle: —. Darunter: CC-061-B02↔source.abap:B15-write 0.33, CC-061-B01↔source.abap:B14-method 0.09. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 1. Verbotene Aussagen: 5 von 6 mit Kern, 1 davon verletzt: source.abap:B10-set → «Phantomobjekt aus dem Text tick» 0.67."
     },
     {
       "case": "CC-062",
@@ -8805,9 +9232,16 @@
           "compared": 1,
           "total": 2,
           "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
+        },
+        {
+          "name": "verbotene-aussagen",
+          "status": "compared",
+          "compared": 5,
+          "total": 5,
+          "note": "Zähler: eingehaltene verbotene Aussagen. Nenner: die 5 von 6, aus denen sich ein Kern bilden lässt (forbiddenCores). Nicht vergleichbar und deshalb weder verletzt noch bestanden: Nicht known_worst_level D."
         }
       ],
-      "reason": "2 Sollfachsatz/-sätze mit 4 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 3 Satz/Sätze. 2 von 2 Sollsätzen vergleichbar (Anker geteilt), davon 1 über der Schwelle: CC-062-B01↔source.abap:B5-select 0.61. Darunter: CC-062-B02↔source.abap:B6-list 0.20. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 1."
+      "reason": "2 Sollfachsatz/-sätze mit 4 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 3 Satz/Sätze. 2 von 2 Sollsätzen vergleichbar (Anker geteilt), davon 1 über der Schwelle: CC-062-B01↔source.abap:B5-select 0.61. Darunter: CC-062-B02↔source.abap:B6-list 0.20. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 1. Verbotene Aussagen: 5 von 6 mit Kern, 0 davon verletzt: —."
     },
     {
       "case": "CC-063",
@@ -8947,9 +9381,16 @@
           "compared": 1,
           "total": 2,
           "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
+        },
+        {
+          "name": "verbotene-aussagen",
+          "status": "compared",
+          "compared": 5,
+          "total": 5,
+          "note": "Zähler: eingehaltene verbotene Aussagen. Nenner: die 5 von 6, aus denen sich ein Kern bilden lässt (forbiddenCores). Nicht vergleichbar und deshalb weder verletzt noch bestanden: Nicht D   und nicht B."
         }
       ],
-      "reason": "2 Sollfachsatz/-sätze mit 4 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 2 Satz/Sätze. 2 von 2 Sollsätzen vergleichbar (Anker geteilt), davon 1 über der Schwelle: CC-063-B01↔source.abap:B5-select 0.64. Darunter: CC-063-B02↔source.abap:B7-write 0.17. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 0."
+      "reason": "2 Sollfachsatz/-sätze mit 4 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 2 Satz/Sätze. 2 von 2 Sollsätzen vergleichbar (Anker geteilt), davon 1 über der Schwelle: CC-063-B01↔source.abap:B5-select 0.64. Darunter: CC-063-B02↔source.abap:B7-write 0.17. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 0. Verbotene Aussagen: 5 von 6 mit Kern, 0 davon verletzt: —."
     },
     {
       "case": "CC-064",
@@ -9089,9 +9530,16 @@
           "compared": 2,
           "total": 2,
           "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
+        },
+        {
+          "name": "verbotene-aussagen",
+          "status": "compared",
+          "compared": 5,
+          "total": 5,
+          "note": "Zähler: eingehaltene verbotene Aussagen. Nenner: die 5 von 6, aus denen sich ein Kern bilden lässt (forbiddenCores). Nicht vergleichbar und deshalb weder verletzt noch bestanden: Nicht."
         }
       ],
-      "reason": "2 Sollfachsatz/-sätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 5 Satz/Sätze. 2 von 2 Sollsätzen vergleichbar (Anker geteilt), davon 2 über der Schwelle: CC-064-B02↔source.abap:B9-write 0.80, CC-064-B01↔source.abap:B6-guard 0.73. Darunter: —. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 3."
+      "reason": "2 Sollfachsatz/-sätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 5 Satz/Sätze. 2 von 2 Sollsätzen vergleichbar (Anker geteilt), davon 2 über der Schwelle: CC-064-B02↔source.abap:B9-write 0.80, CC-064-B01↔source.abap:B6-guard 0.73. Darunter: —. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 3. Verbotene Aussagen: 5 von 6 mit Kern, 0 davon verletzt: —."
     },
     {
       "case": "CC-065",
@@ -9231,9 +9679,16 @@
           "compared": 1,
           "total": 1,
           "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
+        },
+        {
+          "name": "verbotene-aussagen",
+          "status": "compared",
+          "compared": 5,
+          "total": 5,
+          "note": "Zähler: eingehaltene verbotene Aussagen. Nenner: die 5 von 6, aus denen sich ein Kern bilden lässt (forbiddenCores). Nicht vergleichbar und deshalb weder verletzt noch bestanden: Nicht als opaque_call   modellieren."
         }
       ],
-      "reason": "1 Sollfachsatz/-sätze mit 2 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 3 Satz/Sätze. 1 von 1 Sollsätzen vergleichbar (Anker geteilt), davon 1 über der Schwelle: CC-065-B01↔caller.abap:B3-submit 0.64. Darunter: —. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 2."
+      "reason": "1 Sollfachsatz/-sätze mit 2 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 3 Satz/Sätze. 1 von 1 Sollsätzen vergleichbar (Anker geteilt), davon 1 über der Schwelle: CC-065-B01↔caller.abap:B3-submit 0.64. Darunter: —. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 2. Verbotene Aussagen: 5 von 6 mit Kern, 0 davon verletzt: —."
     },
     {
       "case": "CC-066",
@@ -9373,9 +9828,16 @@
           "compared": 0,
           "total": 0,
           "note": "Nichts war vergleichbar — kein erzeugter Satz teilt eine Anweisung mit einem Sollsatz. Die Engine erzeugt die Fachsätze deterministisch aus dem Quelltext (lib/abap/business-statement.ts, Roadmap 17.7, Herkunft „reconstructed\")."
+        },
+        {
+          "name": "verbotene-aussagen",
+          "status": "compared",
+          "compared": 5,
+          "total": 5,
+          "note": "Zähler: eingehaltene verbotene Aussagen. Nenner: die 5 von 5, aus denen sich ein Kern bilden lässt (forbiddenCores). Nicht vergleichbar und deshalb weder verletzt noch bestanden: keine."
         }
       ],
-      "reason": "1 Sollfachsatz/-sätze mit 2 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 3 Satz/Sätze. Kein erzeugter Satz steht an einer ABAP-Anweisung, die auch ein Sollsatz nennt — nicht verglichen, nicht verfehlt."
+      "reason": "1 Sollfachsatz/-sätze mit 2 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 3 Satz/Sätze. Kein erzeugter Satz steht an einer ABAP-Anweisung, die auch ein Sollsatz nennt — nicht verglichen, nicht verfehlt. Verbotene Aussagen: 5 von 5 mit Kern, 0 davon verletzt: —."
     },
     {
       "case": "CC-067",
@@ -9515,9 +9977,16 @@
           "compared": 0,
           "total": 1,
           "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
+        },
+        {
+          "name": "verbotene-aussagen",
+          "status": "compared",
+          "compared": 4,
+          "total": 5,
+          "note": "Zähler: eingehaltene verbotene Aussagen. Nenner: die 5 von 6, aus denen sich ein Kern bilden lässt (forbiddenCores). Nicht vergleichbar und deshalb weder verletzt noch bestanden: Kein gateway mit zwei „always\"-Kanten."
         }
       ],
-      "reason": "1 Sollfachsatz/-sätze mit 2 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 3 Satz/Sätze. 1 von 1 Sollsätzen vergleichbar (Anker geteilt), davon 0 über der Schwelle: —. Darunter: CC-067-B01↔source.abap:B5-assert 0.31. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 2."
+      "reason": "1 Sollfachsatz/-sätze mit 2 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 3 Satz/Sätze. 1 von 1 Sollsätzen vergleichbar (Anker geteilt), davon 0 über der Schwelle: —. Darunter: CC-067-B01↔source.abap:B5-assert 0.31. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 2. Verbotene Aussagen: 5 von 6 mit Kern, 1 davon verletzt: source.abap:B6-select → «Kunden werden gefunden» 0.50."
     },
     {
       "case": "CC-068",
@@ -9657,9 +10126,16 @@
           "compared": 0,
           "total": 1,
           "note": "Dice über normalisierte Inhaltswörter, Schwelle 0.50 (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD)."
+        },
+        {
+          "name": "verbotene-aussagen",
+          "status": "compared",
+          "compared": 5,
+          "total": 5,
+          "note": "Zähler: eingehaltene verbotene Aussagen. Nenner: die 5 von 6, aus denen sich ein Kern bilden lässt (forbiddenCores). Nicht vergleichbar und deshalb weder verletzt noch bestanden: Nicht A."
         }
       ],
-      "reason": "1 Sollfachsatz/-sätze mit 3 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 4 Satz/Sätze. 1 von 1 Sollsätzen vergleichbar (Anker geteilt), davon 0 über der Schwelle: —. Darunter: CC-068-B01↔source.abap:B11-branch11 0.14. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 3."
+      "reason": "1 Sollfachsatz/-sätze mit 3 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 4 Satz/Sätze. 1 von 1 Sollsätzen vergleichbar (Anker geteilt), davon 0 über der Schwelle: —. Darunter: CC-068-B01↔source.abap:B11-branch11 0.14. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 3. Verbotene Aussagen: 5 von 6 mit Kern, 0 davon verletzt: —."
     }
   ]
 }
