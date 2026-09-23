@@ -30,10 +30,21 @@ async function main() {
     test: process.env.TEST_ALERT === 'true',
   });
 
-  console.log(`to      : ${RECIPIENT}`);
-  console.log(`subject : ${mail.subject}`);
-  console.log('');
-  console.log(mail.text);
+  // Same gate as the other senders (`scripts/send-usage-report.ts`,
+  // `send-survey-digest.ts`): the repository is public, so every line printed
+  // here is readable by anyone. This script was missed by the 23.09.2026 sweep
+  // because it was assumed to print nothing. It printed the recipient *and the
+  // whole alert body*, which names the failed jobs of a security run — the QA
+  // delta review of 4b40254 caught it.
+  const local = !process.env.CI && !process.env.GITHUB_ACTIONS;
+  if (local) {
+    console.log(`to      : ${RECIPIENT}`);
+    console.log(`subject : ${mail.subject}`);
+    console.log('');
+    console.log(mail.text);
+  } else {
+    console.log(`security alert built for ${failedJobs.length} failed job(s) (recipient and body withheld: public log)`);
+  }
 
   if (!process.argv.includes('--apply')) {
     console.log('\nDRY RUN — nothing sent. Re-run with --apply.');

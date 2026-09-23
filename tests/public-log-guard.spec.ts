@@ -24,7 +24,17 @@ import path from 'path';
 const ROOT = path.resolve(__dirname, '..');
 
 /** Every script that mails something to a person. */
-const SENDERS = ['scripts/send-usage-report.ts', 'scripts/send-survey-digest.ts'];
+const SENDERS = [
+  'scripts/send-usage-report.ts',
+  'scripts/send-survey-digest.ts',
+  // Added 23.09.2026 after the QA delta review of 4b40254. It was left out of
+  // this list on the assumption that it prints nothing — unchecked, and wrong:
+  // it printed the recipient and the entire alert body, which names the failed
+  // jobs of a security run. The assumption is the defect this file exists to
+  // prevent, so the list is now the list of senders, not of senders believed to
+  // print.
+  'scripts/send-security-alert.ts',
+];
 
 /**
  * Every sender, including the ones that only ever mail the administrator.
@@ -54,18 +64,40 @@ test('every sender knows whether it is running in a public log', () => {
   }
 });
 
-test('no sender prints the recipient on an ungated line', () => {
+test('no sender prints the recipient outside the gate', () => {
+  // Line-by-line matching is not enough, and the first version of this guard
+  // proved it twice: it looked for the `to` spelling only, so it never saw
+  // `send-security-alert.ts` printing `RECIPIENT`; and once that spelling was
+  // added, the *fixed* file still matched, because a gated line is still a
+  // `console.log` when you read it on its own.
+  //
+  // So the question is structural: is the printing line *inside* a block that
+  // asked whether this is CI? Brace counting from the gate is crude, but it is
+  // exactly the property that matters, and renaming a variable cannot satisfy
+  // it.
   for (const file of SENDERS) {
-    const offenders = read(file)
-      .split('\n')
-      .map((line, i) => ({ line: line.trim(), no: i + 1 }))
-      // A line that prints the recipient straight to stdout. `say(...)` and the
-      // ternary in send-survey-digest are the gated forms and are allowed.
-      .filter(({ line }) => /^console\.log\(/.test(line) && /\$\{to\}/.test(line) && !/local \?/.test(line));
+    const lines = read(file).split(/\r?\n/);
+
+    let depth = 0;
+    let gateDepth: number | null = null;
+    const ungated: string[] = [];
+
+    lines.forEach((raw, i) => {
+      const line = raw.trim();
+      const opensGate = /^if \(local\) \{/.test(line);
+      const printsRecipient =
+        /^console\.log\(/.test(line) && /\$\{(to|RECIPIENT)\}/.test(line) && !/local \?/.test(line);
+
+      if (printsRecipient && gateDepth === null) ungated.push(`${file}:${i + 1}  ${line}`);
+
+      depth += (line.match(/\{/g) ?? []).length - (line.match(/\}/g) ?? []).length;
+      if (opensGate && gateDepth === null) gateDepth = depth;
+      else if (gateDepth !== null && depth < gateDepth) gateDepth = null;
+    });
 
     expect(
-      offenders.map((o) => `${file}:${o.no}  ${o.line}`),
-      'this line puts a real e-mail address into a public log',
+      ungated,
+      'this line puts the recipient into a public Actions log: it prints outside any `if (local)` gate',
     ).toEqual([]);
   }
 });
