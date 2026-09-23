@@ -32,7 +32,7 @@ const faqs = [
   },
   {
     question: 'Can I verify the generated code yourself?',
-    answer: 'Yes. Every transformation produces an importable abapGit package (src/ directory + abapgit.xml) with generated ABAP-Unit test classes. Import into your Eclipse ADT, compile, and run the tests locally.'
+    answer: 'Yes. Every transformation produces a package laid out for abapGit — a src/ directory and a .abapgit.xml written from the project itself — together with generated ABAP-Unit test classes, so you can read every line and run the tests in your own system. We have not imported one into a real SAP system, so we do not claim the package activates without adjustment: the object metadata is generated, not produced by abapGit’s own serializer. Treat it as a starting point for an import rather than an import that is known to succeed.'
   }
 ];
 

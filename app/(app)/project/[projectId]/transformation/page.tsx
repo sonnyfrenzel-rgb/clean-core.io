@@ -502,7 +502,9 @@ CMD ["node", "srv/service.js"]`
            - src/z_demo_rap_bdef.bdef.asbdef: The behavior definition for the CDS view (defining CREATE/UPDATE/DELETE and custom actions).
            - src/z_demo_rap_srvd.srvd.assrvd: The RAP service definition exposing the business object.
            - src/z_demo_rap_srvb.srvb.assrvb: The RAP service binding configuration (exposing as OData V4 UI).
-           - abapgit.xml: The standard abapGit repository configuration file in the root.
+           - Do NOT produce an abapGit configuration file. The delivery step writes it
+             deterministically from the project itself, under the dotted name abapGit reads.
+             A model-invented configuration would put a guessed value where a measured one belongs.
         4. Add professional comments explaining the Developer Extensibility patterns used.
         5. Return a complete ABAP Unit test suite inside the tests JSON object that validates the RAP behavior.
         
@@ -532,10 +534,6 @@ CMD ["node", "srv/service.js"]`
             {
               "path": "src/z_demo_rap_srvb.srvb.assrvb",
               "content": "/* The Service Binding code */"
-            },
-            {
-              "path": "abapgit.xml",
-              "content": "/* Standard abapgit.xml setup */"
             }
           ],
           "tests": {
