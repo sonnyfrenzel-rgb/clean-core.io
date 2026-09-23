@@ -507,6 +507,126 @@ test.describe('a view switch moves nothing (roadmap 6.1, §Phase 6 "Fertig, wenn
     expect(await snapshot(), 'the project or the account changed across a view switch').toBe(before);
   });
 
+  /**
+   * The same promise, one screen earlier — roadmap 6.1, `DESIGN.md` §6.1.1.
+   *
+   * "New project" carries the three views in motion: the **real** switcher over
+   * a stage that walks Business → IT → Management on its own. It is the first
+   * place a reader ever changes a view, and it is the easiest place to store
+   * one by accident — *"they liked Management, let us open there next time"* is
+   * one `localStorage` line away, and a reload would still look right.
+   *
+   * So the stage runs its whole pass here, is then steered by hand, and the
+   * account document is compared as bytes across all of it. Browser storage is
+   * read out afterwards for the same reason: the roadmap line says *„in URL und
+   * Browser"* for a view the reader is **in**, and this stage is not a place
+   * anybody is — it is an intro that has no address of its own for a view.
+   */
+  test('the stage on "New project" runs, is steered, and stores nothing anywhere', async ({
+    page,
+  }) => {
+    test.setTimeout(300 * 1000);
+
+    const writes: string[] = [];
+    await page.route('**/*', (route) => {
+      const request = route.request();
+      const url = request.url();
+      const method = request.method();
+      if (/\/Write\/channel|:commit|:batchWrite/.test(url)) writes.push(`${method} ${url}`);
+      else if (url.includes('/api/') && method !== 'GET' && method !== 'HEAD') {
+        writes.push(`${method} ${url}`);
+      }
+      return route.continue();
+    });
+
+    await page.goto('/');
+    await page.click('a:has-text("Get Free Access"), button:has-text("Get Free Access")');
+    await page.waitForSelector('input[type="email"]');
+    await page.fill('input[type="email"]', EMAIL_UI);
+    await page.fill('input[type="password"]', PASSWORD_UI);
+    await page.click('button[type="submit"]:has-text("Sign In")');
+    await page.waitForTimeout(4000);
+
+    await page.emulateMedia({ reducedMotion: 'no-preference' });
+    await page.goto('/admin/new-project', { waitUntil: 'domcontentloaded' });
+    const stage = page.locator('[data-three-views-stage]');
+    await expect(stage).toBeVisible({ timeout: 60000 });
+
+    // The account document only: "New project" is not about a project, and the
+    // sibling test below deliberately mutates the project fixture.
+    const account = async () =>
+      JSON.stringify((await adminDb.doc(`users/${uidUi}`).get()).data() ?? null);
+    const before = await account();
+    writes.length = 0;
+
+    // The whole automatic pass, ending when the stage says it has ended.
+    const deadline = Date.now() + 25000;
+    while (Date.now() < deadline) {
+      if ((await stage.getAttribute('data-three-views-auto')) === 'stopped') break;
+      await page.waitForTimeout(150);
+    }
+    expect(await stage.getAttribute('data-three-views-auto')).toBe('stopped');
+
+    // And then by hand, which is the branch that would tempt somebody to
+    // remember the choice.
+    for (const name of ['Management', 'IT', 'Business']) {
+      await page
+        .locator('[data-three-views-stage] [data-cc-segmented][aria-label="View"] button[role="radio"]', {
+          hasText: name,
+        })
+        .click();
+      await expect(page.locator('[data-three-views-panel]')).toHaveAttribute(
+        'data-three-views-panel',
+        name.toLowerCase(),
+        { timeout: 15000 },
+      );
+    }
+
+    expect(
+      writes,
+      `the stage on "New project" sent something that writes: ${JSON.stringify(writes)}`,
+    ).toEqual([]);
+    expect(await account(), 'the account changed while a stage was cycling views').toBe(before);
+
+    // "Skip intro" is the one thing on this page that *is* remembered in the
+    // browser, so it is pressed here: it gives the check below something real
+    // to look at instead of an empty store that would pass by default.
+    await page.locator('[data-three-views-skip]').click();
+    await expect(page.locator('[data-new-project-intro]')).toHaveAttribute(
+      'data-new-project-intro',
+      'folded',
+      { timeout: 15000 },
+    );
+
+    // Nothing in the browser either. Only this product's own namespace is
+    // examined — Firebase's own auth entry carries the test address, which
+    // happens to contain the word. `cc.newProject.introSeen` is allowed: it is
+    // *„beim ersten Mal offen; danach eine Zeile … gemerkt im Browser"*
+    // (§6.1.1) and says nothing about a view.
+    const stored = await page.evaluate(() => {
+      const out: Record<string, string> = {};
+      const take = (store: Storage, prefix: string) => {
+        for (let i = 0; i < store.length; i++) {
+          const key = store.key(i);
+          if (key && key.startsWith('cc.')) out[`${prefix}${key}`] = store.getItem(key) ?? '';
+        }
+      };
+      take(window.localStorage, '');
+      take(window.sessionStorage, 'session:');
+      return out;
+    });
+    expect(
+      Object.keys(stored).length,
+      'no cc.* key at all — the browser check below would be vacuous',
+    ).toBeGreaterThan(0);
+    for (const [key, value] of Object.entries(stored)) {
+      expect(
+        `${key}=${value}`.toLowerCase(),
+        `the browser remembered a view under "${key}"`,
+      ).not.toMatch(/business|management|view|focus/);
+    }
+  });
+
   test('and the snapshot would have noticed — one allowed field, and it differs', async () => {
     test.setTimeout(60 * 1000);
     const before = await snapshot();

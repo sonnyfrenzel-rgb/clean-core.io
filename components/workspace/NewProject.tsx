@@ -38,6 +38,8 @@ import {
   type CatalogArtifactFigures,
   type StartChoice,
 } from '@/lib/new-project-content';
+import type { TravellingFact } from '@/lib/three-views-stage';
+import ThreeViewsStage from './ThreeViewsStage';
 import PersonalDataHints from '@/components/PersonalDataHints';
 import CcButton from '@/components/cc/Button';
 import CcCard from '@/components/cc/Card';
@@ -63,13 +65,13 @@ import { CcRunCost } from '@/components/cc/RunIndicator';
  * the dashboard's example panel already reads, so the two screens cannot end up
  * with two versions of "what a run costs".
  *
- * **What is deliberately not here.** §6.1.1 also describes *„die drei Sichten in
- * Bewegung"* — a fact travelling through Business, IT and Management on a small
- * stage. The roadmap row for 2.7 does not list it, and building it from anything
- * other than a real run of the example would be the staged marketing picture the
- * same section forbids two paragraphs later. It needs the example's run, which
- * is roadmap 0.10's demo, and it is called out in this step's report rather than
- * faked here.
+ * **The three views in motion** (roadmap 6.1, §6.1.1) arrive the same way. Step
+ * 2.7 left them out on purpose — *"building it from anything other than a real
+ * run of the example would be the staged marketing picture the same section
+ * forbids two paragraphs later"* — and that is still the rule: the fact on the
+ * stage is derived by `lib/three-views-stage.ts` from the example's own source,
+ * read by the route with the same engine a reader's upload meets. Nothing on
+ * the stage is copy, and where the engine has nothing the panel says so.
  *
  * Nothing on this page is switched on for anybody: like the list report it sits
  * behind the admin gate until the new interface ships (`docs/ROADMAP.md`,
@@ -102,9 +104,17 @@ function markIntroSeen(): void {
 
 export default function NewProject({
   catalogArtifacts,
+  stageFact = null,
 }: {
   /** The two synced SAP artifacts, as the catalog reports them. */
   catalogArtifacts: CatalogArtifactFigures[];
+  /**
+   * The one fact the three views carry, derived from the example's own source
+   * by the route (`lib/three-views-stage.ts`). `null` when the example could
+   * not be read, and the stage then does not render — an intro is not worth a
+   * panel of placeholders.
+   */
+  stageFact?: TravellingFact | null;
 }) {
   const router = useRouter();
   const { profile, loading: profileLoading } = useUserProfile();
@@ -365,6 +375,12 @@ export default function NewProject({
                 </ol>
               </CcCard>
             </div>
+
+            {/* The three views in motion — §6.1.1's last bullet of part 1, and
+                the only thing on this page that moves (§1.7). It sits after the
+                three glances because it is the pay-off: the vocabulary above is
+                what the three panels below are speaking. */}
+            <ThreeViewsStage fact={stageFact} onSkip={closeIntro} />
 
             <div>
               <CcButton onClick={closeIntro} data-new-project-intro-hide="">

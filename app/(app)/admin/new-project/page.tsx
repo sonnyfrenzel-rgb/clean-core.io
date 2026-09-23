@@ -1,7 +1,14 @@
+import fs from 'node:fs';
+import path from 'node:path';
 import type { Metadata } from 'next';
 import NewProject from '@/components/workspace/NewProject';
 import { getLevelRuleVersion } from '@/lib/abap/catalog-service';
 import type { CatalogArtifactFigures } from '@/lib/new-project-content';
+import {
+  STAGE_EXAMPLE_FILE,
+  travellingFact,
+  type TravellingFact,
+} from '@/lib/three-views-stage';
 
 /**
  * "New project" — `DESIGN.md` §6.1.1, roadmap 2.7.
@@ -31,6 +38,28 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
+/**
+ * The fact the three views carry — `DESIGN.md` §6.1.1, roadmap 6.1.
+ *
+ * Read here for the same reason the catalog figures are: §6.1.1 asks for
+ * *„alle Inhalte aus dem echten Lauf des Beispiels"*, and the two honest ways
+ * to get them are to run the engine over the example in the browser or to run
+ * it here. Here is cheaper — the example is on this disk already, the reading
+ * is the same deterministic one either way, and the intro page does not have to
+ * fetch and parse 668 lines before it can say anything.
+ *
+ * A missing or unreadable file is a state, not a crash: the stage takes `null`
+ * and renders nothing, and the rest of the page is untouched.
+ */
+function stageFact(): TravellingFact | null {
+  try {
+    const file = path.join(process.cwd(), 'public', 'starter-examples', STAGE_EXAMPLE_FILE);
+    return travellingFact(fs.readFileSync(file, 'utf8'));
+  } catch {
+    return null;
+  }
+}
+
 export default function AdminNewProjectPage() {
   // Read, never restated: file name, entry count and sync date come out of the
   // artifacts themselves. An empty list is a state the component renders as such.
@@ -41,5 +70,5 @@ export default function AdminNewProjectPage() {
     fetchedAt: artifact.fetchedAt,
   }));
 
-  return <NewProject catalogArtifacts={artifacts} />;
+  return <NewProject catalogArtifacts={artifacts} stageFact={stageFact()} />;
 }
