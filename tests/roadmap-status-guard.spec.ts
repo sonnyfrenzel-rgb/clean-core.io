@@ -28,7 +28,12 @@ test.describe('der Standmesser', () => {
     // Der Gegenzähler liest dieselbe Datei mit einem anderen Ausdruck: eine
     // Tabellenzeile, die mit einer Schrittnummer beginnt. Zwei Wege zur selben
     // Menge — ein Parser, der eine Zeile verschluckt, fällt hier auf.
-    const expected = (source.match(/^\|\s*\d+\.\d+\s*\|/gm) || []).map((m) => m.replace(/[|\s]/g, ''));
+    // Zwei ODER drei Zahlenteile — dieselbe Regel wie im Instrument. Diese Zeile
+    // trug bis zum 23.09.2026 dieselbe Blindstelle wie der Parser, den sie
+    // bewacht: beide verlangten genau zwei Teile, also fielen die zehn Schritte
+    // 3.0.1–3.0.10 aus Zählung und Prüfung heraus, ohne dass etwas rot wurde.
+    // Ein Wächter, der die Annahme des Geprüften teilt, prüft sie nicht.
+    const expected = (source.match(/^\|\s*\d+(?:\.\d+){1,2}\s*\|/gm) || []).map((m) => m.replace(/[|\s]/g, ''));
     expect(seen.sort()).toEqual(expected.sort());
     expect(seen.length, 'die Roadmap hat keine Schritte mehr — das ist kein Erfolg, das ist ein Parserfehler').toBeGreaterThan(50);
   });

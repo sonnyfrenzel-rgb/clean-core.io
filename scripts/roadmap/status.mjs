@@ -49,7 +49,12 @@ export function readSteps(markdown) {
       const chapter = /^## (\d+)\. (.+)$/.exec(line);
       if (chapter) section = `§${chapter[1]} ${chapter[2].split('(')[0].trim()}`;
     }
-    const row = /^\|\s*(\d+\.\d+)\s*\|(.*)$/.exec(line);
+    // Zwei ODER drei Zahlenteile. Die zehn Schritte 3.0.1–3.0.10 (der öffentliche
+    // Relaunch) waren bis zum 23.09.2026 für dieses Instrument unsichtbar: die
+    // Regel verlangte genau zwei, und „3.0.6" traf sie nicht. Es meldete 98
+    // Schritte, wo es 108 sind — und der fehlende Block war ausgerechnet der,
+    // der 3.0 ausmacht.
+    const row = /^\|\s*(\d+(?:\.\d+){1,2})\s*\|(.*)$/.exec(line);
     if (!row) continue;
     steps.push({ id: row[1], section, text: row[2] });
   }
@@ -70,8 +75,14 @@ export function idsFromSubjects(subjects) {
   const found = new Map();
   for (const subject of subjects) {
     const marker = /^[a-z]+\(([^)]*)\)/.exec(subject);
+    // Eine Versionsnummer im Scope ist kein Schritt. `release(v2.12.0): …` hat
+    // Schritt 2.12 jahrelang als gebaut ausgewiesen, weil die alte Regel aus
+    // „v2.12.0" die ersten zwei Zahlenteile nahm — ein Release, das mit dem
+    // Schritt nichts zu tun hatte. Gefunden am 23.09.2026 beim Ausweiten der
+    // Regel auf drei Teile.
+    if (marker && /^v\d/.test(marker[1].trim())) continue;
     if (!marker) continue;
-    for (const id of marker[1].match(/\d+\.\d+/g) || []) {
+    for (const id of marker[1].match(/\d+(?:\.\d+){1,2}/g) || []) {
       if (!found.has(id)) found.set(id, subject);
     }
   }
