@@ -165,9 +165,20 @@ test.describe('a user cannot write the administrator’s report', () => {
     expect(await page.locator('a[href^="https://phish.example"]').count()).toBe(0);
     expect(await page.locator('img[src^="https://tracker.example"]').count()).toBe(0);
     expect(await page.evaluate(() => (window as unknown as { __pwned?: number }).__pwned)).toBeUndefined();
-    // …and the report still shows what the person is called, as text.
-    await expect(page.getByText('Password reset', { exact: false })).toBeVisible();
+    // …and the report still shows what the person is called, as text — for the
+    // two lists that still name people. "Neu registriert" is a count since
+    // 23.09.2026 (Sonny: naming new accounts is not required), so the escaping
+    // that used to be tested through `Password reset` is tested here through the
+    // names that remain, and the absence of that one is asserted below rather
+    // than left to chance.
+    // Twice on purpose — the HTML panel and the plain-text part both carry it.
+    await expect(page.getByText('Maria', { exact: false })).toHaveCount(2);
     await expect(page.getByText('Quota exceeded — call this number')).toBeVisible();
+    // The new-account panel carries a number and nobody's name or address.
+    await expect(page.getByText('2 neue Registrierungen')).toBeVisible();
+    await expect(page.getByText('Password reset', { exact: false })).toHaveCount(0);
+    await expect(page.getByText('a@b.c', { exact: false })).toHaveCount(0);
+    await expect(page.getByText('tim@example.com', { exact: false })).toHaveCount(0);
     expect(await page.locator('h1').count()).toBe(0);
     // Every link in the report still points where the report's own markup put it.
     const hrefs = await page.locator('a').evaluateAll((els) => els.map((e) => (e as HTMLAnchorElement).getAttribute('href') || ''));

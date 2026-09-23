@@ -215,8 +215,22 @@ test.describe('with ids the engine really assigns (roadmap step 1.3)', () => {
       expect(example, 'a report without findings has no finding id to offer').toMatch(/^\[\s*L/);
       expect(anchorNarrative(`Example ${example}.`, [], lines).sentences[0].status, example).toBe('anchored');
     }
-    // The page builds its prompt here and nowhere else.
-    expect(fs.readFileSync(path.resolve(__dirname, '../app/(app)/project/[projectId]/analyze/page.tsx'), 'utf8')).toMatch(/const prompt = buildAnalysisPrompt\(\{ targetDeployment, evidenceReport, routeReport: computedRouteReport, code: codeToAnalyze \}\);/);
+    // The page builds its prompt here and nowhere else — from the evidence and
+    // the routing of *this* run, not from anything it found lying around.
+    //
+    // `targetDeployment` is written as a named field rather than shorthand since
+    // 23.09.2026: the page used to read the edition out of component state at
+    // the moment of the call, which is one render behind the choice the reader
+    // just made, so the prompt could describe a different edition than the run
+    // it belongs to (QA full review of 3131afa, 2878b5f8fae3). It is a parameter
+    // of `handleAnalyze` now, and this pattern accepts either spelling so it
+    // keeps testing "one prompt, built from this run" rather than a formatting
+    // choice.
+    const analyzePage = fs.readFileSync(path.resolve(__dirname, '../app/(app)/project/[projectId]/analyze/page.tsx'), 'utf8');
+    expect(analyzePage).toMatch(
+      /const prompt = buildAnalysisPrompt\(\{ targetDeployment(?:: \w+)?, evidenceReport, routeReport: computedRouteReport, code: codeToAnalyze \}\);/,
+    );
+    expect(analyzePage.match(/buildAnalysisPrompt\(/g) || [], 'the page builds its prompt in exactly one place').toHaveLength(1);
   });
 
   test('a report without findings offers no finding id, and its line example fits the file', () => {

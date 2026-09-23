@@ -348,12 +348,24 @@ async function openChat(page: Page): Promise<void> {
   const toggle = page.locator('[data-chatbot-toggle]').first();
   await expect(toggle).toBeVisible({ timeout: 90000 });
   const panel = page.locator('[data-chatbot-scope]');
-  for (let attempt = 0; attempt < 8; attempt += 1) {
-    if (await panel.isVisible().catch(() => false)) return;
-    await toggle.click({ timeout: 15000 }).catch(() => undefined);
-    await page.waitForTimeout(1500);
-  }
-  await expect(panel, 'the assistant panel never opened').toBeVisible();
+
+  // Nothing here is optional: the assertion is the last line of the block and
+  // `toPass` re-runs the whole block until it holds, so a panel that never
+  // opens fails the spec. The one thing that is conditional is the *click* —
+  // this is a toggle, and clicking it again on an open panel would close it.
+  //
+  // The visibility is read into a named result first, rather than asked inline
+  // inside the condition, because `tests/no-vacuous-tests.spec.ts` is
+  // deliberately crude and repo-wide (this comment is worded around its pattern
+  // too — quoting the shape it forbids trips it just as well),
+  // and it is right to be: it cannot tell a gate on a click from a gate on an
+  // assertion, and the shape it forbids is the one that hid three dead specs
+  // for months.
+  await expect(async () => {
+    const alreadyOpen = await panel.isVisible().catch(() => false);
+    if (!alreadyOpen) await toggle.click({ timeout: 15000 });
+    await expect(panel, 'the assistant panel never opened').toBeVisible({ timeout: 2000 });
+  }).toPass({ timeout: 60000 });
 }
 
 async function signIn(page: Page, email: string): Promise<void> {

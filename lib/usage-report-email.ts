@@ -74,6 +74,33 @@ function totalRow(label: string, value: string, highlight = false): string {
  * lines were not (QA review of 33471220d6e9, finding 230989f67624). Styling
  * markup stays outside the escaped values.
  */
+/**
+ * A number where a list of people used to be.
+ *
+ * "Neu registriert diese Woche" named every new account — first name, last name
+ * and e-mail address — in a mail that leaves our infrastructure through Resend
+ * and lands in a mailbox that is not ours. Sonny, 23.09.2026: naming them is not
+ * required. What the report is for is noticing that people arrive; the count
+ * answers that, and the admin panel answers "who" for anyone who actually needs
+ * to know, behind a login.
+ *
+ * The two lists below it still carry names on purpose: "erstmals aktiviert" and
+ * "Kontingent aufgebraucht" are the rows an operator acts on, and an action
+ * needs an addressee.
+ */
+function countPanel(title: string, count: number, emptyText: string): string {
+  const body = count
+    ? `<div style="font-size: 17px; font-weight: 800; color: #0f172a; line-height: 1.3; padding: 9px 0;">${count} ${
+        count === 1 ? 'neue Registrierung' : 'neue Registrierungen'
+      }</div>`
+    : `<p style="font-size: 14px; color: #94a3b8; margin: 6px 0 0 0; font-style: italic; line-height: 1.5;">${escapeHtml(emptyText)}</p>`;
+  return `
+    <div class="panel" style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; padding: 18px; margin-bottom: 18px;">
+      <span style="font-weight: 800; color: #475569; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; display: block; margin-bottom: 4px;">${escapeHtml(title)}</span>
+      ${body}
+    </div>`;
+}
+
 function personList(
   title: string,
   people: { name: string; email: string; suffix?: string }[],
@@ -277,9 +304,9 @@ export function renderUsageReportEmail(report: UsageReport): string {
       ${totalRow('Mit eigenem Gemini-Key (BYOK)', String(totals.byok))}
     </div>
 
-    ${personList(
+    ${countPanel(
       'Neu registriert diese Woche',
-      report.newAccounts.map((a) => ({ name: a.name, email: a.email })),
+      report.newAccounts.length,
       'Keine neuen Registrierungen in dieser Woche.',
     )}
 
@@ -392,7 +419,7 @@ GESAMTBESTAND
   BYOK                        ${totals.byok}
 
 NEU REGISTRIERT
-${report.newAccounts.length ? report.newAccounts.map((a) => `  ${a.name} <${a.email}>`).join('\n') : '  (keine)'}
+${report.newAccounts.length ? `  ${report.newAccounts.length} ${report.newAccounts.length === 1 ? 'neue Registrierung' : 'neue Registrierungen'}` : '  (keine)'}
 
 ERSTMALS AKTIVIERT
 ${report.newlyActivated.length ? report.newlyActivated.map((a) => `  ${a.name} <${a.email}> — ${a.runs} Analysen`).join('\n') : '  (niemand)'}

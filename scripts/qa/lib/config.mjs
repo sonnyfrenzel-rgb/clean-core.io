@@ -16,14 +16,23 @@
  *
  * The delta reviewer moved to GPT-6 Luna on 22.09.2026 (Sonny). Same 1.05M context, and half the price of the
  * 5.6 tier it replaces — $0.10/$0.50 per million tokens against $0.20/$1.20 — so the budget below buys twice
- * as much review per push. `main` keeps Sol: the full review is the one that reads 769 files at once, and
- * changing both reviewers in one step would leave no fixed point to compare a regression against.
+ * as much review per push.
+ *
+ * The full review followed on 23.09.2026 (Sonny), to GPT-6 Luna Pro — and the reason is coverage, not thrift.
+ * Sol's run on v2.14.0 spent $5.54 in 14 calls and stopped with **470 files and 5.4 MB reported as NOT
+ * REVIEWED**, about half the code base and the newest half. It was not the cap that stopped it: reading the
+ * whole repository once costs 3.09M input tokens, which at Sol's $2 per million is $6.17 before the model
+ * thinks at all, so full coverage was about $11 against an approved ceiling of $10. At $0.10/$0.50 the same
+ * pass costs about $0.55, and the ceiling stops being the thing that decides how much of the product gets
+ * read. The fixed point the earlier note wanted is gone, which is the price of this: a regression in the next
+ * report cannot be told from a change of reviewer, and the first run under Luna Pro is a new baseline rather
+ * than a comparison.
  */
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 export const QA_MODEL = 'openai/gpt-6-luna';
-export const QA_FULL_MODEL = 'openai/gpt-5.6-sol';
+export const QA_FULL_MODEL = 'openai/gpt-6-luna-pro';
 
 export const OPENROUTER_ENDPOINT = 'https://openrouter.ai/api/v1/chat/completions';
 
@@ -37,7 +46,7 @@ export const DEV_URL = 'https://clean-core-dev-qcevuoi3uq-ew.a.run.app';
  */
 export const PRICES = {
   [QA_MODEL]: { input: 0.1, output: 0.5 },
-  [QA_FULL_MODEL]: { input: 2, output: 10 },
+  [QA_FULL_MODEL]: { input: 0.1, output: 0.5 },
 };
 export const PRICE_PER_MTOK = PRICES[QA_MODEL];
 
@@ -100,37 +109,33 @@ export const BUDGET = {
 };
 
 /**
- * The review of a release on `main`: the whole code base, area by area, by QA_FULL_MODEL. About 4 MB of
- * reviewable code on 15.09.2026 — some 1.3 million input tokens with line numbers and the file map, so roughly
- * $3 of input and at most $6 of output across its calls; high reasoning effort needs the larger output
- * allowance. It never gates a release; its findings are fixed on `dev` like any other (docs/QA-REVIEW-LOOP.md §10).
- */
-/**
- * The full review of a release. `maxCostUsd` is the ceiling that matters;
- * `maxBatches` exists so a runaway plan cannot sit in a queue for hours.
+ * The full review of a release on `main`: the whole code base, area by area, by QA_FULL_MODEL. It never gates
+ * a release; its findings are fixed on `dev` like any other (docs/QA-REVIEW-LOOP.md §10).
  *
- * Measured on v2.14.0 (3131afa): the run spent $5.5388 in 14 calls at effort
- * high — $0.396 a call — and stopped on the call count with **470 files and
- * 5.4 MB listed as NOT REVIEWED**, among them every component of the new
- * process map, the process revisions, the process states and the workspace
- * shell. That is roughly half the code base, and the half that is newest. The
- * money was not what stopped it: $4.46 of the approved $10 was left.
+ * `maxCostUsd` is the ceiling; `maxBatches` exists so a runaway plan cannot sit in a queue for hours. Until
+ * 23.09.2026 the second one was doing the first one's job, and badly. Sol's run on v2.14.0 (3131afa) spent
+ * $5.5388 in 14 calls at effort high and stopped on the *call count*, with **470 files and 5.4 MB listed as
+ * NOT REVIEWED** — every component of the new process map, the process revisions, the process states and the
+ * workspace shell. About half the code base, and the newest half. The money was not the constraint: $4.46 of
+ * the approved $10 was left, and raising the count to cover everything would have needed about 28 calls and
+ * roughly $11, just past the ceiling. Reading 10.8 MB once is 3.09M input tokens, which at Sol's $2 per
+ * million is $6.17 before a single thought.
  *
- * So the blunt limit moves and the ceiling does not. 24 calls at the measured
- * rate is about $9.50, inside the cap, and `withinBudget` still refuses the
- * first call that would cross $10 — the spend cannot run past the number Sonny
- * set, whatever this number says. Expect a release review to cost around $9.50
- * rather than $5.50 from now on.
+ * Luna Pro reads the same 3.09M tokens for $0.31. Whole-repository coverage — 28 calls of 400,000 characters,
+ * about 17,000 output tokens each as measured — comes to roughly $0.55. So `maxBatches` is now set to cover
+ * the repository rather than to ration it, and it is the *work* that decides the number: 10.8 MB at 400,000
+ * characters a call is 27, and 28 leaves one call of headroom for a repository that grows between releases.
+ * What still does not fit is named in the report, never silently dropped — that NOT REVIEWED list is the only
+ * reason any of this was noticed.
  *
- * It is still not full coverage: all 10.8 MB would need about 28 calls, roughly
- * $11, and that is a decision about the cap rather than about this line. What
- * the run does not read, it names — the NOT REVIEWED list above is how this was
- * found at all.
+ * `maxCostUsd` stays at $10 although the estimate is now twenty times below it. It is a floor against a
+ * pricing change nobody noticed, not a coverage decision: `withinBudget` refuses the first call that would
+ * cross it, whatever this file says about batches.
  */
 export const FULL_BUDGET = {
   maxCostUsd: 10,
   maxBatchChars: 400_000,
-  maxBatches: 24,
+  maxBatches: 28,
   maxOutputTokens: 48_000,
   requestTimeoutMs: 20 * 60_000,
   effort: 'high',

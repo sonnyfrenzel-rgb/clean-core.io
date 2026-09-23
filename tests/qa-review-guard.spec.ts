@@ -126,9 +126,9 @@ test.describe('the reviewer', () => {
     // `main` deliberately did not move with it — changing both in one step would leave no fixed point to
     // compare a regression against.
     expect(QA_MODEL).toBe('openai/gpt-6-luna');
-    expect(QA_FULL_MODEL).toBe('openai/gpt-5.6-sol');
+    expect(QA_FULL_MODEL).toBe('openai/gpt-6-luna-pro');
     expect(PRICES[QA_MODEL]).toEqual({ input: 0.1, output: 0.5 });
-    expect(PRICES[QA_FULL_MODEL]).toEqual({ input: 2, output: 10 });
+    expect(PRICES[QA_FULL_MODEL]).toEqual({ input: 0.1, output: 0.5 });
     expect(buildRequest({ system: 's', user: 'u', schema: { type: 'object' }, effort: 'high', model: QA_FULL_MODEL }).provider).toEqual({ allow_fallbacks: false, data_collection: 'deny' });
     const req = buildRequest({ system: 's', user: 'u', schema: { type: 'object' }, effort: 'medium' });
     expect(req.model).toBe(QA_MODEL);
@@ -377,9 +377,21 @@ test.describe('spend is capped and only the delta is reviewed', () => {
     // arithmetic once.
     expect(estimateCostUsd(0, 1)).toBeCloseTo((BUDGET.maxOutputTokens / 1e6) * PRICES[QA_MODEL].output, 5);
     const full = { budget: FULL_BUDGET, price: PRICES[QA_FULL_MODEL] };
-    expect(estimateCostUsd(0, 1, { price: full.price, maxOutputTokens: FULL_BUDGET.maxOutputTokens })).toBeCloseTo((FULL_BUDGET.maxOutputTokens / 1e6) * 10, 5);
+    const fullCall = estimateCostUsd(400_000, 1, { price: full.price, maxOutputTokens: FULL_BUDGET.maxOutputTokens });
+    // Same lesson as the line above, and it went red for the same reason on the
+    // move to GPT-6 Luna Pro (23.09.2026): the output rate was written here as
+    // `10`, so the test checked the price twice instead of the arithmetic once.
+    expect(estimateCostUsd(0, 1, { price: full.price, maxOutputTokens: FULL_BUDGET.maxOutputTokens })).toBeCloseTo(
+      (FULL_BUDGET.maxOutputTokens / 1e6) * PRICES[QA_FULL_MODEL].output,
+      5,
+    );
     expect(withinBudget(0, 400_000, full)).toBe(true);
-    expect(withinBudget(FULL_BUDGET.maxCostUsd - 0.5, 400_000, full)).toBe(false);
+    // The cap refuses the call that would cross it, wherever that line falls.
+    // Written against the estimate rather than a fixed remaining amount: a
+    // cheaper model moves the line, and a test that pins the gap instead of the
+    // rule would say "the cap is broken" when only the price changed.
+    expect(withinBudget(FULL_BUDGET.maxCostUsd - fullCall * 0.5, 400_000, full)).toBe(false);
+    expect(withinBudget(FULL_BUDGET.maxCostUsd - fullCall * 1.5, 400_000, full)).toBe(true);
     // The caps agreed on 15.09.2026: cents per delta, a few dollars per release.
     expect(BUDGET.maxCostUsd).toBeLessThanOrEqual(0.5);
     expect(FULL_BUDGET.maxCostUsd).toBeLessThanOrEqual(10);
@@ -1031,17 +1043,24 @@ test.describe('the full review of a release on main', () => {
     // The two limits on a full review pull in opposite directions, and only one
     // of them protects the bill. `maxCostUsd` does; `maxBatches` is there so a
     // runaway plan cannot sit in a queue for hours. On v2.14.0 the call count
-    // was what stopped the run — at $5.5388 of an approved $10, with 470 files
-    // and 5.4 MB reported as NOT REVIEWED, which is about half the code base and
-    // the newest half. Raising it is right; raising it past what the cap can pay
-    // for would buy nothing, because `withinBudget` would refuse the extra calls
-    // and the review would end in the same place with a different reason.
-    const { FULL_BUDGET } = await lib('config.mjs');
-    const MEASURED_COST_PER_CALL = 0.3956; // $5.5388 / 14 calls, effort high, 3131afa
-    expect(FULL_BUDGET.maxBatches * MEASURED_COST_PER_CALL).toBeLessThanOrEqual(FULL_BUDGET.maxCostUsd);
+    // was doing the cap's job and doing it badly: the run stopped at $5.5388 of
+    // an approved $10 with 470 files and 5.4 MB reported as NOT REVIEWED, about
+    // half the code base and the newest half.
+    //
+    // Both halves are checked from the budget itself rather than pinned, so this
+    // keeps meaning something after the next model or price change.
+    const { FULL_BUDGET, PRICES, QA_FULL_MODEL, estimateCostUsd } = await lib('config.mjs');
+    const worstCase = estimateCostUsd(FULL_BUDGET.maxBatches * FULL_BUDGET.maxBatchChars, FULL_BUDGET.maxBatches, {
+      price: PRICES[QA_FULL_MODEL],
+      maxOutputTokens: FULL_BUDGET.maxOutputTokens,
+    });
+    expect(worstCase, 'the call count cannot be paid for out of the cap').toBeLessThanOrEqual(FULL_BUDGET.maxCostUsd);
+
     // And the count is worth having: one call reads at most `maxBatchChars`, so
-    // this many of them has to reach past the 5.6 MB the 14-call run managed.
-    expect(FULL_BUDGET.maxBatches * FULL_BUDGET.maxBatchChars).toBeGreaterThan(5_600_000);
+    // this many of them has to reach past the whole repository — 10.8 MB when
+    // this was measured, and the point of the number is that it covers the work
+    // rather than rationing it.
+    expect(FULL_BUDGET.maxBatches * FULL_BUDGET.maxBatchChars).toBeGreaterThanOrEqual(10_800_000);
   });
 
   test('a failed batch is named as not reviewed, the others still count, and the cap sees its worst case', async () => {
