@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useId, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useId, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import CcButton from '@/components/cc/Button';
@@ -8,6 +8,7 @@ import CcSegmentedControl from '@/components/cc/SegmentedControl';
 import WorkspaceMetaLine from './MetaLine';
 import WorkspaceStatusLine from './StatusLine';
 import WorkspaceLayerBar from './LayerBar';
+import WorkspaceLayerSection from './LayerSection';
 import WorkspaceToolBar from './ToolBar';
 import NotDeterminedCard from './NotDeterminedCard';
 import NextStepCard from './NextStepCard';
@@ -32,6 +33,7 @@ import {
   VIEW_LABELS,
   VIEW_QUESTIONS,
   WORKSPACE_VIEWS,
+  layerFromHash,
   metaLine,
   notDetermined,
   workspaceLayers,
@@ -118,8 +120,41 @@ export default function WorkspaceShell({
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [statusOpen, setStatusOpen] = useState(false);
   const [aboutOpen, setAboutOpen] = useState(false);
-  const [layer, setLayer] = useState<LayerKey>(LAYERS[0]);
   const aboutId = useId();
+
+  /**
+   * The layer lives in the URL fragment and nowhere else (ADR-018, roadmap
+   * 6.2): *„Ebene … gehalten in URL-Fragment (`#need`)"*.
+   *
+   * `null` until the browser has been asked, because this component is rendered
+   * on the server too and `window.location.hash` does not exist there. Reading
+   * it during render would be a hydration mismatch; reading it in an effect
+   * means the first paint shows the first layer with content and the reader's
+   * own choice arrives a frame later, which is the right way round — a layer is
+   * not a gate on anything.
+   *
+   * `hashchange` rather than `useSearchParams`: the fragment is never sent to
+   * the server and Next's router does not re-render on it. Back and Forward
+   * move between layers because each choice is a history entry, which is the
+   * "und Browser" half of the roadmap line — and it is the *browser's* history,
+   * not a preference stored anywhere.
+   */
+  const [hashLayer, setHashLayer] = useState<LayerKey | null>(null);
+  useEffect(() => {
+    const read = () => setHashLayer(layerFromHash(window.location.hash));
+    read();
+    window.addEventListener('hashchange', read);
+    return () => window.removeEventListener('hashchange', read);
+  }, []);
+
+  const selectLayer = useCallback((next: LayerKey) => {
+    // Assigning the hash is a history entry, the same as the view's `push`, so
+    // Back returns to the layer the reader came from. Nothing is written: this
+    // is the address bar, not Firestore — and a view or a layer on a stored
+    // artefact is the one thing `docs/ROADMAP.md` forbids outright.
+    window.location.hash = next;
+    setHashLayer(next);
+  }, []);
 
   /**
    * Which revision of the process this screen is showing, and the notice when
@@ -193,9 +228,12 @@ export default function WorkspaceShell({
   const statusVisible = view === 'it' || view === 'management' || statusOpen;
   const toolsOpen = view === 'it';
 
-  const currentLayer = layers.some((l) => l.key === layer && l.count !== null)
-    ? layer
-    : (layers.find((l) => l.count !== null)?.key ?? LAYERS[0]);
+  // The reader's own choice wins, empty or not — an empty layer opened from
+  // "More" is a place, and saying so is the whole of roadmap 6.2. Without a
+  // choice the bar opens on the first layer that has anything in it, and on a
+  // project where nothing does, on the first layer, which then says it is empty.
+  const currentLayer = hashLayer ?? layers.find((l) => l.count !== null)?.key ?? LAYERS[0];
+  const currentLayerSection = layers.find((l) => l.key === currentLayer) ?? layers[0];
 
   return (
     <div className="cc" data-workspace-shell={view}>
@@ -344,7 +382,7 @@ export default function WorkspaceShell({
       </section>
 
       <div className="mt-5">
-        <WorkspaceLayerBar layers={layers} current={currentLayer} onSelect={setLayer} />
+        <WorkspaceLayerBar layers={layers} current={currentLayer} onSelect={selectLayer} />
         {/* "Your next step" — the coach mark now points at a real card rather
             than the empty space above it (roadmap 6.5, `lib/next-step.ts`). */}
         <div className="mt-2">
@@ -364,6 +402,14 @@ export default function WorkspaceShell({
           it never reaches the Gemini proxy. */}
       <div className="mt-5 max-w-3xl">
         <NextStepCard point={nextStep} projectId={projectId} />
+      </div>
+
+      {/* The content of the chosen layer (`DESIGN.md` §2.3 item 5, roadmap
+          6.2). Below "Next step", because the page keeps one primary action
+          and it is that card (§1.5); the anchor bar above scrolls the reader
+          here by the section's own `id`. */}
+      <div className="mt-5 max-w-3xl">
+        <WorkspaceLayerSection layer={currentLayerSection} />
       </div>
 
       {/* The first look — four stages, then the head of the content (§5.1, §5.5):

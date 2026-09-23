@@ -32,8 +32,12 @@ export default function WorkspaceLayerBar({
   onSelect: (key: LayerKey) => void;
 }) {
   const [moreOpen, setMoreOpen] = useState(false);
-  const filled = layers.filter((l) => l.count !== null);
-  const empty = layers.filter((l) => l.count === null);
+  // The chosen layer always stands in the bar, filled or not. An empty layer
+  // the reader opened from "More" has to be visible as the current one, or the
+  // bar shows no selection at all while the section below it shows a layer —
+  // which reads as a rendering fault rather than as an empty layer (roadmap 6.2).
+  const filled = layers.filter((l) => l.count !== null || l.key === current);
+  const empty = layers.filter((l) => l.count === null && l.key !== current);
 
   return (
     <nav
@@ -59,7 +63,9 @@ export default function WorkspaceLayerBar({
             )}
           >
             {layer.label}
-            <span className="font-cc-mono text-[11px] font-semibold text-cc-ink-muted">{layer.count}</span>
+            <span className="font-cc-mono text-[11px] font-semibold text-cc-ink-muted">
+              {layer.count ?? 'empty'}
+            </span>
           </button>
         );
       })}
@@ -87,10 +93,29 @@ export default function WorkspaceLayerBar({
               <ul className="m-0 list-none space-y-2.5 p-0">
                 {empty.map((layer) => (
                   <li key={layer.key} data-workspace-layer-empty={layer.key}>
-                    <div className="text-[13px] font-bold text-cc-ink">{layer.label}</div>
-                    <p className="m-0 mt-0.5 text-[12px] leading-snug font-medium text-cc-ink-muted">
-                      {layer.missing}
-                    </p>
+                    {/* An empty layer can be opened. Until roadmap 6.2 this menu
+                        was a list of six dead entries: it said what was missing
+                        and gave no way to stand in the layer and read it. The
+                        section below says the same sentence with the layer's own
+                        heading over it, which is what makes it a place rather
+                        than a footnote. */}
+                    <button
+                      type="button"
+                      data-workspace-layer={layer.key}
+                      data-layer-state="off"
+                      onClick={() => {
+                        onSelect(layer.key);
+                        setMoreOpen(false);
+                      }}
+                      className="w-full cursor-pointer border-0 bg-transparent p-0 text-left"
+                    >
+                      <span className="block text-[13px] font-bold text-cc-ink underline underline-offset-2">
+                        {layer.label}
+                      </span>
+                      <span className="mt-0.5 block text-[12px] leading-snug font-medium text-cc-ink-muted">
+                        {layer.missing}
+                      </span>
+                    </button>
                   </li>
                 ))}
               </ul>

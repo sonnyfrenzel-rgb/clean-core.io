@@ -419,6 +419,17 @@ export const LAYERS = [
 ] as const;
 export type LayerKey = (typeof LAYERS)[number];
 
+export interface LayerRow {
+  /** Stable within the layer — the React key and the test's handle. */
+  key: string;
+  /** The word before the value. */
+  label: string;
+  /** The value, in the reader's terms. Never empty: a row exists because it has one. */
+  value: string;
+  /** `L225–L234`, or `null` when the row has no line of its own. */
+  anchor: string | null;
+}
+
 export interface WorkspaceLayer {
   key: LayerKey;
   label: string;
@@ -426,31 +437,174 @@ export interface WorkspaceLayer {
   hash: string;
   /** What is in it — "42 findings", "1 signed run". `null` when it is empty. */
   count: string | null;
-  /** Why it is empty, in the reader's terms. Shown under "More" (§2.11). */
+  /** Why it is empty, in the reader's terms — under "More" and in the section itself (§2.11). */
   missing: string;
+  /**
+   * What the layer holds, at most the first five (§2.11). Empty **exactly** when
+   * `count` is `null` — the one invariant that keeps the bar and the section
+   * from disagreeing about whether there is anything to read. Without it a tab
+   * with a count opens on nothing, or a layer under "More" quietly has content.
+   */
+  rows: LayerRow[];
+  /** How many rows exist in total, so the section can say "Show all 42" (§2.11). */
+  total: number;
+  /**
+   * Where the rows come from (§4) — one of the nine values of
+   * `lib/provenance.ts`, never a wording of this module's own. An empty layer
+   * carries `not-determined`, which is what it is: nothing was worked out here.
+   */
+  provenance: ProvenanceValue;
+}
+
+/**
+ * The layer a `#fragment` names, or `null`.
+ *
+ * `null` rather than the default, deliberately: `#L231` is a line anchor and
+ * not a layer, and a reader who arrived on one has not chosen a layer at all.
+ * Collapsing the two here would leave the shell unable to tell "no layer
+ * chosen" from "the first layer chosen", and the first filled layer would
+ * become a decision the reader never made.
+ */
+export function layerFromHash(hash: string | null | undefined): LayerKey | null {
+  if (typeof hash !== 'string') return null;
+  const bare = hash.replace(/^#/, '');
+  return (LAYERS as readonly string[]).includes(bare) ? (bare as LayerKey) : null;
+}
+
+/** A hash is quoted at the length a person can compare by eye, never in full. */
+function shortId(hash: string | undefined | null): string | null {
+  return typeof hash === 'string' && hash.length >= 8 ? hash.slice(0, 8) : null;
 }
 
 /**
  * Layers with content first; empty ones go under "More" and say what is missing
- * (§2.11). Every count below comes from a field that is actually on the project,
+ * (§2.11). Every row below comes from a field that is actually on the project,
  * which is why four of them are routinely empty on a fresh case — and why the
  * bar says so instead of showing six confident-looking tabs.
+ *
+ * **A layer with nothing in it says that, and why** (roadmap 6.2, W22-A03).
+ * Each of the six carries its own temptation — *Standard fit* could read the
+ * routing recommendation sitting on the project, *Costs* could print the Clean
+ * Core score as if it were money, *Changes* could call the project's
+ * `updatedAt` a revision — and every one of those is the "the standard covers
+ * it" claim `DESIGN.md` §5.3 forbids, one layer down. So an empty layer carries
+ * the sentence that names the artefact that is missing, and no row.
  */
 export function workspaceLayers(project: Project | null): WorkspaceLayer[] {
   const usage = project?.usageReport ?? null;
-  const usageCount = Array.isArray(usage?.records) ? usage.records.length : 0;
-  const inventory = Array.isArray(project?.codeInventory) ? project!.codeInventory!.length : 0;
-  const hasRun = typeof project?.activeRunId === 'string' && project.activeRunId.trim().length > 0;
+  const usageRecords = Array.isArray(usage?.records) ? usage.records : [];
+  const inventory = Array.isArray(project?.codeInventory) ? project.codeInventory : [];
+  const coupling = Array.isArray(project?.dataCoupling) ? project.dataCoupling : [];
+  const runId = typeof project?.activeRunId === 'string' ? project.activeRunId.trim() : '';
+  const hasRun = runId.length > 0;
+  const fingerprint = project?.auditMetadata?.inputFingerprint ?? null;
 
   const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
+  /** §2.11: the first five, and the section says how many there are in all. */
+  const FIRST = 5;
+
+  /* ------------------------------------------------------------- need */
+  const needRows: LayerRow[] = usageRecords.map((record, i) => ({
+    key: `usage-${i}`,
+    label: record.objectName,
+    // `null` is not zero (`lib/workspace-rows.ts`): an export with no call
+    // column did not measure zero calls, it measured nothing at all — and the
+    // difference decides whether an object is a retirement candidate.
+    value:
+      typeof record.callCount === 'number'
+        ? `${plural(record.callCount, 'call')} in the measured window`
+        : 'no call count in the export',
+    anchor: null,
+  }));
+
+  /* ----------------------------------------------------- architecture */
+  const architectureRows: LayerRow[] = [
+    ...inventory.map((item, i) => ({
+      key: `object-${i}`,
+      label: item.objectName,
+      value: item.type,
+      anchor:
+        typeof item.lineStart === 'number' && typeof item.lineEnd === 'number'
+          ? `L${item.lineStart}–L${item.lineEnd}`
+          : typeof item.lineStart === 'number'
+            ? `L${item.lineStart}`
+            : null,
+    })),
+    ...coupling.map((entry, i) => ({
+      key: `table-${i}`,
+      label: entry.tableName,
+      value: `${entry.accessType} · ${entry.isCustom ? 'custom table' : 'SAP table'}`,
+      anchor:
+        Array.isArray(entry.lineNumbers) && typeof entry.lineNumbers[0] === 'number'
+          ? `L${entry.lineNumbers[0]}`
+          : null,
+    })),
+  ];
+
+  /* ------------------------------------------------------------ costs */
+  const costsRows: LayerRow[] = hasRun
+    ? [
+        {
+          key: 'basis',
+          label: 'Basis',
+          value: 'assumed effort coefficients, not observed costs',
+          anchor: null,
+        },
+        ...(typeof project?.cleanCoreScore === 'number'
+          ? [
+              {
+                key: 'score',
+                label: 'Clean Core score the estimate starts from',
+                value: String(project.cleanCoreScore),
+                anchor: null,
+              },
+            ]
+          : []),
+      ]
+    : [];
+
+  /* --------------------------------------------------------- evidence */
+  const evidenceRows: LayerRow[] = hasRun
+    ? [
+        { key: 'run', label: 'Signed run', value: shortId(runId) ?? runId, anchor: null },
+        ...(shortId(fingerprint?.sha256)
+          ? [
+              {
+                key: 'fingerprint',
+                label: 'Source fingerprint',
+                value: `${shortId(fingerprint?.sha256)}${
+                  fingerprint?.fileName ? ` · ${fingerprint.fileName}` : ''
+                }`,
+                anchor: null,
+              },
+            ]
+          : []),
+        ...(typeof project?.auditMetadata?.auditPackExportedAt === 'string'
+          ? [
+              {
+                key: 'pack',
+                label: 'Audit pack exported',
+                value: project.auditMetadata.auditPackExportedAt.slice(0, 10),
+                anchor: null,
+              },
+            ]
+          : []),
+        ...(project?.atcReport
+          ? [{ key: 'atc', label: 'ATC results', value: 'imported', anchor: null }]
+          : []),
+      ]
+    : [];
 
   return [
     {
       key: 'need',
       label: 'Need & process',
       hash: '#need',
-      count: usageCount > 0 ? plural(usageCount, 'object with usage') : null,
+      count: needRows.length > 0 ? plural(needRows.length, 'object with usage') : null,
       missing: 'The process reconstructed from the code, and the rules hidden in it, are not here yet.',
+      rows: needRows.slice(0, FIRST),
+      total: needRows.length,
+      provenance: needRows.length > 0 ? 'imported' : 'not-determined',
     },
     {
       key: 'standard',
@@ -458,27 +612,49 @@ export function workspaceLayers(project: Project | null): WorkspaceLayer[] {
       hash: '#standard',
       count: null,
       missing: 'No standard candidate carries an evidence level yet.',
+      rows: [],
+      total: 0,
+      provenance: 'not-determined',
     },
     {
       key: 'costs',
       label: 'Costs & assumptions',
       hash: '#costs',
-      count: hasRun ? 'model estimate' : null,
+      count: costsRows.length > 0 ? 'model estimate' : null,
       missing: 'Economics models costs from a signed run; there is none.',
+      rows: costsRows,
+      total: costsRows.length,
+      provenance: costsRows.length > 0 ? 'simulation' : 'not-determined',
     },
     {
       key: 'architecture',
       label: 'Architecture & dependencies',
       hash: '#architecture',
-      count: inventory > 0 ? plural(inventory, 'object') : null,
+      count:
+        architectureRows.length > 0
+          ? [
+              inventory.length > 0 ? plural(inventory.length, 'object') : null,
+              coupling.length > 0
+                ? `${coupling.length} ${coupling.length === 1 ? 'dependency' : 'dependencies'}`
+                : null,
+            ]
+              .filter(Boolean)
+              .join(' · ')
+          : null,
       missing: 'Nothing has been analysed, so there are no objects and no dependencies to show.',
+      rows: architectureRows.slice(0, FIRST),
+      total: architectureRows.length,
+      provenance: architectureRows.length > 0 ? 'reconstructed' : 'not-determined',
     },
     {
       key: 'evidence',
       label: 'Evidence & controls',
       hash: '#evidence',
-      count: hasRun ? '1 signed run' : null,
+      count: evidenceRows.length > 0 ? '1 signed run' : null,
       missing: 'No signed run — every figure in this product derives from one.',
+      rows: evidenceRows.slice(0, FIRST),
+      total: evidenceRows.length,
+      provenance: evidenceRows.length > 0 ? 'proven' : 'not-determined',
     },
     {
       key: 'changes',
@@ -486,6 +662,9 @@ export function workspaceLayers(project: Project | null): WorkspaceLayer[] {
       hash: '#changes',
       count: null,
       missing: 'Revisions and decisions are recorded from the process model onward.',
+      rows: [],
+      total: 0,
+      provenance: 'not-determined',
     },
   ];
 }

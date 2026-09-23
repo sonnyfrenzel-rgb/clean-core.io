@@ -7,6 +7,7 @@ import { getFirestore, type Firestore } from 'firebase-admin/firestore';
 import firebaseConfig from '../firebase-config.json';
 import { TERMS_VERSION } from '../lib/constants';
 import { buildAuditPackContents, signedGeneratorInput, attestationsOf, type AuditPackSource } from '../lib/audit-pack-build';
+import { adminSetCustomClaim } from './helpers/admin-seed';
 
 /**
  * `expect.arrayContaining([a, b, c])` matches when the array holds **all** of
@@ -334,5 +335,185 @@ test.describe('the audit-pack allowlist keeps a planted view off every generated
       attested,
     });
     expect(Object.values(files).join('\n')).toContain('Order intake, forged');
+  });
+});
+
+/* ------------------------------- D: the switch itself, in a browser ----- */
+
+/**
+ * The three sections above are about the surfaces a view could be *written*
+ * to. This one is about the act: **a view switch must not move a byte.**
+ *
+ * Sections A–C would all still pass on a product that saved the reader's view
+ * to their profile through a server route — the rules never see it, the run
+ * route never gets it, the pack never reads it. The roadmap line is stricter
+ * than that: *„Management, Business und IT sind Sichten — niemals gespeichert
+ * auf einem Artefakt, einem Run, einer Signatur oder einem Audit-Pack"*, and
+ * the honest reading of it is that changing a view is a free act that leaves
+ * no trace anywhere.
+ *
+ * So this one drives the shipped page — three views, IT's focus, two layers, a
+ * reload — and holds two independent measurements over it:
+ *
+ *   - **nothing left the browser that could write.** Every request the page
+ *     makes is classified; Firestore's write channel and any mutating call to
+ *     `/api/` are collected. A read on the way is expected and is itself the
+ *     proof that the interception works — a run in which the page made no
+ *     Firestore request at all would mean the detector was blind.
+ *   - **nothing on the server changed.** The project and the account are read
+ *     with the Admin SDK before and after and compared as serialised
+ *     documents, which catches a write the browser made by some path this test
+ *     did not think to classify.
+ *
+ * And because a comparison that cannot fail is not a comparison, the last step
+ * writes one allowed field and asserts that the same snapshot notices.
+ */
+test.describe('a view switch moves nothing (roadmap 6.1, §Phase 6 "Fertig, wenn")', () => {
+  const adminApp = getAdminApps()[0] ?? initAdminApp({ projectId: firebaseConfig.projectId });
+  const adminDb: Firestore = getFirestore(adminApp, firebaseConfig.firestoreDatabaseId);
+
+  const PASSWORD_UI = 'ViewSwitchGuard123!';
+  const EMAIL_UI = `view-guard-ui-${Date.now()}@cleancore-test.io`;
+  const PROJECT_UI = `p-view-guard-ui-${Date.now()}`;
+  let uidUi = '';
+
+  const firebaseApp = getApps().find((a) => a.name === '[DEFAULT]') ?? initializeApp(firebaseConfig);
+  const uiAuth = getAuth(firebaseApp);
+  try {
+    connectAuthEmulator(uiAuth, 'http://127.0.0.1:9099', { disableWarnings: true });
+  } catch {
+    /* already connected */
+  }
+
+  /** The two documents a stored view would have to land in, as bytes. */
+  const snapshot = async (): Promise<string> => {
+    const [project, user] = await Promise.all([
+      adminDb.doc(`projects/${PROJECT_UI}`).get(),
+      adminDb.doc(`users/${uidUi}`).get(),
+    ]);
+    return JSON.stringify({ project: project.data() ?? null, user: user.data() ?? null });
+  };
+
+  test.beforeAll(async () => {
+    test.setTimeout(180 * 1000);
+    const cred = await createUserWithEmailAndPassword(uiAuth, EMAIL_UI, PASSWORD_UI);
+    uidUi = cred.user.uid;
+    await adminSetCustomClaim(uidUi, { admin: true });
+    await adminDb.doc(`users/${uidUi}`).set({
+      firstName: 'View', lastName: 'Switch', email: EMAIL_UI,
+      tier: 'pilot', status: 'approved', isAdmin: true, workspaceShell: true,
+      termsVersionAccepted: TERMS_VERSION, mfaEnabled: false,
+      transformationsUsed: 1, transformationsLimit: 5, createdAt: new Date(),
+    });
+    await adminDb.doc(`projects/${PROJECT_UI}`).set({
+      name: 'View switch fixture', userId: uidUi,
+      createdAt: new Date(), status: 'created',
+      legacyCode: 'REPORT z_view_switch.\nWRITE 1.\n',
+    });
+  });
+
+  test('three views, a focus, two layers and a reload leave the project and the account untouched', async ({ page }) => {
+    test.setTimeout(300 * 1000);
+
+    const writes: string[] = [];
+    let firestoreRequests = 0;
+    await page.route('**/*', (route) => {
+      const request = route.request();
+      const url = request.url();
+      const method = request.method();
+      if (/127\.0\.0\.1:8080|firestore\.googleapis\.com/.test(url)) {
+        firestoreRequests++;
+        // The JS SDK sends reads and listens down `/Listen/channel` and writes
+        // down `/Write/channel`; the REST fallback commits to `:commit`.
+        if (/\/Write\/channel|:commit|:batchWrite/.test(url)) writes.push(`${method} ${url}`);
+      } else if (url.includes('/api/') && method !== 'GET' && method !== 'HEAD') {
+        // A route that stored the view server side would be the way around the
+        // rules, and it would show up here whatever it was called.
+        writes.push(`${method} ${url}`);
+      }
+      return route.continue();
+    });
+
+    await page.goto('/');
+    await page.click('a:has-text("Get Free Access"), button:has-text("Get Free Access")');
+    await page.waitForSelector('input[type="email"]');
+    await page.fill('input[type="email"]', EMAIL_UI);
+    await page.fill('input[type="password"]', PASSWORD_UI);
+    await page.click('button[type="submit"]:has-text("Sign In")');
+    await page.waitForTimeout(4000);
+
+    await page.goto(`/project/${PROJECT_UI}`, { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('[data-workspace-shell]')).toBeVisible({ timeout: 60000 });
+
+    // Everything before this line — signing in, loading the project — is
+    // allowed to write; the measurement starts here.
+    const before = await snapshot();
+    writes.length = 0;
+
+    const view = (name: string) =>
+      page.locator('[data-cc-segmented][aria-label="View"] button[role="radio"]', { hasText: name });
+
+    await view('IT').click();
+    await expect(page.locator('[data-workspace-shell]')).toHaveAttribute('data-workspace-shell', 'it', {
+      timeout: 30000,
+    });
+
+    const focus = page.locator('[data-workspace-it-focus] button[role="radio"]', { hasText: 'Enterprise' });
+    await expect(focus).toBeVisible({ timeout: 30000 });
+    await focus.click();
+    await expect(focus).toHaveAttribute('aria-checked', 'true', { timeout: 30000 });
+
+    await view('Management').click();
+    await expect(page.locator('[data-workspace-shell]')).toHaveAttribute(
+      'data-workspace-shell',
+      'management',
+      { timeout: 30000 },
+    );
+
+    // The layer is the third navigation and is held the same way — in the
+    // address (roadmap 6.2), which is the other half of "nowhere else".
+    await page.locator('[data-workspace-layer-more]').click();
+    const changes = page.locator('[data-workspace-layer-more-panel] [data-workspace-layer="changes"]');
+    await expect(changes).toBeVisible({ timeout: 15000 });
+    await changes.click();
+    await expect(page.locator('[data-workspace-layer-title]')).toHaveText('Changes & commitments', {
+      timeout: 15000,
+    });
+
+    await view('Business').click();
+    await expect(page.locator('[data-workspace-shell]')).toHaveAttribute(
+      'data-workspace-shell',
+      'business',
+      { timeout: 30000 },
+    );
+
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await expect(page.locator('[data-workspace-shell]')).toBeVisible({ timeout: 60000 });
+    // The reload is also the "gehalten in URL und Browser" check: the view and
+    // the layer come back because the address carried them, not because
+    // anything remembered them for the account.
+    await expect(page.locator('[data-workspace-layer-title]')).toHaveText('Changes & commitments', {
+      timeout: 60000,
+    });
+
+    expect(
+      writes,
+      `a view, focus or layer switch sent something that writes: ${JSON.stringify(writes)}`,
+    ).toEqual([]);
+    expect(
+      firestoreRequests,
+      'the page never reached Firestore at all — the detector above was measuring nothing',
+    ).toBeGreaterThan(0);
+    expect(await snapshot(), 'the project or the account changed across a view switch').toBe(before);
+  });
+
+  test('and the snapshot would have noticed — one allowed field, and it differs', async () => {
+    test.setTimeout(60 * 1000);
+    const before = await snapshot();
+    await adminDb.doc(`projects/${PROJECT_UI}`).update({ status: 'analyzed' });
+    expect(
+      await snapshot(),
+      'the comparison in the test above cannot fail, so it proved nothing',
+    ).not.toBe(before);
   });
 });
