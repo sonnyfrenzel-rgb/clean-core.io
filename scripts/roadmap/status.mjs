@@ -35,7 +35,14 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 export function readSteps(markdown) {
   const steps = [];
   let section = '(ohne Abschnitt)';
-  for (const line of markdown.split('\n')) {
+  // Split on either ending. `core.autocrlf=true` is the default on Windows, so a
+  // developer's checkout of ROADMAP.md is CRLF while the blob and every CI
+  // runner are LF. A bare newline split leaves a trailing carriage return on
+  // each line, and the row regex below then reads no step at all: the whole
+  // instrument reported "gesamt 0" on 23.09.2026 and looked like an empty
+  // roadmap rather than a broken parser. `.gitattributes` documents three
+  // earlier false alarms of exactly this shape in the workflow guards.
+  for (const line of markdown.split(/\r?\n/)) {
     const phase = /^### Phase (\d+) — (\S+)/.exec(line);
     if (phase) section = `Phase ${phase[1]} (${phase[2]})`;
     else {
