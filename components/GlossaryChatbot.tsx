@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
-import { MessageSquare, X, Send, Sparkles, AlertTriangle, ShieldCheck, HelpCircle } from 'lucide-react';
+import { useState, useRef, useEffect, useMemo } from 'react';
+import { MessageSquare, X, Send, PenLine, ShieldCheck } from 'lucide-react';
+import { usePathname } from 'next/navigation';
 import { callGemini } from '@/lib/gemini';
 import { GLOSSARY_ITEMS } from '@/lib/glossary';
 import { glossaryAnswerFor } from '@/lib/glossary-lookup';
@@ -9,6 +10,19 @@ import { buildKnowledgeBase } from '@/lib/chatbot-knowledge';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import clsx from 'clsx';
 import { renderMarkdownSafe } from '@/lib/sanitize-html';
+import { loadProjectAndHydrate } from '@/lib/project-loader';
+import { readSource, decisionLines, type DecisionLine } from '@/lib/first-look';
+import { buildWorkspaceSearchIndex, type SearchResult } from '@/lib/workspace-search';
+import {
+  answerCase,
+  citedAnchors,
+  preAnsweredDecisionAnswer,
+  PRE_ANSWERED_QUESTION,
+  UNANCHORED_PROPOSAL,
+  type CaseFact,
+} from '@/lib/case-answer';
+import { cleanModelText } from '@/lib/model-text';
+import { provenance, type ProvenanceValue } from '@/lib/provenance';
 
 interface Message {
   sender: 'user' | 'bot';
@@ -24,6 +38,63 @@ interface Message {
   source?: 'glossary';
   /** The SAP source the entry names, when it has one (ADR-034). */
   glossarySource?: string;
+  /**
+   * Roadmap 6.8 — inside a project every statement is bound to the code it
+   * rests on. These are the line anchors of the evidence the answer was built
+   * from; for a model proposal they are the anchors the proposal *itself*
+   * cited, not the ones it was offered, because the offer is not the claim.
+   * An in-project bot message with none of these is by construction one of the
+   * two "nothing to show" answers — never an assertion about the code.
+   */
+  anchors?: string[];
+  /** The evidence itself, listed under an answer that has to show its working. */
+  evidence?: readonly CaseFact[];
+  /** Which row of `lib/provenance.ts` this answer is. Absent outside a project. */
+  provenance?: ProvenanceValue;
+  /** True when no model was called for this message — the glossary and case paths. */
+  noModelCall?: boolean;
+}
+
+/**
+ * Everything the assistant is allowed to know inside one project — roadmap 6.8.
+ *
+ * The index is the one roadmap 6.6 already built (`lib/workspace-search.ts`),
+ * read off the same reading of the source the workspace itself renders, so a
+ * question and the ⌘K dialog cannot disagree about what is in this code.
+ */
+interface CaseContext {
+  projectId: string;
+  legacyCode: string;
+  index: SearchResult[];
+  decisions: DecisionLine[];
+  /** Why there is no evidence, when there is none — shown instead of silence. */
+  unreadable: string | null;
+}
+
+async function loadCaseContext(projectId: string): Promise<CaseContext> {
+  const empty = (unreadable: string | null): CaseContext => ({
+    projectId, legacyCode: '', index: [], decisions: [], unreadable,
+  });
+
+  try {
+    const project = await loadProjectAndHydrate(projectId);
+    if (!project) return empty('This project could not be read, so there is no evidence to answer from.');
+
+    const legacyCode = typeof project.legacyCode === 'string' ? project.legacyCode : '';
+    const reading = legacyCode.trim() ? readSource(legacyCode) : null;
+    return {
+      projectId,
+      legacyCode,
+      index: buildWorkspaceSearchIndex({ projectId, project, reading }),
+      decisions: reading ? decisionLines(reading.skeleton) : [],
+      unreadable: reading ? null : 'No source has been staged in this project, so there is nothing to read an answer out of.',
+    };
+  } catch {
+    // A failed read is not a reason to fall back to general SAP knowledge —
+    // that is exactly the boundary this step draws. An empty index makes every
+    // question end in "no evidence", which is the honest outcome.
+    return empty('The evidence of this project could not be loaded, so nothing can be answered from it.');
+  }
 }
 
 export default function GlossaryChatbot() {
@@ -40,6 +111,54 @@ export default function GlossaryChatbot() {
   const { profile } = useUserProfile();
   const chatEndRef = useRef<HTMLDivElement>(null);
 
+  /**
+   * Roadmap 6.8, owner decision of 15.09.2026: **no second chat**. The same
+   * assistant answers everywhere, and the only thing that changes is where it
+   * is allowed to get an answer from. Inside a project that is the project's
+   * own evidence and nothing else; outside it is the product knowledge base,
+   * exactly as before.
+   *
+   * Which of the two it is comes from the path rather than from a prop,
+   * because this component is mounted once in `app/(app)/layout.tsx` and there
+   * is no context to thread one through (the house rule: Firestore is the
+   * source of truth, not a provider tree).
+   */
+  const pathname = usePathname();
+  const projectId = useMemo(() => {
+    const match = /^\/project\/([^/]+)/.exec(pathname ?? '');
+    return match ? decodeURIComponent(match[1]) : null;
+  }, [pathname]);
+
+  const [caseContext, setCaseContext] = useState<CaseContext | null>(null);
+  const caseContextRef = useRef<Promise<CaseContext> | null>(null);
+  const caseProjectRef = useRef<string | null>(null);
+
+  /**
+   * The project's evidence, read once per project and then reused.
+   *
+   * Kept in a promise ref rather than only in state so that a question typed
+   * before the warm-up finishes waits for the same read instead of starting a
+   * second one — two readings of one source are two places for the line
+   * numbers to disagree, which is the defect `lib/process-facts.ts` names.
+   */
+  const ensureCase = (id: string): Promise<CaseContext> => {
+    if (caseProjectRef.current !== id || !caseContextRef.current) {
+      caseProjectRef.current = id;
+      caseContextRef.current = loadCaseContext(id).then((ctx) => {
+        setCaseContext(ctx);
+        return ctx;
+      });
+    }
+    return caseContextRef.current;
+  };
+
+  // Warm the evidence up when the panel opens inside a project, so the first
+  // question does not pay for the read. Nothing here answers anything.
+  useEffect(() => {
+    if (!isOpen || !projectId) return;
+    void ensureCase(projectId);
+  }, [isOpen, projectId]);
+
   // Auto-scroll to bottom of chat when new messages arrive
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -52,14 +171,94 @@ export default function GlossaryChatbot() {
     return () => window.removeEventListener('open-chatbot', handleOpen);
   }, []);
 
-  const suggestionChips = [
-    'Explain RAP vs CAP',
-    'How do I set up S/4 Live Tenant?',
-    'Walk me through the platform',
-    'What is Clean Core?',
-    'How does TCO analysis work?',
-    'What is BYOK?'
-  ];
+  /**
+   * Roadmap 2.7 — the question answered in advance, out of the branches of the
+   * code and without a model call. Offered as the first chip inside a project,
+   * and only when the code actually branches somewhere: a chip that leads to
+   * "this program branches in 0 places" teaches nothing.
+   */
+  const hasPreAnswer = Boolean(projectId && preAnsweredDecisionAnswer(caseContext?.decisions ?? []));
+
+  const suggestionChips = projectId
+    ? [
+        ...(hasPreAnswer ? [PRE_ANSWERED_QUESTION] : []),
+        'What is Clean Core?',
+      ]
+    : [
+        'Explain RAP vs CAP',
+        'How do I set up S/4 Live Tenant?',
+        'Walk me through the platform',
+        'What is Clean Core?',
+        'How does TCO analysis work?',
+        'What is BYOK?'
+      ];
+
+  const now = () => new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const say = (message: Omit<Message, 'sender' | 'timestamp'>) =>
+    setMessages((prev) => [...prev, { sender: 'bot', timestamp: now(), ...message }]);
+
+  /**
+   * The in-project half — roadmap 6.8. Everything it can say comes out of
+   * `lib/case-answer.ts`, and there are exactly three outcomes:
+   *
+   *   - **no evidence** — no model call at all, and the reader is told that
+   *     nothing in this project matched. This is the outcome the step is
+   *     really about: the assistant does not fall back on general SAP
+   *     knowledge to have *something* to say.
+   *   - **answered from the evidence** — the pre-answered decision question of
+   *     roadmap 2.7. Also no model call; marked *Reconstructed*, because that
+   *     is what a statement read off the code is (`DESIGN.md` §4).
+   *   - **a model proposal, grounded** — the model sees the anchored evidence
+   *     and nothing else, and the reply is only shown if it cites at least one
+   *     of those anchors. Marked *Model proposal*.
+   */
+  const answerInProject = async (id: string, text: string): Promise<void> => {
+    const context = await ensureCase(id);
+    const decision = answerCase(
+      context.index,
+      { projectId: id, legacyCode: context.legacyCode },
+      text,
+      context.decisions,
+    );
+
+    if (decision.mode === 'no-evidence') {
+      say({
+        text: context.unreadable ?? decision.text,
+        anchors: [],
+        provenance: 'not-determined',
+        noModelCall: true,
+      });
+      return;
+    }
+
+    if (decision.mode === 'deterministic') {
+      say({
+        text: decision.text,
+        anchors: [...decision.anchors],
+        provenance: 'reconstructed',
+        noModelCall: true,
+      });
+      return;
+    }
+
+    const raw = await callGemini(decision.prompt, 'gemini-3-flash-preview', false);
+    // §3.1 — what the model wrote appears like every other text here. The chip
+    // says where it came from; the prose must not.
+    const { text: cleaned } = cleanModelText(raw ?? '', 'screen');
+    const cited = citedAnchors(cleaned, decision.anchors);
+
+    if (!cleaned.trim() || cited.length === 0) {
+      say({
+        text: UNANCHORED_PROPOSAL,
+        anchors: [],
+        evidence: decision.facts,
+        provenance: 'not-determined',
+      });
+      return;
+    }
+
+    say({ text: cleaned, anchors: cited, evidence: decision.facts, provenance: 'proposed' });
+  };
 
   const handleSend = async (text: string) => {
     if (!text.trim() || loading) return;
@@ -92,6 +291,25 @@ export default function GlossaryChatbot() {
     }
 
     setLoading(true);
+
+    // Roadmap 6.8 — inside a project the knowledge base below is not consulted
+    // at all. This branch returns in every case, including its own failures:
+    // falling through to the product assistant would be the boundary breaking
+    // in exactly the place nobody would notice it.
+    if (projectId) {
+      try {
+        await answerInProject(projectId, text);
+      } catch (error) {
+        console.error('Ask this case error:', error);
+        say({
+          text: 'The evidence of this project could not be read just now, so there is no grounded answer. Reload the project page and ask again.',
+          provenance: 'not-determined',
+        });
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
 
     try {
       // Build comprehensive system prompt with full platform knowledge base
@@ -188,11 +406,15 @@ CRITICAL GUARDRAILS AND SAFETY RULES:
             : "bg-emerald-600 hover:bg-emerald-500 text-white border-emerald-500/30",
           (!isOpen && profile?.desktopChatbotEnabled === false) && "md:hidden"
         )}
-        title="Open Modernization AI Chatbot"
+        title={isOpen ? 'Close the assistant' : 'Ask this case'}
+        data-chatbot-toggle=""
       >
         {isOpen ? <X size={20} /> : <MessageSquare size={20} className="group-hover:rotate-6 transition-transform" />}
+        {/* `DESIGN.md` §3.1, in so many words: „Ask AI" heißt „Ask this case".
+            The old label was also the reason `findAiSymbolism` fires on the
+            exact string "Ask AI about this case" in `lib/model-text.ts`. */}
         <span className="text-xs font-black uppercase tracking-wider hidden sm:inline-block pr-1">
-          {isOpen ? 'Close AI' : 'Ask AI'}
+          {isOpen ? 'Close' : 'Ask this case'}
         </span>
       </button>
 
@@ -204,11 +426,18 @@ CRITICAL GUARDRAILS AND SAFETY RULES:
           <div className="bg-slate-900 text-white px-5 py-4 flex items-center justify-between shrink-0">
             <div className="flex items-center gap-2.5">
               <div className="bg-emerald-500/10 p-1.5 rounded-lg border border-emerald-500/20 text-emerald-400">
-                <Sparkles size={16} className="animate-pulse" />
+                {/* No sparkles: `DESIGN.md` §3.1 forbids them as the icon for
+                    model work. A pen is what `lib/provenance.ts` gives the
+                    value *Model proposal*, so the panel and its chips agree. */}
+                <PenLine size={16} />
               </div>
               <div>
-                <h4 className="text-xs font-extrabold text-white leading-none">SAP Modernization AI</h4>
-                <span className="text-[8px] font-bold text-emerald-400 uppercase tracking-widest block mt-0.5">Architect Assistant</span>
+                <h4 className="text-xs font-extrabold text-white leading-none" data-chatbot-title="">
+                  {projectId ? 'Ask this case' : 'SAP Modernization Assistant'}
+                </h4>
+                <span className="text-[8px] font-bold text-emerald-400 uppercase tracking-widest block mt-0.5">
+                  {projectId ? 'Evidence of this project only' : 'Product and SAP help'}
+                </span>
               </div>
             </div>
             <div className="flex items-center gap-1.5">
@@ -221,7 +450,15 @@ CRITICAL GUARDRAILS AND SAFETY RULES:
           <div className="flex-grow p-4 overflow-y-auto space-y-4 bg-slate-50/30">
             <div className="bg-slate-100/60 p-3 rounded-2xl border border-slate-200/50 flex gap-2 text-[10px] text-slate-600 leading-normal">
               <ShieldCheck size={14} className="text-slate-500 shrink-0 mt-0.5" />
-              <p className="font-semibold">Context-restricted assistant. Focused exclusively on SAP S/4HANA Clean Core architectures.</p>
+              {/* Roadmap 6.8 — the reader is told which of the two boundaries
+                  is in force before they type, not after an answer disappoints
+                  them. Inside a project the assistant has no other source than
+                  this project's evidence, and says so. */}
+              <p className="font-semibold" data-chatbot-scope="">
+                {projectId
+                  ? 'Inside a project this assistant answers only from the evidence of this project, and names the line each statement rests on. It has no other source.'
+                  : 'Context-restricted assistant. Focused exclusively on SAP S/4HANA Clean Core architectures.'}
+              </p>
             </div>
 
             {messages.map((msg, idx) => {
@@ -250,6 +487,40 @@ CRITICAL GUARDRAILS AND SAFETY RULES:
                       />
                     ) : msg.text}
                   </div>
+                  {/* Roadmap 6.8 — inside a project every answer carries the
+                      anchors it rests on and the row of `lib/provenance.ts` it
+                      is. An answer with no anchors is one of the two "nothing
+                      to show" answers, and it is marked *Not determined*
+                      rather than left to look like a statement. */}
+                  {msg.provenance ? (
+                    <div className="px-1 space-y-1" data-chatbot-case-answer="">
+                      <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                        {msg.noModelCall ? (
+                          <>
+                            <span data-chatbot-no-model-call="">No model call</span>
+                            {' · '}
+                          </>
+                        ) : null}
+                        <span data-chatbot-provenance="">{provenance(msg.provenance).label}</span>
+                        {msg.anchors && msg.anchors.length > 0 ? (
+                          <>
+                            {' · '}
+                            <span data-chatbot-anchors="">{msg.anchors.join(' · ')}</span>
+                          </>
+                        ) : null}
+                      </p>
+                      {msg.evidence && msg.evidence.length > 0 ? (
+                        <ul className="text-[11px] font-semibold text-slate-600 space-y-0.5" data-chatbot-evidence="">
+                          {msg.evidence.map((fact) => (
+                            <li key={fact.id}>
+                              <span className="font-mono">{fact.anchor}</span>
+                              {` — ${fact.title}`}
+                            </li>
+                          ))}
+                        </ul>
+                      ) : null}
+                    </div>
+                  ) : null}
                   {msg.source === 'glossary' ? (
                     // Roadmap 6.6: an answer that came from the glossary says so,
                     // in the same words `run.noModelCall` uses on the signed-run

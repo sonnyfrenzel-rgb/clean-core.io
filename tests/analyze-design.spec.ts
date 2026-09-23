@@ -37,13 +37,18 @@ test.describe('Stage 1 & 2: Analysis & Solution Design E2E Tests', () => {
     await page.goto('/knowledge');
     await page.waitForLoadState('domcontentloaded');
 
-    const chatbotTrigger = page.locator('button:has-text("Ask AI")').first();
+    // Located by its data attribute rather than its label since roadmap 6.8:
+    // the label is "Ask this case" now (`DESIGN.md` §3.1 — „Ask AI" heißt „Ask
+    // this case"), and it says something different inside a project, so a
+    // text locator would have to be kept in step with a wording decision.
+    const chatbotTrigger = page.locator('[data-chatbot-toggle]').first();
     await expect(chatbotTrigger).toBeVisible();
+    await expect(chatbotTrigger).toContainText('Ask this case');
 
     // The test is named for the toggle, so it has to toggle.
     await chatbotTrigger.click();
-    await expect(page.locator('button:has-text("Close AI")').first()).toBeVisible();
-    await page.locator('button:has-text("Close AI")').first().click();
-    await expect(chatbotTrigger).toBeVisible();
+    await expect(chatbotTrigger).toContainText('Close');
+    await chatbotTrigger.click();
+    await expect(chatbotTrigger).toContainText('Ask this case');
   });
 });

@@ -1,5 +1,15 @@
 /**
  * Centralized Knowledge Base for the Clean-Core.io AI Chatbot
+ *
+ * **Outside a project only — roadmap 6.8, owner decision of 15.09.2026.**
+ * There is one assistant (`components/GlossaryChatbot.tsx`) and it has two
+ * sources, never both at once: out here, everything below; inside a project,
+ * nothing but that project's own anchored evidence (`lib/case-answer.ts`).
+ * Handing this file to a question asked about somebody's ABAP is precisely the
+ * failure that step exists to prevent — a confident SAP generality standing
+ * where a line number should be. The component's in-project branch therefore
+ * returns before `buildKnowledgeBase()` is ever reached, including on its own
+ * error paths, and `tests/ask-this-case.spec.ts` holds that order.
  * 
  * This module consolidates ALL platform content into structured knowledge
  * that is injected into the chatbot's system prompt. This ensures the AI

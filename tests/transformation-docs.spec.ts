@@ -25,6 +25,8 @@ test.describe('Stage 3 & 4: Code Transformation & Process Blueprinting E2E Tests
     // dead code that this test claimed to cover. Making the assertion strict is
     // what surfaced it; it is recorded in the plan rather than papered over by
     // asserting something that is not on the page.
-    await expect(page.locator('button:has-text("Ask AI")').first()).toBeVisible();
+    // `[data-chatbot-toggle]` since roadmap 6.8 — the label moved to
+    // "Ask this case" (`DESIGN.md` §3.1) and the element did not.
+    await expect(page.locator('[data-chatbot-toggle]').first()).toBeVisible();
   });
 });

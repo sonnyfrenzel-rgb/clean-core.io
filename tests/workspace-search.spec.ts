@@ -310,20 +310,31 @@ test.describe('no model call — proven from the source, not just claimed in a c
     expect(typeof result?.answer).toBe('string');
   });
 
-  test('the chatbot checks the glossary before it can reach `callGemini`', () => {
+  test('the chatbot checks the glossary before anything else in `handleSend`', () => {
     // Source-level, like `tests/signavio-claims-guard.spec.ts`'s own checks:
-    // the call to the glossary lookup has to appear, in the function body,
-    // before the only `callGemini(` call in the file.
+    // inside `handleSend`, the glossary lookup has to come before both of the
+    // branches that can spend a model call, and has to return rather than
+    // fall through into either.
+    //
+    // Measured against the two branches rather than against the first
+    // `callGemini(` in the file: since roadmap 6.8 the component also has an
+    // in-project helper, declared above `handleSend`, which calls the model on
+    // grounded evidence. Where that helper is *declared* says nothing about
+    // the order things run in, and the old file-order comparison would fail on
+    // a component that is still correct.
     const src = read('components/GlossaryChatbot.tsx');
-    const glossaryCheckAt = src.indexOf('glossaryAnswerFor(');
-    const modelCallAt = src.indexOf('callGemini(');
+    const glossaryCheckAt = src.indexOf('glossaryAnswerFor(text)');
+    // Matched as a pattern rather than a literal, so the guard does not depend
+    // on whether this working copy was checked out with CRLF or LF.
+    const projectBranchAt = src.search(/if \(projectId\) \{\s+try \{/);
+    const knowledgeAt = src.indexOf('buildKnowledgeBase()');
     expect(glossaryCheckAt, 'GlossaryChatbot no longer checks the glossary at all').toBeGreaterThan(-1);
-    expect(modelCallAt, 'GlossaryChatbot no longer calls the model at all — check this test, not the component').toBeGreaterThan(-1);
-    expect(glossaryCheckAt).toBeLessThan(modelCallAt);
-    // And the glossary branch returns — it does not fall through into the try
-    // block that calls the model.
-    const betweenCheckAndCall = src.slice(glossaryCheckAt, modelCallAt);
-    expect(betweenCheckAndCall).toMatch(/return;/);
+    expect(projectBranchAt, 'the in-project branch is gone — check this test, not the component').toBeGreaterThan(-1);
+    expect(knowledgeAt, 'GlossaryChatbot no longer calls the model at all — check this test, not the component').toBeGreaterThan(-1);
+    expect(glossaryCheckAt).toBeLessThan(projectBranchAt);
+    expect(glossaryCheckAt).toBeLessThan(knowledgeAt);
+    // And the glossary branch returns — it does not fall through into either.
+    expect(src.slice(glossaryCheckAt, projectBranchAt)).toMatch(/return;/);
   });
 });
 
