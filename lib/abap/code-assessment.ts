@@ -284,6 +284,11 @@ export function extractDataCoupling(code: string): DataCouplingEntry[] {
       tableName,
       accessType,
       isCustom,
+      // The third answer, carried instead of left to be re-derived. A reader
+      // that only has `isCustom` has no way to tell a standard table from a
+      // reserved-namespace one, and `recommendArchitecture` read the
+      // difference away (QA full review, 45a8a7cf4a0c).
+      isStandard,
       riskLevel,
       recommendation,
       occurrences: stats.reads + stats.writes + stats.references,
@@ -479,9 +484,25 @@ export function recommendArchitecture(
   // dynamic name is not a table this program is known to touch (R26): neither
   // may decide the architecture.
   const known = dataCoupling.filter((d) => !d.possibleTargetOf?.length);
-  const customTableWrites = known.filter((d) => d.isCustom && (d.accessType === 'Write' || d.accessType === 'Read/Write')).length;
-  const standardTableReads = known.filter((d) => !d.isCustom && d.accessType === 'Read').length;
-  const standardTableWrites = known.filter((d) => !d.isCustom && (d.accessType === 'Write' || d.accessType === 'Read/Write')).length;
+  //
+  // Ownership has three answers (`extractDataCoupling` :219-231), and this read
+  // `!d.isCustom` as "standard" — so `/ACME/T_ORDER`, a name that may belong to
+  // SAP, to a partner or to the customer, counted as an SAP standard table.
+  // `UPDATE /ACME/T_ORDER` therefore produced no custom-table write, skipped the
+  // CAP branch, and came back as RAP "based on standard table access patterns"
+  // (QA full review, 45a8a7cf4a0c). Only what is explicitly standard counts as
+  // standard now; an entry stored before 2.16 has no `isStandard` and keeps the
+  // old reading, which is the only answer its data supports.
+  const isWrite = (d: DataCouplingEntry) => d.accessType === 'Write' || d.accessType === 'Read/Write';
+  const isStandardTable = (d: DataCouplingEntry) => d.isStandard ?? !d.isCustom;
+  const customTableWrites = known.filter((d) => d.isCustom && isWrite(d)).length;
+  const standardTableReads = known.filter((d) => isStandardTable(d) && d.accessType === 'Read').length;
+  const standardTableWrites = known.filter((d) => isStandardTable(d) && isWrite(d)).length;
+  // Neither custom nor standard: a write into an object whose owner the name
+  // does not name. It may not decide an architecture, but it may not be
+  // proposed for deletion either — the retirement branch below asks what the
+  // code writes, and "nothing standard, nothing custom" is not "nothing".
+  const unownedTableWrites = known.filter((d) => !d.isCustom && !isStandardTable(d) && isWrite(d)).length;
   // Both signals are about what the program *does*, so both are read from calls
   // and statements and not from a word that happens to occur.
   //
@@ -543,6 +564,8 @@ export function recommendArchitecture(
     loc < 30 &&
     codeInventory.length > 0 &&
     standardTableWrites === 0 &&
+    // …and a reserved-namespace write is a write too (45a8a7cf4a0c).
+    unownedTableWrites === 0 &&
     codeInventory.every((i) => i.criticality === 'Low')
   ) {
     return {
@@ -560,13 +583,20 @@ export function recommendArchitecture(
     };
   }
 
-  // Default: follow existing route
+  // Default: follow existing route. Where the only write goes to a
+  // reserved-namespace object, the default is still the route — but it may not
+  // be explained by "standard table access patterns", because nobody has
+  // established that the target is standard (45a8a7cf4a0c).
   return {
     architecture: existingRouteIsBTP ? 'cap' : 'rap',
     confidence: 60,
     justification: existingRouteIsBTP
       ? 'General analysis suggests Side-by-Side extensibility based on the project\'s deployment target.'
-      : 'General analysis suggests On-Stack RAP extensibility based on standard table access patterns.',
+      : unownedTableWrites > 0
+        ? `${unownedTableWrites} write(s) to a reserved-namespace object (/…/), whose owner the name alone does not `
+          + 'establish — SAP, partner or customer. The route needs that ownership confirmed before it can be called '
+          + 'On-Stack or Side-by-Side.'
+        : 'General analysis suggests On-Stack RAP extensibility based on standard table access patterns.',
   };
 }
 

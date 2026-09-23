@@ -533,3 +533,143 @@ test('the literal scanner says where an embedded expression is, and nothing else
   expect(read('a = |UP{ x }|.')).toBe('cccc...eeee..c');
   expect(read("WRITE 'a'.")).toBe('cccccc...c');
 });
+
+/* ------------------------------- subqueries, UNION — the SELECT inside a SELECT */
+
+/**
+ * A statement holds more than one query, and only the first one was read.
+ *
+ * `readSelect` ends its FROM area at `WHERE` and at `UNION`, and `readStatement`
+ * called it exactly once for a statement beginning with SELECT — the second
+ * call existed only for `WITH` and `OPEN CURSOR`. So the table of a WHERE
+ * subquery and the table behind a UNION were absent from the dependency list,
+ * from the data coupling and from every finding drawn on either: an under-report
+ * in the signed evidence, which is the one direction this engine may not take
+ * (QA full review, 67ac19222d96; `open-sql-discrimination.ts` :15-17).
+ */
+test.describe('every SELECT in a statement is read, not only the first (67ac19222d96)', () => {
+  const EXISTS = 'SELECT matnr FROM mara INTO TABLE @DATA(lt_m)\n'
+    + "  WHERE EXISTS ( SELECT kunnr FROM kna1 WHERE kna1~land1 = 'DE' ).";
+  const IN_LIST = 'SELECT * FROM vbak INTO TABLE @DATA(lt_o)\n'
+    + "  WHERE kunnr IN ( SELECT kunnr FROM kna1 WHERE land1 = 'DE' ).";
+  const COMPARISON = 'SELECT * FROM vbap INTO TABLE @DATA(lt_i)\n'
+    + '  WHERE netwr > ( SELECT MAX( netwr ) FROM vbrp ).';
+  const UNION = 'SELECT vbeln FROM vbak\n  UNION\n  SELECT vbeln FROM vbrk\n  INTO TABLE @DATA(lt_all).';
+  const UNION_ALL = 'SELECT vbeln FROM vbak\n  UNION ALL\n  SELECT vbeln FROM lips\n  INTO TABLE @DATA(lt_all).';
+  const DML_SUBQUERY = "DELETE FROM zlog WHERE kunnr IN ( SELECT kunnr FROM kna1 WHERE land1 = 'DE' ).";
+
+  for (const [name, code, expected] of [
+    ['EXISTS subquery', EXISTS, ['MARA', 'KNA1']],
+    ['IN subquery', IN_LIST, ['VBAK', 'KNA1']],
+    ['comparison subquery', COMPARISON, ['VBAP', 'VBRP']],
+    ['UNION', UNION, ['VBAK', 'VBRK']],
+    ['UNION ALL', UNION_ALL, ['VBAK', 'LIPS']],
+    ['a subquery in a DELETE', DML_SUBQUERY, ['KNA1']],
+  ] as Array<[string, string, string[]]>) {
+    test(`${name}: both tables are dependencies`, () => {
+      const read = readTableDependencies(code).dependencies;
+      for (const table of expected) {
+        expect(read.map((d) => d.table), `${table} is read by this statement`).toContain(table);
+      }
+      // The data coupling is the surface the signed run and the panel read.
+      for (const table of expected) expect(tables(code)).toContain(table);
+    });
+  }
+
+  test('the subquery table is a read, at the statement the reader sees', () => {
+    const kna1 = readTableDependencies(EXISTS).dependencies.find((d) => d.table === 'KNA1');
+    expect(kna1).toBeTruthy();
+    expect(kna1!.access).toBe('read');
+    expect(kna1!.route).toBe('open-sql');
+    expect(kna1!.line, 'R27: the line the statement starts on').toBe(1);
+  });
+
+  test('the write of a DELETE with a subquery is still the write', () => {
+    const zlog = entry(DML_SUBQUERY, 'ZLOG');
+    expect(zlog!.accessType).toBe('Write');
+  });
+
+  test('FOR ALL ENTRIES reads its table and invents no second one', () => {
+    const code = 'SELECT matnr, werks FROM marc FOR ALL ENTRIES IN @lt_keys\n'
+      + '  WHERE matnr = @lt_keys-matnr INTO TABLE @DATA(lt_marc).';
+    expect(tables(code)).toEqual(['MARC']);
+  });
+
+  test('a FOR ALL ENTRIES select with a subquery reports both', () => {
+    const code = 'SELECT matnr FROM marc FOR ALL ENTRIES IN @lt_keys\n'
+      + '  WHERE matnr = @lt_keys-matnr AND EXISTS ( SELECT matnr FROM mara WHERE mtart = @lv_t )\n'
+      + '  INTO TABLE @DATA(lt_marc).';
+    expect(tables(code).sort()).toEqual(['MARA', 'MARC']);
+  });
+
+  // The cut runs over code, and it has to know one hyphenated keyword: a word
+  // boundary sits inside `SELECT-OPTIONS`, so the naive scan would have opened a
+  // query there.
+  test('SELECT-OPTIONS opens no query', () => {
+    const code = 'SELECT-OPTIONS s_matnr FOR mara-matnr.';
+    const read = readTableDependencies(code).dependencies;
+    expect(read.map((d) => `${d.table}:${d.access}`)).toEqual(['MARA:reference']);
+  });
+
+  test('a SELECT written inside a literal still opens nothing', () => {
+    expect(readTableDependencies("WRITE 'SELECT * FROM kna1'.").dependencies).toEqual([]);
+  });
+});
+
+/* ----------------------- ownership has three answers, and the route reads them */
+
+/**
+ * `isStandard = !isCustom && !isNamespaced` was computed and then thrown away:
+ * `DataCouplingEntry` carried only `isCustom`, so `recommendArchitecture` read
+ * `!d.isCustom` as "standard". `UPDATE /ACME/T_ORDER` therefore produced no
+ * custom-table write, no standard-table write either — and fell through to a
+ * RAP recommendation explained by "standard table access patterns", for a table
+ * nobody has shown to be SAP's (QA full review, 45a8a7cf4a0c).
+ */
+test.describe('a reserved-namespace table is neither custom nor standard (45a8a7cf4a0c)', () => {
+  const NAMESPACED_WRITE = "UPDATE /acme/t_order SET status = 'X' WHERE id = lv_id.";
+
+  test('the entry carries the third answer instead of leaving it to be re-derived', () => {
+    const e = entry(NAMESPACED_WRITE, '/ACME/T_ORDER');
+    expect(e, 'the write is reported').toBeTruthy();
+    expect(e!.isCustom).toBe(false);
+    expect(e!.isStandard, 'a /…/ name may be SAP\'s, a partner\'s or the customer\'s').toBe(false);
+  });
+
+  test('a standard table and a Z table still answer as they did', () => {
+    expect(entry('UPDATE vbak SET erdat = sy-datum WHERE vbeln = lv_v.', 'VBAK')!.isStandard).toBe(true);
+    expect(entry('UPDATE ztab SET a = 1 WHERE b = 2.', 'ZTAB')!.isStandard).toBe(false);
+    expect(entry('UPDATE ztab SET a = 1 WHERE b = 2.', 'ZTAB')!.isCustom).toBe(true);
+  });
+
+  test('the route does not explain itself by standard table access', () => {
+    const r = recommendArchitecture(
+      NAMESPACED_WRITE,
+      extractCodeInventory(NAMESPACED_WRITE),
+      extractDataCoupling(NAMESPACED_WRITE),
+    );
+    expect(r.justification, 'nobody established that /ACME/T_ORDER is SAP standard')
+      .not.toContain('standard table access patterns');
+    expect(r.justification).toMatch(/reserved-namespace/i);
+  });
+
+  test('a write to a reserved-namespace table is never proposed for retirement', () => {
+    const code = [
+      'FORM close_order.',
+      "  UPDATE /acme/t_order SET status = 'X' WHERE id = lv_id.",
+      'ENDFORM.',
+    ].join('\n');
+    expect(extractCodeInventory(code).map((i) => i.criticality), 'the premise: small and Low').toEqual(['Low']);
+    expect(
+      recommendArchitecture(code, extractCodeInventory(code), extractDataCoupling(code)).architecture,
+      'a write proposed for deletion because its owner could not be read off the name',
+    ).not.toBe('retire');
+  });
+
+  test('the standard-table reads that do decide RAP still decide it', () => {
+    const code = 'SELECT * FROM vbak INTO TABLE @DATA(lt) WHERE vbeln = lv_v.';
+    const r = recommendArchitecture(code, extractCodeInventory(code), extractDataCoupling(code));
+    expect(r.architecture).toBe('rap');
+    expect(r.justification).toContain('standard table read');
+  });
+});

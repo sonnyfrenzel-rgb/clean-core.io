@@ -36,10 +36,13 @@
  *     as ADR-033 states it; for a Public Edition project it also catches B,
  *     which is the behaviour the design doc's own example requires.
  *   - **A modification or an own write to an SAP table is Rebuild even where a
- *     catalog successor exists**, because the roadmap brief states the
- *     precedence explicitly ("eine Modifikation ist Rebuild, niemals Blocked")
- *     and because Blocked exists to separate SAP's unfinished roadmap from the
- *     project's own unfinished work — a modification is always the latter.
+ *     catalog successor exists, and even where the level would qualify for
+ *     Keep**, because the roadmap brief states the precedence explicitly ("eine
+ *     Modifikation ist Rebuild, niemals Blocked") and because Blocked exists to
+ *     separate SAP's unfinished roadmap from the project's own unfinished work
+ *     — a modification is always the latter. The checked order is therefore
+ *     Retire · own work · Keep · Blocked/Rebuild: the level says what SAP
+ *     permits, not what the project has already done to the object.
  *
  * No imports beyond one constant from `usage-model.ts` (also import-free), for
  * the same reason `abcd-classification.ts` and `process-states.ts` give: the
@@ -321,22 +324,17 @@ export function assignPublicCloudFit(
     };
   }
 
-  // Rule 4 — Keep.
-  if (isKeepEligible(input.level, platform)) {
-    return {
-      objectName,
-      bucket: 'keep',
-      rule: 'keep-platform-level',
-      evidence: `Level ${input.level}, permitted for ${TARGET_PLATFORM_LABELS[platform]}.`,
-      reason: null,
-      usageNote,
-    };
-  }
-
-  // Below the platform's bar. A modification or a direct write to an SAP table
-  // is Rebuild whatever the catalog says — checked before the catalog path so
-  // it can never be shadowed by a coincidentally-available successor (roadmap
-  // 6.7: "eine Modifikation ist Rebuild, niemals Blocked").
+  // Rule 3, own work — checked before Keep *and* before the catalog path.
+  //
+  // The rule table above says a modification and an own write access to an SAP
+  // table are Rebuild, full stop: "das ist die Arbeit des Projekts, nie die von
+  // SAP". This stood after `isKeepEligible`, so a level-A object the project had
+  // modified came back as Keep — "nothing to do" for code that carries a
+  // modification, the one sentence this module may never say (QA full review,
+  // f9695d22d124). Being permitted for the platform says what SAP allows; it
+  // says nothing about what the project has since done to the object. Retire
+  // stays rule 1 above: a confirmed Drop or a measured zero settles the object
+  // whether or not it was modified on the way out.
   if (input.hasModification) {
     return {
       objectName,
@@ -359,6 +357,20 @@ export function assignPublicCloudFit(
     };
   }
 
+  // Rule 4 — Keep.
+  if (isKeepEligible(input.level, platform)) {
+    return {
+      objectName,
+      bucket: 'keep',
+      rule: 'keep-platform-level',
+      evidence: `Level ${input.level}, permitted for ${TARGET_PLATFORM_LABELS[platform]}.`,
+      reason: null,
+      usageNote,
+    };
+  }
+
+  // Below the platform's bar, and with no own work of its own to explain it.
+  //
   // Blocked by SAP exists to separate SAP's unfinished roadmap from the
   // project's own unfinished work (roadmap 6.7), so it is concluded only for a
   // real catalog object — never for the project's own code or a heuristic

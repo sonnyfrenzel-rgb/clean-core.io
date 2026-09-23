@@ -387,3 +387,72 @@ test.describe('resolvePublicCloudFit — wiring findings, usage and the catalog 
     expect(assignments.map((a) => a.objectName)).toEqual(['ZA', 'ZB']);
   });
 });
+
+/**
+ * Keep said "nothing to do" over a modification (f9695d22d124).
+ *
+ * The rule table in the head of `public-cloud-fit.ts` states it twice: every
+ * modification and every own write access to an SAP table is Rebuild, "das ist
+ * die Arbeit des Projekts, nie die von SAP". Both checks stood *after*
+ * `isKeepEligible`, which returns on the first match — so a level-A object the
+ * project had modified came back as Keep. The existing coverage was `D` plus a
+ * modification (a level that never keeps), so the combination that mattered was
+ * never asked.
+ *
+ * Retire stays rule 1: a confirmed Drop settles the object whether or not it
+ * was modified on the way out.
+ */
+test.describe('own work beats Keep, not only Blocked (f9695d22d124)', () => {
+  for (const [level, platform] of [
+    ['A', 'public'],
+    ['A', 'private'],
+    ['B', 'private'],
+  ] as Array<['A' | 'B', 'public' | 'private']>) {
+    test(`level ${level} on the ${platform} edition WITH a modification is Rebuild, not Keep`, () => {
+      const a = assignPublicCloudFit(
+        baseInput({ level, levelProvenance: 'catalog', catalog: { hasPath: true }, hasModification: true }),
+        platform,
+      );
+      expect(a.bucket, 'a modified object reported as "Keep — nothing to do"').toBe('rebuild');
+      expect(a.rule).toBe('rebuild-own-work');
+      expect(a.evidence).toMatch(/modification/i);
+    });
+
+    test(`level ${level} on the ${platform} edition WITH an own write access is Rebuild, not Keep`, () => {
+      const a = assignPublicCloudFit(
+        baseInput({ level, levelProvenance: 'catalog', catalog: { hasPath: true }, hasOwnWriteAccess: true }),
+        platform,
+      );
+      expect(a.bucket).toBe('rebuild');
+      expect(a.rule).toBe('rebuild-own-work');
+      expect(a.evidence).toMatch(/writes directly/i);
+    });
+  }
+
+  test('Keep is not deleted: the same object without own work still keeps', () => {
+    const a = assignPublicCloudFit(
+      baseInput({ level: 'A', levelProvenance: 'catalog', catalog: { hasPath: true } }),
+      'public',
+    );
+    expect(a.bucket).toBe('keep');
+    expect(a.rule).toBe('keep-platform-level');
+  });
+
+  test('Retire still wins over own work — rule 1 is first', () => {
+    const a = assignPublicCloudFit(
+      baseInput({
+        level: 'A',
+        hasModification: true,
+        dropDecision: {
+          subject: 'Order check',
+          revision: 3,
+          accountName: 'Sonny',
+          confirmedAt: '2026-09-01T00:00:00.000Z',
+        },
+      }),
+      'private',
+    );
+    expect(a.bucket).toBe('retire');
+    expect(a.rule).toBe('retire-drop');
+  });
+});

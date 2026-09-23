@@ -746,13 +746,31 @@ function readAdbc(text: string, code: string, at: Anchor, sink: Sink, ctx: Conte
 }
 
 /**
- * Each SELECT that stands inside a statement not opened by one — the queries of
- * a `WITH` common table expression, the query of an `OPEN CURSOR … FOR SELECT`.
- * Cut on the code, so a SELECT written in a literal opens nothing; each slice
- * runs to the next SELECT, because `readSelect` reads one source list.
+ * Every SELECT a statement contains, each as its own slice.
+ *
+ * `readSelect` reads one source list, so a statement holding more than one
+ * query has to be cut into one slice per query — and a statement holds more
+ * than one query far more often than "a `WITH` common table expression, the
+ * query of an `OPEN CURSOR … FOR SELECT`", which is all this used to be asked
+ * for. `readStatement` called `readSelect` exactly once for an ordinary SELECT,
+ * and `readSelect` ends its FROM area at `WHERE` and at `UNION`. So
+ *
+ *     SELECT … FROM mara WHERE EXISTS ( SELECT … FROM kna1 … )
+ *     SELECT … FROM vbak UNION SELECT … FROM vbrk
+ *
+ * reported MARA without KNA1 and VBAK without VBRK: tables the statement really
+ * reads, absent from the signed dependency list and from every finding drawn on
+ * it (QA full review, 67ac19222d96). Under-reporting is the one direction this
+ * engine may not take — `open-sql-discrimination.ts` :15-17 errs towards
+ * over-reporting on purpose — and a subquery is no exotic form.
+ *
+ * Cut on the code, so a SELECT written in a literal or a comment opens nothing.
+ * `SELECT-OPTIONS` is excluded explicitly: `\bSELECT\b` matches inside it,
+ * because a hyphen is a word boundary, and it declares a selection-screen field
+ * rather than reading a table.
  */
 function embeddedSelects(text: string, code: string): string[] {
-  const starts = [...code.matchAll(/\bSELECT\b/gi)].map((m) => m.index);
+  const starts = [...code.matchAll(/\bSELECT\b(?!-)/gi)].map((m) => m.index);
   return starts.map((from, i) => text.slice(from, starts[i + 1] ?? text.length));
 }
 
@@ -766,10 +784,14 @@ function readStatement(text: string, at: Anchor, sink: Sink, ctx: Context, depth
   // were passed over in silence: the tables they read were absent from the
   // dependency list and from every finding drawn on it (full review of
   // b88c77b4b5d1, c220db0d6f55 / 684fc78b1f35 / 6eecc0b3ec97).
-  if (/^SELECT\b/i.test(text.trim())) readSelect(text.trim(), at, sink);
-  else if (/^(?:WITH\b|OPEN\s+CURSOR\b)/i.test(bare)) {
-    for (const part of embeddedSelects(text, code)) readSelect(part, at, sink);
-  }
+  //
+  // And not every ABAP SQL read of a statement is its *first* SELECT: a
+  // subquery in the WHERE clause (`EXISTS`, `IN`, a comparison) and the second
+  // arm of a `UNION` are queries of their own inside a statement that does begin
+  // with SELECT (67ac19222d96). Every SELECT is therefore read wherever it
+  // stands — in a SELECT, in a `WITH`, in an `OPEN CURSOR`, and in the WHERE
+  // clause of an UPDATE or a DELETE, which ABAP SQL allows a subquery in too.
+  for (const part of embeddedSelects(text, code)) readSelect(part, at, sink);
 
   const write = databaseWriteIn(text.trim());
   if (write) sink.table(at, write.table, 'write', 'open-sql');
