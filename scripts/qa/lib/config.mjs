@@ -95,8 +95,24 @@ export const BUDGET = {
   /**
    * Includes reasoning tokens. The first live run (15.09.2026) spent a 12,000
    * allowance entirely on reasoning at effort `high` and returned no review.
+   *
+   * Raised from 32,000 to 48,000 on 23.09.2026, and the reason is worth keeping
+   * apart from the earlier one. This time the model was not lost in thought: the
+   * delta review of 4152818 stopped at `completion_tokens=32000` with only 3,855
+   * of them reasoning, so the whole allowance went into a review that still had
+   * more to say, and the JSON ended mid-structure.
+   *
+   * `packBatches` splits by *input* size, which is the wrong axis for this
+   * failure — nine commits of dense new code make one batch whose input fits and
+   * whose output does not. 48,000 is not a guess: `FULL_BUDGET` has run at that
+   * figure since 15.09.2026, including over the whole code base.
+   *
+   * What this does not fix: a batch large enough to exceed 48,000 fails the same
+   * way, because a cut-off batch fails the review rather than splitting and
+   * retrying. That is the real repair and it is a bigger change than a release
+   * should carry.
    */
-  maxOutputTokens: 32_000,
+  maxOutputTokens: 48_000,
   /** Lines of unchanged code around each hunk — enough to see the enclosing branch, not the whole file. */
   hunkContextLines: 12,
   /** Symbols whose callers are looked up outside the delta (impact analysis). */
