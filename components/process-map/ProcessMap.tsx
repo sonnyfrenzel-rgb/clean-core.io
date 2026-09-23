@@ -5,6 +5,8 @@ import { List, Map as MapIcon, Pencil } from 'lucide-react';
 import CcSegmentedControl from '@/components/cc/SegmentedControl';
 import CcMessageStrip from '@/components/cc/MessageStrip';
 import { useProcessRules } from '@/hooks/useProcessRules';
+import { useProcessOverlays } from '@/hooks/useProcessOverlays';
+import type { UsageReport } from '@/lib/abap/usage-model';
 import { UNANCHORED } from '@/lib/process-naming';
 import { elementsOfPlane, type ProcessMapElement, type ProcessMapModel } from '@/lib/process-map';
 import {
@@ -131,6 +133,15 @@ export interface ProcessMapProps {
   /** When the quote was last measured and stored for this source. */
   measuredAt?: string | null;
   /**
+   * Roadmap 6.3 — the usage export of this project, when one was imported.
+   *
+   * Optional and only ever read: omitted, or a project with no import, means
+   * the *Usage* overlay is not offered at all. An overlay counting zero would
+   * say the steps are unused, which is the opposite of what an absent import
+   * means. Nothing here is written back, and nothing here reaches a run.
+   */
+  usage?: UsageReport | null;
+  /**
    * Roadmap 3.2 — keep the draft as a revision. Handed straight to the editor.
    *
    * Omitted here means omitted there, and the editor's footer says saving is not
@@ -150,6 +161,7 @@ export default function ProcessMap({
   onViewChange,
   defaultView = 'map',
   measuredAt = null,
+  usage = null,
   save,
 }: ProcessMapProps) {
   const [viewLocal, setViewLocal] = useState<ProcessMapView>(defaultView);
@@ -180,9 +192,25 @@ export default function ProcessMap({
     return out;
   }, [model, nav, rules.byNode]);
 
-  const overlays = useMemo(
+  /**
+   * Overlays come from two places and the rest of this file may not care which.
+   *
+   * `buildOverlays` counts the three the drawn model proves on its own.
+   * `useProcessOverlays` is roadmap 6.3: level, findings and usage, joined onto
+   * the same elements by their line anchors out of what other stages already
+   * produced. They are appended rather than merged — an overlay that has no
+   * answer yet (the level lookup) or no data (no usage import) is simply not in
+   * the list, and the filter row grows when it arrives instead of showing a
+   * zero that would read as "none".
+   */
+  const modelOverlays = useMemo(
     () => buildOverlays(model, nav, rules.byNode),
     [model, nav, rules.byNode],
+  );
+  const evidenceOverlays = useProcessOverlays(source, model, nav, usage);
+  const overlays = useMemo(
+    () => [...modelOverlays, ...evidenceOverlays],
+    [modelOverlays, evidenceOverlays],
   );
   const switches = useMemo(() => readRunSwitches(source, model), [source, model]);
   const rows = useMemo(() => miniMap(model, nav), [model, nav]);

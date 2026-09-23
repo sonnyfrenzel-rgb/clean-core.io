@@ -26,6 +26,15 @@ import {
   runVariant,
   searchProcess,
 } from '../lib/process-navigation';
+import { readCallGraph } from '../lib/abap/call-graph';
+import { readTableDependencies } from '../lib/abap/table-dependencies';
+import {
+  buildFindingsOverlay,
+  objectSites,
+  sitesByElement,
+  LEVEL_OVERLAY_NOTE,
+} from '../lib/process-overlays';
+import { buildAbapEvidence } from '../lib/abap/evidence-model';
 
 /**
  * Navigating a large process — roadmap 2.9.
@@ -485,6 +494,24 @@ const PASSWORD = 'ProcessNav123!';
 const PROJECT_ID = `process-nav-${STAMP}`;
 const RUN_ID = `process-nav-run-${STAMP}`;
 
+/**
+ * A called object that the map really does place on a step — roadmap 6.3.
+ *
+ * The *Usage* overlay marks a step when the export lists an object the code
+ * behind that step calls. Seeding a name at random would seed a name nothing
+ * calls, and the overlay would be correctly empty and prove nothing.
+ */
+function usageObject(source: string): string {
+  const model = exampleModel(source);
+  const nav = buildNavigation(model);
+  const calls = readCallGraph(source);
+  const placed = sitesByElement(model, nav, objectSites(readTableDependencies(source), calls), calls);
+  for (const owned of placed.values()) {
+    for (const site of owned) if (site.kind !== 'table') return site.name;
+  }
+  throw new Error('the example places no called object on any step');
+}
+
 async function signIn(page: Page) {
   await page.goto('/');
   await page.click('a:has-text("Get Free Access"), button:has-text("Get Free Access")');
@@ -577,6 +604,16 @@ test.describe('every step of the 1.000-line example, in at most three actions', 
       legacyCode: source,
       activeRunId: RUN_ID,
       inputFingerprint: fingerprint,
+      // Roadmap 6.3 — one imported usage row, so the *Usage* overlay has
+      // something to be about. The object is picked out of the map's own call
+      // sites rather than typed in: a name that no step calls would make the
+      // overlay empty and the test vacuous.
+      usageReport: {
+        records: [{ objectName: usageObject(source), callCount: 1204, lastUsed: '2026-03-04', source: 'scmon' }],
+        source: 'scmon',
+        importedAt: new Date().toISOString(),
+        warnings: [],
+      },
     });
 
     await adminSetDoc(`projects/${PROJECT_ID}/runs`, RUN_ID, {
@@ -822,6 +859,71 @@ test.describe('every step of the 1.000-line example, in at most three actions', 
     // The flow itself is untouched: the step list of the open level still holds
     // every element of that level (§5.9 item 8 — an overlay marks, it does not
     // change the process).
+    await page.getByRole('radio', { name: 'Steps' }).click();
+    const plane = await page.evaluate(() => new URLSearchParams(window.location.hash.slice(1)).get('map'));
+    const expected = (nav.planes.get(plane) ?? nav.planes.get(null) ?? []).length;
+    await expect(page.locator('[data-process-step-list] [data-step-node]')).toHaveCount(expected);
+  });
+
+  /**
+   * Roadmap 6.3 — the three overlays reach the screen, and say what they are.
+   *
+   * The joins themselves are measured in `tests/process-overlays.spec.ts`,
+   * which needs no browser. What only the browser can show is the wiring: that
+   * the map offers the three toggles beside the three it already had, that a
+   * mark is text on the element, and that the sentence which keeps the level
+   * honest — one snapshot, the Public Edition list — is on screen exactly while
+   * the overlay is. A source guard cannot see any of that.
+   */
+  test('the 6.3 overlays are on the map, and the level says which snapshot answered', async ({ page }) => {
+    test.setTimeout(300 * 1000);
+    await page.setViewportSize({ width: 1600, height: 1100 });
+    await signIn(page);
+    await openMap(page);
+
+    const source = exampleSource();
+    const model = exampleModel(source);
+    const nav = buildNavigation(model);
+    const calls = readCallGraph(source);
+    const findings = buildAbapEvidence(source, FILE_NAME).findings;
+    const overlay = buildFindingsOverlay(model, nav, findings, calls);
+    expect(overlay.ids.length, 'the example marks no element with a finding').toBeGreaterThan(0);
+
+    /* ---- findings: derived in the browser, and the same count ---- */
+    const findingsToggle = page.locator('[data-overlay-toggle="findings"]');
+    await findingsToggle.waitFor({ timeout: 60000 });
+    await expect(page.locator('[data-overlay-count="findings"]')).toHaveText(String(overlay.ids.length));
+
+    await findingsToggle.click();
+    await expect(page.locator('[data-process-outline-count]'))
+      .toHaveText(`Showing ${overlay.ids.length} of ${nav.order.length} elements`);
+    const marked = overlay.ids[0];
+    for (const ancestor of nav.entries.get(marked)?.ancestors ?? []) {
+      await page.locator(`[data-tree-node="${ancestor}"]`).click();
+    }
+    await expect(page.locator(`[data-tree-node="${marked}"]`))
+      .toContainText(overlay.marks.get(marked) ?? '');
+    await findingsToggle.click();
+
+    /* ---- usage: one seeded row, on the step that calls it ---- */
+    const usageToggle = page.locator('[data-overlay-toggle="usage"]');
+    await expect(usageToggle, 'the seeded import produced no Usage overlay').toHaveCount(1);
+    await usageToggle.click();
+    await expect(page.locator('[data-overlay-note="usage"]')).toContainText('not a judgement of use');
+    await usageToggle.click();
+
+    /* ---- level: the lookup answers, and the note is beside the marks ---- */
+    const levelToggle = page.locator('[data-overlay-toggle="level"]');
+    await levelToggle.waitFor({ timeout: 60000 });
+    await expect(page.locator('[data-overlay-note="level"]'),
+      'the note is on screen before the overlay is switched on').toHaveCount(0);
+    await levelToggle.click();
+    await expect(page.locator('[data-overlay-note="level"]')).toHaveText(LEVEL_OVERLAY_NOTE);
+    await expect(page.locator('[data-overlay-note="level"]')).toContainText('abap-atc-cr-cv-s4hc');
+    await levelToggle.click();
+    await expect(page.locator('[data-overlay-note="level"]')).toHaveCount(0);
+
+    /* ---- and the process itself is untouched by any of them ---- */
     await page.getByRole('radio', { name: 'Steps' }).click();
     const plane = await page.evaluate(() => new URLSearchParams(window.location.hash.slice(1)).get('map'));
     const expected = (nav.planes.get(plane) ?? nav.planes.get(null) ?? []).length;

@@ -387,7 +387,20 @@ export function searchProcess(
  * Overlays — marks, never a different process.
  * ------------------------------------------------------------------ */
 
-export type OverlayKey = 'hard-coded' | 'not-determined' | 'decisions';
+/**
+ * The first three are read out of the drawn model itself (`buildOverlays`
+ * below). The last three are roadmap 6.3 and are joined onto the model from
+ * what other stages already produced — `lib/process-overlays.ts`. They share
+ * this type because the filter row, the outline and the marks must not care
+ * where an overlay came from: an overlay is a mark on an element either way.
+ */
+export type OverlayKey =
+  | 'hard-coded'
+  | 'not-determined'
+  | 'decisions'
+  | 'level'
+  | 'findings'
+  | 'usage';
 
 export interface OverlayDefinition {
   key: OverlayKey;
@@ -396,6 +409,12 @@ export interface OverlayDefinition {
   ids: string[];
   /** The text identifier it writes on an element — never a colour alone. */
   marks: Map<string, string>;
+  /**
+   * One sentence shown while the overlay is on, when the marks alone would
+   * overstate what is known — which snapshot answered, what a count is and is
+   * not. Absent on the three overlays the model proves on its own.
+   */
+  note?: string;
 }
 
 const DECISION_TAGS = new Set(['exclusiveGateway', 'parallelGateway']);

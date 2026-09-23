@@ -1079,6 +1079,12 @@ Structure the JSON exactly like this:
               model={processMap.model}
               source={signedSource.source}
               measuredAt={processMap.measuredAt}
+              /* Roadmap 6.3 — the Usage overlay, and only when there is an
+                 import. `usageReport` is a server-written field (roadmap 0.7,
+                 `lib/project-commands.ts`); this reads it and never writes it,
+                 and an absent import means the overlay is not offered rather
+                 than offered empty. */
+              usage={project?.usageReport ?? null}
               plane={resolved.plane}
               onPlaneChange={openPlane}
               selected={resolved.node}

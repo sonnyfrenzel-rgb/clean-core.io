@@ -131,6 +131,28 @@ export default function ProcessFilters({
         ) : null}
       </div>
 
+      {/* Roadmap 6.3 — what a mark does not say.
+          A level is read against the one released-object snapshot this product
+          ships, and a usage count is what an export recorded rather than a
+          verdict on use. Both sentences belong beside the marks, not in a
+          document nobody opens, so an overlay carries its own and it is on
+          screen exactly while the overlay is. */}
+      {overlays.some((overlay) => overlay.note && activeOverlays.has(overlay.key)) ? (
+        <div data-overlay-notes="" className="flex flex-col gap-0.5">
+          {overlays
+            .filter((overlay) => overlay.note && activeOverlays.has(overlay.key))
+            .map((overlay) => (
+              <p
+                key={overlay.key}
+                data-overlay-note={overlay.key}
+                className="text-[11px] font-medium text-cc-ink-muted"
+              >
+                {overlay.note}
+              </p>
+            ))}
+        </div>
+      ) : null}
+
       {variantOpen && switches.length > 0 ? (
         <div data-process-variants="" className="flex flex-col gap-1 rounded-cc-row border border-cc-line bg-cc-surface p-2">
           <div className="flex flex-wrap items-center gap-1.5">
