@@ -10,7 +10,137 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
-## [Unveröffentlicht] — auf `dev`, seit 2026-09-23
+## [v2.15.0] — 2026-09-23
+
+### Die eigene Adresse stand in einem öffentlichen Log — und im Quellcode
+
+Das Repository ist öffentlich, und damit ist es jedes Actions-Log. Der Wochenbericht
+druckte bei jedem geplanten Lauf die Betreffzeile („9 von 43 Accounts aktiv"), die
+Wochenzahlen zu Registrierungen, Aktivierungen, Läufen und Projekten sowie die Adresse
+des Administrators direkt dorthin — nachweisbar in Lauf 35333168862 und elf weiteren seit
+dem 20.08. Die Sicherheitswarnung war schlimmer: sie druckte den Empfänger **und den
+ganzen Warntext**, also die gefallenen Jobs eines Sicherheitslaufs.
+
+Es ist dieselbe Klasse, für die die Survey-Skripte am 15.09. abgeschaltet wurden. Der Fix
+von damals gab `send-survey-digest.ts` seinen Riegel; die beiden anderen wurden übersehen,
+**weil nichts die Sender verglichen hat**. Die Regel liegt deshalb jetzt in
+`tests/public-log-guard.spec.ts` über allen vier Sendern statt in den Skripten — dasselbe
+Muster wie `SectionHeader` und `StageHeader`. Zwölf veröffentlichte Läufe gelöscht, 404
+nachgeprüft.
+
+Dazu verließ die Adresse den Quellcode: vier Dateien hielten sie als Zeichenkette, jetzt
+liest `scripts/lib/report-recipient.ts` sie aus `REPORT_RECIPIENT`, ohne Rückfall. **Was
+das nicht behebt und hier hingehört:** dieselbe Adresse ist die Autoradresse aller 1.318
+Commits, und die GitHub-API gibt sie öffentlich heraus. Der Quellcode ist die einzige
+Kopie, die sich entfernen ließ.
+
+### Der Security-Audit hing am billigsten Endpunkt, und der war kaputt
+
+Der Lauf vom Morgen fiel mit zwei leeren CISO-Antworten und **51 von 60 gefallenen
+Beraterrufen** — und die 51 standen mit keinem Wort im Log, nur als Zahl.
+
+Gemessen statt vermutet: das Modell lebt, 26 Endpunkte, alle mit reichlich Ausgabebudget.
+Ein einziger ist defekt — **OpenInference, 0 von 7 Rufen mit Inhalt**, unabhängig von der
+Inputgröße; dieselbe Anfrage läuft auf Fireworks und CoreWeave fehlerfrei. Er ist der
+billigste der 26, OpenRouter sortiert nach Preis, und `allow_fallbacks: false` nagelte den
+Audit fest darauf. Jetzt eine benannte Anbieterliste; die Datenzusage bleibt in beiden
+Zweigen bei `data_collection: deny`.
+
+Zwei Mängel unabhängig davon behoben: Fehlschläge hinterlassen ihren Grund — ein Wort aus
+geschlossenem Vokabular, nie ein Fehlertext, denn das Repo ist öffentlich —, und ein Audit
+bricht **vor** den teuren CISO-Rufen ab, wenn weniger als 85 % des geplanten Codes gelesen
+wurden. Vorher wäre ein versiegelter Bericht über 15 % des Codes erschienen und hätte wie
+ein vollständiges Audit ausgesehen.
+
+**Offen geblieben, und der erste scharfe Lauf hat es gezeigt:** die Nachprüf-Grundlage
+bricht auf einer anderen Achse weg. Der Audit zu diesem Release lief sauber durch, aber zu
+keinem der 203 Beraterbefunde kam der zitierte Code mit — die *Eingabe*grenze des
+CISO-Prompts war erreicht. Ergebnis: „Risiko niedrig, 0 Befunde", und der CISO schreibt
+selbst dazu, das sei keine Aussage über die Sicherheit, sondern der niedrigste Wert der
+Skala bei leerer Liste.
+
+### Der Wochenbericht lief mit den Rechten des Deploys
+
+`usage-report.yml` und `deploy.yml` teilten sich das Compute-Standardkonto des Projekts.
+Der Bericht braucht davon eines: Firestore lesen und einen Schnappschuss schreiben. Er hat
+jetzt ein eigenes Konto mit `roles/datastore.user` und nichts weiter.
+
+### Die Business-Sicht bekommt Sätze, die aus dem Code fallen (17.5, 17.7)
+
+Die Korpus-Facette `fachsaetze` stand auf 0 von 173 und las sich wie ein Befund. Sie war
+keiner: **die Facette verglich nichts.** Sie prüfte den Anker und hielt den Inhalt gar
+nicht daneben — ein Satz, richtig verankert und völlig falsch, kam durch. Und es erzeugte
+ohnehin kein Modul einen Fachsatz.
+
+Jetzt misst sie: Schlüssel ist die ABAP-Anweisung an der Ankerzeile, das Textmaß ist von
+Hand nachrechenbar, und die Schwelle 0,50 wird bei **jedem Lauf neu am Korpus kalibriert**
+— verschiedene Sollsätze erreichen höchstens 0,400, die mildeste Umformulierung fällt
+nicht unter 0,571.
+
+Darauf erzeugt `lib/abap/business-statement.ts` die Sätze deterministisch aus dem Code,
+ohne Modell und ohne Netz: **69 von 173 getroffen, Abdeckung 167 von 173.** Unschärfe wird
+aufgelöst *und* ausgewiesen, in dieser Reihenfolge — „nicht bestimmt" darf nie an die
+Stelle eines Satzes treten, und ein Wurf beim Aufbau verhindert einen leeren Kernsatz.
+
+Gemessen ist auch die Decke: **116.** Mehr kann kein Erzeuger treffen, der nichts erfindet;
+die fehlenden Sollsätze sind Beurteilungsprosa des Fallbuchs. Die Abnahme steht deshalb bei
+90, den Rest trägt das Modell.
+
+Ein Fehler darin, gefunden von der QA-Prüfung: in der Erkennung stand ein **echtes
+Backspace-Zeichen (0x08)** an der Stelle der Wortgrenze. ABAP enthält keine Steuerzeichen,
+also traf die Regel nie — der Erzeuger hat nie unterschieden, ob ein `UPDATE` eine
+bestimmte Zeile trifft oder die ganze Tabelle.
+
+### Kein Kostensieger, solange eine Option unvollständig ist (7.4, 7.11, 7.12)
+
+Optionen mit Kosten nur aus einer Annahmenrevision. Vier Gründe, keinen Sieger zu nennen,
+und der lehrreichste ist der vierte: **überlappende Spannen nennen niemanden** — liegt die
+Obergrenze der billigsten nicht unter der Untergrenze der nächsten, ist der Unterschied
+innerhalb der Aufwandsspanne und damit nicht festgestellt. „Nichts tun" ist Pflichtoption;
+ihr Upgrade-Verzug wird benannt, nicht bepreist.
+
+Dazu zwei Entscheidungen: die Seite hatte acht harte Euro-Zeichen und kein einziges
+Eingabefeld für die Währung, während das Panel darunter danach fragte — jetzt eine Währung
+für die ganze Seite, ohne Währung keine Zahl. Und der gesetzte Empfindlichkeitsradius von
+±25 % ist **ersatzlos weg**: das Panel rechnet den Kipppunkt, also wie weit eine Annahme
+sich bewegen muss, bis die Führung wechselt.
+
+### Der Arbeitsraum (6.1, 6.3, 6.4, 6.10)
+
+Die drei Sichten in Bewegung auf „New project", abgeleitet aus dem Beispielcode statt
+getextet. Das Mockup skizziert für Management *„Rebuild — part of decision DEC-1"* — **das
+steht nicht da**, es gibt kein DEC-1, und ein Objekt ohne Katalogeintrag fällt unter *not
+assigned*. Auf der Seite, die „never passes an assumption off as a fact" verspricht, wäre
+das die teuerste Erfindung; dort steht jetzt die Abwesenheit.
+
+Overlays auf dem Prozessmodell: ein Join allein auf den Anker traf **8 von 102**
+Objektstellen — der Median-Anker ist eine Zeile, also die Zeile, die einen Schritt
+*aufruft*, nicht der Code dahinter. Mit dem Rumpf jedes `FORM`, den ein `PERFORM` im Anker
+nennt, sind es 23 auf 17 Elementen; die übrigen wurden nachgesehen statt weggerundet.
+
+Die Management-Sicht antwortet auf vier Fragen, zeichnet aber **keine Linie durch einen
+Punkt** („a history needs two runs measured by the same rule"), und „bestätigt" heißt
+`proven`, nie `done`. Sie las zuletzt in der falschen Reihenfolge — Public-Cloud-Fit,
+Mitgliederliste, dann erst das Urteil; behoben, und dabei zeigte sich, dass **kein
+Struktur-Wächter die Reihenfolge je festgehalten hatte**.
+
+### Ein Zielprofil, das sich nicht signieren lässt, wenn es abgelehnt wurde (7.10)
+
+`AssessmentProfile` mit drei Abdeckungszuständen und neun Lückencodes;
+`profileManifestInput()` wirft bei `rejected` — eine Ablehnung, die sich trotzdem signieren
+lässt, ist keine. Beim Bauen fiel ein Fehler auf, der heute wirkt: `catalog-service.ts`
+kennt weder `deployment` noch `edition`, und der einzige Schnappschuss ist die
+Freigabeliste der **Public** Cloud. Ein Private-Edition-Projekt wird gegen sie beurteilt,
+ohne dass das Ergebnis sagt, welcher Schnappschuss geantwortet hat.
+
+### Kleinere Änderungen
+
+- Das Statusinstrument der Roadmap meldete „gesamt 0" — eine leere Roadmap statt eines
+  kaputten Parsers: es teilte am nackten Zeilenumbruch, und `core.autocrlf=true` ist unter
+  Windows der Normalfall.
+- Die QA-Delta-Prüfung durfte 32.000 Token ausgeben und schöpfte sie aus, davon nur 3.855
+  fürs Denken. Die Stapelung teilt nach *Eingabe*, und das ist für diesen Fehler die
+  falsche Achse; jetzt 48.000, die Zahl, mit der die Vollprüfung seit dem 15.09. läuft.
 
 ### Zwei Prüfagenten urteilten über Code, den sie nie gesehen haben
 
