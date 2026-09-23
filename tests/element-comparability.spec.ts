@@ -88,22 +88,37 @@ test.describe('7.8 / §16 V6 — comparability per element', () => {
     // Pinned, measured on 22.09.2026 over the eight shipped programs (292
     // elements). They are here so a change to the table or to 2.3 has to state
     // itself instead of moving a quarter of the map quietly.
+    //
+    // 287 since roadmap 2.15 built the rule this file wrote into the engine: 21
+    // gateways that only read a return code behind a call, a read or a write are
+    // now the boundary event on that step, and 5 of them joined a boundary event
+    // that was already drawn — which is the only reason the total moved at all.
+    // Nothing changed class: `technical` 110 → 105 is those 5 elements and no
+    // reclassification, gateway → boundary is technical either way.
     expect(byClass).toEqual({
       structural: 91,
-      technical: 110,
+      technical: 105,
       'business-comparable': 67,
       unknown: 24,
     });
-    // 68 gateways: 27 technical by condition (39,7 %, the same order as the
-    // 42,6 % 2.15 measured), 18 on a business field, 23 unreadable.
-    expect(byKind['gateway']).toEqual({ technical: 27, 'business-comparable': 18, unknown: 23 });
+    // 48 gateways: 7 still technical by condition (14,6 %, from 27 of 68 before
+    // 2.15), 18 on a business field, 23 unreadable. The business and the
+    // unreadable counts are **unmoved**, which is the check that 2.15 took only
+    // the return codes. The seven that stayed: four whose `sy-subrc` comes from
+    // a statement that draws no step (`AUTHORITY-CHECK` ×3, `READ TABLE`), one
+    // behind an `OPEN DATASET` (an `output` node, which the predecessor half
+    // refuses on purpose), one condition that is half business
+    // (`sy-subrc = 0 AND ls_eine-peinh > 0`), and one where a `READ TABLE`
+    // stands between the call and the `IF` (`BAPI_PO_CREATE1`), so the return
+    // code is the table read's and not the call's.
+    expect(byKind['gateway']).toEqual({ technical: 7, 'business-comparable': 18, unknown: 23 });
     // The shapes the reference holding almost never draws — 61 end events, 10
-    // error ends, 19 data objects, 6 boundary events — and not one of them is
-    // business-comparable.
+    // error ends, 19 data objects, 21 boundary events (6 before 2.15) — and not
+    // one of them is business-comparable.
     expect(byKind['end']).toEqual({ structural: 61 });
     expect(byKind['end-error']).toEqual({ technical: 10 });
     expect(byKind['output']).toEqual({ structural: 19 });
-    expect(byKind['error-boundary']).toEqual({ technical: 6 });
+    expect(byKind['error-boundary']).toEqual({ technical: 21 });
 
     // Every class is actually reached — a table that only ever says one thing
     // would pass every assertion below without deciding anything.
@@ -181,7 +196,10 @@ test.describe('7.8 / §16 V6 — comparability per element', () => {
     console.log(`ZLEGACY: ${ends.length} end events (${errorEnds.length} with an error definition) of ${skeleton.nodes.length} nodes`);
     expect(ends.length).toBe(27);
     expect(errorEnds.length).toBe(4);
-    expect(skeleton.nodes.length).toBe(106);
+    // 105 since 2.15: one of this program's five technical gateways sat behind a
+    // `CALL FUNCTION … EXCEPTIONS` that already carried a boundary event, and
+    // the two of them are now one element.
+    expect(skeleton.nodes.length).toBe(105);
     const verdicts = classifyElements(skeleton.nodes, skeleton.edges);
     for (const node of ends) {
       expect(verdicts.get(node.id)!.mayCarryStandardCandidate).toBe(false);
@@ -299,9 +317,20 @@ test.describe('the condition rule — written here so 2.15 can use it', () => {
 
   test('the predecessor half over the eight shipped examples is counted, not assumed', () => {
     // Pinned like every other number of 7.8. Before the fix of `f51d99129444`
-    // this was 19: one gateway passed with no known predecessor at all, one sat
-    // behind an `output` node. Both now read as not proven technical — the
-    // condition half is untouched at 27 of 68.
+    // the full rule counted 19: one gateway passed with no known predecessor at
+    // all, one sat behind an `output` node. Both then read as not proven
+    // technical, and the condition half stood at 27 of 68.
+    //
+    // Since roadmap 2.15 the engine **acts** on this rule, so the numbers here
+    // are what is left after it: 48 gateways, 7 technical by condition, 3 that
+    // still pass the whole rule. The three are not a leak — they are the three
+    // the fold refuses for a reason of its own: `sy-subrc = 0 AND
+    // ls_eine-peinh > 0` is half a business condition; the second
+    // `IF sy-subrc <> 0` of `check_authority` reads an `AUTHORITY-CHECK` that
+    // draws no node, so its only predecessor in the graph is the `SELECT` above
+    // it; and behind `BAPI_PO_CREATE1` a `READ TABLE gt_return` stands between
+    // the call and the `IF`, so the return code is the table read's. All three
+    // keep their gateway rather than hang an error on the wrong step.
     let gateways = 0;
     let byCondition = 0;
     let fullRule = 0;
@@ -332,9 +361,9 @@ test.describe('the condition rule — written here so 2.15 can use it', () => {
       }
     }
     console.log(`gateways: ${gateways}, technical by condition: ${byCondition}, full 2.15 rule: ${fullRule}`);
-    expect(gateways).toBe(68);
-    expect(byCondition).toBe(27);
-    expect(fullRule).toBe(17);
+    expect(gateways).toBe(48);
+    expect(byCondition).toBe(7);
+    expect(fullRule).toBe(3);
   });
 
   test('a gateway on a business field is comparable, but never carries a candidate', () => {

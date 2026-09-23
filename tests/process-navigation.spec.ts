@@ -34,7 +34,7 @@ import {
  * > **At the 1.000-line example, every step is reachable in at most three
  * > actions, by keyboard as by mouse.**
  *
- * So this file counts them. Not three of them: **all 65 flow nodes of that
+ * So this file counts them. Not three of them: **all 64 flow nodes of that
  * example, one at a time, in the browser, on both paths.** The count is
  * asserted per node and the worst case is asserted at the end, which is the
  * only way a claim like that survives the next change to the tree.
@@ -94,7 +94,7 @@ function rulesByNode(source: string, model: ProcessMapModel): Map<string, string
  * ------------------------------------------------------------------ */
 
 test.describe('the outline of the 1.000-line example', () => {
-  test('it is the 65 flow nodes on 8 levels, each with one address', () => {
+  test('it is the 64 flow nodes on 8 levels, each with one address', () => {
     const source = exampleSource();
     const model = exampleModel(source);
     const nav = buildNavigation(model);
@@ -102,9 +102,12 @@ test.describe('the outline of the 1.000-line example', () => {
     // The fixture, stated as the numbers the step was specified against. If the
     // engine ever draws this program differently these come first, and every
     // count below is measured against the model rather than against them.
-    expect(model.elements).toHaveLength(65);
+    // 65 until roadmap 2.15: one `IF sy-subrc` of this program stood behind a
+    // `CALL FUNCTION … EXCEPTIONS` that already carried a boundary event, and
+    // the two of them are now the one element they always were.
+    expect(model.elements).toHaveLength(64);
     expect(model.planes).toHaveLength(8);
-    expect(model.traceability.anchored).toBe(65);
+    expect(model.traceability.anchored).toBe(64);
     expect(model.traceability.unanchored).toBe(0);
 
     expect(nav.order, 'an element of the model is not in the outline').toHaveLength(model.elements.length);
@@ -458,7 +461,7 @@ test.describe('the parts of the navigation say what the file says', () => {
 });
 
 /* ------------------------------------------------------------------ *
- * The acceptance, in the browser, on all 65 steps.
+ * The acceptance, in the browser, on all 64 steps.
  * ------------------------------------------------------------------ */
 
 const STAMP = Date.now();
@@ -596,7 +599,7 @@ test.describe('every step of the 1.000-line example, in at most three actions', 
     }
   });
 
-  test('the measured acceptance: 65 steps, mouse and keyboard, both at most three', async ({ page }) => {
+  test('the measured acceptance: 64 steps, mouse and keyboard, both at most three', async ({ page }) => {
     test.setTimeout(900 * 1000);
     await page.setViewportSize({ width: 1600, height: 1100 });
     await signIn(page);
@@ -661,7 +664,7 @@ test.describe('every step of the 1.000-line example, in at most three actions', 
     }
 
     /* ---- the measurement, stated ---- */
-    expect(counts.length, 'not every step of the example was measured').toBe(65);
+    expect(counts.length, 'not every step of the example was measured').toBe(64);
     const worstMouse = Math.max(...counts.map((count) => count.mouse));
     const worstKeyboard = Math.max(...counts.map((count) => count.keyboard));
     const over = counts.filter((count) => count.mouse > 3 || count.keyboard > 3);

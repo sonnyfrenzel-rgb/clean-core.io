@@ -47,12 +47,22 @@ function nodeAt(skeleton: ProcessSkeleton, line: number, kind: string): Skeleton
  */
 const SHIPPED: Array<[string, number, number, number, number, number, number, number, number]> = [
   // file, nodes, edges, regions, entries, unreached, unreachedLines, helpers, cloneGroups
-  [LEGACY, 106, 129, 23, 4, 19, 323, 6, 1],
-  ['Z_BUSINESS_PARTNER_SYNC.txt', 17, 17, 4, 2, 0, 0, 1, 0],
+  //
+  // Roadmap 2.15 moved four of these counts, deliberately. A technical gateway
+  // that follows a call, a read or a write is no longer drawn as a decision: it
+  // becomes the boundary event on that step, and where `walkFunction` had
+  // already hung one, the gateway and its two flows into it go altogether. So a
+  // program loses one node and two edges per double drawing (5 of them over the
+  // eight examples) and keeps its count otherwise — LEGACY 106→105 / 129→127,
+  // BP_SYNC 17→16 / 17→15, PO 113→110 / 122→116. Nothing was dropped from the
+  // map: every arm of every folded gateway is still a flow, see the 2.15 block
+  // at the end of this file.
+  [LEGACY, 105, 127, 23, 4, 19, 323, 6, 1],
+  ['Z_BUSINESS_PARTNER_SYNC.txt', 16, 15, 4, 2, 0, 0, 1, 0],
   ['Z_EMPLOYEE_EXPENSE_VAL.txt', 12, 13, 2, 1, 0, 0, 1, 0],
   ['Z_INVOICE_EXTRACTOR.txt', 16, 14, 3, 1, 0, 0, 0, 0],
   ['Z_MATERIAL_STOCK_CALC.txt', 16, 17, 4, 1, 0, 0, 0, 0],
-  [PO, 113, 122, 23, 1, 13, 147, 0, 0],
+  [PO, 110, 116, 23, 1, 13, 147, 0, 0],
   ['Z_ORDER_INTEGRITY_CHECK.txt', 0, 0, 0, 0, 1, 15, 0, 0],
   ['Z_SALES_ORDER_CREATOR.txt', 12, 12, 2, 1, 0, 0, 1, 0],
 ];
@@ -95,14 +105,17 @@ test.describe('the eight programs this product ships', () => {
       start: 4,
       end: 23,
       'end-error': 4,
-      gateway: 28,
+      // 2.15: 28 → 23. Five gateways here decided on a return code behind a
+      // call, a read or a write; four of them became the boundary event on that
+      // step (2 → 6), the fifth joined one that was already drawn.
+      gateway: 23,
       loop: 11,
       'sub-process': 7,
       'business-rule-task': 3,
       'service-task': 5,
       'send-task': 2,
       'user-task': 2,
-      'error-boundary': 2,
+      'error-boundary': 6,
       transaction: 2,
       read: 8,
       write: 4,
@@ -115,11 +128,16 @@ test.describe('the eight programs this product ships', () => {
       start: 1,
       end: 23,
       'end-error': 3,
-      gateway: 31,
+      // 2.15, and this is the program the step was written for: 13 of its 31
+      // gateways were `IF sy-subrc …` directly behind a `SELECT`, a
+      // `CALL FUNCTION` or a `CALL TRANSACTION`. Ten became the boundary event
+      // on their step (3 → 13), three joined one that `walkFunction` had
+      // already hung there.
+      gateway: 18,
       'sub-process': 9,
       'service-task': 5,
       'send-task': 3,
-      'error-boundary': 3,
+      'error-boundary': 13,
       transaction: 2,
       read: 15,
       write: 15,
@@ -676,7 +694,11 @@ test.describe('rule 7 — kind and line are not an identity', () => {
 
     const skeleton = buildProcessSkeleton(source);
     const onLine5 = skeleton.nodes.filter((n) => n.anchor?.lineStart === 5);
-    expect(onLine5.map((n) => n.kind)).toEqual(['read', 'gateway', 'write']);
+    // The middle one was a `gateway` until roadmap 2.15: `IF sy-subrc = 0`
+    // behind a `SELECT SINGLE` is that read reporting whether it found a row,
+    // so it is now the boundary event on the read. What this test is about is
+    // untouched — three statements, three statement indices, three ids.
+    expect(onLine5.map((n) => n.kind)).toEqual(['read', 'error-boundary', 'write']);
     // Kind and line would give three different keys here by accident. The thing
     // that actually keeps them apart is the statement index.
     expect(new Set(onLine5.map((n) => n.anchor?.statementIndex)).size).toBe(3);
@@ -842,5 +864,224 @@ test.describe('the steps the walker used to miss (b88c77b4b5d1, CR-07)', () => {
     expect(boundary, 'the handler is drawn').toBeTruthy();
     expect(skeleton.edges.some((e) => e.to === boundary!.id), 'and something leads to it').toBe(true);
     expect(skeleton.notes.map((n) => n.reason)).not.toContain('unreachable-after-abort');
+  });
+});
+
+/* ================================================================== *
+ * Roadmap 2.15 — a return code is the effect of a step, not a decision
+ * ================================================================== */
+
+/**
+ * The three things 2.15 says it is finished when, each measured here rather
+ * than argued: no activity is drawn with a boundary event **and** a `sy-subrc`
+ * gateway behind it, the share of purely technical XOR has come down, and every
+ * arm of every folded gateway is still a flow carrying the words the source
+ * wrote on it.
+ *
+ * The condition rule itself is not tested here — it lives in
+ * `lib/abap/element-comparability.ts` and `tests/element-comparability.spec.ts`
+ * pins it. What is tested here is what the skeleton **does** with it.
+ */
+test.describe('roadmap 2.15 — a return code is the effect of a step', () => {
+  /** Every technical marker of 2.15, so this file does not depend on the other spec. */
+  const TECHNICAL = /\bSY-SUBRC\b|\bSY-TABIX\b|\bIS\s+(?:NOT\s+)?ASSIGNED\b|\bIS\s+(?:NOT\s+)?BOUND\b|\bLINES\s*\(/i;
+
+  test('no activity carries a boundary event and a return-code gateway behind it (5 → 0)', () => {
+    // The double drawing, and the number 2.15 names: 5 of 5 activities with a
+    // boundary event were followed by a gateway that read the same `sy-subrc`.
+    // `walkFunction` hung the boundary, `walkBranch` drew the `IF` anyway, and
+    // the map said the same thing twice with two different symbols.
+    const offenders: string[] = [];
+    let boundaries = 0;
+    for (const [file] of SHIPPED) {
+      const skeleton = skeletonOf(file);
+      const byId = new Map(skeleton.nodes.map((n) => [n.id, n]));
+      for (const node of skeleton.nodes) {
+        if (node.kind !== 'error-boundary') continue;
+        boundaries += 1;
+        for (const edge of skeleton.edges.filter((e) => e.from === node.id)) {
+          const next = byId.get(edge.to);
+          if (!next || next.kind !== 'gateway') continue;
+          const conditions = skeleton.edges
+            .filter((e) => e.from === next.id)
+            .map((e) => e.condition)
+            .filter((c) => c.trim());
+          if (conditions.length && conditions.every((c) => TECHNICAL.test(c))) {
+            offenders.push(`${file} ${next.id} ${next.label}`);
+          }
+        }
+      }
+    }
+    console.log(`2.15: ${boundaries} boundary events over the eight examples, ${offenders.length} with a sy-subrc gateway behind them`);
+    expect(offenders, offenders.join(' · ')).toHaveLength(0);
+  });
+
+  test('the share of purely technical gateways falls from 27 of 68 to 7 of 48', () => {
+    // 2.15 asks for ≤ 10 % and calls the figure a setting, not a measured
+    // optimum. It is **not reached**: 7 of 48 is 14,6 %, and the seven are
+    // counted out one by one below rather than rounded away. Each of them fails
+    // the rule as 2.15 writes it, and five of them for one and the same reason
+    // — the statement that set `sy-subrc` draws no step of its own
+    // (`AUTHORITY-CHECK`, `READ TABLE`), so there is nothing to hang the error
+    // on and nothing that proves the branch is about the step in front of it.
+    const remaining: string[] = [];
+    let gateways = 0;
+    for (const [file] of SHIPPED) {
+      const skeleton = skeletonOf(file);
+      for (const node of skeleton.nodes) {
+        if (node.kind !== 'gateway') continue;
+        gateways += 1;
+        const conditions = skeleton.edges
+          .filter((e) => e.from === node.id)
+          .map((e) => e.condition)
+          .filter((c) => c.trim());
+        if (conditions.length && conditions.every((c) => TECHNICAL.test(c))) {
+          remaining.push(`${file}:${node.anchor?.lineStart} ${node.label}`);
+        }
+      }
+    }
+    console.log(`2.15: ${remaining.length} of ${gateways} gateways are still purely technical — ${remaining.join(' · ')}`);
+    expect(gateways).toBe(48);
+    expect(remaining).toHaveLength(7);
+    // Three `AUTHORITY-CHECK` and one `READ TABLE`: statements that set
+    // `sy-subrc` and draw no node (the first is lane evidence, 2.16; the second
+    // is not a database read). One `OPEN DATASET`, drawn as an `output` node,
+    // which the predecessor half of the rule refuses on purpose since the QA
+    // review of `9e408888bfec`. One condition that is half a business
+    // comparison, which the fold will not move onto a boundary event. And one
+    // `READ TABLE gt_return` between `BAPI_PO_CREATE1` and its `IF` — the
+    // return code there is the table read's, not the call's.
+    expect(remaining.filter((r) => r.includes('ZLEGACY'))).toHaveLength(3);
+    expect(remaining.filter((r) => r.includes('Z_MM'))).toHaveLength(3);
+    expect(remaining.filter((r) => r.includes('Z_INVOICE'))).toHaveLength(1);
+  });
+
+  test('every arm of every folded gateway is still a flow, with its words on it', () => {
+    // The third acceptance of 2.15, and the one that makes the step safe: the
+    // branch is not deleted, it starts one node further up. For a boundary event
+    // the fold made, the error condition stands verbatim on the flow leaving it
+    // — rule 6 is untouched — and the other arm leaves the step itself.
+    let folded = 0;
+    for (const [file] of SHIPPED) {
+      const skeleton = skeletonOf(file);
+      const byId = new Map(skeleton.nodes.map((n) => [n.id, n]));
+      for (const node of skeleton.nodes) {
+        if (node.kind !== 'error-boundary' || node.detail?.foldedGateway !== true) continue;
+        folded += 1;
+        // It hangs on a step, and something still leaves both of them: the error
+        // arm from the boundary event, the other arm from the step.
+        const step = byId.get(String(node.detail?.attachedTo ?? ''));
+        expect(step, `${file} ${node.id} hangs on nothing`).toBeTruthy();
+        expect(skeleton.edges.some((e) => e.from === step!.id && e.to === node.id && e.kind === 'boundary')).toBe(true);
+        const fromBoundary = skeleton.edges.filter((e) => e.from === node.id);
+        const fromStep = skeleton.edges.filter((e) => e.from === step!.id && e.kind !== 'boundary');
+        expect(fromBoundary.length, `${file} ${node.id} leads nowhere`).toBeGreaterThan(0);
+        expect(fromStep.length, `${file} ${step!.id} leads nowhere`).toBeGreaterThan(0);
+        // And the words are still there. `IF sy-subrc <> 0.` writes them on the
+        // error arm, `IF sy-subrc = 0. … ELSE.` on the other one — one of the
+        // two carries the text of the source, verbatim, and which one is not
+        // this engine's choice (rule 6).
+        const written = [...fromBoundary, ...fromStep].map((e) => e.condition);
+        expect(written.filter((c) => TECHNICAL.test(c)), `${file} ${node.id} lost its condition`)
+          .not.toHaveLength(0);
+        const condition = String(node.detail?.condition ?? '');
+        if (condition) expect(fromBoundary.map((e) => e.condition)).toContain(condition);
+      }
+    }
+    // 15 of the 20 folds keep the node (the gateway becomes the boundary); the
+    // other 5 joined a boundary event `walkFunction` had already drawn and are
+    // counted by the first test of this block.
+    expect(folded).toBe(15);
+  });
+
+  test('one call, one boundary event, no gateway — and both arms still there', () => {
+    const source = [
+      'REPORT z_subrc.',
+      'START-OF-SELECTION.',
+      "  CALL FUNCTION 'Z_READ_ORDER'",
+      "    EXPORTING vbeln = '1'",
+      '    EXCEPTIONS not_found = 1 OTHERS = 2.',
+      '  IF sy-subrc <> 0.',
+      "    MESSAGE 'not found' TYPE 'E'.",
+      '  ELSE.',
+      '    UPDATE vbak SET lifsk = space.',
+      '  ENDIF.',
+    ].join('\n');
+    const skeleton = buildProcessSkeleton(source);
+    expect(skeleton.nodes.filter((n) => n.kind === 'gateway'), 'the IF is not a decision').toHaveLength(0);
+    const boundaries = skeleton.nodes.filter((n) => n.kind === 'error-boundary');
+    expect(boundaries, 'and it is drawn once, not twice').toHaveLength(1);
+
+    const call = skeleton.nodes.find((n) => n.kind === 'service-task')!;
+    expect(skeleton.edges.filter((e) => e.from === call.id && e.kind === 'boundary'))
+      .toHaveLength(1);
+    // The error arm leaves the boundary event and says why, in the words of the
+    // source; the normal arm leaves the call.
+    const fromBoundary = skeleton.edges.filter((e) => e.from === boundaries[0].id);
+    expect(fromBoundary.map((e) => e.condition)).toContain('sy-subrc <> 0');
+    expect(fromBoundary.map((e) => skeleton.nodes.find((n) => n.id === e.to)?.kind)).toContain('end-error');
+    const fromCall = skeleton.edges.filter((e) => e.from === call.id && e.kind !== 'boundary');
+    expect(fromCall).toHaveLength(1);
+    expect(skeleton.nodes.find((n) => n.id === fromCall[0].to)?.kind).toBe('write');
+  });
+
+  test('a decision on a business field behind the same call stays a decision', () => {
+    // The other half of the rule, and the one that keeps it honest: the step is
+    // about return codes, not about every `IF` that follows a call.
+    const source = [
+      'REPORT z_business.',
+      'START-OF-SELECTION.',
+      '  SELECT SINGLE * FROM vbak INTO @DATA(ls_vbak) WHERE vbeln = @gv_vbeln.',
+      '  IF ls_vbak-netwr > 10000.',
+      "    UPDATE vbak SET lifsk = 'X'.",
+      '  ENDIF.',
+    ].join('\n');
+    const skeleton = buildProcessSkeleton(source);
+    const gateways = skeleton.nodes.filter((n) => n.kind === 'gateway');
+    expect(gateways).toHaveLength(1);
+    expect(gateways[0].label).toContain('netwr');
+    expect(skeleton.nodes.filter((n) => n.kind === 'error-boundary')).toHaveLength(0);
+  });
+
+  test('a return-code gateway with no step in front of it stays a gateway', () => {
+    // `AUTHORITY-CHECK` draws no node — it is lane evidence (2.16) — so the
+    // `IF sy-subrc <> 0.` behind it has nothing to hang on. A fold here would
+    // put the authorisation error on whatever step happened to stand above it,
+    // and "we do not know" never becomes a drawing. This is four of the six
+    // gateways the step leaves behind, and it is deliberate.
+    const source = [
+      'REPORT z_auth.',
+      'START-OF-SELECTION.',
+      "  AUTHORITY-CHECK OBJECT 'V_VBAK_VKO' ID 'ACTVT' FIELD '03'.",
+      '  IF sy-subrc <> 0.',
+      "    MESSAGE 'no authorisation' TYPE 'E'.",
+      '  ENDIF.',
+    ].join('\n');
+    const skeleton = buildProcessSkeleton(source);
+    expect(skeleton.nodes.filter((n) => n.kind === 'gateway')).toHaveLength(1);
+    expect(skeleton.nodes.filter((n) => n.kind === 'error-boundary')).toHaveLength(0);
+  });
+
+  test('the fold reads the graph the walk left, never its own result', () => {
+    // `check_authority` of Z_MM_PO_APPROVAL, in miniature: a `SELECT` with its
+    // own `IF sy-subrc`, and an `AUTHORITY-CHECK` with a second one behind it.
+    // Folding the first moves the `SELECT`s other arm onto the `SELECT` — and if
+    // the pass then read its own result, the authorisation error would hang on
+    // that read. It does not: the second `IF` keeps its gateway.
+    const source = [
+      'REPORT z_two.',
+      'START-OF-SELECTION.',
+      '  SELECT SINGLE ekgrp FROM eban INTO @DATA(lv_ekgrp) WHERE banfn = @gv_banfn.',
+      '  IF sy-subrc <> 0.',
+      "    MESSAGE 'requisition not found' TYPE 'E'.",
+      '  ENDIF.',
+      "  AUTHORITY-CHECK OBJECT 'M_BANF_EKG' ID 'ACTVT' FIELD '02'.",
+      '  IF sy-subrc <> 0.',
+      "    MESSAGE 'no authorisation' TYPE 'E'.",
+      '  ENDIF.',
+    ].join('\n');
+    const skeleton = buildProcessSkeleton(source);
+    expect(skeleton.nodes.filter((n) => n.kind === 'error-boundary'), 'the read reports itself').toHaveLength(1);
+    expect(skeleton.nodes.filter((n) => n.kind === 'gateway'), 'the authorisation check does not').toHaveLength(1);
   });
 });

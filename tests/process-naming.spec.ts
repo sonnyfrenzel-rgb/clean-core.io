@@ -144,7 +144,10 @@ test.describe('the prompt carries ids, kinds, technical names and conditions —
     const source = readFileSync(join(process.cwd(), 'public/starter-examples/Z_MM_PO_APPROVAL.abap'), 'utf8');
     const ctx = namingContextOf(source);
     const prompt = buildNamingPrompt(ctx);
-    expect(ctx.skeleton.nodes.length).toBe(113);
+    // 110 since roadmap 2.15: three `IF sy-subrc` of this program stood behind a
+    // call that already carried a boundary event, and each pair is now one
+    // element. The prompt still shows every node the skeleton has.
+    expect(ctx.skeleton.nodes.length).toBe(110);
     for (const node of ctx.skeleton.nodes) {
       expect(prompt, `node ${node.id} is missing from the prompt`).toContain(`${node.id} | ${node.kind} | ${node.label}`);
     }

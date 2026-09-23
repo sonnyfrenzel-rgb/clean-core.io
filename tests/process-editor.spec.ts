@@ -85,7 +85,7 @@ test.describe('the four rules of roadmap 3.3', () => {
     const counts = countHints(hints);
 
     // Every element of this example carries a line anchor — the navigation spec
-    // asserts the same 65 of 65 — so the two rules about a missing anchor have
+    // asserts the same 64 of 64 — so the two rules about a missing anchor have
     // nothing to say, and saying nothing is the right answer rather than a gap.
     expect(model.traceability.unanchored).toBe(0);
     expect(counts.byRule.get(TASK_WITHOUT_ANCHOR) ?? 0).toBe(0);
@@ -117,12 +117,17 @@ test.describe('the four rules of roadmap 3.3', () => {
     );
     const decisions = model.elements.filter((element) => element.tag === 'exclusiveGateway');
 
-    // 19 decisions, 13 of them with a condition on one branch and none on the
+    // 17 decisions, 11 of them with a condition on one branch and none on the
     // other. That is what BPMN means by a default flow and the rule leaves it
-    // alone — a rule that reported all 19 would be a rule nobody reads twice.
-    expect(decisions).toHaveLength(19);
+    // alone — a rule that reported all 17 would be a rule nobody reads twice.
+    //
+    // 19 and 13 until roadmap 2.15: two of this level's decisions only read a
+    // return code behind a step and are now the boundary event on it. The six
+    // the rule does report are untouched by that — all six are `LOOP AT`
+    // gateways (2.17), and the test above still counts exactly six.
+    expect(decisions).toHaveLength(17);
     const quiet = decisions.filter((element) => !reported.has(element.id));
-    expect(quiet).toHaveLength(13);
+    expect(quiet).toHaveLength(11);
     for (const element of quiet) {
       const conditions = element.branches.map((branch) => branch.condition);
       expect(

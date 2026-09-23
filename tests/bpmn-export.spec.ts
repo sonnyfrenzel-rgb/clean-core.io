@@ -132,13 +132,22 @@ const OPTIONS = (file: string) => ({ processName: file.replace(/\.\w+$/, ''), so
 
 /** file, flow nodes, sequence flows, sub-processes, planes, data stores, pools, message flows — counted from the XML. */
 const SHIPPED: Array<[string, number, number, number, number, number, number, number]> = [
-  // 76 flows, not 71: five of them go around a folded run switch (decision 7).
-  [LEGACY, 65, 76, 7, 8, 8, 1, 1],
-  ['Z_BUSINESS_PARTNER_SYNC.txt', 17, 16, 2, 3, 3, 0, 0],
+  // 73 flows, not 68: five of them go around a folded run switch (decision 7).
+  //
+  // Roadmap 2.15 moved three rows, and the direction is the point of the step: a
+  // gateway that only read a return code behind a call, a read or a write is no
+  // longer an `exclusiveGateway` but the boundary event on that step, so the
+  // flow node count stays where the gateway became the boundary and drops by one
+  // where `walkFunction` had already hung one — LEGACY 65→64, BP_SYNC 17→16,
+  // PO 73→71. The flows drop by two per folded double drawing plus nothing else:
+  // both arms survive, they only start one node further up (LEGACY 76→73,
+  // BP_SYNC 16→14, PO 82→72).
+  [LEGACY, 64, 73, 7, 8, 8, 1, 1],
+  ['Z_BUSINESS_PARTNER_SYNC.txt', 16, 14, 2, 3, 3, 0, 0],
   ['Z_EMPLOYEE_EXPENSE_VAL.txt', 12, 13, 1, 2, 0, 0, 0],
   ['Z_INVOICE_EXTRACTOR.txt', 12, 11, 1, 2, 2, 0, 0],
   ['Z_MATERIAL_STOCK_CALC.txt', 10, 9, 1, 2, 4, 0, 0],
-  [PO, 73, 82, 9, 10, 11, 0, 0],
+  [PO, 71, 72, 9, 10, 11, 0, 0],
   ['Z_ORDER_INTEGRITY_CHECK.txt', 0, 0, 0, 1, 0, 0, 0],
   ['Z_SALES_ORDER_CREATOR.txt', 12, 12, 1, 2, 0, 0, 0],
 ];
@@ -352,7 +361,9 @@ test.describe('a syntactically valid model is never presented as an evidenced as
     // The same sentence on the diagram, where a reader of the picture sees it.
     const note = allArtifacts(process).find((a) => a.id === 'note-reconstruction');
     expect(String(note?.text)).toContain('Not confirmed by anyone, and not evidence of how the process runs in production.');
-    expect(String(note?.text)).toContain('65 of 65 elements carry a line anchor.');
+    // 64 since 2.15: one gateway of this program was drawn twice — once as the
+    // boundary event on the call, once as the `IF sy-subrc` behind it.
+    expect(String(note?.text)).toContain('64 of 64 elements carry a line anchor.');
     expect(diIndex(parsed.rootElement).get('note-reconstruction')).toBe(1);
 
     // No promise about a target tool (roadmap 4.3 has not happened).
@@ -835,4 +846,74 @@ test('the documentation stage exports the skeleton of the signed run, not a mode
   const guard = page.slice(page.indexOf('const signedSource'), page.indexOf('const downloadBPMN'));
   expect(guard).toContain('sha256Hex(source) !== signed.sha256');
   expect(guard).toContain('project?.activeRunId');
+});
+
+/* ---------------------------------------------------------------- *
+ * Roadmap 2.15 — the share of purely technical XOR in the file
+ * ---------------------------------------------------------------- */
+
+test.describe('roadmap 2.15 — a return code is not an exclusive gateway', () => {
+  const TECHNICAL = /\bSY-SUBRC\b|\bSY-TABIX\b|\bIS\s+(?:NOT\s+)?ASSIGNED\b|\bIS\s+(?:NOT\s+)?BOUND\b|\bLINES\s*\(/i;
+
+  test('6 of 41 exclusive gateways in the eight files are purely technical, from 17 of 52', () => {
+    // Counted out of the XML, like every other number in this file, and counted
+    // over the whole export rather than over the skeleton: an `exclusiveGateway`
+    // is what a reader of the file sees, and `model.ts` draws a loop as one too.
+    //
+    // 2.15 sets the bar at ≤ 10 % and says that is a setting, not a measured
+    // optimum. **It is not reached: 14,6 %.** The six that are left all fail the
+    // rule 2.15 writes, and five of them for one reason — the statement that set
+    // `sy-subrc` is not the step in front of the branch (`AUTHORITY-CHECK` and
+    // `READ TABLE` draw no node at all, `OPEN DATASET` draws an `output`), so
+    // there is no activity whose failure this is. The gap is that, not a
+    // condition the fold could not read.
+    let gateways = 0;
+    let technical = 0;
+    for (const [file] of SHIPPED) {
+      const skeleton = buildProcessSkeleton(read(file));
+      const exported = buildBpmnExport(skeleton, OPTIONS(file));
+      const conditions = new Map<string, string[]>();
+      for (const edge of skeleton.edges) {
+        const own = conditions.get(edge.from) ?? [];
+        own.push(edge.condition);
+        conditions.set(edge.from, own);
+      }
+      const byId = new Map(skeleton.nodes.map((n) => [n.id, n]));
+      for (const [elementId, nodeId] of Object.entries(exported.elementNode)) {
+        if (!exported.xml.includes(`<bpmn:exclusiveGateway id="${elementId}"`)) continue;
+        gateways += 1;
+        if (byId.get(nodeId)?.kind !== 'gateway') continue;
+        const own = (conditions.get(nodeId) ?? []).filter((c) => c.trim());
+        if (own.length && own.every((c) => TECHNICAL.test(c))) technical += 1;
+      }
+    }
+    console.log(`2.15: ${technical} of ${gateways} exclusive gateways in the eight files are purely technical (${(technical / gateways * 100).toFixed(1)} %)`);
+    expect(gateways).toBe(41);
+    expect(technical).toBe(6);
+  });
+
+  test(`${PO} — the error arm leaves a boundary event and keeps the words of the source`, async () => {
+    const parsed = await (await moddle()).fromXML(buildBpmnExportFromSource(read(PO), OPTIONS(PO)).xml);
+    const { elements } = countOf(parsed.rootElement);
+
+    // `SELECT SINGLE … FROM lfa1` at line 148 and the `IF sy-subrc <> 0.` behind
+    // it: one task, one boundary event on it, and the error path leaving the
+    // boundary with the condition of the source on it. Before 2.15 this was a
+    // task, an exclusive gateway and two arms of a decision nobody takes.
+    const boundaries = elements.filter((e) => e.$type === 'bpmn:BoundaryEvent');
+    expect(boundaries.length).toBe(8);
+    const onRead = boundaries.filter((b) => (b.attachedToRef as ModdleElement)?.$type === 'bpmn:Task');
+    expect(onRead.length).toBeGreaterThan(0);
+
+    const withCondition = boundaries.flatMap((b) => list<ModdleElement>(b.outgoing))
+      .map((f) => (f.conditionExpression as { body?: string } | undefined)?.body)
+      .filter((c): c is string => !!c);
+    expect(withCondition.some((c) => /sy-subrc/i.test(c)), 'rule 6: the words stay on the flow').toBe(true);
+
+    // And every one of them sits on an activity — a boundary event that found
+    // nothing to attach to would have become an `intermediateCatchEvent`
+    // (`model.ts` decision 3), and none did.
+    expect(elements.filter((e) => e.$type === 'bpmn:IntermediateCatchEvent')).toHaveLength(0);
+    for (const boundary of boundaries) expect(boundary.attachedToRef).toBeTruthy();
+  });
 });

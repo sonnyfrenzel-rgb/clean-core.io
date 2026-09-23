@@ -3,7 +3,7 @@
     "path": "docs/korpus/referenzkorpus-v2.1.md",
     "sha256": "9b1ed17256d04a3990335ff9e1a54f2151bccfd44e43190cc40fead2c0d0b288"
   },
-  "written": "2026-09-22",
+  "written": "2026-09-23",
   "entries": [
     {
       "case": "CC-001",
@@ -3055,7 +3055,7 @@
         {
           "name": "kanten",
           "status": "compared",
-          "compared": 4,
+          "compared": 3,
           "total": 9,
           "note": "Kantenart (sequence/conditional/default/loop-back/boundary) zwischen zwei aufgelösten Knoten."
         },
@@ -3081,7 +3081,7 @@
           "note": "Der Fall nennt keinen parallelen Knoten (Sollfeld leer) — nicht geprüft, Roadmap 2.17."
         }
       ],
-      "reason": "8 von 10 Sollknoten verglichen (7 getroffen, 1 ohne Knoten, 0 mit anderer Art); 4 von 9 Sollkanten verglichen (4 getroffen, 0 fehlend, 0 mit anderer Art, 5 ohne aufgelöste Enden). Die Engine baut an diesem Fall 8 Knoten. Ohne Knoten: x/end@source.abap:8 erwartet end|end-error in source.abap:8–8. Andere Knotenart: —. Fehlende Kante: —. Andere Kantenart: —. Nicht vergleichbar: c/transaction@source.abap:12 — keine Brücke für „transaction\" an „COMMIT WORK AND WAIT\", r/transaction@source.abap:15 — keine Brücke für „transaction\" an „ROLLBACK WORK\"."
+      "reason": "8 von 10 Sollknoten verglichen (6 getroffen, 1 ohne Knoten, 1 mit anderer Art); 3 von 9 Sollkanten verglichen (3 getroffen, 0 fehlend, 0 mit anderer Art, 6 ohne aufgelöste Enden). Die Engine baut an diesem Fall 8 Knoten. Ohne Knoten: x/end@source.abap:8 erwartet end|end-error in source.abap:8–8. Andere Knotenart: g/gateway@source.abap:11 → Engine error-boundary. Fehlende Kante: —. Andere Kantenart: —. Nicht vergleichbar: c/transaction@source.abap:12 — keine Brücke für „transaction\" an „COMMIT WORK AND WAIT\", r/transaction@source.abap:15 — keine Brücke für „transaction\" an „ROLLBACK WORK\"."
     },
     {
       "case": "CC-023",
@@ -3190,7 +3190,7 @@
         {
           "name": "kanten",
           "status": "compared",
-          "compared": 3,
+          "compared": 2,
           "total": 8,
           "note": "Kantenart (sequence/conditional/default/loop-back/boundary) zwischen zwei aufgelösten Knoten."
         },
@@ -3216,7 +3216,7 @@
           "note": "Der Fall nennt keinen parallelen Knoten (Sollfeld leer) — nicht geprüft, Roadmap 2.17."
         }
       ],
-      "reason": "7 von 9 Sollknoten verglichen (6 getroffen, 1 ohne Knoten, 0 mit anderer Art); 3 von 8 Sollkanten verglichen (3 getroffen, 0 fehlend, 0 mit anderer Art, 5 ohne aufgelöste Enden). Die Engine baut an diesem Fall 8 Knoten. Ohne Knoten: x/end@source.abap:8 erwartet end|end-error in source.abap:8–8. Andere Knotenart: —. Fehlende Kante: —. Andere Kantenart: —. Nicht vergleichbar: c/transaction@source.abap:12 — keine Brücke für „transaction\" an „COMMIT WORK AND WAIT\", r/transaction@source.abap:15 — keine Brücke für „transaction\" an „ROLLBACK WORK\"."
+      "reason": "7 von 9 Sollknoten verglichen (5 getroffen, 1 ohne Knoten, 1 mit anderer Art); 2 von 8 Sollkanten verglichen (2 getroffen, 0 fehlend, 0 mit anderer Art, 6 ohne aufgelöste Enden). Die Engine baut an diesem Fall 8 Knoten. Ohne Knoten: x/end@source.abap:8 erwartet end|end-error in source.abap:8–8. Andere Knotenart: g/gateway@source.abap:11 → Engine error-boundary. Fehlende Kante: —. Andere Kantenart: —. Nicht vergleichbar: c/transaction@source.abap:12 — keine Brücke für „transaction\" an „COMMIT WORK AND WAIT\", r/transaction@source.abap:15 — keine Brücke für „transaction\" an „ROLLBACK WORK\"."
     },
     {
       "case": "CC-024",
@@ -3865,7 +3865,7 @@
         {
           "name": "kanten",
           "status": "compared",
-          "compared": 6,
+          "compared": 2,
           "total": 11,
           "note": "Kantenart (sequence/conditional/default/loop-back/boundary) zwischen zwei aufgelösten Knoten."
         },
@@ -3891,7 +3891,7 @@
           "note": "Der Fall nennt keinen parallelen Knoten (Sollfeld leer) — nicht geprüft, Roadmap 2.17."
         }
       ],
-      "reason": "9 von 11 Sollknoten verglichen (8 getroffen, 1 ohne Knoten, 0 mit anderer Art); 6 von 11 Sollkanten verglichen (6 getroffen, 0 fehlend, 0 mit anderer Art, 5 ohne aufgelöste Enden). Die Engine baut an diesem Fall 10 Knoten. Ohne Knoten: e/end@source.abap:12 erwartet end|end-error in source.abap:12–12. Andere Knotenart: —. Fehlende Kante: —. Andere Kantenart: —. Nicht vergleichbar: c/transaction@source.abap:16 — keine Brücke für „transaction\" an „COMMIT WORK\", r/transaction@source.abap:18 — keine Brücke für „transaction\" an „ROLLBACK WORK\"."
+      "reason": "9 von 11 Sollknoten verglichen (6 getroffen, 2 ohne Knoten, 1 mit anderer Art); 2 von 11 Sollkanten verglichen (2 getroffen, 0 fehlend, 0 mit anderer Art, 9 ohne aufgelöste Enden). Die Engine baut an diesem Fall 9 Knoten. Ohne Knoten: g1/gateway@source.abap:10 erwartet gateway in source.abap:10–10, e/end@source.abap:12 erwartet end|end-error in source.abap:12–12. Andere Knotenart: g2/gateway@source.abap:15 → Engine error-boundary. Fehlende Kante: —. Andere Kantenart: —. Nicht vergleichbar: c/transaction@source.abap:16 — keine Brücke für „transaction\" an „COMMIT WORK\", r/transaction@source.abap:18 — keine Brücke für „transaction\" an „ROLLBACK WORK\"."
     },
     {
       "case": "CC-029",
@@ -3999,8 +3999,8 @@
         },
         {
           "name": "kanten",
-          "status": "compared",
-          "compared": 1,
+          "status": "not_checked",
+          "compared": 0,
           "total": 8,
           "note": "Kantenart (sequence/conditional/default/loop-back/boundary) zwischen zwei aufgelösten Knoten."
         },
@@ -4026,7 +4026,7 @@
           "note": "Der Fall nennt keinen parallelen Knoten (Sollfeld leer) — nicht geprüft, Roadmap 2.17."
         }
       ],
-      "reason": "5 von 7 Sollknoten verglichen (4 getroffen, 0 ohne Knoten, 1 mit anderer Art); 1 von 8 Sollkanten verglichen (1 getroffen, 0 fehlend, 0 mit anderer Art, 7 ohne aufgelöste Enden). Die Engine baut an diesem Fall 6 Knoten. Ohne Knoten: —. Andere Knotenart: l/loop@source.abap:4 → Engine read. Fehlende Kante: —. Andere Kantenart: —. Nicht vergleichbar: c/transaction@source.abap:10 — keine Brücke für „transaction\" an „COMMIT WORK\", x/end@source.abap:4 — keine Brücke für „end\" an „SELECT case_id FROM zcc_decision WHERE r\"."
+      "reason": "5 von 7 Sollknoten verglichen (3 getroffen, 0 ohne Knoten, 2 mit anderer Art); 0 von 8 Sollkanten verglichen (0 getroffen, 0 fehlend, 0 mit anderer Art, 8 ohne aufgelöste Enden). Die Engine baut an diesem Fall 6 Knoten. Ohne Knoten: —. Andere Knotenart: l/loop@source.abap:4 → Engine read, g/gateway@source.abap:9 → Engine error-boundary. Fehlende Kante: —. Andere Kantenart: —. Nicht vergleichbar: c/transaction@source.abap:10 — keine Brücke für „transaction\" an „COMMIT WORK\", x/end@source.abap:4 — keine Brücke für „end\" an „SELECT case_id FROM zcc_decision WHERE r\"."
     },
     {
       "case": "CC-030",
@@ -4135,7 +4135,7 @@
         {
           "name": "kanten",
           "status": "compared",
-          "compared": 4,
+          "compared": 1,
           "total": 12,
           "note": "Kantenart (sequence/conditional/default/loop-back/boundary) zwischen zwei aufgelösten Knoten."
         },
@@ -4161,7 +4161,7 @@
           "note": "Der Fall nennt keinen parallelen Knoten (Sollfeld leer) — nicht geprüft, Roadmap 2.17."
         }
       ],
-      "reason": "10 von 13 Sollknoten verglichen (8 getroffen, 2 ohne Knoten, 0 mit anderer Art); 4 von 12 Sollkanten verglichen (4 getroffen, 0 fehlend, 0 mit anderer Art, 8 ohne aufgelöste Enden). Die Engine baut an diesem Fall 10 Knoten. Ohne Knoten: e1/end@source.abap:9 erwartet end|end-error in source.abap:9–9, e2/end@source.abap:20 erwartet end|end-error in source.abap:20–20. Andere Knotenart: —. Fehlende Kante: —. Andere Kantenart: —. Nicht vergleichbar: t1/transaction@source.abap:11 — keine Brücke für „transaction\" an „CALL FUNCTION 'Z_CC_NOTIFY' DESTINATION \", r/transaction@source.abap:18 — keine Brücke für „transaction\" an „ROLLBACK WORK\", c/transaction@source.abap:22 — keine Brücke für „transaction\" an „COMMIT WORK\"."
+      "reason": "10 von 13 Sollknoten verglichen (6 getroffen, 3 ohne Knoten, 1 mit anderer Art); 1 von 12 Sollkanten verglichen (1 getroffen, 0 fehlend, 0 mit anderer Art, 11 ohne aufgelöste Enden). Die Engine baut an diesem Fall 9 Knoten. Ohne Knoten: e1/end@source.abap:9 erwartet end|end-error in source.abap:9–9, g2/gateway@source.abap:17 erwartet gateway in source.abap:17–17, e2/end@source.abap:20 erwartet end|end-error in source.abap:20–20. Andere Knotenart: g1/gateway@source.abap:7 → Engine error-boundary. Fehlende Kante: —. Andere Kantenart: —. Nicht vergleichbar: t1/transaction@source.abap:11 — keine Brücke für „transaction\" an „CALL FUNCTION 'Z_CC_NOTIFY' DESTINATION \", r/transaction@source.abap:18 — keine Brücke für „transaction\" an „ROLLBACK WORK\", c/transaction@source.abap:22 — keine Brücke für „transaction\" an „COMMIT WORK\"."
     },
     {
       "case": "CC-031",
@@ -4270,7 +4270,7 @@
         {
           "name": "kanten",
           "status": "compared",
-          "compared": 4,
+          "compared": 1,
           "total": 6,
           "note": "Kantenart (sequence/conditional/default/loop-back/boundary) zwischen zwei aufgelösten Knoten."
         },
@@ -4296,7 +4296,7 @@
           "note": "Der Fall nennt keinen parallelen Knoten (Sollfeld leer) — nicht geprüft, Roadmap 2.17."
         }
       ],
-      "reason": "7 von 8 Sollknoten verglichen (5 getroffen, 2 ohne Knoten, 0 mit anderer Art); 4 von 6 Sollkanten verglichen (4 getroffen, 0 fehlend, 0 mit anderer Art, 2 ohne aufgelöste Enden). Die Engine baut an diesem Fall 7 Knoten. Ohne Knoten: e/end@source.abap:15 erwartet end|end-error in source.abap:15–15, cb/start@source.abap:18 erwartet start in source.abap:18–18. Andere Knotenart: —. Fehlende Kante: —. Andere Kantenart: —. Nicht vergleichbar: rr/rfc@source.abap:19 — keine Brücke für „rfc\" an „RECEIVE RESULTS FROM FUNCTION 'Z_CC_ROUT\"."
+      "reason": "7 von 8 Sollknoten verglichen (4 getroffen, 3 ohne Knoten, 0 mit anderer Art); 1 von 6 Sollkanten verglichen (1 getroffen, 0 fehlend, 0 mit anderer Art, 5 ohne aufgelöste Enden). Die Engine baut an diesem Fall 6 Knoten. Ohne Knoten: g/gateway@source.abap:13 erwartet gateway in source.abap:13–13, e/end@source.abap:15 erwartet end|end-error in source.abap:15–15, cb/start@source.abap:18 erwartet start in source.abap:18–18. Andere Knotenart: —. Fehlende Kante: —. Andere Kantenart: —. Nicht vergleichbar: rr/rfc@source.abap:19 — keine Brücke für „rfc\" an „RECEIVE RESULTS FROM FUNCTION 'Z_CC_ROUT\"."
     },
     {
       "case": "CC-032",
@@ -4405,7 +4405,7 @@
         {
           "name": "kanten",
           "status": "compared",
-          "compared": 6,
+          "compared": 1,
           "total": 9,
           "note": "Kantenart (sequence/conditional/default/loop-back/boundary) zwischen zwei aufgelösten Knoten."
         },
@@ -4431,7 +4431,7 @@
           "note": "Der Fall nennt keinen parallelen Knoten (Sollfeld leer) — nicht geprüft, Roadmap 2.17."
         }
       ],
-      "reason": "9 von 10 Sollknoten verglichen (8 getroffen, 1 ohne Knoten, 0 mit anderer Art); 6 von 9 Sollkanten verglichen (6 getroffen, 0 fehlend, 0 mit anderer Art, 3 ohne aufgelöste Enden). Die Engine baut an diesem Fall 9 Knoten. Ohne Knoten: e1/end@source.abap:8 erwartet end|end-error in source.abap:8–8. Andere Knotenart: —. Fehlende Kante: —. Andere Kantenart: —. Nicht vergleichbar: c/transaction@source.abap:14 — keine Brücke für „transaction\" an „COMMIT WORK\"."
+      "reason": "9 von 10 Sollknoten verglichen (6 getroffen, 1 ohne Knoten, 2 mit anderer Art); 1 von 9 Sollkanten verglichen (1 getroffen, 0 fehlend, 0 mit anderer Art, 8 ohne aufgelöste Enden). Die Engine baut an diesem Fall 9 Knoten. Ohne Knoten: e1/end@source.abap:8 erwartet end|end-error in source.abap:8–8. Andere Knotenart: g1/gateway@source.abap:6 → Engine error-boundary, g2/gateway@source.abap:11 → Engine error-boundary. Fehlende Kante: —. Andere Kantenart: —. Nicht vergleichbar: c/transaction@source.abap:14 — keine Brücke für „transaction\" an „COMMIT WORK\"."
     },
     {
       "case": "CC-033",
@@ -6835,7 +6835,7 @@
         {
           "name": "kanten",
           "status": "compared",
-          "compared": 4,
+          "compared": 1,
           "total": 5,
           "note": "Kantenart (sequence/conditional/default/loop-back/boundary) zwischen zwei aufgelösten Knoten."
         },
@@ -6861,7 +6861,7 @@
           "note": "Der Fall nennt keinen parallelen Knoten (Sollfeld leer) — nicht geprüft, Roadmap 2.17."
         }
       ],
-      "reason": "6 von 6 Sollknoten verglichen (5 getroffen, 1 ohne Knoten, 0 mit anderer Art); 4 von 5 Sollkanten verglichen (4 getroffen, 0 fehlend, 0 mit anderer Art, 1 ohne aufgelöste Enden). Die Engine baut an diesem Fall 6 Knoten. Ohne Knoten: e/end@source.abap:12 erwartet end|end-error in source.abap:12–12. Andere Knotenart: —. Fehlende Kante: —. Andere Kantenart: —."
+      "reason": "6 von 6 Sollknoten verglichen (4 getroffen, 1 ohne Knoten, 1 mit anderer Art); 1 von 5 Sollkanten verglichen (1 getroffen, 0 fehlend, 0 mit anderer Art, 4 ohne aufgelöste Enden). Die Engine baut an diesem Fall 6 Knoten. Ohne Knoten: e/end@source.abap:12 erwartet end|end-error in source.abap:12–12. Andere Knotenart: g/gateway@source.abap:10 → Engine error-boundary. Fehlende Kante: —. Andere Kantenart: —."
     },
     {
       "case": "CC-051",
@@ -6970,7 +6970,7 @@
         {
           "name": "kanten",
           "status": "compared",
-          "compared": 4,
+          "compared": 1,
           "total": 6,
           "note": "Kantenart (sequence/conditional/default/loop-back/boundary) zwischen zwei aufgelösten Knoten."
         },
@@ -6996,7 +6996,7 @@
           "note": "Der Fall nennt keinen parallelen Knoten (Sollfeld leer) — nicht geprüft, Roadmap 2.17."
         }
       ],
-      "reason": "7 von 7 Sollknoten verglichen (5 getroffen, 1 ohne Knoten, 1 mit anderer Art); 4 von 6 Sollkanten verglichen (4 getroffen, 0 fehlend, 0 mit anderer Art, 2 ohne aufgelöste Enden). Die Engine baut an diesem Fall 6 Knoten. Ohne Knoten: e/end@source.abap:10 erwartet end|end-error in source.abap:10–10. Andere Knotenart: o2/output@source.abap:13 → Engine end. Fehlende Kante: —. Andere Kantenart: —."
+      "reason": "7 von 7 Sollknoten verglichen (4 getroffen, 1 ohne Knoten, 2 mit anderer Art); 1 von 6 Sollkanten verglichen (1 getroffen, 0 fehlend, 0 mit anderer Art, 5 ohne aufgelöste Enden). Die Engine baut an diesem Fall 6 Knoten. Ohne Knoten: e/end@source.abap:10 erwartet end|end-error in source.abap:10–10. Andere Knotenart: g/gateway@source.abap:8 → Engine error-boundary, o2/output@source.abap:13 → Engine end. Fehlende Kante: —. Andere Kantenart: —."
     },
     {
       "case": "CC-052",
