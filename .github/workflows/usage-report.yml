@@ -102,7 +102,27 @@ jobs:
         # way in three places. If a future dependency does need one, this step
         # fails loudly on a Friday rather than quietly — which is the right way
         # round for a job that mails production numbers.
-        run: npm ci --ignore-scripts
+        #
+        # `--omit=dev` for the other half of the same argument, and it is the
+        # half `--ignore-scripts` does not cover. Install scripts are stopped;
+        # *runtime* code is not, and `npx tsx scripts/send-usage-report.ts` runs
+        # after the Google authentication step, with `ACTIONS_ID_TOKEN_REQUEST_URL`
+        # and `…_TOKEN` still in the environment of every step. Top-level code in
+        # any package it loads can mint its own token (QA review, fa0aaea6cc47 —
+        # confirmed). What can be made smaller is the set of packages that get
+        # loaded at all: the report's whole import graph is eight local modules
+        # and three packages — `firebase-admin`, `clsx`, `tailwind-merge` — all
+        # of them production dependencies. The 26 devDependencies and everything
+        # under them have no business in this job.
+        #
+        # This narrows the blast radius; it does not close the finding. The rest
+        # is not in this repository: the Workload Identity provider accepts on
+        # `attribute.repository` alone — no ref, no workflow — for
+        # `…-compute@developer.gserviceaccount.com`, which holds `roles/editor`.
+        # A dedicated service account with Firestore read only, and a provider
+        # condition naming this workflow, are the fix, and both live in the GCP
+        # console (docs/ROADMAP.md §12).
+        run: npm ci --omit=dev --ignore-scripts
 
       - name: Authenticate with Google Cloud
         if: steps.clock.outputs.proceed == 'true'

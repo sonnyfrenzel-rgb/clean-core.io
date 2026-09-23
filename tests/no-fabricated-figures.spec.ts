@@ -101,6 +101,16 @@ test.describe('a private report goes to one address, and no input reaches a shel
     // whatever was typed (QA full review of 52f171091948, 32e9456648b6). The
     // address is the one the script knows.
     expect(wf, 'no dispatch input at all').not.toMatch(/inputs:\s*\n\s+recipient:/);
+
+    // The job holds `id-token: write`, so every step in it can mint a token for
+    // a service account with `roles/editor`. `--ignore-scripts` stops code at
+    // install time; `--omit=dev` is what keeps 26 devDependencies and their
+    // transitive graph out of the *runtime* the report then executes beside that
+    // permission (QA review, fa0aaea6cc47). Measured: the report's whole import
+    // graph is eight local modules and `firebase-admin`, `clsx`,
+    // `tailwind-merge` — every one a production dependency, so nothing it needs
+    // is lost.
+    expect(wf, 'the OIDC job installs its dev dependencies again').toMatch(/npm ci --omit=dev --ignore-scripts/);
     expect(wf).not.toMatch(/\$\{\{\s*inputs\./);
     expect(wf).toContain('npx tsx scripts/send-usage-report.ts --apply');
     expect(wf, 'and no override on the command line either').not.toMatch(/--to\s/);
