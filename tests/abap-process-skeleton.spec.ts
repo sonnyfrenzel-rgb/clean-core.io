@@ -76,7 +76,13 @@ const SHIPPED: Array<[string, number, number, number, number, number, number, nu
   ['Z_INVOICE_EXTRACTOR.txt', 17, 13, 4, 1, 0, 0, 0, 0],
   ['Z_MATERIAL_STOCK_CALC.txt', 18, 15, 6, 1, 0, 0, 0, 0],
   [PO, 110, 116, 23, 1, 13, 147, 0, 0],
-  ['Z_ORDER_INTEGRITY_CHECK.txt', 0, 0, 0, 0, 1, 15, 0, 0],
+  // Roadmap 2.14: this one had **no** entry point and drew nothing at all.
+  // Its only routine with an effect is a `FORM` no `PERFORM` reaches, which
+  // is the source saying its caller is outside this file — so it is the
+  // beginning, the 15 lines it holds are no longer "not reached", and the
+  // five nodes are the ones that were always in it. 0→5 nodes / 0→5 edges /
+  // 0→1 region / 0→1 entry / 1→0 unreached routines / 15→0 unreached lines.
+  ['Z_ORDER_INTEGRITY_CHECK.txt', 5, 5, 1, 1, 0, 0, 0, 0],
   ['Z_SALES_ORDER_CREATOR.txt', 13, 11, 3, 1, 0, 0, 1, 0],
 ];
 
@@ -551,13 +557,32 @@ test.describe('rule 4 — the starts, and the order they run in', () => {
     ]);
   });
 
-  test('a source with no entry point says so instead of inventing one', () => {
-    // Z_ORDER_INTEGRITY_CHECK.txt is exactly this: classes, types and one FORM
-    // nothing performs. Nothing in it says where a process would begin.
+  test('a source whose only beginning is a FORM nothing performs begins there', () => {
+    // Z_ORDER_INTEGRITY_CHECK.txt: local classes, types and one FORM nothing
+    // performs. Until 2.14 this was the engine's `no-entry-point` case and it
+    // drew **nothing** — the answer that reads as "there is no process here".
+    // The `FORM` is the one thing in the file with an effect, and that no
+    // `PERFORM` reaches it is the source saying its caller is somewhere else.
     const skeleton = skeletonOf('Z_ORDER_INTEGRITY_CHECK.txt');
-    expect(skeleton.nodes).toEqual([]);
-    expect(skeleton.notes.map((n) => n.reason)).toEqual(['no-entry-point']);
-    expect(skeleton.notDrawn.unreached.map((r) => r.name)).toEqual(['PERFORM_SALES_AUDIT']);
+    expect(skeleton.entries).toEqual(['entry:perform_sales_audit@85']);
+    const start = skeleton.nodes.find((n) => n.kind === 'start');
+    expect(start?.detail?.origin).toBe('form');
+    expect(start?.anchor?.lineStart).toBe(85);
+    expect(skeleton.nodes.some((n) => n.kind === 'read')).toBe(true);
+    expect(skeleton.notes.some((n) => n.reason === 'no-entry-point')).toBe(false);
+    // Drawn, and therefore no longer unreached.
+    expect(skeleton.notDrawn.unreached.map((r) => r.name)).toEqual([]);
+    // What the source does not say is not filled in: nothing here says *what*
+    // performs it, and the note says so rather than naming a caller.
+    const note = skeleton.notes.find((n) => n.reason === 'entry-trigger-not-determined');
+    expect(note?.lineStart).toBe(85);
+    expect(note?.detail).toContain('not determined');
+    expect(start?.detail?.triggerNotDetermined).toBe(true);
+
+    // The six local classes stay out of it. `PUBLIC SECTION` in a `CLASS lcl_x
+    // DEFINITION` is public *within this program*; reading it as an entry made
+    // `constructor`, `calculate_tax` and `get_details` six beginnings.
+    expect(skeleton.nodes.filter((n) => n.kind === 'start')).toHaveLength(1);
   });
 });
 
@@ -1015,10 +1040,12 @@ test.describe('roadmap 2.15 — a return code is the effect of a step', () => {
         if (condition) expect(fromBoundary.map((e) => e.condition)).toContain(condition);
       }
     }
-    // 15 of the 20 folds keep the node (the gateway becomes the boundary); the
+    // 16 of the 21 folds keep the node (the gateway becomes the boundary); the
     // other 5 joined a boundary event `walkFunction` had already drawn and are
-    // counted by the first test of this block.
-    expect(folded).toBe(15);
+    // counted by the first test of this block. 15 until 2.14: the `IF sy-subrc
+    // <> 0` of `Z_ORDER_INTEGRITY_CHECK` had never been walked, because nothing
+    // in that file was an entry point.
+    expect(folded).toBe(16);
   });
 
   test('one call, one boundary event, no gateway — and both arms still there', () => {
@@ -1166,22 +1193,25 @@ test.describe('roadmap 2.16 — lanes', () => {
   });
 
   test('a program with no evidence has exactly one lane, named after itself', () => {
-    // Four of the eight shipped programs prove nothing about who acts. Each of
+    // Five of the eight shipped programs prove nothing about who acts. Each of
     // them gets one lane, and its name is the program's own name out of the
     // `REPORT` statement — a token of the source, never a job title.
+    //
+    // Four until 2.14: `Z_ORDER_INTEGRITY_CHECK` drew no node at all, so it had
+    // no actor either. It now begins at the `FORM` nothing performs, and it
+    // still proves nothing about who acts — one lane, no evidence.
     const bare = lanesOfShipped().filter(({ lanes }) => lanes.every((l) => l.kind === 'program'));
     const withNodes = bare.filter(({ lanes }) => lanes.length > 0);
-    expect(withNodes.length, 'four programs prove nothing about who acts').toBe(4);
+    expect(withNodes.length, 'five programs prove nothing about who acts').toBe(5);
     for (const { file, lanes } of withNodes) {
       expect(lanes, `${file} has exactly one lane`).toHaveLength(1);
       expect(lanes[0].evidence, `${file} has no evidence`).toEqual([]);
       expect(lanes[0].name.length, `${file}'s lane is named`).toBeGreaterThan(0);
     }
-    // A source that draws no node at all is no process, and a process with no
-    // steps has no actor either.
-    const empty = skeletonOf('Z_ORDER_INTEGRITY_CHECK.txt');
-    expect(empty.nodes).toHaveLength(0);
-    expect(empty.lanes).toEqual([]);
+    const opened = skeletonOf('Z_ORDER_INTEGRITY_CHECK.txt');
+    expect(opened.lanes).toHaveLength(1);
+    expect(opened.lanes[0].kind).toBe('program');
+    expect(opened.lanes[0].evidence).toEqual([]);
   });
 
   test('no lane exists without a line anchor, and never more lanes than distinct evidence', () => {
@@ -1390,7 +1420,42 @@ test.describe('roadmap 2.17 — DESIGN.md §5.8 and the code in agreement', () =
     expect(forks(skeleton)).toHaveLength(1);
     expect(joins(skeleton)).toHaveLength(0);
     const fork = forks(skeleton)[0];
-    expect(skeleton.edges.filter((e) => e.from === fork.id)).toHaveLength(2);
+    // Two task branches **and** the caller's own branch: the fork is what runs
+    // concurrently, and without a wait the caller is one of the concurrent
+    // paths. QA finding 3ef9d0de98ec (HIGH): before the fix the `WRITE` hung on
+    // the two task exits, which draws "the caller waited" — the one sentence
+    // this source refuses to write.
+    expect(skeleton.edges.filter((e) => e.from === fork.id)).toHaveLength(3);
+  });
+
+  test('a fork without a join does not carry the caller on: the WRITE hangs on the fork', () => {
+    // The defect this replaces was structural, not cosmetic: `walkParallel`
+    // returned the **branch** exits when there was no join, so the walker hung
+    // the caller's next statement on the asynchronous tasks. Same class as
+    // CC-055 at 2.15 — a sentence the source does not contain.
+    const skeleton = buildProcessSkeleton(PARALLEL.replace('  WAIT UNTIL gv_done >= 2.' + '\n', ''));
+    const fork = forks(skeleton)[0];
+    const write = skeleton.nodes.find((n) => n.kind === 'output')!;
+    const tasks = skeleton.nodes.filter((n) => n.detail?.startingNewTask === true);
+    expect(tasks).toHaveLength(2);
+
+    const intoWrite = skeleton.edges.filter((e) => e.to === write.id);
+    expect(intoWrite.map((e) => e.from)).toEqual([fork.id]);
+    for (const task of tasks) {
+      expect(skeleton.edges.some((e) => e.from === task.id)).toBe(false);
+    }
+
+    // And the reader is told, rather than left to read the missing edge.
+    const note = skeleton.notes.find((n) => n.reason === 'fork-without-join');
+    expect(note).toBeTruthy();
+    expect(note!.lineStart).toBe(4);
+
+    // The wait puts it back: with `WAIT UNTIL` the write does hang on the join.
+    const waited = buildProcessSkeleton(PARALLEL);
+    const join = joins(waited)[0];
+    const waitedWrite = waited.nodes.find((n) => n.kind === 'output')!;
+    expect(waited.edges.filter((e) => e.to === waitedWrite.id).map((e) => e.from)).toEqual([join.id]);
+    expect(waited.notes.some((n) => n.reason === 'fork-without-join')).toBe(false);
   });
 
   test('one STARTING NEW TASK stays a service task, and two without a proof stay two', () => {
@@ -1571,5 +1636,338 @@ test.describe('roadmap 2.17 — DESIGN.md §5.8 and the code in agreement', () =
     expect(callSite('PERSIST_RUN_LOG')?.kind).toBe('sub-process');
     // A decision table stays a decision table — only its collapsing changed.
     expect(callSite('CALCULATE_RISK_SCORES')?.kind).toBe('business-rule-task');
+  });
+});
+
+
+/* ================================================================== *
+ * Roadmap 2.14 — "Einstieg wählen" (CR-08)
+ *
+ * On 18.09.2026 nine of the corpus sources ended with `no-entry-point`
+ * and zero nodes: a class method, a module pool, a BAdI implementation,
+ * a RAP handler and a bare `FORM`. Zero nodes is not a careful answer.
+ *
+ * Every test here is about one sentence: *where does this process
+ * begin?* — and about the two ways of getting that wrong. Inventing a
+ * beginning the source does not write is one. Refusing to name one the
+ * source does write is the other.
+ * ================================================================== */
+
+test.describe('roadmap 2.14 — where the process begins', () => {
+  const starts = (s: ProcessSkeleton) => s.nodes.filter((n) => n.kind === 'start');
+  const reasons = (s: ProcessSkeleton) => s.notes.map((n) => n.reason);
+
+  /* ---------------- FUNCTION is not a report (§16 V5) ---------------- */
+
+  test('a FUNCTION opens a start event with its own name, never START-OF-SELECTION', () => {
+    const skeleton = buildProcessSkeleton([
+      'FUNCTION z_cc_route_get.',
+      '  SELECT SINGLE land1 FROM kna1 INTO @DATA(lv_land) WHERE kunnr = @iv_kunnr.',
+      '  ev_land = lv_land.',
+      'ENDFUNCTION.',
+    ].join('\n'));
+
+    expect(starts(skeleton)).toHaveLength(1);
+    const start = starts(skeleton)[0];
+    // §16 V5, verbatim: the name of the function, and `implicit = false`.
+    expect(start.label).toBe('z_cc_route_get');
+    expect(start.detail?.implicit).toBe(false);
+    expect(start.detail?.origin).toBe('function');
+    expect(start.anchor?.lineStart).toBe(1);
+    expect(skeleton.entries).toEqual(['entry:z_cc_route_get@1']);
+    // The body used to be swallowed by the implicit event of a report, which
+    // put `START-OF-SELECTION` on a function group.
+    expect(skeleton.nodes.some((n) => n.label === 'START-OF-SELECTION')).toBe(false);
+    expect(reasons(skeleton)).not.toContain('no-entry-point');
+    // And the function's own end, at `ENDFUNCTION`.
+    expect(skeleton.nodes.find((n) => n.kind === 'end')?.anchor?.lineStart).toBe(4);
+  });
+
+  test('two function modules in one file are two beginnings, not one and an orphan', () => {
+    // No rank is invented between equals. The source writes two function
+    // modules; picking one of them as *the* beginning would be a sentence it
+    // does not contain, and the other half of the file would silently vanish.
+    const skeleton = buildProcessSkeleton([
+      'FUNCTION z_cc_read.',
+      '  SELECT SINGLE land1 FROM kna1 INTO @DATA(l1) WHERE kunnr = @iv_kunnr.',
+      'ENDFUNCTION.',
+      'FUNCTION z_cc_write.',
+      '  UPDATE kna1 SET land1 = @iv_land WHERE kunnr = @iv_kunnr.',
+      'ENDFUNCTION.',
+    ].join('\n'));
+    expect(starts(skeleton).map((n) => [n.label, n.anchor?.lineStart]))
+      .toEqual([['z_cc_read', 1], ['z_cc_write', 4]]);
+    expect(skeleton.nodes.some((n) => n.kind === 'read')).toBe(true);
+    expect(skeleton.nodes.some((n) => n.kind === 'write')).toBe(true);
+  });
+
+  /* ---------------- a method (§16 V5) ---------------- */
+
+  test('a public method of a global class is a start event, a private one is not', () => {
+    const source = (section: string) => [
+      'CLASS zcl_cc_route DEFINITION PUBLIC FINAL CREATE PUBLIC.',
+      `  ${section} SECTION.`,
+      '    METHODS determine IMPORTING iv_amount TYPE p RETURNING VALUE(rv) TYPE string.',
+      'ENDCLASS.',
+      'CLASS zcl_cc_route IMPLEMENTATION.',
+      '  METHOD determine.',
+      "    UPDATE zsd_route SET amount = @iv_amount.",
+      '  ENDMETHOD.',
+      'ENDCLASS.',
+    ].join('\n');
+
+    const open = buildProcessSkeleton(source('PUBLIC'));
+    expect(starts(open).map((n) => [n.label, n.anchor?.lineStart])).toEqual([['determine', 6]]);
+    expect(starts(open)[0].detail?.origin).toBe('method');
+    expect(starts(open)[0].detail?.trigger).toBe('public');
+    expect(reasons(open)).not.toContain('no-entry-point');
+
+    // A private method is callable from nowhere outside the class, and nothing
+    // else in this source says where it begins. That is the honest "no".
+    const shut = buildProcessSkeleton(source('PRIVATE'));
+    expect(starts(shut)).toHaveLength(0);
+    expect(reasons(shut)).toContain('no-entry-point');
+  });
+
+  test('PUBLIC SECTION in a LOCAL class is not an entry — local is not callable from outside', () => {
+    // The defect this catches is a claim, not a miss: `CLASS lcl_x DEFINITION`
+    // is visible inside the program only, so `PUBLIC SECTION` there says
+    // nothing about the world outside the file.
+    const skeleton = buildProcessSkeleton([
+      'REPORT z_local.',
+      'CLASS lcl_helper DEFINITION.',
+      '  PUBLIC SECTION.',
+      '    METHODS run.',
+      'ENDCLASS.',
+      'CLASS lcl_helper IMPLEMENTATION.',
+      '  METHOD run.',
+      '    UPDATE zsd_log SET x = 1.',
+      '  ENDMETHOD.',
+      'ENDCLASS.',
+    ].join('\n'));
+    expect(starts(skeleton)).toHaveLength(0);
+    expect(reasons(skeleton)).toContain('no-entry-point');
+  });
+
+  test('a method implemented through an interface is an entry; the interface alone is not', () => {
+    const implementation = buildProcessSkeleton([
+      'CLASS zcl_cc_route_impl DEFINITION PUBLIC FINAL CREATE PUBLIC.',
+      '  PUBLIC SECTION.',
+      '    INTERFACES zif_cc_route.',
+      'ENDCLASS.',
+      'CLASS zcl_cc_route_impl IMPLEMENTATION.',
+      '  METHOD zif_cc_route~determine.',
+      '    IF iv_amount > 10000.',
+      "      UPDATE zsd_route SET route = 'MANAGER'.",
+      '    ENDIF.',
+      '  ENDMETHOD.',
+      'ENDCLASS.',
+    ].join('\n'));
+    expect(starts(implementation).map((n) => n.label)).toEqual(['zif_cc_route~determine']);
+    expect(starts(implementation)[0].detail?.trigger).toBe('interface');
+  });
+
+  test('a RAP handler is an entry although its section is private', () => {
+    // Corpus case CC-059. `FOR DETERMINE ON MODIFY` stands in the source and
+    // says the runtime calls this method; the section does not contradict it.
+    const skeleton = buildProcessSkeleton([
+      'CLASS lhc_order DEFINITION INHERITING FROM cl_abap_behavior_handler.',
+      '  PRIVATE SECTION.',
+      '    METHODS set_status FOR DETERMINE ON MODIFY IMPORTING keys FOR order~set_status.',
+      'ENDCLASS.',
+      'CLASS lhc_order IMPLEMENTATION.',
+      '  METHOD set_status.',
+      '    UPDATE zi_order SET status = @lv_status.',
+      '  ENDMETHOD.',
+      'ENDCLASS.',
+    ].join('\n'));
+    expect(starts(skeleton).map((n) => [n.label, n.anchor?.lineStart])).toEqual([['set_status', 6]]);
+    expect(starts(skeleton)[0].detail?.trigger).toBe('RAP DETERMINE');
+  });
+
+  /* ---------------- a dynpro event (§16 V5) ---------------- */
+
+  test('a module pool begins at its screen modules — PBO and PAI, and both of them', () => {
+    // Corpus case CC-013, whose expected process begins at the PBO module and
+    // runs into the PAI module. Until 2.14 both were counted as unreached code
+    // "because the dynpro is not in this source" — true of the screen, not of
+    // the module, whose `OUTPUT` / `INPUT` word is written down.
+    const skeleton = buildProcessSkeleton([
+      'PROGRAM zcc_pool.',
+      'DATA ok_code TYPE c LENGTH 20.',
+      'MODULE status_0100 OUTPUT.',
+      "  SET PF-STATUS 'MAIN'.",
+      'ENDMODULE.',
+      'MODULE user_command_0100 INPUT.',
+      "  IF ok_code = 'CHECK'.",
+      '    UPDATE zsd_route SET x = 1.',
+      '  ENDIF.',
+      'ENDMODULE.',
+    ].join('\n'));
+    expect(starts(skeleton).map((n) => [n.label, n.anchor?.lineStart])).toEqual([
+      ['status_0100 OUTPUT', 3],
+      ['user_command_0100 INPUT', 6],
+    ]);
+    expect(starts(skeleton).map((n) => n.detail?.trigger)).toEqual(['dynpro PBO', 'dynpro PAI']);
+    expect(reasons(skeleton)).not.toContain('no-entry-point');
+    // Drawn, therefore no longer listed as code no entry point reaches.
+    expect(skeleton.notDrawn.unreached).toEqual([]);
+  });
+
+  test('a report with screen modules still begins at its event block, and the modules stay unreached', () => {
+    // The counter-direction, and the one that keeps the change small: where the
+    // program says itself where it begins, nothing new is added. A `CALL SCREEN`
+    // the report never reaches is not a second beginning.
+    const skeleton = buildProcessSkeleton([
+      'REPORT z_both.',
+      'START-OF-SELECTION.',
+      '  UPDATE zsd_route SET x = 1.',
+      'MODULE status_0100 OUTPUT.',
+      "  SET PF-STATUS 'MAIN'.",
+      'ENDMODULE.',
+    ].join('\n'));
+    expect(starts(skeleton).map((n) => n.label)).toEqual(['START-OF-SELECTION']);
+    expect(skeleton.notDrawn.unreached.map((r) => [r.name, r.kind])).toEqual([['STATUS_0100', 'module']]);
+  });
+
+  /* ---------------- a bare FORM ---------------- */
+
+  test('a user exit is its own beginning, and two of them are two beginnings', () => {
+    const skeleton = buildProcessSkeleton([
+      'FORM userexit_save_document.',
+      "  IF vbak-auart = 'TA' AND vbak-netwr > 20000.",
+      "    vbak-lifsk = '01'.",
+      '  ENDIF.',
+      'ENDFORM.',
+      'FORM userexit_check_vbap.',
+      '  UPDATE vbap SET abgru = @lv_reason.',
+      'ENDFORM.',
+    ].join('\n'));
+    expect(starts(skeleton).map((n) => [n.label, n.anchor?.lineStart])).toEqual([
+      ['userexit_save_document', 1],
+      ['userexit_check_vbap', 6],
+    ]);
+    for (const start of starts(skeleton)) expect(start.detail?.origin).toBe('form');
+  });
+
+  test('a FORM the source performs is a step of its caller, not a second beginning', () => {
+    const skeleton = buildProcessSkeleton([
+      'REPORT z_perform.',
+      'START-OF-SELECTION.',
+      '  PERFORM write_log.',
+      'FORM write_log.',
+      '  UPDATE zsd_log SET x = 1.',
+      'ENDFORM.',
+    ].join('\n'));
+    expect(starts(skeleton).map((n) => n.label)).toEqual(['START-OF-SELECTION']);
+  });
+
+  /* ---------------- "not applicable", with the explanation ---------------- */
+
+  test('an interface-only upload says "not applicable" and why, instead of 0 steps', () => {
+    // Corpus case CC-009's second file. Zero nodes with no word is the one
+    // answer that reads as a failure of the engine rather than a property of
+    // the upload — the roadmap names this result explicitly.
+    const skeleton = buildProcessSkeleton([
+      'INTERFACE zif_cc_route PUBLIC.',
+      '  INTERFACES if_badi_interface.',
+      '  METHODS determine IMPORTING iv_amount TYPE p',
+      '                    CHANGING cv_route TYPE string.',
+      'ENDINTERFACE.',
+    ].join('\n'));
+    expect(skeleton.nodes).toEqual([]);
+    expect(reasons(skeleton)).toEqual(['entry-not-applicable']);
+    const note = skeleton.notes[0];
+    expect(note.detail).toContain('not applicable');
+    // The explanation has to say what to do next, or it is only a refusal.
+    expect(note.detail).toContain('implements this interface');
+    expect(note.lineStart).toBe(1);
+    expect(reasons(skeleton)).not.toContain('no-entry-point');
+  });
+
+  /* ---------------- the multi-file case ---------------- */
+
+  test('a main program of nothing but INCLUDEs asks for the files it is missing', () => {
+    const skeleton = buildProcessSkeleton([
+      'PROGRAM sapmzcc_pool.',
+      'INCLUDE mzcc_pooltop.',
+      'INCLUDE mzcc_poolo01.',
+      'INCLUDE mzcc_pooli01.',
+    ].join('\n'));
+    expect(skeleton.nodes).toEqual([]);
+    const note = skeleton.notes.find((n) => n.reason === 'no-entry-point');
+    expect(note, 'a main program that includes everything has no beginning of its own').toBeTruthy();
+    // Named, not implied: which files to add.
+    expect(note!.detail).toContain('mzcc_pooltop');
+    expect(note!.detail).toContain('mzcc_poolo01');
+    expect(note!.detail).toContain('mzcc_pooli01');
+    expect(note!.detail).toContain('Upload them');
+    // And the includes are still reported one by one as text that was not read.
+    expect(skeleton.notes.filter((n) => n.reason === 'include-not-read')).toHaveLength(3);
+  });
+
+  /* ---------------- what the source does not say ---------------- */
+
+  test('the trigger is Not determined with a reason — an RFC or an IDoc is never guessed', () => {
+    // Across the reference holding 14 % of processes begin on a message. That
+    // is a fact about the holding and no evidence at all about one source, so
+    // the start event says what it is drawn from and leaves the rest open.
+    const skeleton = buildProcessSkeleton([
+      'FUNCTION z_cc_idoc_input.',
+      '  UPDATE zsd_route SET x = 1.',
+      'ENDFUNCTION.',
+    ].join('\n'));
+    const note = skeleton.notes.find((n) => n.reason === 'entry-trigger-not-determined');
+    expect(note?.lineStart).toBe(1);
+    expect(note?.detail).toContain('not determined');
+    expect(note?.detail).toContain('z_cc_idoc_input');
+    expect(starts(skeleton)[0].detail?.triggerNotDetermined).toBe(true);
+    // The name says IDoc. The engine does not.
+    expect(starts(skeleton)[0].kind).toBe('start');
+    expect(JSON.stringify(starts(skeleton)[0].detail)).not.toContain('IDoc');
+  });
+
+  /* ---------------- the measurement ---------------- */
+
+  test('every shape §16 V5 measured at zero nodes now draws a process', () => {
+    // "gemessen ergeben heute Klassenmethode, Modulpool und nackte FORM null
+    // Knoten" — the three, in one test, so a regression shows up as the number
+    // it is rather than as a corpus case name.
+    const shapes: Array<[string, string]> = [
+      ['class method', [
+        'CLASS zcl_cc_a DEFINITION PUBLIC FINAL CREATE PUBLIC.',
+        '  PUBLIC SECTION.',
+        '    METHODS run.',
+        'ENDCLASS.',
+        'CLASS zcl_cc_a IMPLEMENTATION.',
+        '  METHOD run.',
+        '    UPDATE zsd_a SET x = 1.',
+        '  ENDMETHOD.',
+        'ENDCLASS.',
+      ].join('\n')],
+      ['module pool', [
+        'PROGRAM zcc_b.',
+        'MODULE user_command_0100 INPUT.',
+        '  UPDATE zsd_b SET x = 1.',
+        'ENDMODULE.',
+      ].join('\n')],
+      ['bare FORM', [
+        'FORM userexit_c.',
+        '  UPDATE zsd_c SET x = 1.',
+        'ENDFORM.',
+      ].join('\n')],
+      ['function module', [
+        'FUNCTION z_cc_d.',
+        '  UPDATE zsd_d SET x = 1.',
+        'ENDFUNCTION.',
+      ].join('\n')],
+    ];
+    for (const [what, source] of shapes) {
+      const skeleton = buildProcessSkeleton(source);
+      expect(starts(skeleton), `${what} has a beginning`).toHaveLength(1);
+      expect(skeleton.nodes.length, `${what} draws a process`).toBeGreaterThan(2);
+      expect(skeleton.nodes.some((n) => n.kind === 'write'), `${what} keeps its step`).toBe(true);
+      expect(reasons(skeleton), `${what} no longer refuses`).not.toContain('no-entry-point');
+    }
   });
 });

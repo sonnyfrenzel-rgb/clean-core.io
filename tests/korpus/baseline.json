@@ -1191,7 +1191,7 @@
           "note": "Der Fall nennt keinen parallelen Knoten (Sollfeld leer) — nicht geprüft, Roadmap 2.17."
         }
       ],
-      "reason": "4 von 7 Sollknoten verglichen (2 getroffen, 2 ohne Knoten, 0 mit anderer Art); 0 von 7 Sollkanten verglichen (0 getroffen, 0 fehlend, 0 mit anderer Art, 7 ohne aufgelöste Enden). Die Engine baut an diesem Fall 3 Knoten. Ohne Knoten: c/call@source.abap:7 erwartet call-activity|service-task|sub-process|transaction|user-task|task in source.abap:7–9, g/gateway@implementation.abap:7 erwartet gateway in implementation.abap:7–7. Andere Knotenart: —. Fehlende Kante: —. Andere Kantenart: —. Nicht vergleichbar: b/call@source.abap:6 — keine Brücke für „call\" an „GET BADI lo_badi\", m/action@implementation.abap:8 — keine Brücke für „action\" an „cv_route = 'MANAGER_ROUTE'\", a/action@implementation.abap:10 — keine Brücke für „action\" an „cv_route = 'AUTO_ROUTE'\"."
+      "reason": "4 von 7 Sollknoten verglichen (3 getroffen, 1 ohne Knoten, 0 mit anderer Art); 0 von 7 Sollkanten verglichen (0 getroffen, 0 fehlend, 0 mit anderer Art, 7 ohne aufgelöste Enden). Die Engine baut an diesem Fall 6 Knoten. Ohne Knoten: c/call@source.abap:7 erwartet call-activity|service-task|sub-process|transaction|user-task|task in source.abap:7–9. Andere Knotenart: —. Fehlende Kante: —. Andere Kantenart: —. Nicht vergleichbar: b/call@source.abap:6 — keine Brücke für „call\" an „GET BADI lo_badi\", m/action@implementation.abap:8 — keine Brücke für „action\" an „cv_route = 'MANAGER_ROUTE'\", a/action@implementation.abap:10 — keine Brücke für „action\" an „cv_route = 'AUTO_ROUTE'\"."
     },
     {
       "case": "CC-009",
@@ -1704,8 +1704,8 @@
         },
         {
           "name": "kanten",
-          "status": "not_checked",
-          "compared": 0,
+          "status": "compared",
+          "compared": 1,
           "total": 11,
           "note": "Kantenart (sequence/conditional/default/loop-back/boundary) zwischen zwei aufgelösten Knoten."
         },
@@ -1731,7 +1731,7 @@
           "note": "Der Fall nennt keinen parallelen Knoten (Sollfeld leer) — nicht geprüft, Roadmap 2.17."
         }
       ],
-      "reason": "4 von 9 Sollknoten verglichen (0 getroffen, 4 ohne Knoten, 0 mit anderer Art); 0 von 11 Sollkanten verglichen (0 getroffen, 0 fehlend, 0 mit anderer Art, 11 ohne aufgelöste Enden). Die Engine baut an diesem Fall 0 Knoten. Weniger als die Hälfte der Sollknoten war vergleichbar; das Ergebnis trägt keine Aussage. Nicht vergleichbar: p/action@source.abap:6 — keine Brücke für „action\" an „SET PF-STATUS 'MAIN'\", i/event@source.abap:8 — keine Brücke für „event\" an „MODULE user_command_0100 INPUT\", m/action@source.abap:12 — keine Brücke für „action\" an „gv_route = 'MANAGER_ROUTE'\", a/action@source.abap:14 — keine Brücke für „action\" an „gv_route = 'AUTO_ROUTE'\" … (+1)."
+      "reason": "4 von 9 Sollknoten verglichen (3 getroffen, 1 ohne Knoten, 0 mit anderer Art); 1 von 11 Sollkanten verglichen (1 getroffen, 0 fehlend, 0 mit anderer Art, 10 ohne aufgelöste Enden). Die Engine baut an diesem Fall 6 Knoten. Weniger als die Hälfte der Sollknoten war vergleichbar; das Ergebnis trägt keine Aussage. Nicht vergleichbar: p/action@source.abap:6 — keine Brücke für „action\" an „SET PF-STATUS 'MAIN'\", i/event@source.abap:8 — keine Brücke für „event\" an „MODULE user_command_0100 INPUT\", m/action@source.abap:12 — keine Brücke für „action\" an „gv_route = 'MANAGER_ROUTE'\", a/action@source.abap:14 — keine Brücke für „action\" an „gv_route = 'AUTO_ROUTE'\" … (+1)."
     },
     {
       "case": "CC-013",
@@ -5376,7 +5376,7 @@
           "note": "Der Fall nennt keinen parallelen Knoten (Sollfeld leer) — nicht geprüft, Roadmap 2.17."
         }
       ],
-      "reason": "4 von 7 Sollknoten verglichen (0 getroffen, 4 ohne Knoten, 0 mit anderer Art); 0 von 6 Sollkanten verglichen (0 getroffen, 0 fehlend, 0 mit anderer Art, 6 ohne aufgelöste Enden). Die Engine baut an diesem Fall 0 Knoten. Ohne Knoten: s/start@source.abap:7 erwartet start in source.abap:7–7, g/gateway@source.abap:10 erwartet gateway in source.abap:10–10, e1/end@source.abap:12 erwartet end|end-error in source.abap:12–12, done/end@source.abap:15 erwartet end|end-error in source.abap:15–15. Andere Knotenart: —. Fehlende Kante: —. Andere Kantenart: —. Nicht vergleichbar: r/read@source.abap:9 — keine Brücke für „read\" an „ASSIGN ('(SAPMV45A)VBAK-VBELN') TO <lv_v\", cl/action@source.abap:11 — keine Brücke für „action\" an „CLEAR rv_vbeln\", a/action@source.abap:14 — keine Brücke für „action\" an „rv_vbeln = <lv_vbeln>\"."
+      "reason": "4 von 7 Sollknoten verglichen (3 getroffen, 1 ohne Knoten, 0 mit anderer Art); 0 von 6 Sollkanten verglichen (0 getroffen, 0 fehlend, 0 mit anderer Art, 6 ohne aufgelöste Enden). Die Engine baut an diesem Fall 3 Knoten. Ohne Knoten: e1/end@source.abap:12 erwartet end|end-error in source.abap:12–12. Andere Knotenart: —. Fehlende Kante: —. Andere Kantenart: —. Nicht vergleichbar: r/read@source.abap:9 — keine Brücke für „read\" an „ASSIGN ('(SAPMV45A)VBAK-VBELN') TO <lv_v\", cl/action@source.abap:11 — keine Brücke für „action\" an „CLEAR rv_vbeln\", a/action@source.abap:14 — keine Brücke für „action\" an „rv_vbeln = <lv_vbeln>\"."
     },
     {
       "case": "CC-040",
@@ -7088,8 +7088,8 @@
     {
       "case": "CC-053",
       "class": "skelett",
-      "state": "disagree",
-      "verdict": "engine-defekt",
+      "state": "agree",
+      "verdict": null,
       "scope": {
         "compared": 4,
         "total": 7
@@ -7104,8 +7104,8 @@
         },
         {
           "name": "kanten",
-          "status": "not_checked",
-          "compared": 0,
+          "status": "compared",
+          "compared": 2,
           "total": 8,
           "note": "Kantenart (sequence/conditional/default/loop-back/boundary) zwischen zwei aufgelösten Knoten."
         },
@@ -7131,7 +7131,7 @@
           "note": "Der Fall nennt keinen parallelen Knoten (Sollfeld leer) — nicht geprüft, Roadmap 2.17."
         }
       ],
-      "reason": "4 von 7 Sollknoten verglichen (0 getroffen, 4 ohne Knoten, 0 mit anderer Art); 0 von 8 Sollkanten verglichen (0 getroffen, 0 fehlend, 0 mit anderer Art, 8 ohne aufgelöste Enden). Die Engine baut an diesem Fall 0 Knoten. Ohne Knoten: s/start@source.abap:1 erwartet start in source.abap:1–1, g/gateway@source.abap:4 erwartet gateway in source.abap:4–4, h/gateway@source.abap:7 erwartet gateway in source.abap:7–7, e/end@source.abap:10 erwartet end|end-error in source.abap:10–10. Andere Knotenart: —. Fehlende Kante: —. Andere Kantenart: —. Nicht vergleichbar: i/action@source.abap:3 — keine Brücke für „action\" an „CLEAR lv_block\", a/action@source.abap:5 — keine Brücke für „action\" an „lv_block = '01'\", w/action@source.abap:8 — keine Brücke für „action\" an „vbak-lifsk = lv_block\"."
+      "reason": "4 von 7 Sollknoten verglichen (4 getroffen, 0 ohne Knoten, 0 mit anderer Art); 2 von 8 Sollkanten verglichen (2 getroffen, 0 fehlend, 0 mit anderer Art, 6 ohne aufgelöste Enden). Die Engine baut an diesem Fall 4 Knoten. Nicht vergleichbar: i/action@source.abap:3 — keine Brücke für „action\" an „CLEAR lv_block\", a/action@source.abap:5 — keine Brücke für „action\" an „lv_block = '01'\", w/action@source.abap:8 — keine Brücke für „action\" an „vbak-lifsk = lv_block\"."
     },
     {
       "case": "CC-053",
@@ -7644,8 +7644,8 @@
         },
         {
           "name": "kanten",
-          "status": "not_checked",
-          "compared": 0,
+          "status": "compared",
+          "compared": 1,
           "total": 5,
           "note": "Kantenart (sequence/conditional/default/loop-back/boundary) zwischen zwei aufgelösten Knoten."
         },
@@ -7671,7 +7671,7 @@
           "note": "Der Fall nennt keinen parallelen Knoten (Sollfeld leer) — nicht geprüft, Roadmap 2.17."
         }
       ],
-      "reason": "4 von 5 Sollknoten verglichen (0 getroffen, 4 ohne Knoten, 0 mit anderer Art); 0 von 5 Sollkanten verglichen (0 getroffen, 0 fehlend, 0 mit anderer Art, 5 ohne aufgelöste Enden). Die Engine baut an diesem Fall 0 Knoten. Ohne Knoten: s/start@source.abap:9 erwartet start in source.abap:9–9, q/read@source.abap:10 erwartet read in source.abap:10–13, g/gateway@source.abap:14 erwartet gateway in source.abap:14–14, e/end@source.abap:17 erwartet end|end-error in source.abap:17–17. Andere Knotenart: —. Fehlende Kante: —. Andere Kantenart: —. Nicht vergleichbar: a/action@source.abap:15 — keine Brücke für „action\" an „rv_land1 = lv_land1\"."
+      "reason": "4 von 5 Sollknoten verglichen (3 getroffen, 0 ohne Knoten, 1 mit anderer Art); 1 von 5 Sollkanten verglichen (1 getroffen, 0 fehlend, 0 mit anderer Art, 4 ohne aufgelöste Enden). Die Engine baut an diesem Fall 4 Knoten. Ohne Knoten: —. Andere Knotenart: g/gateway@source.abap:14 → Engine error-boundary. Fehlende Kante: —. Andere Kantenart: —. Nicht vergleichbar: a/action@source.abap:15 — keine Brücke für „action\" an „rv_land1 = lv_land1\"."
     },
     {
       "case": "CC-057",
@@ -7898,8 +7898,8 @@
     {
       "case": "CC-059",
       "class": "skelett",
-      "state": "disagree",
-      "verdict": "engine-defekt",
+      "state": "agree",
+      "verdict": null,
       "scope": {
         "compared": 2,
         "total": 4
@@ -7941,7 +7941,7 @@
           "note": "Der Fall nennt keinen parallelen Knoten (Sollfeld leer) — nicht geprüft, Roadmap 2.17."
         }
       ],
-      "reason": "2 von 4 Sollknoten verglichen (0 getroffen, 2 ohne Knoten, 0 mit anderer Art); 0 von 3 Sollkanten verglichen (0 getroffen, 0 fehlend, 0 mit anderer Art, 3 ohne aufgelöste Enden). Die Engine baut an diesem Fall 0 Knoten. Ohne Knoten: s/start@source.abap:8 erwartet start in source.abap:8–8, w/write@source.abap:13 erwartet write in source.abap:13–20. Andere Knotenart: —. Fehlende Kante: —. Andere Kantenart: —. Nicht vergleichbar: r/read@source.abap:9 — keine Brücke für „read\" an „READ ENTITIES OF zi_order IN LOCAL MODE \", e/end@source.abap:21 — keine Brücke für „end\" an „reported = CORRESPONDING #( DEEP lt_repo\"."
+      "reason": "2 von 4 Sollknoten verglichen (2 getroffen, 0 ohne Knoten, 0 mit anderer Art); 0 von 3 Sollkanten verglichen (0 getroffen, 0 fehlend, 0 mit anderer Art, 3 ohne aufgelöste Enden). Die Engine baut an diesem Fall 3 Knoten. Nicht vergleichbar: r/read@source.abap:9 — keine Brücke für „read\" an „READ ENTITIES OF zi_order IN LOCAL MODE \", e/end@source.abap:21 — keine Brücke für „end\" an „reported = CORRESPONDING #( DEEP lt_repo\"."
     },
     {
       "case": "CC-059",
@@ -8076,7 +8076,7 @@
           "note": "Der Fall nennt keinen parallelen Knoten (Sollfeld leer) — nicht geprüft, Roadmap 2.17."
         }
       ],
-      "reason": "6 von 12 Sollknoten verglichen (0 getroffen, 6 ohne Knoten, 0 mit anderer Art); 0 von 13 Sollkanten verglichen (0 getroffen, 0 fehlend, 0 mit anderer Art, 13 ohne aufgelöste Enden). Die Engine baut an diesem Fall 0 Knoten. Ohne Knoten: s/start@zcl_route_service.clas.abap:10 erwartet start in zcl_route_service.clas.abap:10–10, q/read@zcl_customer_api.clas.abap:10 erwartet read in zcl_customer_api.clas.abap:10–13, wg/gateway@zcl_customer_api.clas.abap:14 erwartet gateway in zcl_customer_api.clas.abap:14–14, g1/gateway@zcl_route_service.clas.abap:12 erwartet gateway in zcl_route_service.clas.abap:12–12 … (+2). Andere Knotenart: —. Fehlende Kante: —. Andere Kantenart: —. Nicht vergleichbar: c/action@zcl_route_service.clas.abap:11 — keine Brücke für „action\" an „DATA(lv_name) = zcl_customer_api=>get_na\", wa/action@zcl_customer_api.clas.abap:15 — keine Brücke für „action\" an „rv_name = lv_name\", u/action@zcl_route_service.clas.abap:13 — keine Brücke für „action\" an „rv_route = 'UNKNOWN_CUSTOMER'\", g2/gateway@zcl_route_service.clas.abap:16 (expression_path = #cond) — keine Brücke für „gateway\" an „rv_route = COND #( WHEN iv_amount > 1000\" … (+2)."
+      "reason": "6 von 12 Sollknoten verglichen (4 getroffen, 1 ohne Knoten, 1 mit anderer Art); 0 von 13 Sollkanten verglichen (0 getroffen, 0 fehlend, 0 mit anderer Art, 13 ohne aufgelöste Enden). Die Engine baut an diesem Fall 7 Knoten. Ohne Knoten: x/end@zcl_route_service.clas.abap:14 erwartet end|end-error in zcl_route_service.clas.abap:14–14. Andere Knotenart: wg/gateway@zcl_customer_api.clas.abap:14 → Engine error-boundary. Fehlende Kante: —. Andere Kantenart: —. Nicht vergleichbar: c/action@zcl_route_service.clas.abap:11 — keine Brücke für „action\" an „DATA(lv_name) = zcl_customer_api=>get_na\", wa/action@zcl_customer_api.clas.abap:15 — keine Brücke für „action\" an „rv_name = lv_name\", u/action@zcl_route_service.clas.abap:13 — keine Brücke für „action\" an „rv_route = 'UNKNOWN_CUSTOMER'\", g2/gateway@zcl_route_service.clas.abap:16 (expression_path = #cond) — keine Brücke für „gateway\" an „rv_route = COND #( WHEN iv_amount > 1000\" … (+2)."
     },
     {
       "case": "CC-060",

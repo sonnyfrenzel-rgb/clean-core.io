@@ -160,7 +160,10 @@ const SHIPPED: Array<[string, number, number, number, number, number, number, nu
   ['Z_INVOICE_EXTRACTOR.txt', 13, 10, 2, 3, 2, 0, 0],
   ['Z_MATERIAL_STOCK_CALC.txt', 16, 14, 4, 5, 4, 0, 0],
   [PO, 71, 72, 9, 10, 11, 0, 0],
-  ['Z_ORDER_INTEGRITY_CHECK.txt', 0, 0, 0, 1, 0, 0, 0],
+  // Roadmap 2.14: the file's `FORM` is now the entry point it never had, so
+  // the export has something to write. 0→5 flow nodes / 0→4 flows / 0→3 data
+  // stores; still one plane and no pool.
+  ['Z_ORDER_INTEGRITY_CHECK.txt', 5, 4, 0, 1, 3, 0, 0],
   ['Z_SALES_ORDER_CREATOR.txt', 13, 11, 2, 3, 0, 0, 0],
 ];
 
@@ -1047,8 +1050,20 @@ test.describe('roadmap 2.16 — lanes in the exported file', () => {
   test('no lane, and no name, where the source proves neither', async () => {
     // A source that draws nothing has no process and therefore no actor. The
     // file then carries no `laneSet` at all rather than an empty band.
+    //
+    // The probe used to be `Z_ORDER_INTEGRITY_CHECK.txt`; since 2.14 that file
+    // has an entry point and a lane. An interface is the case that stays empty
+    // on purpose — it declares methods and runs nothing, which the engine calls
+    // "not applicable" rather than an empty result.
+    const source = [
+      'INTERFACE zif_cc_route PUBLIC.',
+      '  METHODS determine IMPORTING iv_amount TYPE p',
+      '                    CHANGING cv_route TYPE string.',
+      'ENDINTERFACE.',
+    ].join('\n');
+    expect(buildProcessSkeleton(source).nodes).toEqual([]);
     const { rootElement } = await (await moddle()).fromXML(
-      buildBpmnExportFromSource(read('Z_ORDER_INTEGRITY_CHECK.txt'), OPTIONS('Z_ORDER_INTEGRITY_CHECK.txt')).xml,
+      buildBpmnExportFromSource(source, OPTIONS('zif_cc_route.intf.abap')).xml,
     );
     const { process } = countOf(rootElement);
     expect(list(process.laneSets)).toHaveLength(0);

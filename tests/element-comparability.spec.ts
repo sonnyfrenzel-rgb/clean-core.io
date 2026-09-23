@@ -144,9 +144,18 @@ test.describe('7.8 / §16 V6 — comparability per element', () => {
     // row is a phase rather than one step, so they stand as `sub-process`
     // (`read` 30 → 27, `write` 23 → 20, `sub-process` 22 → 25). Not one element
     // was reclassified by the table; the skeleton drew different elements.
+    //
+    // 307 since roadmap 2.14, and all five of them are one file: until 2.14
+    // `Z_ORDER_INTEGRITY_CHECK.txt` had no entry point and therefore no
+    // elements at all. It now begins at the `FORM` no `PERFORM` reaches, and
+    // the five elements that were always in that file are classified for the
+    // first time — **+3 `structural`** (`start` 11 → 12, `end` 76 → 77,
+    // `output` 19 → 20) and **+2 `technical`** (`read` 27 → 28,
+    // `error-boundary` 21 → 22). Not one element changed class, and no other
+    // file moved by one.
     expect(byClass).toEqual({
-      structural: 106,
-      technical: 102,
+      structural: 109,
+      technical: 104,
       'business-comparable': 70,
       unknown: 24,
     });
@@ -161,14 +170,19 @@ test.describe('7.8 / §16 V6 — comparability per element', () => {
     // stands between the call and the `IF` (`BAPI_PO_CREATE1`), so the return
     // code is the table read's and not the call's.
     expect(byKind['gateway']).toEqual({ technical: 7, 'business-comparable': 18, unknown: 23 });
-    // The shapes the reference holding almost never draws — 76 end events (61
+    // The shapes the reference holding almost never draws — 77 end events (61
     // before 2.17 (b) gave fifteen loop bodies a plane, and a plane an end), 10
-    // error ends, 19 data objects, 21 boundary events (6 before 2.15) — and not
+    // error ends, 20 data objects, 22 boundary events (6 before 2.15) — and not
     // one of them is business-comparable.
-    expect(byKind['end']).toEqual({ structural: 76 });
+    //
+    // Three of these rows moved by exactly one at roadmap 2.14, and all three
+    // in `Z_ORDER_INTEGRITY_CHECK.txt`, which had no entry point until then and
+    // therefore no elements: its end event, its `WRITE` and the boundary event
+    // its `IF sy-subrc <> 0` folds into.
+    expect(byKind['end']).toEqual({ structural: 77 });
     expect(byKind['end-error']).toEqual({ technical: 10 });
-    expect(byKind['output']).toEqual({ structural: 19 });
-    expect(byKind['error-boundary']).toEqual({ technical: 21 });
+    expect(byKind['output']).toEqual({ structural: 20 });
+    expect(byKind['error-boundary']).toEqual({ technical: 22 });
 
     // Every class is actually reached — a table that only ever says one thing
     // would pass every assertion below without deciding anything.

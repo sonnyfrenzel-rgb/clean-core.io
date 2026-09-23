@@ -639,8 +639,36 @@ komplexeste Beispiel des Produkts, `ZLEGACY_ORDER_FULFILLMENT_AUDIT` (1.000 Zeil
 
 | BPMN-Element | entsteht aus | im Beispiel |
 |---|---|---|
-| **Startereignis** | Einstieg: `START-OF-SELECTION`, Transaktion, BAdI-Methode, RFC-Baustein | Audit-Lauf gestartet (L161) |
+| **Startereignis** | Einstieg: `START-OF-SELECTION`, Transaktion, BAdI-Methode, RFC-Baustein — **dazu (2.14): `FUNCTION name.`, eine öffentliche Methode einer *globalen* Klasse, ein Dynpro-Ereignis (`MODULE … OUTPUT` und `… INPUT`), und eine `FORM`, die kein `PERFORM` erreicht** | Audit-Lauf gestartet (L161) |
 | **Endereignis** | normales Ende des Einstiegs | Audit abgeschlossen (L176–179) |
+<!--
+  Die vier neuen Einstiegsformen (2.14, 23.09.2026) und die drei Regeln, die sie
+  eng halten — sie stehen hier, weil die Zeile darüber sonst als Einladung zum
+  Raten gelesen wird.
+
+  **Innerhalb einer Beweisart gibt es keine Rangfolge.** Zwei Funktionsbausteine
+  sind zwei Einstiege, PBO und PAI sind zwei Einstiege, zwei User-Exits sind zwei
+  Einstiege. Einen Vorrang gibt es nur *zwischen* Arten, und nur wo die Quelle
+  selbst eindeutig ist: ein Programm, das `START-OF-SELECTION` schreibt, hat
+  gesagt, wo es beginnt.
+
+  **„Public" heißt nicht „von außen aufrufbar".** Der erste Entwurf las jede
+  `PUBLIC SECTION` als Einstieg und gab `Z_ORDER_INTEGRITY_CHECK` sechs
+  Startereignisse — aber `CLASS lcl_x DEFINITION` ohne `PUBLIC` ist nur innerhalb
+  des Programms sichtbar. Verlangt wird jetzt `DEFINITION … PUBLIC`. Die eine
+  Ausnahme sind RAP-Handler: dort ist die `FOR …`-Klausel der Beleg, nicht die
+  Sichtbarkeit, und sie steht wörtlich in der Quelle.
+
+  **Was auslöst, wird nicht geraten.** Jeder Einstieg, der kein Ereignisblock ist,
+  trägt `triggerNotDetermined` — ein Funktionsbaustein namens `z_cc_idoc_input`
+  bekommt kein IDoc-Startereignis. Der Name sagt IDoc; die Engine nicht.
+
+  **Und „nicht anwendbar" ist ein Ergebnis.** Ein Upload, der nur ein Interface
+  enthält, meldet `entry-not-applicable` mit Erklärung und dem nächsten Schritt
+  („lade die implementierende Klasse hoch") — nicht null Schritte und auch nicht
+  „kein Einstieg gefunden", was nach einem Fehler des Lesers klingt.
+-->
+
 | **Fehler-Endereignis** | `MESSAGE … TYPE 'E'/'A'/'X'`, `RAISE`, `LEAVE PROGRAM` nach Fehler | Selektion abgelehnt (L183, L189), nicht berechtigt (L202, L209) |
 | **Eingeklappter Teilprozess** | eine `FORM`/Methode mit eigener Wirkung und mehr als drei Elementen; die Phasen eines Einstiegs | „Kunden anreichern" (L276–301), „Aktionen ausführen" (L435–451) |
 | **Aufruf-Aktivität** | `CALL TRANSACTION`, `SUBMIT … AND RETURN`, Aufruf eines anderen eigenen Programms | Kundenauftrag ändern per Batch-Input, VA02 (L467) |

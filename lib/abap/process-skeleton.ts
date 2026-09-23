@@ -351,6 +351,9 @@ export type SkeletonNoteReason =
   | 'unreachable-after-abort'
   | 'commit-boundary'
   | 'no-entry-point'
+  | 'entry-not-applicable'
+  | 'entry-trigger-not-determined'
+  | 'fork-without-join'
   | 'expansion-depth-reached';
 
 export interface SkeletonNote extends SourceRange {
@@ -438,6 +441,30 @@ const DECLARATIVE = new Set([
   'DEFINE', 'END-OF-DEFINITION', 'ENDFORM', 'ENDMODULE', 'ENDMETHOD',
   'ENDCLASS', 'ENDINTERFACE', 'CONTROLS', 'TYPE-POOL',
 ]);
+
+/**
+ * Everything `DECLARATIVE` holds, plus the words that open and close a named
+ * region and the words a class or interface body declares with. A source in
+ * which every statement is one of these **runs nothing** — roadmap 2.14 calls
+ * that "not applicable" and says so, rather than returning zero steps in
+ * silence. `METHOD`/`ENDMETHOD` belong here: an interface names methods and
+ * implements none.
+ */
+const DECLARES = new Set([
+  ...DECLARATIVE,
+  'CLASS', 'INTERFACE', 'METHOD', 'FUNCTION', 'ENDFUNCTION', 'FORM', 'MODULE',
+  'PUBLIC', 'PROTECTED', 'PRIVATE', 'METHODS', 'CLASS-METHODS', 'INTERFACES',
+  'ALIASES', 'EVENTS', 'CLASS-EVENTS', 'ENUM', 'ENDENUM', 'MESH',
+]);
+
+/**
+ * A RAP behaviour handler method — roadmap 2.14. The `FOR …` clause is the
+ * source saying, in words that stand in it, that the runtime calls this method;
+ * corpus case CC-059 declares `set_status FOR DETERMINE ON MODIFY` in a
+ * `PRIVATE SECTION` and its expected process begins there all the same.
+ */
+const RAP_HANDLER =
+  /\bFOR\s+(DETERMINE|VALIDATE|MODIFY|READ|LOCK|ACTION|FEATURES|BEHAVIOR|PRECHECK|NUMBERING|GLOBAL\s+AUTHORIZATION|INSTANCE\s+AUTHORIZATION|GLOBAL\s+FEATURES|INSTANCE\s+FEATURES)\b/i;
 
 /** Function modules that send something out of the system — §5.8 Send-Task. */
 const SEND_FUNCTIONS = new Set([
@@ -666,12 +693,25 @@ interface WalkContext {
   loopBreaks: Exit[][];
 }
 
+/**
+ * Where a process may begin — roadmap 2.14. `event` and `implicit` are the two
+ * a report writes; the other four are the ways a source that is not a report
+ * says "this is callable from outside", and every one of them is a word that
+ * stands in the source rather than a reading of what the program means.
+ */
+type EntryOrigin = 'event' | 'implicit' | 'function' | 'method' | 'module' | 'form';
+
 interface EntryPoint {
   statement: AbapStatement;
   lastIndex: number;
+  /** The statement the normal end is anchored at — the closer, where there is one. */
+  endStatement: AbapStatement;
   label: string;
   rank: number;
   implicit: boolean;
+  origin: EntryOrigin;
+  /** What the source says calls this, when it says anything at all. */
+  trigger: string | null;
 }
 
 /**
@@ -769,6 +809,12 @@ class SkeletonBuilder {
   private evidenceSeen = new Set<string>();
   private selectionNames = new Set<string>();
   private performedFrom = new Map<string, string[]>();
+  /** `FUNCTION name.` … `ENDFUNCTION.` — roadmap 2.14. Not a block: ABAP closes it, `block-structure.ts` does not open it. */
+  private functionBlocks: Array<{ name: string; openIndex: number; closeIndex: number }> = [];
+  /** Method names a class **definition** in this source declares callable from outside, upper-cased. */
+  private externallyCallableMethods = new Map<string, string>();
+  /** Region keys of the entries built, so `unreached()` does not also list them as not reached. */
+  private entryOfBlock = new Set<number>();
 
   constructor(
     private statements: AbapStatement[],
@@ -789,6 +835,8 @@ class SkeletonBuilder {
       const m = /^FORM\s+([\w/]+)/i.exec(this.statements[block.openIndex].text);
       if (m) this.formBlocks.set(m[1].toUpperCase(), block);
     }
+    this.readFunctionBlocks();
+    this.readMethodVisibility();
     this.readSelectionScreen();
     this.readEffects();
     this.noteWhatIsNotRead();
@@ -1067,11 +1115,102 @@ class SkeletonBuilder {
   }
 
   /**
-   * Rule 4. The event blocks, and — when the program has no `START-OF-SELECTION`
-   * — the statements it writes at program level, which ABAP runs as the implicit
-   * one. A report without the keyword still has a skeleton.
+   * Rule 4, and roadmap 2.14: **where does this process begin?**
+   *
+   * A report answers it itself — an event block, or the statements it writes at
+   * program level, which ABAP runs as the implicit `START-OF-SELECTION`. Most
+   * custom ABAP is not a report, and until 2.14 those sources got nothing at
+   * all: on 18.09.2026, 9 of the corpus sources ended with `no-entry-point` and
+   * **zero** nodes — a class method, a module pool, a BAdI implementation and a
+   * bare `FORM` among them. Zero nodes is not a careful answer, it is no
+   * answer, and it reads to the user as "there is no process here".
+   *
+   * The four additions are all the same kind of evidence: a declaration in this
+   * source that says the routine is callable from **outside** it.
+   *
+   * - `FUNCTION name.` — a function module. Its name is the name of the start
+   *   event; it is emphatically **not** `START-OF-SELECTION`, which is what the
+   *   implicit fallback used to make of it (§16 V5).
+   * - `METHOD name.` whose class definition declares it in the `PUBLIC SECTION`,
+   *   or through `INTERFACES`, or as a RAP handler (`FOR DETERMINE`, `FOR
+   *   MODIFY`, …) — the framework calls those whatever section they sit in.
+   * - `MODULE name INPUT.` / `OUTPUT.` — a dynpro event. Both, and in source
+   *   order: the screen runtime calls PBO and PAI, and calling one of them the
+   *   beginning and the other not would be a rank this source does not write.
+   * - a `FORM` no `PERFORM` in this source reaches — the user exit case. Only
+   *   when nothing above answered, because a form a report performs is a step
+   *   of that report and not a second beginning.
+   *
+   * **What the source does not say is not filled in.** That a method is
+   * callable is written down; *what* calls it — an RFC, an IDoc, a BAdI, a
+   * person at a screen — is not, and is left as a note rather than guessed.
+   * Across the reference holding, 14 % of processes start on a message, which
+   * is a fact about the holding and no evidence at all about one source.
+   *
+   * **And no rank is invented.** Within a kind, every member is an entry: two
+   * public methods are two beginnings, not one beginning and one orphan. Only
+   * between kinds does one answer beat another, and only where the source
+   * itself is unambiguous — a program that writes `START-OF-SELECTION` has said
+   * where it begins.
    */
   private readEntryPoints(): EntryPoint[] {
+    const events = this.eventEntries();
+    if (events.length) {
+      // Unchanged from rule 4, and deliberately: a program that writes an event
+      // block but no `START-OF-SELECTION` still runs its program-level
+      // statements as the implicit one. `GET TIME.` beside `GET vbak.` is the
+      // case, and it is two entries, not one.
+      if (!events.some((e) => /^START-OF-SELECTION$/i.test(e.label))) {
+        const free = this.programLevelStatements();
+        if (free.length) {
+          events.push({
+            statement: free[0],
+            lastIndex: free[free.length - 1].index,
+            endStatement: free[free.length - 1],
+            label: 'START-OF-SELECTION',
+            rank: 5,
+            implicit: true,
+            origin: 'implicit',
+            trigger: null,
+          });
+        }
+      }
+      return events;
+    }
+
+    // One class, not three: a function module, a public method and a dialog
+    // module are each "called from outside this source", and where a source
+    // carries more than one of them they are equals.
+    const calledFromOutside = [
+      ...this.functionEntries(),
+      ...this.methodEntries(),
+      ...this.moduleEntries(),
+    ].sort((a, b) => a.statement.index - b.statement.index);
+    if (calledFromOutside.length) return this.noteTriggers(calledFromOutside);
+
+    const free = this.programLevelStatements();
+    if (free.length) {
+      return [{
+        statement: free[0],
+        lastIndex: free[free.length - 1].index,
+        endStatement: free[free.length - 1],
+        label: 'START-OF-SELECTION',
+        rank: 5,
+        implicit: true,
+        origin: 'implicit',
+        trigger: null,
+      }];
+    }
+
+    const forms = this.formEntries();
+    if (forms.length) return this.noteTriggers(forms);
+
+    this.noteNoEntryPoint();
+    return [];
+  }
+
+  /** The classic event blocks, unchanged since rule 4 — a report says it itself. */
+  private eventEntries(): EntryPoint[] {
     const out: EntryPoint[] = [];
     const isBoundary = (i: number) => {
       const block = this.blockAt.get(i);
@@ -1087,40 +1226,337 @@ class SkeletonBuilder {
       for (let j = i + 1; j < this.statements.length; j++) {
         if (isBoundary(j)) { last = j - 1; break; }
       }
+      const lastIndex = Math.max(i, last);
       out.push({
         statement: this.statements[i],
-        lastIndex: Math.max(i, last),
+        lastIndex,
+        endStatement: this.statements[lastIndex],
         label: this.statements[i].text,
         rank: this.runtimeRank(this.statements[i].text),
         implicit: false,
+        origin: 'event',
+        trigger: null,
       });
-    }
-
-    if (!out.some((e) => /^START-OF-SELECTION$/i.test(e.label))) {
-      const free = this.programLevelStatements();
-      if (free.length) {
-        out.push({
-          statement: free[0],
-          lastIndex: free[free.length - 1].index,
-          label: 'START-OF-SELECTION',
-          rank: 5,
-          implicit: true,
-        });
-      } else if (out.length === 0) {
-        this.notes.push({
-          reason: 'no-entry-point',
-          detail:
-            'This source names no event block and writes no statement at program level, so nothing here says where the process begins. Every routine it defines is listed as not reached.',
-          snippet: '',
-          lineStart: 1,
-          lineEnd: Math.max(1, this.statements[this.statements.length - 1]?.lineEnd ?? 1),
-        });
-      }
     }
     return out;
   }
 
-  /** Executable statements outside every block and outside every event block. */
+  /**
+   * `FUNCTION name.` … `ENDFUNCTION.` — read here rather than in
+   * `block-structure.ts` because ABAP's own block table is shared with the
+   * branch reader, the call graph and the comparability rules, and a new kind
+   * in it changes what every one of them sees. What this needs is the range.
+   */
+  private readFunctionBlocks(): void {
+    const open: number[] = [];
+    for (let i = 0; i < this.statements.length; i++) {
+      const statement = this.statements[i];
+      if (statement.nativeSql) continue;
+      if (statement.keyword === 'FUNCTION') { open.push(i); continue; }
+      if (statement.keyword !== 'ENDFUNCTION') continue;
+      const openIndex = open.pop();
+      if (openIndex === undefined) continue;
+      const name = /^FUNCTION\s+([\w/]+)/i.exec(this.statements[openIndex].text);
+      if (name) this.functionBlocks.push({ name: name[1], openIndex, closeIndex: i });
+    }
+    // An opener nothing closed: the range runs to the end of the file, the same
+    // floor `block-structure.ts` uses, and `noteWhatIsNotRead` has already said
+    // that an unterminated container is a guess rather than an anchor.
+    for (const openIndex of open) {
+      const name = /^FUNCTION\s+([\w/]+)/i.exec(this.statements[openIndex].text);
+      if (name) this.functionBlocks.push({ name: name[1], openIndex, closeIndex: this.statements.length });
+    }
+    this.functionBlocks.sort((a, b) => a.openIndex - b.openIndex);
+  }
+
+  private functionEntries(): EntryPoint[] {
+    return this.functionBlocks.map((fn) => {
+      const opener = this.statements[fn.openIndex];
+      const closer = this.statements[Math.min(fn.closeIndex, this.statements.length - 1)];
+      this.entryOfBlock.add(fn.openIndex);
+      return {
+        statement: opener,
+        lastIndex: fn.closeIndex - 1,
+        endStatement: closer,
+        label: fn.name,
+        rank: RUNTIME_ORDER.length,
+        implicit: false,
+        origin: 'function' as const,
+        trigger: null,
+      };
+    });
+  }
+
+  /**
+   * What a class **definition** in this source declares callable from outside
+   * it: the `PUBLIC SECTION`, the interfaces it implements, and the RAP handler
+   * methods the framework calls whatever section they stand in.
+   *
+   * A private method is not here, and a class implementation whose definition
+   * is in another file declares nothing here — both stay silent rather than
+   * being assumed public.
+   */
+  private readMethodVisibility(): void {
+    for (const block of this.structure.blocks) {
+      if (block.kind !== 'class' && block.kind !== 'interface') continue;
+      const opener = this.statements[block.openIndex];
+      // **Local is not public.** `PUBLIC SECTION` in a `CLASS lcl_x DEFINITION`
+      // means public *within this program*; only `DEFINITION PUBLIC` — a global
+      // class — is callable from outside the source. Without that distinction
+      // the six local helper classes of `Z_ORDER_INTEGRITY_CHECK` each became a
+      // beginning of the process, which is six sentences the source does not
+      // write. A RAP handler is read below whatever its class is, because there
+      // the `FOR …` clause is the evidence rather than the visibility.
+      if (block.kind === 'class'
+        && !/^CLASS\s+[\w/]+\s+DEFINITION\b[^.]*\bPUBLIC\b/i.test(opener.text)) {
+        this.readRapHandlers(block);
+        continue;
+      }
+      // An interface declares nothing but public methods; a class starts private.
+      let visible = block.kind === 'interface';
+      for (let i = block.openIndex + 1; i < block.closeIndex; i++) {
+        const statement = this.statements[i];
+        if (statement.keyword === 'PUBLIC') {
+          visible = /^PUBLIC\s+SECTION\b/i.test(statement.text);
+          continue;
+        }
+        if (statement.keyword === 'PROTECTED' || statement.keyword === 'PRIVATE') {
+          visible = false;
+          continue;
+        }
+        if (statement.keyword === 'INTERFACES') {
+          // Every method of the interface is reachable as `zif~name`, and the
+          // prefix is what the implementation writes, so the prefix is recorded.
+          const name = /^INTERFACES\s+([\w/]+)/i.exec(statement.text);
+          if (visible && name) this.externallyCallableMethods.set(`${name[1].toUpperCase()}~`, 'interface');
+          continue;
+        }
+        if (statement.keyword !== 'METHODS' && statement.keyword !== 'CLASS-METHODS') continue;
+        const name = /^(?:CLASS-)?METHODS\s+([\w/~]+)/i.exec(statement.text);
+        if (!name) continue;
+        const handler = RAP_HANDLER.exec(statement.text);
+        if (handler) {
+          this.externallyCallableMethods.set(name[1].toUpperCase(), `RAP ${handler[1].toUpperCase()}`);
+          continue;
+        }
+        if (visible) this.externallyCallableMethods.set(name[1].toUpperCase(), 'public');
+      }
+    }
+  }
+
+  /**
+   * The one thing a **local** class can still say: that its method is a RAP
+   * handler. `lhc_order` of corpus case CC-059 declares `set_status FOR
+   * DETERMINE ON MODIFY` in its `PRIVATE SECTION`, and the runtime calls it
+   * regardless — the `FOR` clause stands in the source and the section does
+   * not contradict it.
+   */
+  private readRapHandlers(block: Block): void {
+    if (!/\bDEFINITION\b/i.test(this.statements[block.openIndex].text)) return;
+    for (let i = block.openIndex + 1; i < block.closeIndex; i++) {
+      const statement = this.statements[i];
+      if (statement.keyword !== 'METHODS' && statement.keyword !== 'CLASS-METHODS') continue;
+      const name = /^(?:CLASS-)?METHODS\s+([\w/~]+)/i.exec(statement.text);
+      const handler = RAP_HANDLER.exec(statement.text);
+      if (name && handler) {
+        this.externallyCallableMethods.set(name[1].toUpperCase(), `RAP ${handler[1].toUpperCase()}`);
+      }
+    }
+  }
+
+  /** Is this implemented method one the source declares callable from outside? */
+  private methodTrigger(name: string): string | null {
+    const upper = name.toUpperCase();
+    const direct = this.externallyCallableMethods.get(upper);
+    if (direct) return direct;
+    const tilde = upper.indexOf('~');
+    if (tilde < 0) return null;
+    return this.externallyCallableMethods.get(upper.slice(0, tilde + 1)) ?? null;
+  }
+
+  private methodEntries(): EntryPoint[] {
+    const out: EntryPoint[] = [];
+    for (const block of this.structure.blocks) {
+      if (block.kind !== 'method') continue;
+      const opener = this.statements[block.openIndex];
+      const name = /^METHOD\s+([\w/~]+)/i.exec(opener.text);
+      if (!name) continue;
+      const trigger = this.methodTrigger(name[1]);
+      if (!trigger) continue;
+      this.entryOfBlock.add(block.openIndex);
+      out.push({
+        statement: opener,
+        lastIndex: block.closeIndex - 1,
+        endStatement: this.statements[Math.min(block.closeIndex, this.statements.length - 1)],
+        label: name[1],
+        rank: RUNTIME_ORDER.length,
+        implicit: false,
+        origin: 'method',
+        trigger,
+      });
+    }
+    return out;
+  }
+
+  /**
+   * A dialog module. Until 2.14 these were counted with the unreached code, on
+   * the grounds that the dynpro is not in this source — which is true of the
+   * screen and not of the module: `MODULE … INPUT` is written down, and it is
+   * written down as an event the screen runtime raises. Corpus case CC-013 is
+   * the measurement: its expected process begins at the PBO module and runs
+   * into the PAI module, and the engine drew neither.
+   */
+  private moduleEntries(): EntryPoint[] {
+    const out: EntryPoint[] = [];
+    for (const block of this.structure.blocks) {
+      if (block.kind !== 'module') continue;
+      const opener = this.statements[block.openIndex];
+      const m = /^MODULE\s+([\w/]+)\s+(INPUT|OUTPUT)\b/i.exec(opener.text);
+      if (!m) continue;
+      this.entryOfBlock.add(block.openIndex);
+      out.push({
+        statement: opener,
+        lastIndex: block.closeIndex - 1,
+        endStatement: this.statements[Math.min(block.closeIndex, this.statements.length - 1)],
+        label: `${m[1]} ${m[2].toUpperCase()}`,
+        rank: RUNTIME_ORDER.length,
+        implicit: false,
+        origin: 'module',
+        trigger: m[2].toUpperCase() === 'INPUT' ? 'dynpro PAI' : 'dynpro PBO',
+      });
+    }
+    return out;
+  }
+
+  /**
+   * The bare `FORM` — a user exit, an enhancement include. Last, and only when
+   * nothing else in this source answered: a form a report performs is a step of
+   * that report, and drawing it as a second beginning would double it.
+   */
+  private formEntries(): EntryPoint[] {
+    const out: EntryPoint[] = [];
+    for (const [name, block] of this.formBlocks) {
+      if (!this.calls.unreachable.includes(name)) continue;
+      const opener = this.statements[block.openIndex];
+      const written = /^FORM\s+([\w/]+)/i.exec(opener.text);
+      this.entryOfBlock.add(block.openIndex);
+      out.push({
+        statement: opener,
+        lastIndex: block.closeIndex - 1,
+        endStatement: this.statements[Math.min(block.closeIndex, this.statements.length - 1)],
+        label: written ? written[1] : name,
+        rank: RUNTIME_ORDER.length,
+        implicit: false,
+        origin: 'form',
+        trigger: null,
+      });
+    }
+    return out.sort((a, b) => a.statement.index - b.statement.index);
+  }
+
+  /**
+   * *Not determined*, with the reason — §5.8's rule for what the code does not
+   * say. The source proves the routine is callable; it does not say what calls
+   * it, and a message start (RFC, IDoc, BAdI) is exactly the thing that is not
+   * written down. This note is why the start event may be drawn at all.
+   */
+  private noteTriggers(entries: EntryPoint[]): EntryPoint[] {
+    for (const entry of entries) {
+      const what = entry.origin === 'function' ? 'function module'
+        : entry.origin === 'method' ? 'method'
+          : entry.origin === 'module' ? 'screen module' : 'subroutine';
+      const proof = entry.trigger === 'public' ? 'its class declares it in the PUBLIC SECTION'
+        : entry.trigger === 'interface' ? 'its class implements the interface that declares it'
+          : entry.trigger === 'dynpro PAI' ? 'the screen runtime raises PAI on it'
+            : entry.trigger === 'dynpro PBO' ? 'the screen runtime raises PBO on it'
+              : entry.trigger ? `it is declared as a ${entry.trigger} handler`
+                : entry.origin === 'function' ? 'it is a function module, callable by name'
+                  : 'no PERFORM in this source reaches it, so its caller is outside this source';
+      this.note('entry-trigger-not-determined', entry.statement,
+        `The process is drawn as beginning at the ${what} ${entry.label} because ${proof}. `
+        + 'What triggers it — a remote call, an IDoc, a BAdI, a batch job or a person — is not in this '
+        + 'source and is not determined.');
+    }
+    return entries;
+  }
+
+  /**
+   * No entry, and why — roadmap 2.14. "Not applicable, with an explanation" is
+   * a result the step names on purpose: an interface, a type pool or a bare
+   * declaration has no process in it, and zero steps without a word is the one
+   * answer that reads as a failure of the engine rather than a property of the
+   * upload.
+   */
+  private noteNoEntryPoint(): void {
+    const lineEnd = Math.max(1, this.statements[this.statements.length - 1]?.lineEnd ?? 1);
+    const interfaces = this.structure.blocks.filter((b) => b.kind === 'interface');
+    // An `INCLUDE` is not a declaration: the program runs, its text is in
+    // another file. A main program that is nothing but include lines is the
+    // multi-file case, not the "not applicable" one, and the answer is the
+    // list of files to add — see the tail of this method.
+    const includesText = this.statements.some((st) =>
+      st.keyword === 'INCLUDE' && !/^INCLUDE\s+STRUCTURE\b/i.test(st.text));
+    const executable = includesText
+      || this.statements.some((st) => !DECLARES.has(st.keyword) && !st.nativeSql);
+    if (interfaces.length && !executable) {
+      const opener = this.statements[interfaces[0].openIndex];
+      this.notes.push({
+        reason: 'entry-not-applicable',
+        detail:
+          'This source declares an interface and implements nothing: it names methods and their parameters, '
+          + 'and not one statement that runs. A process view is not applicable here — that is a property of '
+          + 'the upload, not an empty result. Upload the class that implements this interface, and its '
+          + 'includes, to see the process.',
+        snippet: snippet(opener.text),
+        lineStart: interfaces[0].lineStart,
+        lineEnd: interfaces[0].lineEnd,
+      });
+      return;
+    }
+    if (!executable) {
+      this.notes.push({
+        reason: 'entry-not-applicable',
+        detail:
+          'This source declares and does not run: every statement in it is a declaration. A process view is '
+          + 'not applicable here — that is a property of the upload, not an empty result.',
+        snippet: '',
+        lineStart: 1,
+        lineEnd,
+      });
+      return;
+    }
+    // The multi-file case, named rather than implied: a main program that is
+    // nothing but `INCLUDE` lines has its entry point in a file this upload
+    // does not hold, and the useful answer is which files to add.
+    const includes: string[] = [];
+    for (const statement of this.statements) {
+      if (statement.keyword !== 'INCLUDE' || /^INCLUDE\s+STRUCTURE\b/i.test(statement.text)) continue;
+      const name = /^INCLUDE\s+([\w/]+)/i.exec(statement.text);
+      if (name && !includes.includes(name[1])) includes.push(name[1]);
+    }
+    this.notes.push({
+      reason: 'no-entry-point',
+      detail:
+        'This source names no event block, no function module, no externally callable method, no screen '
+        + 'module and no unperformed subroutine, and it writes no statement at program level — so nothing '
+        + 'here says where the process begins. Every routine it defines is listed as not reached.'
+        + (includes.length
+          ? ` The beginning is in one of the ${includes.length} includes this source names and this upload `
+            + `does not hold: ${includes.join(', ')}. Upload them and the process can be read.`
+          : ' If this is one file of several, the entry point is in another one: upload the rest as well.'),
+      snippet: '',
+      lineStart: 1,
+      lineEnd,
+    });
+  }
+
+  /**
+   * Executable statements outside every block, every event block and every
+   * function module. The last of those is 2.14: the body of a `FUNCTION` stands
+   * at program level as far as the block table is concerned, and reading it as
+   * the implicit `START-OF-SELECTION` put a report's start event on a function
+   * group (§16 V5).
+   */
   private programLevelStatements(): AbapStatement[] {
     const inEvent = new Set<number>();
     for (let i = 0; i < this.statements.length; i++) {
@@ -1133,6 +1569,9 @@ class SkeletonBuilder {
         if (boundary) break;
         inEvent.add(j);
       }
+    }
+    for (const fn of this.functionBlocks) {
+      for (let i = fn.openIndex; i <= Math.min(fn.closeIndex, this.statements.length - 1); i++) inEvent.add(i);
     }
     const out: AbapStatement[] = [];
     for (let i = 0; i < this.statements.length; i++) {
@@ -1165,10 +1604,20 @@ class SkeletonBuilder {
 
     const container = entry.implicit ? null : entry.label;
     const start = this.addNode('start', entry.label, anchorOf(entry.statement), region, container, {
-      detail: { implicit: entry.implicit, runtimeRank: entry.rank },
+      detail: {
+        implicit: entry.implicit,
+        runtimeRank: entry.rank,
+        // Roadmap 2.14: which of the six the reader is looking at, and what the
+        // source said to justify it. `trigger: null` is the honest half — the
+        // source proves the routine is callable and not what calls it.
+        origin: entry.origin,
+        ...(entry.trigger ? { trigger: entry.trigger } : { triggerNotDetermined: true }),
+      },
     });
-    const last = this.statements[entry.lastIndex];
-    const end = this.addNode('end', entry.label, anchorOf(last), region, container);
+    // The normal end of a named region is its closing word, not the last
+    // statement before it (2.14): `ENDMETHOD` is where the method ends, and
+    // corpus cases CC-040 and CC-057 anchor their end node exactly there.
+    const end = this.addNode('end', entry.label, anchorOf(entry.endStatement), region, container);
     region.endNodeId = end.id;
 
     const from = entry.implicit ? entry.statement.index : entry.statement.index + 1;
@@ -1436,7 +1885,20 @@ class SkeletonBuilder {
       branchExits.push(...this.walkStatement(this.statements[member], ctx,
         [{ from: fork.id, condition: '', kind: 'sequence' }], null).exits);
     }
-    if (group.joinIndex === null) return branchExits;
+    if (group.joinIndex === null) {
+      // **The caller's continuation is not the exit of the tasks.** Handing the
+      // branch exits back would let the walker hang the next statement of the
+      // caller on them, and the diagram would then say the caller ran on *after
+      // the tasks came back*. The source says the opposite — that is why there
+      // is no `WAIT` in it. So the caller is one more branch of the same fork:
+      // it runs concurrently with the tasks, and the asynchronous branches end
+      // where the source stops speaking about them.
+      this.note('fork-without-join', first,
+        `${group.members.length} tasks are started asynchronously and nothing in this source waits for them. `
+        + 'The caller carries on at once, so no step after the fork depends on a result: the branches are drawn '
+        + 'without a join, and where each task ends is outside this program.');
+      return [{ from: fork.id, condition: '', kind: 'sequence' }];
+    }
 
     const wait = this.statements[group.joinIndex];
     const join = this.addNode('parallel-gateway', snippet(wait.text), anchorOf(wait),
@@ -2577,13 +3039,16 @@ class SkeletonBuilder {
     const out: UnreachedRegion[] = [];
     for (const name of this.calls.unreachable) {
       const block = this.formBlocks.get(name);
-      if (block) out.push({ name, kind: 'form', lineStart: block.lineStart, lineEnd: block.lineEnd });
+      if (!block || this.entryOfBlock.has(block.openIndex)) continue;
+      out.push({ name, kind: 'form', lineStart: block.lineStart, lineEnd: block.lineEnd });
     }
-    // A screen module runs from a dynpro, and a dynpro is not in this source: no
-    // entry point here reaches one, so §5.8 counts them with the unreached code
-    // rather than drawing a start event nothing proves.
+    // A screen module runs from a dynpro, and the dynpro is not in this source.
+    // Until 2.14 that made it unreached code; it no longer does, because the
+    // `MODULE … INPUT` line is itself the source saying the screen runtime
+    // calls it. A module that is **not** an entry — one this source never
+    // reaches and never declares as a screen event — is still counted here.
     for (const block of this.structure.blocks) {
-      if (block.kind !== 'module') continue;
+      if (block.kind !== 'module' || this.entryOfBlock.has(block.openIndex)) continue;
       const name = /^MODULE\s+([\w/]+)/i.exec(this.statements[block.openIndex].text)?.[1];
       if (name) {
         out.push({ name: name.toUpperCase(), kind: 'module', lineStart: block.lineStart, lineEnd: block.lineEnd });
