@@ -192,7 +192,17 @@ test.describe('no model call', () => {
   test('its only imports are the pure, import-free phase and model-switch contracts', () => {
     const src = fs.readFileSync(path.join(ROOT, 'lib/next-step.ts'), 'utf8');
     const localImports = [...src.matchAll(/from\s+'(\.[^']+)'/g)].map((m) => m[1]);
-    expect(localImports.sort()).toEqual(['./model-stages', './types', './workflow-steps']);
+    // `./provenance` joined the list on 23.09.2026: the card states where its
+    // sentence comes from, and the word for that is one of the nine
+    // (`DESIGN.md` §4). It belongs under this guard rather than beside it —
+    // `lib/provenance.ts` is pure data with no imports of its own, so it
+    // cannot carry a network call in behind it.
+    expect(localImports.sort()).toEqual([
+      './model-stages',
+      './provenance',
+      './types',
+      './workflow-steps',
+    ]);
   });
 });
 
