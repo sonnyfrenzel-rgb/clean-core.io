@@ -5,6 +5,10 @@ import { callGemini } from '@/lib/gemini';
 import { useUserProfile } from './useUserProfile';
 import type { Project, TestCase, TestSuite, CoverageEstimate, ManualTestRequirement } from '@/lib/types';
 import { PRODUCT_GEMINI_MODEL } from '@/lib/constants';
+import {
+  checkTestSuiteShape,
+  testSuiteRejectionMessage,
+} from '@/app/(app)/project/[projectId]/testing/test-suite-schema';
 
 export const useTestGeneration = (projectId: string, project: Project | null, setProject: React.Dispatch<React.SetStateAction<Project | null>>) => {
   const [isGenerating, setIsGenerating] = useState(false);
@@ -12,7 +16,44 @@ export const useTestGeneration = (projectId: string, project: Project | null, se
   // The saved suite, until this session generates a new one. Seeding useState from `project` read it once, on the
   // first render, while the project was still loading: a saved suite never appeared after a reload, and the page
   // offered to generate it again (QA review of a0c108513165).
-  const testCases = useMemo(() => generated ?? project?.testCases ?? [], [generated, project?.testCases]);
+  //
+  // The stored half also runs through the shape check, and for the same reason
+  // the documentation stage does it: the gate below stops a bad suite being
+  // written from now on, but a suite an earlier build already stored is still
+  // in Firestore, and reading it back would crash the page exactly as before.
+  // A rejected stored suite becomes no suite — which is the state the page
+  // already knows how to draw, with the "Generate Test Suite" button on it —
+  // and `storedSuiteRejected` is what lets the page say so instead of pretending
+  // nothing was ever generated.
+  //
+  // It is all-or-nothing on purpose: the four fields are written in one update
+  // and are one answer, so showing three of them beside a refused fourth would
+  // be a screen no generation ever produced.
+  const storedCheck = useMemo(() => {
+    if (!project) return { ok: true, problems: [] };
+    if (
+      project.testCases === undefined &&
+      project.testSuite === undefined &&
+      project.coverageEstimate === undefined &&
+      project.manualTestingRequirements === undefined
+    ) {
+      return { ok: true, problems: [] };
+    }
+    return checkTestSuiteShape({
+      testCases: project.testCases,
+      testSuite: project.testSuite,
+      coverageEstimate: project.coverageEstimate,
+      manualTestingRequirements: project.manualTestingRequirements,
+    });
+  }, [project]);
+
+  /** True only for a suite that is stored and cannot be drawn — not for "nothing generated yet". */
+  const storedSuiteRejected = generated === null && !storedCheck.ok;
+
+  const testCases = useMemo(
+    () => generated ?? (storedCheck.ok ? project?.testCases ?? [] : []),
+    [generated, project?.testCases, storedCheck.ok],
+  );
   const { profile } = useUserProfile();
 
   const generateTestCases = async (previousError?: string) => {
@@ -91,6 +132,20 @@ export const useTestGeneration = (projectId: string, project: Project | null, se
       const responseText = await callGemini(prompt, PRODUCT_GEMINI_MODEL, true, 'testing');
       
       const result = JSON.parse(responseText || '{}');
+
+      // Parsing is not validation. `JSON.parse` proves the answer was JSON and
+      // nothing else, and every `|| []` / `|| {}` fallback below waves a truthy
+      // object of the wrong shape straight through — which is how `testCases`
+      // came to be an object that `testing/page.tsx` asked for `.map`
+      // (roadmap 17.2; the same defect `0cb64a5` fixed in `documentation`).
+      // The gate belongs here, before the write, so a refused answer changes
+      // nothing: no Firestore update, no `status: 'testing'`, and the suite
+      // that was there before is still there.
+      const shape = checkTestSuiteShape(result);
+      if (!shape.ok) {
+        throw new Error(testSuiteRejectionMessage(shape.problems));
+      }
+
       const generatedTestCases: TestCase[] = result.testCases || [];
       const generatedTestSuite: TestSuite = result.testSuite || { code: '' };
       const coverageEstimate: CoverageEstimate = result.coverageEstimate || { percentage: 0, explanation: 'No coverage estimate available', missingCoverage: 'N/A' };
@@ -117,5 +172,5 @@ export const useTestGeneration = (projectId: string, project: Project | null, se
     }
   };
 
-  return { isGenerating, testCases, generateTestCases };
+  return { isGenerating, testCases, generateTestCases, storedSuiteRejected };
 };

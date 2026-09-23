@@ -71,3 +71,67 @@ test('the deploy-time escape hatch cannot run an unreviewed model', async () => 
   // And the body default goes through it rather than around it.
   expect(route).toMatch(/model = productModel\(\),/);
 });
+
+/**
+ * Roadmap 17.1 — every entry of the register has been called, and answered.
+ *
+ * `gemini-2.5-pro` stood in the register as "GA — stable fallback" while the
+ * production key got HTTP 404, "no longer available to new users", for it. The
+ * escape hatch `GEMINI_MODEL` accepted the name, so the one thing the register
+ * is for — a model that can be switched to without a deploy when Google
+ * withdraws the default — pointed at a door that was walled up.
+ *
+ * The check that would have caught it is a real `generateContent` call, and it
+ * is deliberately *not* in this file. The suite runs on every push, in
+ * environments with no Gemini key and sometimes no network, and a spec that
+ * reaches the provider would go red for the environment instead of for the
+ * register. `ListModels` is no substitute either: it still lists
+ * `gemini-2.5-pro` for the key that cannot call it.
+ *
+ * So the call lives in `scripts/check-gemini-register.mjs`, which writes what
+ * came back, and what this test holds is the register and that record together:
+ * a model may be in the register only if it has been called and answered. The
+ * test needs no key and no network, costs nothing, and goes red for exactly one
+ * reason — somebody added a model without probing it, or the probe found a dead
+ * one. Re-running the script is the whole remedy.
+ *
+ * What it cannot do is notice that a model died *after* the last probe; nothing
+ * offline can. That is a recurring network call, and it belongs where the other
+ * recurring checks already are — `.github/workflows/qa-weekly-health.yml` — as
+ * `node scripts/check-gemini-register.mjs`, which exits 1 on a dead entry and 2
+ * when there is no key. Wiring it in is not part of this step.
+ */
+test('every model in the register has been called, and answered', () => {
+  const route = read('app/api/gemini/route.ts');
+  const start = route.indexOf('const ALLOWED_MODELS');
+  const block = route.slice(start, route.indexOf('])', start));
+  const register = [...block.matchAll(/'([^']+)'/g)].map((m) => m[1]);
+  expect(register.length, 'no model names were parsed out of the register — the assertions below would be empty').toBeGreaterThan(0);
+
+  const ledger = JSON.parse(read('tests/gemini-register-liveness.json')) as {
+    models: Record<string, { httpStatus: number; answered: boolean; checkedAt: string; providerMessage?: string }>;
+  };
+
+  const unprobed = register.filter((m) => !ledger.models[m]);
+  expect(
+    unprobed,
+    `these models may be called but were never probed. Run: node scripts/check-gemini-register.mjs --write\n${unprobed.join('\n')}`,
+  ).toEqual([]);
+
+  const dead = register
+    .filter((m) => !ledger.models[m].answered)
+    .map((m) => `${m} — HTTP ${ledger.models[m].httpStatus} on ${ledger.models[m].checkedAt}: ${ledger.models[m].providerMessage ?? 'no message recorded'}`);
+  expect(dead, `the register offers models the provider refused:\n${dead.join('\n')}`).toEqual([]);
+
+  // The record describes this register and no other: a leftover entry for a
+  // model that has since been struck is how a ledger starts drifting into a
+  // list of models nobody has looked at in a year.
+  expect(Object.keys(ledger.models).sort(), 'the record names models that are not in the register').toEqual([...register].sort());
+
+  // Each record says which call was made and when, so the claim can be re-read
+  // rather than taken on trust.
+  for (const model of register) {
+    expect(ledger.models[model].checkedAt, `no date recorded for ${model}`).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(typeof ledger.models[model].httpStatus, `no HTTP status recorded for ${model}`).toBe('number');
+  }
+});

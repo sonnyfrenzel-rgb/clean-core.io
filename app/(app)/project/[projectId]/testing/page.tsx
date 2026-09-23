@@ -34,6 +34,7 @@ import { useModelAvailability } from '@/hooks/useModelAvailability';
 import { workflowSteps, generationBlockers } from '@/lib/workflow-steps';
 import { LIVE_TEST_EXECUTION } from '@/lib/locked-paths';
 import StaleNotice from '@/components/StaleNotice';
+import { STORED_TEST_SUITE_REJECTED } from './test-suite-schema';
 
 const renderSafeValue = (val: any): string => {
   if (val === null || val === undefined) return '';
@@ -156,7 +157,9 @@ export default function TestingSandboxPage() {
   const [odataExpandedEntity, setOdataExpandedEntity] = useState<string | null>(null);
   const [odataCatalogSearch, setOdataCatalogSearch] = useState('');
 
-  const { isGenerating, testCases, generateTestCases } = useTestGeneration(projectId as string, project, setProject);
+  const { isGenerating, testCases, generateTestCases, storedSuiteRejected } = useTestGeneration(projectId as string, project, setProject);
+  /** Why the last generation attempt produced nothing. Empty when none has failed. */
+  const [genError, setGenError] = useState('');
   const { isRunning, testResults, sandboxOutput, setSandboxOutput, aiExplanation, runTestCases, stubbedPackages } = useTestExecution(projectId as string, project, setProject);
   const [showTestCode, setShowTestCode] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -605,13 +608,19 @@ export default function TestingSandboxPage() {
     // Not against code generated from a previous source (E01-F01-US02). The
     // notice at the top of the page says which stage to regenerate first.
     if (generationBlockers(project, 'testing').length > 0) return;
+    setGenError('');
     try {
       const result = await generateTestCases();
       if (result && result.testCases) {
         setSelectedTestCases(result.testCases.map((_: any, i: number) => i));
       }
     } catch (error) {
+      // The console was the only place this went. A refused generation leaves
+      // the page exactly as it was, which from the reader's side is a button
+      // that does nothing — so the reason now stands next to the button
+      // (roadmap 17.2), the way the documentation stage already does it.
       console.error("Failed to generate test cases:", error);
+      setGenError(error instanceof Error ? error.message : String(error));
     }
   };
 
@@ -837,7 +846,7 @@ export default function TestingSandboxPage() {
           <div>
             <h3 className="font-bold text-purple-900 mb-1 text-sm md:text-base">Estimated Coverage</h3>
             <p className="text-xs md:text-sm text-purple-700 font-bold uppercase tracking-tight">
-              {project?.coverageEstimate
+              {project?.coverageEstimate && !storedSuiteRejected
                 ? <span data-stage-output="coverageEstimate">{`${project.coverageEstimate.percentage}% Coverage`}</span>
                 : 'Generate tests to see estimate'}
             </p>
@@ -1658,10 +1667,27 @@ export default function TestingSandboxPage() {
                   <ListChecks className="w-10 h-10 md:w-12 md:h-12" />
                 </div>
                 <h3 className="text-base font-extrabold text-slate-900">Generate Your Test Suite</h3>
-                <p className="text-xs text-slate-500 mt-2 max-w-xs leading-relaxed">
-                  To begin sandboxed verification, you must first generate the test cases based on your modernization blueprint.
-                </p>
+                {/* A stored suite that cannot be drawn is a fact about this
+                    project, not the same thing as never having generated one.
+                    Without this line the reader is told to start something he
+                    already did, and the reason his last suite vanished is
+                    nowhere on the screen. */}
+                {storedSuiteRejected ? (
+                  <p data-stored-test-suite-rejected className="text-xs text-slate-500 mt-2 max-w-xs leading-relaxed">
+                    {STORED_TEST_SUITE_REJECTED}
+                  </p>
+                ) : (
+                  <p className="text-xs text-slate-500 mt-2 max-w-xs leading-relaxed">
+                    To begin sandboxed verification, you must first generate the test cases based on your modernization blueprint.
+                  </p>
+                )}
                 
+                {genError && (
+                  <p data-test-generation-error role="alert" className="mt-4 max-w-xs text-xs font-semibold leading-relaxed text-red-700">
+                    {genError}
+                  </p>
+                )}
+
                 <button
                   onClick={handleGenerate}
                   disabled={isGenerating}
@@ -1682,6 +1708,16 @@ export default function TestingSandboxPage() {
               </div>
             ) : (
               <div className="space-y-3">
+                {/* The same message as in the empty state, because "Regenerate
+                    Suite" can be refused too — and there the previous suite is
+                    still on the screen, so without this the button simply
+                    appears to do nothing. */}
+                {genError && (
+                  <p data-test-generation-error role="alert" className="p-3.5 rounded-2xl bg-red-50 border border-red-200 text-xs font-semibold leading-relaxed text-red-800">
+                    {genError}
+                  </p>
+                )}
+
                 {/* Not a second lock notice — the one above this panel is the
                     only one on this screen (roadmap 1.7). What belongs beside a
                     disabled button is the way forward, so that is all this says. */}
@@ -1796,7 +1832,7 @@ export default function TestingSandboxPage() {
                 data-stage-output={project?.testSuite?.code ? 'testSuite' : undefined}
                 className="whitespace-pre-wrap leading-relaxed text-blue-300"
               >
-                {project?.testSuite?.code || (isAbapCloud ? 'No test suite generated yet. Generate a suite to inspect local ABAP stubs.' : 'No test code generated yet.')}
+                {(!storedSuiteRejected && project?.testSuite?.code) || (isAbapCloud ? 'No test suite generated yet. Generate a suite to inspect local ABAP stubs.' : 'No test code generated yet.')}
               </pre>
             ) : (
               <pre className="whitespace-pre-wrap leading-relaxed">{sandboxOutput || '// Waiting for execution...'}</pre>

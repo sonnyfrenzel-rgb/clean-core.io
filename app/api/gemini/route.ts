@@ -76,12 +76,31 @@ function getDefaultAI(): GoogleGenAI | null {
  * rest on a model that may be withdrawn. It stays listed — receipts were issued
  * under it and a client may still ask for it — but it is no longer what the
  * product calls.
+ *
+ * `gemini-2.5-pro` was listed here as "GA — stable fallback" and was neither.
+ * A `generateContent` call with the production key answers HTTP 404, "This model
+ * models/gemini-2.5-pro is no longer available to new users" (checked 23.09.2026,
+ * three times, roadmap 17.1). It is still in the key's `ListModels` answer, which
+ * is why nobody noticed: listing a model is not the same statement as serving it,
+ * and only the call tells the two apart.
+ *
+ * It was struck rather than replaced. Google's own 404 points at
+ * `gemini-3.1-pro-preview`, and that is a preview — putting it here as a "stable
+ * fallback" would repeat exactly the mistake the paragraph above records. No
+ * pro-line model is GA for this key today, so the fallbacks are the three flash
+ * models that answered. A client that still pins `gemini-2.5-pro` now gets a 400
+ * naming the permitted models instead of a 500 from a provider 404, and
+ * `GEMINI_MODEL` can no longer be pointed at an emergency exit that is walled up.
+ *
+ * `scripts/check-gemini-register.mjs` makes the call for every entry here and
+ * writes what came back to `tests/gemini-register-liveness.json`;
+ * `tests/gemini-model-pin.spec.ts` holds the register and that record together
+ * without touching the network. Adding a model here means running the script.
  */
 const ALLOWED_MODELS = new Set([
   'gemini-3.8-flash',       // GA — the product default (lib/constants.ts)
   'gemini-3.5-flash',       // GA — the longest-standing GA of the 3 line
   'gemini-2.5-flash',       // GA — stable fallback
-  'gemini-2.5-pro',         // GA — stable fallback
   'gemini-3-flash-preview', // PREVIEW — the former default, kept for callers that pin it
 ]);
 
