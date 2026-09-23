@@ -33,6 +33,7 @@ import { isAbapCloudTrack, trackCopy } from '@/lib/transformation-track';
 import StaleNotice from '@/components/StaleNotice';
 import NotGenerated from '@/components/NotGenerated';
 import { useModelAvailability } from '@/hooks/useModelAvailability';
+import { PRODUCT_GEMINI_MODEL } from '@/lib/constants';
 
 /**
  * A file the workspace can show and the next stage can read. The model's answer
@@ -604,7 +605,7 @@ CMD ["node", "srv/service.js"]`
 
       console.log('Transforming code for project:', projectRef.current?.name);
 
-      const responseText = await callGemini(prompt, 'gemini-3-flash-preview', true, 'transformation');
+      const responseText = await callGemini(prompt, PRODUCT_GEMINI_MODEL, true, 'transformation');
       
       let filesArray: ProjectFile[] = [];
       let tests = { config: '', spec: '' };

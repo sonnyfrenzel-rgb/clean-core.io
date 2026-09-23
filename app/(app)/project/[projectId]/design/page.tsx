@@ -63,6 +63,7 @@ import { workflowSteps, staleness } from '@/lib/workflow-steps';
 import StaleNotice from '@/components/StaleNotice';
 import { escapeHtml } from '@/lib/utils';
 import { sapApiHubLink } from '@/lib/export-safety';
+import { PRODUCT_GEMINI_MODEL } from '@/lib/constants';
 
 const cleanAndParseJSON = (str: string) => {
   let cleaned = str.trim();
@@ -309,7 +310,7 @@ ${prepareAnalysisContext(analysis)}`;
       console.log('[Design] Generating solution design for:', projectRef.current?.name);
       console.log('[Design] Analysis type:', typeof analysis, '| length:', typeof analysis === 'string' ? analysis.length : JSON.stringify(analysis).length);
 
-      const responseText = await callGemini(prompt, 'gemini-3-flash-preview', true, 'design');
+      const responseText = await callGemini(prompt, PRODUCT_GEMINI_MODEL, true, 'design');
       
       console.log('[Design] Gemini response received, length:', responseText?.length);
         
@@ -343,7 +344,7 @@ ${prepareAnalysisContext(analysis)}`;
 Solution Design Context:
 ${responseText.substring(0, 4000)}`;
 
-        const nfrResponse = await callGemini(nfrPrompt, 'gemini-3-flash-preview', true, 'design');
+        const nfrResponse = await callGemini(nfrPrompt, PRODUCT_GEMINI_MODEL, true, 'design');
         if (nfrResponse) {
           try {
             const cleaned = nfrResponse.replace(/^```json\n?/gm, '').replace(/^```\n?/gm, '').trim();

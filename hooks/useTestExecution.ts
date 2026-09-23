@@ -8,6 +8,7 @@ import { LIVE_TEST_EXECUTION } from '@/lib/locked-paths';
 import { parseGeneratedPackage, replaceFileContent, repairTarget } from '@/lib/generated-package';
 import { applyRunnerVerdicts } from '@/lib/test-verdicts';
 import type { TestRunReceipt } from '@/lib/test-receipt';
+import { PRODUCT_GEMINI_MODEL } from '@/lib/constants';
 
 export const useTestExecution = (projectId: string, project: Project | null, setProject?: React.Dispatch<React.SetStateAction<Project | null>>) => {
   const [isRunning, setIsRunning] = useState(false);
@@ -96,7 +97,7 @@ ${currentCode}
 Return ONLY the raw, corrected TypeScript source — no markdown fences, no commentary.`;
 
     try {
-      const fixedCode = await callGemini(prompt, 'gemini-3-flash-preview', false, 'testing');
+      const fixedCode = await callGemini(prompt, PRODUCT_GEMINI_MODEL, false, 'testing');
       const cleaned = stripCodeFences(fixedCode);
       return cleaned && cleaned.length > 0 ? cleaned : currentCode;
     } catch (err) {
@@ -115,7 +116,7 @@ Return ONLY the raw, corrected TypeScript source — no markdown fences, no comm
       ERROR:
       ${errorOutput}`;
       
-      const explanation = await callGemini(prompt, 'gemini-3-flash-preview', false, 'testing');
+      const explanation = await callGemini(prompt, PRODUCT_GEMINI_MODEL, false, 'testing');
       setAiExplanation(explanation || "No explanation provided by AI.");
     } catch (e) {
       console.error("Failed to generate AI explanation", e);

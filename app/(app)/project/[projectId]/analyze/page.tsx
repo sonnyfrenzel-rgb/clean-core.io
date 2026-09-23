@@ -88,6 +88,7 @@ import { DocumentSkeleton } from '@/components/Skeleton';
 import VerificationRail from '@/components/VerificationRail';
 import StageHeader from '@/components/StageHeader';
 import { workflowSteps } from '@/lib/workflow-steps';
+import { PRODUCT_GEMINI_MODEL } from '@/lib/constants';
 
 export default function AnalyzePage() {
   const { projectId } = useParams();
@@ -373,7 +374,7 @@ export default function AnalyzePage() {
         setLoadingMessage('Evidence scanner only — no narrative for this run.');
       } else {
         try {
-          const generated = await callGeminiWithReceipt(prompt, 'gemini-3-flash-preview', true, 'analyze');
+          const generated = await callGeminiWithReceipt(prompt, PRODUCT_GEMINI_MODEL, true, 'analyze');
           responseText = generated.text;
           modelReceipt = generated.receipt;
         } catch (modelErr) {

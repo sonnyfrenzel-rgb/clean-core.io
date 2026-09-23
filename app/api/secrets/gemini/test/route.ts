@@ -11,6 +11,7 @@ import {
 import { byokRequiresEnrolment } from '@/lib/mfa-gate';
 import { assertRateLimit, getClientIp } from '@/lib/rate-limit';
 import { GoogleGenAI } from '@google/genai';
+import { PRODUCT_GEMINI_MODEL } from '@/lib/constants';
 
 /**
  * POST /api/secrets/gemini/test
@@ -57,7 +58,7 @@ export async function POST(req: NextRequest) {
     // Call Gemini to verify key
     const ai = new GoogleGenAI({ apiKey: apiKey.trim() });
     const result = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
+      model: PRODUCT_GEMINI_MODEL,
       contents: "Ping. Respond with exactly 'OK' to confirm connectivity.",
     });
 

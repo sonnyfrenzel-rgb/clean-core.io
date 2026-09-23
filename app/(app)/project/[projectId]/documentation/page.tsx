@@ -37,6 +37,7 @@ import type {
   SaveProcessModelInput,
   SaveProcessModelResult,
 } from '@/components/process-map/BpmnEditor';
+import { PRODUCT_GEMINI_MODEL } from '@/lib/constants';
 
 const addOrUpdateFileInWorkspace = (generatedCode: string | undefined, filePath: string, fileContent: string): string => {
   let files: Array<{ path: string, content: string }> = [];
@@ -279,7 +280,7 @@ ${context}`;
 
       console.log('Generating documentation for project:', project.name);
 
-      const responseText = await callGemini(prompt, 'gemini-3-flash-preview', false, 'documentation');
+      const responseText = await callGemini(prompt, PRODUCT_GEMINI_MODEL, false, 'documentation');
       
       if (!responseText) {
         throw new Error('Gemini returned an empty response.');
@@ -400,7 +401,7 @@ Structure the JSON exactly like this:
 }`;
 
       console.log('Generating business process compliance for project:', project.name);
-      const responseText = await callGemini(prompt, 'gemini-3-flash-preview', false, 'documentation');
+      const responseText = await callGemini(prompt, PRODUCT_GEMINI_MODEL, false, 'documentation');
       
       if (!responseText) {
         throw new Error('Gemini returned an empty response.');

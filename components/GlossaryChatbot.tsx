@@ -23,6 +23,7 @@ import {
 } from '@/lib/case-answer';
 import { cleanModelText } from '@/lib/model-text';
 import { provenance, type ProvenanceValue } from '@/lib/provenance';
+import { PRODUCT_GEMINI_MODEL } from '@/lib/constants';
 
 interface Message {
   sender: 'user' | 'bot';
@@ -249,7 +250,7 @@ export default function GlossaryChatbot() {
       return;
     }
 
-    const raw = await callGemini(decision.prompt, 'gemini-3-flash-preview', false);
+    const raw = await callGemini(decision.prompt, PRODUCT_GEMINI_MODEL, false);
     // §3.1 — what the model wrote appears like every other text here. The chip
     // says where it came from; the prose must not.
     const { text: cleaned } = cleanModelText(raw ?? '', 'screen');
@@ -348,7 +349,7 @@ CRITICAL GUARDRAILS AND SAFETY RULES:
 
       const promptContext = `${systemPrompt}\n\nUser Question: ${text}\nAssistant Response:`;
 
-      const responseText = await callGemini(promptContext, 'gemini-3-flash-preview', false);
+      const responseText = await callGemini(promptContext, PRODUCT_GEMINI_MODEL, false);
 
       const botMessage: Message = {
         sender: 'bot',

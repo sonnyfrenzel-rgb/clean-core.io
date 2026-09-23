@@ -4,6 +4,7 @@ import { getDb } from '@/lib/firebase';
 import { callGemini } from '@/lib/gemini';
 import { useUserProfile } from './useUserProfile';
 import type { Project, TestCase, TestSuite, CoverageEstimate, ManualTestRequirement } from '@/lib/types';
+import { PRODUCT_GEMINI_MODEL } from '@/lib/constants';
 
 export const useTestGeneration = (projectId: string, project: Project | null, setProject: React.Dispatch<React.SetStateAction<Project | null>>) => {
   const [isGenerating, setIsGenerating] = useState(false);
@@ -87,7 +88,7 @@ export const useTestGeneration = (projectId: string, project: Project | null, se
         - coverageEstimate: { percentage: number, explanation: string, missingCoverage: string }.
         `;
       
-      const responseText = await callGemini(prompt, 'gemini-3-flash-preview', true, 'testing');
+      const responseText = await callGemini(prompt, PRODUCT_GEMINI_MODEL, true, 'testing');
       
       const result = JSON.parse(responseText || '{}');
       const generatedTestCases: TestCase[] = result.testCases || [];

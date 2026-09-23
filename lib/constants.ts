@@ -92,3 +92,28 @@ export function termsVersionInForce(accepted: string | null | undefined): boolea
 export const APP_BASE_URL: string =
   process.env.NEXT_PUBLIC_APP_URL?.replace(/\/+$/, '') ||
   (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
+
+/**
+ * The Gemini model the product calls, in one place.
+ *
+ * It was written out at every call site instead — twelve of them across
+ * `app/`, `components/`, `hooks/` and `lib/` — so the "default" parameter in
+ * `lib/gemini.ts` was never the default of anything: every caller passed the
+ * string. Changing the model meant editing twelve files and hoping none was
+ * missed, which is how a product ends up half on one model and half on another
+ * without anyone deciding it.
+ *
+ * Sonny, 23.09.2026: `gemini-3.8-flash`. The reason is availability before
+ * quality. The previous default, `gemini-3-flash-preview`, is a preview model —
+ * `app/api/gemini/route.ts` says so itself ("PREVIEW = opt-in canary (may
+ * change or retire)") — and the 3-flash line never reached GA: Google shipped
+ * 3.5, 3.6, 3.7 and 3.8 flash as GA and left it behind. A product whose promise
+ * is a signed run cannot rest on a model that may be withdrawn.
+ *
+ * What a model change can and cannot move: the narrative only.
+ * `app/api/runs/create/route.ts` overwrites the model's numbers with the ones
+ * the server computed before it signs anything, and the provenance of the text
+ * says `narrative` rather than `narrative-attested`. Historical receipts keep
+ * the model they were issued under; nothing here rewrites them.
+ */
+export const PRODUCT_GEMINI_MODEL = 'gemini-3.8-flash';

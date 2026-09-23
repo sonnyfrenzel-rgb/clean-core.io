@@ -11,6 +11,7 @@ import {
   computeCriticalityScore,
 } from '@/lib/abap/code-assessment';
 import { absenceFromError, type ModelAbsence, type ModelParticipation } from '@/lib/model-stages';
+import { PRODUCT_GEMINI_MODEL } from '@/lib/constants';
 
 /**
  * One analysis run, startable from more than one screen.
@@ -220,7 +221,7 @@ export async function runAnalysis(input: AnalysisRunInput): Promise<AnalysisRunR
         routeReport,
         code: legacyCode,
       });
-      const generated = await callGeminiWithReceipt(prompt, 'gemini-3-flash-preview', true, 'analyze', signal);
+      const generated = await callGeminiWithReceipt(prompt, PRODUCT_GEMINI_MODEL, true, 'analyze', signal);
       if (aborted(signal)) throw new AnalysisRunCancelled();
       const responseText = generated.text;
       const cleaned = responseText.replace(/^```json\n?/gm, '').replace(/^```\n?/gm, '').trim();

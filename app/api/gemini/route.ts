@@ -19,6 +19,7 @@ import {
 } from '@/lib/model-stages';
 import { getAuditSigningKey, MISSING_SIGNING_KEY_LOG } from '@/lib/audit-signing-key';
 import { issueModelReceipt } from '@/lib/model-receipt';
+import { PRODUCT_GEMINI_MODEL } from '@/lib/constants';
 
 /**
  * Server-side API route for all Gemini AI calls.
@@ -62,16 +63,49 @@ function getDefaultAI(): GoogleGenAI | null {
   return defaultAI;
 }
 
-// F-09: Server-side model register / allowlist. Only approved models may be used.
-// GA = generally available & stable; PREVIEW = opt-in canary (may change or retire).
-// Dead Gemini 2.0 IDs were removed (lifecycle ended per Google's deprecation page).
-// The POST default below is pinned to the current product model; promoting the
-// default to a GA model is gated on a golden-set regression check (2.2 roadmap).
+/**
+ * F-09: server-side model register. Only a model named here may be called, whoever asks.
+ *
+ * GA = generally available; PREVIEW = opt-in canary that may change or be withdrawn.
+ * Dead Gemini 2.0 IDs were removed (lifecycle ended per Google's deprecation page).
+ *
+ * `gemini-3-flash-preview` was the product default until 23.09.2026 and is the
+ * reason this list is now written down properly: it is a *preview* model, the
+ * 3-flash line never reached GA, and Google shipped 3.5, 3.6, 3.7 and 3.8 flash
+ * as GA while it stayed a canary. A product whose promise is a signed run cannot
+ * rest on a model that may be withdrawn. It stays listed — receipts were issued
+ * under it and a client may still ask for it — but it is no longer what the
+ * product calls.
+ */
 const ALLOWED_MODELS = new Set([
+  'gemini-3.8-flash',       // GA — the product default (lib/constants.ts)
+  'gemini-3.5-flash',       // GA — the longest-standing GA of the 3 line
   'gemini-2.5-flash',       // GA — stable fallback
   'gemini-2.5-pro',         // GA — stable fallback
-  'gemini-3-flash-preview', // PREVIEW — current product default (see POST body)
+  'gemini-3-flash-preview', // PREVIEW — the former default, kept for callers that pin it
 ]);
+
+/**
+ * The model this deployment actually calls, and why it can be moved without a deploy.
+ *
+ * The product's choice is a constant in the source (`PRODUCT_GEMINI_MODEL`), so
+ * changing it is a reviewed commit — which is right, because the model's name
+ * goes into the signed model receipt and an audit trail whose contents can change
+ * without a commit is not one. The same reasoning is already written down for the
+ * review agents: *"Pinned on purpose: an alias … would change the reviewer without
+ * a commit."*
+ *
+ * `GEMINI_MODEL` exists for the one case the constant serves badly: Google
+ * withdraws a model and every analysis in the product stops until a deploy lands.
+ * It is server-side only, and it cannot leave the register above — an unknown or
+ * misspelt value is ignored rather than trusted, so the escape hatch cannot become
+ * a way to run an unreviewed model. Whatever actually ran is what the receipt says.
+ */
+function productModel(): string {
+  const override = process.env.GEMINI_MODEL?.trim();
+  if (override && ALLOWED_MODELS.has(override)) return override;
+  return PRODUCT_GEMINI_MODEL;
+}
 
 // F-07: Hard prompt-size limit to prevent cost/quota abuse.
 const MAX_PROMPT_LENGTH = 250_000;
@@ -160,7 +194,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const {
       prompt,
-      model = 'gemini-3-flash-preview',
+      model = productModel(),
       jsonResponse = false,
       stage,
     } = body as {

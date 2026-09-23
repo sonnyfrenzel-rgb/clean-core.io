@@ -1,6 +1,7 @@
 import { getAuth } from '@/lib/firebase';
 import type { ModelStage } from '@/lib/model-stages';
 import type { ModelReceipt } from '@/lib/model-receipt';
+import { PRODUCT_GEMINI_MODEL } from '@/lib/constants';
 
 /**
  * Client-side Gemini helper.
@@ -38,7 +39,7 @@ export interface GeminiResult {
  */
 export async function callGeminiWithReceipt(
   prompt: string,
-  modelName: string = 'gemini-3-flash-preview',
+  modelName: string = PRODUCT_GEMINI_MODEL,
   jsonResponse: boolean = false,
   stage?: ModelStage,
   /**
@@ -97,7 +98,7 @@ export async function callGeminiWithReceipt(
 
 export async function callGemini(
   prompt: string,
-  modelName: string = 'gemini-3-flash-preview',
+  modelName: string = PRODUCT_GEMINI_MODEL,
   jsonResponse: boolean = false,
   stage?: ModelStage,
   signal?: AbortSignal,
