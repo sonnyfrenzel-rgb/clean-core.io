@@ -1946,3 +1946,70 @@ gegen einen echten lizenzierten Workspace.
 **Eine angenehme Bestätigung:** `DESIGN.md` §5.9 setzt „Übersicht ≈ 12 Elemente, eine
 Ebene ≤ 25". Der Bestand hat Median 12 und p85 25. Das war eine Designmeinung und ist
 jetzt gemessen — hier ist nichts zu ändern.
+
+## 17. Modell je Stufe (23.09.2026) — Untersuchung und Aufnahme
+
+Das Produkt ruft für alle sechs Modellstufen dasselbe Gemini-Modell. Sonny hat am
+23.09.2026 eine Untersuchung beauftragt: „Modell je Stufe" gegen die Roadmap geprüft,
+mit einem Vergleichslauf, ohne Codeänderung. Der volle Bericht liegt außerhalb des
+Repositories (`scratch/modellvergleich/BERICHT.md`, nicht eingecheckt); hier steht,
+was daraus folgt.
+
+**Die Roadmap schweigt zur Modellwahl — vollständig.** Kein Modellname, keine Version,
+keine Bedingung an die Modellgüte. Sie regelt, *ob* ein Modell gerufen wird (1.2,
+Stufen einzeln zuschaltbar), nie *welches*. Gebrochen würde also keine Zusage. Die
+einzige Schranke steht in `DESIGN.md`: ADR-025 fordert für die Namensstufe **Tempo**
+(„22 Namen per Modellaufruf passen nicht sicher in 3 s") — die einzige Stelle im
+Regelwerk, die überhaupt eine Modelleigenschaft verlangt, und sie verlangt
+Geschwindigkeit, nicht Güte. §10 terminiert Bench-Kennzahlen (Halluzinationsquote)
+ausdrücklich **nach 3.0**.
+
+**Die Facette `fachsaetze` misst kein Modell.** `tests/helpers/korpus-comparison.ts`
+prüft nur, ob Anker in existierende Zeilen zeigen, und ist hart auf `disagree`
+verdrahtet: *„Nie `agree`: der Inhalt der Fachsätze wurde nicht verglichen."* Die
+Zahl „0 agree / 68 disagree" heißt **es wurde nichts verglichen**, nicht „das Modell
+versagt" — und keine der fünf Facetten ruft ein Modell, der Korpus wäre für jedes
+Modell bitgleich. Er trägt aber die einzige echte Ground Truth des Repositories:
+**173 verankerte Fachsätze, für die es heute keinen Erzeuger gibt.**
+
+**Gemessen, 68 Aufrufe über vier Modelle:** null erfundene Anker, null erfundene
+Geldbeträge, Schema praktisch durchgehend eingehalten. Die Ankerquoten sind
+**statistisch ununterscheidbar** — gepaart je Fall enthält jedes der sechs
+95-%-Intervalle die Null. Aus dem Rauschen treten nur Kosten und Zeit:
+`gemini-3.5-flash-lite` kostet ein Drittel und ist 2,4-mal schneller, weil es keine
+Denk-Token erzeugt.
+
+**Ein Modellwechsel kann keine signierte Zahl bewegen.**
+`app/api/runs/create/route.ts:459` signiert `Omit<…, 'analysis'>` — die Modellprosa
+ist ausdrücklich aus der Signatur ausgenommen, und jede Zahl des Modells wird
+serverseitig überschrieben. Die Risikoachse trennt deshalb nicht `analyze` von den
+übrigen, sondern **`design` und `testing`** (Antwort ungeprüft gespeichert) von
+**`naming` und `transformation`** (echte Gates).
+
+**Entschieden (Sonny, 23.09.2026): kein globaler Wechsel.** Die Messung lief auf
+Korpusfällen von durchschnittlich 543 Byte; der echte Analyse-Prompt ist 19.477
+Token. Ein Modell ohne Denk-Token ist auf der schwersten Stufe das Gegenteil dessen,
+was man will, und der Vergleich trägt „genauso gut" so wenig wie „besser". Dazu die
+Zahl, die größer ist als die Modellfrage: **40 von 53 erwarteten Fachsätzen (75 %)
+hat kein Modell getroffen.**
+
+| Nr. | Schritt | Größe |
+|---|---|---|
+| 17.1 | **Toter Registereintrag.** `gemini-2.5-pro` steht in `app/api/gemini/route.ts` als „GA — stable fallback" und antwortet dem Produktionsschlüssel mit **HTTP 404, „no longer available to new users"** (nachgeprüft 23.09.2026, zweimal). Die Notluke `GEMINI_MODEL` würde ihn annehmen — ein Notausgang auf ein Modell, das nicht antwortet. Streichen oder durch ein lebendes GA-Modell ersetzen, und der Pin-Waechter prüft künftig, dass **jeder** Registereintrag antwortet. | S |
+| 17.2 | **`testing` härten wie `documentation`.** `hooks/useTestGeneration.ts:93-108` parst die Modellantwort ohne Typprüfung, `result.testCases \|\| []` nimmt ein Objekt entgegen, speichert es, und `testing/page.tsx:1735` ruft `.map` darauf. Derselbe Defekt, den `0cb64a5` in der Dokumentationsstufe behoben hat — und **nur die Dokumentationsstufe hat eine `error.tsx`**, die Teststufe fängt den Absturz also an der Wurzel ab und nimmt den Knopf mit. Prüfung vor dem Schreiben plus Segment-Boundary. | M |
+| 17.3 | **`naming` auf `gemini-3.5-flash-lite`** — aus Latenz, nicht aus Güte: ADR-025 verlangt Tempo, lite ist das einzige gemessene Modell ohne Denk-Token, der naming-Prompt ist mit 2.658 statt 19.477 Token der billigste, die Stufe hat die strengste Validierung und **keinen Signaturkontakt**. Ehrliche Grenze: **die Namensstufe selbst wurde nicht gemessen**, der Schluss steht auf Mechanismus und Promptgröße. Abnahme: ein Messlauf der Stufe, drei Durchgänge, gegen die heutige Vorgabe. | M |
+| 17.4 | **Sauberer Messlauf vor jeder weiteren Modellentscheidung.** Drei Durchgänge je Modell auf **echten** Startbeispielen statt 21-Zeilen-Schnipseln. Ohne ihn trägt keine Aussage über `analyze`. | M |
+
+**Zwei Hebel sind größer als die Modellwahl, beide unabhängig einplanbar:** das
+Evidenz-JSON macht **49–56 %** des Analyse-Prompts aus und wird eingerückt
+serialisiert; und `testing` macht **bis zu vier Modellaufrufe je Klick**. Beides
+wirkt auf jede Stufe und auf jedes Modell. Beim Evidenz-JSON ist Vorsicht geboten:
+es geht in den Hash ein, den die Quittung nennt.
+
+**Wiedervorlage 01.01.2027:** der Preis der heutigen Vorgabe verdoppelt sich
+(0,75 → 1,50 Eingabe, 3,75 → 7,50 Ausgabe je Million Token).
+
+**Nicht anfassen, unabhängig davon, welcher Schritt kommt:**
+`lib/model-receipt.ts` (der `modelId` ist, was *tatsächlich übergeben* wurde, nicht
+was angefordert war), `/api/gemini` als einziger Weg nach außen,
+`runs/create:459` (`analysis` außerhalb der Signatur), und historische Quittungen.

@@ -165,7 +165,12 @@ test.describe('7976bced4c28 · one file is not a package', () => {
     const named = (['abapCloud', 'btp'] as const)
       .flatMap((t) => REQUIRED_ARTEFACTS[t])
       .filter((r): r is Extract<Requirement, { match: 'name' }> => r.match === 'name');
-    expect(named.length, 'no requirement is matched by name any more').toBeGreaterThanOrEqual(3);
+    // Two since 23.09.2026: `package.json` and `Dockerfile`. The third was
+    // `abapgit.xml`, and it left the list because the delivery step writes the
+    // real `.abapgit.xml` deterministically and the model is no longer asked
+    // for one (827cf6758637). The floor is here so the name/ending distinction
+    // cannot quietly disappear altogether, not to pin a count.
+    expect(named.length, 'no requirement is matched by name any more').toBeGreaterThanOrEqual(2);
 
     for (const r of named) {
       expect(satisfies(r, r.name), `${r.name} no longer satisfies itself`).toBe(true);

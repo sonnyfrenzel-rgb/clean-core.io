@@ -38,17 +38,22 @@ test.describe('Stage 1 & 2: Analysis & Solution Design E2E Tests', () => {
     await page.waitForLoadState('domcontentloaded');
 
     // Located by its data attribute rather than its label since roadmap 6.8:
-    // the label is "Ask this case" now (`DESIGN.md` §3.1 — „Ask AI" heißt „Ask
-    // this case"), and it says something different inside a project, so a
-    // text locator would have to be kept in step with a wording decision.
+    // the label is a wording decision and moves without this test's consent.
+    //
+    // And it really does move. `/knowledge` is *outside* a project, so since
+    // 23.09.2026 the trigger reads "Ask the assistant": there is no case here,
+    // and the assistant answers from the product knowledge base rather than from
+    // the evidence of an uploaded piece of ABAP. Inside a project the same
+    // button says "Ask this case". Both halves are exercised rendered in
+    // `tests/assistant-label.spec.ts`; what this test owns is the toggling.
     const chatbotTrigger = page.locator('[data-chatbot-toggle]').first();
     await expect(chatbotTrigger).toBeVisible();
-    await expect(chatbotTrigger).toContainText('Ask this case');
+    await expect(chatbotTrigger).toContainText('Ask the assistant');
 
     // The test is named for the toggle, so it has to toggle.
     await chatbotTrigger.click();
     await expect(chatbotTrigger).toContainText('Close');
     await chatbotTrigger.click();
-    await expect(chatbotTrigger).toContainText('Ask this case');
+    await expect(chatbotTrigger).toContainText('Ask the assistant');
   });
 });

@@ -23,8 +23,8 @@ export interface ProjectFile {
 /**
  * Two kinds of requirement, and they are not the same test.
  *
- * `*.clas.abap` is an extension: any file name may carry it. `package.json`,
- * `Dockerfile` and `abapgit.xml` are *names* — the tooling that reads them looks
+ * `*.clas.abap` is an extension: any file name may carry it. `package.json` and
+ * `Dockerfile` are *names* — the tooling that reads them looks
  * for that exact file, not for something ending in it. Matching both with
  * `endsWith` let `xpackage.json` satisfy the manifest requirement and
  * `my-dockerfile` the container one: a package reported complete that would not
@@ -35,6 +35,24 @@ export type Requirement =
   | { label: string; match: 'extension'; suffix: string }
   | { label: string; match: 'name'; name: string };
 
+/**
+ * The abapGit configuration is **not** on this list, and its absence is the point.
+ *
+ * It was, and the model was asked for it by name in the same breath. Both went on
+ * 23.09.2026: the file abapGit reads is `.abapgit.xml`, with a leading dot, and
+ * the prompt asked for `abapgit.xml` — so every package carried a configuration
+ * abapGit ignores, with `START_CLASS` wired to a demo class from someone else's
+ * project (QA full review of 3131afa, 827cf6758637). The delivery step writes the
+ * real one deterministically from the project now, so the model must not invent
+ * one; a generated configuration would put a guessed value where a measured one
+ * belongs.
+ *
+ * This list and the prompt are two halves of one statement — what the model is
+ * asked for, and what it is required to hand back. Dropping one without the other
+ * is why this is written down: `tests/qa-dringend-b88c77b.spec.ts` compares them
+ * in both directions, and for the length of one commit the gate demanded a file
+ * nobody asked for, which would have reported every abapCloud package incomplete.
+ */
 export const REQUIRED_ARTEFACTS: Record<'abapCloud' | 'btp', Requirement[]> = {
   abapCloud: [
     { label: 'behavior implementation class (*.clas.abap)', match: 'extension', suffix: '.clas.abap' },
@@ -43,7 +61,6 @@ export const REQUIRED_ARTEFACTS: Record<'abapCloud' | 'btp', Requirement[]> = {
     { label: 'behavior definition (*.bdef.asbdef)', match: 'extension', suffix: '.bdef.asbdef' },
     { label: 'service definition (*.srvd.assrvd)', match: 'extension', suffix: '.srvd.assrvd' },
     { label: 'service binding (*.srvb.assrvb)', match: 'extension', suffix: '.srvb.assrvb' },
-    { label: 'abapGit repository configuration (abapgit.xml)', match: 'name', name: 'abapgit.xml' },
   ],
   btp: [
     { label: 'service implementation (*.ts)', match: 'extension', suffix: '.ts' },
