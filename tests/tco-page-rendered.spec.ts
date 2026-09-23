@@ -152,3 +152,42 @@ test('code already at the target is not modelled either', async ({ page }) => {
   await adminMergeDoc('projects', SCORED, { cleanCoreScore: SCORE });
   await adminMergeDoc(`projects/${SCORED}/runs`, RUN_ID, { cleanCoreScore: SCORE });
 });
+
+/**
+ * Roadmap 7.4, on the screen rather than in `lib/cost-assumptions.ts`.
+ *
+ * `tests/cost-assumptions.spec.ts` runs the comparison itself; this opens the
+ * stage and reads what the panel says, because a model that refuses correctly
+ * while the page prints a figure anyway is the defect this step exists to
+ * remove.
+ */
+test('the option comparison names nothing until every option is complete', async ({ page }) => {
+  test.setTimeout(180 * 1000);
+  await openEconomics(page, SCORED);
+  await page.waitForSelector('[data-cost-comparison]');
+
+  // Nothing entered: each option says "Not determined", and the panel says why
+  // rather than showing a zero.
+  for (const id of ['do-nothing', 'keep', 'standard']) {
+    await expect(page.locator(`[data-cost-option-not-determined="${id}"]`)).toHaveText('Not determined');
+  }
+  await expect(page.locator('[data-cost-no-winner]')).toBeVisible();
+  await expect(page.locator('[data-cost-revision]')).toContainText('unconfirmed:');
+
+  // The shared assumptions, complete — including the cadence confirmation,
+  // which is a mandatory field only once it is confirmed (ADR-035).
+  await page.fill('[data-cost-field="currency"]', 'CHF');
+  await page.fill('[data-cost-field="dev-day-rate"]', '800');
+  await page.fill('[data-cost-field="test-day-rate"]', '600');
+  await page.fill('[data-cost-field="horizon-years"]', '5');
+  await page.fill('[data-cost-field="release-cadence"]', '2');
+  await page.check('[data-cost-field="release-cadence-confirmed"]');
+
+  // Still nothing: the day rates are there, the options are not, and the panel
+  // refuses to call one cheapest instead of comparing what happens to be filled in.
+  await expect(page.locator('[data-cost-no-winner]')).toBeVisible();
+  await expect(page.locator('[data-cost-option-not-determined="do-nothing"]')).toBeVisible();
+  const body = await page.locator('[data-cost-comparison]').innerText();
+  expect(body, 'no amount is invented from the rates alone').not.toMatch(/CHF\s*0\b/);
+  expect(body).toContain('one-off effort range');
+});

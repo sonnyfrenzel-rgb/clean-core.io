@@ -14,6 +14,7 @@ import NavigationButtons from '@/components/NavigationButtons';
 import { workflowSteps } from '@/lib/workflow-steps';
 import { Calculator, ShieldCheck, Printer, BarChart3, AlertCircle } from 'lucide-react';
 import dynamic from 'next/dynamic';
+import OptionComparison from '@/components/tco/OptionComparison';
 
 // Lazy-load recharts to reduce initial bundle size (~312KB)
 const RechartsChart = dynamic(() => import('recharts').then(mod => {
@@ -164,6 +165,11 @@ export default function TcoCalculatorPage() {
             a payback period and an ROI percentage on the strength of it. A financial case
             built on a number nobody measured is worse than no page at all.
           </p>
+        </div>
+        {/* The option comparison needs no Clean Core score — its figures are the
+            reader's own, not derived from one — so it stands here too. Roadmap 7.4. */}
+        <div className="max-w-6xl mx-auto mt-8">
+          <OptionComparison loc={loc} />
         </div>
         <div className="max-w-2xl mx-auto">
           <NavigationButtons
@@ -499,6 +505,13 @@ export default function TcoCalculatorPage() {
           </span>
         </div>
         </>)}
+
+        {/* Options with costs (roadmap 7.4). A separate calculation from the
+            forecast above and deliberately so: that one prices a single
+            modernisation against assumed coefficients, this one prices options
+            against each other out of one revision of stated assumptions, and it
+            names no cheapest option while any of them is incomplete. */}
+        <OptionComparison loc={loc} />
 
         {/* Printed with the estimate, so a copy cannot leave without it. It
             used to read "Business Value Report" under figures from defaults. */}
