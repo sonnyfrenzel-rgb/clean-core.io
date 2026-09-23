@@ -822,6 +822,99 @@ test.describe('the shell, opened by an administrator who turned it on', () => {
     expect(modelOrRunCalls, `a view or focus switch reached ${JSON.stringify(modelOrRunCalls)}`).toEqual([]);
   });
 
+  /**
+   * Roadmap 6.10 — the Management view begins with its answer.
+   *
+   * Until this step the three Management blocks were rendered in two files:
+   * the Public-Cloud-Fit panel and "Members on this case" in this shell, the
+   * four answers as a sibling *after* it in
+   * `app/(app)/project/[projectId]/page.tsx`. Nobody decided that order, and
+   * it read Public-Cloud-Fit → members → answers: a decider met an access
+   * control list before the verdict, which is exactly the state ADR-029
+   * abolished (`DESIGN.md` §5.6: *"Management beginnt mit einem Satz über
+   * allen Karten, der die Frage der Sicht beantwortet"*).
+   *
+   * Measured on the painted page rather than in the source, and twice over:
+   * the document order of the three sections **and** their vertical position,
+   * because a DOM order can be undone by a grid or an `order:` and the reader
+   * only ever sees the second one.
+   *
+   * The second half is the property both files carried a correct comment
+   * about and which the move must not lose: neither Management block exists at
+   * all in Business or IT — not hidden, not a stub, absent — while "Members on
+   * this case" is in every view because read access is not a perspective.
+   */
+  test('Management reads answers → Public-Cloud-Fit → members, and neither answer exists in the other two views', async ({
+    page,
+  }) => {
+    test.setTimeout(240 * 1000);
+    await page.setViewportSize({ width: 1440, height: 1600 });
+    await signIn(page, ADMIN);
+
+    expect(await openWorkspace(page, FULL_ID, '?view=management')).toBe('shell');
+    await expect(page.locator('[data-workspace-shell]')).toHaveAttribute(
+      'data-workspace-shell',
+      'management',
+    );
+
+    // All three have to be on the screen before the order means anything: the
+    // answers and the access list both arrive from a fetch, and comparing
+    // positions while one of them is still `null` would compare two things.
+    await expect(page.locator('[data-management-view]')).toBeVisible({ timeout: 60000 });
+    await expect(page.locator('[data-public-cloud-fit-panel]')).toBeVisible({ timeout: 60000 });
+    await expect(page.locator('[data-workspace-access]')).toBeVisible({ timeout: 60000 });
+
+    const SELECTORS = [
+      '[data-management-view]',
+      '[data-public-cloud-fit-panel]',
+      '[data-workspace-access]',
+    ];
+
+    // `querySelectorAll` with a selector list answers in document order.
+    const documentOrder = await page.evaluate((selectors) => {
+      const els = Array.from(document.querySelectorAll(selectors.join(',')));
+      return els.map((el) => selectors.find((s) => el.matches(s)) ?? '?');
+    }, SELECTORS);
+    expect(documentOrder, 'the Management view does not begin with its answer').toEqual(SELECTORS);
+
+    // And on the screen. Tops, not a promise about the markup: `order`,
+    // `flex-direction: column-reverse` or a grid row would each satisfy the
+    // check above and paint the opposite of it.
+    const tops = await page.evaluate(
+      (selectors) =>
+        selectors.map((s) => {
+          const el = document.querySelector(s);
+          return el ? el.getBoundingClientRect().top + window.scrollY : Number.NaN;
+        }),
+      SELECTORS,
+    );
+    expect(tops.some(Number.isNaN), 'one of the three sections was not laid out at all').toBe(false);
+    expect(
+      tops[0] < tops[1] && tops[1] < tops[2],
+      `painted top to bottom the three sit at ${JSON.stringify(tops)} — the answer is not above the cards`,
+    ).toBe(true);
+
+    // The property the move had to keep: in the other two views the Management
+    // blocks are not rendered at all, while the access list is.
+    for (const other of ['business', 'it'] as const) {
+      await page.goto(`/project/${FULL_ID}?view=${other}`, { waitUntil: 'domcontentloaded' });
+      await expect(page.locator('[data-workspace-shell]')).toHaveAttribute(
+        'data-workspace-shell',
+        other,
+        { timeout: 60000 },
+      );
+      await expect(page.locator('[data-workspace-access]')).toBeVisible({ timeout: 60000 });
+      await expect(
+        page.locator('[data-management-view]'),
+        `Management's answers are rendered in the ${other} view`,
+      ).toHaveCount(0);
+      await expect(
+        page.locator('[data-public-cloud-fit-panel]'),
+        `the Public-Cloud-Fit panel is rendered in the ${other} view`,
+      ).toHaveCount(0);
+    }
+  });
+
   test('the switch is written by the server, and refuses a caller who is not an administrator', async ({ request }) => {
     test.setTimeout(180 * 1000);
 

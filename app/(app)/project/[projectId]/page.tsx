@@ -10,7 +10,6 @@ import { workspaceShellEnabled } from '@/lib/workspace-shell';
 import { itFocusFromParam, viewFromParam, type ItFocus, type WorkspaceView } from '@/lib/workspace-model';
 import { firstLookSeen, markFirstLookSeen } from '@/lib/first-look';
 import WorkspaceShell from '@/components/workspace/WorkspaceShell';
-import ManagementAnswers from '@/components/workspace/ManagementAnswers';
 import type { Project } from '@/lib/types';
 
 /**
@@ -164,29 +163,15 @@ export default function ProjectWorkspacePage() {
   }
 
   return (
-    <>
-      <WorkspaceShell
-        project={project}
-        projectId={projectId}
-        view={view}
-        onViewChange={setView}
-        focus={focus}
-        onFocusChange={setFocus}
-        account={profile}
-        buildUp={buildUp}
-      />
-      {/* Roadmap 6.4 — the Management view's own answers: what is confirmed,
-          what is missing, what a decision would bind, and the Clean Core Score
-          with its rule version and history. Rendered only in that view, for the
-          same reason the Public-Cloud-Fit panel is (roadmap 6.7): a stub of
-          somebody else's answer in the other two views is a promise the page
-          does not keep. It reads the runs of this project itself, because the
-          history is the one thing the hydrated project does not carry. */}
-      {view === 'management' && (
-        <div className="mt-5 max-w-3xl">
-          <ManagementAnswers project={project} projectId={projectId} />
-        </div>
-      )}
-    </>
+    <WorkspaceShell
+      project={project}
+      projectId={projectId}
+      view={view}
+      onViewChange={setView}
+      focus={focus}
+      onFocusChange={setFocus}
+      account={profile}
+      buildUp={buildUp}
+    />
   );
 }

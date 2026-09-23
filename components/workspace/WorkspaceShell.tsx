@@ -13,6 +13,7 @@ import WorkspaceToolBar from './ToolBar';
 import NotDeterminedCard from './NotDeterminedCard';
 import NextStepCard from './NextStepCard';
 import PublicCloudFitPanel from './PublicCloudFitPanel';
+import ManagementAnswers from './ManagementAnswers';
 import FirstLook from './FirstLook';
 import AskThisCase from './AskThisCase';
 import CoachMarkNote from './CoachMarks';
@@ -448,6 +449,22 @@ export default function WorkspaceShell({
         />
         <NotDeterminedCard data={open} />
       </div>
+
+      {/* Management begins with its answer, above every card (ADR-029,
+          `DESIGN.md` §5.6: *"Management beginnt mit einem Satz über allen
+          Karten, der die Frage der Sicht beantwortet"*) — roadmap 6.4, moved
+          here from the route by roadmap 6.10. What is confirmed, what is
+          missing, what a decision would bind, and the Clean Core Score with its
+          rule version and history. Rendered only in that view, for the same
+          reason the Public-Cloud-Fit panel below is: a stub of somebody else's
+          answer in the other two views is a promise the page does not keep. It
+          reads the runs of this project itself, because the history is the one
+          thing the hydrated project does not carry. */}
+      {view === 'management' && (
+        <div className="mt-5 max-w-3xl">
+          <ManagementAnswers project={project} projectId={projectId} />
+        </div>
+      )}
 
       {/* Public-Cloud-Fit and the four buckets (roadmap 6.7, `DESIGN.md` §5.6) —
           Management's own answer, so it renders only there rather than a stub
