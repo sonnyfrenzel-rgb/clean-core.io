@@ -1,4 +1,4 @@
-import { AbapEvidenceReport } from './evidence-model';
+import { AbapEvidenceReport, EvidenceKind } from './evidence-model';
 
 export interface DecisionCheckpoint {
   checkpointName: string;
@@ -74,6 +74,61 @@ const KIND_LABELS: Record<string, string> = {
 };
 
 const labelFor = (kind: string) => KIND_LABELS[kind] ?? kind;
+
+/**
+ * One construct that drove the route off the stack, with its evidence.
+ *
+ * Roadmap 8.2 needs the *reason an alternative was rejected*, at the line it
+ * stands on. That reason is exactly the rule below, so it is exported rather
+ * than reproduced: a second implementation of "what forces side-by-side" is a
+ * second answer, and the two would disagree the first time one of them moved.
+ */
+export interface RouteDriver {
+  kind: EvidenceKind;
+  /** The words a report may print for this kind — `KIND_LABELS`. */
+  label: string;
+  count: number;
+  /** The lowest `lineStart` among the findings of this kind. */
+  firstLine: number;
+  /** Finding ids, in the order the evidence reports them. */
+  findingIds: string[];
+}
+
+/**
+ * The constructs that choose a side-by-side route, in the order the rule reads
+ * them. Empty means on-stack: `needsBtp` is `drivers.length > 0` and nothing
+ * else.
+ *
+ * `deploymentModel` decides two of the six — custom persistence and direct
+ * writes to standard tables are triggers in the Public Edition only (CR-04,
+ * see `routeExtensibility`).
+ */
+export function routeDrivers(
+  evidence: AbapEvidenceReport,
+  deploymentModel: 'public' | 'private',
+): RouteDriver[] {
+  const of = (kind: EvidenceKind) => evidence.findings.filter((f) => f.kind === kind);
+  const driver = (kind: EvidenceKind): RouteDriver | null => {
+    const hits = of(kind);
+    if (hits.length === 0) return null;
+    return {
+      kind,
+      label: labelFor(kind),
+      count: hits.length,
+      firstLine: hits.reduce((min, f) => Math.min(min, f.lineStart), hits[0].lineStart),
+      findingIds: hits.map((f) => f.id),
+    };
+  };
+  const ordered: Array<RouteDriver | null> = [
+    deploymentModel === 'public' ? driver('custom-table-write') : null,
+    driver('bdc'),
+    driver('rfc-call'),
+    driver('native-sql'),
+    driver('gui-download'),
+    deploymentModel === 'public' ? driver('standard-table-write') : null,
+  ];
+  return ordered.filter((d): d is RouteDriver => d !== null);
+}
 
 export function routeExtensibility(
   evidence: AbapEvidenceReport,
@@ -158,26 +213,17 @@ export function routeExtensibility(
   // `deploymentModel` and not from the finding.
   const customPersistenceForcesBtp = deploymentModel === 'public' && customWrites.length > 0;
 
-  const needsBtp =
-    customPersistenceForcesBtp ||
-    bdcCalls.length > 0 ||
-    rfcCalls.length > 0 ||
-    nativeSql.length > 0 ||
-    fileAccess.length > 0 ||
-    (deploymentModel === 'public' && standardWrites.length > 0);
+  // The constructs that actually chose the route, in the order the rule reads
+  // them, and the one definition of that rule (`routeDrivers` above). Every
+  // sentence below that names a construct takes it from here, and so does the
+  // architecture contract of roadmap 8.2, which has to give the *same* reason
+  // for rejecting the other track.
+  const drivers = routeDrivers(evidence, deploymentModel);
+  const needsBtp = drivers.length > 0;
 
   const recommendedRoute = needsBtp ? 'Side-by-Side (SAP BTP)' : 'In-App (ABAP Cloud)';
 
-  // The constructs that actually chose the route, in the order `needsBtp` reads
-  // them. Every sentence below that names a construct takes it from here.
-  const btpTriggerKinds: string[] = [];
-  if (customPersistenceForcesBtp) btpTriggerKinds.push('custom-table-write');
-  if (bdcCalls.length > 0) btpTriggerKinds.push('bdc');
-  if (rfcCalls.length > 0) btpTriggerKinds.push('rfc-call');
-  if (nativeSql.length > 0) btpTriggerKinds.push('native-sql');
-  if (fileAccess.length > 0) btpTriggerKinds.push('gui-download');
-  if (deploymentModel === 'public' && standardWrites.length > 0) btpTriggerKinds.push('standard-table-write');
-  const btpTriggerList = btpTriggerKinds.map(labelFor).join(', ');
+  const btpTriggerList = drivers.map((d) => d.label).join(', ');
   const presentCategories = [...new Set(findings.map((f) => f.kind))].map(labelFor).join(', ');
 
   // What this router can say about persistence: a count, not a fit.
