@@ -92,6 +92,40 @@ function buildMerged(): { map: Record<string, MergedApiEntry>; noPath: Set<strin
     // released && no successor → object itself is a released API; nothing to map.
   }
 
+  // Layer 2b: the classification file, which this loop used to skip entirely.
+  //
+  // Finding 20fe6d7b4308 (QA full review of b88c77b, confirmed): `buildMerged`
+  // read CR.entries only, so the 8,397 objects that exist ONLY in
+  // cloudification-repo.classifications-sap.json never reached `noPath`. 367 of
+  // them carry `state: noAPI` — SAP's statement that the object is not intended
+  // for customer use — without a successor and without a concept note, and for
+  // every one of them `hasNoReleasedApiPath()` answered `false`. Reachable
+  // effect: `deriveFeasibility` (usage-join.ts) called such an object
+  // `clean-core-ready` after an SCMON/UPL import, which is the engine claiming a
+  // path it never looked for. Counted against the shipped artifacts, not
+  // estimated (tests/catalog-no-path-classification.spec.ts re-counts them).
+  //
+  // Scope, deliberately narrow:
+  //   noAPI, no successor  → no path. This is the finding.
+  //   noAPI, with successor→ SAP names the replacement, so a path exists; the
+  //                          object is still level D and the catalog page names
+  //                          the successor (getObjectDimensions), but "no path"
+  //                          would be untrue.
+  //   classicAPI           → a documented classic API (level B). Not released
+  //                          for ABAP Cloud, but calling 7,805 documented APIs
+  //                          "no released path" is a different verdict than the
+  //                          one this flag carries, and not one SAP's data
+  //                          states.
+  // Objects listed in BOTH files are left to the release loop above: the release
+  // state decides before the classification state, exactly as in
+  // `gradeFromSapStates`.
+  for (const [name, e] of Object.entries<NormalizedEntry>(CR_CLASS.entries ?? {})) {
+    if (CR.entries?.[name]) continue;
+    if (e.state?.toLowerCase() !== 'noapi') continue;
+    if (e.successors?.length || e.conceptNote) continue;
+    noPath.add(name);
+  }
+
   // Layer 1: curated entries always win (field-level knowledge).
   for (const [name, e] of Object.entries(SAP_API_CATALOG)) {
     const repo = CR.entries?.[name];
@@ -217,6 +251,110 @@ export function gradeSapObject(objectName: string): GradedObject {
  */
 export function gradeSapObjectUse(objectName: string, use: ObjectUse | null): GradedObject {
   return gradeFromSapStatesForUse(getSapObjectStates(objectName), use);
+}
+
+/* ---------- the two dimensions of a catalog object (roadmap 7.9, CR-01) ---------- */
+
+/**
+ * Where the replacement SAP names comes from.
+ *
+ * The release file and the classification file both carry successors, and they
+ * do not carry the same ones: 225 of the 8,397 objects that exist only in the
+ * classification file name a successor that `resolveApi()` cannot see, because
+ * MERGED_TABLE_MAP is the release file's mapping layer and stays that. Naming
+ * the file is how a reader can tell "SAP published a released successor" from
+ * "SAP's classic classification points somewhere else".
+ */
+export type SuccessorSource = 'release' | 'classification';
+
+/**
+ * The two things a catalog object is, kept apart — roadmap 7.9, from CR-01.
+ *
+ * An object has a classic release status and an ABAP Cloud usability, and they
+ * are not the same property. `CL_HTTP_UTILITY` is the case that makes it
+ * obvious: the classification file calls it `classicAPI` (classic ABAP may use
+ * it) while the release file calls it `notToBeReleased` and names
+ * `CL_WEB_HTTP_UTILITY` as the successor. Collapsed into one letter, that object
+ * looks like a misgrading — two independent reviews filed it as one (see the
+ * comment on `gradeFromSapStates`).
+ *
+ * The LETTER is not a third thing and is not re-derived here: it stays the clean
+ * core target reference (decision §9 no. 18), and `GradedObject.cloudView` /
+ * `classicView` remain its two halves. What this adds is the successor — the
+ * part of the answer that lives in whichever file happens to hold it — and the
+ * honest marking of a verdict that is really a check.
+ */
+export interface ObjectDimensions {
+  name: string;
+  /** The clean core level and its two views. The target reference, unchanged. */
+  graded: GradedObject;
+  /** Verbatim state from objectReleaseInfo*.json, when the object is listed there. */
+  releaseState?: string;
+  /** Verbatim state from objectClassifications_SAP.json, when listed there. */
+  classificationState?: string;
+  /** The replacement SAP names, from whichever file names it. Empty when none. */
+  successors: { name: string; tadir: string }[];
+  successorSource: SuccessorSource | null;
+  /** Successor named as a concept rather than an object ("Communication Targets"). */
+  conceptNote?: string;
+  /**
+   * SAP marked the object for removal but named nothing to move to.
+   *
+   * Roadmap 7.9 is explicit that this is a CHECK and not an automatic D: 183 of
+   * the 259 `deprecated` objects in the release file carry no successor, and for
+   * those the grading rule's D is the strictest reading of a missing sentence,
+   * not a replacement instruction anyone can act on. The letter is unchanged —
+   * `abcd-classification.ts` derives it and is not touched here — but a surface
+   * that prints it can now say which of the two it is looking at.
+   */
+  needsCheck: boolean;
+  checkNote?: string;
+}
+
+/**
+ * Both dimensions of one object, for the catalog page and anything else that
+ * shows an object rather than a verdict.
+ *
+ * Server-side only, like the rest of this module: it reads the full artifacts.
+ */
+export function getObjectDimensions(objectName: string): ObjectDimensions {
+  const key = (objectName || '').toUpperCase().trim();
+  const release = CR.entries?.[key];
+  const classification = CR_CLASS.entries?.[key];
+
+  // Same precedence as the level: the release file decides, the classification
+  // file answers where the release file is silent. The curated layer is not
+  // consulted here — it is a transformation mapping, and `resolveApi()` remains
+  // the place that speaks for it.
+  let successors: { name: string; tadir: string }[] = [];
+  let successorSource: SuccessorSource | null = null;
+  if (release?.successors?.length) {
+    successors = release.successors.map((s) => ({ name: s.name, tadir: s.tadir }));
+    successorSource = 'release';
+  } else if (classification?.successors?.length) {
+    successors = classification.successors.map((s) => ({ name: s.name, tadir: s.tadir }));
+    successorSource = 'classification';
+  }
+
+  const deprecated = release?.state?.toLowerCase() === 'deprecated';
+  const needsCheck = deprecated && successors.length === 0 && !release?.conceptNote;
+
+  return {
+    name: key,
+    graded: gradeSapObject(key),
+    releaseState: release?.state,
+    classificationState: classification?.state,
+    successors,
+    successorSource,
+    conceptNote: release?.conceptNote ?? classification?.conceptNote,
+    needsCheck,
+    ...(needsCheck
+      ? {
+          checkNote:
+            'SAP marks this object for removal but names no replacement. That is a check to run against the current release notes, not a finished verdict — the level reads the missing successor in the strictest way it can.',
+        }
+      : {}),
+  };
 }
 
 /** SAP object types the repository files list that code reads and writes as data. */

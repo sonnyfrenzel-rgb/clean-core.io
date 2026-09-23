@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { withTwitterCard } from '@/lib/page-metadata';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { resolveApi, hasNoReleasedApiPath, gradeSapObject, gradeSapObjectUses } from '@/lib/abap/catalog-service';
+import { resolveApi, hasNoReleasedApiPath, gradeSapObject, gradeSapObjectUses, getObjectDimensions } from '@/lib/abap/catalog-service';
 import { ABCD_META, CLOUD_VIEW_META, CLASSIC_VIEW_META } from '@/lib/abap/abcd-classification';
 import {
   slugToObject,
@@ -41,6 +41,10 @@ function facts(name: string) {
     successorType,
     allSuccessors,
     graded: gradeSapObject(name),
+    // Roadmap 7.9 (CR-01): the object's two dimensions — classic release status
+    // and ABAP Cloud usability — plus the successor from whichever of SAP's two
+    // files names it. The letter is not re-derived from this.
+    dimensions: getObjectDimensions(name),
     // Set only for a table or view whose level depends on the access (KNA1: C to
     // read, D to write). The page has no code to look at, so it shows both.
     byUse: gradeSapObjectUses(name),
@@ -88,7 +92,7 @@ export default async function CatalogObjectPage({
 }) {
   const { object } = await params;
   const name = slugToObject(object);
-  const { entry, noPath, successor, successorType, allSuccessors, graded, byUse } = facts(name);
+  const { entry, noPath, successor, successorType, allSuccessors, graded, byUse, dimensions } = facts(name);
 
   if (!entry && !noPath) notFound();
 
@@ -254,6 +258,19 @@ export default async function CatalogObjectPage({
       */}
       {graded.cloudView && graded.classicView && (
         <div className="border border-slate-200 rounded-2xl overflow-hidden mb-8">
+          {/*
+            Roadmap 7.9 (CR-01), decision §9 no. 18: the letter is the clean core
+            TARGET reference, not a statement about classic usability. Said here,
+            at the object, because that is where it is read — and because the two
+            columns below only make sense once a reader knows the letter is not a
+            summary of them.
+          */}
+          <p className="bg-slate-50 border-b border-slate-200 px-4 py-2 text-xs text-slate-600 leading-relaxed">
+            <span className="font-bold text-slate-800">Two questions, two answers.</span>{' '}
+            The level {graded.grade} above answers the clean core target question &mdash; what this
+            object is worth in an ABAP Cloud target. Whether classic ABAP may still call it is a
+            separate property, and it is the right-hand column.
+          </p>
           <div className="grid sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-slate-200">
             <div className="p-4">
               <p className="text-[10px] font-black tracking-widest text-slate-400 uppercase">
@@ -280,6 +297,48 @@ export default async function CatalogObjectPage({
               <p className="text-[10px] text-slate-400 mt-2 font-mono">objectClassifications_SAP</p>
             </div>
           </div>
+
+          {/*
+            The third fact of roadmap 7.9: the successor, named — and named with
+            the file it came from. SAP puts successors in BOTH artifacts and they
+            are not the same set; 225 objects that exist only in the
+            classification file name one that the release-file mapping layer
+            (`resolveApi`) cannot see. Printing it without its source would make
+            a classic-classification pointer look like a released-API mapping.
+          */}
+          {dimensions.successors.length > 0 && (
+            <div className="border-t border-slate-200 p-4">
+              <p className="text-[10px] font-black tracking-widest text-slate-400 uppercase">
+                SAP names as successor
+              </p>
+              <p className="text-sm font-bold text-emerald-700 font-mono mt-1">
+                {dimensions.successors.map((sx) => sx.name).join(', ')}
+              </p>
+              <p className="text-xs text-slate-500 mt-1">
+                {dimensions.successorSource === 'release'
+                  ? 'From objectReleaseInfo — SAP names this as the released replacement.'
+                  : 'From objectClassifications_SAP — SAP points classic use here; it is not necessarily a released API.'}
+              </p>
+            </div>
+          )}
+
+          {/*
+            Roadmap 7.9, verbatim: "`deprecated` ohne Nachfolger ist eine
+            Prüfung, kein automatisches D". 183 of the 259 deprecated objects in
+            the release file name no replacement. The level stays D — the rule in
+            abcd-classification.ts is unchanged and deliberately strict — but a
+            D that rests on a missing sentence is a thing to check, and saying so
+            is the difference between a verdict and an instruction nobody can act
+            on.
+          */}
+          {dimensions.needsCheck && (
+            <div className="bg-amber-50 border-t border-amber-200 p-4">
+              <p className="text-xs text-amber-900 leading-relaxed">
+                <span className="font-bold">Deprecated, with no successor named &mdash; check this one.</span>{' '}
+                {dimensions.checkNote}
+              </p>
+            </div>
+          )}
 
           {/*
             The 22 objects where the two files disagree — CL_BCS, CL_HTTP_CLIENT
@@ -351,9 +410,16 @@ export default async function CatalogObjectPage({
               No clean path
             </span>
             <p className="text-slate-700 mt-2 leading-relaxed">
-              This object is not released and has no direct released replacement. Custom code using it
-              cannot simply be re-pointed — it requires re-architecture (e.g. a side-by-side extension)
-              rather than a drop-in successor. This is an honest limitation, not an omission.
+              {/*
+                Finding 20fe6d7b4308: since this page also covers the 359 objects
+                that are listed ONLY in the classification file, the wording has
+                to match which file said so. "Not released" is the release file's
+                sentence; `noAPI` is a stronger and different one, and printing
+                the first for the second would put SAP's words in the wrong file.
+              */}
+              {dimensions.classificationState === 'noAPI' && !dimensions.releaseState
+                ? 'SAP classifies this object as noAPI — not intended for customer use — and names no replacement. Custom code calling it cannot simply be re-pointed; it requires re-architecture (e.g. a side-by-side extension). This is an honest limitation, not an omission.'
+                : 'This object is not released and has no direct released replacement. Custom code using it cannot simply be re-pointed — it requires re-architecture (e.g. a side-by-side extension) rather than a drop-in successor. This is an honest limitation, not an omission.'}
             </p>
           </div>
         </>
