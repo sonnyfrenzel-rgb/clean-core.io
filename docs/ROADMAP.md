@@ -2064,7 +2064,7 @@ verankerte Einzelaussage.
 | Nr. | Schritt | Größe |
 |---|---|---|
 | 17.5 | **Erledigt 23.09.2026 (adb6d7d).** **Die Facette vergleicht wirklich.** `compareBusinessStatements` prüft heute nur, ob Anker in existierende Zeilen zeigen, und ist hart auf `disagree` verdrahtet; das Verdikt heißt `nicht-vergleichbar`. Künftig vergleicht sie die erzeugten Sätze gegen die 173 Sollsätze — **deterministisch**, über den Anker als Schlüssel und ein offengelegtes Textmaß, **kein Modell als Richter** (die Zweitmessung vom 23.09. hat genau das getan und trägt deshalb nichts). Je Fall Zähler und Nenner wie in 1.9; „nicht geprüft" bleibt verboten als `agree`. **Fertig, wenn** `baseline.json` für `fachsaetze` eine Zahl nennt, die sich bewegt, wenn man den Prompt ändert — und wenn ein absichtlich verschlechterter Prompt die Facette rot macht. | M |
-| 17.6 | **Entscheiden, wer die Fachsätze erzeugt** — heute niemand, und das ist eine Produktentscheidung, keine Technikfrage. Zwei Wege, und sie schließen sich nicht aus: **(a) die Engine** aus dem Skelett, deterministisch und damit ohne Modellkosten und ohne Halluzination, aber auf das begrenzt, was der Kontrollfluss hergibt; **(b) das Modell** mit einem Prompt, der genau danach fragt, statt nach einer Zusammenfassung — verankert, und durch 17.5 messbar. Gehört **vor** den Ausbau der Business-Sicht beantwortet, weil er bestimmt, was sie eigentlich sagt. Die Entscheidung gehört Sonny; dieser Schritt bereitet sie mit gemessenen Zahlen aus 17.5 vor, statt sie vorwegzunehmen. | M |
+| 17.6 | **Entschieden 23.09.2026 (Sonny): A+B, A zuerst.** **Wer die Fachsätze erzeugt** — heute niemand, und das ist eine Produktentscheidung, keine Technikfrage. Zwei Wege, und sie schließen sich nicht aus: **(a) die Engine** aus dem Skelett, deterministisch und damit ohne Modellkosten und ohne Halluzination, aber auf das begrenzt, was der Kontrollfluss hergibt; **(b) das Modell** mit einem Prompt, der genau danach fragt, statt nach einer Zusammenfassung — verankert, und durch 17.5 messbar. Gehört **vor** den Ausbau der Business-Sicht beantwortet, weil er bestimmt, was sie eigentlich sagt. Die Entscheidung gehört Sonny; dieser Schritt bereitet sie mit gemessenen Zahlen aus 17.5 vor, statt sie vorwegzunehmen. | M |
 
 **Ergebnis 17.5 (gemessen, 23.09.2026).** Die Facette hat vorher nichts
 verglichen: kein Modul in `lib/`, `app/` oder `components/` erzeugt heute
@@ -2088,6 +2088,42 @@ nicht — erzeugte Sätze ohne Sollsatz bleiben straffrei, weil das Fallbuch sei
 Fachsatzliste nirgends für vollständig erklärt. Bei Weg (b) ist genau das das
 Halluzinationsrisiko. Soll es zählen, muss **der Korpus** die Vollständigkeit je
 Fall erklären (analog `declaredEmpty` bei Befunden und Objekten).
+
+### Die Entscheidung zu 17.6 (Sonny, 23.09.2026) und was daraus folgt
+
+**Beide Wege, A zuerst.** Die Engine setzt die Untergrenze, das Modell wird
+dagegen gemessen; ist das Modell schlechter als die Engine, fällt es weg.
+
+Dazu drei Forderungen, die den Zuschnitt beider Schritte ändern:
+
+1. **Der Satz muss den Code für einen Fachbereichsmenschen verständlich machen.**
+   Nicht „SELECT auf KNA1", sondern was fachlich geschieht. Das ist der Maßstab,
+   nicht die technische Korrektheit allein.
+2. **Der Satz steht am BPMN-Element**, nicht in einer Liste daneben — so, wie die
+   Business-Sicht in 3.0 gedacht ist (`docs/roadmap/clean-core-mockups-v2_8.html`).
+   Wo es die Sache verlangt, **mit allen Details**; Kürze ist kein Wert an sich.
+3. **Unschärfe wird aufgelöst *und* ausgewiesen — in dieser Reihenfolge.**
+   Das ist die schärfste der drei und widerspricht dem bequemen Weg: `notDetermined`
+   darf **nicht an die Stelle eines Satzes treten**. Erst wird die bestmögliche
+   belegbare Aussage gebildet, dann wird der Rest an Unsicherheit *an* dieser
+   Aussage vermerkt. Ein Element ohne Satz, aber mit „nicht bestimmt", erfüllt
+   diesen Schritt nicht.
+
+**Herkunft je Satz, aus dem bestehenden Vokabular (`lib/provenance.ts`), nie neu
+erfunden:** Engine-Sätze sind `reconstructed`, Modellsätze `proposed`.
+`notDetermined` bleibt zulässig für einen *Bestandteil* einer Aussage, nie für die
+Aussage selbst.
+
+**Kein Halluzinieren, und das ist messbar, nicht versprochen.** Weg B darf erst
+scharf gehen, wenn der Korpus je Fall erklärt, dass seine Fachsatzliste
+vollständig ist (Muster: `declaredEmpty` bei Befunden und Objekten). Ohne das
+zählt 17.5 nur Treffer und blendet Erfindungen aus — dann misst man ein Modell an
+dem, was es richtig macht, und nie an dem, was es dazudichtet.
+
+| Nr. | Schritt | Größe |
+|---|---|---|
+| 17.7 | **Weg A — die Engine erzeugt den Fachsatz.** Deterministisch aus Skelett und Evidenz, ohne Modellaufruf, ohne Netz. Herkunft `reconstructed`, Anker auf die ABAP-Anweisung, Darstellung am BPMN-Element. Öffnet Regel 6 aus `lib/abap/process-skeleton.ts` (dort nie eine erfundene Phrase) für **eine klar abgetrennte Schicht** — die Knotenbeschriftung selbst bleibt wörtliches Token. **Fertig, wenn** `baseline.json` für `fachsaetze` **≥ 120 von 173** nennt und die Gegenprobe aus 17.5 (Satz des Nachbarn am eigenen Anker) weiter rot ist. | M |
+| 17.8 | **Weg B — das Modell erzeugt den Fachsatz**, mit einem Prompt, der verankerte Einzelsätze bestellt statt einer Executive Summary (heute: 0 von 173). Herkunft `proposed`, außerhalb der Signatur wie jedes Narrativ. **Voraussetzung:** die Vollständigkeitserklärung im Korpus (oben), sonst ist Erfindung straffrei. **Fertig, wenn** B die von A gemessene Zahl schlägt — sonst bleibt A allein, und das ist ein zulässiges Ergebnis. | M |
 
 **Reihenfolge:** 17.5 vor 17.6, und beide vor jeder weiteren Modellentscheidung —
 sonst optimiert man eine Größe, die niemand misst. 17.5 ist unabhängig von der
