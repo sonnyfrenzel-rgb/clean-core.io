@@ -14,9 +14,11 @@
  */
 
 import { renderSecurityAlert, failedJobsFrom } from '../lib/security-alert-email';
+import { reportRecipient } from './lib/report-recipient';
 
 // The same admin address and sender as the weekly usage report.
-const RECIPIENT = 'sonny.frenzel@googlemail.com';
+// The address is no longer written down here — see scripts/lib/report-recipient.ts.
+const RECIPIENT = reportRecipient();
 const FROM = 'Clean-Core.io Security <info@clean-core.io>';
 
 async function main() {

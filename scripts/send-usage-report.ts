@@ -25,9 +25,10 @@ import {
   renderUsageReportText,
 } from '../lib/usage-report-email';
 import { FIRESTORE_DB_ID } from '../lib/constants';
+import { reportRecipient } from './lib/report-recipient';
 
 const PROJECT_ID = 'cleancore-491216';
-const DEFAULT_RECIPIENT = 'sonny.frenzel@googlemail.com';
+// The address is no longer written down here — see scripts/lib/report-recipient.ts.
 const FROM = 'Clean-Core.io Report <info@clean-core.io>';
 
 const APPLY = process.argv.includes('--apply');
@@ -57,7 +58,7 @@ function readSecret(key: string): string {
 }
 
 async function main() {
-  const to = argValue('--to') || DEFAULT_RECIPIENT;
+  const to = argValue('--to') || reportRecipient();
 
   if (!getApps().length) initializeApp({ credential: applicationDefault(), projectId: PROJECT_ID });
   const db = getFirestore(getApps()[0], FIRESTORE_DB_ID);
@@ -67,7 +68,7 @@ async function main() {
 
   // The repository is public, and so is every Actions log. Until 23.09.2026 this
   // function printed the subject line ("9 von 43 Accounts aktiv"), the weekly
-  // figures and `recipient   : sonny.frenzel@googlemail.com` straight into that
+  // figures and the administrator's address straight into that
   // log — every Friday, readable by anyone (run 35333168862, KW 38). The survey
   // scripts had the same defect and were switched off for it on 15.09.2026; this
   // one was not covered by that fix.

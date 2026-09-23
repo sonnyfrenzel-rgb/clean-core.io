@@ -136,6 +136,8 @@ jobs:
         if: steps.clock.outputs.proceed == 'true'
         env:
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          # The recipient is a secret, not a literal in a public repository (23.09.2026).
+          REPORT_RECIPIENT: ${{ secrets.REPORT_RECIPIENT }}
         # The local binary, not `npx`. `tsx` is a production dependency, so
         # `--omit=dev` above keeps it — but `npx` downloads a package it cannot
         # find, and this line runs *after* the Google authentication step. A

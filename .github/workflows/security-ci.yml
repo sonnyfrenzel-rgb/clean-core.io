@@ -100,6 +100,8 @@ jobs:
       - name: Send the alert
         env:
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          # The recipient is a secret, not a literal in a public repository (23.09.2026).
+          REPORT_RECIPIENT: ${{ secrets.REPORT_RECIPIENT }}
           # Context reaches the script as environment variables, never as text
           # interpolated into the shell.
           NEEDS_JSON: ${{ toJSON(needs) }}

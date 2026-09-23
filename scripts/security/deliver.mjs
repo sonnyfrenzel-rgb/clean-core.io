@@ -13,7 +13,7 @@
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { openWith, privateKeyFrom } from './lib/envelope.mjs';
-import { FROM, RECIPIENT, renderAuditMail } from './lib/mail.mjs';
+import { FROM, recipient, renderAuditMail } from './lib/mail.mjs';
 
 const DRY = process.argv.includes('--dry');
 const SEALED = process.env.SEALED_PATH || '.security-audit/out/security-audit.enc.json';
@@ -38,7 +38,7 @@ async function main() {
   const res = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ from: FROM, to: [RECIPIENT], subject: mail.subject, text: mail.text, html: mail.html }),
+    body: JSON.stringify({ from: FROM, to: [recipient()], subject: mail.subject, text: mail.text, html: mail.html }),
   });
   // Status only: the body of a rejection can echo the mail, and this log is public.
   if (!res.ok) throw new Error(`Resend rejected the audit mail: HTTP ${res.status}`);

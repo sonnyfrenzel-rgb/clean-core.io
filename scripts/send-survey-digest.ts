@@ -28,9 +28,10 @@ import {
 } from '../lib/survey/digest-email';
 import { wrapEmailDocument } from '../lib/email-layout';
 import { FIRESTORE_DB_ID } from '../lib/constants';
+import { reportRecipient } from './lib/report-recipient';
 
 const PROJECT_ID = 'cleancore-491216';
-const DEFAULT_RECIPIENT = 'sonny.frenzel@googlemail.com';
+// The address is no longer written down here — see scripts/lib/report-recipient.ts.
 const FROM = 'Clean-Core.io Report <info@clean-core.io>';
 
 const APPLY = process.argv.includes('--apply');
@@ -66,7 +67,7 @@ function toDate(v: unknown): Date | null {
 }
 
 async function main() {
-  const to = argValue('--to') || DEFAULT_RECIPIENT;
+  const to = argValue('--to') || reportRecipient();
 
   if (!getApps().length) {
     initializeApp({ credential: applicationDefault(), projectId: PROJECT_ID });

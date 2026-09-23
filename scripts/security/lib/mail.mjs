@@ -10,7 +10,23 @@ import { wrapEmailDocument } from './mail-shell.mjs';
  * renders markup, and the report quotes code.
  */
 
-export const RECIPIENT = 'sonny.frenzel@googlemail.com';
+/**
+ * Who the sealed audit mail goes to. A function, not a constant, and read from
+ * the environment rather than written down here: this file is in a public
+ * repository. It must stay lazy — `tests/security-audit-guard.spec.ts` imports
+ * this module to check other exports, and a throw at import time would fail that
+ * test for a missing secret instead of for a real defect.
+ */
+export function recipient() {
+  const value = process.env.REPORT_RECIPIENT;
+  if (!value) {
+    throw new Error(
+      'REPORT_RECIPIENT is not set, so the audit report has nowhere to go. ' +
+        'In CI: `gh secret set REPORT_RECIPIENT` and pass it into the job env.',
+    );
+  }
+  return value;
+}
 export const FROM = 'Clean-Core.io Security <info@clean-core.io>';
 
 const ORDER = ['kritisch', 'hoch', 'mittel', 'niedrig', 'info'];

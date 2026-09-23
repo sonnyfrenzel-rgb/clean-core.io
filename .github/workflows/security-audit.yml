@@ -126,5 +126,7 @@ jobs:
         env:
           SECURITY_AUDIT_PRIVATE_KEY: ${{ secrets.SECURITY_AUDIT_PRIVATE_KEY }}
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          # The recipient is a secret, not a literal in a public repository (23.09.2026).
+          REPORT_RECIPIENT: ${{ secrets.REPORT_RECIPIENT }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: node scripts/security/deliver.mjs
