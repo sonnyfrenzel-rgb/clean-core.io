@@ -56,6 +56,8 @@ export interface BpmnExportStats {
   messageFlows: number;
   /** Sequence flows that go around a folded run switch (`model.ts` decision 7). */
   guardBypasses: number;
+  /** Lanes in the top-level process — roadmap 2.16. */
+  lanes: number;
   /** Flow nodes with a line range, and flow nodes visibly without one. */
   anchored: number;
   unanchored: number;
@@ -136,7 +138,11 @@ export function buildBpmnExport(skeleton: ProcessSkeleton, options: BpmnExportOp
       ['technicalHelpers', skeleton.notDrawn.technicalHelpers.length],
       ['cloneGroups', skeleton.notDrawn.clones.length],
       ['notes', skeleton.notes.length],
+      ['lanes', model.lanes.length],
     ])]),
+    // Roadmap 2.16. Before the flow elements, because that is the order the
+    // BPMN 2.0 schema fixes for `tProcess`: laneSet*, then flowElement*.
+    ...laneSet(model, options),
     ...containerContent(model.root, options),
   ]);
 
@@ -173,6 +179,7 @@ export function buildBpmnExport(skeleton: ProcessSkeleton, options: BpmnExportOp
       pools: model.pools.length,
       messageFlows: model.messages.length,
       guardBypasses: model.containers.reduce((n, c) => n + c.flows.filter((f) => f.bypassOf).length, 0),
+      lanes: model.lanes.length,
       anchored,
       unanchored: nodes.length - anchored,
     },
@@ -288,6 +295,50 @@ function nodeTrace(node: SkeletonNode, file: string, extra: Record<string, strin
   }
   for (const [key, value] of Object.entries(extra)) attrs.push([key, value]);
   return el('cc:trace', [['status', STATUS], ...attrs]);
+}
+
+/**
+ * `laneSet` — roadmap 2.16, the part of the file that says **who acts**.
+ *
+ * Three things this writes and one it does not:
+ *
+ * - the lane's **name is the evidence token** out of the source (`V_VBAK_VKO`,
+ *   `SCREEN 9000`, `UPDATE TASK`) and never a job title. §8 of the roadmap
+ *   forbids role mandates, and a lane is the one element of this file that could
+ *   quietly acquire one;
+ * - the **anchor travels in the Clean-Core.io namespace** (2.6): the kind of
+ *   evidence, its line range, and the tokens every piece of it was read from,
+ *   so a reader can go back to the statement that produced the lane;
+ * - the status is `reconstructed`, like every other element of this file.
+ *
+ * What it does **not** write is a `BPMNShape` for the lane. Lanes as bands on
+ * the map are roadmap 2.5; DI is optional per element in BPMN 2.0, and a band
+ * laid out here would be a layout decision taken twice.
+ *
+ * An `authority` lane carries no `flowNodeRef` on purpose — `DESIGN.md` §5.8
+ * calls that actor *"Prüfer (außerhalb des Programms)"*, and the checker
+ * executes none of this program's statements.
+ */
+function laneSet(model: ExportModel, options: BpmnExportOptions): XmlElement[] {
+  if (!model.lanes.length) return [];
+  return [el('bpmn:laneSet', [['id', 'laneSet']], model.lanes.map((lane) => {
+    const anchor = lane.source.anchor;
+    return el('bpmn:lane', [['id', lane.id], ['name', lane.name || undefined]], [
+      el('bpmn:extensionElements', [], [trace({
+        kind: lane.kind,
+        file: options.sourceFileName,
+        lineStart: anchor.lineStart,
+        lineEnd: anchor.lineEnd,
+        statementIndex: anchor.statementIndex,
+        tokenOffset: anchor.tokenOffset,
+        evidence: lane.source.evidence.map((e) => `${e.kind}:${e.token}@${e.anchor.lineStart}`).join(' ')
+          || undefined,
+        evidenceCount: lane.source.evidence.length,
+        unnamedReason: lane.source.unnamedReason,
+      })]),
+      ...lane.flowNodeRefs.map((id) => textEl('bpmn:flowNodeRef', id)),
+    ]);
+  }))];
 }
 
 function containerContent(container: ExportContainer, options: BpmnExportOptions): XmlElement[] {

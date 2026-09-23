@@ -1,6 +1,7 @@
 import type {
   ProcessSkeleton,
   SkeletonEdge,
+  SkeletonLane,
   SkeletonNode,
   SkeletonRegion,
 } from '../abap/process-skeleton';
@@ -179,8 +180,27 @@ export interface ExportMessage {
   calls: number;
 }
 
+/**
+ * A lane of the top-level process — roadmap 2.16.
+ *
+ * The skeleton decided how many there are and what they are called; this is the
+ * same lane with export ids on it. `flowNodeRefs` names only elements of the
+ * **root** container, because that is where the `laneSet` sits: what a collapsed
+ * `subProcess` contains is on its own plane, and it is in the lane by virtue of
+ * the sub-process element being in it.
+ */
+export interface ExportLane {
+  id: string;
+  name: string;
+  kind: SkeletonLane['kind'];
+  source: SkeletonLane;
+  flowNodeRefs: string[];
+}
+
 export interface ExportModel {
   root: ExportContainer;
+  /** Roadmap 2.16. Empty only for a source with no process at all. */
+  lanes: ExportLane[];
   /** Every container, root first, then depth first — the order of the planes. */
   containers: ExportContainer[];
   stores: ExportStore[];
@@ -298,12 +318,44 @@ class ModelBuilder {
 
     return {
       root,
+      lanes: this.readLanes(root),
       containers: this.containers,
       stores,
       pools,
       messages,
       droppedEdges: this.droppedEdges,
     };
+  }
+
+  /**
+   * The lanes of the top plane — roadmap 2.16.
+   *
+   * Nothing is decided here: `lib/abap/process-skeleton.ts` decided how many
+   * lanes there are, what each is called and which skeleton nodes it holds. This
+   * translates skeleton ids into export ids, and it does so by asking the root
+   * container which nodes it actually has — so a `flowNodeRef` can only ever
+   * name an element that is in the file. A skeleton node that was expanded into
+   * a collapsed sub-process is *not* on the top plane and is therefore not
+   * referenced; its sub-process element is.
+   */
+  private readLanes(root: ExportContainer): ExportLane[] {
+    const laneOfSkeletonNode = new Map<string, string>();
+    for (const lane of this.skeleton.lanes) {
+      for (const nodeId of lane.nodeIds) laneOfSkeletonNode.set(nodeId, lane.id);
+    }
+    const refs = new Map<string, string[]>();
+    for (const node of root.nodes) {
+      const laneId = laneOfSkeletonNode.get(node.source.id);
+      if (!laneId) continue;
+      refs.set(laneId, [...(refs.get(laneId) ?? []), node.id]);
+    }
+    return this.skeleton.lanes.map((lane) => ({
+      id: lane.id,
+      name: lane.name,
+      kind: lane.kind,
+      source: lane,
+      flowNodeRefs: refs.get(lane.id) ?? [],
+    }));
   }
 
   /**

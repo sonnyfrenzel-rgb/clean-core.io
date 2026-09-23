@@ -8,7 +8,7 @@ import {
   bpmnFileName,
   CC_NAMESPACE,
 } from '../lib/bpmn/export';
-import { MAX_NODES } from '../lib/bpmn/model';
+import { buildExportModel, MAX_NODES } from '../lib/bpmn/model';
 import { escapeAttribute, escapeText, ncName } from '../lib/bpmn/xml';
 
 /**
@@ -915,5 +915,95 @@ test.describe('roadmap 2.15 — a return code is not an exclusive gateway', () =
     // (`model.ts` decision 3), and none did.
     expect(elements.filter((e) => e.$type === 'bpmn:IntermediateCatchEvent')).toHaveLength(0);
     for (const boundary of boundaries) expect(boundary.attachedToRef).toBeTruthy();
+  });
+});
+
+/* ================================================================== *
+ * Roadmap 2.16 — the lanes in the file
+ * ================================================================== */
+
+/**
+ * `laneSet` came out of `lib/bpmn/` **nullmal** until this step: our maps said
+ * what happens and never who does it, while the reference holding of 1.246 SAP
+ * diagrams carries 3.711 lanes.
+ *
+ * Everything here is read back out of the parsed XML by `bpmn-moddle`, like the
+ * rest of this file — a `laneSet` this exporter believes in is worth nothing if
+ * a real reader drops it, and a `flowNodeRef` that points at an id the file does
+ * not contain is worse than no lane at all.
+ */
+test.describe('roadmap 2.16 — lanes in the exported file', () => {
+  test('the 1.000-line example exports two lanes, and both are read back', async () => {
+    const { rootElement } = await (await moddle()).fromXML(
+      buildBpmnExportFromSource(read(LEGACY), OPTIONS(LEGACY)).xml,
+    );
+    const { process } = countOf(rootElement);
+    const laneSets = list<ModdleElement>(process.laneSets);
+    expect(laneSets, 'the process carries exactly one laneSet').toHaveLength(1);
+    const lanes = list<ModdleElement>(laneSets[0].lanes);
+    expect(lanes.map((l) => l.name)).toEqual(['UPDATE TASK', 'V_VBAK_VKO']);
+  });
+
+  test('every flowNodeRef resolves to a flow node of the same process', async () => {
+    // The acceptance of 2.16, and the one a modeller punishes: bpmn-moddle
+    // resolves a `flowNodeRef` into the element itself when the id exists and
+    // leaves a dangling reference when it does not.
+    for (const [file] of SHIPPED) {
+      const { rootElement } = await (await moddle()).fromXML(
+        buildBpmnExportFromSource(read(file), OPTIONS(file)).xml,
+      );
+      const { process, elements } = countOf(rootElement);
+      const own = new Set(list<ModdleElement>(process.flowElements).map((e) => e.id));
+      const known = new Set(elements.map((e) => e.id));
+      for (const lane of list<ModdleElement>(process.laneSets).flatMap((s) => list<ModdleElement>(s.lanes))) {
+        for (const ref of list<ModdleElement>(lane.flowNodeRefs)) {
+          expect(typeof ref, `${file}: ${lane.name} resolves its refs`).toBe('object');
+          expect(known.has(ref.id as string), `${file}: ${ref.id} is an element of the file`).toBe(true);
+          expect(own.has(ref.id as string), `${file}: ${ref.id} is on the same plane as the laneSet`).toBe(true);
+          expect(ref.$instanceOf('bpmn:FlowNode'), `${file}: ${ref.id} is a flow node`).toBe(true);
+        }
+      }
+    }
+  });
+
+  test('every lane carries its anchor and its evidence in the Clean-Core.io namespace', async () => {
+    const { rootElement } = await (await moddle()).fromXML(
+      buildBpmnExportFromSource(read(LEGACY), OPTIONS(LEGACY)).xml,
+    );
+    const { process } = countOf(rootElement);
+    const lanes = list<ModdleElement>(process.laneSets).flatMap((s) => list<ModdleElement>(s.lanes));
+    for (const lane of lanes) {
+      const trace = traceOf(lane);
+      expect(trace, `${lane.name} carries a trace`).toBeTruthy();
+      expect(trace?.status).toBe('reconstructed');
+      expect(Number(trace?.lineStart), `${lane.name} is anchored`).toBeGreaterThan(0);
+      expect(trace?.file).toBe(LEGACY);
+    }
+    const checker = lanes.find((l) => l.name === 'V_VBAK_VKO') as ModdleElement;
+    expect(traceOf(checker)?.kind).toBe('authority');
+    // Both checks travel, so a reader can go back to either statement.
+    expect(traceOf(checker)?.evidence).toBe('authority:V_VBAK_VKO@197 authority:V_VBAK_VKO@205');
+    // §5.8 calls this actor "Prüfer (außerhalb des Programms)": the lane holds
+    // no flow node, because the checker runs none of this program's statements.
+    expect(list(checker.flowNodeRefs)).toHaveLength(0);
+  });
+
+  test('the run lane holds every element of the top plane, and the file counts them', () => {
+    const exported = buildBpmnExportFromSource(read(LEGACY), OPTIONS(LEGACY));
+    expect(exported.stats.lanes).toBe(2);
+    const model = buildExportModel(buildProcessSkeleton(read(LEGACY)));
+    const run = model.lanes[0];
+    expect(run.flowNodeRefs).toHaveLength(model.root.nodes.length);
+    expect(model.root.nodes.length).toBeGreaterThan(0);
+  });
+
+  test('no lane, and no name, where the source proves neither', async () => {
+    // A source that draws nothing has no process and therefore no actor. The
+    // file then carries no `laneSet` at all rather than an empty band.
+    const { rootElement } = await (await moddle()).fromXML(
+      buildBpmnExportFromSource(read('Z_ORDER_INTEGRITY_CHECK.txt'), OPTIONS('Z_ORDER_INTEGRITY_CHECK.txt')).xml,
+    );
+    const { process } = countOf(rootElement);
+    expect(list(process.laneSets)).toHaveLength(0);
   });
 });

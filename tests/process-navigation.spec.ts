@@ -384,7 +384,7 @@ test.describe('the parts of the navigation say what the file says', () => {
       elementNode: {},
       stats: {
         flowNodes: 6, sequenceFlows: 6, subProcesses: 0, planes: 1, dataStores: 0,
-        pools: 0, messageFlows: 0, guardBypasses: 0, anchored: 0, unanchored: 6,
+        pools: 0, messageFlows: 0, guardBypasses: 0, lanes: 1, anchored: 0, unanchored: 6,
       },
     },
     named: applyNaming(namingContextOf(TWO_WAYS_SOURCE), null, 'no-key'),

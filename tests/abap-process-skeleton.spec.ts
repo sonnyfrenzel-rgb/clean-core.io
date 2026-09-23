@@ -3,6 +3,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import {
   buildProcessSkeleton,
+  MAX_LANES,
   type ProcessSkeleton,
   type SkeletonNode,
 } from '../lib/abap/process-skeleton';
@@ -1083,5 +1084,210 @@ test.describe('roadmap 2.15 — a return code is the effect of a step', () => {
     const skeleton = buildProcessSkeleton(source);
     expect(skeleton.nodes.filter((n) => n.kind === 'error-boundary'), 'the read reports itself').toHaveLength(1);
     expect(skeleton.nodes.filter((n) => n.kind === 'gateway'), 'the authorisation check does not').toHaveLength(1);
+  });
+});
+
+/* ================================================================== *
+ * Roadmap 2.16 — lanes: who acts
+ * ================================================================== */
+
+/**
+ * A lane is the one element of this product that could say something about
+ * **people**, and §8 of the roadmap forbids role lists and role mandates. So
+ * every assertion here is about the same two things: a lane exists only where
+ * the code proves an actor, and its name is a token the source itself contains.
+ *
+ * The reference holding of 1.246 SAP diagrams has 3.711 lanes, median 2 per
+ * diagram, 71 % of them with at least two. Our maps had **none** until this
+ * step. What follows is measured against the eight programs this product ships,
+ * not against a snippet written to suit the rule.
+ */
+test.describe('roadmap 2.16 — lanes', () => {
+  /** Every lane, over the eight shipped programs, with the source it came from. */
+  const lanesOfShipped = () => SHIPPED.map(([file]) => ({
+    file,
+    source: read(file),
+    lanes: skeletonOf(file).lanes,
+  }));
+
+  test('ZLEGACY carries exactly two lanes, both anchored: the run and the checker', () => {
+    // The number 2.16 names. Four kinds of evidence are in this program —
+    // AUTHORITY-CHECK (L197/L205), IN UPDATE TASK (L509), an ALV display (L616)
+    // and a DESTINATION (L401) — and they make two lanes: the destination is a
+    // collapsed pool and not a lane, the two authority checks name one and the
+    // same object, and the program's own steps are one run however many things
+    // that run does.
+    const skeleton = skeletonOf(LEGACY);
+    expect(skeleton.lanes).toHaveLength(2);
+    const [run, checker] = skeleton.lanes;
+    expect(run.kind).toBe('system');
+    expect(run.name).toBe('UPDATE TASK');
+    expect(run.anchor.lineStart).toBe(509);
+    expect(run.nodeIds).toHaveLength(skeleton.nodes.length);
+    expect(checker.kind).toBe('authority');
+    expect(checker.name).toBe('V_VBAK_VKO');
+    expect(checker.anchor.lineStart).toBe(197);
+    // Two checks on one object are one actor.
+    expect(checker.evidence.map((e) => e.anchor.lineStart)).toEqual([197, 205]);
+    // §5.8: "Prüfer (außerhalb des Programms)". The checker runs no statement
+    // of this program, so the lane holds no flow node — and claiming otherwise
+    // would be a sentence the source does not contain.
+    expect(checker.nodeIds).toEqual([]);
+    for (const lane of skeleton.lanes) {
+      expect(lane.anchor, `${lane.name} has a line anchor`).toBeTruthy();
+      expect(lane.status).toBe('reconstructed');
+    }
+  });
+
+  test('a program with no evidence has exactly one lane, named after itself', () => {
+    // Four of the eight shipped programs prove nothing about who acts. Each of
+    // them gets one lane, and its name is the program's own name out of the
+    // `REPORT` statement — a token of the source, never a job title.
+    const bare = lanesOfShipped().filter(({ lanes }) => lanes.every((l) => l.kind === 'program'));
+    const withNodes = bare.filter(({ lanes }) => lanes.length > 0);
+    expect(withNodes.length, 'four programs prove nothing about who acts').toBe(4);
+    for (const { file, lanes } of withNodes) {
+      expect(lanes, `${file} has exactly one lane`).toHaveLength(1);
+      expect(lanes[0].evidence, `${file} has no evidence`).toEqual([]);
+      expect(lanes[0].name.length, `${file}'s lane is named`).toBeGreaterThan(0);
+    }
+    // A source that draws no node at all is no process, and a process with no
+    // steps has no actor either.
+    const empty = skeletonOf('Z_ORDER_INTEGRITY_CHECK.txt');
+    expect(empty.nodes).toHaveLength(0);
+    expect(empty.lanes).toEqual([]);
+  });
+
+  test('no lane exists without a line anchor, and never more lanes than distinct evidence', () => {
+    for (const [file] of SHIPPED) {
+      const skeleton = skeletonOf(file);
+      for (const lane of skeleton.lanes) {
+        expect(lane.anchor, `${file} ${lane.name} is anchored`).toBeTruthy();
+        expect(lane.anchor.lineStart, `${file} ${lane.name} has a real line`).toBeGreaterThan(0);
+      }
+      // "Lane-Zahl = Zahl verschiedener Beweise, nie mehr". Exactly: one lane
+      // for the run, which exists wherever there is a process at all, and
+      // beyond it one lane per **distinct** `AUTHORITY-CHECK` object and
+      // nothing else. Human and system evidence names the run rather than
+      // multiplying it, which is why the 1.000-line example has two lanes and
+      // not four.
+      const objects = new Set(
+        skeleton.laneEvidence.filter((e) => e.kind === 'authority').map((e) => e.token),
+      );
+      const expected = skeleton.nodes.length ? Math.min(1 + objects.size, MAX_LANES) : 0;
+      expect(skeleton.lanes.length, `${file}: ${objects.size} distinct authority objects`).toBe(expected);
+      for (const lane of skeleton.lanes.slice(1)) {
+        expect(lane.evidence.length, `${file} ${lane.name} rests on evidence`).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  test('no lane name contains a token the source does not contain', () => {
+    // The whole of §8 in one assertion. A lane is where a role list would creep
+    // in, and `tests/process-naming.spec.ts` ("CFO is rejected") holds for a
+    // deterministic lane too — so the test is not "is this word on a blacklist"
+    // but "is this word in the file".
+    for (const { file, source, lanes } of lanesOfShipped()) {
+      const haystack = source.toUpperCase();
+      for (const lane of lanes) {
+        for (const token of lane.name.split(/\s+/).filter(Boolean)) {
+          expect(
+            haystack.includes(token.toUpperCase()),
+            `${file}: "${token}" of lane "${lane.name}" is in the source`,
+          ).toBe(true);
+        }
+      }
+    }
+  });
+
+  test('evidence in code no entry point reaches opens no lane', () => {
+    // `legacy_call_screen_example` holds the one `CALL SCREEN` of the
+    // 1.000-line example, and no `PERFORM` names it: the skeleton lists the
+    // routine under "not reached". 2.16 says such a piece of evidence does not
+    // count, and the walk is what makes that true — the statement is never
+    // passed, so it never reaches the evidence list at all.
+    const skeleton = skeletonOf(LEGACY);
+    expect(skeleton.notDrawn.unreached.map((r) => r.name)).toContain('LEGACY_CALL_SCREEN_EXAMPLE');
+    expect(skeleton.laneEvidence.map((e) => e.anchor.lineStart)).not.toContain(670);
+    expect(skeleton.lanes.map((l) => l.name)).not.toContain('SCREEN 9000');
+
+    // And the counter-proof, so the assertion above is not green for the wrong
+    // reason: the same statement in code an entry point does reach opens a lane.
+    const reached = buildProcessSkeleton([
+      'REPORT zreach.',
+      'START-OF-SELECTION.',
+      '  PERFORM show.',
+      'FORM show.',
+      '  CALL SCREEN 9000.',
+      'ENDFORM.',
+    ].join('\n'));
+    expect(reached.lanes.map((l) => l.name)).toContain('SCREEN 9000');
+    expect(reached.lanes[0].kind).toBe('human');
+  });
+
+  test('a DESTINATION is evidence and stays a pool, never a lane', () => {
+    // §5.8 draws another system as a collapsed pool with a message flow, and
+    // `lib/bpmn/model.ts` has done that since 2.6. 2.16 records the evidence so
+    // the reason is visible, and opens no lane for it.
+    const skeleton = skeletonOf(LEGACY);
+    const foreign = skeleton.laneEvidence.filter((e) => e.kind === 'foreign-system');
+    expect(foreign).toHaveLength(1);
+    expect(foreign[0].anchor.lineStart).toBe(401);
+    expect(skeleton.lanes.map((l) => l.name)).not.toContain(foreign[0].token);
+  });
+
+  test('one lane per distinct authority object, not one per check', () => {
+    const source = [
+      'REPORT zauth.',
+      'START-OF-SELECTION.',
+      "  AUTHORITY-CHECK OBJECT 'V_VBAK_VKO' ID 'ACTVT' FIELD '03'.",
+      "  AUTHORITY-CHECK OBJECT 'V_VBAK_VKO' ID 'ACTVT' FIELD '02'.",
+      "  AUTHORITY-CHECK OBJECT 'M_BANF_EKG' ID 'ACTVT' FIELD '02'.",
+      '  WRITE / 1.',
+    ].join('\n');
+    const skeleton = buildProcessSkeleton(source);
+    const authority = skeleton.lanes.filter((l) => l.kind === 'authority');
+    expect(authority.map((l) => l.name)).toEqual(['V_VBAK_VKO', 'M_BANF_EKG']);
+    expect(authority[0].evidence).toHaveLength(2);
+    expect(skeleton.laneEvidence.filter((e) => e.kind === 'authority')).toHaveLength(3);
+  });
+
+  test('the upper bound holds, and what it leaves out stays visible', () => {
+    // "mit Obergrenze" (2.16). A source with more distinct authority objects
+    // than `MAX_LANES` gets `MAX_LANES` lanes and not one more — and the
+    // evidence it did not draw a lane for is still in `laneEvidence`, so
+    // "not drawn" is visible rather than silent.
+    const checks = Array.from({ length: MAX_LANES + 8 }, (_, i) =>
+      `  AUTHORITY-CHECK OBJECT 'Z_OBJ_${i}' ID 'ACTVT' FIELD '02'.`);
+    const skeleton = buildProcessSkeleton([
+      'REPORT zmany.',
+      'START-OF-SELECTION.',
+      ...checks,
+      '  WRITE / 1.',
+    ].join('\n'));
+    expect(skeleton.lanes).toHaveLength(MAX_LANES);
+    expect(skeleton.laneEvidence.filter((e) => e.kind === 'authority')).toHaveLength(MAX_LANES + 8);
+  });
+
+  test('the lane changes nothing about the graph — 2.15 and the CC-055 argument hold', () => {
+    // The warning this step was given: in `Z_MM_PO_APPROVAL/check_authority`
+    // the only graph predecessor of the second `IF sy-subrc <> 0.` is the
+    // `SELECT … FROM eban` of the *first* check. `AUTHORITY-CHECK` is lane
+    // evidence now, with a name and an anchor — and it still draws no node, so
+    // nothing can fold onto that read and claim the authorisation failed there.
+    const skeleton = skeletonOf(PO);
+    const authorityBranch = skeleton.nodes.find((n) => n.anchor?.lineStart === 111);
+    expect(authorityBranch?.kind, 'the branch behind AUTHORITY-CHECK is still a gateway').toBe('gateway');
+    const eban = skeleton.nodes.find((n) => n.kind === 'read' && n.label === 'EBAN');
+    const hangingOnEban = skeleton.nodes.filter(
+      (n) => n.kind === 'error-boundary' && n.detail?.attachedTo === eban?.id,
+    );
+    expect(
+      hangingOnEban.map((n) => n.anchor?.lineStart),
+      'nothing folded the authority check onto the read',
+    ).not.toContain(111);
+    // And no node was added anywhere: the counts are the ones 2.15 left behind.
+    expect(skeleton.nodes).toHaveLength(110);
+    expect(skeletonOf(LEGACY).nodes).toHaveLength(105);
   });
 });

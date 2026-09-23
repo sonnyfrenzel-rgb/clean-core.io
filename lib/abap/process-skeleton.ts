@@ -62,10 +62,14 @@ import {
  * the code alone. Inclusive, complex and event-based gateways, compensation,
  * escalation and choreography are deliberately absent from that table too.
  *
- * Parallel gateways, timer and message intermediate events, pools, data stores
- * and lanes are in the table but not here: a pool needs the message flows of
- * 2.5, and a lane is a *proposal* that 2.4 makes with a model. This file emits
- * only what a statement proves.
+ * Parallel gateways, timer and message intermediate events, pools and data
+ * stores are in the table but not among these kinds: a pool needs the message
+ * flows of 2.5. This file emits only what a statement proves.
+ *
+ * **Lanes are here, and they are not a node kind.** Since 2.16 a lane is
+ * reconstructed from four kinds of evidence in the code and carried beside the
+ * graph in `ProcessSkeleton.lanes` — a lane is not a step, it says who performs
+ * the steps. See `buildLanes`.
  */
 export type SkeletonNodeKind =
   /** Start event — a classic event block, or the implicit `START-OF-SELECTION`. */
@@ -222,6 +226,74 @@ export type FormEffect =
   | 'authority'
   | 'business-rule';
 
+/* ------------------------------------------------------------------ *
+ * Lanes — roadmap 2.16
+ * ------------------------------------------------------------------ */
+
+/**
+ * The four kinds of evidence 2.16 accepts for *who acts*, and nothing else.
+ *
+ * - `authority` — `AUTHORITY-CHECK OBJECT x`. The one place ABAP names an actor
+ *   **outside** the program: the person whose authorisation is being checked.
+ *   One lane per **distinct** object.
+ * - `human` — `CALL SCREEN`, a dynpro, a popup, an ALV display. A person acts
+ *   inside the program, so the run is a dialogue run.
+ * - `system` — `IN UPDATE TASK`, `IN BACKGROUND TASK`, `VIA JOB`. The run is
+ *   handed to a work process nobody sits in front of.
+ * - `foreign-system` — `DESTINATION`. Recorded, and deliberately **not** a lane:
+ *   another system is a collapsed pool (`DESIGN.md` §5.8), which `lib/bpmn/model.ts`
+ *   already draws.
+ */
+export type LaneEvidenceKind = 'authority' | 'human' | 'system' | 'foreign-system';
+
+/** One statement that says who acts, with the token it says it in. */
+export interface LaneEvidence {
+  kind: LaneEvidenceKind;
+  /** The token as the source writes it, upper-cased. Never a phrase (rule 6). */
+  token: string;
+  anchor: NodeAnchor;
+  /** The keyword this was read from — `AUTHORITY-CHECK`, `CALL FUNCTION`, … */
+  statement: string;
+}
+
+/**
+ * What a lane can be. `program` is the lane of the run itself, the one every
+ * flow node sits in; the other three are named by the evidence that produced
+ * them.
+ */
+export type SkeletonLaneKind = 'program' | 'authority' | 'human' | 'system';
+
+export interface SkeletonLane {
+  /** `lane-1`, `lane-2`, … in the order the lanes are emitted. */
+  id: string;
+  kind: SkeletonLaneKind;
+  /**
+   * The evidence token, and nothing else — `V_VBAK_VKO`, `SCREEN 9000`,
+   * `UPDATE TASK`. Never a job title and never a word from a list: §8 of the
+   * roadmap forbids role mandates, and `tests/process-naming.spec.ts` ("CFO is
+   * rejected") holds for a deterministic lane too. Empty exactly when the source
+   * offers no token at all, and `unnamedReason` then says so.
+   */
+  name: string;
+  unnamedReason?: string;
+  /** Always set. A lane without a line anchor is not emitted (2.16). */
+  anchor: NodeAnchor;
+  /** Every statement behind this lane, in source order. Empty for a bare `program` lane. */
+  evidence: LaneEvidence[];
+  /**
+   * The skeleton nodes this lane holds. Empty for an `authority` lane on
+   * purpose: `DESIGN.md` §5.8 calls that actor *"Prüfer (außerhalb des
+   * Programms)"* — the checker does not execute a statement of this program, and
+   * saying they do would be a sentence the source does not contain.
+   */
+  nodeIds: string[];
+  /** 2.16: reconstructed from the code, never *Model proposal*, never confirmed. */
+  status: 'reconstructed';
+}
+
+/** Above this many lanes no further evidence opens one (2.16, "mit Obergrenze"). */
+export const MAX_LANES = 12;
+
 export interface FoldedForm {
   name: string;
   lineStart: number;
@@ -268,6 +340,18 @@ export interface ProcessSkeleton {
   nodes: SkeletonNode[];
   edges: SkeletonEdge[];
   regions: SkeletonRegion[];
+  /**
+   * Who acts — roadmap 2.16. Exactly one lane when the source proves nothing,
+   * never more lanes than there are **distinct** pieces of evidence, and every
+   * one of them with a line anchor.
+   */
+  lanes: SkeletonLane[];
+  /**
+   * Every piece of lane evidence the walk saw, in source order — including the
+   * `DESTINATION` evidence that stays a pool and anything past `MAX_LANES`. It
+   * is here so that "this lane was not drawn" is visible rather than silent.
+   */
+  laneEvidence: LaneEvidence[];
   /** Entry region keys in **runtime** order, which is not source order (rule 4). */
   entries: string[];
   /** What §5.8 says instead of drawing it. */
@@ -634,6 +718,15 @@ class SkeletonBuilder {
   /** The chain of routines being expanded right now — the floor of `formRegion`. */
   private expanding: string[] = [];
   private macros = new Map<string, { block: Block }>();
+  /**
+   * Lane evidence — roadmap 2.16. Collected **inside the walk** on purpose:
+   * that is what makes "a piece of evidence in code no entry point reaches does
+   * not count" true rather than asserted. `legacy_call_screen_example` of the
+   * 1.000-line example is never walked, so its `CALL SCREEN 9000` (L670) never
+   * gets here, and no lane is opened for a screen nobody can reach.
+   */
+  private evidence: LaneEvidence[] = [];
+  private evidenceSeen = new Set<string>();
   private selectionNames = new Set<string>();
   private performedFrom = new Map<string, string[]>();
 
@@ -669,11 +762,16 @@ class SkeletonBuilder {
     // which are counted over the graph this pass leaves behind.
     this.foldTechnicalGateways();
     this.noteUnreachableSteps();
+    // Roadmap 2.16, last: a lane holds node ids, and `foldTechnicalGateways`
+    // is the pass that can still drop one.
+    const lanes = this.buildLanes();
 
     return {
       nodes: this.nodes,
       edges: this.edges,
       regions: this.regions,
+      lanes,
+      laneEvidence: this.evidence,
       entries: this.regions
         .filter((r) => r.kind === 'entry')
         .sort((a, b) => (a.runtimeRank ?? 0) - (b.runtimeRank ?? 0)
@@ -1354,6 +1452,12 @@ class SkeletonBuilder {
         anchorOf(statement, 1), ctx.region, ctx.container, {
           detail: { returns, viaJob: /\bVIA\s+JOB\b/i.test(text), dynamic: Boolean(program?.[1]) },
         });
+      // 2.16: `VIA JOB` hands the run to a batch work process — a system, not a
+      // person. The token is the two words the source writes.
+      if (/\bVIA\s+JOB\b/i.test(text)) {
+        this.recordEvidence('system', 'VIA JOB',
+          anchorOf(statement, tokenIndexOf(statement, /^VIA$/i)), statement);
+      }
       this.connect(incoming, node.id);
       if (returns) return { exits: [{ from: node.id, condition: '', kind: 'sequence' }], outputRun: null };
       this.edges.push({ from: node.id, to: ctx.region.endNodeId, kind: 'sequence', condition: '', reason: 'no-return' });
@@ -1393,6 +1497,9 @@ class SkeletonBuilder {
     }
     if (/^CALL\s+SCREEN\b/i.test(text)) {
       const screen = /^CALL\s+SCREEN\s+([\w/]+)/i.exec(text)?.[1] ?? 'CALL SCREEN';
+      // 2.16: a dynpro is a person. The token is written the way the source
+      // writes it, `SCREEN 9000`, and both words are in the statement.
+      this.recordEvidence('human', `SCREEN ${screen.toUpperCase()}`, anchorOf(statement, 1), statement);
       return keep(this.addNode('user-task', screen, anchorOf(statement, 2), ctx.region, ctx.container));
     }
 
@@ -1448,8 +1555,20 @@ class SkeletonBuilder {
     }
 
     // Everything else is a move, a calculation or a commit boundary, and §5.8
-    // gives none of them a BPMN element. `AUTHORITY-CHECK` is the deliberate one:
-    // it is evidence for a lane, which 2.4 proposes with a model, not a step.
+    // gives none of them a BPMN element. `AUTHORITY-CHECK` is the deliberate
+    // one: since 2.16 it is read here as **lane evidence** — it opens a lane for
+    // the actor outside the program whose authorisation is checked — and it
+    // still draws no step, because the checker executes no statement of this
+    // program. Nothing about the graph changes here, which is what keeps the
+    // fold of 2.15 and the CC-055 argument intact.
+    if (statement.keyword === 'AUTHORITY-CHECK') {
+      const object = /\bOBJECT\s+(?:'([^']*)'|`([^`]*)`|([\w/]+))/i.exec(text);
+      const token = (object?.[1] ?? object?.[2] ?? object?.[3] ?? '').toUpperCase();
+      if (token) {
+        this.recordEvidence('authority', token,
+          anchorOf(statement, tokenIndexOf(statement, /^OBJECT$/i) + 1), statement);
+      }
+    }
     return { exits: incoming, outputRun: null };
   }
 
@@ -1578,6 +1697,7 @@ class SkeletonBuilder {
       },
     });
     this.connect(incoming, node.id);
+    this.readLaneEvidence(statement, kind, label, call?.destination);
     const exits: Exit[] = [{ from: node.id, condition: '', kind: 'sequence' }];
 
     if (/\bEXCEPTIONS\b/i.test(statement.text) && this.handlesSubrcAfter(statement.index)) {
@@ -1780,6 +1900,154 @@ class SkeletonBuilder {
         edge.condition = guard.condition;
       }
     }
+  }
+
+  /* ---------------- roadmap 2.16 — who acts ---------------- */
+
+  /**
+   * One piece of lane evidence, recorded where the walk reads it.
+   *
+   * Deduplicated by statement, kind and token: a routine performed from three
+   * places is walked three times, and one `AUTHORITY-CHECK` written once is one
+   * piece of evidence however often the flow passes it.
+   */
+  private recordEvidence(
+    kind: LaneEvidenceKind,
+    token: string,
+    anchor: NodeAnchor,
+    statement: AbapStatement,
+  ): void {
+    const key = `${anchor.statementIndex}|${kind}|${token}`;
+    if (this.evidenceSeen.has(key)) return;
+    this.evidenceSeen.add(key);
+    this.evidence.push({ kind, token, anchor, statement: statement.keyword });
+  }
+
+  /**
+   * What a `CALL FUNCTION` says about who acts — 2.16, three of the four kinds.
+   *
+   * The *kind* of the node is the evidence for a person: `functionTaskKind`
+   * already decided `user-task` from the §5.8 list of function modules a person
+   * looks at or answers (ALV, `POPUP_*`, `F4IF_*`), and reading that decision
+   * here rather than matching the names a second time keeps one rule in one
+   * place. `IN UPDATE TASK`, `IN BACKGROUND TASK` and `DESTINATION` are read off
+   * the statement, in the words the source writes them in.
+   */
+  private readLaneEvidence(
+    statement: AbapStatement,
+    kind: SkeletonNodeKind,
+    label: string,
+    destination: string | undefined,
+  ): void {
+    const text = statement.text;
+    if (kind === 'user-task') {
+      this.recordEvidence('human', label, anchorOf(statement, 2), statement);
+    }
+    if (/\bIN\s+UPDATE\s+TASK\b/i.test(text)) {
+      this.recordEvidence('system', 'UPDATE TASK',
+        anchorOf(statement, tokenIndexOf(statement, /^UPDATE$/i)), statement);
+    }
+    if (/\bIN\s+BACKGROUND\s+TASK\b/i.test(text)) {
+      this.recordEvidence('system', 'BACKGROUND TASK',
+        anchorOf(statement, tokenIndexOf(statement, /^BACKGROUND$/i)), statement);
+    }
+    if (destination) {
+      // Recorded, never a lane: another system is a collapsed pool (§5.8), and
+      // `lib/bpmn/model.ts` has drawn it as one since 2.6.
+      this.recordEvidence('foreign-system', destination.toUpperCase(),
+        anchorOf(statement, tokenIndexOf(statement, /^DESTINATION$/i) + 1), statement);
+    }
+  }
+
+  /**
+   * The lanes — roadmap 2.16 (§16 V3).
+   *
+   * Two rules and no third:
+   *
+   * 1. **One lane for the run.** Every flow node of this program is executed by
+   *    the same actor: the run. There is exactly one run per start, and the code
+   *    proves no handover inside a program — so a second lane for the program's
+   *    own steps would be a sentence the source does not contain. What the
+   *    evidence decides is not *how many* such lanes there are but **what this
+   *    one is called**: the first `human` or `system` token in source order,
+   *    which is the first statement in the run that says who is at the keyboard
+   *    or that nobody is. With no such token the lane takes the program's own
+   *    name from `REPORT`/`PROGRAM`, which is still a token out of the source.
+   * 2. **One lane per distinct `AUTHORITY-CHECK` object.** That is the only
+   *    place ABAP names an actor *outside* the program, and §5.8 calls it
+   *    exactly that — *"Prüfer (außerhalb des Programms)"*. Two checks on
+   *    `V_VBAK_VKO` are one actor and therefore one lane; the lane holds no flow
+   *    node, because the checker runs none of them.
+   *
+   * Measured on the 1.000-line example: four kinds of evidence (L197/L205
+   * authority, L510 update task, L616 ALV, L402 destination) and **2 lanes** —
+   * the destination is a pool, the two authority checks are one object, and the
+   * run is one lane whatever else it does. `CALL SCREEN 9000` at L670 never
+   * arrives here at all: no entry point reaches `legacy_call_screen_example`, so
+   * the walk never passes the statement.
+   *
+   * `MAX_LANES` is the upper bound 2.16 asks for. Evidence past it opens no
+   * lane and stays visible in `laneEvidence`.
+   */
+  private buildLanes(): SkeletonLane[] {
+    if (!this.nodes.length) return [];
+    const lanes: SkeletonLane[] = [];
+
+    const runEvidence = this.evidence
+      .filter((e) => e.kind === 'human' || e.kind === 'system')
+      .sort((a, b) => a.anchor.statementIndex - b.anchor.statementIndex);
+    const named = runEvidence[0];
+    const program = this.programName();
+    const entry = this.regions.find((r) => r.kind === 'entry' && r.anchor);
+    const anchor = named?.anchor ?? program?.anchor ?? entry?.anchor ?? this.firstAnchor();
+    if (!anchor) return [];
+
+    lanes.push({
+      id: 'lane-1',
+      kind: named ? (named.kind === 'human' ? 'human' : 'system') : 'program',
+      name: named?.token ?? program?.name ?? '',
+      ...(named || program ? {} : {
+        unnamedReason:
+          'The source names no dialogue, no background task and no program name, so nothing in it says who runs these steps.',
+      }),
+      anchor,
+      evidence: runEvidence,
+      nodeIds: this.nodes.map((n) => n.id),
+      status: 'reconstructed',
+    });
+
+    const byObject = new Map<string, LaneEvidence[]>();
+    for (const e of this.evidence) {
+      if (e.kind !== 'authority') continue;
+      byObject.set(e.token, [...(byObject.get(e.token) ?? []), e]);
+    }
+    for (const [token, evidence] of byObject) {
+      if (lanes.length >= MAX_LANES) break;
+      lanes.push({
+        id: `lane-${lanes.length + 1}`,
+        kind: 'authority',
+        name: token,
+        anchor: evidence[0].anchor,
+        evidence,
+        nodeIds: [],
+        status: 'reconstructed',
+      });
+    }
+    return lanes;
+  }
+
+  /** `REPORT zlegacy_order_fulfillment_audit …` — a token out of the source, upper-cased. */
+  private programName(): { name: string; anchor: NodeAnchor } | null {
+    for (const statement of this.statements) {
+      if (statement.keyword !== 'REPORT' && statement.keyword !== 'PROGRAM') continue;
+      const name = /^(?:REPORT|PROGRAM)\s+([\w/]+)/i.exec(statement.text)?.[1];
+      if (name) return { name: name.toUpperCase(), anchor: anchorOf(statement, 1) };
+    }
+    return null;
+  }
+
+  private firstAnchor(): NodeAnchor | null {
+    return this.nodes.find((n) => n.anchor)?.anchor ?? null;
   }
 
   /* ---------------- roadmap 2.15 ---------------- */
