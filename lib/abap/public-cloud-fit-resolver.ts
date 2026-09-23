@@ -23,6 +23,8 @@ import type { UsageReport } from './usage-model';
 import {
   assignPublicCloudFit,
   summarizePublicCloudFit,
+  type CatalogPathEvidence,
+  type CatalogSnapshot,
   type ObjectCatalogEvidence,
   type ObjectDropDecision,
   type ObjectUsageEvidence,
@@ -66,6 +68,14 @@ export interface PublicCloudFitResolverInput {
    * lookup that does not exist yet.
    */
   dropDecisions?: Record<string, ObjectDropDecision>;
+  /**
+   * The synced SAP repository files behind every path statement, for the
+   * "Datenbasis und Datum" roadmap 6.7 asks the fourth bucket to carry.
+   * Omitted rather than filled with a plausible date when the caller does not
+   * have it — `summarizePublicCloudFit` then says the date is not available
+   * here instead of printing one nobody measured.
+   */
+  catalogBasis?: readonly CatalogSnapshot[] | null;
 }
 
 export interface ResolverDeps {
@@ -108,6 +118,33 @@ export function collectObjectFacts(findings: readonly PublicCloudFitFinding[]): 
     byObject.set(name, facts);
   }
   return byObject;
+}
+
+/**
+ * What the catalog can say about one object's way forward.
+ *
+ * `hasNoPath` answers one question — `catalog-service.ts`'s
+ * `hasNoReleasedApiPath()` — and a `false` from it is NOT "a path exists". It
+ * is "not flagged", which only means a path exists for an object the release
+ * file actually lists: `buildMerged()` flags a listed object whenever it is
+ * neither released nor carries a successor, so listed-and-unflagged does mean a
+ * path. For an object the release file never mentions, the same `false` means
+ * nothing was looked up.
+ *
+ * The two used to collapse into one boolean, and the sentence the panel then
+ * printed for an unlisted object — "a successor or extension path exists in the
+ * Cloudification Repository" — cited an entry the repository does not have. It
+ * is the same shape as the 367-object finding in `catalog-service.ts`
+ * (20fe6d7b4308): absence of a flag read as evidence.
+ *
+ * `cloudView`/`classicView` (`abcd-classification.ts`) are the honest signal for
+ * which file knows the object, and they already travel through
+ * `/api/abcd-classify` with the grade, so this needs no second lookup.
+ */
+function pathEvidenceFor(graded: GradedObject, hasNoPath: boolean): CatalogPathEvidence {
+  if (hasNoPath) return 'none-named';
+  const inReleaseFile = graded.cloudView !== undefined && graded.cloudView !== 'unlisted';
+  return inReleaseFile ? 'successor-named' : 'not-in-release-file';
 }
 
 /** One object's usage evidence, or `null` when the import carries nothing usable for it. */
@@ -155,7 +192,11 @@ export function resolvePublicCloudFit(
   const assignments: PublicCloudFitAssignment[] = [];
   for (const [name, f] of facts) {
     const graded = gradeObjectUse(name, f.use);
-    const catalog: ObjectCatalogEvidence = { state: graded.state, hasPath: !hasNoPath(name) };
+    const catalog: ObjectCatalogEvidence = {
+      state: graded.state,
+      pathEvidence: pathEvidenceFor(graded, hasNoPath(name)),
+      listedInClassificationFile: graded.classicView !== undefined && graded.classicView !== 'unlisted',
+    };
     const objectInput: PublicCloudFitObjectInput = {
       objectName: name,
       level: graded.grade,
@@ -173,6 +214,7 @@ export function resolvePublicCloudFit(
   const summary = summarizePublicCloudFit(assignments, {
     targetPlatform: input.targetPlatform,
     usageImported: Boolean(input.usageReport),
+    catalogBasis: input.catalogBasis ?? null,
   });
 
   return { assignments, summary };

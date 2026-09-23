@@ -565,7 +565,7 @@ nichts zeigt, senkt die Glaubwürdigkeit, die der Moment braucht.
 |---|---|---|
 | **Business** | Do I still need this, and what changes for me? | Prozess, Geschäftsregeln (auch versteckte), Standard-Fit mit Scope-Item-ID, Not determined |
 | **IT** | What exactly, where to, and is it right? | Findings mit Zeile und beiden Katalogsichten, Nachfolger-API, Kette Objekt → Bedeutung → Entscheidung → Ziel, Architekturvertrag |
-| **Management** | What do I risk, what do I decide? | Clean-Core readiness mit Regelversion und Verlauf, Public-Cloud fit, vier Töpfe (Retire · Keep · Rebuild · Blocked by SAP), offene Entscheidung, Kosten nur als *Simulation* |
+| **Management** | What do I risk, what do I decide? | Clean-Core readiness mit Regelversion und Verlauf, Public-Cloud fit, vier Töpfe (Retire · Keep · Rebuild · Kein katalogisierter Pfad), offene Entscheidung, Kosten nur als *Simulation* |
 
 Die Kette **Objekt → Bedeutung → Entscheidung → Ziel → Status** ist in jeder Sicht durchklickbar, und jede Zahl nennt
 ihre Abdeckung („42 findings in 907 of 907 lines · 2 includes not read"). Auf S steht die Kette als Liste
@@ -577,13 +577,13 @@ und jede Zuordnung zeigt ihren Beleg:
 | # | Topf | Regel | Beleg am Objekt |
 |---|---|---|---|
 | 1 | **Retire** | die Regel, der das Objekt dient, ist bestätigt „Drop" — **oder** der Nutzungsimport zeigt null Ausführungen über mindestens **13 Monate** | Entscheidung mit Revision · oder Nutzungsimport |
-| 2 | **Blocked by SAP** | gebraucht, Level C oder D, **ein SAP-Katalogobjekt ohne freigegebenen Nachfolger** und ohne Erweiterungsweg | Eintrag im Cloudification Repository |
+| 2 | **Kein katalogisierter Pfad** | gebraucht, Level C oder D, **ein SAP-Katalogobjekt ohne freigegebenen Nachfolger** und ohne Erweiterungsweg — oder in keiner der beiden SAP-Dateien genannt | Eintrag im Cloudification Repository, mit Datenbasis und Synchronisationsdatum |
 | 3 | **Rebuild** | gebraucht, Level C oder D, und es gibt Nachfolger oder Erweiterungsweg — sowie jede Modifikation und jeder eigene Schreibzugriff auf SAP-Tabellen: das ist eigene Arbeit, nie SAPs | Nachfolger-API · BAdI · Befund |
 | 4 | **Keep** | gebraucht und für die **Zielplattform des Projekts** zulässig: Public Edition nur Level A, Private Edition A oder B | Level und Zielplattform |
 | — | *not assigned* | Level unbekannt oder *Not determined* | mit Grund |
 
 - **Die Töpfe hängen an der Zielplattform.** Dasselbe B-Objekt ist in der Private Edition *Keep*, in der Public Edition
-  *Rebuild* oder *Blocked by SAP*. Die Karte nennt die Zielplattform im Antwortsatz; ein Wechsel der Zielplattform
+  *Rebuild* oder *Kein katalogisierter Pfad*. Die Karte nennt die Zielplattform im Antwortsatz; ein Wechsel der Zielplattform
   ordnet neu und sagt, was sich bewegt hat.
 - **Retire ist durchsichtig.** Jede Retire-Zuordnung aus Nutzung zeigt Quelle, Zeitraum mit Datum und ob er einen
   Jahresabschluss enthält: *„No executions in SUSG, 2025-08-01 to 2026-08-31 (13 months, includes year-end close)"*.
