@@ -2013,3 +2013,34 @@ es geht in den Hash ein, den die Quittung nennt.
 `lib/model-receipt.ts` (der `modelId` ist, was *tatsächlich übergeben* wurde, nicht
 was angefordert war), `/api/gemini` als einziger Weg nach außen,
 `runs/create:459` (`analysis` außerhalb der Signatur), und historische Quittungen.
+
+### Die Ground Truth, die niemand erzeugt (17.5 und 17.6)
+
+Nachgezählt am 23.09.2026: **alle 68 Korpusfälle** tragen Fachsätze, zusammen
+**173 Sätze mit 435 Ankern** — jeder Satz hat mindestens einen. Sie sehen so aus:
+
+> `CC-003-B01` — *„Negative Beträge werden als INVALID eingeordnet."* → `source.abap:9`
+> `CC-002-B01` — *„Nur eine nicht leere Kundennummer wird als Selektionsschlüssel aufgenommen."* → `source.abap:6–7`
+
+Das ist nicht die Executive Summary, die `lib/analysis-prompt.ts:38` beim Modell
+bestellt („plain english business executive summary"). Es ist die verankerte
+Einzelaussage darüber, was der Code an dieser Stelle tut — **näher an dem, was die
+Business-Sicht nach 3.0 zeigt, als an dem, was heute angefordert wird.** Die
+Grundlinie zu 2.11 sagt es selbst: *„die Engine kennt die Aussageklasse nicht —
+Fachsätze durchweg."*
+
+Drei Dinge stehen damit nebeneinander, die zusammengehören: ein von Hand
+geschriebener Sollwert, ein Prompt, der etwas anderes bestellt, und eine Facette,
+die so tut, als prüfe sie beides. Solange das so steht, **kann keine Prompt- und
+keine Modelländerung je zeigen, ob sie besser oder schlechter geworden ist.**
+3.0 macht das nicht kleiner: die Hauptaussage der Business-Sicht ist genau die
+verankerte Einzelaussage.
+
+| Nr. | Schritt | Größe |
+|---|---|---|
+| 17.5 | **Die Facette vergleicht wirklich.** `compareBusinessStatements` prüft heute nur, ob Anker in existierende Zeilen zeigen, und ist hart auf `disagree` verdrahtet; das Verdikt heißt `nicht-vergleichbar`. Künftig vergleicht sie die erzeugten Sätze gegen die 173 Sollsätze — **deterministisch**, über den Anker als Schlüssel und ein offengelegtes Textmaß, **kein Modell als Richter** (die Zweitmessung vom 23.09. hat genau das getan und trägt deshalb nichts). Je Fall Zähler und Nenner wie in 1.9; „nicht geprüft" bleibt verboten als `agree`. **Fertig, wenn** `baseline.json` für `fachsaetze` eine Zahl nennt, die sich bewegt, wenn man den Prompt ändert — und wenn ein absichtlich verschlechterter Prompt die Facette rot macht. | M |
+| 17.6 | **Entscheiden, wer die Fachsätze erzeugt** — heute niemand, und das ist eine Produktentscheidung, keine Technikfrage. Zwei Wege, und sie schließen sich nicht aus: **(a) die Engine** aus dem Skelett, deterministisch und damit ohne Modellkosten und ohne Halluzination, aber auf das begrenzt, was der Kontrollfluss hergibt; **(b) das Modell** mit einem Prompt, der genau danach fragt, statt nach einer Zusammenfassung — verankert, und durch 17.5 messbar. Gehört **vor** den Ausbau der Business-Sicht beantwortet, weil er bestimmt, was sie eigentlich sagt. Die Entscheidung gehört Sonny; dieser Schritt bereitet sie mit gemessenen Zahlen aus 17.5 vor, statt sie vorwegzunehmen. | M |
+
+**Reihenfolge:** 17.5 vor 17.6, und beide vor jeder weiteren Modellentscheidung —
+sonst optimiert man eine Größe, die niemand misst. 17.5 ist unabhängig von der
+Modellfrage nützlich und billig: der Sollwert liegt seit Monaten im Repository.
