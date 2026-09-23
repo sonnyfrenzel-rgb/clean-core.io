@@ -65,21 +65,40 @@ async function main() {
   const report = await buildUsageReport(db);
   const subject = renderUsageReportSubject(report);
 
-  console.log(subject);
-  console.log('');
-  console.log(`period      : ${report.periodStart.toISOString()} — ${report.periodEnd.toISOString()}`);
-  console.log(`accounts    : ${report.totals.accounts} (${report.totals.activated} activated, ${report.totals.neverStarted} never started)`);
-  console.log('');
-  console.log('                        this week   last week');
+  // The repository is public, and so is every Actions log. Until 23.09.2026 this
+  // function printed the subject line ("9 von 43 Accounts aktiv"), the weekly
+  // figures and `recipient   : sonny.frenzel@googlemail.com` straight into that
+  // log — every Friday, readable by anyone (run 35333168862, KW 38). The survey
+  // scripts had the same defect and were switched off for it on 15.09.2026; this
+  // one was not covered by that fix.
+  //
+  // The figures are what the report is for, so they are not removed — they are
+  // kept out of CI. Locally the whole table still prints, because a dry run that
+  // shows nothing cannot be checked.
+  // Same test as `send-survey-digest.ts:138`, deliberately: one rule for what a
+  // public log may see, not two.
+  const local = !process.env.CI && !process.env.GITHUB_ACTIONS;
+  if (!local) {
+    console.log(`report built for ${report.periodStart.toISOString().slice(0, 10)} — ` +
+      `${report.periodEnd.toISOString().slice(0, 10)} (figures and recipient withheld: public log)`);
+  }
+  const say = (line: string) => { if (local) console.log(line); };
+
+  say(subject);
+  say('');
+  say(`period      : ${report.periodStart.toISOString()} — ${report.periodEnd.toISOString()}`);
+  say(`accounts    : ${report.totals.accounts} (${report.totals.activated} activated, ${report.totals.neverStarted} never started)`);
+  say('');
+  say('                        this week   last week');
   const row = (label: string, a: number, b: number) =>
-    console.log(`  ${label.padEnd(22)}${String(a).padStart(9)}${String(b).padStart(12)}`);
+    say(`  ${label.padEnd(22)}${String(a).padStart(9)}${String(b).padStart(12)}`);
   row('registrations', report.current.registrations, report.previous.registrations);
   row('activations', report.current.activations, report.previous.activations);
   row('runs', report.current.runs, report.previous.runs);
   row('projects', report.current.projects, report.previous.projects);
   row('units', report.current.units, report.previous.units);
-  console.log('');
-  console.log(`recipient   : ${to}`);
+  say('');
+  say(`recipient   : ${to}`);
 
   if (!APPLY) {
     console.log('');
