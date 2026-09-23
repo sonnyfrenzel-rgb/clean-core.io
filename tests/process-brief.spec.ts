@@ -6,15 +6,17 @@ import { deriveBusinessRules } from '../lib/abap/business-rule-set';
 import { assessCoverage } from '../lib/abap/coverage';
 import { applyNaming, namingContextOf } from '../lib/process-naming';
 import { buildProcessMapModel, type ProcessMapModel } from '../lib/process-map';
-import type { ElementState, ProcessStates, StateEntry } from '../lib/process-states';
+import { STATE_LABELS, type ElementState, type ProcessStates, type StateEntry } from '../lib/process-states';
 import { NEED_WITHOUT_CODE } from '../lib/process-target';
 import {
   NOT_DETERMINED,
   buildProcessBrief,
   briefStatements,
+  type BriefStatement,
   type ProcessBrief,
 } from '../lib/brief/model';
-import { briefPdf } from '../lib/brief/pdf';
+import { PROVENANCE } from '../lib/provenance';
+import { briefBlocks, briefPdf } from '../lib/brief/pdf';
 import { readPdfText, wrapText, textWidth } from '../lib/brief/pdf-writer';
 import { buildBriefPackage } from '../lib/brief/package';
 
@@ -411,5 +413,78 @@ test.describe('the brief is a summary and never evidence', () => {
     expect(made.disclaimer).toContain('no audit pack');
     const flat = squash(readPdfText(briefPdf(made, { generatedAt: GENERATED_AT })));
     expect(flat).toContain(squash('It is not evidence'));
+  });
+});
+
+test.describe('the brief speaks the one provenance vocabulary', () => {
+  /**
+   * `lib/provenance.ts` is the nine-value list of `DESIGN.md` §4, and the reason
+   * it exists is that the product once wrote provenance freehand: nine concepts,
+   * about twenty spellings, "Model estimate" beside "AI Generated" beside
+   * "Signed off". The chips were fixed by `CcProvenanceChip`, which has no
+   * `label` prop and therefore cannot be told a wrong word.
+   *
+   * The brief is the first thing that prints provenance into a **file a third
+   * party keeps**, and it does not go through a chip — `lib/brief/model.ts` and
+   * `lib/brief/pdf.ts` spell the words out. Today they match the list exactly.
+   * Nothing made them match and nothing would notice if they stopped: a PDF
+   * saying "Nicht bestimmt" or "AI-generated" while every screen says "Not
+   * determined" and "Model proposal" is the old failure told once more, in the
+   * one artefact that leaves the building and outlives the screen.
+   *
+   * So the words are compared against the list itself, not against a copy of
+   * them. `cc-provenance-guard.spec.ts` walks the component directories and does
+   * not reach `lib/brief`; this is that guard for the document.
+   */
+  const stated = (text: string): BriefStatement => ({
+    id: 'picture-x-0',
+    subject: 'x',
+    text,
+    anchors: [],
+    undetermined: { label: NOT_DETERMINED, reason: 'the engine established no line range' },
+    evidence: `${NOT_DETERMINED} — the engine established no line range`,
+    origin: 'model-proposal',
+    confirmation: {
+      state: 'keep' as ElementState,
+      label: STATE_LABELS.keep,
+      account: 'someone@example.com',
+      confirmedAt: '2026-09-23T10:00:00.000Z',
+      revision: 2,
+      note: null,
+    },
+  });
+
+  test('the word for a statement without lines is the list\'s word', () => {
+    expect(NOT_DETERMINED).toBe(PROVENANCE['not-determined'].label);
+
+    // And it reaches the page: the constant could be right while the document
+    // printed something else around it.
+    const flat = squash(readPdfText(briefPdf(brief(), { generatedAt: GENERATED_AT })));
+    expect(flat).toContain(squash(PROVENANCE['not-determined'].label));
+  });
+
+  test('a model proposal and a confirmation are named as the list names them', () => {
+    const made = brief();
+    const one: ProcessBrief = {
+      ...made,
+      sections: made.sections.map((section, i) =>
+        i === 0 ? { ...section, statements: [stated('Release the requisition')] } : { ...section, statements: [] },
+      ),
+    };
+    const lines = briefBlocks(one, { generatedAt: GENERATED_AT }).map((b) => b.text);
+
+    const proposal = lines.find((line) => /proposal/i.test(line));
+    expect(proposal, 'the document no longer labels a model proposal at all').toBeTruthy();
+    expect(
+      (proposal as string).startsWith(PROVENANCE.proposed.label),
+      `the document says "${proposal}" where the list says "${PROVENANCE.proposed.label}"`,
+    ).toBe(true);
+
+    const confirmation = lines.find((line) => /someone@example\.com/.test(line));
+    expect(confirmation, 'the confirmation line vanished').toBeTruthy();
+    expect(
+      (confirmation as string).startsWith(PROVENANCE.confirmed.label),
+      `the document says "${confirmation}" where the list says "${PROVENANCE.confirmed.label}"`,
+    ).toBe(true);
   });
 });
