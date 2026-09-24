@@ -27,7 +27,10 @@ const ANALYSIS = JSON.stringify({
   cleanCoreScore: 62,
   extensibilityRouting: {
     recommendedRoute: 'Side-by-Side (SAP BTP)',
-    confidenceScore: 88,
+    // Not the signed figure: the card prints the run's
+    // `recommendationConfidence` (88, below), never the narrative's number
+    // (QA full review of 81810c8, d5a87a5db395).
+    confidenceScore: 95,
     rationale: 'The report joins three tables that have released APIs.',
     targetArtifact: 'SAP BTP Node.js App (CAP)',
   },
@@ -61,6 +64,7 @@ test.beforeAll(async () => {
   await adminSetDoc(`projects/${PROJECT_ID}/runs`, RUN_ID, {
     runId: RUN_ID, projectId: PROJECT_ID, userId: uid,
     createdAt: new Date().toISOString(), status: 'completed', cleanCoreScore: 62,
+    recommendationConfidence: 88,
   });
 });
 
@@ -82,6 +86,7 @@ test('a route that still matches the recommendation shows the recommendation', a
 
   const body = await page.locator('body').innerText();
   expect(body, 'the confidence belongs to the route that is shown').toContain('88% Conf.');
+  expect(body, "the narrative's own confidence is not printed").not.toContain('95%');
   expect(body).toContain('The report joins three tables that have released APIs.');
   expect(body, 'nothing was changed, so nothing is labelled as changed').not.toContain('Chosen by you');
   expect(body).not.toContain('You changed this route');
@@ -108,6 +113,8 @@ test('an analysis without a recommendation claims no override', async ({ page })
     analysis: JSON.stringify({ cleanCoreScore: 62, standardFit: { potential: 'Medium' } }),
     extensibilityRoute: 'In-App (ABAP Cloud)',
   });
+  // A run that recommended nothing signed no confidence for it either.
+  await adminMergeDoc(`projects/${PROJECT_ID}/runs`, RUN_ID, { recommendationConfidence: null });
   await openAnalyze(page);
 
   const body = await page.locator('body').innerText();

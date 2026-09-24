@@ -4,6 +4,7 @@ export const dynamic = 'force-dynamic';
 
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { scanCodeContent } from '@/lib/staged-code-scan';
+import { pinRunOwnedFields } from '@/lib/model-owned-fields';
 import { personalDataHintKey, scanForPersonalDataHints } from '@/lib/personal-data-hints';
 import { looksLikeAbap } from '@/lib/abap-input-check';
 import { routeWasOverridden } from '@/lib/route-override';
@@ -233,10 +234,6 @@ export default function AnalyzePage() {
   // quota and signed into a run as ABAP (QA review of 33471220d6e9,
   // 2d714ac42b63). The list is the deterministic engine's own vocabulary of
   // top-level constructs; one of them has to appear.
-  // Fields the signed run owns. The model may describe them in prose; it may
-  // not supply the numbers, because nothing downstream could tell the two apart.
-  const MODEL_MUST_NOT_OWN = ['cleanCoreScore', 'complexityScore', 'criticalityScore'] as const;
-
   const isLegacyCode = (code: string) => looksLikeAbap(code);
 
   const scanForMaliciousCode = (content: string, fileName: string): string | null => {
@@ -413,8 +410,9 @@ export default function AnalyzePage() {
           // own numbers; stored alongside the signed ones they became a second,
           // unsigned truth that the screen and the Confluence export were happy
           // to print (QA review of 33471220d6e9, e184fc0c59bf). They are
-          // dropped here, once, before anything is stored.
-          for (const owned of MODEL_MUST_NOT_OWN) delete obj[owned];
+          // dropped here, once, before anything is stored, and the routing
+          // block carries the router's values (`lib/model-owned-fields.ts`).
+          pinRunOwnedFields(obj, computedRouteReport);
           normalizedAnalysis = JSON.stringify(obj);
           
           // A single object is one gap; any other shape is said on the Gaps
@@ -1191,6 +1189,18 @@ export default function AnalyzePage() {
   /** Ticked once for other lines than the ones now shown: the tick is gone, and the box says why. */
   const personalDataAckStale = personalDataHints.length > 0 && personalDataAckFor !== '' && personalDataAckFor !== personalDataKey;
 
+  /**
+   * The route's confidence as the run signed it (`recommendationConfidence`),
+   * or as the router just computed it — never the number in the model's JSON
+   * (QA full review of 81810c8, d5a87a5db395).
+   */
+  const signedRouteConfidence: number | null =
+    typeof routeReport?.confidenceScore === 'number'
+      ? routeReport.confidenceScore
+      : typeof project?.recommendationConfidence === 'number'
+        ? project.recommendationConfidence
+        : null;
+
   const signedCleanCoreScore: number | null =
     typeof routeReport?.cleanCoreScore === 'number'
       ? routeReport.cleanCoreScore
@@ -1462,8 +1472,8 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
                       <span className="text-[10px] font-bold text-slate-400">
                         {routeIsOverridden
                           ? 'Chosen by you'
-                          : typeof analysisData.extensibilityRouting?.confidenceScore === 'number'
-                            ? `${analysisData.extensibilityRouting.confidenceScore}% Conf.`
+                          : signedRouteConfidence !== null
+                            ? `${signedRouteConfidence}% Conf.`
                             : 'Confidence not computed'}
                       </span>
                     </div>
@@ -1480,8 +1490,8 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
                       <p className="text-[11px] text-slate-500 leading-relaxed">
                         You changed this route. The recommendation was{' '}
                         <span className="font-bold text-slate-700">{analysisData.extensibilityRouting?.recommendedRoute}</span>
-                        {typeof analysisData.extensibilityRouting?.confidenceScore === 'number'
-                          ? ` at ${analysisData.extensibilityRouting.confidenceScore}% confidence`
+                        {signedRouteConfidence !== null
+                          ? ` at ${signedRouteConfidence}% confidence`
                           : ''}
                         {analysisData.extensibilityRouting?.rationale ? `: ${analysisData.extensibilityRouting.rationale}` : '.'}
                       </p>

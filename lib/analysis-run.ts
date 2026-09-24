@@ -13,6 +13,7 @@ import {
 import { absenceFromError, type ModelAbsence, type ModelParticipation } from '@/lib/model-stages';
 import { PRODUCT_GEMINI_MODEL } from '@/lib/constants';
 import { readModelGaps, gapsUnreadableSentence } from '@/lib/model-gaps';
+import { pinRunOwnedFields } from '@/lib/model-owned-fields';
 
 /**
  * One analysis run, startable from more than one screen.
@@ -103,9 +104,6 @@ export class AnalysisRunCancelled extends Error {
     this.name = 'AnalysisRunCancelled';
   }
 }
-
-/** The three figures the run computes and a model may not overwrite. */
-const MODEL_MUST_NOT_OWN = ['cleanCoreScore', 'complexityScore', 'criticalityScore'] as const;
 
 /**
  * The deterministic half of the initial worklist: one item per grouped finding.
@@ -231,7 +229,7 @@ export async function runAnalysis(input: AnalysisRunInput): Promise<AnalysisRunR
       if (!obj || typeof obj !== 'object') throw new Error('the narrative was not an object');
       // The deterministic figures belong to the run, not to the model. Dropped
       // from this function's copy; the route drops them from the one it signs.
-      for (const owned of MODEL_MUST_NOT_OWN) delete obj[owned];
+      pinRunOwnedFields(obj, routeReport);
       narrative = responseText;
       modelReceipt = generated.receipt;
       // A single object is one gap; any other shape is said, not dropped
