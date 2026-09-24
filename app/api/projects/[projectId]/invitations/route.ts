@@ -92,7 +92,7 @@ interface InviteDoc {
   data: () => Record<string, unknown>;
 }
 interface Tx {
-  get: (r: unknown) => Promise<{ docs: InviteDoc[] }>;
+  get: (r: unknown) => Promise<{ docs: InviteDoc[]; exists: boolean; data: () => Record<string, unknown> | undefined }>;
   create: (r: unknown, data: Record<string, unknown>) => void;
 }
 
@@ -252,8 +252,15 @@ export async function POST(
     // shape of race a ceiling exists to stop. Accepted, revoked and expired
     // invitations hold no slot, so withdrawing one frees it at once.
     const tooMany = Symbol('invitation ceiling');
+    const projectGone = Symbol('project gone');
     try {
       await db.runTransaction(async (tx: Tx) => {
+        // The project again, inside the transaction: one deleted (or handed
+        // away) since `openProject` read it must not get an invitation — the
+        // recipient's address and the inviter's name — written beneath its
+        // path after its erasure (QA full review of a12774cd2b7f).
+        const current = await tx.get(db.collection('projects').doc(gate.projectId));
+        if (!current.exists || current.data()?.userId !== gate.uid) throw projectGone;
         const existing = await tx.get(ref.parent);
         const open = existing.docs.filter((d: InviteDoc) =>
           isOpen(d.data() as unknown as Pick<Invitation, 'status' | 'expiresAt'>, invitedAt),
@@ -262,6 +269,9 @@ export async function POST(
         tx.create(ref, invitation as unknown as Record<string, unknown>);
       });
     } catch (ceilingErr: unknown) {
+      if (ceilingErr === projectGone) {
+        return NextResponse.json({ error: 'Project not found.' }, { status: 404 });
+      }
       if (ceilingErr === tooMany) {
         return NextResponse.json(
           { error: invitationTooManyMessage(), code: INVITATION_TOO_MANY_CODE },

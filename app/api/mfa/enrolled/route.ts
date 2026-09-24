@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyRequestAuth, getAdminDb, QuotaError, getAdminAuth } from '@/lib/firebase-admin';
+import { verifyRequestAuth, getAdminDb, QuotaError, getAdminAuth, updateExistingProfile } from '@/lib/firebase-admin';
 import { assertRateLimit, getClientIp } from '@/lib/rate-limit';
 
 /**
@@ -42,18 +42,17 @@ export async function POST(request: NextRequest) {
     }
 
     const { db, FieldValue } = await getAdminDb();
-    await db.collection('users').doc(uid).set(
-      {
-        mfaEnabled: true,
-        mfaFactor: 'totp',
-        mfaEnrolledAt: FieldValue.serverTimestamp(),
-        // Fields of the application-level TOTP that preceded Firebase's factor.
-        mfaSecret: FieldValue.delete(),
-        mfaBackupCodes: FieldValue.delete(),
-        updatedAt: FieldValue.serverTimestamp(),
-      },
-      { merge: true },
-    );
+    // `update`, not a merge-set: an account erased while this request was in
+    // flight must not get its profile back (QA full review of a12774cd2b7f).
+    await updateExistingProfile(uid, {
+      mfaEnabled: true,
+      mfaFactor: 'totp',
+      mfaEnrolledAt: FieldValue.serverTimestamp(),
+      // Fields of the application-level TOTP that preceded Firebase's factor.
+      mfaSecret: FieldValue.delete(),
+      mfaBackupCodes: FieldValue.delete(),
+      updatedAt: FieldValue.serverTimestamp(),
+    }, { db });
     // The application-level secret store is retired with it.
     await Promise.all([
       db.collection('mfa_secrets').doc(uid).delete().catch(() => {}),

@@ -108,8 +108,10 @@ export default function AnalyzePage() {
   const [targetDeployment, setTargetDeployment] = useState<'public' | 'private' | null>(null);
   const [showConceptQuestion, setShowConceptQuestion] = useState(false);
   const [modalSelection, setModalSelection] = useState<'public' | 'private' | null>(null);
-  const isFromExample = searchParams.get('fromExample') === 'true' || !!project?.fromExample || project?.isExample;
-  const [acceptedTerms, setAcceptedTerms] = useState(searchParams.get('fromExample') === 'true');
+  // Only the stored project says it is the example; a query parameter granted
+  // the example's exemptions to any project (QA full review of a12774cd2b7f).
+  const isFromExample = !!project?.fromExample || project?.isExample;
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [uploadedFileName, setUploadedFileName] = useState('manual-input.abap');
   const [activeTab, setActiveTab] = useState<'evidence' | 'backlog' | 'detailed' | 'strategy'>('evidence');
   const [evidenceFilter, setEvidenceFilter] = useState<'All' | 'Critical' | 'High' | 'Medium' | 'Low'>('All');
@@ -198,7 +200,7 @@ export default function AnalyzePage() {
           if (hydratedProject.s4Deployment) {
             setTargetDeployment(hydratedProject.s4Deployment as 'public' | 'private');
           }
-          if (hydratedProject.fromExample || hydratedProject.isExample || searchParams.get('fromExample') === 'true') {
+          if (hydratedProject.fromExample || hydratedProject.isExample) {
             setAcceptedTerms(true);
           }
           // v1.22: restore persisted usage report

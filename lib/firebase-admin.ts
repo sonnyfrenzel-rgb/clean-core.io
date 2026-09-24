@@ -475,6 +475,57 @@ export async function assertAccountActive(
 }
 
 /**
+ * Writes that must not outlive an erasure (QA full review of a12774cd2b7f).
+ *
+ * `deleteUserDataAndAccount` deletes the profile in its last Firestore step. A
+ * request that verified its token before that step and writes afterwards used
+ * `set(..., { merge: true })`, which creates the document it merges into — the
+ * erased profile came back with whatever the request carried. These two refuse
+ * instead: an `update()` fails on a missing document, and a write to another
+ * document keyed by the account happens in a transaction that reads the profile
+ * and so cannot commit once the profile is gone. The erasure deletes the
+ * profile and `registration_requests/{uid}` in one batch, so a write that
+ * committed just before is taken with it.
+ */
+const PROFILE_GONE = 'User profile not found. Please complete registration.';
+
+const isNotFoundError = (e: unknown) => {
+  const err = e as { code?: unknown; message?: unknown } | null;
+  return err?.code === 5 || err?.code === 'not-found' || /NOT_FOUND/i.test(String(err?.message || ''));
+};
+
+/** `update()` the account's profile; a missing profile is a 404, never a new document. */
+export async function updateExistingProfile(
+  uid: string,
+  data: Record<string, unknown>,
+  deps: { db?: Firestore } = {},
+): Promise<void> {
+  const db = deps.db ?? (await getAdminDb()).db;
+  try {
+    await db.collection('users').doc(uid).update(data);
+  } catch (e: unknown) {
+    if (isNotFoundError(e)) throw new QuotaError(PROFILE_GONE, 404);
+    throw e;
+  }
+}
+
+/** Merge `data` into `ref` only while the account's profile still exists, in one transaction. */
+export async function mergeWhileProfileExists(
+  uid: string,
+  ref: DocumentReference,
+  data: Record<string, unknown>,
+  deps: { db?: Firestore } = {},
+): Promise<void> {
+  const db = deps.db ?? (await getAdminDb()).db;
+  const profileRef: DocumentReference = db.collection('users').doc(uid);
+  await db.runTransaction(async (tx: Transaction) => {
+    const profile = await tx.get(profileRef);
+    if (!profile.exists) throw new QuotaError(PROFILE_GONE, 404);
+    tx.set(ref, data, { merge: true });
+  });
+}
+
+/**
  * Activates a freshly registered account.
  *
  * This is what replaced the administrator approval gate. Every new profile is
@@ -856,8 +907,17 @@ export async function deleteUserDataAndAccount(
     );
   }
 
-  // 5. The profile — nothing else remains that it could be needed for.
-  await tryDelete('users', () => db.collection('users').doc(uid).delete());
+  // 5. The profile — nothing else remains that it could be needed for. The
+  //    registration record goes in the same batch: `/api/account/register`
+  //    writes it only in a transaction that reads this profile
+  //    (`mergeWhileProfileExists`), so one that committed after step 3 is
+  //    deleted here, and one that did not can no longer commit.
+  await tryDelete('users', () => {
+    const batch = db.batch();
+    batch.delete(db.collection('registration_requests').doc(uid));
+    batch.delete(db.collection('users').doc(uid));
+    return batch.commit();
+  });
   if (erasureErrors.length > 0) {
     throw new Error(`Account erasure incomplete for ${uid}: ${erasureErrors.join(' | ')}`);
   }
@@ -1164,17 +1224,16 @@ export async function adminRevokeUser(adminUid: string, targetUid: string) {
   // itself. Disabling the sign-in as well means a new sign-in cannot mint a fresh
   // token either — without it, revocation only costs the holder one login.
   //
-  // What this does **not** do, said plainly because the first version of this
-  // comment claimed otherwise: it does not end the session at once. An ID token
-  // already in the browser stays valid until it expires, up to an hour, and no
-  // rule in `firestore.rules` consults `status` — the project rules ask
-  // `resource.data.userId == request.auth.uid` and nothing else. So these two
-  // lines turn an unbounded hole into an hour-long one; closing it needs a rule
-  // that reads the account's state, and therefore a manual rules deploy (QA
-  // review of 4d6f35c59546, 2a9864f3b52e). Roadmap 3.0.12 adds that rule —
-  // `accountActive()` in firestore.rules, tested by
-  // tests/firestore-rules-suspended.spec.ts — and the hour-long hole closes only
-  // once it is deployed (`docs/registers/rules-deployment.json` says whether).
+  // What these two lines do **not** do: end a session at once. An ID token
+  // already in the browser stays valid until it expires, up to an hour. That
+  // hour is closed by the rules, not here: `accountActive()` in firestore.rules
+  // (roadmap 3.0.12) reads the `status` written above and refuses owner and
+  // invited-reader access to projects, runs and the profile for a suspended,
+  // deleted or disabled account with the same still-valid token — tested by
+  // tests/firestore-rules-suspended.spec.ts, live since the rules deploy
+  // recorded in `docs/registers/rules-deployment.json`. An earlier version of
+  // this comment said no rule consults `status`; that stopped being true with
+  // 3.0.12 (QA reviews of 4d6f35c59546, 2a9864f3b52e, a12774cd2b7f).
   const auth = await getAdminAuth();
   await auth.revokeRefreshTokens(targetUid);
   await auth.updateUser(targetUid, { disabled: true });

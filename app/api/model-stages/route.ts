@@ -7,6 +7,7 @@ import {
   getAdminDb,
   loadGeminiApiKey,
   QuotaError,
+  updateExistingProfile,
 } from '@/lib/firebase-admin';
 import { assertRateLimit, getClientIp } from '@/lib/rate-limit';
 import { MODEL_STAGES, isModelStage, modelStagesOf, type ModelStage } from '@/lib/model-stages';
@@ -133,10 +134,12 @@ export async function POST(req: NextRequest) {
     }
 
     const { db, FieldValue } = await getAdminDb();
-    await db
-      .collection('users')
-      .doc(uid)
-      .set({ modelStages: update, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+    // `update` with one field path per stage: the same merge as before into
+    // `modelStages`, but an account erased in the meantime is not recreated
+    // (QA full review of a12774cd2b7f).
+    const fields: Record<string, unknown> = { updatedAt: FieldValue.serverTimestamp() };
+    for (const [stage, on] of Object.entries(update)) fields[`modelStages.${stage}`] = on;
+    await updateExistingProfile(uid, fields, { db });
 
     return NextResponse.json({ ok: true, ...(await answerFor(uid)) });
   } catch (err: unknown) {

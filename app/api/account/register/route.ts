@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyRequestAuth, getAdminDb, activateAccount } from '@/lib/firebase-admin';
+import { verifyRequestAuth, getAdminDb, activateAccount, mergeWhileProfileExists } from '@/lib/firebase-admin';
 import { recordConsent } from '@/lib/consent';
 import { escapeHtml } from '@/lib/utils';
 import { assertRateLimit, getClientIp } from '@/lib/rate-limit';
@@ -124,7 +124,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ ok: true, activated: false, status });
     }
 
-    await db.collection('registration_requests').doc(uid).set(
+    // Only while the profile exists, in one transaction with reading it: an
+    // erasure that completed in the meantime leaves no record behind (QA full
+    // review of a12774cd2b7f).
+    await mergeWhileProfileExists(
+      uid,
+      db.collection('registration_requests').doc(uid),
       {
         email: rawEmail,
         name: rawName,
@@ -132,7 +137,7 @@ export async function POST(request: NextRequest) {
         status: 'approved',
         activatedAt: FieldValue.serverTimestamp(),
       },
-      { merge: true },
+      { db },
     );
 
     const name = escapeHtml(rawName);
