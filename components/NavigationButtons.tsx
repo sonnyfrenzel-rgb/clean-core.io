@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, ArrowRight, Loader2 } from 'lucide-react';
-import { clsx } from 'clsx';
+import CcButton from '@/components/cc/Button';
 
 interface NavigationButtonsProps {
   backPath?: string;
@@ -20,6 +20,10 @@ interface NavigationButtonsProps {
    * this product; here it also meant "the way onwards exists". The route stays
    * open — skipping a step is a legitimate choice — but it stops looking like
    * the recommended one, and says what is being left behind.
+   *
+   * Since Block D (D.9) that is the difference between the `primary` and the
+   * `secondary` of the four buttons (`DESIGN.md` §1.5), with the reason in the
+   * `warning` ink underneath.
    */
   incomplete?: boolean;
   /** What has not happened yet, e.g. "no tests have been generated". */
@@ -55,46 +59,42 @@ const NavigationButtons: React.FC<NavigationButtonsProps> = ({
   };
 
   return (
-    <div className="flex flex-col sm:flex-row items-center justify-between gap-6 pt-12 border-t border-gray-100 mt-12">
+    <div className="flex flex-col sm:flex-row items-center justify-between gap-6 pt-8 border-t border-cc-line mt-12">
       {backPath ? (
-        <button
+        <CcButton
+          variant="ghost"
+          density="cozy"
+          icon={<ArrowLeft size={16} aria-hidden="true" />}
           onClick={() => router.push(backPath)}
-          className="flex items-center gap-2 text-[#0b1c30]/60 font-bold hover:text-[#0b1c30] px-6 py-3 rounded-xl hover:bg-gray-100 transition-all group"
         >
-          <ArrowLeft size={20} className="transition-transform group-hover:-translate-x-1" /> {backLabel || 'Back'}
-        </button>
+          {backLabel || 'Back'}
+        </CcButton>
       ) : (
         <div />
       )}
-      
+
       <div className="flex flex-col items-stretch sm:items-end gap-2">
-        <button
+        <CcButton
+          variant={incomplete ? 'secondary' : 'primary'}
+          density="cozy"
           onClick={handleProceed}
           disabled={isPending || isDisabled}
+          aria-busy={isPending || undefined}
           title={isDisabled ? proceedLabel : undefined}
-          className={clsx(
-            "flex items-center gap-3 px-10 py-4 rounded-2xl font-black min-w-[220px] justify-center transition-all",
-            isDisabled
-              ? "bg-slate-200 text-slate-400 cursor-not-allowed"
-              : incomplete
-                ? "bg-white text-[#006b2c] border-2 border-[#00873a]/40 hover:border-[#00873a] hover:bg-green-50 transition-all"
-                : "bg-[#00873a] text-white hover:bg-[#006b2c] hover:shadow-xl hover:shadow-green-900/20 shadow-lg shadow-green-900/10 disabled:opacity-70 disabled:cursor-not-allowed",
-            isPending && "animate-pulse"
-          )}
         >
           {isPending ? (
             <>
-              <Loader2 size={20} className="animate-spin" />
+              <Loader2 size={16} className="motion-safe:animate-spin" aria-hidden="true" />
               Processing...
             </>
           ) : (
             <>
-              {proceedLabel} <ArrowRight size={20} />
+              {proceedLabel} <ArrowRight size={16} aria-hidden="true" />
             </>
           )}
-        </button>
+        </CcButton>
         {incomplete && incompleteReason && !isDisabled && (
-          <p className="text-[11px] font-semibold text-amber-700 text-center sm:text-right max-w-[280px] leading-snug">
+          <p className="m-0 cc-text-meta text-cc-warning text-center sm:text-right max-w-[280px]">
             Skipping this step &mdash; {incompleteReason}.
           </p>
         )}

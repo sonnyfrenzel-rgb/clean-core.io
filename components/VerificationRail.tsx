@@ -2,7 +2,10 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Check, X, ListChecks } from 'lucide-react';
+import { Check, ListChecks } from 'lucide-react';
+import CcDialog from '@/components/cc/Dialog';
+import { CC_BUTTON_BASE, CC_BUTTON_DENSITY_CLASSES, CC_BUTTON_VARIANT_CLASSES } from '@/components/cc/Button';
+import { cn } from '@/lib/utils';
 import { PHASE_TONE_CLASS, phaseTone, type PhaseKey, type RailStep } from '@/lib/workflow-steps';
 
 /**
@@ -31,6 +34,12 @@ import { PHASE_TONE_CLASS, phaseTone, type PhaseKey, type RailStep } from '@/lib
  * button at the bottom-left that opens the same list as a sheet. Both are behind
  * `hidden` at the print breakpoint, because a rail is navigation and navigation
  * does not belong in a printed business case.
+ *
+ * Block D (D.9): the sheet is a `CcDialog` — the one modal behaviour of the
+ * product, with focus kept inside, Escape and a way back to the button that
+ * opened it — instead of a hand-built `fixed inset-0` layer; the phone button
+ * wears the `ghost` style; the hover card and the lists take the workspace's
+ * type scale and tokens. Keyboard focus shows the app-wide ring (§1.6).
  */
 export default function VerificationRail({
   steps,
@@ -59,7 +68,7 @@ export default function VerificationRail({
   const dot = (step: RailStep) => {
     const paint = PHASE_TONE_CLASS[phaseTone(step)];
     return `${paint.border} ${paint.surface}${
-      step.key === current ? ' ring-2 ring-gray-900/30 ring-offset-2 ring-offset-[#f8f9ff]' : ''
+      step.key === current ? ' ring-2 ring-cc-ink/30 ring-offset-2 ring-offset-cc-page' : ''
     }`;
   };
 
@@ -69,7 +78,7 @@ export default function VerificationRail({
   // is no tick, the reader's position is a small dot in the ink.
   const mark = (step: RailStep) => {
     if (step.done) return <Check size={12} className={PHASE_TONE_CLASS[phaseTone(step)].ink} strokeWidth={3.5} />;
-    if (step.key === current) return <span className="h-2 w-2 rounded-full bg-gray-900" />;
+    if (step.key === current) return <span className="h-2 w-2 rounded-full bg-cc-ink" />;
     return null;
   };
 
@@ -94,22 +103,18 @@ export default function VerificationRail({
               data-rail-phase={step.key}
               data-phase-state={step.state}
               data-phase-tone={phaseTone(step)}
-              className={`relative h-6 w-6 rounded-full border-2 flex items-center justify-center transition-all hover:scale-110 outline-none focus-visible:ring-2 focus-visible:ring-gray-900 focus-visible:ring-offset-2 ${dot(step)}`}
+              className={`relative h-6 w-6 rounded-full border-2 flex items-center justify-center transition-transform duration-200 hover:scale-110 ${dot(step)}`}
             >
               {mark(step)}
 
               {/* Left, not right: there is no room on the right. */}
               {hovered === step.n && (
-                <span className="absolute right-full mr-3 top-1/2 -translate-y-1/2 w-56 rounded-xl border border-gray-200 bg-white p-3 text-left shadow-xl pointer-events-none">
-                  <span className="block text-[9px] font-black uppercase tracking-widest text-gray-400">
+                <span className="absolute right-full mr-3 top-1/2 -translate-y-1/2 w-56 rounded-cc-card border border-cc-line bg-cc-surface p-3 text-left shadow-cc-dialog pointer-events-none">
+                  <span className="block cc-text-label text-cc-ink-muted">
                     Phase {step.n} · {step.badge}
                   </span>
-                  <span className="block text-sm font-bold text-gray-900 leading-tight mt-0.5">
-                    {step.label}
-                  </span>
-                  <span className="block text-[11px] text-gray-500 leading-relaxed mt-1">
-                    {step.detail}
-                  </span>
+                  <span className="block mt-1 cc-text-h3 text-cc-ink">{step.label}</span>
+                  <span className="block mt-1 cc-text-meta text-cc-ink-muted">{step.detail}</span>
                 </span>
               )}
             </button>
@@ -128,76 +133,59 @@ export default function VerificationRail({
         type="button"
         onClick={() => setOpen(true)}
         aria-label={`Workflow progress: ${doneCount} of ${steps.length} phases complete`}
-        className="2xl:hidden fixed left-4 bottom-4 z-30 flex items-center gap-2 rounded-full border border-gray-200 bg-white px-3.5 py-2.5 shadow-lg print:hidden"
+        className={cn(
+          CC_BUTTON_BASE,
+          CC_BUTTON_VARIANT_CLASSES.ghost,
+          CC_BUTTON_DENSITY_CLASSES.cozy,
+          '2xl:hidden fixed left-4 bottom-4 z-30 shadow-cc print:hidden',
+        )}
       >
         {/* A count of finished phases, not a verdict on them — so the icon is
             ink, not the green this product reserves for proven work. */}
-        <ListChecks size={15} className="text-gray-500" />
-        <span className="text-[11px] font-black uppercase tracking-widest text-gray-700 tabular-nums">
+        <ListChecks size={16} aria-hidden="true" />
+        <span className="cc-text-label text-cc-ink tabular-nums">
           {doneCount} / {steps.length}
         </span>
       </button>
 
-      {open && (
-        <div className="2xl:hidden fixed inset-0 z-50 flex items-end print:hidden">
-          <button
-            type="button"
-            aria-label="Close workflow progress"
-            onClick={() => setOpen(false)}
-            className="absolute inset-0 bg-slate-950/40 backdrop-blur-sm"
-          />
-          <div className="relative w-full rounded-t-3xl border-t border-gray-200 bg-white p-5 pb-8 shadow-2xl animate-in slide-in-from-bottom duration-200 max-h-[80vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Workflow progress</p>
-                <p className="text-base font-black text-gray-900 tabular-nums">
-                  {doneCount} of {steps.length} phases complete
-                </p>
-              </div>
+      <CcDialog
+        open={open}
+        title="Workflow progress"
+        lead={`${doneCount} of ${steps.length} phases complete`}
+        onClose={() => setOpen(false)}
+      >
+        <ol className="m-0 list-none space-y-1 p-0">
+          {steps.map((step) => (
+            <li key={step.key}>
               <button
                 type="button"
-                onClick={() => setOpen(false)}
-                className="rounded-full p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-700 transition-colors"
-                aria-label="Close"
+                onClick={() => go(step)}
+                aria-current={step.key === current ? 'step' : undefined}
+                data-rail-sheet-phase={step.key}
+                data-phase-tone={phaseTone(step)}
+                className={cn(
+                  // Selection wears the ink (§1.1), as a frame rather than a surface.
+                  'flex w-full items-start gap-3 rounded-cc-row border p-3 text-left transition-colors',
+                  step.key === current ? 'border-cc-ink' : 'border-transparent hover:border-cc-line',
+                )}
               >
-                <X size={18} />
+                <span
+                  className={`mt-0.5 h-6 w-6 shrink-0 rounded-full border-2 flex items-center justify-center ${dot(step)}`}
+                >
+                  {mark(step)}
+                </span>
+                <span className="min-w-0">
+                  <span className="block cc-text-h3 text-cc-ink">
+                    {step.n}. {step.label}
+                    <span className="ml-2 cc-text-label text-cc-ink-muted">{step.badge}</span>
+                  </span>
+                  <span className="block mt-1 cc-text-meta text-cc-ink-muted">{step.detail}</span>
+                </span>
               </button>
-            </div>
-
-            <ol className="space-y-1">
-              {steps.map((step) => (
-                <li key={step.key}>
-                  <button
-                    type="button"
-                    onClick={() => go(step)}
-                    aria-current={step.key === current ? 'step' : undefined}
-                    data-rail-sheet-phase={step.key}
-                    data-phase-tone={phaseTone(step)}
-                    className={`flex w-full items-start gap-3 rounded-2xl p-3 text-left transition-colors ${
-                      step.key === current ? 'bg-gray-100' : 'hover:bg-gray-50'
-                    }`}
-                  >
-                    <span
-                      className={`mt-0.5 h-6 w-6 shrink-0 rounded-full border-2 flex items-center justify-center ${dot(step)}`}
-                    >
-                      {mark(step)}
-                    </span>
-                    <span className="min-w-0">
-                      <span className="block text-sm font-bold text-gray-900 leading-tight">
-                        {step.n}. {step.label}
-                        <span className="ml-2 text-[10px] font-black uppercase tracking-widest text-gray-400">{step.badge}</span>
-                      </span>
-                      <span className="block text-[11px] text-gray-500 leading-relaxed mt-0.5">
-                        {step.detail}
-                      </span>
-                    </span>
-                  </button>
-                </li>
-              ))}
-            </ol>
-          </div>
-        </div>
-      )}
+            </li>
+          ))}
+        </ol>
+      </CcDialog>
     </>
   );
 }

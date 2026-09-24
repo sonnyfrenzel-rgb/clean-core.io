@@ -302,7 +302,8 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
     // --- STAGE 4: PROCESS BLUEPRINTING & DOCUMENTATION ---
     console.log('Navigating to Stage 4: Documentation...');
     await page.click('button:has-text("Proceed to Documentation")');
-    await page.waitForSelector('h1:has-text("Process Blueprint & Mapping")', { timeout: 45000 });
+    // One name for the stage everywhere (UX-169): the title is the stepper's label.
+    await page.waitForSelector('h1[data-stage-title]:has-text("Documentation")', { timeout: 45000 });
 
     // Roadmap 3.0.5: the documentation is read out of the code by the engine —
     // the button waits until the map of the signed source is read.

@@ -2,6 +2,7 @@
 
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { AlertCircle, RefreshCw } from 'lucide-react';
+import CcButton from '@/components/cc/Button';
 
 interface Props {
   children?: ReactNode;
@@ -47,23 +48,36 @@ class ErrorBoundary extends Component<Props, State> {
         }
       }
 
+      // Block D (D.9): a workspace card with the error in its words and icon,
+      // not a red slab with a 48 px bubble and a 900-weight headline (§1.1, §1.2).
       return (
-        <div className="p-12 text-center bg-red-50 rounded-[3rem] border border-red-100 shadow-inner">
-          <div className="flex flex-col items-center gap-4">
-            <div className="p-4 bg-red-100 rounded-full text-red-600">
-              <AlertCircle size={48} />
+        <div
+          role="alert"
+          className="rounded-cc-card border border-cc-error-border bg-cc-surface p-8 text-center shadow-cc"
+        >
+          <div className="flex flex-col items-center gap-3">
+            <AlertCircle size={20} className="text-cc-error" aria-hidden="true" />
+            <h2 className="m-0 cc-text-h2 text-cc-ink">{errorMessage}</h2>
+            {details && (
+              <p className="m-0 rounded-cc-row border border-cc-error-border bg-cc-error-bg p-3 font-cc-mono cc-text-meta text-cc-error">
+                {details}
+              </p>
+            )}
+            {!details && (
+              <p className="m-0 mx-auto max-w-md cc-text-body text-cc-ink-muted">
+                The application encountered an unexpected error. This might be due to malformed data or a rendering issue.
+              </p>
+            )}
+            <div className="mt-2">
+              <CcButton
+                variant="primary"
+                density="cozy"
+                icon={<RefreshCw size={16} aria-hidden="true" />}
+                onClick={() => this.setState({ hasError: false })}
+              >
+                Try Again
+              </CcButton>
             </div>
-            <h2 className="text-2xl font-black text-red-900 tracking-tight">{errorMessage}</h2>
-            {details && <p className="text-red-600 font-mono text-xs bg-white/50 p-3 rounded-xl border border-red-100">{details}</p>}
-            <p className="text-red-700 font-medium max-w-md mx-auto">
-              {!details && "The application encountered an unexpected error. This might be due to malformed data or a rendering issue."}
-            </p>
-            <button
-              onClick={() => this.setState({ hasError: false })}
-              className="mt-4 flex items-center gap-2 bg-red-600 text-white px-8 py-3 rounded-2xl font-bold hover:bg-red-700 transition-all shadow-lg"
-            >
-              <RefreshCw size={20} /> Try Again
-            </button>
           </div>
         </div>
       );

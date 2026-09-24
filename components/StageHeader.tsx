@@ -1,4 +1,14 @@
-import React from 'react';
+'use client';
+
+import React, { useSyncExternalStore } from 'react';
+import Link from 'next/link';
+import { useParams } from 'next/navigation';
+import { ArrowLeft } from 'lucide-react';
+import { useUserProfile } from '@/hooks/useUserProfile';
+import { PHASES, type PhaseKey } from '@/lib/workflow-steps';
+import { isWorkspaceView } from '@/lib/workspace-model';
+import { workspaceShellEnabled } from '@/lib/workspace-shell';
+import { BACK_LINK_CLASS } from '@/components/BackLink';
 
 /**
  * The header at the top of a workflow stage. There is exactly one.
@@ -13,19 +23,68 @@ import React from 'react';
  *   delivery        text-3xl md:text-5xl font-black     gray-900   centred, UPPERCASE
  *   tco             text-3xl md:text-4xl font-black     #0b1c30    left, UPPERCASE
  *
- * Three weights, four scales, two inks, two cases, and two stages with no
- * responsive step at all — so the title jumped size, weight and colour as the
- * reader moved from one step to the next. Nobody chose that; each page was
- * written on a different day.
+ * The first fix made them agree with each other at 30–36 px / 900 — the
+ * landing page's scale. Block D (E-3, ADR-050, `DESIGN.md` §2.3) makes them
+ * agree with the workspace instead: a stage is a tool of the workspace, so its
+ * title stands like the project title, **22 px / 800, `-0.02em`, `--cc-ink`**,
+ * as the page's `h1` (`cc-text-title`). 900 does not exist in the workspace
+ * (§1.2), and the green bubble behind delivery's rocket said "proven" about a
+ * page heading (§1.1) — the icon now stands neutral before the title, 20 px in
+ * `--cc-ink-muted`, whatever colour the page handed in.
  *
- * The scale here is the app's, not the landing page's: a working screen wants a
- * title it can read past, not a marketing headline. The ink is `gray-950`, which
- * is what `SectionHeader` uses, so the two halves of the product agree.
+ * Above the title sits **"Back to workspace"** — a link, not a button, 13 px /
+ * 600 in `--cc-ink-muted`. It returns to the view and the layer the stage was
+ * opened from when the address carries them (`?view=`, `?from=`), and to the
+ * workspace's default view when it does not. The object-page workspace exists
+ * only behind the admin switch until 3.0 (`lib/workspace-shell.ts`); for every
+ * other account the workspace is still `/dashboard`, and the link goes there —
+ * a link into a 404 would be worse than no link.
+ *
+ * `stage` names the title from `PHASES` in `lib/workflow-steps.ts`, the list
+ * the stepper, the rail and the dashboard read, so a stage that passes it
+ * cannot be called one thing in the stepper and another above its own content
+ * (UX-169: the documentation stage was "Documentation" in the stepper and
+ * "Process Blueprint & Mapping" here).
  *
  * Guarded by `tests/workflow-style-guard.spec.ts`, which loads every stage and
- * compares the computed style of each `[data-stage-title]` against the first.
+ * compares the computed style of each `[data-stage-title]` against §2.3.
  */
+
+/** A layer id on the workspace page: letters, digits and dashes, nothing that could leave the fragment. */
+const LAYER_ID = /^[A-Za-z][\w-]{0,63}$/;
+
+/**
+ * Where "Back to workspace" leads. Pure, so the rule can be read and tested in
+ * one place: the view and the layer come from the stage's own address and are
+ * checked against what the workspace understands — a view in the URL is a
+ * perspective, never a grant (ADR-018), and an unknown one is simply dropped.
+ */
+export function workspaceBackHref({
+  projectId,
+  shell,
+  search,
+}: {
+  projectId: string;
+  /** Whether this account has the object-page workspace (`workspaceShellEnabled`). */
+  shell: boolean;
+  /** The stage's `location.search`, e.g. `?view=it&from=it-answers-heading`. */
+  search: string;
+}): string {
+  if (!shell) return '/dashboard';
+  const params = new URLSearchParams(search);
+  const view = params.get('view');
+  const from = params.get('from');
+  const query = isWorkspaceView(view) ? `?view=${view}` : '';
+  const hash = from && LAYER_ID.test(from) ? `#${from}` : '';
+  return `/project/${encodeURIComponent(projectId)}${query}${hash}`;
+}
+
+const noSubscription = () => () => {};
+const readSearch = () => window.location.search;
+const serverSearch = () => '';
+
 export default function StageHeader({
+  stage,
   title,
   eyebrow,
   icon,
@@ -33,10 +92,13 @@ export default function StageHeader({
   align = 'left',
   children,
 }: {
-  title: React.ReactNode;
+  /** The stage this header belongs to; its name comes from `PHASES`. */
+  stage?: PhaseKey;
+  /** A title of the stage's own, for the few headers that are not the stage's name (an empty state). */
+  title?: React.ReactNode;
   /** Badges or labels that sit above the title, where a stage has them. */
   eyebrow?: React.ReactNode;
-  /** The one stage that opens with a mark — delivery's rocket. */
+  /** A mark before the title — delivery's rocket. Drawn neutral, 20 px. */
   icon?: React.ReactNode;
   /** Buttons that belong to the stage as a whole, right-aligned on desktop. */
   actions?: React.ReactNode;
@@ -45,51 +107,81 @@ export default function StageHeader({
   children?: React.ReactNode;
 }) {
   const centred = align === 'center';
+  const heading = title ?? (stage ? PHASES.find((p) => p.key === stage)?.label : undefined);
+
+  // The demo (`/demo/[stage]`) has no project behind it and no workspace to go
+  // back to; it renders the header without the link.
+  const params = useParams();
+  const projectId = typeof params?.projectId === 'string' ? params.projectId : '';
+  const { profile } = useUserProfile();
+  const shell = workspaceShellEnabled(profile);
+
+  // Read from the address in the browser only: the query is not part of the
+  // server render (`''` there), and a statically generated demo page must not
+  // depend on it — `useSearchParams` would force it to render on demand.
+  const search = useSyncExternalStore(noSubscription, readSearch, serverSearch);
+
+  const backHref = projectId ? workspaceBackHref({ projectId, shell, search }) : null;
 
   return (
-    <div
-      className={`mb-8 md:mb-10 mt-6 md:mt-8 ${
-        centred
-          ? 'text-center'
-          : 'flex flex-col gap-5 md:flex-row md:items-start md:justify-between'
-      }`}
+    <header
+      data-stage-header={stage ?? ''}
+      className={`mt-6 mb-8 ${centred ? 'text-center' : ''}`}
     >
-      <div className={centred ? '' : 'min-w-0'}>
-        {icon && (
-          <div
-            className={`inline-flex items-center justify-center w-16 h-16 md:w-20 md:h-20 rounded-full bg-green-50 mb-5 md:mb-6 border-4 border-white shadow-xl ${
-              centred ? '' : 'mb-4'
-            }`}
-          >
-            {icon}
+      {backHref && (
+        <Link
+          href={backHref}
+          data-stage-back={shell ? 'workspace' : 'dashboard'}
+          className={`${BACK_LINK_CLASS} mb-3`}
+        >
+          <ArrowLeft size={16} aria-hidden="true" /> Back to workspace
+        </Link>
+      )}
+
+      <div
+        className={
+          centred ? '' : 'flex flex-col gap-4 md:flex-row md:items-start md:justify-between'
+        }
+      >
+        <div className="min-w-0">
+          {eyebrow && (
+            <div className={`mb-2 flex flex-wrap items-center gap-2 ${centred ? 'justify-center' : ''}`}>
+              {eyebrow}
+            </div>
+          )}
+
+          <div className={`flex items-center gap-2 ${centred ? 'justify-center' : ''}`}>
+            {icon && (
+              <span
+                data-stage-icon
+                aria-hidden="true"
+                className="inline-flex shrink-0 text-cc-ink-muted [&>svg]:size-5 [&>svg]:text-cc-ink-muted"
+              >
+                {icon}
+              </span>
+            )}
+            <h1 data-stage-title className="m-0 cc-text-title text-cc-ink text-balance">
+              {heading}
+            </h1>
+          </div>
+
+          {children && (
+            <p
+              className={`mt-1 cc-text-body text-cc-ink-muted ${
+                centred ? 'max-w-2xl mx-auto' : 'max-w-3xl'
+              }`}
+            >
+              {children}
+            </p>
+          )}
+        </div>
+
+        {actions && (
+          <div className={`flex flex-wrap gap-3 ${centred ? 'justify-center mt-6' : 'shrink-0'}`}>
+            {actions}
           </div>
         )}
-
-        {eyebrow && <div className="mb-2 flex flex-wrap items-center gap-2">{eyebrow}</div>}
-
-        <h1
-          data-stage-title
-          className="text-3xl md:text-4xl font-black tracking-tight text-gray-950 text-balance"
-        >
-          {title}
-        </h1>
-
-        {children && (
-          <p
-            className={`mt-2.5 text-sm md:text-base text-gray-600 font-medium leading-relaxed ${
-              centred ? 'max-w-2xl mx-auto' : 'max-w-3xl'
-            }`}
-          >
-            {children}
-          </p>
-        )}
       </div>
-
-      {actions && (
-        <div className={`flex flex-wrap gap-3 ${centred ? 'justify-center mt-6' : 'shrink-0'}`}>
-          {actions}
-        </div>
-      )}
-    </div>
+    </header>
   );
 }

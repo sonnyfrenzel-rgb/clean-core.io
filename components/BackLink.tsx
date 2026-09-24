@@ -42,6 +42,16 @@ import { useUserProfile } from '@/hooks/useUserProfile';
  * without a profile away, so the signed-out half of this component could never
  * render there.
  */
+/**
+ * How a way back looks, here and above every stage (`StageHeader`): a link,
+ * not a button — 13 px / 600 in `--cc-ink-muted`, arrow on the left
+ * (`DESIGN.md` §2.3). It used to be a pill with its own white surface, a border
+ * and a green hover, one of the product's 78 button styles; a way back is not
+ * an action, and green in the workspace means "proven" (§1.1).
+ */
+export const BACK_LINK_CLASS =
+  'inline-flex items-center gap-1 cc-text-identifier text-cc-ink-muted no-underline hover:text-cc-ink hover:underline';
+
 export default function BackLink() {
   const { profile } = useUserProfile();
   const signedIn = Boolean(profile);
@@ -50,9 +60,9 @@ export default function BackLink() {
     <Link
       data-back-link={signedIn ? 'workspace' : 'home'}
       href={signedIn ? '/dashboard' : '/'}
-      className="inline-flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-green-600 transition-all bg-white px-5 py-2.5 rounded-full border border-gray-200 hover:border-green-200 hover:bg-green-50/50 hover:shadow-sm shadow-slate-100"
+      className={BACK_LINK_CLASS}
     >
-      <ArrowLeft size={14} /> {signedIn ? 'Back to Workspace' : 'Back to Homepage'}
+      <ArrowLeft size={16} aria-hidden="true" /> {signedIn ? 'Back to workspace' : 'Back to homepage'}
     </Link>
   );
 }

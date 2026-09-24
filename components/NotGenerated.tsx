@@ -1,5 +1,6 @@
 import { MinusCircle } from 'lucide-react';
 import clsx from 'clsx';
+import CcEmptyState from '@/components/cc/EmptyState';
 import { NOT_GENERATED, modelAbsenceReason, type ModelAbsence, type ModelStage } from '@/lib/model-stages';
 
 /**
@@ -13,6 +14,8 @@ import { NOT_GENERATED, modelAbsenceReason, type ModelAbsence, type ModelStage }
  *
  * Deliberately colourless as far as verdicts go: grey, not red and not green.
  * Nothing failed and nothing succeeded; the section simply was not produced.
+ * Since Block D (D.9) it is the library's empty state (`CcEmptyState`, §2.8),
+ * so an absent answer looks the same in every stage.
  *
  * `data-not-generated` carries the name of the missing part so a rendered guard
  * can find it, and `tests/zero-llm-path.spec.ts` reads the live page rather
@@ -37,23 +40,14 @@ export default function NotGenerated({
   className?: string;
 }) {
   return (
-    <div
-      data-not-generated={what}
-      className={clsx(
-        'flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4 text-left',
-        className,
-      )}
-    >
-      <MinusCircle size={18} className="mt-0.5 shrink-0 text-slate-400" aria-hidden="true" />
-      <div className="min-w-0 space-y-1">
-        <p className="text-sm font-bold text-slate-800">
-          {NOT_GENERATED} — {what}
-        </p>
-        <p className="text-xs font-medium leading-relaxed text-slate-600">
-          {why ?? modelAbsenceReason(absence, stage)}
-        </p>
-        {hint && <p className="text-xs font-medium leading-relaxed text-slate-500">{hint}</p>}
-      </div>
+    <div data-not-generated={what} className={clsx('text-left', className)}>
+      <CcEmptyState
+        illustration={<MinusCircle size={20} className="text-cc-ink-muted" aria-hidden="true" />}
+        title={`${NOT_GENERATED} — ${what}`}
+      >
+        {why ?? modelAbsenceReason(absence, stage)}
+        {hint ? <> {hint}</> : null}
+      </CcEmptyState>
     </div>
   );
 }

@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { AlertCircle, RefreshCw, ArrowLeft } from 'lucide-react';
+import CcButton from '@/components/cc/Button';
 
 /**
  * The second half of QA findings 0d8443fae823 / 58201e6aaedb.
@@ -54,37 +55,44 @@ export default function DocumentationStageError({
     }
   }, [error]);
 
+  // Block D (D.9): a workspace card (§1.4) — 12 px radius, the error's own
+  // icon at 20 px without a bubble, the title on the scale (§1.2) and the two
+  // ways out as the product's buttons (§1.5) instead of two hand-drawn slabs.
   return (
     <div data-documentation-error-boundary className="p-8 md:p-12 flex justify-center">
-      <div className="bg-white p-10 rounded-[3rem] shadow-xl border border-red-100 max-w-lg w-full text-center">
-        <div className="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-6">
-          <AlertCircle className="w-10 h-10 text-red-500" />
-        </div>
-        <h2 className="text-2xl font-black text-[#0b1c30] mb-4">This stage could not be displayed</h2>
-        <p className="text-gray-500 mb-8 font-medium">
+      <div className="bg-cc-surface p-8 rounded-cc-card shadow-cc border border-cc-error-border max-w-lg w-full text-center">
+        <AlertCircle size={20} className="mx-auto mb-3 text-cc-error" aria-hidden="true" />
+        <h2 className="m-0 mb-3 cc-text-h2 text-cc-ink">This stage could not be displayed</h2>
+        <p className="m-0 mb-6 cc-text-body text-cc-ink-muted">
           The documentation stage stopped while drawing. Nothing was changed, and nothing was deleted —
           the stored blueprint is as it was. What caused it is not recorded beyond the technical details below.
         </p>
         {/* Folded, not open: the sentence above is what a reader acts on; the raw
             message is for whoever reports it (UX review of ac27aed, UX-149). */}
-        <details data-documentation-error-details className="bg-red-50 p-4 rounded-2xl text-left mb-8">
-          <summary className="text-xs font-bold text-red-800 cursor-pointer">Technical details</summary>
-          <p className="mt-2 text-xs font-mono text-red-800 overflow-auto max-h-32">{error.message || 'Unknown error'}</p>
+        <details data-documentation-error-details className="bg-cc-error-bg border border-cc-error-border p-4 rounded-cc-row text-left mb-6">
+          <summary className="cc-text-meta text-cc-error cursor-pointer">Technical details</summary>
+          <p className="m-0 mt-2 cc-text-meta font-cc-mono text-cc-error overflow-auto max-h-32">{error.message || 'Unknown error'}</p>
         </details>
-        <button
-          onClick={() => reset()}
-          data-documentation-error-retry
-          className="flex items-center justify-center gap-2 w-full bg-[#0b1c30] text-white px-6 py-4 rounded-2xl font-bold hover:bg-[#006b2c] transition-colors"
-        >
-          <RefreshCw size={18} /> Try Again
-        </button>
-        <button
-          onClick={() => router.push(idStr ? `/project/${idStr}/transformation` : '/dashboard')}
-          data-documentation-error-back
-          className="mt-3 flex items-center justify-center gap-2 w-full bg-white text-[#0b1c30] border border-[#eff4ff] px-6 py-4 rounded-2xl font-bold hover:bg-[#eff4ff] transition-colors"
-        >
-          <ArrowLeft size={18} /> Back to the previous stage
-        </button>
+        <div className="flex flex-col gap-3">
+          <CcButton
+            variant="primary"
+            density="cozy"
+            onClick={() => reset()}
+            data-documentation-error-retry
+            icon={<RefreshCw size={16} aria-hidden="true" />}
+          >
+            Try Again
+          </CcButton>
+          <CcButton
+            variant="ghost"
+            density="cozy"
+            onClick={() => router.push(idStr ? `/project/${idStr}/transformation` : '/dashboard')}
+            data-documentation-error-back
+            icon={<ArrowLeft size={16} aria-hidden="true" />}
+          >
+            Back to the previous stage
+          </CcButton>
+        </div>
       </div>
     </div>
   );

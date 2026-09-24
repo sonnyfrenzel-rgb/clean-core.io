@@ -23,6 +23,13 @@ import { PHASE_TONE_CLASS, phaseTone, type PhaseKey, type RailStep } from '@/lib
  *
  * The ring marks where the reader is, in the product's ink and not in green:
  * being on a page has never been evidence of anything.
+ *
+ * Block D (D.9): type and ink from the workspace scale — the phase name is a
+ * micro label (`cc-text-label`, 11 px; it was 9 px on a phone), the number a
+ * meta figure — and keyboard focus shows the app-wide ring of `DESIGN.md` §1.6
+ * rather than a ring of its own. The tone classes stay in `PHASE_TONE_CLASS`,
+ * shared with the rail and the dashboard, so all three still compute the same
+ * colour for the same phase.
  */
 export default function Stepper({
   steps,
@@ -56,7 +63,7 @@ export default function Stepper({
           const tone = phaseTone(step);
           const paint = PHASE_TONE_CLASS[tone];
           return (
-            <li key={step.key} className="flex flex-col items-center relative bg-gray-50 px-1 sm:px-2">
+            <li key={step.key} className="flex flex-col items-center relative bg-cc-page px-1 sm:px-2">
               <button
                 type="button"
                 onClick={() => go(step)}
@@ -67,19 +74,19 @@ export default function Stepper({
                 data-phase-state={step.state}
                 data-phase-tone={tone}
                 className={clsx(
-                  'w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center border-2 text-xs sm:text-sm font-semibold transition-all duration-300 shadow-sm hover:scale-105 outline-none focus-visible:ring-2 focus-visible:ring-gray-900 focus-visible:ring-offset-2',
+                  'w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center border-2 cc-text-meta transition-transform duration-200 hover:scale-105',
                   paint.border,
                   paint.surface,
                   paint.ink,
-                  isCurrent && 'ring-2 ring-gray-900/30 ring-offset-2 ring-offset-gray-50 scale-110',
+                  isCurrent && 'ring-2 ring-cc-ink/30 ring-offset-2 ring-offset-cc-page scale-110',
                 )}
               >
                 {step.done ? <Check className="w-4 h-4 sm:w-5 sm:h-5" /> : step.n}
               </button>
               <span
                 className={clsx(
-                  'absolute -bottom-7 text-[9px] sm:text-xs font-medium uppercase tracking-wider whitespace-nowrap',
-                  isCurrent ? 'text-gray-900 block' : 'text-gray-500 hidden sm:block',
+                  'absolute -bottom-7 cc-text-label whitespace-nowrap',
+                  isCurrent ? 'text-cc-ink block' : 'text-cc-ink-muted hidden sm:block',
                 )}
               >
                 {step.label}

@@ -1029,7 +1029,7 @@ Structure the JSON exactly like this:
 
       <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6 mb-10 mt-6 md:mt-8">
         <div>
-          <StageHeader title="Process Blueprint &amp; Mapping">
+          <StageHeader stage="documentation">
             Business Architecture &amp; BPMN Map
           </StageHeader>
           

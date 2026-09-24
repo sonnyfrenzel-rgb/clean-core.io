@@ -26,6 +26,13 @@ import firebaseConfig from '../firebase-config.json';
  *
  * The rendered check is the one that matters: a source guard can be satisfied by
  * a component that quietly accepts a `className` override, computed style cannot.
+ *
+ * Block D (D.9, E-3, ADR-050) moved the one header from the landing scale
+ * (30–36 px / 900) to the workspace's: a stage title stands like the project
+ * title — `DESIGN.md` §2.3, 22 px / 800, `-0.02em`, `--cc-ink`, as the `h1` —
+ * with "Back to workspace" above it and any icon neutral, without the green
+ * bubble. "All seven equal" alone would stay green if all seven drifted
+ * together, so the rendered test also pins the values themselves.
  */
 const ROOT = path.resolve(__dirname, '..');
 const read = (rel: string) => fs.readFileSync(path.resolve(ROOT, rel), 'utf8');
@@ -54,7 +61,34 @@ test.describe('one stage header, defined once', () => {
   test('the scale lives in StageHeader and nowhere else', () => {
     const header = read('components/StageHeader.tsx');
     expect(header).toContain('data-stage-title');
-    expect(header).toMatch(/text-3xl md:text-4xl font-black/);
+    // The title role of §1.2 and the ink, on the h1 — not a size of its own.
+    expect(header).toMatch(/<h1\s+data-stage-title\s+className="[^"]*\bcc-text-title\b[^"]*\btext-cc-ink\b/);
+    // Code only: the doc comment keeps the measured history, class names included.
+    const code = header.replace(/\/\*[\s\S]*?\*\//g, '');
+    expect(code, 'StageHeader writes a size, weight or ink of its own').not.toMatch(
+      /\bfont-black\b|\btext-(?:[2-9]xl|gray-\d+|slate-\d+)\b|\bbg-green-/,
+    );
+    // The way back, above the title (§2.3).
+    expect(header).toContain('Back to workspace');
+    expect(code.indexOf('data-stage-back')).toBeGreaterThan(-1);
+    expect(code.indexOf('data-stage-back')).toBeLessThan(code.indexOf('data-stage-title'));
+  });
+
+  test('the cc-text-title role is 22 px / 800 / -0.02em (DESIGN.md §1.2, §2.3)', () => {
+    const css = read('app/globals.css');
+    const role = css.match(/@utility cc-text-title\s*\{([^}]*)\}/);
+    expect(role, 'app/globals.css has no cc-text-title role').not.toBeNull();
+    expect(role![1]).toMatch(/font-size:\s*22px/);
+    expect(role![1]).toMatch(/font-weight:\s*800/);
+    expect(role![1]).toMatch(/letter-spacing:\s*-0\.02em/);
+  });
+
+  test('the documentation stage has one name (UX-169)', () => {
+    // The stepper's label is the title: `stage=` reads it from `PHASES`.
+    const src = read('app/(app)/project/[projectId]/documentation/page.tsx');
+    expect(src).toContain('<StageHeader stage="documentation"');
+    expect(src).not.toContain('Process Blueprint &amp; Mapping');
+    expect(read('lib/workflow-steps.ts')).toContain("{ n: 4, key: 'documentation', label: 'Documentation' }");
   });
 });
 
@@ -122,15 +156,60 @@ test.describe('every stage renders its title identically', () => {
     await page.click('button[type="submit"]:has-text("Sign In")');
     await page.waitForTimeout(4000);
 
+    // DESIGN.md §2.3 — the values themselves, not only their agreement.
+    // -0.02em of 22 px is -0.44px; rgb(11, 28, 48) is --cc-ink.
+    const WANT: Record<string, string> = {
+      tag: 'H1', fontSize: '22px', fontWeight: '800', letterSpacing: '-0.44px', textTransform: 'none', color: 'rgb(11, 28, 48)',
+    };
+
     const seen: { stage: string; key: string }[] = [];
+    const offSpec: string[] = [];
     for (const stage of STAGES) {
       await page.goto(`/project/${PROJECT_ID}/${stage}`, { waitUntil: 'domcontentloaded' });
       await page.waitForSelector('[data-stage-title]', { timeout: 30000 });
-      const key = await page.locator('[data-stage-title]').first().evaluate((el) => {
+      const title = page.locator('[data-stage-title]').first();
+      const m = await title.evaluate((el) => {
         const s = getComputedStyle(el);
-        return [s.fontSize, s.fontWeight, s.fontFamily, s.letterSpacing, s.textTransform, s.color].join(' | ');
+        return {
+          key: [s.fontSize, s.fontWeight, s.fontFamily, s.letterSpacing, s.textTransform, s.color].join(' | '),
+          values: {
+            tag: el.tagName, fontSize: s.fontSize, fontWeight: s.fontWeight,
+            letterSpacing: s.letterSpacing, textTransform: s.textTransform, color: s.color,
+          } as Record<string, string>,
+        };
       });
-      seen.push({ stage, key });
+      seen.push({ stage, key: m.key });
+      for (const [prop, value] of Object.entries(WANT)) {
+        if (m.values[prop] !== value) offSpec.push(`${stage}: ${prop} ${m.values[prop]}, §2.3 wants ${value}`);
+      }
+
+      // "Back to workspace" above the title — a link, not a button.
+      const back = page.locator('[data-stage-back]');
+      await expect(back, `${stage} has no way back to the workspace`).toHaveCount(1);
+      await expect(back).toHaveText(/Back to workspace/);
+      expect(await back.evaluate((el) => el.tagName), `${stage}: the way back is not a link`).toBe('A');
+      const backBox = await back.boundingBox();
+      const titleBox = await title.boundingBox();
+      expect(
+        Boolean(backBox && titleBox && backBox.y + backBox.height <= titleBox.y),
+        `${stage}: "Back to workspace" is not above the title`,
+      ).toBe(true);
+
+      // An icon, where a stage has one, stands neutral: no surface, 20 px, --cc-ink-muted.
+      const icon = page.locator('[data-stage-icon]');
+      if (await icon.count()) {
+        const look = await icon.first().evaluate((el) => {
+          const svg = el.querySelector('svg');
+          return {
+            background: getComputedStyle(el).backgroundColor,
+            width: svg ? getComputedStyle(svg).width : 'no svg',
+            color: svg ? getComputedStyle(svg).color : 'no svg',
+          };
+        });
+        if (look.background !== 'rgba(0, 0, 0, 0)') offSpec.push(`${stage}: the icon sits on a surface (${look.background})`);
+        if (look.width !== '20px') offSpec.push(`${stage}: the icon is ${look.width} wide, §2.3 wants 20px`);
+        if (look.color !== 'rgb(75, 85, 99)') offSpec.push(`${stage}: the icon is ${look.color}, §2.3 wants --cc-ink-muted`);
+      }
     }
 
     const distinct = [...new Set(seen.map((s) => s.key))];
@@ -138,5 +217,6 @@ test.describe('every stage renders its title identically', () => {
       distinct,
       `stage titles disagree:\n${seen.map((s) => `${s.stage.padEnd(15)} ${s.key}`).join('\n')}`,
     ).toHaveLength(1);
+    expect(offSpec, `stage headers off DESIGN.md §2.3:\n${offSpec.join('\n')}`).toEqual([]);
   });
 });

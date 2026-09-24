@@ -1,7 +1,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { AlertCircle } from 'lucide-react';
+import CcMessageStrip from '@/components/cc/MessageStrip';
 import ErrorBoundary from '@/components/ErrorBoundary';
 
 interface SectionBoundaryProps {
@@ -24,14 +24,12 @@ interface SectionBoundaryProps {
  *   </SectionBoundary>
  */
 export default function SectionBoundary({ name, children, silent = false }: SectionBoundaryProps) {
+  // Neutral, not error: nothing the reader did failed, and the rest of the page
+  // stands (Block D, D.9 — a Message Strip like every other notice, §2.6).
   const fallback = silent ? null : (
-    <div className="bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 flex items-center gap-3">
-      <AlertCircle className="w-4 h-4 text-slate-400 shrink-0" />
-      <p className="text-xs text-slate-500 leading-relaxed">
-        <span className="font-bold text-slate-600">{name}</span> could not be rendered —
-        likely incomplete data from an older analysis run. The rest of the page is unaffected.
-      </p>
-    </div>
+    <CcMessageStrip state="neutral" headline={`${name} could not be rendered —`}>
+      likely incomplete data from an older analysis run. The rest of the page is unaffected.
+    </CcMessageStrip>
   );
 
   return <ErrorBoundary fallback={fallback}>{children}</ErrorBoundary>;
