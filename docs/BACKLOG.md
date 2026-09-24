@@ -3,14 +3,28 @@
 Offene Punkte, jüngster Stand zuerst. Kurz gehalten: was, warum, und wie dringend.
 Ältere Abschnitte bleiben stehen, solange etwas darin offen ist.
 
-## Am 24.09.2026 — v2.19.0 vorbereitet, offen danach
+## Feierabend 24.09.2026
 
-- **Ausgeliefert mit v2.19.0:** Integration von 3.0 (hinter dem Admin-Schalter) und 8.9, Mail-Layout (3.0.9), 3.0.11, 3.0.12 (Regeln live seit 24.09., `32e1970bb02e…`), Vollprüfung von v2.18.0 abgearbeitet, Gemini-Retry bei 503, Security-Pipeline mit Stapelprüfung, UX-Agent auf Mockups 2.8.
-- **Nach dem Release:** Produktions-Runner deployen, `run.invoker` für `clean-core-runner` und `clean-core-runner-live` (Sonny), `RUNNER_URL_MAIN`/`RUNNER_LIVE_URL_MAIN`/`S4_PROXY_BASE_URL_MAIN` setzen, Selbsttest auf dev und main (Sonny klickt), Ergebnis in SECURITY.md §7.2.
-- **Zurückgehalten für 3.0:** Landingpage mit Zeitstrahl, Showroom und Banner gestrichen, öffentliche Texte (Branch `feat/3.0.6-landing`).
-- **Block D vor 3.0:** Lückenliste gegen DESIGN.md (193 von 230 UI-Dateien ohne cc-Komponente); wartet auf die Entscheidungen E-1 bis E-7.
-- **Klein, danach:** `runs/create` prüft den Typ von `uploadedFileName` nicht (nur eigenes Projekt betroffen); die Refund-Tests in `starter-example-quota.spec.ts` brauchen dann einen anderen Fehlerpunkt. Mail-Nachmessung GMX/web.de in etwa einer Woche, höchstens 20 Mails.
-- **Übertragen, ungesichtet:** 2 kritische QA-Befunde zu `usage-report.yml` (OIDC im Job mit Laufzeit-Abhängigkeiten), 16 hohe und rund 1.500 mittlere aus den Vollprüfungen.
+**Ausgeliefert:** v2.18.0 und **v2.19.0** auf `main` (clean-core.io). v2.19.0: isolierter Test-Runner (8.9) mit Produktions-Runnern, Mail-Layout (3.0.9), 3.0.11, 3.0.12 (Regeln live, `32e1970bb02e`), Vollprüfung von v2.18.0 abgearbeitet, Gemini-Retry bei 503, Security-Pipeline mit Stapelprüfung, UX-Agent auf Mockups 2.8.
+
+**Auf `dev` seit v2.19.0** (CHANGELOG „Unreleased"): Block D D.1, D.3, D.4, D.5a–d, D.9, D.10a; Security-Schritt A (SEC-2026-514/525/481/492/497); Vollprüfung von v2.19.0 (6 behoben, 4 widerlegt).
+
+**Sonnys Entscheidungen heute:** externe Prüfung für den Live-Pfad entfällt (belegte eigene Prüfung); Security-Pipeline mit 5 USD; UX-Aufnahme 7 Schlüsselansichten aus Mockups 2.8; Showroom gestrichen; Banner im Produkt entfällt; Landing-Aufnahmen mit Community-Konto und „Explore the demo" → `/demo/workspace` mit 3.0.1; Block D mit E-1–E-7 nach Empfehlung, E-6 geändert: Dashboard und Stufen-Demo werden neu gebaut; neues Mail-Layout ins Release.
+
+**Mail (3.0.9):** Seed-Test Lauf e — O365 7/8, Outlook.com 8/8, Gmail 8/8 im Posteingang; GMX und web.de alles Spam (Reputation, durch >70 Testmails am selben Tag verstärkt). Nachmessung in etwa einer Woche, höchstens 20 Mails.
+
+**Offen, braucht Sonny:**
+- Subnetz `app-egress` (runner-net, 10.10.2.0/24, Private Google Access) — ohne es antworten die internal-Runner der App mit 404; danach `APP_VPC_SUBNET=app-egress` setzen, dev neu deployen, Selbsttest.
+- `run.invoker` für `clean-core-runner` und `clean-core-runner-live` (main).
+- Go für Security-Schritt B (Regeländerung + Rules-Deploy: Admin-Lesezugriff auf Kunden-ABAP, hasOnly/Größen in Create-Regeln).
+
+**In Arbeit (lokale Branches, als `wip/*` gesichert):** D.6 Shell (Menü-Tastatur fertig, Rest offen — Liste im Plan), QA-Runde zu Security-Schritt A (Log ohne Upstream-Texte, gerenderte Fehlertext-Tests, ID-Guard für Query-Parameter, drei Test-Lücken aus 3ee443a).
+
+**Zurückgehalten für 3.0:** Branch `feat/3.0.6-landing` — Landingpage mit Zeitstrahl und echten Aufnahmen, Showroom und Banner gestrichen, öffentliche Texte (3.0.8, etwa zur Hälfte).
+
+**Block D danach, in dieser Reihenfolge:** D.10b–D.19 (Werkzeuge), D.7/D.8/D.20–D.21/D.22a–c (Rahmen, Konto, Admin, Dashboard und Demo neu), D.2, D.29, D.23–D.28 (öffentliche Seiten, teils nach dem Landing-Merge), D.30 (alles auf null). Nachträge je Schritt stehen im Plan (`luecken-und-plan.md`, Scratchpad der Sitzung; Kopie unter `docs/design/block-d-plan.md`).
+
+**Klein, später:** Typprüfung `uploadedFileName` in `runs/create`; Beispiel-Kennzeichen vom Client setzbar (nur eigene Einwilligung); Mail-Webhook kann nach Löschung einen leeren Statuseintrag anlegen; Security-Schritte C (Sanitizer) und F (Härtung); 2 übertragene kritische QA-Befunde zu `usage-report.yml`.
 
 ## Am 18.09.2026 entschieden und abgearbeitet
 

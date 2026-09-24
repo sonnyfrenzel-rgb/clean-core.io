@@ -10,6 +10,64 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+## [Unreleased] — auf `dev`, seit v2.19.0
+
+Der Anfang von Block D — die ganze App aus einem Guss nach `DESIGN.md`, vor 3.0 —,
+dazu Schritt A aus dem Security-Audit von v2.19.0 und die Befunde der Vollprüfung.
+
+### Was alle bemerken
+
+- **Die sieben Stufen haben einen Kopf.** Jede Stufe trägt ihren Namen aus derselben
+  Liste wie der Stepper, in 22 px / 800, mit neutralem Icon statt grüner Blase und
+  „Back to workspace" darüber — der Link führt in die Sicht und Ebene zurück, aus der
+  die Stufe geöffnet wurde. Die Dokumentationsstufe heißt überall „Documentation".
+- **Die Analyse-Stufe ist umgebaut (D.10a).** Farben aus Tokens statt einer eigenen Palette, eine Schriftskala, vier Button-Stile, keine Emojis und keine KI-Symbolik; Grün nur noch dort, wo etwas belegt ist. Der Titel heißt jetzt „Analyze", wie im Stepper. Eine erfundene Routen-Begründung („AI analyzed legacy database joins…") heißt jetzt ehrlich „No rationale was recorded for this route."
+- **Stepper, Hinweise und Fehlerseiten sprechen eine Sprache.** Veraltete Stände sind
+  eine Warnung statt Rosa, Fehlerseiten und leere Zustände nutzen dieselben Bausteine,
+  die Stufen-Labels sind nicht mehr 9 px klein.
+- **Fokus überall sichtbar.** Jedes bedienbare Element zeigt beim Tabben denselben
+  Fokusring, auch außerhalb des neuen Arbeitsraums; wer reduzierte Bewegung
+  eingestellt hat, sieht keine CSS-Animationen mehr.
+- **Datum und Zahl sehen überall gleich aus** — „15 Sep 2026", Zeiten mit ihrer Zone,
+  unabhängig von der Spracheinstellung des Browsers.
+- **Gesperrte Konten lesen auch über die API nichts mehr.** Die Projekt-Routen prüfen
+  den Kontostatus wie die Firestore-Regeln.
+- **Die Einwilligung vor der Analyse lässt sich nicht mehr per Adresse überspringen.**
+  Nur ein gespeichertes Beispielprojekt ist davon ausgenommen.
+- **Eine Löschung bleibt eine Löschung.** Registrierung, MFA-Abgleich und
+  Modell-Einstellungen legen ein gelöschtes Profil nicht mehr neu an; eine Einladung
+  entsteht nicht unter einem gelöschten Projekt.
+
+### Sicherheit (Audit von v2.19.0, Schritt A)
+
+- Dokument-IDs aus einer Anfrage werden an einer Stelle geprüft, bevor sie einen
+  Datenbankpfad bilden — in rund zwanzig Routen, gehalten von einem Guard
+  (SEC-2026-514).
+- Die S/4-Routen geben keinen Antworttext eines Token- oder Metadaten-Endpunkts mehr
+  an den Aufrufer (SEC-2026-525); drei Routen antworten mit festem Wortlaut statt mit
+  internen Fehlertexten (SEC-2026-481, -492, -497).
+- Das Audit selbst: 81 verifizierte Befunde, 55 eingeplant, 26 widerlegt — der erste
+  Lauf mit der Stapelprüfung.
+
+### Hinter den Kulissen
+
+- **Design-Guard mit Ratsche (D.1):** 19 Regeln aus `DESIGN.md` über alle
+  UI-Dateien; je Datei und Regel darf die Zahl nur sinken, neue Dateien haben keine
+  Ausnahme. Der Stufenrahmen steht bereits auf null.
+- **Die Bausteinbibliothek ist vollständig (D.5a–d):** Dialog und Meldungs-Popover mit
+  einem gemeinsamen Modal-Verhalten, Checkbox, Radio-Gruppe, Select, Textarea, Switch,
+  Skeleton, Busy-Zustand am Button, Aufklappen, Reiter, „Show all N" in Tabellen,
+  Datumsanzeige, die Schwere eines Befunds als fünfte feste Liste und Diagrammfarben
+  aus Tokens.
+- **Grundlagen (D.3):** Textrollen `cc-text-*`, `lib/format.ts`, eine Druckregel für
+  die ganze Seite.
+- **`DESIGN.md` 1.5 (D.4):** die Entscheidungen vom 24.09. als ADR-047 bis ADR-053 —
+  12 px für Meta/Chip, 2 px nur in Chips, Stufenkopf 22/800, Schwere als feste Liste,
+  Tokens auch öffentlich, Dashboard und Stufen-Demo werden neu gebaut, die deutsche
+  Datenschutzerklärung als Rechtstext-Ausnahme.
+- Eine Überlast von Gemini und ein fremder Zeitzonen-Name brechen keine Tests mehr;
+  `CcButton` behält ein übergebenes `aria-busy`.
+
 ## [v2.19.0] — 2026-09-24
 
 Der isolierte Test-Runner (8.9) ist gebaut und läuft, die Mails kommen bei Microsoft an,

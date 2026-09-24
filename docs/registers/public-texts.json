@@ -3041,6 +3041,28 @@
       "measured": {
         "lines": 99
       }
+    },
+    {
+      "path": "docs/design/block-d-plan.md",
+      "kind": "plan",
+      "purpose": "Arbeitsplan Block D (vor 3.0): Lueckenliste gegen DESIGN.md je Abschnitt und Abbau in Schritten D.1-D.30 mit Dateimengen, Guard-Ratsche und Nachtraegen je Schritt",
+      "audience": "Sonny, Agenten",
+      "saysToday": "Stand 24.09.2026: D.1, D.3, D.4, D.5a-d, D.9, D.10a erledigt; D.6 angefangen; Nachtraege des Koordinators am Ende.",
+      "wrongWith30": [],
+      "decision": "keep",
+      "reason": "Arbeitsdokument von Block D; wird mit D.30 abgeschlossen und dann archiviert.",
+      "effort": "none",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "referencedBy": [
+        "docs/BACKLOG.md",
+        "docs/ROADMAP.md"
+      ],
+      "measured": {
+        "lines": 656
+      }
     }
   ],
   "served": [
