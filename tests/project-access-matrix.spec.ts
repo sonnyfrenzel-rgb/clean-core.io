@@ -217,6 +217,17 @@ const CASES: RouteCase[] = [
     readerAdmitted: false,
   },
   {
+    key: 'app/api/projects/[projectId]/decision/route.ts#GET',
+    what: 'the decision draft — what a confirmation would bind',
+    method: 'GET',
+    path: (p) => `/api/projects/${p}/decision`,
+    refusal: 404,
+    // The fixture has source and no run: the draft is derived and blocked,
+    // which is an answer, not a failure. Owner and reader read the same one.
+    owner: [200],
+    readerAdmitted: true,
+  },
+  {
     key: 'app/api/projects/[projectId]/readers/route.ts#GET',
     what: 'who has Einsicht, and since when — other people\'s addresses',
     method: 'GET',

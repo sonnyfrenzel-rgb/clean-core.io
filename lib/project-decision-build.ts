@@ -32,6 +32,7 @@ import {
   costAssumptionsRevision,
   type CostAssumptions,
   type CostComparison,
+  type OptionKind,
 } from './cost-assumptions';
 import {
   DECISION_BINDING_LABELS,
@@ -105,8 +106,21 @@ export interface BuildDecisionArgs {
   comparison: CostComparison | null;
   /** The option the reader picked, by id. `null` while none is picked. */
   chosenOptionId: string | null;
-  /** The confirmed need (roadmap 3.5): its revision, and what it decided. */
-  need: { revision: number | null; confirmedDrops: number; undecided: number };
+  /**
+   * The kind of the chosen option when the comparison does not carry it — the
+   * workspace card binds the signed-off target architecture, and no cost
+   * comparison is stored for it to be found in. Without this the reversibility
+   * would answer "no option is chosen" for a decision that names one. Ignored
+   * when the comparison has the option: its own kind wins.
+   */
+  chosenOptionKind?: OptionKind | null;
+  /**
+   * The confirmed need (roadmap 3.5): its revision, and what it decided.
+   * `undecided` is `null` when the subjects could not be read at all — no
+   * reconstructed process, or a source that moved since — which is not the
+   * same statement as "none undecided" and must not be counted as one.
+   */
+  need: { revision: number | null; confirmedDrops: number; undecided: number | null };
   /** Has a handover package for this project left the product (roadmap 8.5)? */
   handedOver: boolean;
   attestations?: readonly ConditionAttestation[];
@@ -169,7 +183,9 @@ export function buildProjectDecision(args: BuildDecisionArgs): ProjectDecision {
     args.need.revision === null
       ? notDetermined(
           'need',
-          `No confirmed need revision: ${args.need.undecided} element(s) of the process carry no state yet (roadmap 3.5). The decision is made without one and says so.`,
+          args.need.undecided === null
+            ? 'No confirmed need revision: the process of this project has not been reconstructed against its current source, so no need could be stated (roadmap 3.5). The decision is made without one and says so.'
+            : `No confirmed need revision: ${args.need.undecided} element(s) of the process carry no state yet (roadmap 3.5). The decision is made without one and says so.`,
         )
       : bound('need', `need/r${args.need.revision}`, 'confirmed'),
   );
@@ -252,7 +268,7 @@ export function buildProjectDecision(args: BuildDecisionArgs): ProjectDecision {
       });
     }
   }
-  if (args.need.undecided > 0) {
+  if (args.need.undecided !== null && args.need.undecided > 0) {
     conditions.push({
       id: 'need:undecided',
       text: `${args.need.undecided} element(s) of the process carry no confirmed state. The decision is taken while the need is incomplete, and that stays visible with it.`,
@@ -325,7 +341,7 @@ export function buildProjectDecision(args: BuildDecisionArgs): ProjectDecision {
     bindings,
     conditions,
     reversibility: decisionReversibility({
-      optionKind: option?.kind ?? null,
+      optionKind: option?.kind ?? (args.chosenOptionId === null ? null : (args.chosenOptionKind ?? null)),
       handedOver: args.handedOver,
       confirmedDrops: args.need.confirmedDrops,
     }),

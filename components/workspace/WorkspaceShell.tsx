@@ -15,6 +15,7 @@ import NextStepCard from './NextStepCard';
 import PublicCloudFitPanel from './PublicCloudFitPanel';
 import ManagementAnswers from './ManagementAnswers';
 import ItAnswers from './ItAnswers';
+import DecisionCard from './DecisionCard';
 import FirstLook from './FirstLook';
 import AskThisCase from './AskThisCase';
 import CoachMarkNote from './CoachMarks';
@@ -490,6 +491,18 @@ export default function WorkspaceShell({
       {view === 'management' && (
         <div className="mt-5 max-w-3xl">
           <PublicCloudFitPanel project={project} />
+        </div>
+      )}
+
+      {/* "Open decision" (roadmap 8.4, mockup screen 5) — what a confirmation
+          would bind, reversible or not, the conditions and the folded timeline.
+          Management's answer to "what do I decide?", so it renders only there.
+          It derives the draft through its own route (the contract behind it
+          reaches the SAP catalog) and writes only through the commands route;
+          the confirmation is a write, so the Stand check of 6.9 hangs off it. */}
+      {view === 'management' && (
+        <div className="mt-5 max-w-3xl">
+          <DecisionCard projectId={projectId} beforeWrite={stand.checkBeforeWrite} />
         </div>
       )}
 

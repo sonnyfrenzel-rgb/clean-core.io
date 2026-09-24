@@ -97,6 +97,9 @@ export const GATED_ROUTES: GatedRoute[] = [
   // second factor reaches neither.
   { file: 'app/api/projects/[projectId]/process-states/route.ts', method: 'GET', path: (p) => `/api/projects/${p}/process-states` },
   { file: 'app/api/projects/[projectId]/process-states/route.ts', method: 'POST', path: (p) => `/api/projects/${p}/process-states`, body: { baseRevision: 0, choices: [] } },
+  // Roadmap 8.4 — the decision draft, derived from the project's code, its
+  // contract and its need. A read of the customer's source by another name.
+  { file: 'app/api/projects/[projectId]/decision/route.ts', method: 'GET', path: (p) => `/api/projects/${p}/decision` },
   // Roadmap 5.2/5.4 — sharing. Inviting hands a third party the project's ABAP
   // source, and revoking is how an owner takes that back; both are at least as
   // grave as editing the evidence, so both sit behind the factor. Found by the
