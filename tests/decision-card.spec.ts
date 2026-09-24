@@ -6,7 +6,7 @@ import { analysisRunInputs, buildInputManifest } from '../lib/input-manifest';
 import { buildAbapEvidence } from '../lib/abap/evidence-model';
 import { routeExtensibility } from '../lib/abap/extensibility-router';
 import { evidenceDigest } from '../lib/run-evidence-digest';
-import { SELF_DECLARATION } from '../lib/project-decision';
+import { SELF_DECLARATION, normaliseProjectDecision } from '../lib/project-decision';
 import { validateProjectCommand, type ProjectCommandState } from '../lib/project-commands';
 import { deriveDecisionDraft, readStoredDecision, type DecisionDraftFacts } from '../lib/decision-draft';
 import { conditionsSummary, decisionCardView } from '../lib/decision-card';
@@ -73,12 +73,17 @@ const facts = (over: Partial<DecisionDraftFacts> = {}): DecisionDraftFacts => ({
 
 const ACTOR = { email: 'owner@example.invalid', now: '2026-09-24T11:00:00.000Z' };
 
-/** The project document as the commands route hands it to `validateProjectCommand`. */
-const stateWith = (decision: unknown): ProjectCommandState =>
+/**
+ * The project document as the commands route hands it to `validateProjectCommand`,
+ * with the fingerprint the route derives from the same project
+ * (`deriveProjectDecision()` → `deriveDecisionDraft()` over these facts).
+ */
+const stateWith = (decision: unknown, derivedFrom: DecisionDraftFacts = facts()): ProjectCommandState =>
   ({
     activeRunId: 'run-1',
     activeRunEvidence: DIGEST,
     decision,
+    derivedDecisionFingerprint: deriveDecisionDraft({ ...derivedFrom, stored: decision }).draft.fingerprint,
   }) as ProjectCommandState;
 
 test.describe('8.4 card — what the draft binds on this project', () => {
@@ -242,12 +247,56 @@ test.describe('8.4 card — the two commands the card sends', () => {
         expectedRunId: 'run-1',
         expectedEvidenceDigest: DIGEST,
       },
-      stateWith(recorded.fields.decision),
+      stateWith(recorded.fields.decision, facts({ signedOffArchitecture: null })),
       ACTOR,
     );
     expect(refused.ok).toBe(false);
     if (refused.ok) return;
     expect(refused.status).toBe(409);
+    expect(refused.code).toBe('decision-blocked');
+  });
+
+  // QA review of 4b4586aff273: `record-decision-draft` checks a record's shape
+  // and fingerprint, not where its bindings came from. A record with the right
+  // run and evidence but a contract, conditions and reversibility of the
+  // sender's choosing could be confirmed.
+  test('a record the server did not derive is not confirmed, however well-formed', () => {
+    const { draft } = deriveDecisionDraft(facts());
+    const forged = normaliseProjectDecision({
+      ...draft,
+      fingerprint: undefined,
+      bindings: draft.bindings.map((b) =>
+        b.key === 'contract' ? { ...b, revision: 'AC-9/r1@run-1+000000000000', notDeterminedReason: null } : b,
+      ),
+      conditions: [],
+      reversibility: { answer: 'reversible', boundary: null, reason: 'Nothing here is hard to undo.' },
+    });
+    expect(forged.ok, forged.ok ? '' : forged.error).toBe(true);
+    if (!forged.ok) return;
+    expect(forged.decision.boundRunId).toBe('run-1');
+    expect(forged.decision.boundEvidenceDigest).toBe(DIGEST);
+
+    const recorded = validateProjectCommand({ command: 'record-decision-draft', decision: forged.decision }, stateWith(undefined), ACTOR);
+    expect(recorded.ok).toBe(true);
+    if (!recorded.ok) return;
+    const confirm = {
+      command: 'confirm-decision',
+      expectedDecisionFingerprint: forged.decision.fingerprint,
+      expectedRunId: 'run-1',
+      expectedEvidenceDigest: DIGEST,
+    };
+    const refused = validateProjectCommand(confirm, stateWith(recorded.fields.decision), ACTOR);
+    expect(refused.ok).toBe(false);
+    if (!refused.ok) expect(refused.code).toBe('decision-not-derived');
+
+    // And a caller that supplies no derivation at all confirms nothing either.
+    const underived = validateProjectCommand(
+      confirm,
+      { ...stateWith(recorded.fields.decision), derivedDecisionFingerprint: undefined },
+      ACTOR,
+    );
+    expect(underived.ok).toBe(false);
+    if (!underived.ok) expect(underived.code).toBe('decision-not-derived');
   });
 });
 

@@ -384,6 +384,16 @@ export interface ProjectCommandState {
    * compared against a claimed fingerprint would bind nothing.
    */
   decision?: unknown;
+  /**
+   * The fingerprint of the decision the server derives from the project's own
+   * sources, under the stored record's revision (`deriveProjectDecision()` in
+   * `lib/decision-facts.ts`, its `answer.draft`). `confirm-decision` confirms
+   * the stored record only when it is that decision: the record came in through
+   * `record-decision-draft` from a browser, and its bindings, conditions and
+   * reversibility are only checked there for shape (QA review of
+   * 4b4586aff273). `undefined` or `null` refuses, as `activeRunEvidence` does.
+   */
+  derivedDecisionFingerprint?: string | null;
 }
 
 /** Facts only the server knows. Never taken from the request body. */
@@ -732,6 +742,21 @@ export function validateProjectCommand(
         'decision-evidence-mismatch',
         'This decision names evidence that is not the evidence its run carries. Nothing was written. Draft the decision again on the current analysis.',
         { activeRunId: state.activeRunId },
+      );
+    }
+    // The run and the evidence are compared above; the rest of the record — the
+    // contract, need and cost it binds, its conditions, its reversibility — is
+    // what the browser sent. It is confirmed only if it is exactly the decision
+    // this server derives from the same project, so a confirmed record says
+    // nothing the product did not derive.
+    if (
+      typeof state.derivedDecisionFingerprint !== 'string' ||
+      state.derivedDecisionFingerprint !== stored.decision.fingerprint
+    ) {
+      return refuse(
+        409,
+        'decision-not-derived',
+        'The decision on this project is not the decision this server derives from its analysis, contract and need today. Nothing was written. Open the decision again and confirm the one it shows.',
       );
     }
     const coverage = decisionCoverage(stored.decision);

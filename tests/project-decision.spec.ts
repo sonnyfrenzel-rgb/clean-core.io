@@ -425,6 +425,9 @@ test.describe('8.4 — the confirmation is the account\'s, and it is bound to th
     activeRunId: 'run-1',
     activeRunEvidence: DIGEST,
     decision: stored(d),
+    // The fixtures are built by `buildProjectDecision`, i.e. they *are* what the
+    // server derives; `decision-card.spec.ts` covers a record that is not.
+    derivedDecisionFingerprint: d.fingerprint,
     ...over,
   });
   const confirm = (d: ProjectDecision, over: Record<string, unknown> = {}) => ({

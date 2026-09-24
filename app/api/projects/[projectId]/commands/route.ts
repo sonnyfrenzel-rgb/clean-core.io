@@ -10,6 +10,7 @@ import {
 import { assertRateLimit } from '@/lib/rate-limit';
 import { validateProjectCommand, type ProjectCommandState } from '@/lib/project-commands';
 import { evidenceDigest } from '@/lib/run-evidence-digest';
+import { deriveProjectDecision } from '@/lib/decision-facts';
 import type { EvidenceChange } from '@/lib/run-evidence-digest';
 
 /**
@@ -93,6 +94,9 @@ export async function POST(
     // transaction's reads all have to happen before its first write.
     const actorEmail = await auditActorEmail(db, decodedToken.uid);
 
+    const commandName =
+      typeof body === 'object' && body !== null ? (body as { command?: unknown }).command : undefined;
+
     // Read, decide and write in one transaction.
     //
     // The three used to be three separate steps: the project was read, the
@@ -154,12 +158,21 @@ export async function POST(
         // read from. Both are named here rather than "any command that sends an
         // expectedRunId": the set of commands that must be bound is a decision
         // of this product, not of whoever writes the request body.
-        const commandName =
-          typeof body === 'object' && body !== null ? (body as { command?: unknown }).command : undefined;
         const wantsBinding = commandName === 'approve-architecture' || commandName === 'confirm-decision';
         if (wantsBinding && typeof project.activeRunId === 'string' && project.activeRunId.length > 0) {
           const runSnap = await tx.get(ref.collection('runs').doc(project.activeRunId));
           activeRunEvidence = runSnap.exists ? evidenceDigest(runSnap.data()) : null;
+        }
+
+        // `confirm-decision` confirms a record that came in from the browser, so
+        // it is compared with the decision this server derives from the project
+        // the transaction just read (`lib/decision-facts.ts`) — derived from
+        // this snapshot and not from an earlier one, for the reason the run is
+        // read here. Only for this command: it runs the catalog-backed engine.
+        let derivedDecisionFingerprint: string | null = null;
+        if (commandName === 'confirm-decision') {
+          const derived = await deriveProjectDecision(db, projectId, project, new Date().toISOString());
+          derivedDecisionFingerprint = derived.ok ? derived.answer.draft.fingerprint : null;
         }
 
         const state: ProjectCommandState = {
@@ -173,6 +186,7 @@ export async function POST(
           // confirmation compared against a draft that has been redrafted since
           // is a confirmation of something else.
           decision: project.decision,
+          derivedDecisionFingerprint,
         };
         const decision = validateProjectCommand(body, state, { email, now: new Date().toISOString() });
         if (!decision.ok) {
