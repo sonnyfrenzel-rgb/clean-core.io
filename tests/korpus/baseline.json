@@ -3,7 +3,7 @@
     "path": "docs/korpus/referenzkorpus-v2.1.md",
     "sha256": "9b1ed17256d04a3990335ff9e1a54f2151bccfd44e43190cc40fead2c0d0b288"
   },
-  "written": "2026-09-23",
+  "written": "2026-09-24",
   "entries": [
     {
       "case": "CC-001",
@@ -3877,7 +3877,7 @@
           "note": "Zähler: eingehaltene verbotene Aussagen. Nenner: die 3 von 4, aus denen sich ein Kern bilden lässt (forbiddenCores). Nicht vergleichbar und deshalb weder verletzt noch bestanden: kein synchroner call-opaque mit Kante „und damit erledigt\"."
         }
       ],
-      "reason": "4 Sollfachsatz/-sätze mit 11 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 12 Satz/Sätze. 4 von 4 Sollsätzen vergleichbar (Anker geteilt), davon 1 über der Schwelle: CC-026-B03↔source.abap:B12-seq12 0.63. Darunter: CC-026-B01↔source.abap:B6-call 0.42, CC-026-B04↔source.abap:B10-write 0.41, CC-026-B02↔source.abap:B15-seq15 0.38. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 8. Verbotene Aussagen: 3 von 4 mit Kern, 0 davon verletzt: —."
+      "reason": "4 Sollfachsatz/-sätze mit 11 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 12 Satz/Sätze. 4 von 4 Sollsätzen vergleichbar (Anker geteilt), davon 1 über der Schwelle: CC-026-B03↔source.abap:B12-seq12 0.63. Darunter: CC-026-B02↔source.abap:B15-commit 0.44, CC-026-B01↔source.abap:B6-call 0.43, CC-026-B04↔source.abap:B10-write 0.41. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 8. Verbotene Aussagen: 3 von 4 mit Kern, 0 davon verletzt: —."
     },
     {
       "case": "CC-027",
@@ -4026,7 +4026,7 @@
           "note": "Zähler: eingehaltene verbotene Aussagen. Nenner: die 6 von 6, aus denen sich ein Kern bilden lässt (forbiddenCores). Nicht vergleichbar und deshalb weder verletzt noch bestanden: keine."
         }
       ],
-      "reason": "2 Sollfachsatz/-sätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 4 Satz/Sätze. 2 von 2 Sollsätzen vergleichbar (Anker geteilt), davon 0 über der Schwelle: —. Darunter: CC-027-B01↔source.abap:B5-call 0.35, CC-027-B02↔source.abap:B5-seq5 0.13. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 2. Verbotene Aussagen: 6 von 6 mit Kern, 0 davon verletzt: —."
+      "reason": "2 Sollfachsatz/-sätze mit 6 Anker(n); 0 zeigen nicht in den Quelltext: —. Erzeuger „engine:fachsatz\" lieferte 4 Satz/Sätze. 2 von 2 Sollsätzen vergleichbar (Anker geteilt), davon 0 über der Schwelle: —. Darunter: CC-027-B01↔source.abap:B5-call 0.30, CC-027-B02↔source.abap:B5-seq5 0.13. Ohne Gegenstück: —. Erzeugte Sätze ohne Sollsatz an derselben Stelle: 2. Verbotene Aussagen: 6 von 6 mit Kern, 0 davon verletzt: —."
     },
     {
       "case": "CC-028",

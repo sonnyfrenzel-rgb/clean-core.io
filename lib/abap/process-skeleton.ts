@@ -4,6 +4,7 @@ import { type Branch, type ControlFlowReport } from './control-flow';
 import { type CallGraphReport } from './call-graph';
 import { databaseWriteIn } from './open-sql-discrimination';
 import { buildProcessFacts, type ProcessFacts } from './process-facts';
+import { readLuwStates, type LuwEvent, type UpdateRegistration } from './luw-states';
 import {
   hasOnlyTechnicalConditions,
   isTechnicalGateway,
@@ -392,6 +393,22 @@ export interface ProcessSkeleton {
   unanchoredNodes: number;
   /** What the reader saw and would not guess at. */
   notes: SkeletonNote[];
+  /**
+   * Wirkungsstatus — roadmap 2.12 (CR-06). `IN UPDATE TASK` is a registration,
+   * `COMMIT WORK` dispatches it, `ROLLBACK WORK` discards it, and a whole
+   * program that ends without either leaves it orphaned. States of the model,
+   * each with its line; the views condense them and never drop them. See
+   * `luw-states.ts`.
+   */
+  luw: SkeletonLuw;
+}
+
+/** A registration, and the node it was drawn as — `null` when no entry reaches it. */
+export type SkeletonUpdateRegistration = UpdateRegistration & { nodeId: string | null };
+
+export interface SkeletonLuw {
+  registrations: SkeletonUpdateRegistration[];
+  events: LuwEvent[];
 }
 
 /* ------------------------------------------------------------------ *
@@ -853,6 +870,8 @@ class SkeletonBuilder {
     // Roadmap 2.16, last: a lane holds node ids, and `foldTechnicalGateways`
     // is the pass that can still drop one.
     const lanes = this.buildLanes();
+    // Roadmap 2.12, after every pass that can still drop a node.
+    const luw = this.attachLuwStates();
 
     return {
       nodes: this.nodes,
@@ -874,7 +893,38 @@ class SkeletonBuilder {
       anchoredNodes: this.nodes.length - this.unanchoredCount,
       unanchoredNodes: this.unanchoredCount,
       notes: this.notes,
+      luw,
     };
+  }
+
+  /**
+   * Roadmap 2.12. The states come from `luw-states.ts`, read off the same
+   * statements; here they are tied to the node a registration was drawn as, and
+   * the node says its state itself (`detail.effectState`), so a view that shows
+   * only the node still cannot show a registration as a finished step.
+   */
+  private attachLuwStates(): SkeletonLuw {
+    const model = readLuwStates({
+      statements: this.statements,
+      structure: this.structure,
+      control: this.control,
+      calls: this.calls,
+    });
+    const registrations = model.registrations.map((registration) => {
+      const node = this.nodes.find((n) => n.anchor?.statementIndex === registration.statementIndex
+        && n.kind !== 'error-boundary');
+      if (node) {
+        node.detail = {
+          ...(node.detail ?? {}),
+          effectState: registration.state,
+          effectOutcomes: [...new Set(registration.outcomes.map((o) => o.state))],
+          ...(registration.unresolved ? { effectEnd: registration.unresolved.state } : {}),
+          updateMode: registration.updateMode.value,
+        };
+      }
+      return { ...registration, nodeId: node?.id ?? null };
+    });
+    return { registrations, events: model.events };
   }
 
   /* ---------------- nodes and edges ---------------- */
@@ -958,7 +1008,7 @@ class SkeletonBuilder {
       }
       if (statement.keyword === 'COMMIT' || statement.keyword === 'ROLLBACK') {
         this.note('commit-boundary', statement,
-          'A commit boundary is IT knowledge and belongs in the Technical overlay (DESIGN.md §5.8), not in the flow.');
+          'A commit boundary is IT knowledge and belongs in the Technical overlay (DESIGN.md §5.8), not in the flow. What it does to an update registration — dispatched or discarded — is a state of the model, in `luw` (roadmap 2.12).');
       }
     }
     for (const branch of this.control.notHandled) {

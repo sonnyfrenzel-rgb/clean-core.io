@@ -815,7 +815,8 @@ function compareObjects(korpusCase: KorpusCase, reading: EngineReading): ClassRe
  * Quelltext wäre eine Behauptung. Der Korpus schreibt `transaction` sowohl an
  * ein `CALL TRANSACTION` als auch an ein `COMMIT WORK` — das erste ist eine
  * Aufruf-Aktivität, das zweite eine LUW-Grenze, die `process-skeleton.ts`
- * bewusst als Anmerkung (`commit-boundary`) führt und nicht als Knoten. Eine
+ * bewusst als Anmerkung (`commit-boundary`) und als Wirkungsstatus (`luw`,
+ * 2.12) führt und nicht als Knoten. Eine
  * Brücke gilt deshalb erst, wenn die **ABAP-Anweisung am Anker** das benannte
  * Konstrukt trägt; sonst ist der Sollknoten `nicht-vergleichbar` — gezählt,
  * nicht verfehlt.
@@ -953,8 +954,9 @@ export const SKELETON_BRIDGES: SkeletonBridge[] = [
     construct: /\bCALL\s+TRANSACTION\b/i,
     why:
       'Aufruf-Aktivität auf eine Transaktion. **Nicht** die LUW-Grenze: der Korpus schreibt `transaction` auch an ' +
-      'COMMIT WORK und ROLLBACK WORK, und die führt `process-skeleton.ts` bewusst als Anmerkung ' +
-      '(`commit-boundary`), nicht als Knoten. Solche Knoten sind nicht vergleichbar.',
+      'COMMIT WORK und ROLLBACK WORK, und die führt `process-skeleton.ts` nicht als Knoten, sondern als Anmerkung ' +
+      '(`commit-boundary`) und seit 2.12 als Wirkungsstatus im Modell (`luw`: angestoßen/verworfen). Solche ' +
+      'Knoten sind hier nicht vergleichbar; die Zustände prüft `tests/luw-states.spec.ts` an CC-026/CC-027.',
   },
   {
     type: 'external_program',
@@ -966,7 +968,9 @@ export const SKELETON_BRIDGES: SkeletonBridge[] = [
     type: 'update_task',
     kinds: ['service-task'],
     construct: /\bIN\s+UPDATE\s+TASK\b/i,
-    why: 'Registrierung beim Verbucher; die Engine zeichnet den CALL FUNCTION als Service-Aktivität.',
+    why:
+      'Registrierung beim Verbucher; die Engine zeichnet den CALL FUNCTION als Service-Aktivität und trägt am ' +
+      'Knoten `effectState = registered` (2.12) — die Art bleibt, der Zustand steht daneben.',
   },
   {
     type: 'async',

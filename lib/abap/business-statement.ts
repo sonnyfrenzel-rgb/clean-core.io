@@ -53,6 +53,8 @@
 
 import { readStatements, type AbapStatement, type SourceRange } from './statement-reader';
 import { tableTerm, termFor, type BusinessTerm } from './business-glossary';
+import { buildProcessFacts } from './process-facts';
+import { readLuwStates, type LuwModel } from './luw-states';
 
 /**
  * Ein Vorbehalt **an** einer Aussage — nie an ihrer Stelle.
@@ -651,12 +653,38 @@ function plainAssignment(statement: AbapStatement): Draft | null {
   };
 }
 
+/**
+ * Was aus einer Registrierung wird — roadmap 2.12, als Vorbehalt am Satz.
+ * Angestoßen, verworfen oder beim Programmende nicht ausgeführt, jeweils mit
+ * der Zeile, die es trägt; was offen bleibt, wird gesagt.
+ */
+function registrationNotes(luw: LuwModel, index: number): string[] {
+  const registration = luw.registrations.find((r) => r.statementIndex === index);
+  const notes = ['An der Aufrufstelle wird nichts geändert.'];
+  if (!registration) return notes;
+  const lines = (state: 'dispatched' | 'discarded') =>
+    registration.outcomes.filter((o) => o.state === state).map((o) => o.lineStart).join(' bzw. ');
+  const dispatched = lines('dispatched');
+  const discarded = lines('discarded');
+  if (dispatched) notes.push(`Angestoßen wird er erst mit dem COMMIT WORK in Zeile ${dispatched}.`);
+  if (discarded) notes.push(`Mit dem ROLLBACK WORK in Zeile ${discarded} wird die Registrierung verworfen.`);
+  if (registration.unresolved?.state === 'orphaned') {
+    notes.push(dispatched
+      ? 'Auf dem Weg ohne COMMIT WORK wird er nicht angestoßen und nicht ausgeführt.'
+      : 'Im gelieferten Programm folgt kein COMMIT WORK: er wird nicht angestoßen und nicht ausgeführt.');
+  } else if (registration.unresolved) {
+    notes.push('Ob ein COMMIT WORK ihn auf jedem Weg anstößt, ist im gelieferten Code nicht bestimmt.');
+  }
+  return notes;
+}
+
 /** Die Sätze, die aus einer einzelnen Anweisung kommen. */
 function sentenceFor(
   statement: AbapStatement,
   statements: readonly AbapStatement[],
   stack: Block[],
   origins: Map<string, ValueOrigin>,
+  luw: LuwModel,
 ): Draft | null {
   const text = statement.text;
   const keyword = statement.keyword.toUpperCase();
@@ -725,10 +753,32 @@ function sentenceFor(
     };
   }
 
+  // Roadmap 2.12: vor einem COMMIT WORK registrierte Verbuchungsbausteine
+  // werden damit **angestoßen**, nicht als ausgeführt belegt (CC-026, CR-06).
+  // Ohne Registrierung bleibt der bisherige Satz über die direkte Änderung.
+  const event = luw.events.find((e) => e.statementIndex === statement.index);
   if (keyword === 'COMMIT') {
+    if (event && event.registrations.length > 0) {
+      const notes = event.andWait
+        ? (event.subrcRead ? [] : ['Mit AND WAIT wird auf die Verbuchung gewartet; sy-subrc wird danach aber nicht ausgewertet.'])
+        : ['Ohne AND WAIT wartet der Code das Verbuchungsergebnis nicht ab; ausgeführt oder persistiert ist damit nicht belegt.'];
+      return {
+        anchors,
+        core: 'Mit COMMIT WORK wird die Verbuchung der zuvor registrierten Bausteine angestoßen.',
+        notes,
+        tag: 'commit',
+      };
+    }
     return { anchors, core: 'Mit COMMIT WORK wird die Änderung persistiert.', tag: 'commit' };
   }
   if (keyword === 'ROLLBACK') {
+    if (event && event.registrations.length > 0) {
+      return {
+        anchors,
+        core: 'Mit ROLLBACK WORK werden die zuvor registrierten Verbuchungen verworfen; der Baustein wird auf diesem Weg nicht ausgeführt.',
+        tag: 'rollback',
+      };
+    }
     return { anchors, core: 'Mit ROLLBACK WORK wird die Änderung verworfen; nichts ist persistiert.', tag: 'rollback' };
   }
 
@@ -806,7 +856,7 @@ function sentenceFor(
       }
       if (/\bIN\s+UPDATE\s+TASK\b/i.test(text)) {
         core = `Der Baustein ${name} wird zur Verbuchung registriert.`;
-        notes.push('An der Aufrufstelle wird nichts geändert; er läuft erst mit dem COMMIT WORK.');
+        notes.push(...registrationNotes(luw, statement.index));
       } else if (/\bSTARTING\s+NEW\s+TASK\b/i.test(text)) {
         core = `Der Baustein ${name} wird asynchron in einer eigenen Task gestartet.`;
         notes.push('Ein Ergebnis liegt zu diesem Zeitpunkt nicht vor.');
@@ -1268,6 +1318,9 @@ function listSentence(
  */
 export function buildBusinessStatements(source: string): BusinessStatement[] {
   const statements = readStatements(source);
+  // Dieselbe Lesung wie im Skelett: der Satz verdichtet den Wirkungsstatus
+  // des Modells (2.12), er bildet keinen eigenen.
+  const luw = readLuwStates(buildProcessFacts(source));
   const stacks = blockStacks(statements);
   const origins = originMap(statements);
   const out: BusinessStatement[] = [];
@@ -1313,7 +1366,7 @@ export function buildBusinessStatements(source: string): BusinessStatement[] {
       out.push(build(plainSet));
       continue;
     }
-    const draft = sentenceFor(statement, statements, stack, origins);
+    const draft = sentenceFor(statement, statements, stack, origins, luw);
     if (draft) out.push(build(draft));
     const result = resultSentence(statement);
     if (result) out.push(build(result));
