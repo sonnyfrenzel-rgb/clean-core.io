@@ -1,22 +1,23 @@
 import { test, expect } from '@playwright/test';
 import { initializeApp } from 'firebase/app';
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, connectAuthEmulator } from 'firebase/auth';
+import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
 import { adminSetDoc, adminSetCustomClaim } from './helpers/admin-seed';
 
 process.env.PILOT_APPROVAL_SECRET = process.env.PILOT_APPROVAL_SECRET || 'test-approval-secret-key-12345';
 
 import firebaseConfig from '../firebase-config.json';
+import { connectAuthToEmulator, disposableEmail, EMULATOR_PASSWORD } from './helpers/emulator-guard';
 
 const firebaseApp = initializeApp(firebaseConfig, 'admin-usage-panel');
 const firebaseAuth = getAuth(firebaseApp);
 
-if (process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === 'true') {
-  connectAuthEmulator(firebaseAuth, 'http://127.0.0.1:9099', { disableWarnings: true });
-}
+// Fail closed: throws unless the run targets the emulators (tests/helpers/emulator-guard.ts).
+connectAuthToEmulator(firebaseAuth);
 
-const ADMIN_EMAIL = 'sonny.frenzel@gmail.com';
-const ADMIN_PASSWORD = 'SecurityPassword123!';
-const FALLBACK_PASSWORD = 'SuperPassword123!';
+// A disposable emulator account, new per run: admin rights come from the seeded
+// claim and profile below, not from the address.
+const ADMIN_EMAIL = disposableEmail('admin-usage');
+const ADMIN_PASSWORD = EMULATOR_PASSWORD;
 
 /** Deterministic 64-char hex fingerprints, as written by reserveRunQuota. */
 const fp = (seed: string, n: number) =>
@@ -78,20 +79,10 @@ const COHORT = [
 
 test.describe('Admin Console — Usage & Quota panel', () => {
   test.beforeAll(async () => {
-    let adminUid = '';
-    try {
-      adminUid = (await createUserWithEmailAndPassword(firebaseAuth, ADMIN_EMAIL, ADMIN_PASSWORD)).user.uid;
-    } catch (error: unknown) {
-      if ((error as { code?: string }).code !== 'auth/email-already-in-use') throw error;
-      try {
-        adminUid = (await signInWithEmailAndPassword(firebaseAuth, ADMIN_EMAIL, ADMIN_PASSWORD)).user.uid;
-      } catch {
-        adminUid = (await signInWithEmailAndPassword(firebaseAuth, ADMIN_EMAIL, FALLBACK_PASSWORD)).user.uid;
-      }
-    }
+    const adminUid = (await createUserWithEmailAndPassword(firebaseAuth, ADMIN_EMAIL, ADMIN_PASSWORD)).user.uid;
 
     await adminSetDoc('users', adminUid, {
-      firstName: 'Sonny', lastName: 'Frenzel', email: ADMIN_EMAIL,
+      firstName: 'Admin', lastName: 'E2E', email: ADMIN_EMAIL,
       tier: 'enterprise', status: 'approved', isAdmin: true,
       transformationsUsed: 0, transformationsLimit: 5, createdAt: new Date(),
     });

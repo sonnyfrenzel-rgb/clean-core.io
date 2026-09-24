@@ -1,12 +1,13 @@
 import { test, expect } from '@playwright/test';
 import { initializeApp } from 'firebase/app';
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, connectAuthEmulator } from 'firebase/auth';
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
 import { adminSetDoc } from './helpers/admin-seed';
 import { STARTER_EXAMPLES } from '../lib/starter-examples';
 
 process.env.PILOT_APPROVAL_SECRET = process.env.PILOT_APPROVAL_SECRET || 'test-approval-secret-key-12345';
 
 import firebaseConfig from '../firebase-config.json';
+import { connectAuthToEmulator } from './helpers/emulator-guard';
 // The current Terms version, not a literal: seeding a stale one makes the
 // account fail `requireCurrentTerms` on every protected route, so a version
 // bump would break this spec for a reason that has nothing to do with it.
@@ -15,9 +16,8 @@ import { TERMS_VERSION } from '../lib/constants';
 const firebaseApp = initializeApp(firebaseConfig, 'starter-examples');
 const firebaseAuth = getAuth(firebaseApp);
 
-if (process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === 'true') {
-  connectAuthEmulator(firebaseAuth, 'http://127.0.0.1:9099', { disableWarnings: true });
-}
+// Fail closed: throws unless the run targets the emulators (tests/helpers/emulator-guard.ts).
+connectAuthToEmulator(firebaseAuth);
 
 const EMAIL = 'starter-examples-e2e@cleancore-test.io';
 const PASSWORD = 'SuperPassword123!';

@@ -1,7 +1,8 @@
 import { test, expect, type APIRequestContext } from '@playwright/test';
 import { initializeApp, getApps } from 'firebase/app';
-import { getAuth, connectAuthEmulator, createUserWithEmailAndPassword } from 'firebase/auth';
+import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
 import firebaseConfig from '../firebase-config.json';
+import { connectAuthToEmulator } from './helpers/emulator-guard';
 import { adminSetDoc, adminGetDoc } from './helpers/admin-seed';
 import { validateProjectCommand } from '../lib/project-commands';
 import {
@@ -226,9 +227,8 @@ const PROJECT_ID = `run-bound-project-${Date.now()}`;
 
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 const auth = getAuth(app);
-if (process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === 'true') {
-  connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true });
-}
+// Fail closed: throws unless the run targets the emulators (tests/helpers/emulator-guard.ts).
+connectAuthToEmulator(auth);
 
 test.describe('the route compares against the run document, inside the transaction', () => {
   test.describe.configure({ mode: 'serial' });

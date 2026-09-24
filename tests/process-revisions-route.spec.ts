@@ -1,8 +1,9 @@
 import { test, expect, type APIRequestContext } from '@playwright/test';
 import { initializeApp, getApps } from 'firebase/app';
-import { getAuth, connectAuthEmulator, createUserWithEmailAndPassword } from 'firebase/auth';
-import { initializeFirestore, doc, getDoc, setDoc, connectFirestoreEmulator } from 'firebase/firestore';
+import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
+import { initializeFirestore, doc, getDoc, setDoc } from 'firebase/firestore';
 import firebaseConfig from '../firebase-config.json';
+import { connectAuthToEmulator, connectFirestoreToEmulator } from './helpers/emulator-guard';
 import { TERMS_VERSION } from '../lib/constants';
 import { adminSetDoc, adminDocExists } from './helpers/admin-seed';
 import { sha256Hex } from '../lib/artefact-digest';
@@ -123,10 +124,8 @@ const path = `/api/projects/${PROJECT_ID}/process-revisions`;
 
 const app = getApps().find((a) => a.name === '[DEFAULT]') ?? initializeApp(firebaseConfig);
 const clientDb = initializeFirestore(app, {}, firebaseConfig.firestoreDatabaseId);
-if (process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === 'true') {
-  const [host, port] = (process.env.FIRESTORE_EMULATOR_HOST || '127.0.0.1:8080').split(':');
-  connectFirestoreEmulator(clientDb, host || '127.0.0.1', Number(port) || 8080);
-}
+// Fail closed: throws unless the run targets the emulators (tests/helpers/emulator-guard.ts).
+connectFirestoreToEmulator(clientDb);
 
 test.describe.configure({ mode: 'serial' });
 
@@ -155,9 +154,7 @@ function rename(xml: string, to: string): string {
 test.beforeAll(async () => {
   test.setTimeout(120 * 1000);
   const auth = getAuth(app);
-  try {
-    connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true });
-  } catch { /* already connected */ }
+  connectAuthToEmulator(auth);
 
   const other = await createUserWithEmailAndPassword(auth, OTHER_EMAIL, SIGN_IN);
   otherUid = other.user.uid;

@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { initializeApp } from 'firebase/app';
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, connectAuthEmulator } from 'firebase/auth';
-import { initializeFirestore, doc, setDoc, getDoc, collection, query, where, getDocs, deleteDoc, connectFirestoreEmulator } from 'firebase/firestore';
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
+import { initializeFirestore, doc, setDoc, getDoc, collection, query, where, getDocs, deleteDoc } from 'firebase/firestore';
 import * as fs from 'fs';
 import * as path from 'path';
 import { adminSetDoc, adminApproveUser, adminSetCustomClaim } from './helpers/admin-seed';
@@ -10,23 +10,24 @@ import { adminSetDoc, adminApproveUser, adminSetCustomClaim } from './helpers/ad
 process.env.PILOT_APPROVAL_SECRET = process.env.PILOT_APPROVAL_SECRET || 'test-approval-secret-key-12345';
 
 import firebaseConfig from '../firebase-config.json';
+import { connectAuthToEmulator, connectFirestoreToEmulator, disposableEmail, EMULATOR_PASSWORD } from './helpers/emulator-guard';
 
 // Initialize Firebase SDK in Node context to register and approve the test user
 const firebaseApp = initializeApp(firebaseConfig);
 const firestoreDb = initializeFirestore(firebaseApp, {}, firebaseConfig.firestoreDatabaseId);
 const firebaseAuth = getAuth(firebaseApp);
 
-if (process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === 'true') {
-  console.log('[TEST SDK] Connecting test runner Firestore & Auth to emulators...');
-  connectFirestoreEmulator(firestoreDb, '127.0.0.1', 8080);
-  connectAuthEmulator(firebaseAuth, 'http://127.0.0.1:9099', { disableWarnings: true });
-}
+// Fail closed: throws unless the run targets the emulators (tests/helpers/emulator-guard.ts).
+connectFirestoreToEmulator(firestoreDb);
+connectAuthToEmulator(firebaseAuth);
 
 const branchSuffix = (process.env.GITHUB_REF_NAME || 'local').replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
 const TEST_EMAIL = `superduper-e2e-${branchSuffix}@cleancore-test.io`;
-const ADMIN_USER_EMAIL = 'sonny.frenzel@gmail.com';
+// A disposable emulator account, new per run: admin rights come from the seeded
+// claim and profile below, not from the address.
+const ADMIN_USER_EMAIL = disposableEmail('pipeline-admin');
 const TEST_PASSWORD = 'SuperPassword123!';
-const ADMIN_PASSWORD = 'SecurityPassword123!';
+const ADMIN_PASSWORD = EMULATOR_PASSWORD;
 
 test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', () => {
   
@@ -73,25 +74,8 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
       console.log('Created new E2E test user profile with free/pending defaults.');
     }
 
-    // 3. Register admin user if not exists (try both known passwords for emulator reuse)
-    let adminUid = '';
-    try {
-      const adminCred = await createUserWithEmailAndPassword(firebaseAuth, ADMIN_USER_EMAIL, ADMIN_PASSWORD);
-      adminUid = adminCred.user.uid;
-    } catch (e: any) {
-      if (e.code === 'auth/email-already-in-use') {
-        // Admin may have been registered by security-compliance or a prior run; try known passwords
-        let adminCred;
-        try {
-          adminCred = await signInWithEmailAndPassword(firebaseAuth, ADMIN_USER_EMAIL, ADMIN_PASSWORD);
-        } catch {
-          adminCred = await signInWithEmailAndPassword(firebaseAuth, ADMIN_USER_EMAIL, TEST_PASSWORD);
-        }
-        adminUid = adminCred.user.uid;
-      } else {
-        throw e;
-      }
-    }
+    // 3. Register a fresh admin account for this run
+    const adminUid = (await createUserWithEmailAndPassword(firebaseAuth, ADMIN_USER_EMAIL, ADMIN_PASSWORD)).user.uid;
     // Seed admin profile via Admin SDK (bypasses security rules).
     // The client SDK would reject isAdmin:true on profile creation (L100 in firestore.rules).
     await adminSetDoc('users', adminUid, {

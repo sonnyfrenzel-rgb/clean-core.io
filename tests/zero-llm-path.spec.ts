@@ -1,8 +1,9 @@
 import { test, expect, type APIRequestContext, type Page } from '@playwright/test';
 import { initializeApp, getApps } from 'firebase/app';
-import { getAuth, connectAuthEmulator, createUserWithEmailAndPassword } from 'firebase/auth';
-import { initializeFirestore, doc, getDoc, updateDoc, connectFirestoreEmulator } from 'firebase/firestore';
+import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
+import { initializeFirestore, doc, getDoc, updateDoc } from 'firebase/firestore';
 import firebaseConfig from '../firebase-config.json';
+import { connectAuthToEmulator, connectFirestoreToEmulator } from './helpers/emulator-guard';
 import { TERMS_VERSION } from '../lib/constants';
 import { adminSetDoc } from './helpers/admin-seed';
 import { recomputeStoredRunHash, signRunHash } from '../lib/run-signature';
@@ -57,14 +58,8 @@ const headers = () => ({ Authorization: `Bearer ${idToken}`, 'Content-Type': 'ap
 
 const app = getApps().find((a) => a.name === '[DEFAULT]') ?? initializeApp(firebaseConfig);
 const clientDb = initializeFirestore(app, {}, firebaseConfig.firestoreDatabaseId);
-if (process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === 'true') {
-  // From the environment rather than hard-coded, for the same reason
-  // `tests/helpers/admin-seed.ts` reads `TEST_BASE_URL`: this machine can have
-  // more than one emulator up, and a spec that reads a different database from
-  // the app under test compares two unrelated states and calls it a regression.
-  const [host, port] = (process.env.FIRESTORE_EMULATOR_HOST || '127.0.0.1:8080').split(':');
-  connectFirestoreEmulator(clientDb, host || '127.0.0.1', Number(port) || 8080);
-}
+// Fail closed: throws unless the run targets the emulators (tests/helpers/emulator-guard.ts).
+connectFirestoreToEmulator(clientDb);
 
 test.describe.configure({ mode: 'serial' });
 
@@ -90,9 +85,7 @@ test.beforeAll(async () => {
   // enough for a sign-up plus two seed writes.
   test.setTimeout(120 * 1000);
   const auth = getAuth(app);
-  try {
-    connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true });
-  } catch { /* already connected */ }
+  connectAuthToEmulator(auth);
   const cred = await createUserWithEmailAndPassword(auth, EMAIL, SIGN_IN);
   uid = cred.user.uid;
   idToken = await cred.user.getIdToken();

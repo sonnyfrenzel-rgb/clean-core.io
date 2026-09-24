@@ -4,11 +4,11 @@ import {
   getAuth,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
-  connectAuthEmulator,
 } from 'firebase/auth';
-import { initializeFirestore, doc, getDoc, connectFirestoreEmulator } from 'firebase/firestore';
+import { initializeFirestore, doc, getDoc } from 'firebase/firestore';
 import { adminSetDoc } from './helpers/admin-seed';
 import firebaseConfig from '../firebase-config.json';
+import { connectAuthToEmulator, connectFirestoreToEmulator } from './helpers/emulator-guard';
 
 /**
  * Roadmap 5.4 and 5.5, the server half.
@@ -29,12 +29,10 @@ const firebaseApp = initializeApp(firebaseConfig, 'access-routes');
 const db = initializeFirestore(firebaseApp, {}, firebaseConfig.firestoreDatabaseId);
 const auth = getAuth(firebaseApp);
 
-const [EMU_HOST, EMU_PORT] = (process.env.FIRESTORE_EMULATOR_HOST || '127.0.0.1:8080').split(':');
 
-if (process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === 'true') {
-  connectFirestoreEmulator(db, EMU_HOST, Number(EMU_PORT));
-  connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true });
-}
+// Fail closed: throws unless the run targets the emulators (tests/helpers/emulator-guard.ts).
+connectFirestoreToEmulator(db);
+connectAuthToEmulator(auth);
 
 const PASSWORD = 'SecurityPassword123!';
 const stamp = Date.now();

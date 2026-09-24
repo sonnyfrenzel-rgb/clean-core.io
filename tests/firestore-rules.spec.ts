@@ -1,20 +1,19 @@
 import { test, expect } from '@playwright/test';
 import { initializeApp } from 'firebase/app';
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, connectAuthEmulator } from 'firebase/auth';
-import { initializeFirestore, doc, setDoc, getDoc, connectFirestoreEmulator } from 'firebase/firestore';
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
+import { initializeFirestore, doc, setDoc, getDoc } from 'firebase/firestore';
 import { adminSetDoc, adminSetCustomClaim } from './helpers/admin-seed';
 import firebaseConfig from '../firebase-config.json';
+import { connectAuthToEmulator, connectFirestoreToEmulator } from './helpers/emulator-guard';
 
 // Initialize Firebase SDK in Node context for seeding and validation
 const firebaseApp = initializeApp(firebaseConfig);
 const firestoreDb = initializeFirestore(firebaseApp, {}, firebaseConfig.firestoreDatabaseId);
 const firebaseAuth = getAuth(firebaseApp);
 
-if (process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === 'true') {
-  console.log('[TEST SDK] Connecting firestore rules test runner to emulators...');
-  connectFirestoreEmulator(firestoreDb, '127.0.0.1', 8080);
-  connectAuthEmulator(firebaseAuth, 'http://127.0.0.1:9099', { disableWarnings: true });
-}
+// Fail closed: throws unless the run targets the emulators (tests/helpers/emulator-guard.ts).
+connectFirestoreToEmulator(firestoreDb);
+connectAuthToEmulator(firebaseAuth);
 
 const branchSuffix = (process.env.GITHUB_REF_NAME || 'local').replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
 

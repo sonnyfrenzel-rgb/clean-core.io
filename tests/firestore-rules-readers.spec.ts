@@ -4,7 +4,6 @@ import {
   getAuth,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
-  connectAuthEmulator,
 } from 'firebase/auth';
 import {
   initializeFirestore,
@@ -17,12 +16,12 @@ import {
   arrayUnion,
   query,
   where,
-  connectFirestoreEmulator,
 } from 'firebase/firestore';
 import fs from 'fs';
 import path from 'path';
 import { adminSetDoc, adminMergeDoc, adminSetCustomClaim } from './helpers/admin-seed';
 import firebaseConfig from '../firebase-config.json';
+import { connectAuthToEmulator, connectFirestoreToEmulator } from './helpers/emulator-guard';
 
 /**
  * Roadmap 5.4 and 5.5 — what the new read rule opens, and what it must not.
@@ -55,10 +54,9 @@ const auth = getAuth(firebaseApp);
 
 const [EMU_HOST, EMU_PORT] = (process.env.FIRESTORE_EMULATOR_HOST || '127.0.0.1:8080').split(':');
 
-if (process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === 'true') {
-  connectFirestoreEmulator(db, EMU_HOST, Number(EMU_PORT));
-  connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true });
-}
+// Fail closed: throws unless the run targets the emulators (tests/helpers/emulator-guard.ts).
+connectFirestoreToEmulator(db);
+connectAuthToEmulator(auth);
 
 /**
  * Make the emulator serve the rules in this working copy.

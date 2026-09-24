@@ -4,12 +4,12 @@ import path from 'path';
 import { initializeApp, getApps } from 'firebase/app';
 import {
   getAuth,
-  connectAuthEmulator,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
 } from 'firebase/auth';
-import { initializeFirestore, connectFirestoreEmulator, doc, updateDoc, getDoc } from 'firebase/firestore';
+import { initializeFirestore, doc, updateDoc, getDoc } from 'firebase/firestore';
 import firebaseConfig from '../firebase-config.json';
+import { connectAuthToEmulator, connectFirestoreToEmulator } from './helpers/emulator-guard';
 import { adminSetDoc } from './helpers/admin-seed';
 import {
   ATC_FIELD_MAX_CHARS,
@@ -526,10 +526,9 @@ const FOREIGN_PROJECT_ID = `cmd-foreign-${Date.now()}`;
 const app = getApps().find((a) => a.name === 'command-boundary') ?? initializeApp(firebaseConfig, 'command-boundary');
 const db = initializeFirestore(app, {}, firebaseConfig.firestoreDatabaseId);
 const auth = getAuth(app);
-if (process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === 'true') {
-  connectFirestoreEmulator(db, '127.0.0.1', 8080);
-  connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true });
-}
+// Fail closed: throws unless the run targets the emulators (tests/helpers/emulator-guard.ts).
+connectFirestoreToEmulator(db);
+connectAuthToEmulator(auth);
 
 /**
  * The rules in the tree are the rules under test.

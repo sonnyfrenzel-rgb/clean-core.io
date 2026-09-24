@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { initializeApp } from 'firebase/app';
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, connectAuthEmulator } from 'firebase/auth';
-import { initializeFirestore, doc, setDoc, getDoc, collection, query, where, getDocs, connectFirestoreEmulator } from 'firebase/firestore';
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
+import { initializeFirestore, doc, setDoc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { adminSetDoc, adminSetCustomClaim, adminMergeDoc, adminDocExists, adminGetDoc } from './helpers/admin-seed';
 import JSZip from 'jszip';
 import { createHash } from 'crypto';
@@ -12,6 +12,7 @@ process.env.PILOT_APPROVAL_SECRET = process.env.PILOT_APPROVAL_SECRET || 'test-a
 import { createApprovalToken } from '../lib/approval-token';
 import { computeRunHash, signRunHash } from '../lib/run-signature';
 import firebaseConfig from '../firebase-config.json';
+import { connectAuthToEmulator, connectFirestoreToEmulator, disposableEmail } from './helpers/emulator-guard';
 // The current Terms version, not a literal: seeding a stale one makes the
 // account fail `requireCurrentTerms` on every protected route, so a version
 // bump would break this spec for a reason that has nothing to do with it.
@@ -22,17 +23,17 @@ const firebaseApp = initializeApp(firebaseConfig);
 const firestoreDb = initializeFirestore(firebaseApp, {}, firebaseConfig.firestoreDatabaseId);
 const firebaseAuth = getAuth(firebaseApp);
 
-if (process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === 'true') {
-  console.log('[TEST SDK] Connecting E2E security test runner to emulators...');
-  connectFirestoreEmulator(firestoreDb, '127.0.0.1', 8080);
-  connectAuthEmulator(firebaseAuth, 'http://127.0.0.1:9099', { disableWarnings: true });
-}
+// Fail closed: throws unless the run targets the emulators (tests/helpers/emulator-guard.ts).
+connectFirestoreToEmulator(firestoreDb);
+connectAuthToEmulator(firebaseAuth);
 
 const branchSuffix = (process.env.GITHUB_REF_NAME || 'local').replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
 
 // Accounts for testing (using timestamp to prevent collisions between sequential test runs in the emulator)
 const NORMAL_USER_EMAIL = `security-user-${branchSuffix}-${Date.now()}-${Math.floor(Math.random() * 1000)}@cleancore-test.io`;
-const ADMIN_USER_EMAIL = `sonny.frenzel@gmail.com`; // Hardcoded admin email in constants
+// A disposable emulator account, new per run: admin rights come from the seeded
+// claim and profile in beforeAll, not from the address.
+const ADMIN_USER_EMAIL = disposableEmail('security-admin');
 const TEST_PASSWORD = 'SecurityPassword123!';
 
 test.describe('Clean-Core.io Security, Compliance & Onboarding Gates E2E Tests', () => {
@@ -91,23 +92,13 @@ test.describe('Clean-Core.io Security, Compliance & Onboarding Gates E2E Tests',
     }
 
     // 2. Register an admin user
-    try {
-      const cred = await createUserWithEmailAndPassword(firebaseAuth, ADMIN_USER_EMAIL, TEST_PASSWORD);
-      adminUid = cred.user.uid;
-    } catch (e: any) {
-      if (e.code === 'auth/email-already-in-use') {
-        const cred = await signInWithEmailAndPassword(firebaseAuth, ADMIN_USER_EMAIL, TEST_PASSWORD);
-        adminUid = cred.user.uid;
-      } else {
-        throw e;
-      }
-    }
+    adminUid = (await createUserWithEmailAndPassword(firebaseAuth, ADMIN_USER_EMAIL, TEST_PASSWORD)).user.uid;
 
     // Seed admin profile via Admin SDK (bypasses security rules).
     // The client SDK would reject isAdmin:true on profile creation (L100 in firestore.rules).
     await adminSetDoc('users', adminUid, {
-      firstName: 'Sonny',
-      lastName: 'Frenzel',
+      firstName: 'Admin',
+      lastName: 'E2E',
       email: ADMIN_USER_EMAIL,
       isAdmin: true,
       createdAt: new Date(),
