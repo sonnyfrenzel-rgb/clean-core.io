@@ -170,11 +170,27 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pro
       return NextResponse.json({ error: 'No such project.' }, { status: 404 });
     }
 
-    const body = (await req.json().catch(() => ({}))) as { generatedCode?: unknown };
+    const body = (await req.json().catch(() => ({}))) as { generatedCode?: unknown; expectedContractFingerprint?: unknown };
     const code = typeof body.generatedCode === 'string' ? body.generatedCode : '';
     if (!code.trim()) {
       return NextResponse.json(
         { error: 'No generated package was named, so there is nothing to bind.', code: 'no-code' },
+        { status: 400 },
+      );
+    }
+    // The contract the stand was generated from, as the page read it before the
+    // model call. The binding is the server's rebuild, so it is written only if
+    // that rebuild is still the contract the page generated against: a contract
+    // that moved while the model ran would otherwise be bound to code computed
+    // for its predecessor (QA review of 4b4586aff273).
+    const expectedFingerprint =
+      typeof body.expectedContractFingerprint === 'string' ? body.expectedContractFingerprint : '';
+    if (!expectedFingerprint) {
+      return NextResponse.json(
+        {
+          error: 'The contract this package was generated against was not named, so it cannot be bound. Nothing was written.',
+          code: 'no-contract-named',
+        },
         { status: 400 },
       );
     }
@@ -197,6 +213,15 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pro
       // A refusal that can still be recorded is not a refusal — the reason
       // `contractManifestInput()` throws on a blocked contract.
       return NextResponse.json({ error: decision.sentence, code: decision.code }, { status: 409 });
+    }
+    if (built.contract.fingerprint !== expectedFingerprint) {
+      return NextResponse.json(
+        {
+          error: `This package was generated against contract ${expectedFingerprint.slice(0, 12)}, and the contract of this project is now ${built.contract.fingerprint.slice(0, 12)}. Nothing was bound; generate again against the current contract.`,
+          code: 'contract-moved',
+        },
+        { status: 409 },
+      );
     }
 
     const binding = generationBinding(built.contract, { codeSha256: sha256Hex(code) });

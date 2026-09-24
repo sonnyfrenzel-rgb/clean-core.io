@@ -494,11 +494,17 @@ CMD ["node", "srv/service.js"]`
       // the recommendation unless a deviation was declared — and a deviation
       // reaches it only with a reason (`lib/architecture-contract.ts` throws
       // without one). A blocked contract generates nothing and says why.
-      const { decision } = await fetchGenerationDecision(projectId as string);
+      const { contract, decision } = await fetchGenerationDecision(projectId as string);
       if (!decision.ok) {
         setContractRefusal(decision);
         return;
       }
+      if (!contract) {
+        throw new Error('The contract endpoint allowed a generation but named no contract, so nothing could be bound to it. Nothing was generated.');
+      }
+      // The contract this stand is generated from. The binding below is written
+      // only if the server's contract is still this one when the model is done.
+      const generatedAgainst = contract.fingerprint;
       setContractRefusal(null);
       setContractTrack({ isAbapCloud: decision.isAbapCloud, sentence: decision.sentence });
       const isAbapCloud = decision.isAbapCloud;
@@ -706,7 +712,7 @@ CMD ["node", "srv/service.js"]`
       // derived. If it fails, nothing is saved: a generated stand whose
       // contract nobody can name is the state this step removes.
       const packaged = JSON.stringify(filesArray);
-      const bound = await recordGenerationBinding(projectId as string, packaged);
+      const bound = await recordGenerationBinding(projectId as string, packaged, generatedAgainst);
       if (!bound.ok) {
         throw new Error(`${bound.error} Nothing was saved — the previous version is untouched.`);
       }

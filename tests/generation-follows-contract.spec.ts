@@ -270,6 +270,28 @@ test('the binding is written before the generated code is stored', () => {
   expect(save).toBeGreaterThan(bind);
 });
 
+// QA review of 4b4586aff273: the binding named whatever contract the server
+// rebuilt when the model was done, not the one the code was generated from.
+test('the binding names the contract the code was generated from, or nothing is bound', () => {
+  const body = generationBody();
+  expect(body).toContain('const { contract, decision } = await fetchGenerationDecision(');
+  expect(body).toContain('const generatedAgainst = contract.fingerprint;');
+  expect(body).toContain('recordGenerationBinding(projectId as string, packaged, generatedAgainst)');
+  // Read before the model is asked, not after.
+  expect(body.indexOf('const generatedAgainst')).toBeLessThan(body.indexOf('callGemini('));
+
+  const client = readFileSync('lib/generation-contract-client.ts', 'utf8');
+  expect(client).toContain('JSON.stringify({ generatedCode, expectedContractFingerprint })');
+
+  const route = readFileSync('app/api/projects/[projectId]/contract/route.ts', 'utf8');
+  const post = route.slice(route.indexOf('export async function POST'));
+  const compare = post.indexOf('built.contract.fingerprint !== expectedFingerprint');
+  expect(compare, 'the POST binds whatever contract it rebuilds').toBeGreaterThan(-1);
+  expect(post).toContain("code: 'contract-moved'");
+  expect(post).toContain("code: 'no-contract-named'");
+  expect(compare, 'the comparison comes after the write').toBeLessThan(post.indexOf('GENERATION_BINDING_FIELD]: binding'));
+});
+
 test('the contract field the server writes is not client-writable', () => {
   const rules = readFileSync('firestore.rules', 'utf8');
   // The binding says which contract a stand followed. A browser that could

@@ -74,13 +74,15 @@ export async function fetchGenerationDecision(projectId: string): Promise<Contra
 export async function recordGenerationBinding(
   projectId: string,
   generatedCode: string,
+  /** The fingerprint of the contract the stand was generated from — `fetchGenerationDecision().contract`. */
+  expectedContractFingerprint: string,
 ): Promise<{ ok: true; binding: GenerationBinding } | { ok: false; error: string }> {
   let res: Response;
   try {
     res = await fetch(`/api/projects/${encodeURIComponent(projectId)}/contract`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...(await authHeader()) },
-      body: JSON.stringify({ generatedCode }),
+      body: JSON.stringify({ generatedCode, expectedContractFingerprint }),
     });
   } catch {
     return { ok: false, error: 'The contract this generation followed could not be recorded.' };
