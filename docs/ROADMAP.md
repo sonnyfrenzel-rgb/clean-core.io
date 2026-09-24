@@ -1278,6 +1278,21 @@ echter Rest benannt) und `text-[18px]` (`components/workspace/FirstLook.tsx`). N
 `DESIGN.md` Z. 913 ist ein neuer Radius eine Änderung dieser Datei; deshalb eingeplant
 statt widerlegt, aber mit diesem Umfang: drei Werte, nicht sieben.
 
+**Delta-Review von ac27aed (24.09.2026):** zwölf Befunde waren unentschieden, sechs
+eingeplant (UX-145 bis UX-147, UX-149, UX-155, UX-156), drei widerlegt, drei
+zurückgestellt. Drei der sechs sind Wiederholungen offener Einträge an derselben Stelle:
+UX-147 ist UX-117 (das Board heißt weiter „Active Discussions" und lädt zum Mitreden
+ein, `app/(app)/dashboard/page.tsx:1609-1617`), UX-156 ist UX-118 (Settings rendert einen
+eigenen Rücksprung in Kapitälchen statt `BackLink`, `app/(app)/settings/page.tsx:871`),
+UX-146 ist UX-110 (Mail-Detail nur im `title`, `app/(app)/admin/page.tsx:475`). Neu und
+belegt ist UX-145: der Admin-Tab „suspended" filtert `status !== 'approved'` und zeigt
+damit auch wartende und gelöschte Konten (`app/(app)/admin/page.tsx:309`). Widerlegt sind
+die beiden Assistent-Befunde (UX-150/151) — Header-Knopf und schwebende Pille öffnen
+denselben Dialog mit demselben Label, „Ask AI" gibt es nicht mehr; ob es zwei Einstiege
+braucht, ist eine Designfrage, kein Fehler. UX-152 (automatische Freigabe per Mail-Link)
+ist sicherheitsrelevant und wandert ins Security-Register; UX-148 (Kontext vor Annahme
+einer Einladung) braucht Sonnys Abwägung gegen weitergeleitete Links.
+
 | ID | Schwere | Befund | Roadmap-Schritt | Status |
 |---|---|---|---|---|
 | UX-002 | critical | Null Befunde als Fully Supported besiegelt | 0.8 | behoben |
@@ -1304,6 +1319,7 @@ statt widerlegt, aber mit diesem Umfang: drei Werte, nicht sieben.
 | UX-121 | high | Einladen-Icon ohne Namen — nur Titel, kein Label | sofort | behoben |
 | UX-122 | high | ToS-Hinweis verdrängt auf allen Routen den Inhalt | sofort | behoben |
 | UX-138 | high | Integrity-Grün bedeutet mal Existenz, mal Prüfung | sofort | behoben |
+| UX-145 | high | Tab „suspended“ zeigt auch Pending und Deleted | sofort | eingeplant |
 | UX-005 | medium | Routenwechsel ohne Bestätigung und Undo | 0.7 | eingeplant |
 | UX-006 | medium | Von Befund kein Weg in den Code | 1.5 | eingeplant |
 | UX-012 | medium | Sticky-Header und Tabs verdecken Inhalt auf Phone | 1.4 | eingeplant |
@@ -1356,6 +1372,12 @@ statt widerlegt, aber mit diesem Umfang: drei Werte, nicht sieben.
 | UX-136 | medium | Fünf Icon-Buttons ohne Text – Einladen kaum entdeckbar | 1.5 | eingeplant |
 | UX-139 | medium | Verweigertes Bundle ohne direkten Weg zur Transformation | sofort | behoben |
 | UX-140 | medium | Bestätigung verfällt nach Edit ohne Erklärung | sofort | behoben |
+| UX-146 | medium | Welcome-Mail-Detail nur per Hover-Titel lesbar | 3.0.4 | eingeplant |
+| UX-147 | medium | Read-only-Board verspricht weiter Diskussion | sofort | eingeplant |
+| UX-148 | medium | Einladung ohne Kontext erzwingt blindes Annehmen | — | zurückgestellt |
+| UX-149 | medium | Fehlergrenze zeigt Roh-Fehlermeldung offen statt eingeklappt | sofort | eingeplant |
+| UX-152 | medium | Automatische Genehmigung läuft ohne Abbruchmöglichkeit | — | zurückgestellt |
+| UX-153 | medium | Eingeladene Leser landen auf Analyse-Start | — | zurückgestellt |
 | UX-008 | low | Slideshow-Steuerung ohne Namen, Pfeiltasten gekapert | 3.0.4 | behoben |
 | UX-011 | low | Wirre Befund-Begriffe und Sprachmix | 1.5 | eingeplant |
 | UX-013 | low | Vorschau widerspricht Editierbarkeit, Start irreführend | 1.5 | eingeplant |
@@ -1396,6 +1418,8 @@ statt widerlegt, aber mit diesem Umfang: drei Werte, nicht sieben.
 | UX-142 | low | Optionale Importe mit uneinheitlichem Versions-Label | sofort | behoben |
 | UX-143 | low | Labels ohne Feld auf Freigabeseite | sofort | behoben |
 | UX-144 | low | Workspace-Gate lädt stumm für Screenreader | sofort | behoben |
+| UX-155 | low | Workspace-Laden für Sehende leer, nur sr-only-Text | 1.4 | eingeplant |
+| UX-156 | low | Rücksprung in zwei Großschreibungen | 1.5 | eingeplant |
 ---
 
 ## 14. QA-Befunde aus der Vollprüfung
