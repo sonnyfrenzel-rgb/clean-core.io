@@ -63,6 +63,22 @@ test('the engine documentation export (3.0.5) escapes every value it prints', ()
   expect(raw, `unescaped in the engine documentation rows: ${raw.join(', ')}`).toEqual([]);
 });
 
+test('the engine documentation export carries the business layer, escaped and marked as a proposal', () => {
+  // QA review of 4b4586aff273 (496a06c737f1): the engine export returned
+  // before the business layer, so an existing SOP was missing from the file.
+  const src = read(DOCS);
+  const engine = src.slice(src.indexOf('const downloadEngineConfluenceHTML'), src.indexOf('new Blob([engineHtml]'));
+  expect(engine).toContain('const businessSection = parsedBusinessDoc');
+  expect(engine).toMatch(/<\/ul>\s*\$\{businessSection\}\s*<\/body>/);
+  expect(engine).toContain('Business layer — Model proposal');
+  const section = engine.slice(engine.indexOf('const businessSection = '), engine.indexOf('const engineHtml = `'));
+  for (const field of ['raci_matrix', 'sop_details', 'audit_controls']) expect(section).toContain(field);
+  const all = [...section.matchAll(/\$\{([^{}]*)\}/g)].map((m) => m[1].trim());
+  expect(all.length, 'the scan found no value in the business layer').toBeGreaterThan(10);
+  const raw = all.filter((e) => !e.startsWith('esc('));
+  expect(raw, `unescaped in the business layer of the engine export: ${raw.join(', ')}`).toEqual([]);
+});
+
 test('the design preview is not written into a window of our own origin', () => {
   const s = read(DESIGN);
   // `window.open('', '_blank')` inherits this origin, and `document.write` then

@@ -939,6 +939,27 @@ Structure the JSON exactly like this:
     const gapSection = engine.notDetermined
       .map((g) => `<li><strong>${esc(g.subject)}:</strong> Not determined — ${esc(g.reason)}</li>`)
       .join('');
+    // The business layer the stage shows below the engine document. It was
+    // promised by the comment above and never written, so an export of a
+    // project with an SOP left the SOP out (QA review of 4b4586aff273). Every
+    // value in it was written by the model: it is marked as a proposal and
+    // escaped like the rest.
+    const businessSection = parsedBusinessDoc
+      ? `<h2 data-business-layer="">Business layer — Model proposal</h2>
+      <p><em>Written by a language model from the documentation above. Not derived from the code, and not verified.</em></p>
+      <h3>RACI assignment</h3>
+      <table><thead><tr><th>Step</th><th>Responsible (R)</th><th>Accountable (A)</th><th>Consulted (C)</th><th>Informed (I)</th></tr></thead><tbody>${(parsedBusinessDoc.raci_matrix || [])
+        .map((raci: Record<string, unknown>) => `<tr><td><code>${esc(raci.stepId)}</code></td><td>${esc(raci.r || 'N/A')}</td><td>${esc(raci.a || 'N/A')}</td><td>${esc(raci.c || 'N/A')}</td><td>${esc(raci.i || 'N/A')}</td></tr>`)
+        .join('')}</tbody></table>
+      <h3>Standard operating procedure</h3>
+      <table><thead><tr><th>Step</th><th>Description</th><th>Business exception</th><th>KPI</th></tr></thead><tbody>${(parsedBusinessDoc.sop_details || [])
+        .map((sop: Record<string, unknown>) => `<tr><td><code>${esc(sop.stepId)}</code></td><td>${esc(sop.narrative || 'N/A')}</td><td>${esc(sop.businessException || 'N/A')}</td><td>${esc(sop.kpiTarget || 'N/A')}</td></tr>`)
+        .join('')}</tbody></table>
+      <h3>Audit controls</h3>
+      <table><thead><tr><th>Step</th><th>Control objective</th><th>Mitigation</th><th>Verification</th></tr></thead><tbody>${(parsedBusinessDoc.audit_controls || [])
+        .map((ctrl: Record<string, unknown>) => `<tr><td><code>${esc(ctrl.stepId)}</code></td><td>${esc(ctrl.controlObjective || 'N/A')}</td><td>${esc(ctrl.mitigationAction || 'N/A')}</td><td>${esc(ctrl.assertionMethod || 'N/A')}</td></tr>`)
+        .join('')}</tbody></table>`
+      : '';
     const engineHtml = `<html><head><meta charset="utf-8"><style>
       body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color: #172B4D; line-height: 1.6; padding: 20px; }
       table { border-collapse: collapse; width: 100%; } th, td { border: 1px solid #DFE1E6; padding: 8px; text-align: left; vertical-align: top; }
@@ -951,6 +972,7 @@ Structure the JSON exactly like this:
       <table><thead><tr><th>Element</th><th>Name</th><th>What it does</th><th>Lines</th></tr></thead><tbody>${stepRows}</tbody></table>
       <h2>Business statements, across the whole program</h2><ul>${statementSection}</ul>
       <h2>Not determined from the code</h2><ul>${gapSection}</ul>
+      ${businessSection}
     </body></html>`;
     const blob = new Blob([engineHtml], { type: 'text/html;charset=utf-8' });
     const fileName = (project?.name || 'Project').replace(/\s+/g, '_');
