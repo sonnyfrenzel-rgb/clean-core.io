@@ -386,6 +386,13 @@ test.describe('8.4 card — source guards', () => {
     // lost; fetch then rejects and the catch said "Nothing was written."
     const client = fs.readFileSync(path.join(ROOT, 'lib/project-command-client.ts'), 'utf8');
     expect(client).toMatch(/try \{\s*res = await fetch\([\s\S]*?\} catch \{\s*throw new CommandAnswerLostError\(/);
+    // QA review of 4c9d12276f58: a 5xx is an unknown outcome too, and it is
+    // decided before the generic refusal — a 500 after a commit is not "refused".
+    const unknown = client.indexOf('if (res.status >= 500)');
+    const refused = client.indexOf('if (!res.ok) throw new Error(');
+    expect(unknown, 'a 5xx is still read as a refusal').toBeGreaterThan(-1);
+    expect(unknown).toBeLessThan(refused);
+    expect(client.slice(unknown, refused)).toContain('throw new CommandAnswerLostError(');
     const catches = card.split('} catch (err: unknown) {').slice(1);
     expect(catches.length).toBe(2);
     for (const c of catches) {

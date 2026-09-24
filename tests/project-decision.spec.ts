@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import { createHash } from 'node:crypto';
 import path from 'node:path';
 import { test, expect, type APIRequestContext } from '@playwright/test';
 import { initializeApp, getApps } from 'firebase/app';
@@ -668,8 +669,11 @@ const clientAuth = getAuth(clientApp);
 // emulator it would create them in the Firebase project of firebase-config.json.
 try {
   connectAuthEmulator(clientAuth, `http://${process.env.FIREBASE_AUTH_EMULATOR_HOST || '127.0.0.1:9099'}`, { disableWarnings: true });
-} catch {
-  /* already connected */
+} catch (err) {
+  // "Already connected" is the one failure that is fine — and then the emulator
+  // config is set. Anything else must stop the suite before it creates an
+  // account against the real project (QA review of 4c9d12276f58).
+  if (!clientAuth.emulatorConfig) throw err;
 }
 const adminDb = (): Firestore => {
   // The Admin SDK goes to the emulator only when this is set; otherwise to the real database.
@@ -700,6 +704,8 @@ test.describe('8.4 — the decision commands through /api/projects/[id]/commands
 
   test.beforeAll(async () => {
     test.setTimeout(120_000);
+    // Checked again where it matters: no account is created unless Auth goes to the emulator.
+    expect(clientAuth.emulatorConfig, "Auth is not connected to the emulator").not.toBeNull();
     const owner = await createUserWithEmailAndPassword(clientAuth, DECISION_OWNER, DECISION_PASSWORD);
     ownerToken = await owner.user.getIdToken();
     await adminSetDoc('users', owner.user.uid, {
@@ -720,6 +726,13 @@ test.describe('8.4 — the decision commands through /api/projects/[id]/commands
       legacyCode: SOURCE,
       activeRunId: 'run-1',
       originalRecommendation: RUN.originalRecommendation,
+      // A decision the server will let the owner confirm: an architecture was
+      // signed off (the option), and — on the run below — the inputs are bound
+      // (without a manifest the contract is `inputs-not-bound`, i.e. blocked).
+      approvedByArchitect: true,
+      targetArchitecture: 'rap',
+      approvedBy: DECISION_OWNER,
+      architectSignOffAt: '2026-09-24T08:00:00.000Z',
     });
     // The run the decision is bound to; its digest is `DIGEST`, which the
     // fixture decision names.
@@ -728,6 +741,17 @@ test.describe('8.4 — the decision commands through /api/projects/[id]/commands
       runId: 'run-1',
       projectId: DECISION_PROJECT,
       userId: owner.user.uid,
+      inputManifest: buildInputManifest(
+        analysisRunInputs({
+          sourceSha256: createHash('sha256').update(SOURCE, 'utf8').digest('hex'),
+          deploymentTarget: 'private',
+          catalogVersion: '2026.FPS01',
+          rulesetVersion: 'rules-v1.0',
+          engineVersion: '2.18.0',
+          model: null,
+        }),
+        null,
+      ),
     });
   });
 
@@ -736,11 +760,17 @@ test.describe('8.4 — the decision commands through /api/projects/[id]/commands
       headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}), 'Content-Type': 'application/json' },
       data,
     });
+  // Since the QA review of 4b4586aff273 a confirmation binds only a decision the
+  // server derived itself (`decision-not-derived` otherwise). So the owner's draft
+  // comes from where the decision card gets it: GET /api/projects/[id]/decision.
+  // The locally built fixture `d` is still what the refused calls send.
+  let serverDraft: ProjectDecision | null = null;
+  let serverDigest = DIGEST;
   const confirmBody = (over: Record<string, unknown> = {}) => ({
     command: 'confirm-decision',
     expectedRunId: 'run-1',
-    expectedEvidenceDigest: DIGEST,
-    expectedDecisionFingerprint: d.fingerprint,
+    expectedEvidenceDigest: serverDigest,
+    expectedDecisionFingerprint: (serverDraft ?? d).fingerprint,
     ...over,
   });
   const storedDecision = async () =>
@@ -761,9 +791,16 @@ test.describe('8.4 — the decision commands through /api/projects/[id]/commands
   });
 
   test('the owner drafts: stored as a draft whatever it claims, with one journal entry', async ({ request }) => {
+    const read = await request.get(`/api/projects/${DECISION_PROJECT}/decision`, {
+      headers: { Authorization: `Bearer ${ownerToken}` },
+    });
+    expect(read.status()).toBe(200);
+    const body = (await read.json()) as { draft: ProjectDecision; evidenceDigest: string | null };
+    serverDraft = body.draft;
+    if (body.evidenceDigest) serverDigest = body.evidenceDigest;
     const res = await post(request, ownerToken, {
       command: 'record-decision-draft',
-      decision: { ...d, status: 'confirmed', confirmation: { account: 'cto@example.com', at: '1999', selfDeclaration: 'x' } },
+      decision: { ...serverDraft, status: 'confirmed', confirmation: { account: 'cto@example.com', at: '1999', selfDeclaration: 'x' } },
     });
     expect(res.status()).toBe(200);
     const stored = await storedDecision();
@@ -794,7 +831,7 @@ test.describe('8.4 — the decision commands through /api/projects/[id]/commands
       ownerToken,
       confirmBody({ confirmation: { account: 'cto@example.com', at: '1999-01-01T00:00:00.000Z', selfDeclaration: 'x' } }),
     );
-    expect(res.status()).toBe(200);
+    expect(res.status(), await res.text()).toBe(200);
     const stored = await storedDecision();
     expect(stored?.status).toBe('confirmed');
     expect(stored?.confirmation?.account, 'the body chose the confirmer').toBe(DECISION_OWNER);
