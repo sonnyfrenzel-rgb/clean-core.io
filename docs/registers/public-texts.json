@@ -1,0 +1,3207 @@
+{
+  "schemaVersion": 1,
+  "id": "public-texts",
+  "roadmapStep": "3.0.8",
+  "purpose": "Inventur jeder eingecheckten Text- und Markdown-Datei ausserhalb von docs/archiv/ und docs/korpus/ — das Repository ist oeffentlich, jede davon ist Produktkommunikation. Je Datei: Zweck, Zielgruppe, was sie heute sagt, was mit 3.0 falsch wird (mit Zeilen), die Entscheidung und der Aufwand. Die Umstellung selbst kommt mit 3.0, nicht vorher (ROADMAP 3.0.8): bis dahin beschreiben die Texte, was ausgeliefert ist. Gehalten von tests/public-texts-guard.spec.ts.",
+  "vocabulary": "docs/registers/vocabulary.json",
+  "guard": "tests/public-texts-guard.spec.ts",
+  "schema": {
+    "scope": "git ls-files, Endung .md/.mdx/.txt oder LICENSE/NOTICE im Wurzelverzeichnis, ohne docs/archiv/** und docs/korpus/**. Pruefung (c) verlangt fuer jede solche Datei einen Eintrag in files[] und fuer jeden Eintrag eine Datei.",
+    "files[].path": "Pfad relativ zum Repository",
+    "files[].kind": "root-doc | docs | runbook | policy | concept | plan | review | register | roadmap | log | skill | agent-brief | email | marketing | legal | abap-sample | draft",
+    "files[].purpose": "wozu die Datei da ist",
+    "files[].audience": "wer sie liest (oeffentlich, Nutzer, Entwickler, Agenten, intern)",
+    "files[].saysToday": "was sie heute ueber das Produkt sagt",
+    "files[].wrongWith30[]": "{lines, what}: was mit 3.0 falsch wird. Handeintraege plus die Treffer der Guard-Pruefungen (a) und (b) am Stichtag, mit Zeilennummern",
+    "files[].decision": "update (am Ort auf 3.0 ziehen) | archive (nach archiveTarget verschieben, Eintrag in docs/archiv/README.md) | delete (Geschichte bleibt in Git) | keep (geprueft, mit 3.0 nichts falsch — Rechtstexte, Quelltext, Logs)",
+    "files[].archiveTarget": "nur bei archive: Zielordner unter docs/archiv/",
+    "files[].reason": "Begruendung der Entscheidung",
+    "files[].effort": "none | XS (< 1 h) | S (halber Tag) | M (1-2 Tage) | L (mehrere Tage)",
+    "files[].guard": "{removed, terms}: check | exempt je Pruefung (a) und (b); why bei exempt",
+    "files[].referencedBy": "Code, Specs, Skripte oder Workflows, die den Pfad nennen — beim Verschieben mitziehen (CLAUDE.md: grep vor jedem Umzug)",
+    "files[].measured.lines": "Zeilenzahl am Stichtag",
+    "served[]": "oeffentlich ausgelieferte Texte, die keine eigene Textdatei sind (llms.txt, package.json, Metadaten, JSON-LD) und die Gestaltungsartefakte unter docs/roadmap/*.html — nur genannt, nicht von (c) erzwungen",
+    "referenceCheck[]": "Dateien in docs/archiv/ und docs/korpus/, die eine Datei nennen, die archiviert oder geloescht wird — dort nur Verweise pruefen, nicht umschreiben",
+    "baseline": "Zahl der Verstoesse gegen (a) und (b) am Stichtag, einmal ueber alle geprueften Dateien und einmal nur ueber die, die bleiben (update/keep)"
+  },
+  "baseline": {
+    "date": "2026-09-24",
+    "commit": "fd75514548c5365073c3076e190c295605b6c546",
+    "armedWith": "3.0.1",
+    "note": "Heute sind (a) und (b) nicht scharf (tests/public-texts-guard.spec.ts, PUBLIC_TEXTS_ARMED). Die Zahlen sind der Ausgangswert; mit 3.0 muessen beide auf 0.",
+    "files": 99,
+    "byDecision": {
+      "update": 23,
+      "keep": 12,
+      "delete": 11,
+      "archive": 53
+    },
+    "effortDaysRough": 24.8,
+    "removed": {
+      "total": 30,
+      "inFilesThatStay": 15,
+      "byId": {
+        "seven-stages-as-product": 11,
+        "dark-mode": 8,
+        "not-built-tenancy": 2,
+        "not-built-roles": 4,
+        "documentation-generator": 2,
+        "pilot-banner": 1,
+        "signavio-unverified": 2
+      }
+    },
+    "terms": {
+      "total": 39,
+      "inFilesThatStay": 13,
+      "byVariant": {
+        "self-declaration#0": 1,
+        "clean-core-level#2": 3,
+        "clean-core-level#1": 4,
+        "workspace#0": 1,
+        "clean-core-concept#0": 7,
+        "provenance-not-determined#0": 6,
+        "self-declaration#2": 2,
+        "provenance-other#2": 3,
+        "provenance-model-proposal#0": 3,
+        "clean-core-concept#1": 1,
+        "provenance-other#1": 3,
+        "stages-as-tools#0": 3,
+        "layers#1": 1,
+        "provenance-not-determined#4": 1
+      }
+    }
+  },
+  "files": [
+    {
+      "path": ".claude/skills/qa-review-loop/SKILL.md",
+      "kind": "skill",
+      "purpose": "Skill fuer Coding-Agenten: QA-Review-Schleife nach jedem Push auf dev",
+      "audience": "Coding-Agenten (Claude Code), mitlesende Entwickler",
+      "saysToday": "Ablauf await.mjs, Befunde pruefen, bis zu drei Runden, main erst nach sauberer Runde.",
+      "wrongWith30": [
+        {
+          "lines": "—",
+          "what": "Nichts Produktbezogenes falsch; mit 3.0 nur Stand (Modellname, Runbook-Verweis) gegen scripts/qa/lib/config.mjs abgleichen."
+        }
+      ],
+      "decision": "update",
+      "reason": "Aktiver Ablauf, von tests/qa-review-guard.spec.ts gelesen.",
+      "effort": "XS",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "referencedBy": [
+        "tests/qa-review-guard.spec.ts"
+      ],
+      "measured": {
+        "lines": 119
+      }
+    },
+    {
+      "path": ".claude/skills/security-audit-intake/SKILL.md",
+      "kind": "skill",
+      "purpose": "Skill: Intake der Sicherheitsaudit-Berichte",
+      "audience": "Coding-Agenten",
+      "saysToday": "inbox.mjs, register.mjs, Einplanung in ROADMAP §12 nur mit IDs.",
+      "wrongWith30": [
+        {
+          "lines": "—",
+          "what": "Verweis auf ROADMAP §12 muss nach einer neuen Roadmap-Fassung nach 3.0 nachgezogen werden."
+        }
+      ],
+      "decision": "update",
+      "reason": "Aktiver Ablauf.",
+      "effort": "XS",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "measured": {
+        "lines": 78
+      }
+    },
+    {
+      "path": ".claude/skills/ux-review-intake/SKILL.md",
+      "kind": "skill",
+      "purpose": "Skill: Intake der UX-Reviews (Muse Spark 1.3)",
+      "audience": "Coding-Agenten",
+      "saysToday": "inbox.mjs, register.mjs, Einplanung in ROADMAP §13; die erste Review nimmt das ganze Produkt.",
+      "wrongWith30": [
+        {
+          "lines": "—",
+          "what": "Verweis auf ROADMAP §13 und auf die Mockups 2.7/2.8 als Vergleich; nach 3.0 ist das Produkt selbst die Referenz."
+        }
+      ],
+      "decision": "update",
+      "reason": "Aktiver Ablauf, von tests/ux-review-guard.spec.ts gelesen.",
+      "effort": "XS",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "referencedBy": [
+        "tests/ux-review-guard.spec.ts"
+      ],
+      "measured": {
+        "lines": 83
+      }
+    },
+    {
+      "path": "CHANGELOG.md",
+      "kind": "root-doc",
+      "purpose": "Versionshistorie jeder Auslieferung",
+      "audience": "Nutzer, Entwickler, Agenten (QA, Version-Drift-Guard)",
+      "saysToday": "Eintraege v1.x bis v2.15.0 (23.09.2026), jeweils zum damaligen Produkt.",
+      "wrongWith30": [
+        {
+          "lines": "1-12",
+          "what": "Kopf: muss mit 3.0 den Sprung erklaeren (ein oeffentlicher Sprung, Arbeitsraum statt sieben Stufen)."
+        },
+        {
+          "lines": "ab 13",
+          "what": "Alte Eintraege nennen Dark Mode, Pilot-Banner, Signavio-Aussagen — als Geschichte korrekt."
+        }
+      ],
+      "decision": "update",
+      "reason": "Neuer 3.0-Eintrag oben; alte Eintraege sind Chronik und bleiben woertlich (README verweist auf CHANGELOG als Release Notes).",
+      "effort": "S",
+      "guard": {
+        "removed": "exempt",
+        "terms": "exempt",
+        "why": "Chronik: datierte Eintraege beschreiben, was damals galt, und werden nicht umgeschrieben."
+      },
+      "referencedBy": [
+        "tests/qa-review-guard.spec.ts",
+        "tests/version-drift-guard.spec.ts",
+        "next.config.mjs"
+      ],
+      "measured": {
+        "lines": 5060
+      }
+    },
+    {
+      "path": "CLAUDE.md",
+      "kind": "root-doc",
+      "purpose": "Arbeitsanleitung fuer das Repository (Coding-Agenten und Entwickler)",
+      "audience": "Coding-Agenten, Mitwirkende; oeffentlich lesbar",
+      "saysToday": "Produkt, Richtung Fassung 2.8 bis 3.0, Befehle, Layout mit dem 7-Stufen-Workflow, Konventionen, Deploy, die drei Agenten, Style-Guards, Gotchas.",
+      "wrongWith30": [
+        {
+          "lines": "10-19",
+          "what": "\"3.0 is the UX rebuild ... new UI grows behind an admin-only switch until 3.0\" wird Vergangenheit."
+        },
+        {
+          "lines": "56-57",
+          "what": "\"the 7-stage workflow, one page each\" — ab 3.0.1 Werkzeuge im Arbeitsraum; der Arbeitsraum (components/workspace, lib/workspace-model.ts) fehlt im Layout."
+        },
+        {
+          "lines": "74",
+          "what": "\"dark mode via `dark` class from profile\" — schon seit 1.6 falsch."
+        },
+        {
+          "lines": "193-213",
+          "what": "Abschnitt \"Workflow stages — one style\" beschreibt die Stufen als Fluss; nach 3.0 Werkzeugseiten."
+        },
+        {
+          "lines": "216",
+          "what": "\"local machine currently runs v20.12.2\" — Stand pruefen."
+        },
+        {
+          "lines": "56, 203",
+          "what": "Guard (a) seven-stages-as-product: nennt, was 3.0 entfernt"
+        },
+        {
+          "lines": "74",
+          "what": "Guard (a) dark-mode: nennt, was 3.0 entfernt"
+        },
+        {
+          "lines": "20",
+          "what": "Guard (b) self-declaration: Abweichung \"Langform\" statt \"a self-declaration, not a mandate\""
+        },
+        {
+          "lines": "41",
+          "what": "Guard (b) clean-core-level: Abweichung \"nachgestellt\" statt \"Level A–D (einzeln: Level A)\""
+        },
+        {
+          "lines": "66",
+          "what": "Guard (b) clean-core-level: Abweichung \"Plural — die Kennung heisst Level\" statt \"Level A–D (einzeln: Level A)\""
+        }
+      ],
+      "decision": "update",
+      "reason": "Lebende Anleitung, von vielen Specs und Modulen zitiert; bleibt am Ort.",
+      "effort": "M",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "referencedBy": [
+        "app/(app)/settings/page.tsx",
+        "app/api/projects/[projectId]/findings/route.ts",
+        "lib/facts.ts",
+        "lib/it-findings-build.ts",
+        "lib/it-findings.ts",
+        "lib/process-overlays.ts",
+        "lib/project-decision.ts",
+        "lib/workflow-steps.ts",
+        "scripts/qa/lib/config.mjs",
+        "tests/atc-provenance-guard.spec.ts",
+        "tests/copy-ci-guard.spec.ts",
+        "tests/process-brief.spec.ts",
+        "tests/process-editor.spec.ts",
+        "tests/process-map.spec.ts",
+        "tests/process-navigation.spec.ts",
+        "tests/process-overlays.spec.ts",
+        "tests/process-target.spec.ts",
+        "tests/project-decision.spec.ts",
+        "tests/run-bound-approval.spec.ts",
+        "tests/verdict-honesty-guard.spec.ts",
+        "tests/workspace-shell-guard.spec.ts",
+        "hooks/useAbcdCatalogLookup.ts",
+        "hooks/useProcessOverlays.ts"
+      ],
+      "measured": {
+        "lines": 237
+      }
+    },
+    {
+      "path": "DESIGN.md",
+      "kind": "root-doc",
+      "purpose": "Gestaltung, Struktur und Verhalten von 3.0 (Look, Fiori-Muster, Sprache, Vokabular)",
+      "audience": "Entwickler, Agenten (UX-Agent), Gestalter",
+      "saysToday": "Das 3.0-Produkt als Vorgabe: Arbeitsraum, drei Sichten, Ebenen, sieben Stufen als Werkzeuge, Herkunft aus lib/provenance.ts.",
+      "wrongWith30": [
+        {
+          "lines": "Status/Kopf",
+          "what": "Formulierungen \"bis 3.0\", \"ab Schritt x\" werden zu Ist-Beschreibungen; Spalte \"Heute zum Beispiel\" in §4 wird Geschichte."
+        }
+      ],
+      "decision": "update",
+      "reason": "Bleibt die verbindliche Gestaltung; nur Zeitformen und Rueckblicke.",
+      "effort": "S",
+      "guard": {
+        "removed": "exempt",
+        "terms": "exempt",
+        "why": "Quelle der Streichungen und des Vokabulars: nennt das Entfernte, um es zu verbieten, und die alten Schreibweisen, um sie abzubilden."
+      },
+      "referencedBy": [
+        "app/(app)/admin/design-system/page.tsx",
+        "app/(app)/admin/new-project/page.tsx",
+        "app/(app)/admin/workspace/page.tsx",
+        "app/(app)/layout.tsx",
+        "app/(app)/project/[projectId]/analyze/page.tsx",
+        "app/(app)/project/[projectId]/documentation/page.tsx",
+        "app/(app)/project/[projectId]/page.tsx",
+        "app/globals.css",
+        "lib/abap/business-rule-set.ts",
+        "lib/abap/process-skeleton.ts",
+        "lib/abap/public-cloud-fit.ts",
+        "lib/abap/review-tasks.ts",
+        "lib/abap/user-change.ts",
+        "lib/analysis-run.ts",
+        "lib/ask-this-case.ts",
+        "lib/bpmn/export.ts",
+        "lib/bpmn/layout.ts",
+        "lib/bpmn/model.ts",
+        "lib/brief/pdf.ts",
+        "lib/case-answer.ts",
+        "lib/cc-messages.ts",
+        "lib/clean-core-level.ts",
+        "lib/coach-marks.ts",
+        "lib/demo-marks.ts",
+        "lib/demo-project.ts",
+        "lib/evidence-level.ts",
+        "lib/first-look.ts",
+        "lib/glossary-lookup.ts",
+        "lib/glossary.ts",
+        "lib/input-manifest.ts",
+        "lib/it-findings.ts",
+        "lib/management-answers.ts",
+        "lib/model-text.ts",
+        "lib/new-project-content.ts",
+        "lib/next-step.ts",
+        "lib/object-status.ts",
+        "lib/process-hints.ts",
+        "lib/process-map.ts",
+        "lib/process-naming.ts",
+        "lib/process-navigation.ts",
+        "lib/provenance.ts",
+        "lib/rule-property.ts",
+        "lib/run-cost.ts",
+        "lib/three-views-stage.ts",
+        "lib/trust-claims.ts",
+        "lib/workspace-model.ts",
+        "lib/workspace-rows.ts",
+        "lib/workspace-search.ts",
+        "scripts/ux/design-review.mjs",
+        "tests/abap-business-rule-set.spec.ts",
+        "tests/abap-process-skeleton.spec.ts",
+        "tests/assistant-label.spec.ts",
+        "tests/bpmn-export.spec.ts",
+        "tests/cc-provenance-guard.spec.ts",
+        "tests/cc-style-guard.spec.ts",
+        "tests/cc-token-guard.spec.ts",
+        "tests/dark-mode-guard.spec.ts",
+        "tests/demo-project.spec.ts",
+        "tests/first-look.spec.ts",
+        "tests/helpers/contrast.ts",
+        "tests/mockup-roadmap-guard.spec.ts",
+        "tests/model-text-guard.spec.ts",
+        "tests/next-step-provenance.spec.ts",
+        "tests/next-step.spec.ts",
+        "tests/process-brief.spec.ts",
+        "tests/process-editor.spec.ts",
+        "tests/process-navigation.spec.ts",
+        "tests/project-decision.spec.ts",
+        "tests/public-cloud-fit.spec.ts",
+        "tests/review-tasks-guard.spec.ts",
+        "tests/roadmap-status-guard.spec.ts",
+        "tests/standard-coverage-guard.spec.ts",
+        "tests/three-views-stage.spec.ts",
+        "tests/transformation-docs.spec.ts",
+        "tests/trust-card-guard.spec.ts",
+        "tests/user-change-guard.spec.ts",
+        "tests/view-attribute-guard.spec.ts",
+        "tests/workspace-layers.spec.ts",
+        "tests/workspace-list-report.spec.ts",
+        "tests/workspace-search.spec.ts",
+        "tests/workspace-shell-guard.spec.ts",
+        "components/cc/Anchor.tsx",
+        "components/cc/ArtefactRow.tsx",
+        "components/cc/Button.tsx",
+        "components/cc/Card.tsx",
+        "components/cc/CodeSurface.tsx",
+        "components/cc/EmptyState.tsx",
+        "components/cc/Field.tsx",
+        "components/cc/FilterBar.tsx",
+        "components/cc/IconButton.tsx",
+        "components/cc/Identifier.tsx",
+        "components/cc/LinkButton.tsx",
+        "components/cc/MessageBox.tsx",
+        "components/cc/MessageStrip.tsx",
+        "components/cc/ObjectIdentifier.tsx",
+        "components/cc/ObjectStatus.tsx",
+        "components/cc/ProvenanceChip.tsx",
+        "components/cc/RunIndicator.tsx",
+        "components/cc/SegmentedControl.tsx",
+        "components/cc/Table.tsx",
+        "components/cc/Tag.tsx",
+        "components/cc/Toast.tsx",
+        "components/cc/WhyPopover.tsx",
+        "components/demo/DemoEntryCard.tsx",
+        "components/demo/DemoWorkspace.tsx",
+        "components/GlossaryChatbot.tsx",
+        "components/process-map/BpmnCanvas.tsx",
+        "components/process-map/BpmnEditor.tsx",
+        "components/process-map/process-map.css",
+        "components/process-map/ProcessBreadcrumb.tsx",
+        "components/process-map/ProcessCodeCard.tsx",
+        "components/process-map/ProcessFilters.tsx",
+        "components/process-map/ProcessHints.tsx",
+        "components/process-map/ProcessMap.tsx",
+        "components/process-map/ProcessMapLegend.tsx",
+        "components/process-map/ProcessMiniMap.tsx",
+        "components/process-map/ProcessOutline.tsx",
+        "components/process-map/ProcessSearch.tsx",
+        "components/process-map/ProcessStepList.tsx",
+        "components/process-target/TargetAnchorNote.tsx",
+        "components/TrustBeforeUpload.tsx",
+        "components/workspace/AskThisCase.tsx",
+        "components/workspace/CoachMarks.tsx",
+        "components/workspace/CommandSearch.tsx",
+        "components/workspace/FirstLook.tsx",
+        "components/workspace/GlossaryText.tsx",
+        "components/workspace/ItAnswers.tsx",
+        "components/workspace/LayerBar.tsx",
+        "components/workspace/LayerSection.tsx",
+        "components/workspace/MetaLine.tsx",
+        "components/workspace/NewProject.tsx",
+        "components/workspace/NextStepCard.tsx",
+        "components/workspace/NotDeterminedCard.tsx",
+        "components/workspace/PublicCloudFitPanel.tsx",
+        "components/workspace/StatusLine.tsx",
+        "components/workspace/SteeringOnePager.tsx",
+        "components/workspace/ThreeViewsStage.tsx",
+        "components/workspace/ToolBar.tsx",
+        "components/workspace/WorkspaceListReport.tsx",
+        "components/workspace/WorkspaceShell.tsx",
+        "hooks/useCoachMarks.ts",
+        "hooks/useProcessMapAddress.ts"
+      ],
+      "measured": {
+        "lines": 1009
+      }
+    },
+    {
+      "path": "LICENSE",
+      "kind": "legal",
+      "purpose": "Apache License 2.0",
+      "audience": "oeffentlich, rechtlich",
+      "saysToday": "Lizenztext.",
+      "wrongWith30": [],
+      "decision": "keep",
+      "reason": "Rechtstext.",
+      "effort": "none",
+      "guard": {
+        "removed": "exempt",
+        "terms": "exempt",
+        "why": "ABAP-Quelltext oder Rechtstext, keine Produktbeschreibung."
+      },
+      "measured": {
+        "lines": 202
+      }
+    },
+    {
+      "path": "NOTICE",
+      "kind": "legal",
+      "purpose": "NOTICE-Datei zur Apache-Lizenz",
+      "audience": "oeffentlich, rechtlich",
+      "saysToday": "Urheber- und Drittanbieterhinweis.",
+      "wrongWith30": [],
+      "decision": "keep",
+      "reason": "Rechtstext.",
+      "effort": "none",
+      "guard": {
+        "removed": "exempt",
+        "terms": "exempt",
+        "why": "ABAP-Quelltext oder Rechtstext, keine Produktbeschreibung."
+      },
+      "measured": {
+        "lines": 34
+      }
+    },
+    {
+      "path": "README.md",
+      "kind": "root-doc",
+      "purpose": "Schaufenster des oeffentlichen Repositories: was das Produkt ist, Setup, Sicherheit, Status, Lizenz",
+      "audience": "oeffentlich: SAP-Architekten, Entwickler, Pruefer, Suchmaschinen",
+      "saysToday": "Feature-Liste der v1.9-v2.5-Zeit (Compliance Shield HUD, Heatmap, Board Presentation Stage 7, Frosted-glass dark mode), Status v2.5.0, SSO etc. als \"deferred\".",
+      "wrongWith30": [
+        {
+          "lines": "7-43",
+          "what": "Die ganze Feature-Liste ist das alte Produktbild: HUD, Compliance Shield, Sign-off Gate, Stage-Nummern; der Arbeitsraum, die Sichten, der Prozess aus dem Code und der BPMN-Austausch fehlen."
+        },
+        {
+          "lines": "29, 96",
+          "what": "\"Board Presentation (Stage 7)\", \"inside Stage 5 (Testing Sandbox)\" — Stufen als Nummern im Fluss."
+        },
+        {
+          "lines": "40-41",
+          "what": "\"Frosted-glass UI ... dark-mode design ... glassmorphism\" — Dark Mode entfaellt (1.6), Look nach DESIGN.md §1."
+        },
+        {
+          "lines": "121-127",
+          "what": "\"Status: v2.5.0 shipped\" — schon heute falsch (package.json 2.15.0); \"CHANGELOG kept internal\" im oeffentlichen Repo."
+        },
+        {
+          "lines": "129-131",
+          "what": "SSO, RBAC, org sharing als \"deliberately in the backlog\" — nach §8 nicht gebaut, nicht vertagt; Teilen ist Einsicht per Einladung."
+        },
+        {
+          "lines": "139-141",
+          "what": "\"host it yourself ... self-hosting and open-core intent\" — die Lizenz erlaubt es, aber eine Self-Hosted Edition wird nicht gebaut (§8); Satz neu fassen."
+        },
+        {
+          "lines": "41",
+          "what": "Guard (a) dark-mode: nennt, was 3.0 entfernt"
+        },
+        {
+          "lines": "131",
+          "what": "Guard (a) not-built-tenancy: nennt, was 3.0 entfernt"
+        },
+        {
+          "lines": "19",
+          "what": "Guard (b) workspace: Abweichung \"\\bWork ?bench\\b\" statt \"workspace\""
+        }
+      ],
+      "decision": "update",
+      "reason": "Oeffentliche Hauptseite des Repos; Entwurf der 3.0-Fassung liegt in docs/drafts/README-3.0.md.",
+      "effort": "L",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "referencedBy": [
+        "app/(app)/project/[projectId]/delivery/page.tsx",
+        "tests/delivery-abapgit-config.spec.ts",
+        "tests/generated-package-repair.spec.ts",
+        "tests/locked-paths-guard.spec.ts",
+        "tests/money-honesty-guard.spec.ts",
+        "tests/security-audit-guard.spec.ts",
+        "tests/signavio-claims-guard.spec.ts",
+        "tests/trust-card-guard.spec.ts",
+        "tests/verdict-honesty-guard.spec.ts",
+        "components/SamplePackageDownload.tsx"
+      ],
+      "measured": {
+        "lines": 145
+      }
+    },
+    {
+      "path": "SECURITY.md",
+      "kind": "root-doc",
+      "purpose": "Sicherheitsarchitektur und Bedrohungsmodell",
+      "audience": "Pruefer, IT-Abteilungen der Nutzer, Security-Agent, /trust-Seite",
+      "saysToday": "Version 4.1 vom 15.09.2026: Befundtabelle, Auth-Modell, Verschluesselung, SSRF, Quota, Test-Runner (gesperrt G0:R0), CSP, Trust Chain.",
+      "wrongWith30": [
+        {
+          "lines": "3",
+          "what": "\"Classification: Internal\" — in einem oeffentlichen Repository unzutreffend."
+        },
+        {
+          "lines": "300-305",
+          "what": "§11 \"Evidentiary Board Presentation\" beschreibt die Stufe 7 als Board-Deck; mit 3.0 Management-Sicht/Steering one-pager."
+        },
+        {
+          "lines": "17-38",
+          "what": "Befundtabelle mit Pilot-Registrierung (A-01, F-05n) — als Geschichte in einen Anhang."
+        }
+      ],
+      "decision": "update",
+      "reason": "Von /trust, lib/trust-claims.ts und Guards zitiert; bleibt am Ort, neue Version 5.0 mit 3.0.",
+      "effort": "M",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "referencedBy": [
+        "app/(app)/project/[projectId]/analyze/page.tsx",
+        "app/(app)/trust/page.tsx",
+        "lib/locked-paths.ts",
+        "lib/trust-claims.ts",
+        "tests/locked-paths-guard.spec.ts",
+        "tests/trust-card-guard.spec.ts",
+        "tests/ui-hardening-b88c77b.spec.ts",
+        "components/TrustBeforeUpload.tsx"
+      ],
+      "measured": {
+        "lines": 423
+      }
+    },
+    {
+      "path": "THIRD-PARTY-NOTICES.md",
+      "kind": "legal",
+      "purpose": "Lizenzhinweis fuer die Daten des SAP Cloudification Repository",
+      "audience": "oeffentlich, rechtlich",
+      "saysToday": "Apache-2.0-Hinweis fuer SAPs Katalogdaten.",
+      "wrongWith30": [],
+      "decision": "keep",
+      "reason": "Rechtstext, nichts daran wird mit 3.0 falsch.",
+      "effort": "none",
+      "guard": {
+        "removed": "exempt",
+        "terms": "exempt",
+        "why": "ABAP-Quelltext oder Rechtstext, keine Produktbeschreibung."
+      },
+      "measured": {
+        "lines": 39
+      }
+    },
+    {
+      "path": "abap-test-files/Z_BUSINESS_PARTNER_SYNC.txt",
+      "kind": "abap-sample",
+      "purpose": "ABAP-Beispielprogramm Z_BUSINESS_PARTNER_SYNC fuer Tests und Erstnutzung",
+      "audience": "Nutzer (Beispiel laden), Tests",
+      "saysToday": "ABAP-Quelltext, keine Aussage ueber das Produkt.",
+      "wrongWith30": [],
+      "decision": "delete",
+      "reason": "Byte-gleiche Kopie von public/starter-examples/Z_BUSINESS_PARTNER_SYNC.txt; kein Code und kein Test liest den Pfad, nur README.md Zeile 15 verlinkt ihn (mit der README umstellen).",
+      "effort": "XS",
+      "guard": {
+        "removed": "exempt",
+        "terms": "exempt",
+        "why": "ABAP-Quelltext oder Rechtstext, keine Produktbeschreibung."
+      },
+      "measured": {
+        "lines": 114
+      }
+    },
+    {
+      "path": "abap-test-files/Z_EMPLOYEE_EXPENSE_VAL.txt",
+      "kind": "abap-sample",
+      "purpose": "ABAP-Beispielprogramm Z_EMPLOYEE_EXPENSE_VAL fuer Tests und Erstnutzung",
+      "audience": "Nutzer (Beispiel laden), Tests",
+      "saysToday": "ABAP-Quelltext, keine Aussage ueber das Produkt.",
+      "wrongWith30": [],
+      "decision": "delete",
+      "reason": "Byte-gleiche Kopie von public/starter-examples/Z_EMPLOYEE_EXPENSE_VAL.txt; kein Code und kein Test liest den Pfad, nur README.md Zeile 15 verlinkt ihn (mit der README umstellen).",
+      "effort": "XS",
+      "guard": {
+        "removed": "exempt",
+        "terms": "exempt",
+        "why": "ABAP-Quelltext oder Rechtstext, keine Produktbeschreibung."
+      },
+      "measured": {
+        "lines": 106
+      }
+    },
+    {
+      "path": "abap-test-files/Z_INVOICE_EXTRACTOR.txt",
+      "kind": "abap-sample",
+      "purpose": "ABAP-Beispielprogramm Z_INVOICE_EXTRACTOR fuer Tests und Erstnutzung",
+      "audience": "Nutzer (Beispiel laden), Tests",
+      "saysToday": "ABAP-Quelltext, keine Aussage ueber das Produkt.",
+      "wrongWith30": [],
+      "decision": "delete",
+      "reason": "Byte-gleiche Kopie von public/starter-examples/Z_INVOICE_EXTRACTOR.txt; kein Code und kein Test liest den Pfad, nur README.md Zeile 15 verlinkt ihn (mit der README umstellen).",
+      "effort": "XS",
+      "guard": {
+        "removed": "exempt",
+        "terms": "exempt",
+        "why": "ABAP-Quelltext oder Rechtstext, keine Produktbeschreibung."
+      },
+      "measured": {
+        "lines": 88
+      }
+    },
+    {
+      "path": "abap-test-files/Z_MATERIAL_STOCK_CALC.txt",
+      "kind": "abap-sample",
+      "purpose": "ABAP-Beispielprogramm Z_MATERIAL_STOCK_CALC fuer Tests und Erstnutzung",
+      "audience": "Nutzer (Beispiel laden), Tests",
+      "saysToday": "ABAP-Quelltext, keine Aussage ueber das Produkt.",
+      "wrongWith30": [],
+      "decision": "delete",
+      "reason": "Byte-gleiche Kopie von public/starter-examples/Z_MATERIAL_STOCK_CALC.txt; kein Code und kein Test liest den Pfad, nur README.md Zeile 15 verlinkt ihn (mit der README umstellen).",
+      "effort": "XS",
+      "guard": {
+        "removed": "exempt",
+        "terms": "exempt",
+        "why": "ABAP-Quelltext oder Rechtstext, keine Produktbeschreibung."
+      },
+      "measured": {
+        "lines": 100
+      }
+    },
+    {
+      "path": "abap-test-files/Z_ORDER_INTEGRITY_CHECK.txt",
+      "kind": "abap-sample",
+      "purpose": "ABAP-Beispielprogramm Z_ORDER_INTEGRITY_CHECK fuer Tests und Erstnutzung",
+      "audience": "Nutzer (Beispiel laden), Tests",
+      "saysToday": "ABAP-Quelltext, keine Aussage ueber das Produkt.",
+      "wrongWith30": [],
+      "decision": "delete",
+      "reason": "Byte-gleiche Kopie von public/starter-examples/Z_ORDER_INTEGRITY_CHECK.txt; kein Code und kein Test liest den Pfad, nur README.md Zeile 15 verlinkt ihn (mit der README umstellen).",
+      "effort": "XS",
+      "guard": {
+        "removed": "exempt",
+        "terms": "exempt",
+        "why": "ABAP-Quelltext oder Rechtstext, keine Produktbeschreibung."
+      },
+      "measured": {
+        "lines": 100
+      }
+    },
+    {
+      "path": "abap-test-files/Z_SALES_ORDER_CREATOR.txt",
+      "kind": "abap-sample",
+      "purpose": "ABAP-Beispielprogramm Z_SALES_ORDER_CREATOR fuer Tests und Erstnutzung",
+      "audience": "Nutzer (Beispiel laden), Tests",
+      "saysToday": "ABAP-Quelltext, keine Aussage ueber das Produkt.",
+      "wrongWith30": [],
+      "decision": "delete",
+      "reason": "Byte-gleiche Kopie von public/starter-examples/Z_SALES_ORDER_CREATOR.txt; kein Code und kein Test liest den Pfad, nur README.md Zeile 15 verlinkt ihn (mit der README umstellen).",
+      "effort": "XS",
+      "guard": {
+        "removed": "exempt",
+        "terms": "exempt",
+        "why": "ABAP-Quelltext oder Rechtstext, keine Produktbeschreibung."
+      },
+      "measured": {
+        "lines": 99
+      }
+    },
+    {
+      "path": "clean-core-video/README.md",
+      "kind": "marketing",
+      "purpose": "Remotion-Projekt fuer einen 30-s-LinkedIn-Spot (01.07.2026)",
+      "audience": "intern (Video-Produktion)",
+      "saysToday": "Storyboard des Spots mit Szenen aus Analyze/Design (Stufen als Produkt).",
+      "wrongWith30": [
+        {
+          "lines": "Storyboard",
+          "what": "Szenen zeigen die alte Oberflaeche und den Stufenfluss; widerspricht 3.0.6 (keine Mockup-Bilder, nur echte Produktansichten)."
+        },
+        {
+          "lines": "11",
+          "what": "Guard (b) clean-core-concept: Abweichung \"mit Bindestrich, aber ohne .io — liest sich wie der Produktname\" statt \"Clean Core\""
+        }
+      ],
+      "decision": "delete",
+      "reason": "CLAUDE.md fuehrt clean-core-video/ als zu ignorieren; der Spot ist veroeffentlicht und zeigt ein Produkt, das es mit 3.0 nicht mehr gibt. Mit dem ganzen Ordner loeschen (Geschichte bleibt in Git) — offene Frage an Sonny.",
+      "effort": "XS",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "measured": {
+        "lines": 96
+      }
+    },
+    {
+      "path": "clean-core-video/public/screens/README.txt",
+      "kind": "marketing",
+      "purpose": "Platzhalter-Hinweis fuer Bildschirmaufnahmen des Spots",
+      "audience": "intern",
+      "saysToday": "analyze.mp4 / design.mp4 in Szene 5 einbinden.",
+      "wrongWith30": [
+        {
+          "lines": "1",
+          "what": "Aufnahmen der Stufen als Produkt."
+        }
+      ],
+      "decision": "delete",
+      "reason": "Mit clean-core-video/ (siehe oben).",
+      "effort": "XS",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "measured": {
+        "lines": 5
+      }
+    },
+    {
+      "path": "docs/ARCHITECTURE.md",
+      "kind": "docs",
+      "purpose": "Architektur und Runbook (die tiefe Referenz neben CLAUDE.md)",
+      "audience": "Entwickler, Agenten, Pruefer",
+      "saysToday": "Systemueberblick, §2 \"The 7-stage workflow\", Trust Chain, Engine, Sicherheit (5.1-5.9), Tests, Deploy, Logs, Konventionen, oeffentlicher Guide.",
+      "wrongWith30": [
+        {
+          "lines": "25-50",
+          "what": "§2 \"The 7-stage workflow\" als Rueckgrat des Produkts; ab 3.0.1 oeffnet jedes Projekt im Arbeitsraum (Sichten, Ebenen, Werkzeugleiste) — Arbeitsraum-Architektur (lib/workspace-model.ts, workspace-shell) fehlt."
+        },
+        {
+          "lines": "8-10",
+          "what": "\"deterministic-first, AI-second ... modernizes to TypeScript/Node.js\" — das Produktbild von 3.0 fuehrt mit dem Prozess aus dem Code (Business-Sicht)."
+        },
+        {
+          "lines": "493",
+          "what": "\"dark mode via `dark` class from profile\" — seit 1.6 falsch."
+        },
+        {
+          "lines": "496-543",
+          "what": "§10 oeffentlicher Guide: mit 3.0.6 (neue Landingpage) abgleichen."
+        },
+        {
+          "lines": "25",
+          "what": "Guard (a) seven-stages-as-product: nennt, was 3.0 entfernt"
+        },
+        {
+          "lines": "493",
+          "what": "Guard (a) dark-mode: nennt, was 3.0 entfernt"
+        },
+        {
+          "lines": "99",
+          "what": "Guard (b) clean-core-level: Abweichung \"Plural — die Kennung heisst Level\" statt \"Level A–D (einzeln: Level A)\""
+        },
+        {
+          "lines": "120",
+          "what": "Guard (b) clean-core-level: Abweichung \"nachgestellt\" statt \"Level A–D (einzeln: Level A)\""
+        },
+        {
+          "lines": "417",
+          "what": "Guard (b) provenance-not-determined: Abweichung \"alter Text\" statt \"Not determined (im Satz: not determined)\""
+        }
+      ],
+      "decision": "update",
+      "reason": "Lebende Referenz, von Code und Specs zitiert.",
+      "effort": "L",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "referencedBy": [
+        "lib/board-deck.ts",
+        "lib/demo-project.ts",
+        "tests/project-command-boundary.spec.ts",
+        "tests/ui-hardening-b88c77b.spec.ts",
+        "tests/unearned-verdicts-guard.spec.ts",
+        "components/analyze/BusinessValueAudit.tsx"
+      ],
+      "measured": {
+        "lines": 549
+      }
+    },
+    {
+      "path": "docs/BACKLOG.md",
+      "kind": "docs",
+      "purpose": "Arbeitsprotokoll: was entschieden, gebaut und ausgeliefert wurde",
+      "audience": "Sonny, Agenten, Standmesser (scripts/roadmap/status.mjs)",
+      "saysToday": "Datierte Abschnitte seit Juli 2026, juengster zuerst.",
+      "wrongWith30": [
+        {
+          "lines": "aeltere Abschnitte",
+          "what": "Beschreiben den jeweiligen Stand; als Protokoll korrekt, als Produktbild nicht."
+        }
+      ],
+      "decision": "update",
+      "reason": "Bleibt am Ort (deploy.yml, status.mjs, Specs lesen ihn); mit 3.0 die abgeschlossenen Abschnitte vor 3.0 nach docs/archiv/BACKLOG-bis-3.0.md auslagern und im Index fuehren.",
+      "effort": "M",
+      "guard": {
+        "removed": "exempt",
+        "terms": "exempt",
+        "why": "Chronik: datierte Eintraege beschreiben, was damals galt, und werden nicht umgeschrieben."
+      },
+      "referencedBy": [
+        "app/api/send-approval-email/route.ts",
+        "lib/survey/definition.ts",
+        "scripts/roadmap/status.mjs",
+        "tests/copy-ci-guard.spec.ts",
+        "tests/survey-guard.spec.ts",
+        "tests/verdict-honesty-guard.spec.ts",
+        ".github/workflows/deploy.yml"
+      ],
+      "measured": {
+        "lines": 2044
+      }
+    },
+    {
+      "path": "docs/CLEAN_CORE_ENRICHMENT_CONCEPT.md",
+      "kind": "concept",
+      "purpose": "Konzept (01.07.2026): Nutzungsimport, Prozess-Mapping und ATC-Parsing aus den KIRO-Erkenntnissen",
+      "audience": "intern",
+      "saysToday": "Plan, die drei Funktionen in Upload und Analyze einzubauen, \"ohne die Struktur zu aendern\".",
+      "wrongWith30": [
+        {
+          "lines": "ganze Datei",
+          "what": "Usage- und ATC-Import sind gebaut (lib/abap/usage-*, ATC-Provenienz); Prozess-Mapping ist mit Phase 2 der Prozess aus dem Code — der Plan ist erledigt oder ueberholt."
+        }
+      ],
+      "decision": "archive",
+      "archiveTarget": "docs/archiv/konzepte/",
+      "reason": "Erledigtes Konzeptpapier (3.0.8: archivieren, nicht umschreiben). Pfad in tests/survey-guard.spec.ts:400 und lib/survey/definition.ts:18 mitziehen.",
+      "effort": "XS",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "referencedBy": [
+        "lib/survey/definition.ts",
+        "tests/survey-guard.spec.ts"
+      ],
+      "measured": {
+        "lines": 132
+      }
+    },
+    {
+      "path": "docs/CODEX-DELTA-2026-07-10-REMEDIATION-PART2.md",
+      "kind": "review",
+      "purpose": "Remediation-Nachweis Teil 2 (v2.2.0) zum Codex-Delta-Report",
+      "audience": "intern, Pruefer",
+      "saysToday": "Wie die aufgeschobenen Befunde in v2.2.0 behandelt wurden.",
+      "wrongWith30": [
+        {
+          "lines": "ganze Datei",
+          "what": "Momentaufnahme v2.2.0."
+        }
+      ],
+      "decision": "archive",
+      "archiveTarget": "docs/archiv/audits/",
+      "reason": "Erledigter Nachweis; bleibt als Beleg.",
+      "effort": "XS",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "measured": {
+        "lines": 45
+      }
+    },
+    {
+      "path": "docs/CODEX-DELTA-2026-07-10-REMEDIATION.md",
+      "kind": "review",
+      "purpose": "Remediation-Nachweis (v2.1.0) zum Codex-Delta-Report",
+      "audience": "intern, Pruefer",
+      "saysToday": "Gates G0-G2 in v2.1.0.",
+      "wrongWith30": [
+        {
+          "lines": "ganze Datei",
+          "what": "Momentaufnahme v2.1.0."
+        }
+      ],
+      "decision": "archive",
+      "archiveTarget": "docs/archiv/audits/",
+      "reason": "Erledigter Nachweis.",
+      "effort": "XS",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "measured": {
+        "lines": 45
+      }
+    },
+    {
+      "path": "docs/CONCEPT-ADMIN-USAGE-CONSOLE.md",
+      "kind": "concept",
+      "purpose": "Konzept Admin-Konsole: Verbrauch der freien Transformationen",
+      "audience": "intern",
+      "saysToday": "\"Phase 0 umgesetzt\"; Verbrauch je Stufe im 7-Stufen-Workflow.",
+      "wrongWith30": [
+        {
+          "lines": "82-85",
+          "what": "\"7-Stufen-Workflows kostet 6-7 Einheiten ... nach Stage 4 von 7 gesperrt\" — Stufen als Produktfluss."
+        }
+      ],
+      "decision": "archive",
+      "archiveTarget": "docs/archiv/konzepte/",
+      "reason": "Umgesetztes Konzept.",
+      "effort": "XS",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "measured": {
+        "lines": 339
+      }
+    },
+    {
+      "path": "docs/CONCEPT-DE-LOCALIZATION.md",
+      "kind": "concept",
+      "purpose": "Konzept deutsche Fassung (Stand v2.0.0, 06.07.2026, Entwurf zur Entscheidung)",
+      "audience": "intern, Sonny",
+      "saysToday": "Marktbegruendung und Umsetzung einer deutschen Oberflaeche fuer den Stufen-Workflow.",
+      "wrongWith30": [
+        {
+          "lines": "16, 47, 116, 156",
+          "what": "Ist-Stand und Umfang beziehen sich auf die sieben Stufenseiten; mit 3.0 gilt DESIGN.md §3 (Textschluessel) und ROADMAP §7 (deutsche Oberflaeche nach 3.0)."
+        },
+        {
+          "lines": "116",
+          "what": "Guard (a) seven-stages-as-product: nennt, was 3.0 entfernt"
+        }
+      ],
+      "decision": "archive",
+      "archiveTarget": "docs/archiv/konzepte/",
+      "reason": "Ueberholt durch DESIGN.md §3 und ROADMAP §7; wenn die deutsche Oberflaeche ansteht, entsteht ein neues Konzept auf dem Arbeitsraum. Pfad in tests/survey-guard.spec.ts:400 und lib/survey/definition.ts:17 mitziehen.",
+      "effort": "XS",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "referencedBy": [
+        "lib/survey/definition.ts",
+        "tests/survey-guard.spec.ts"
+      ],
+      "measured": {
+        "lines": 193
+      }
+    },
+    {
+      "path": "docs/CONCEPT-EINSICHT-PER-EINLADUNG.md",
+      "kind": "concept",
+      "purpose": "Konzept Einsicht per Einladung (Teil von 0.7)",
+      "audience": "intern",
+      "saysToday": "Kopf: \"nichts davon ist gebaut\".",
+      "wrongWith30": [
+        {
+          "lines": "3",
+          "what": "\"nichts davon ist gebaut\" — Einladungen sind seit 18.09.2026 implementiert (ROADMAP Phase 5)."
+        },
+        {
+          "lines": "18, 240",
+          "what": "Guard (a) not-built-roles: nennt, was 3.0 entfernt"
+        },
+        {
+          "lines": "49",
+          "what": "Guard (b) self-declaration: Abweichung \"deutsches Synonym\" statt \"a self-declaration, not a mandate\""
+        }
+      ],
+      "decision": "archive",
+      "archiveTarget": "docs/archiv/konzepte/",
+      "reason": "Umgesetztes Konzept; die Regeln stehen in CLAUDE.md, ROADMAP und im Code (lib/invitations.ts).",
+      "effort": "XS",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "measured": {
+        "lines": 246
+      }
+    },
+    {
+      "path": "docs/DATA-RETENTION.md",
+      "kind": "policy",
+      "purpose": "Aufbewahrung und Backup: was gespeichert wird, wie lange, wie geloescht",
+      "audience": "oeffentlich (Datenschutzseiten verlinken), Pruefer",
+      "saysToday": "Version 1.0; Firestore clean-core-eu, Loeschkaskade, Backups.",
+      "wrongWith30": [
+        {
+          "lines": "Datentabelle",
+          "what": "Gegen 3.0 abgleichen: Einladungen, Prozessmodelle, Arbeitsraum-Artefakte muessen in der Liste stehen (Stand pruefen, nicht erraten)."
+        }
+      ],
+      "decision": "update",
+      "reason": "Von app/datenschutz und retention-Skripten zitiert; bleibt am Ort.",
+      "effort": "S",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "referencedBy": [
+        "app/datenschutz/de/page.tsx",
+        "app/datenschutz/page.tsx",
+        "lib/rate-limit.ts",
+        "scripts/purge-audit-events.ts",
+        "scripts/retention-verify.ts",
+        "tests/audit-retention.spec.ts",
+        "tests/retention-verify.spec.ts"
+      ],
+      "measured": {
+        "lines": 123
+      }
+    },
+    {
+      "path": "docs/INCIDENT-RESPONSE.md",
+      "kind": "policy",
+      "purpose": "Incident-Response-Playbook",
+      "audience": "Betrieb, Pruefer",
+      "saysToday": "Rollen, Ablauf, Eskalation fuer einen Ein-Personen-Betrieb.",
+      "wrongWith30": [],
+      "decision": "keep",
+      "reason": "Nichts Produktbezogenes wird mit 3.0 falsch; bei der naechsten Uebung pruefen.",
+      "effort": "none",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "measured": {
+        "lines": 52
+      }
+    },
+    {
+      "path": "docs/LINKEDIN-CLEAN-CORE-EXPLAINED.md",
+      "kind": "marketing",
+      "purpose": "LinkedIn-Post zu /clean-core-explained (20.08.2026)",
+      "audience": "intern (Entwurf), Inhalt oeffentlich gepostet",
+      "saysToday": "Begleittext zum Explainer.",
+      "wrongWith30": [
+        {
+          "lines": "ganze Datei",
+          "what": "Einmalige Kommunikation, erledigt."
+        }
+      ],
+      "decision": "archive",
+      "archiveTarget": "docs/archiv/kommunikation/",
+      "reason": "Erledigte Kommunikation.",
+      "effort": "XS",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "measured": {
+        "lines": 219
+      }
+    },
+    {
+      "path": "docs/OPERATIONS.md",
+      "kind": "runbook",
+      "purpose": "Betrieb und Monitoring (Cloud Run, Health, Backups, Rules)",
+      "audience": "Betrieb, Agenten",
+      "saysToday": "Version 2.0.0; /api/health, Logs, Backups, Rules-Deploy.",
+      "wrongWith30": [
+        {
+          "lines": "3",
+          "what": "\"Version 2.0.0\" — Stand mit der App-Version abgleichen oder die Versionszeile streichen."
+        }
+      ],
+      "decision": "update",
+      "reason": "Aktives Runbook.",
+      "effort": "XS",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "measured": {
+        "lines": 75
+      }
+    },
+    {
+      "path": "docs/PLAN-FIRESTORE-MIGRATION.md",
+      "kind": "plan",
+      "purpose": "Plan: Firestore aus us-west1 nach europe-west1 (19.08.2026)",
+      "audience": "intern",
+      "saysToday": "\"Status: Entwurf, noch nichts ausgefuehrt\".",
+      "wrongWith30": [
+        {
+          "lines": "4",
+          "what": "Die Migration lief am 20.08.2026 — der Status ist schon heute falsch."
+        }
+      ],
+      "decision": "archive",
+      "archiveTarget": "docs/archiv/betrieb/",
+      "reason": "Ausgefuehrter Plan. Kommentar in scripts/reset-quota-v23-fairness.mjs:27 mitziehen.",
+      "effort": "XS",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "referencedBy": [
+        "scripts/reset-quota-v23-fairness.mjs"
+      ],
+      "measured": {
+        "lines": 236
+      }
+    },
+    {
+      "path": "docs/PRESERVATION-REGISTER.md",
+      "kind": "register",
+      "purpose": "Erhaltungsregister, menschliche Haelfte (1.1): was die sieben Stufen heute tun",
+      "audience": "Entwickler, Agenten; tests/preservation-register.spec.ts",
+      "saysToday": "Die sieben Stufen mit Eingaben/Ausgaben, damit der 3.0-Umbau nichts verliert.",
+      "wrongWith30": [
+        {
+          "lines": "23",
+          "what": "\"The 3.0 rebuild replaces the workspace around these seven stages\" wird Vergangenheit."
+        },
+        {
+          "lines": "193",
+          "what": "Dokumentationsstufe: \"the first 1,000 characters of generatedCode...\" — faellt mit 3.0.5 (Weg C)."
+        },
+        {
+          "lines": "193",
+          "what": "Guard (a) documentation-generator: nennt, was 3.0 entfernt"
+        },
+        {
+          "lines": "151",
+          "what": "Guard (b) provenance-other: Abweichung \"alter Text fuer Simulation\" statt \"Proven · Confirmed · Reconstructed · Imported · Simulation · Demonstrated · mock · Stale\""
+        }
+      ],
+      "decision": "update",
+      "reason": "Nach 3.0.3 (Register im neuen Arbeitsraum) auf den 3.0-Stand ziehen; bleibt, solange die Spec es liest.",
+      "effort": "S",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "referencedBy": [
+        "tests/preservation-register.spec.ts"
+      ],
+      "measured": {
+        "lines": 257
+      }
+    },
+    {
+      "path": "docs/QA-REVIEW-LOOP.md",
+      "kind": "runbook",
+      "purpose": "Runbook QA-Agent (Delta-Review und Smoke-Check auf dev)",
+      "audience": "Agenten, Sonny",
+      "saysToday": "Stand 15.09.2026, GPT-6 Luna, Ablauf, Widerruf.",
+      "wrongWith30": [
+        {
+          "lines": "3",
+          "what": "\"Stand 15.09.2026 · eingefuehrt mit v2.9.12\" — Stand bei 3.0 bestaetigen."
+        }
+      ],
+      "decision": "update",
+      "reason": "Aktives Runbook, von Workflows und Specs gelesen.",
+      "effort": "XS",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "referencedBy": [
+        "scripts/qa/await.mjs",
+        "scripts/qa/full-review.mjs",
+        "scripts/qa/health.mjs",
+        "scripts/qa/lib/config.mjs",
+        "scripts/qa/review.mjs",
+        "tests/qa-review-guard.spec.ts",
+        ".github/workflows/qa-review.yml",
+        ".github/workflows/qa-weekly-health.yml"
+      ],
+      "measured": {
+        "lines": 306
+      }
+    },
+    {
+      "path": "docs/ROADMAP.md",
+      "kind": "roadmap",
+      "purpose": "Die einzige verbindliche Roadmap (Fassung 2.8)",
+      "audience": "Sonny, Agenten, Standmesser",
+      "saysToday": "Phasen 0-8 bis 3.0, was nicht gebaut wird, Entscheidungen, Befundregister.",
+      "wrongWith30": [
+        {
+          "lines": "Kopf, §4",
+          "what": "Nach 3.0 ist \"bis 3.0\" erledigt; neue Fassung fuer \"Nach 3.0\" (§7), die 2.8 geht ins Archiv."
+        }
+      ],
+      "decision": "update",
+      "reason": "Wird mit 3.0 neu gefasst (nicht Teil dieses Vorbereitungsschritts). Quelle der Streichliste.",
+      "effort": "M",
+      "guard": {
+        "removed": "exempt",
+        "terms": "exempt",
+        "why": "Quelle der Streichungen und des Vokabulars: nennt das Entfernte, um es zu verbieten, und die alten Schreibweisen, um sie abzubilden."
+      },
+      "referencedBy": [
+        "app/(app)/admin/design-system/page.tsx",
+        "app/(app)/admin/new-project/page.tsx",
+        "app/(app)/admin/workspace/page.tsx",
+        "app/(app)/project/[projectId]/documentation/page.tsx",
+        "app/(app)/project/[projectId]/page.tsx",
+        "app/api/workspace-shell/route.ts",
+        "lib/abap/call-graph.ts",
+        "lib/abap/control-flow.ts",
+        "lib/abap/statement-reader.ts",
+        "lib/architecture-contract.ts",
+        "lib/assessment-profile.ts",
+        "lib/constants.ts",
+        "lib/cost-assumptions.ts",
+        "lib/generation-direction.ts",
+        "lib/input-manifest.ts",
+        "lib/invitation-email.ts",
+        "lib/invitations.ts",
+        "lib/model-stages.ts",
+        "lib/process-naming.ts",
+        "lib/project-decision.ts",
+        "lib/workspace-shell.ts",
+        "scripts/roadmap/status.mjs",
+        "scripts/security/inbox.mjs",
+        "scripts/ux/inbox.mjs",
+        "scripts/ux/lib/register.mjs",
+        "scripts/ux/register.mjs",
+        "tests/abap-call-graph.spec.ts",
+        "tests/abap-control-flow.spec.ts",
+        "tests/korpus-facets.spec.ts",
+        "tests/mockup-roadmap-guard.spec.ts",
+        "tests/qa-review-guard.spec.ts",
+        "tests/roadmap-status-guard.spec.ts",
+        "tests/security-audit-guard.spec.ts",
+        "tests/signavio-claims-guard.spec.ts",
+        "tests/ux-review-guard.spec.ts",
+        "tests/view-attribute-guard.spec.ts",
+        "tests/workspace-shell-guard.spec.ts",
+        ".github/workflows/usage-report.yml",
+        "components/InviteReaderDialog.tsx",
+        "components/workspace/NewProject.tsx",
+        "components/workspace/ShellSwitch.tsx",
+        "components/workspace/WorkspaceShell.tsx",
+        "hooks/useWorkspaceRevision.ts"
+      ],
+      "measured": {
+        "lines": 2261
+      }
+    },
+    {
+      "path": "docs/S4_LIVE_TENANT_BRIDGE.md",
+      "kind": "docs",
+      "purpose": "Feature-Doku S/4HANA Live Tenant Bridge (BYOT)",
+      "audience": "Nutzer mit Tenant, Pruefer",
+      "saysToday": "Version 1.6.0 vom 10.06.2026, \"Production-Ready (Pilot)\", Ausfuehrung gesperrt seit 15.09.",
+      "wrongWith30": [
+        {
+          "lines": "2-4",
+          "what": "Version 1.6.0 / 10.06.2026 / \"Production-Ready (Pilot)\" — Pilot gibt es nicht mehr, Stand veraltet."
+        },
+        {
+          "lines": "91",
+          "what": "\"AI-powered test case generation\" — DESIGN.md §3.1 Blockliste."
+        },
+        {
+          "lines": "410",
+          "what": "\"Navigate to your project -> Stage 5: Testing\" — ab 3.0 Werkzeug Testing aus dem Arbeitsraum."
+        },
+        {
+          "lines": "91",
+          "what": "Guard (a) pilot-banner: nennt, was 3.0 entfernt"
+        },
+        {
+          "lines": "251",
+          "what": "Guard (b) provenance-model-proposal: Abweichung \"alter Badge-Text\" statt \"Model proposal\""
+        }
+      ],
+      "decision": "update",
+      "reason": "Feature besteht (gesperrt), die Doku bleibt noetig.",
+      "effort": "M",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "measured": {
+        "lines": 525
+      }
+    },
+    {
+      "path": "docs/SCREENING-GCP-ALTLASTEN.md",
+      "kind": "plan",
+      "purpose": "Bestandsaufnahme der GCP-Ressourcen aus der Prototyp-Phase (20.08.2026)",
+      "audience": "intern",
+      "saysToday": "\"Es wurde noch nichts geloescht\"; Ressourcenliste mit Loeschbefehlen.",
+      "wrongWith30": [
+        {
+          "lines": "ganze Datei",
+          "what": "Momentaufnahme; nennt interne Ressourcennamen in einem oeffentlichen Repo."
+        }
+      ],
+      "decision": "archive",
+      "archiveTarget": "docs/archiv/betrieb/",
+      "reason": "Erledigte oder liegengebliebene Momentaufnahme — vorher mit Sonny klaeren, ob offene Punkte in die Roadmap gehoeren, und ob die Ressourcennamen oeffentlich bleiben sollen.",
+      "effort": "S",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "measured": {
+        "lines": 193
+      }
+    },
+    {
+      "path": "docs/SECURE_CODE_EXPORT.md",
+      "kind": "runbook",
+      "purpose": "Ablauf fuer einen bereinigten Quellcode-Export (Audits)",
+      "audience": "Betrieb, externe Pruefer",
+      "saysToday": "Ausschlussliste, Schritte.",
+      "wrongWith30": [
+        {
+          "lines": "—",
+          "what": "Ausschlussliste gegen die heutige Struktur pruefen (scratch/, tmp/, dist/)."
+        }
+      ],
+      "decision": "update",
+      "reason": "Ablauf bleibt gueltig; nur Stand.",
+      "effort": "XS",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "measured": {
+        "lines": 121
+      }
+    },
+    {
+      "path": "docs/SECURITY-AUDIT-AGENT.md",
+      "kind": "runbook",
+      "purpose": "Runbook Security-Agent (Vollaudit jeder main-Version)",
+      "audience": "Agenten, Sonny",
+      "saysToday": "Stand 15.09.2026, DeepSeek V4.1 Flash, CISO plus fuenf Consultants.",
+      "wrongWith30": [
+        {
+          "lines": "3",
+          "what": "Stand bei 3.0 bestaetigen (Modell, Budget)."
+        }
+      ],
+      "decision": "update",
+      "reason": "Aktives Runbook.",
+      "effort": "XS",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "referencedBy": [
+        "scripts/security/audit.mjs",
+        "scripts/security/lib/team.mjs",
+        "tests/security-audit-guard.spec.ts",
+        ".github/workflows/security-audit.yml"
+      ],
+      "measured": {
+        "lines": 191
+      }
+    },
+    {
+      "path": "docs/SECURITY-BACKLOG.md",
+      "kind": "review",
+      "purpose": "Sicherheits-Backlog aus dem Audit vom 27.06.2026",
+      "audience": "intern",
+      "saysToday": "Phase 2 BYOK Secret Store (F-01) usw.",
+      "wrongWith30": [
+        {
+          "lines": "ganze Datei",
+          "what": "Ueberholt durch SECURITY.md §2 und das versiegelte Register (scripts/security/register.mjs)."
+        }
+      ],
+      "decision": "archive",
+      "archiveTarget": "docs/archiv/audits/",
+      "reason": "Erledigtes Pruefpapier.",
+      "effort": "XS",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "measured": {
+        "lines": 108
+      }
+    },
+    {
+      "path": "docs/SEO-GEO-PLAN-2026-07.md",
+      "kind": "plan",
+      "purpose": "SEO/GEO-Plan und Changelog vom 15.07.2026",
+      "audience": "intern",
+      "saysToday": "Diagnose aus Search Console, Massnahmen.",
+      "wrongWith30": [
+        {
+          "lines": "ganze Datei",
+          "what": "Ersetzt durch 3.0.6 (Search-Console-Stand 15.09., Suchanfragen, Seiten mit Reichweite)."
+        },
+        {
+          "lines": "83",
+          "what": "Guard (b) clean-core-level: Abweichung \"Plural — die Kennung heisst Level\" statt \"Level A–D (einzeln: Level A)\""
+        }
+      ],
+      "decision": "archive",
+      "archiveTarget": "docs/archiv/betrieb/",
+      "reason": "Erledigter Plan.",
+      "effort": "XS",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "measured": {
+        "lines": 118
+      }
+    },
+    {
+      "path": "docs/UX-REVIEW-AGENT.md",
+      "kind": "runbook",
+      "purpose": "Runbook UX-Agent (Muse Spark 1.3)",
+      "audience": "Agenten, Sonny",
+      "saysToday": "Ablauf, Screenshots desktop/phone/dark plus Mockups 2.7.",
+      "wrongWith30": [
+        {
+          "lines": "28",
+          "what": "\"3 Screens im Dark Mode, 6 Ansichten der Mockups 2.7\" — Dark Mode entfaellt; nach 3.0 keine Mockups mehr als Vergleich."
+        },
+        {
+          "lines": "28",
+          "what": "Guard (a) dark-mode: nennt, was 3.0 entfernt"
+        }
+      ],
+      "decision": "update",
+      "reason": "Aktives Runbook.",
+      "effort": "S",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "referencedBy": [
+        "scripts/ux/design-review.mjs",
+        "scripts/ux/lib/config.mjs",
+        "scripts/ux/review.mjs",
+        "tests/capture-screens.spec.ts",
+        "tests/ux-review-guard.spec.ts",
+        ".github/workflows/ux-review.yml"
+      ],
+      "measured": {
+        "lines": 161
+      }
+    },
+    {
+      "path": "docs/WEEK2_AUDIT_INTEGRITY_PLAN.md",
+      "kind": "plan",
+      "purpose": "Umsetzungsplan \"Week 2: Audit Integrity\" (Juli 2026)",
+      "audience": "intern",
+      "saysToday": "Runs-Collection, HMAC, Audit-Pack.",
+      "wrongWith30": [
+        {
+          "lines": "ganze Datei",
+          "what": "Umgesetzt (Trust Chain in ARCHITECTURE §3, SECURITY §14)."
+        }
+      ],
+      "decision": "archive",
+      "archiveTarget": "docs/archiv/konzepte/",
+      "reason": "Erledigter Plan.",
+      "effort": "XS",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "measured": {
+        "lines": 164
+      }
+    },
+    {
+      "path": "docs/codex-audit-v119.md",
+      "kind": "review",
+      "purpose": "Externes Code-Review/Security-Audit v1.19.0 (01.07.2026)",
+      "audience": "intern",
+      "saysToday": "Befunde und Enterprise-Werteinschaetzung zu v1.19.",
+      "wrongWith30": [
+        {
+          "lines": "3-4",
+          "what": "Nennt einen lokalen Pfad (C:\\Users\\felix\\Documents\\Codex\\...)."
+        },
+        {
+          "lines": "ganze Datei",
+          "what": "Stand v1.19."
+        },
+        {
+          "lines": "503",
+          "what": "Guard (a) not-built-tenancy: nennt, was 3.0 entfernt"
+        },
+        {
+          "lines": "1",
+          "what": "Guard (b) clean-core-concept: Abweichung \"zusammengeschrieben\" statt \"Clean Core\""
+        },
+        {
+          "lines": "496",
+          "what": "Guard (b) provenance-other: Abweichung \"alte Badges\" statt \"Proven · Confirmed · Reconstructed · Imported · Simulation · Demonstrated · mock · Stale\""
+        }
+      ],
+      "decision": "archive",
+      "archiveTarget": "docs/archiv/audits/",
+      "reason": "Erledigtes Pruefpapier.",
+      "effort": "XS",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "measured": {
+        "lines": 521
+      }
+    },
+    {
+      "path": "docs/design/decisions.md",
+      "kind": "log",
+      "purpose": "ADR-Log zu DESIGN.md",
+      "audience": "Entwickler, UX-Agent",
+      "saysToday": "ADR-001 ff., Eintraege werden nie geloescht, nur ersetzt.",
+      "wrongWith30": [],
+      "decision": "keep",
+      "reason": "Entscheidungslog: Eintraege sind datiert und bleiben; neue ADRs kommen dazu.",
+      "effort": "none",
+      "guard": {
+        "removed": "exempt",
+        "terms": "exempt",
+        "why": "Quelle der Streichungen und des Vokabulars: nennt das Entfernte, um es zu verbieten, und die alten Schreibweisen, um sie abzubilden."
+      },
+      "referencedBy": [
+        "lib/cost-assumptions.ts"
+      ],
+      "measured": {
+        "lines": 65
+      }
+    },
+    {
+      "path": "docs/drafts/README-3.0.md",
+      "kind": "draft",
+      "purpose": "Entwurf der README fuer 3.0 (Vorbereitung 3.0.8)",
+      "audience": "Sonny (Freigabe), danach oeffentlich als README.md",
+      "saysToday": "Das 3.0-Produktbild im Vokabular aus docs/registers/vocabulary.json.",
+      "wrongWith30": [],
+      "decision": "delete",
+      "reason": "Wird mit 3.0 zur README.md und faellt dann weg.",
+      "effort": "XS",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "measured": {
+        "lines": 110
+      }
+    },
+    {
+      "path": "docs/emails/clean-core-explained.md",
+      "kind": "email",
+      "purpose": "Community-Mail \"Clean Core explained\" (Text-Teil, Versand 20.08.2026)",
+      "audience": "Empfaenger der Mail; Vorlage fuer scripts/send-community-mail.ts",
+      "saysToday": "\"all seven stages\" usw. — Stand August.",
+      "wrongWith30": [
+        {
+          "lines": "64",
+          "what": "\"sign-in, analysis, all seven stages, exports\" — Stufen als Produkt."
+        }
+      ],
+      "decision": "archive",
+      "archiveTarget": "docs/archiv/emails/",
+      "reason": "Versandte Mail; zusammen mit der .html-Schwester archivieren und die Kampagne in scripts/send-community-mail.ts austragen (liest docs/emails/<template>.md/.html).",
+      "effort": "S",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "measured": {
+        "lines": 152
+      }
+    },
+    {
+      "path": "docs/emails/community-update-v2.3.md",
+      "kind": "email",
+      "purpose": "Community-Mail zum Release v2.3 (Text-Teil)",
+      "audience": "Empfaenger; Vorlage fuer scripts/send-community-mail.ts",
+      "saysToday": "Neuerungen v2.3 im Stufen-Workflow.",
+      "wrongWith30": [
+        {
+          "lines": "58-70",
+          "what": "Beschreibt die Stufen als Produktfluss."
+        },
+        {
+          "lines": "58",
+          "what": "Guard (a) seven-stages-as-product: nennt, was 3.0 entfernt"
+        }
+      ],
+      "decision": "archive",
+      "archiveTarget": "docs/archiv/emails/",
+      "reason": "Versandte Mail; wie oben.",
+      "effort": "S",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "measured": {
+        "lines": 138
+      }
+    },
+    {
+      "path": "docs/qa/reviewer-brief.md",
+      "kind": "agent-brief",
+      "purpose": "System-Brief des QA-Agenten",
+      "audience": "QA-Modell (OpenRouter), Security-Pipeline",
+      "saysToday": "\"carries it through a seven-stage workflow\"; Stack, Invarianten.",
+      "wrongWith30": [
+        {
+          "lines": "3-5",
+          "what": "\"carries it through a seven-stage workflow\" — mit 3.0 Arbeitsraum mit drei Sichten, Stufen als Werkzeuge."
+        },
+        {
+          "lines": "71",
+          "what": "Reihenfolge der Stufen — bleibt als Werkzeug-Invariante, Wortlaut anpassen."
+        },
+        {
+          "lines": "5",
+          "what": "Guard (a) seven-stages-as-product: nennt, was 3.0 entfernt"
+        },
+        {
+          "lines": "49",
+          "what": "Guard (b) provenance-other: Abweichung \"alter Text fuer Simulation\" statt \"Proven · Confirmed · Reconstructed · Imported · Simulation · Demonstrated · mock · Stale\""
+        }
+      ],
+      "decision": "update",
+      "reason": "Das Modell prueft gegen dieses Produktbild; ein falsches Bild erzeugt falsche Befunde.",
+      "effort": "S",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "referencedBy": [
+        "scripts/qa/lib/prompt.mjs",
+        "scripts/security/lib/surface.mjs",
+        "tests/qa-review-guard.spec.ts",
+        "tests/security-audit-guard.spec.ts"
+      ],
+      "measured": {
+        "lines": 111
+      }
+    },
+    {
+      "path": "docs/reviews/2026-08-26-BENEFIT-NEXT-STEPS.md",
+      "kind": "review",
+      "purpose": "Naechste Schritte aus der Benefit-Review 26.08.",
+      "audience": "intern: Sonny und die Agenten, als Beleg fuer Befund-IDs",
+      "saysToday": "Rohausgabe oder Triage eines Modell-Reviews vom 26.-28.08.2026 gegen v2.4/v2.5 — beschreibt das Produkt dieses Standes (Stufen, HUD, Pilot).",
+      "wrongWith30": [
+        {
+          "lines": "ganze Datei",
+          "what": "Momentaufnahme eines Standes vor Fassung 2.8; die Befunde sind in ROADMAP.md und BACKLOG.md uebernommen oder erledigt."
+        }
+      ],
+      "decision": "archive",
+      "archiveTarget": "docs/archiv/reviews-2026-08/",
+      "reason": "Erledigtes Pruefpapier. components/BenefitCard.tsx zitiert den Pfad im Kommentar — mitziehen.",
+      "effort": "XS",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "referencedBy": [
+        "components/BenefitCard.tsx"
+      ],
+      "measured": {
+        "lines": 270
+      }
+    },
+    {
+      "path": "docs/reviews/2026-08-26-TRIAGE.md",
+      "kind": "review",
+      "purpose": "Triage der Grok-4.6-Reviews 26.08.",
+      "audience": "intern: Sonny und die Agenten, als Beleg fuer Befund-IDs",
+      "saysToday": "Rohausgabe oder Triage eines Modell-Reviews vom 26.-28.08.2026 gegen v2.4/v2.5 — beschreibt das Produkt dieses Standes (Stufen, HUD, Pilot).",
+      "wrongWith30": [
+        {
+          "lines": "ganze Datei",
+          "what": "Momentaufnahme eines Standes vor Fassung 2.8; die Befunde sind in ROADMAP.md und BACKLOG.md uebernommen oder erledigt."
+        }
+      ],
+      "decision": "archive",
+      "archiveTarget": "docs/archiv/reviews-2026-08/",
+      "reason": "Erledigtes Pruefpapier: wird nicht umgeschrieben (3.0.8), bleibt als Beleg fuer die zitierten Befunde erreichbar.",
+      "effort": "XS",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "measured": {
+        "lines": 158
+      }
+    },
+    {
+      "path": "docs/reviews/2026-08-26-grok-4.6-benefit-wow-raw.md",
+      "kind": "review",
+      "purpose": "Rohausgabe Grok 4.6, Benefit/Wow",
+      "audience": "intern: Sonny und die Agenten, als Beleg fuer Befund-IDs",
+      "saysToday": "Rohausgabe oder Triage eines Modell-Reviews vom 26.-28.08.2026 gegen v2.4/v2.5 — beschreibt das Produkt dieses Standes (Stufen, HUD, Pilot).",
+      "wrongWith30": [
+        {
+          "lines": "ganze Datei",
+          "what": "Momentaufnahme eines Standes vor Fassung 2.8; die Befunde sind in ROADMAP.md und BACKLOG.md uebernommen oder erledigt."
+        }
+      ],
+      "decision": "archive",
+      "archiveTarget": "docs/archiv/reviews-2026-08/",
+      "reason": "Erledigtes Pruefpapier: wird nicht umgeschrieben (3.0.8), bleibt als Beleg fuer die zitierten Befunde erreichbar.",
+      "effort": "XS",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "measured": {
+        "lines": 100
+      }
+    },
+    {
+      "path": "docs/reviews/2026-08-26-grok-4.6-engine.md",
+      "kind": "review",
+      "purpose": "Grok 4.6, Engine",
+      "audience": "intern: Sonny und die Agenten, als Beleg fuer Befund-IDs",
+      "saysToday": "Rohausgabe oder Triage eines Modell-Reviews vom 26.-28.08.2026 gegen v2.4/v2.5 — beschreibt das Produkt dieses Standes (Stufen, HUD, Pilot).",
+      "wrongWith30": [
+        {
+          "lines": "ganze Datei",
+          "what": "Momentaufnahme eines Standes vor Fassung 2.8; die Befunde sind in ROADMAP.md und BACKLOG.md uebernommen oder erledigt."
+        }
+      ],
+      "decision": "archive",
+      "archiveTarget": "docs/archiv/reviews-2026-08/",
+      "reason": "Erledigtes Pruefpapier: wird nicht umgeschrieben (3.0.8), bleibt als Beleg fuer die zitierten Befunde erreichbar.",
+      "effort": "XS",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "measured": {
+        "lines": 142
+      }
+    },
+    {
+      "path": "docs/reviews/2026-08-26-grok-4.6-meta.md",
+      "kind": "review",
+      "purpose": "Grok 4.6, Meta",
+      "audience": "intern: Sonny und die Agenten, als Beleg fuer Befund-IDs",
+      "saysToday": "Rohausgabe oder Triage eines Modell-Reviews vom 26.-28.08.2026 gegen v2.4/v2.5 — beschreibt das Produkt dieses Standes (Stufen, HUD, Pilot).",
+      "wrongWith30": [
+        {
+          "lines": "ganze Datei",
+          "what": "Momentaufnahme eines Standes vor Fassung 2.8; die Befunde sind in ROADMAP.md und BACKLOG.md uebernommen oder erledigt."
+        },
+        {
+          "lines": "89",
+          "what": "Guard (b) clean-core-level: Abweichung \"nachgestellt\" statt \"Level A–D (einzeln: Level A)\""
+        }
+      ],
+      "decision": "archive",
+      "archiveTarget": "docs/archiv/reviews-2026-08/",
+      "reason": "Erledigtes Pruefpapier: wird nicht umgeschrieben (3.0.8), bleibt als Beleg fuer die zitierten Befunde erreichbar.",
+      "effort": "XS",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "measured": {
+        "lines": 96
+      }
+    },
+    {
+      "path": "docs/reviews/2026-08-26-grok-4.6-security.md",
+      "kind": "review",
+      "purpose": "Grok 4.6, Security",
+      "audience": "intern: Sonny und die Agenten, als Beleg fuer Befund-IDs",
+      "saysToday": "Rohausgabe oder Triage eines Modell-Reviews vom 26.-28.08.2026 gegen v2.4/v2.5 — beschreibt das Produkt dieses Standes (Stufen, HUD, Pilot).",
+      "wrongWith30": [
+        {
+          "lines": "ganze Datei",
+          "what": "Momentaufnahme eines Standes vor Fassung 2.8; die Befunde sind in ROADMAP.md und BACKLOG.md uebernommen oder erledigt."
+        }
+      ],
+      "decision": "archive",
+      "archiveTarget": "docs/archiv/reviews-2026-08/",
+      "reason": "Erledigtes Pruefpapier: wird nicht umgeschrieben (3.0.8), bleibt als Beleg fuer die zitierten Befunde erreichbar.",
+      "effort": "XS",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "measured": {
+        "lines": 118
+      }
+    },
+    {
+      "path": "docs/reviews/2026-08-26-grok-4.6-ui1.md",
+      "kind": "review",
+      "purpose": "Grok 4.6, UI Teil 1",
+      "audience": "intern: Sonny und die Agenten, als Beleg fuer Befund-IDs",
+      "saysToday": "Rohausgabe oder Triage eines Modell-Reviews vom 26.-28.08.2026 gegen v2.4/v2.5 — beschreibt das Produkt dieses Standes (Stufen, HUD, Pilot).",
+      "wrongWith30": [
+        {
+          "lines": "ganze Datei",
+          "what": "Momentaufnahme eines Standes vor Fassung 2.8; die Befunde sind in ROADMAP.md und BACKLOG.md uebernommen oder erledigt."
+        },
+        {
+          "lines": "49",
+          "what": "Guard (b) stages-as-tools: Abweichung \"die Stufe heisst Economics; TCO ist nur der Ordner\" statt \"the seven stages as tools: Analyze · Design · Transformation · Documentation · Testing · Economics · Delivery\""
+        },
+        {
+          "lines": "83",
+          "what": "Guard (b) clean-core-concept: Abweichung \"mit Bindestrich, aber ohne .io — liest sich wie der Produktname\" statt \"Clean Core\""
+        }
+      ],
+      "decision": "archive",
+      "archiveTarget": "docs/archiv/reviews-2026-08/",
+      "reason": "Erledigtes Pruefpapier: wird nicht umgeschrieben (3.0.8), bleibt als Beleg fuer die zitierten Befunde erreichbar.",
+      "effort": "XS",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "measured": {
+        "lines": 150
+      }
+    },
+    {
+      "path": "docs/reviews/2026-08-26-grok-4.6-ui2.md",
+      "kind": "review",
+      "purpose": "Grok 4.6, UI Teil 2",
+      "audience": "intern: Sonny und die Agenten, als Beleg fuer Befund-IDs",
+      "saysToday": "Rohausgabe oder Triage eines Modell-Reviews vom 26.-28.08.2026 gegen v2.4/v2.5 — beschreibt das Produkt dieses Standes (Stufen, HUD, Pilot).",
+      "wrongWith30": [
+        {
+          "lines": "ganze Datei",
+          "what": "Momentaufnahme eines Standes vor Fassung 2.8; die Befunde sind in ROADMAP.md und BACKLOG.md uebernommen oder erledigt."
+        },
+        {
+          "lines": "84",
+          "what": "Guard (a) documentation-generator: nennt, was 3.0 entfernt"
+        }
+      ],
+      "decision": "archive",
+      "archiveTarget": "docs/archiv/reviews-2026-08/",
+      "reason": "Erledigtes Pruefpapier: wird nicht umgeschrieben (3.0.8), bleibt als Beleg fuer die zitierten Befunde erreichbar.",
+      "effort": "XS",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "measured": {
+        "lines": 125
+      }
+    },
+    {
+      "path": "docs/reviews/2026-08-26-grok-4.6-ui3.md",
+      "kind": "review",
+      "purpose": "Grok 4.6, UI Teil 3",
+      "audience": "intern: Sonny und die Agenten, als Beleg fuer Befund-IDs",
+      "saysToday": "Rohausgabe oder Triage eines Modell-Reviews vom 26.-28.08.2026 gegen v2.4/v2.5 — beschreibt das Produkt dieses Standes (Stufen, HUD, Pilot).",
+      "wrongWith30": [
+        {
+          "lines": "ganze Datei",
+          "what": "Momentaufnahme eines Standes vor Fassung 2.8; die Befunde sind in ROADMAP.md und BACKLOG.md uebernommen oder erledigt."
+        },
+        {
+          "lines": "80",
+          "what": "Guard (b) layers: Abweichung \"\\bStandard Fit\\b\" statt \"layers: Need & process · Standard fit · Costs & assumptions · Architecture & dependencies · Evidence & controls · Changes & commitments\""
+        },
+        {
+          "lines": "182",
+          "what": "Guard (b) clean-core-concept: Abweichung \"mit Bindestrich, aber ohne .io — liest sich wie der Produktname\" statt \"Clean Core\""
+        }
+      ],
+      "decision": "archive",
+      "archiveTarget": "docs/archiv/reviews-2026-08/",
+      "reason": "Erledigtes Pruefpapier: wird nicht umgeschrieben (3.0.8), bleibt als Beleg fuer die zitierten Befunde erreichbar.",
+      "effort": "XS",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "measured": {
+        "lines": 220
+      }
+    },
+    {
+      "path": "docs/reviews/2026-08-27-EXTERNAL-AUDIT-V2.md",
+      "kind": "review",
+      "purpose": "Externes Audit V2 (27.08.)",
+      "audience": "intern: Sonny und die Agenten, als Beleg fuer Befund-IDs",
+      "saysToday": "Rohausgabe oder Triage eines Modell-Reviews vom 26.-28.08.2026 gegen v2.4/v2.5 — beschreibt das Produkt dieses Standes (Stufen, HUD, Pilot).",
+      "wrongWith30": [
+        {
+          "lines": "ganze Datei",
+          "what": "Momentaufnahme eines Standes vor Fassung 2.8; die Befunde sind in ROADMAP.md und BACKLOG.md uebernommen oder erledigt."
+        },
+        {
+          "lines": "116",
+          "what": "Guard (a) signavio-unverified: nennt, was 3.0 entfernt"
+        },
+        {
+          "lines": "201",
+          "what": "Guard (b) clean-core-concept: Abweichung \"mit Bindestrich, aber ohne .io — liest sich wie der Produktname\" statt \"Clean Core\""
+        }
+      ],
+      "decision": "archive",
+      "archiveTarget": "docs/archiv/reviews-2026-08/",
+      "reason": "Erledigtes Pruefpapier: wird nicht umgeschrieben (3.0.8), bleibt als Beleg fuer die zitierten Befunde erreichbar.",
+      "effort": "XS",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "measured": {
+        "lines": 362
+      }
+    },
+    {
+      "path": "docs/reviews/2026-08-27-GLM-INDEX.md",
+      "kind": "review",
+      "purpose": "Index der GLM-5.3-Vollreview",
+      "audience": "intern: Sonny und die Agenten, als Beleg fuer Befund-IDs",
+      "saysToday": "Rohausgabe oder Triage eines Modell-Reviews vom 26.-28.08.2026 gegen v2.4/v2.5 — beschreibt das Produkt dieses Standes (Stufen, HUD, Pilot).",
+      "wrongWith30": [
+        {
+          "lines": "ganze Datei",
+          "what": "Momentaufnahme eines Standes vor Fassung 2.8; die Befunde sind in ROADMAP.md und BACKLOG.md uebernommen oder erledigt."
+        }
+      ],
+      "decision": "archive",
+      "archiveTarget": "docs/archiv/reviews-2026-08/",
+      "reason": "Erledigtes Pruefpapier: wird nicht umgeschrieben (3.0.8), bleibt als Beleg fuer die zitierten Befunde erreichbar.",
+      "effort": "XS",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "measured": {
+        "lines": 122
+      }
+    },
+    {
+      "path": "docs/reviews/2026-08-27-GLM-TRIAGE.md",
+      "kind": "review",
+      "purpose": "Triage der GLM-Review",
+      "audience": "intern: Sonny und die Agenten, als Beleg fuer Befund-IDs",
+      "saysToday": "Rohausgabe oder Triage eines Modell-Reviews vom 26.-28.08.2026 gegen v2.4/v2.5 — beschreibt das Produkt dieses Standes (Stufen, HUD, Pilot).",
+      "wrongWith30": [
+        {
+          "lines": "ganze Datei",
+          "what": "Momentaufnahme eines Standes vor Fassung 2.8; die Befunde sind in ROADMAP.md und BACKLOG.md uebernommen oder erledigt."
+        },
+        {
+          "lines": "289",
+          "what": "Guard (b) provenance-other: Abweichung \"alte Badges\" statt \"Proven · Confirmed · Reconstructed · Imported · Simulation · Demonstrated · mock · Stale\""
+        }
+      ],
+      "decision": "archive",
+      "archiveTarget": "docs/archiv/reviews-2026-08/",
+      "reason": "Erledigtes Pruefpapier: wird nicht umgeschrieben (3.0.8), bleibt als Beleg fuer die zitierten Befunde erreichbar.",
+      "effort": "XS",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "measured": {
+        "lines": 347
+      }
+    },
+    {
+      "path": "docs/reviews/2026-08-27-benefit-consult-glm-5.3.md",
+      "kind": "review",
+      "purpose": "Benefit-Beratung GLM 5.3",
+      "audience": "intern: Sonny und die Agenten, als Beleg fuer Befund-IDs",
+      "saysToday": "Rohausgabe oder Triage eines Modell-Reviews vom 26.-28.08.2026 gegen v2.4/v2.5 — beschreibt das Produkt dieses Standes (Stufen, HUD, Pilot).",
+      "wrongWith30": [
+        {
+          "lines": "ganze Datei",
+          "what": "Momentaufnahme eines Standes vor Fassung 2.8; die Befunde sind in ROADMAP.md und BACKLOG.md uebernommen oder erledigt."
+        }
+      ],
+      "decision": "archive",
+      "archiveTarget": "docs/archiv/reviews-2026-08/",
+      "reason": "Erledigtes Pruefpapier: wird nicht umgeschrieben (3.0.8), bleibt als Beleg fuer die zitierten Befunde erreichbar.",
+      "effort": "XS",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "measured": {
+        "lines": 92
+      }
+    },
+    {
+      "path": "docs/reviews/2026-08-27-benefit-consult-grok-4.20.md",
+      "kind": "review",
+      "purpose": "Benefit-Beratung Grok 4.20",
+      "audience": "intern: Sonny und die Agenten, als Beleg fuer Befund-IDs",
+      "saysToday": "Rohausgabe oder Triage eines Modell-Reviews vom 26.-28.08.2026 gegen v2.4/v2.5 — beschreibt das Produkt dieses Standes (Stufen, HUD, Pilot).",
+      "wrongWith30": [
+        {
+          "lines": "ganze Datei",
+          "what": "Momentaufnahme eines Standes vor Fassung 2.8; die Befunde sind in ROADMAP.md und BACKLOG.md uebernommen oder erledigt."
+        }
+      ],
+      "decision": "archive",
+      "archiveTarget": "docs/archiv/reviews-2026-08/",
+      "reason": "Erledigtes Pruefpapier: wird nicht umgeschrieben (3.0.8), bleibt als Beleg fuer die zitierten Befunde erreichbar.",
+      "effort": "XS",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "measured": {
+        "lines": 129
+      }
+    },
+    {
+      "path": "docs/reviews/2026-08-27-benefit-consult-r2-glm-5.3.md",
+      "kind": "review",
+      "purpose": "Benefit-Beratung Runde 2, GLM 5.3",
+      "audience": "intern: Sonny und die Agenten, als Beleg fuer Befund-IDs",
+      "saysToday": "Rohausgabe oder Triage eines Modell-Reviews vom 26.-28.08.2026 gegen v2.4/v2.5 — beschreibt das Produkt dieses Standes (Stufen, HUD, Pilot).",
+      "wrongWith30": [
+        {
+          "lines": "ganze Datei",
+          "what": "Momentaufnahme eines Standes vor Fassung 2.8; die Befunde sind in ROADMAP.md und BACKLOG.md uebernommen oder erledigt."
+        }
+      ],
+      "decision": "archive",
+      "archiveTarget": "docs/archiv/reviews-2026-08/",
+      "reason": "Erledigtes Pruefpapier: wird nicht umgeschrieben (3.0.8), bleibt als Beleg fuer die zitierten Befunde erreichbar.",
+      "effort": "XS",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "measured": {
+        "lines": 64
+      }
+    },
+    {
+      "path": "docs/reviews/2026-08-27-benefit-consult-r2-grok-4.20.md",
+      "kind": "review",
+      "purpose": "Benefit-Beratung Runde 2, Grok 4.20",
+      "audience": "intern: Sonny und die Agenten, als Beleg fuer Befund-IDs",
+      "saysToday": "Rohausgabe oder Triage eines Modell-Reviews vom 26.-28.08.2026 gegen v2.4/v2.5 — beschreibt das Produkt dieses Standes (Stufen, HUD, Pilot).",
+      "wrongWith30": [
+        {
+          "lines": "ganze Datei",
+          "what": "Momentaufnahme eines Standes vor Fassung 2.8; die Befunde sind in ROADMAP.md und BACKLOG.md uebernommen oder erledigt."
+        }
+      ],
+      "decision": "archive",
+      "archiveTarget": "docs/archiv/reviews-2026-08/",
+      "reason": "Erledigtes Pruefpapier: wird nicht umgeschrieben (3.0.8), bleibt als Beleg fuer die zitierten Befunde erreichbar.",
+      "effort": "XS",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "measured": {
+        "lines": 44
+      }
+    },
+    {
+      "path": "docs/reviews/2026-08-27-benefit-visual-glm-5v.md",
+      "kind": "review",
+      "purpose": "Visuelle Benefit-Review GLM 5V",
+      "audience": "intern: Sonny und die Agenten, als Beleg fuer Befund-IDs",
+      "saysToday": "Rohausgabe oder Triage eines Modell-Reviews vom 26.-28.08.2026 gegen v2.4/v2.5 — beschreibt das Produkt dieses Standes (Stufen, HUD, Pilot).",
+      "wrongWith30": [
+        {
+          "lines": "ganze Datei",
+          "what": "Momentaufnahme eines Standes vor Fassung 2.8; die Befunde sind in ROADMAP.md und BACKLOG.md uebernommen oder erledigt."
+        }
+      ],
+      "decision": "archive",
+      "archiveTarget": "docs/archiv/reviews-2026-08/",
+      "reason": "Erledigtes Pruefpapier: wird nicht umgeschrieben (3.0.8), bleibt als Beleg fuer die zitierten Befunde erreichbar.",
+      "effort": "XS",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "measured": {
+        "lines": 155
+      }
+    },
+    {
+      "path": "docs/reviews/2026-08-27-benefit-visual-grok-4.20.md",
+      "kind": "review",
+      "purpose": "Visuelle Benefit-Review Grok 4.20",
+      "audience": "intern: Sonny und die Agenten, als Beleg fuer Befund-IDs",
+      "saysToday": "Rohausgabe oder Triage eines Modell-Reviews vom 26.-28.08.2026 gegen v2.4/v2.5 — beschreibt das Produkt dieses Standes (Stufen, HUD, Pilot).",
+      "wrongWith30": [
+        {
+          "lines": "ganze Datei",
+          "what": "Momentaufnahme eines Standes vor Fassung 2.8; die Befunde sind in ROADMAP.md und BACKLOG.md uebernommen oder erledigt."
+        }
+      ],
+      "decision": "archive",
+      "archiveTarget": "docs/archiv/reviews-2026-08/",
+      "reason": "Erledigtes Pruefpapier: wird nicht umgeschrieben (3.0.8), bleibt als Beleg fuer die zitierten Befunde erreichbar.",
+      "effort": "XS",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "measured": {
+        "lines": 64
+      }
+    },
+    {
+      "path": "docs/reviews/2026-08-27-glm-engine-raw.md",
+      "kind": "review",
+      "purpose": "Rohausgabe GLM, Engine",
+      "audience": "intern: Sonny und die Agenten, als Beleg fuer Befund-IDs",
+      "saysToday": "Rohausgabe oder Triage eines Modell-Reviews vom 26.-28.08.2026 gegen v2.4/v2.5 — beschreibt das Produkt dieses Standes (Stufen, HUD, Pilot).",
+      "wrongWith30": [
+        {
+          "lines": "ganze Datei",
+          "what": "Momentaufnahme eines Standes vor Fassung 2.8; die Befunde sind in ROADMAP.md und BACKLOG.md uebernommen oder erledigt."
+        },
+        {
+          "lines": "36",
+          "what": "Guard (b) provenance-other: Abweichung \"alte Badges\" statt \"Proven · Confirmed · Reconstructed · Imported · Simulation · Demonstrated · mock · Stale\""
+        }
+      ],
+      "decision": "archive",
+      "archiveTarget": "docs/archiv/reviews-2026-08/",
+      "reason": "Erledigtes Pruefpapier: wird nicht umgeschrieben (3.0.8), bleibt als Beleg fuer die zitierten Befunde erreichbar.",
+      "effort": "XS",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "measured": {
+        "lines": 95
+      }
+    },
+    {
+      "path": "docs/reviews/2026-08-27-glm-meta-raw.md",
+      "kind": "review",
+      "purpose": "Rohausgabe GLM, Meta",
+      "audience": "intern: Sonny und die Agenten, als Beleg fuer Befund-IDs",
+      "saysToday": "Rohausgabe oder Triage eines Modell-Reviews vom 26.-28.08.2026 gegen v2.4/v2.5 — beschreibt das Produkt dieses Standes (Stufen, HUD, Pilot).",
+      "wrongWith30": [
+        {
+          "lines": "ganze Datei",
+          "what": "Momentaufnahme eines Standes vor Fassung 2.8; die Befunde sind in ROADMAP.md und BACKLOG.md uebernommen oder erledigt."
+        }
+      ],
+      "decision": "archive",
+      "archiveTarget": "docs/archiv/reviews-2026-08/",
+      "reason": "Erledigtes Pruefpapier: wird nicht umgeschrieben (3.0.8), bleibt als Beleg fuer die zitierten Befunde erreichbar.",
+      "effort": "XS",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "measured": {
+        "lines": 74
+      }
+    },
+    {
+      "path": "docs/reviews/2026-08-27-glm-security-raw.md",
+      "kind": "review",
+      "purpose": "Rohausgabe GLM, Security",
+      "audience": "intern: Sonny und die Agenten, als Beleg fuer Befund-IDs",
+      "saysToday": "Rohausgabe oder Triage eines Modell-Reviews vom 26.-28.08.2026 gegen v2.4/v2.5 — beschreibt das Produkt dieses Standes (Stufen, HUD, Pilot).",
+      "wrongWith30": [
+        {
+          "lines": "ganze Datei",
+          "what": "Momentaufnahme eines Standes vor Fassung 2.8; die Befunde sind in ROADMAP.md und BACKLOG.md uebernommen oder erledigt."
+        }
+      ],
+      "decision": "archive",
+      "archiveTarget": "docs/archiv/reviews-2026-08/",
+      "reason": "Erledigtes Pruefpapier: wird nicht umgeschrieben (3.0.8), bleibt als Beleg fuer die zitierten Befunde erreichbar.",
+      "effort": "XS",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "measured": {
+        "lines": 81
+      }
+    },
+    {
+      "path": "docs/reviews/2026-08-27-glm-ui_app-raw.md",
+      "kind": "review",
+      "purpose": "Rohausgabe GLM, UI app",
+      "audience": "intern: Sonny und die Agenten, als Beleg fuer Befund-IDs",
+      "saysToday": "Rohausgabe oder Triage eines Modell-Reviews vom 26.-28.08.2026 gegen v2.4/v2.5 — beschreibt das Produkt dieses Standes (Stufen, HUD, Pilot).",
+      "wrongWith30": [
+        {
+          "lines": "ganze Datei",
+          "what": "Momentaufnahme eines Standes vor Fassung 2.8; die Befunde sind in ROADMAP.md und BACKLOG.md uebernommen oder erledigt."
+        }
+      ],
+      "decision": "archive",
+      "archiveTarget": "docs/archiv/reviews-2026-08/",
+      "reason": "Erledigtes Pruefpapier: wird nicht umgeschrieben (3.0.8), bleibt als Beleg fuer die zitierten Befunde erreichbar.",
+      "effort": "XS",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "measured": {
+        "lines": 61
+      }
+    },
+    {
+      "path": "docs/reviews/2026-08-27-glm-ui_components-raw.md",
+      "kind": "review",
+      "purpose": "Rohausgabe GLM, UI components",
+      "audience": "intern: Sonny und die Agenten, als Beleg fuer Befund-IDs",
+      "saysToday": "Rohausgabe oder Triage eines Modell-Reviews vom 26.-28.08.2026 gegen v2.4/v2.5 — beschreibt das Produkt dieses Standes (Stufen, HUD, Pilot).",
+      "wrongWith30": [
+        {
+          "lines": "ganze Datei",
+          "what": "Momentaufnahme eines Standes vor Fassung 2.8; die Befunde sind in ROADMAP.md und BACKLOG.md uebernommen oder erledigt."
+        }
+      ],
+      "decision": "archive",
+      "archiveTarget": "docs/archiv/reviews-2026-08/",
+      "reason": "Erledigtes Pruefpapier: wird nicht umgeschrieben (3.0.8), bleibt als Beleg fuer die zitierten Befunde erreichbar.",
+      "effort": "XS",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "measured": {
+        "lines": 79
+      }
+    },
+    {
+      "path": "docs/reviews/2026-08-27-glm-ui_public-raw.md",
+      "kind": "review",
+      "purpose": "Rohausgabe GLM, UI public",
+      "audience": "intern: Sonny und die Agenten, als Beleg fuer Befund-IDs",
+      "saysToday": "Rohausgabe oder Triage eines Modell-Reviews vom 26.-28.08.2026 gegen v2.4/v2.5 — beschreibt das Produkt dieses Standes (Stufen, HUD, Pilot).",
+      "wrongWith30": [
+        {
+          "lines": "ganze Datei",
+          "what": "Momentaufnahme eines Standes vor Fassung 2.8; die Befunde sind in ROADMAP.md und BACKLOG.md uebernommen oder erledigt."
+        }
+      ],
+      "decision": "archive",
+      "archiveTarget": "docs/archiv/reviews-2026-08/",
+      "reason": "Erledigtes Pruefpapier: wird nicht umgeschrieben (3.0.8), bleibt als Beleg fuer die zitierten Befunde erreichbar.",
+      "effort": "XS",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "measured": {
+        "lines": 91
+      }
+    },
+    {
+      "path": "docs/reviews/2026-08-27-gpt-5.6-sol-engine-raw.md",
+      "kind": "review",
+      "purpose": "Rohausgabe GPT 5.6 Sol, Engine",
+      "audience": "intern: Sonny und die Agenten, als Beleg fuer Befund-IDs",
+      "saysToday": "Rohausgabe oder Triage eines Modell-Reviews vom 26.-28.08.2026 gegen v2.4/v2.5 — beschreibt das Produkt dieses Standes (Stufen, HUD, Pilot).",
+      "wrongWith30": [
+        {
+          "lines": "ganze Datei",
+          "what": "Momentaufnahme eines Standes vor Fassung 2.8; die Befunde sind in ROADMAP.md und BACKLOG.md uebernommen oder erledigt."
+        }
+      ],
+      "decision": "archive",
+      "archiveTarget": "docs/archiv/reviews-2026-08/",
+      "reason": "Erledigtes Pruefpapier: wird nicht umgeschrieben (3.0.8), bleibt als Beleg fuer die zitierten Befunde erreichbar.",
+      "effort": "XS",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "measured": {
+        "lines": 69
+      }
+    },
+    {
+      "path": "docs/reviews/2026-08-27-gpt-5.6-sol-meta-raw.md",
+      "kind": "review",
+      "purpose": "Rohausgabe GPT 5.6 Sol, Meta",
+      "audience": "intern: Sonny und die Agenten, als Beleg fuer Befund-IDs",
+      "saysToday": "Rohausgabe oder Triage eines Modell-Reviews vom 26.-28.08.2026 gegen v2.4/v2.5 — beschreibt das Produkt dieses Standes (Stufen, HUD, Pilot).",
+      "wrongWith30": [
+        {
+          "lines": "ganze Datei",
+          "what": "Momentaufnahme eines Standes vor Fassung 2.8; die Befunde sind in ROADMAP.md und BACKLOG.md uebernommen oder erledigt."
+        }
+      ],
+      "decision": "archive",
+      "archiveTarget": "docs/archiv/reviews-2026-08/",
+      "reason": "Erledigtes Pruefpapier: wird nicht umgeschrieben (3.0.8), bleibt als Beleg fuer die zitierten Befunde erreichbar.",
+      "effort": "XS",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "measured": {
+        "lines": 81
+      }
+    },
+    {
+      "path": "docs/reviews/2026-08-27-gpt-5.6-sol-security-raw.md",
+      "kind": "review",
+      "purpose": "Rohausgabe GPT 5.6 Sol, Security",
+      "audience": "intern: Sonny und die Agenten, als Beleg fuer Befund-IDs",
+      "saysToday": "Rohausgabe oder Triage eines Modell-Reviews vom 26.-28.08.2026 gegen v2.4/v2.5 — beschreibt das Produkt dieses Standes (Stufen, HUD, Pilot).",
+      "wrongWith30": [
+        {
+          "lines": "ganze Datei",
+          "what": "Momentaufnahme eines Standes vor Fassung 2.8; die Befunde sind in ROADMAP.md und BACKLOG.md uebernommen oder erledigt."
+        }
+      ],
+      "decision": "archive",
+      "archiveTarget": "docs/archiv/reviews-2026-08/",
+      "reason": "Erledigtes Pruefpapier: wird nicht umgeschrieben (3.0.8), bleibt als Beleg fuer die zitierten Befunde erreichbar.",
+      "effort": "XS",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "measured": {
+        "lines": 69
+      }
+    },
+    {
+      "path": "docs/reviews/2026-08-27-gpt-5.6-sol-ui_app-raw.md",
+      "kind": "review",
+      "purpose": "Rohausgabe GPT 5.6 Sol, UI app",
+      "audience": "intern: Sonny und die Agenten, als Beleg fuer Befund-IDs",
+      "saysToday": "Rohausgabe oder Triage eines Modell-Reviews vom 26.-28.08.2026 gegen v2.4/v2.5 — beschreibt das Produkt dieses Standes (Stufen, HUD, Pilot).",
+      "wrongWith30": [
+        {
+          "lines": "ganze Datei",
+          "what": "Momentaufnahme eines Standes vor Fassung 2.8; die Befunde sind in ROADMAP.md und BACKLOG.md uebernommen oder erledigt."
+        },
+        {
+          "lines": "25",
+          "what": "Guard (b) stages-as-tools: Abweichung \"die Stufe heisst Economics; TCO ist nur der Ordner\" statt \"the seven stages as tools: Analyze · Design · Transformation · Documentation · Testing · Economics · Delivery\""
+        },
+        {
+          "lines": "41",
+          "what": "Guard (b) provenance-model-proposal: Abweichung \"alter Badge-Text\" statt \"Model proposal\""
+        }
+      ],
+      "decision": "archive",
+      "archiveTarget": "docs/archiv/reviews-2026-08/",
+      "reason": "Erledigtes Pruefpapier: wird nicht umgeschrieben (3.0.8), bleibt als Beleg fuer die zitierten Befunde erreichbar.",
+      "effort": "XS",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "measured": {
+        "lines": 73
+      }
+    },
+    {
+      "path": "docs/reviews/2026-08-27-gpt-5.6-sol-ui_components-raw.md",
+      "kind": "review",
+      "purpose": "Rohausgabe GPT 5.6 Sol, UI components",
+      "audience": "intern: Sonny und die Agenten, als Beleg fuer Befund-IDs",
+      "saysToday": "Rohausgabe oder Triage eines Modell-Reviews vom 26.-28.08.2026 gegen v2.4/v2.5 — beschreibt das Produkt dieses Standes (Stufen, HUD, Pilot).",
+      "wrongWith30": [
+        {
+          "lines": "ganze Datei",
+          "what": "Momentaufnahme eines Standes vor Fassung 2.8; die Befunde sind in ROADMAP.md und BACKLOG.md uebernommen oder erledigt."
+        },
+        {
+          "lines": "49, 71",
+          "what": "Guard (b) provenance-not-determined: Abweichung \"alter Text\" statt \"Not determined (im Satz: not determined)\""
+        }
+      ],
+      "decision": "archive",
+      "archiveTarget": "docs/archiv/reviews-2026-08/",
+      "reason": "Erledigtes Pruefpapier: wird nicht umgeschrieben (3.0.8), bleibt als Beleg fuer die zitierten Befunde erreichbar.",
+      "effort": "XS",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "measured": {
+        "lines": 71
+      }
+    },
+    {
+      "path": "docs/reviews/2026-08-27-gpt-5.6-sol-ui_public-raw.md",
+      "kind": "review",
+      "purpose": "Rohausgabe GPT 5.6 Sol, UI public",
+      "audience": "intern: Sonny und die Agenten, als Beleg fuer Befund-IDs",
+      "saysToday": "Rohausgabe oder Triage eines Modell-Reviews vom 26.-28.08.2026 gegen v2.4/v2.5 — beschreibt das Produkt dieses Standes (Stufen, HUD, Pilot).",
+      "wrongWith30": [
+        {
+          "lines": "ganze Datei",
+          "what": "Momentaufnahme eines Standes vor Fassung 2.8; die Befunde sind in ROADMAP.md und BACKLOG.md uebernommen oder erledigt."
+        }
+      ],
+      "decision": "archive",
+      "archiveTarget": "docs/archiv/reviews-2026-08/",
+      "reason": "Erledigtes Pruefpapier: wird nicht umgeschrieben (3.0.8), bleibt als Beleg fuer die zitierten Befunde erreichbar.",
+      "effort": "XS",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "measured": {
+        "lines": 54
+      }
+    },
+    {
+      "path": "docs/reviews/2026-08-28-UMSETZUNGSPLAN.md",
+      "kind": "review",
+      "purpose": "Umsetzungsplan aus den Reviews 26.-28.08.",
+      "audience": "intern: Sonny und die Agenten, als Beleg fuer Befund-IDs",
+      "saysToday": "Rohausgabe oder Triage eines Modell-Reviews vom 26.-28.08.2026 gegen v2.4/v2.5 — beschreibt das Produkt dieses Standes (Stufen, HUD, Pilot).",
+      "wrongWith30": [
+        {
+          "lines": "ganze Datei",
+          "what": "Momentaufnahme eines Standes vor Fassung 2.8; die Befunde sind in ROADMAP.md und BACKLOG.md uebernommen oder erledigt."
+        },
+        {
+          "lines": "153",
+          "what": "Guard (b) stages-as-tools: Abweichung \"die Stufe heisst Economics; TCO ist nur der Ordner\" statt \"the seven stages as tools: Analyze · Design · Transformation · Documentation · Testing · Economics · Delivery\""
+        }
+      ],
+      "decision": "archive",
+      "archiveTarget": "docs/archiv/reviews-2026-08/",
+      "reason": "Erledigtes Pruefpapier: wird nicht umgeschrieben (3.0.8), bleibt als Beleg fuer die zitierten Befunde erreichbar.",
+      "effort": "XS",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "measured": {
+        "lines": 354
+      }
+    },
+    {
+      "path": "docs/reviews/2026-08-28-ux-bench-glm-5.3-ERROR.txt",
+      "kind": "review",
+      "purpose": "Fehlerantwort eines UX-Benchmark-Laufs",
+      "audience": "intern: Sonny und die Agenten, als Beleg fuer Befund-IDs",
+      "saysToday": "Eine JSON-Fehlermeldung (\"No endpoints found that support image input\").",
+      "wrongWith30": [
+        {
+          "lines": "1",
+          "what": "Kein Inhalt."
+        }
+      ],
+      "decision": "delete",
+      "reason": "Enthaelt nur eine API-Fehlermeldung; nichts zu bewahren.",
+      "effort": "XS",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "measured": {
+        "lines": 1
+      }
+    },
+    {
+      "path": "docs/reviews/2026-08-28-ux-bench-glm-5.3-flash.md",
+      "kind": "review",
+      "purpose": "UX-Benchmark GLM 5.3 Flash",
+      "audience": "intern: Sonny und die Agenten, als Beleg fuer Befund-IDs",
+      "saysToday": "Kopfzeilen und \"(leer)\" — der Lauf lieferte nichts.",
+      "wrongWith30": [
+        {
+          "lines": "8",
+          "what": "Leeres Ergebnis."
+        }
+      ],
+      "decision": "delete",
+      "reason": "Leerer Lauf; nichts zu bewahren.",
+      "effort": "XS",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "measured": {
+        "lines": 11
+      }
+    },
+    {
+      "path": "docs/reviews/2026-08-28-ux-bench-glm-5v-turbo.md",
+      "kind": "review",
+      "purpose": "UX-Benchmark GLM 5V Turbo",
+      "audience": "intern: Sonny und die Agenten, als Beleg fuer Befund-IDs",
+      "saysToday": "Rohausgabe oder Triage eines Modell-Reviews vom 26.-28.08.2026 gegen v2.4/v2.5 — beschreibt das Produkt dieses Standes (Stufen, HUD, Pilot).",
+      "wrongWith30": [
+        {
+          "lines": "ganze Datei",
+          "what": "Momentaufnahme eines Standes vor Fassung 2.8; die Befunde sind in ROADMAP.md und BACKLOG.md uebernommen oder erledigt."
+        }
+      ],
+      "decision": "archive",
+      "archiveTarget": "docs/archiv/reviews-2026-08/",
+      "reason": "Erledigtes Pruefpapier: wird nicht umgeschrieben (3.0.8), bleibt als Beleg fuer die zitierten Befunde erreichbar.",
+      "effort": "XS",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "measured": {
+        "lines": 145
+      }
+    },
+    {
+      "path": "docs/reviews/2026-08-28-ux-bench-gpt-5.6-sol.md",
+      "kind": "review",
+      "purpose": "UX-Benchmark GPT 5.6 Sol",
+      "audience": "intern: Sonny und die Agenten, als Beleg fuer Befund-IDs",
+      "saysToday": "Rohausgabe oder Triage eines Modell-Reviews vom 26.-28.08.2026 gegen v2.4/v2.5 — beschreibt das Produkt dieses Standes (Stufen, HUD, Pilot).",
+      "wrongWith30": [
+        {
+          "lines": "ganze Datei",
+          "what": "Momentaufnahme eines Standes vor Fassung 2.8; die Befunde sind in ROADMAP.md und BACKLOG.md uebernommen oder erledigt."
+        },
+        {
+          "lines": "15, 142",
+          "what": "Guard (a) seven-stages-as-product: nennt, was 3.0 entfernt"
+        },
+        {
+          "lines": "121",
+          "what": "Guard (b) provenance-model-proposal: Abweichung \"alter Badge-Text\" statt \"Model proposal\""
+        }
+      ],
+      "decision": "archive",
+      "archiveTarget": "docs/archiv/reviews-2026-08/",
+      "reason": "Erledigtes Pruefpapier: wird nicht umgeschrieben (3.0.8), bleibt als Beleg fuer die zitierten Befunde erreichbar.",
+      "effort": "XS",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "measured": {
+        "lines": 294
+      }
+    },
+    {
+      "path": "docs/reviews/2026-08-28-ux-bench-grok-4.6.md",
+      "kind": "review",
+      "purpose": "UX-Benchmark Grok 4.6",
+      "audience": "intern: Sonny und die Agenten, als Beleg fuer Befund-IDs",
+      "saysToday": "Rohausgabe oder Triage eines Modell-Reviews vom 26.-28.08.2026 gegen v2.4/v2.5 — beschreibt das Produkt dieses Standes (Stufen, HUD, Pilot).",
+      "wrongWith30": [
+        {
+          "lines": "ganze Datei",
+          "what": "Momentaufnahme eines Standes vor Fassung 2.8; die Befunde sind in ROADMAP.md und BACKLOG.md uebernommen oder erledigt."
+        },
+        {
+          "lines": "48, 52, 133",
+          "what": "Guard (b) provenance-not-determined: Abweichung \"alter Text\" statt \"Not determined (im Satz: not determined)\""
+        }
+      ],
+      "decision": "archive",
+      "archiveTarget": "docs/archiv/reviews-2026-08/",
+      "reason": "Erledigtes Pruefpapier: wird nicht umgeschrieben (3.0.8), bleibt als Beleg fuer die zitierten Befunde erreichbar.",
+      "effort": "XS",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "measured": {
+        "lines": 142
+      }
+    },
+    {
+      "path": "docs/reviews/2026-08-28-ux-round2-glm-5v-turbo.md",
+      "kind": "review",
+      "purpose": "UX-Runde 2, GLM 5V Turbo",
+      "audience": "intern: Sonny und die Agenten, als Beleg fuer Befund-IDs",
+      "saysToday": "Rohausgabe oder Triage eines Modell-Reviews vom 26.-28.08.2026 gegen v2.4/v2.5 — beschreibt das Produkt dieses Standes (Stufen, HUD, Pilot).",
+      "wrongWith30": [
+        {
+          "lines": "ganze Datei",
+          "what": "Momentaufnahme eines Standes vor Fassung 2.8; die Befunde sind in ROADMAP.md und BACKLOG.md uebernommen oder erledigt."
+        },
+        {
+          "lines": "83",
+          "what": "Guard (a) dark-mode: nennt, was 3.0 entfernt"
+        },
+        {
+          "lines": "91",
+          "what": "Guard (b) clean-core-concept: Abweichung \"mit Bindestrich, aber ohne .io — liest sich wie der Produktname\" statt \"Clean Core\""
+        }
+      ],
+      "decision": "archive",
+      "archiveTarget": "docs/archiv/reviews-2026-08/",
+      "reason": "Erledigtes Pruefpapier: wird nicht umgeschrieben (3.0.8), bleibt als Beleg fuer die zitierten Befunde erreichbar.",
+      "effort": "XS",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "measured": {
+        "lines": 129
+      }
+    },
+    {
+      "path": "docs/reviews/2026-08-28-ux-round2-gpt-5.6-sol.md",
+      "kind": "review",
+      "purpose": "UX-Runde 2, GPT 5.6 Sol",
+      "audience": "intern: Sonny und die Agenten, als Beleg fuer Befund-IDs",
+      "saysToday": "Rohausgabe oder Triage eines Modell-Reviews vom 26.-28.08.2026 gegen v2.4/v2.5 — beschreibt das Produkt dieses Standes (Stufen, HUD, Pilot).",
+      "wrongWith30": [
+        {
+          "lines": "ganze Datei",
+          "what": "Momentaufnahme eines Standes vor Fassung 2.8; die Befunde sind in ROADMAP.md und BACKLOG.md uebernommen oder erledigt."
+        },
+        {
+          "lines": "191, 267",
+          "what": "Guard (a) seven-stages-as-product: nennt, was 3.0 entfernt"
+        }
+      ],
+      "decision": "archive",
+      "archiveTarget": "docs/archiv/reviews-2026-08/",
+      "reason": "Erledigtes Pruefpapier: wird nicht umgeschrieben (3.0.8), bleibt als Beleg fuer die zitierten Befunde erreichbar.",
+      "effort": "XS",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "measured": {
+        "lines": 274
+      }
+    },
+    {
+      "path": "docs/reviews/2026-08-28-ux-round2-grok-4.6.md",
+      "kind": "review",
+      "purpose": "UX-Runde 2, Grok 4.6",
+      "audience": "intern: Sonny und die Agenten, als Beleg fuer Befund-IDs",
+      "saysToday": "Rohausgabe oder Triage eines Modell-Reviews vom 26.-28.08.2026 gegen v2.4/v2.5 — beschreibt das Produkt dieses Standes (Stufen, HUD, Pilot).",
+      "wrongWith30": [
+        {
+          "lines": "ganze Datei",
+          "what": "Momentaufnahme eines Standes vor Fassung 2.8; die Befunde sind in ROADMAP.md und BACKLOG.md uebernommen oder erledigt."
+        },
+        {
+          "lines": "36",
+          "what": "Guard (b) clean-core-concept: Abweichung \"mit Bindestrich, aber ohne .io — liest sich wie der Produktname\" statt \"Clean Core\""
+        }
+      ],
+      "decision": "archive",
+      "archiveTarget": "docs/archiv/reviews-2026-08/",
+      "reason": "Erledigtes Pruefpapier: wird nicht umgeschrieben (3.0.8), bleibt als Beleg fuer die zitierten Befunde erreichbar.",
+      "effort": "XS",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "measured": {
+        "lines": 99
+      }
+    },
+    {
+      "path": "docs/roadmap/SCHNITT-0-UMFANG.md",
+      "kind": "roadmap",
+      "purpose": "Arbeitspakete von Phase 0 (Anhang zur Roadmap)",
+      "audience": "intern, Guards zitieren Paragraphen",
+      "saysToday": "Umfang v2.10 \"Belegt\", Pakete 1-8.",
+      "wrongWith30": [
+        {
+          "lines": "ganze Datei",
+          "what": "Phase 0 ist mit 3.0 abgeschlossen."
+        },
+        {
+          "lines": "7",
+          "what": "Guard (a) signavio-unverified: nennt, was 3.0 entfernt"
+        },
+        {
+          "lines": "8, 317",
+          "what": "Guard (a) not-built-roles: nennt, was 3.0 entfernt"
+        },
+        {
+          "lines": "169",
+          "what": "Guard (b) provenance-not-determined: Abweichung \"deutsche Nebenform\" statt \"Not determined (im Satz: not determined)\""
+        },
+        {
+          "lines": "246",
+          "what": "Guard (b) self-declaration: Abweichung \"deutsches Synonym\" statt \"a self-declaration, not a mandate\""
+        }
+      ],
+      "decision": "archive",
+      "archiveTarget": "docs/archiv/roadmap-2.8/",
+      "reason": "Erledigter Plan. Elf Code- und Spec-Kommentare zitieren den Pfad (lib/facts.ts, lib/locked-paths.ts, tests/copy-ci-guard.spec.ts u. a.) — beim Verschieben mitziehen, sonst luegen die Kommentare.",
+      "effort": "S",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "referencedBy": [
+        "app/api/projects/[projectId]/commands/route.ts",
+        "lib/facts.ts",
+        "lib/input-manifest.ts",
+        "lib/locked-paths.ts",
+        "lib/project-commands.ts",
+        "tests/conservative-invalidity.spec.ts",
+        "tests/copy-ci-guard.spec.ts",
+        "tests/handle-claim-guard.spec.ts",
+        "tests/input-manifest.spec.ts",
+        "tests/locked-paths-guard.spec.ts",
+        "tests/money-honesty-guard.spec.ts"
+      ],
+      "measured": {
+        "lines": 358
+      }
+    },
+    {
+      "path": "docs/security/ciso-brief.md",
+      "kind": "agent-brief",
+      "purpose": "System-Brief des CISO im Security-Agenten",
+      "audience": "Security-Modell",
+      "saysToday": "Auftrag, Prioritaeten, Ausgabeformat.",
+      "wrongWith30": [
+        {
+          "lines": "—",
+          "what": "Produktbeschreibung gegen 3.0 pruefen (Einladungen, Arbeitsraum als Angriffsflaeche)."
+        }
+      ],
+      "decision": "update",
+      "reason": "Aktiver Prompt.",
+      "effort": "XS",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "referencedBy": [
+        "scripts/security/lib/surface.mjs",
+        "scripts/security/lib/team.mjs",
+        "tests/security-audit-guard.spec.ts"
+      ],
+      "measured": {
+        "lines": 103
+      }
+    },
+    {
+      "path": "docs/terms/2026-07-07.md",
+      "kind": "legal",
+      "purpose": "Nutzungsbedingungen, Fassung 07.07.2026",
+      "audience": "oeffentlich, rechtlich (lib/terms-versions.ts)",
+      "saysToday": "AGB und Community-Richtlinien v2.0.0.",
+      "wrongWith30": [],
+      "decision": "keep",
+      "reason": "Versionierter Rechtstext, wird nie editiert (lib/terms-versions.ts). Ob 3.0 eine neue Fassung braucht (Einladungen, Einsicht inkl. Quellcode), entscheidet Sonny — dann als neue Datei.",
+      "effort": "none",
+      "guard": {
+        "removed": "exempt",
+        "terms": "exempt",
+        "why": "ABAP-Quelltext oder Rechtstext, keine Produktbeschreibung."
+      },
+      "referencedBy": [
+        "lib/terms-versions.ts"
+      ],
+      "measured": {
+        "lines": 99
+      }
+    },
+    {
+      "path": "docs/testing.md",
+      "kind": "docs",
+      "purpose": "Teststrategie und Ausfuehrung",
+      "audience": "Entwickler, Agenten",
+      "saysToday": "Playwright, Emulatoren, Specs pro Stufe.",
+      "wrongWith30": [
+        {
+          "lines": "29-52",
+          "what": "Links als file:///c:/Users/felix/... — lokaler Pfad, oeffentlich nutzlos."
+        },
+        {
+          "lines": "51-52",
+          "what": "stage1-2 / full-pipeline als \"primaerer E2E-Fluss\" — ab 3.0 laeuft der Fluss durch den Arbeitsraum."
+        },
+        {
+          "lines": "62",
+          "what": "Versionsmarken (v2.4.2) — Stand."
+        },
+        {
+          "lines": "49",
+          "what": "Guard (b) clean-core-concept: Abweichung \"mit Bindestrich, aber ohne .io — liest sich wie der Produktname\" statt \"Clean Core\""
+        }
+      ],
+      "decision": "update",
+      "reason": "Lebende Entwicklerdoku.",
+      "effort": "M",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "measured": {
+        "lines": 191
+      }
+    },
+    {
+      "path": "docs/ux/ux-brief.md",
+      "kind": "agent-brief",
+      "purpose": "System-Brief des UX-Agenten",
+      "audience": "UX-Modell (Muse Spark 1.3)",
+      "saysToday": "\"Today the product is a seven-stage workflow\"; Dark Mode ueber Profil; Screenshots auch dark.",
+      "wrongWith30": [
+        {
+          "lines": "42-44",
+          "what": "\"Today the product is a seven-stage workflow per project\" — ab 3.0.1 Arbeitsraum."
+        },
+        {
+          "lines": "92, 106, 128",
+          "what": "Dark Mode als Merkmal und Pruefkriterium (\"dark-mode parity\") — entfaellt."
+        },
+        {
+          "lines": "42",
+          "what": "Guard (a) seven-stages-as-product: nennt, was 3.0 entfernt"
+        },
+        {
+          "lines": "92, 106, 128",
+          "what": "Guard (a) dark-mode: nennt, was 3.0 entfernt"
+        },
+        {
+          "lines": "52",
+          "what": "Guard (b) clean-core-level: Abweichung \"Plural — die Kennung heisst Level\" statt \"Level A–D (einzeln: Level A)\""
+        },
+        {
+          "lines": "64",
+          "what": "Guard (b) provenance-other: Abweichung \"alter Text fuer Simulation\" statt \"Proven · Confirmed · Reconstructed · Imported · Simulation · Demonstrated · mock · Stale\""
+        }
+      ],
+      "decision": "update",
+      "reason": "Das Modell bewertet gegen dieses Bild; falsches Bild, falsche Befunde.",
+      "effort": "S",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "referencedBy": [
+        "scripts/security/lib/surface.mjs",
+        "scripts/ux/lib/prompt.mjs",
+        "tests/security-audit-guard.spec.ts",
+        "tests/ux-review-guard.spec.ts"
+      ],
+      "measured": {
+        "lines": 222
+      }
+    },
+    {
+      "path": "public/starter-examples/Z_BUSINESS_PARTNER_SYNC.txt",
+      "kind": "abap-sample",
+      "purpose": "ABAP-Beispielprogramm Z_BUSINESS_PARTNER_SYNC fuer Tests und Erstnutzung",
+      "audience": "Nutzer (Beispiel laden), Tests",
+      "saysToday": "ABAP-Quelltext, keine Aussage ueber das Produkt.",
+      "wrongWith30": [],
+      "decision": "keep",
+      "reason": "Oeffentlich ausgeliefertes Beispiel; Quelltext bleibt, wie er ist.",
+      "effort": "none",
+      "guard": {
+        "removed": "exempt",
+        "terms": "exempt",
+        "why": "ABAP-Quelltext oder Rechtstext, keine Produktbeschreibung."
+      },
+      "referencedBy": [
+        "tests/abap-table-dependencies.spec.ts"
+      ],
+      "measured": {
+        "lines": 114
+      }
+    },
+    {
+      "path": "public/starter-examples/Z_EMPLOYEE_EXPENSE_VAL.txt",
+      "kind": "abap-sample",
+      "purpose": "ABAP-Beispielprogramm Z_EMPLOYEE_EXPENSE_VAL fuer Tests und Erstnutzung",
+      "audience": "Nutzer (Beispiel laden), Tests",
+      "saysToday": "ABAP-Quelltext, keine Aussage ueber das Produkt.",
+      "wrongWith30": [],
+      "decision": "keep",
+      "reason": "Oeffentlich ausgeliefertes Beispiel; Quelltext bleibt, wie er ist.",
+      "effort": "none",
+      "guard": {
+        "removed": "exempt",
+        "terms": "exempt",
+        "why": "ABAP-Quelltext oder Rechtstext, keine Produktbeschreibung."
+      },
+      "measured": {
+        "lines": 106
+      }
+    },
+    {
+      "path": "public/starter-examples/Z_INVOICE_EXTRACTOR.txt",
+      "kind": "abap-sample",
+      "purpose": "ABAP-Beispielprogramm Z_INVOICE_EXTRACTOR fuer Tests und Erstnutzung",
+      "audience": "Nutzer (Beispiel laden), Tests",
+      "saysToday": "ABAP-Quelltext, keine Aussage ueber das Produkt.",
+      "wrongWith30": [],
+      "decision": "keep",
+      "reason": "Oeffentlich ausgeliefertes Beispiel; Quelltext bleibt, wie er ist.",
+      "effort": "none",
+      "guard": {
+        "removed": "exempt",
+        "terms": "exempt",
+        "why": "ABAP-Quelltext oder Rechtstext, keine Produktbeschreibung."
+      },
+      "measured": {
+        "lines": 88
+      }
+    },
+    {
+      "path": "public/starter-examples/Z_MATERIAL_STOCK_CALC.txt",
+      "kind": "abap-sample",
+      "purpose": "ABAP-Beispielprogramm Z_MATERIAL_STOCK_CALC fuer Tests und Erstnutzung",
+      "audience": "Nutzer (Beispiel laden), Tests",
+      "saysToday": "ABAP-Quelltext, keine Aussage ueber das Produkt.",
+      "wrongWith30": [],
+      "decision": "keep",
+      "reason": "Oeffentlich ausgeliefertes Beispiel; Quelltext bleibt, wie er ist.",
+      "effort": "none",
+      "guard": {
+        "removed": "exempt",
+        "terms": "exempt",
+        "why": "ABAP-Quelltext oder Rechtstext, keine Produktbeschreibung."
+      },
+      "measured": {
+        "lines": 100
+      }
+    },
+    {
+      "path": "public/starter-examples/Z_ORDER_INTEGRITY_CHECK.txt",
+      "kind": "abap-sample",
+      "purpose": "ABAP-Beispielprogramm Z_ORDER_INTEGRITY_CHECK fuer Tests und Erstnutzung",
+      "audience": "Nutzer (Beispiel laden), Tests",
+      "saysToday": "ABAP-Quelltext, keine Aussage ueber das Produkt.",
+      "wrongWith30": [],
+      "decision": "keep",
+      "reason": "Oeffentlich ausgeliefertes Beispiel; Quelltext bleibt, wie er ist.",
+      "effort": "none",
+      "guard": {
+        "removed": "exempt",
+        "terms": "exempt",
+        "why": "ABAP-Quelltext oder Rechtstext, keine Produktbeschreibung."
+      },
+      "measured": {
+        "lines": 100
+      }
+    },
+    {
+      "path": "public/starter-examples/Z_SALES_ORDER_CREATOR.txt",
+      "kind": "abap-sample",
+      "purpose": "ABAP-Beispielprogramm Z_SALES_ORDER_CREATOR fuer Tests und Erstnutzung",
+      "audience": "Nutzer (Beispiel laden), Tests",
+      "saysToday": "ABAP-Quelltext, keine Aussage ueber das Produkt.",
+      "wrongWith30": [],
+      "decision": "keep",
+      "reason": "Oeffentlich ausgeliefertes Beispiel; Quelltext bleibt, wie er ist.",
+      "effort": "none",
+      "guard": {
+        "removed": "exempt",
+        "terms": "exempt",
+        "why": "ABAP-Quelltext oder Rechtstext, keine Produktbeschreibung."
+      },
+      "measured": {
+        "lines": 99
+      }
+    }
+  ],
+  "served": [
+    {
+      "path": "app/llms.txt/route.ts",
+      "kind": "served",
+      "purpose": "llms.txt fuer KI-Suchmaschinen",
+      "audience": "oeffentlich (Crawler, Antwortmaschinen)",
+      "saysToday": "Werkzeug parst ABAP, mappt auf Nachfolger, \"drafts in-app RAP or side-by-side CAP targets\"; Zahlen aus lib/facts; was das Werkzeug nicht tut.",
+      "wrongWith30": [
+        {
+          "lines": "22-27",
+          "what": "Produktsatz ohne Prozess aus dem Code, Sichten und BPMN-Austausch — das 3.0-Produktbild fehlt."
+        },
+        {
+          "lines": "90",
+          "what": "\"AI-generated code and narrative\" — Vokabular: Model proposal."
+        }
+      ],
+      "decision": "update",
+      "reason": "Teil von 3.0.6 (dort ausdruecklich genannt).",
+      "effort": "S"
+    },
+    {
+      "path": "package.json#description",
+      "kind": "served",
+      "purpose": "Paketbeschreibung (GitHub, npm-Metadaten)",
+      "audience": "oeffentlich",
+      "saysToday": "Kein description-Feld vorhanden.",
+      "wrongWith30": [
+        {
+          "lines": "—",
+          "what": "Fehlt; ein Satz im 3.0-Vokabular."
+        }
+      ],
+      "decision": "update",
+      "reason": "Ein Satz, gleichlautend mit README-Einleitung.",
+      "effort": "XS"
+    },
+    {
+      "path": "app/layout.tsx#metadata",
+      "kind": "served",
+      "purpose": "Standard-Titel und -Beschreibung, OpenGraph, Twitter",
+      "audience": "oeffentlich (Suche, Vorschauen)",
+      "saysToday": "\"Free SAP Clean Core Modernization Assistant ... analyzes custom SAP ABAP ...\"",
+      "wrongWith30": [
+        {
+          "lines": "13-40",
+          "what": "Produktbild vor 3.0 (Modernisierungsassistent); Titel folgen nach 3.0.6 den Suchanfragen mit Reichweite."
+        }
+      ],
+      "decision": "update",
+      "reason": "Teil von 3.0.6.",
+      "effort": "XS"
+    },
+    {
+      "path": "app/page.tsx#metadata+jsonld",
+      "kind": "served",
+      "purpose": "Startseite: Metadaten, Feature-Karten, JSON-LD (Organization, SoftwareApplication, FAQPage, BreadcrumbList)",
+      "audience": "oeffentlich",
+      "saysToday": "\"SAP Clean Core Accelerator\", Feature-Karten \"Developer HUD & Feedback\", \"Code Refactoring (Remediation)\", \"Sandbox Verification (BYOT)\".",
+      "wrongWith30": [
+        {
+          "lines": "40-55",
+          "what": "Titel/Beschreibung \"Accelerator ... generates the first Clean-Core-compliant ...\""
+        },
+        {
+          "lines": "87-125, 713-760",
+          "what": "Feature-Karten des alten Produkts (Developer HUD, Code Refactoring) und die Features-Sektion."
+        }
+      ],
+      "decision": "update",
+      "reason": "Wird mit 3.0.6 durch die neue Startseite ersetzt; JSON-LD deckungsgleich mit sichtbarem FAQ.",
+      "effort": "L"
+    },
+    {
+      "path": "app/catalog/layout.tsx#metadata",
+      "kind": "served",
+      "purpose": "Metadaten des Objektkatalogs",
+      "audience": "oeffentlich (hohe Suchreichweite)",
+      "saysToday": "Katalogtitel und -beschreibung.",
+      "wrongWith30": [],
+      "decision": "keep",
+      "reason": "3.0.6: URL, Canonical und Inhalt bleiben unveraendert; nur der Look.",
+      "effort": "none"
+    },
+    {
+      "path": "app/features/layout.tsx#metadata",
+      "kind": "served",
+      "purpose": "Metadaten der Feature-Seiten",
+      "audience": "oeffentlich",
+      "saysToday": "Feature-Seiten /features/[slug].",
+      "wrongWith30": [
+        {
+          "lines": "—",
+          "what": "Inhalt der Feature-Seiten gegen das 3.0-Produktbild pruefen (URLs bleiben nach 3.0.6)."
+        }
+      ],
+      "decision": "update",
+      "reason": "URL bleibt; Wortlaut pruefen.",
+      "effort": "S"
+    },
+    {
+      "path": "docs/roadmap/clean-core-mockups-v2_7.html",
+      "kind": "design-artefact",
+      "purpose": "Mockups 2.7",
+      "audience": "intern, UX-Agent",
+      "saysToday": "Zielbild 2.7 mit Rollen.",
+      "wrongWith30": [
+        {
+          "lines": "ganze Datei",
+          "what": "Durch 2.8 ersetzt; docs/archiv/README.md nennt sie noch \"Zielbild von 3.0\"."
+        }
+      ],
+      "decision": "archive",
+      "archiveTarget": "docs/archiv/roadmap-2.7/",
+      "reason": "Ueberholt; Verweise in docs/UX-REVIEW-AGENT.md und scripts/ux mitziehen.",
+      "effort": "S"
+    },
+    {
+      "path": "docs/roadmap/clean-core-mockups-v2_8.html",
+      "kind": "design-artefact",
+      "purpose": "Mockups 2.8 — Zielbild von 3.0",
+      "audience": "intern, UX-Agent, capture-screens",
+      "saysToday": "Das 3.0-Zielbild.",
+      "wrongWith30": [
+        {
+          "lines": "ganze Datei",
+          "what": "Nach 3.0 ist das Produkt selbst die Referenz."
+        }
+      ],
+      "decision": "archive",
+      "archiveTarget": "docs/archiv/roadmap-2.8/",
+      "reason": "Mit der Abnahme von 3.0 archivieren; tests/mockup-roadmap-guard.spec.ts und capture-screens mitziehen.",
+      "effort": "S"
+    },
+    {
+      "path": "docs/roadmap/clean-core-landing-v3_0.html",
+      "kind": "design-artefact",
+      "purpose": "Vorlage der neuen Startseite (3.0.6)",
+      "audience": "intern",
+      "saysToday": "Die 3.0-Startseite als Mockup.",
+      "wrongWith30": [
+        {
+          "lines": "ganze Datei",
+          "what": "Nach 3.0.6 ist app/page.tsx die Startseite."
+        }
+      ],
+      "decision": "archive",
+      "archiveTarget": "docs/archiv/roadmap-2.8/",
+      "reason": "Mit 3.0.6 umgesetzt, dann Geschichte.",
+      "effort": "XS"
+    }
+  ],
+  "referenceCheck": [
+    {
+      "target": "abap-test-files/Z_INVOICE_EXTRACTOR.txt",
+      "decision": "delete",
+      "referencedFrom": [
+        "docs/archiv/roadmap-2.7/clean-core-review-und-roadmap-2026-09-08.md"
+      ]
+    },
+    {
+      "target": "abap-test-files/Z_SALES_ORDER_CREATOR.txt",
+      "decision": "delete",
+      "referencedFrom": [
+        "docs/archiv/roadmap-2.7/clean-core-review-und-roadmap-2026-09-08.md"
+      ]
+    },
+    {
+      "target": "clean-core-video/README.md",
+      "decision": "delete",
+      "referencedFrom": [
+        "docs/archiv/roadmap-2.7/clean-core-review-und-roadmap-2026-09-08.md",
+        "docs/korpus/anhang/gegenreview/MANIFEST.sha256.json",
+        "docs/korpus/referenzkorpus-v2.1.md"
+      ]
+    },
+    {
+      "target": "docs/roadmap/SCHNITT-0-UMFANG.md",
+      "decision": "archive",
+      "referencedFrom": [
+        "docs/archiv/README.md",
+        "docs/archiv/roadmap-2.7/ROADMAP-2.7.md"
+      ]
+    },
+    {
+      "target": "docs/roadmap/clean-core-mockups-v2_7.html",
+      "decision": "archive",
+      "referencedFrom": [
+        "docs/archiv/README.md",
+        "docs/archiv/roadmap-2.7/clean-core-roadmap-v2_7-delta.md",
+        "docs/archiv/roadmap-2.7/ROADMAP-2.7.md"
+      ]
+    }
+  ]
+}

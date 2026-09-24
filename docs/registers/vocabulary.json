@@ -1,0 +1,498 @@
+{
+  "schemaVersion": 1,
+  "id": "vocabulary",
+  "roadmapStep": "3.0.8",
+  "purpose": "Die Kernbegriffe der oeffentlichen Texte mit genau einer Schreibweise je Sprache, und die Liste dessen, was 3.0 entfernt hat und keine oeffentliche Datei mehr nennen darf. Quelle der Begriffe ist der Code (lib/provenance.ts, lib/workspace-model.ts, lib/abap/abcd-classification.ts) und DESIGN.md; diese Datei erfindet keinen Begriff, sie legt nur die Schreibweise fest. Gehalten von tests/public-texts-guard.spec.ts, Pruefung (a) retired und (b) terms.",
+  "schema": {
+    "terms[]": {
+      "id": "stabiler Schluessel",
+      "concept": "was der Begriff bezeichnet",
+      "source": "wo der Begriff im Code oder in DESIGN.md festgelegt ist",
+      "en": "die eine englische Schreibweise (Oberflaeche, README, alles Englische)",
+      "de": "die eine deutsche Schreibweise (DESIGN.md, ROADMAP.md, deutsche Runbooks); null, wo der englische Begriff auch im Deutschen gilt",
+      "variants[]": "Abweichungen, die der Guard zaehlt: pattern (JavaScript-RegExp-Quelle), flags, note",
+      "baseline": "Zahl der Treffer je Variante am Stichtag, ueber alle Dateien, fuer die die Inventur guard.terms = check setzt"
+    },
+    "retired[]": {
+      "id": "stabiler Schluessel",
+      "what": "was 3.0 entfernt oder nie baut",
+      "source": "Roadmap-Stelle der Streichung (3.0.5, §8, 1.6, 0.2/4.3, 3.0.6)",
+      "patterns[]": "RegExp-Quellen; ein Treffer ist ein Verstoss, ausser die Zeile trifft allowIfLine oder den globalen negationLine",
+      "allowIfLine": "optional: RegExp-Quelle, die die Zeile freigibt (z. B. 'als Werkzeuge' bei den sieben Stufen)",
+      "samples": "hit/allowed: Beispielzeilen, an denen der Guard seine eigenen Ausdruecke prueft (Selbsttest, laeuft ab sofort)",
+      "baseline": "Zahl der Treffer am Stichtag, ueber alle Dateien mit guard.removed = check"
+    },
+    "negationLine": "Eine Zeile, die das Entfernte ausdruecklich als entfernt oder nicht gebaut nennt, ist kein Verstoss — sie beschreibt den 3.0-Stand. Geprueft wird die Zeile zusammen mit ihrer Vorgaengerzeile, weil Markdown Saetze umbricht ('Deliberately not built: tenants, SSO,' / 'ALM adapters, portfolio steering.'). Heuristik, bewusst eng gehalten."
+  },
+  "negationLine": "(not built|nicht gebaut|deliberately not|bewusst nicht|entf(ae|ä)llt|removed|entfernt|gestrichen|no longer|nicht mehr|retired|dropped|there is no|no connection to|keine Anbindung|gibt es nicht|❌|kein(e|en|er)? (Dark Mode|dark mode|SSO|Signavio-API)|no (dark mode|SSO|Signavio API))",
+  "terms": [
+    {
+      "id": "product-name",
+      "concept": "Name des Produkts",
+      "source": "CLAUDE.md Kopf, README.md Titel, package.json name clean-core-io",
+      "en": "Clean-Core.io",
+      "de": null,
+      "variants": [
+        {
+          "pattern": "\\bCleanCore\\.io\\b",
+          "flags": "",
+          "note": "ohne Bindestrich"
+        },
+        {
+          "pattern": "\\bClean Core\\.io\\b",
+          "flags": "",
+          "note": "Leerzeichen statt Bindestrich"
+        },
+        {
+          "pattern": "\\bClean-core\\.io\\b|\\bCleancore\\.io\\b",
+          "flags": "",
+          "note": "Grossschreibung gemischt"
+        },
+        {
+          "pattern": "\\bClean-Core\\.IO\\b|\\bClean-Core IO\\b",
+          "flags": "",
+          "note": "IO gross"
+        }
+      ],
+      "exceptions": "Kleingeschrieben `clean-core.io` ist die Domain und bleibt in URLs und Mailadressen erlaubt."
+    },
+    {
+      "id": "clean-core-concept",
+      "concept": "SAPs Clean-Core-Paradigma (nicht das Produkt)",
+      "source": "README.md, CLAUDE.md 'aligned with SAP's Clean Core Extensibility paradigm'",
+      "en": "Clean Core",
+      "de": "Clean Core",
+      "variants": [
+        {
+          "pattern": "\\bClean-Core\\b(?!\\.io|-|\\/)",
+          "flags": "",
+          "note": "mit Bindestrich, aber ohne .io — liest sich wie der Produktname"
+        },
+        {
+          "pattern": "\\bCleanCore\\b(?!\\.io)",
+          "flags": "",
+          "note": "zusammengeschrieben"
+        }
+      ],
+      "exceptions": "Zusammensetzungen im Deutschen ('Clean-Core-Level', 'Clean-Core-Paradigma') sind Durchkopplung und kein Verstoss; das Muster schliesst sie ueber (?!-) aus."
+    },
+    {
+      "id": "views",
+      "concept": "die drei Sichten des Arbeitsraums — nur Sichten, nie gespeichert",
+      "source": "lib/workspace-model.ts VIEW_LABELS, DESIGN.md §2.3",
+      "en": "Business view · IT view · Management view (Plural: views)",
+      "de": "Business-Sicht · IT-Sicht · Management-Sicht (Plural: Sichten)",
+      "variants": [
+        {
+          "pattern": "\\b(Business|Management) View\\b|\\bIT View\\b",
+          "flags": "",
+          "note": "View gross"
+        },
+        {
+          "pattern": "\\b(Business|Management|IT) Sicht\\b",
+          "flags": "",
+          "note": "deutsch ohne Bindestrich"
+        },
+        {
+          "pattern": "\\b(Business|Management|IT)-View\\b|\\bBusinesssicht\\b",
+          "flags": "",
+          "note": "Mischform"
+        },
+        {
+          "pattern": "\\b(Management|Business|IT)[- ](role|Rolle)\\b",
+          "flags": "",
+          "note": "als Rolle bezeichnet — Sichten sind keine Rollen (CLAUDE.md, ROADMAP §8)"
+        }
+      ]
+    },
+    {
+      "id": "layers",
+      "concept": "die sechs Ebenen der Anchor Bar",
+      "source": "lib/workspace-model.ts LAYERS, DESIGN.md §2.3 Punkt 4",
+      "en": "layers: Need & process · Standard fit · Costs & assumptions · Architecture & dependencies · Evidence & controls · Changes & commitments",
+      "de": "Ebenen (die Namen bleiben englisch, wie in der Oberflaeche)",
+      "variants": [
+        {
+          "pattern": "\\bNeed and process\\b|\\bNeed & Process\\b",
+          "flags": "",
+          "note": ""
+        },
+        {
+          "pattern": "\\bStandard Fit\\b",
+          "flags": "",
+          "note": ""
+        },
+        {
+          "pattern": "\\bCosts and assumptions\\b|\\bEvidence and controls\\b|\\bChanges and commitments\\b|\\bArchitecture and dependencies\\b",
+          "flags": "",
+          "note": "and statt &"
+        }
+      ]
+    },
+    {
+      "id": "clean-core-level",
+      "concept": "SAPs Clean-Core-Level A bis D eines Objekts",
+      "source": "lib/abap/abcd-classification.ts, DESIGN.md §4.1",
+      "en": "Level A–D (einzeln: Level A)",
+      "de": "Level A–D (einzeln: Level A)",
+      "variants": [
+        {
+          "pattern": "\\b[Ll]evels? A-D\\b",
+          "flags": "",
+          "note": "ASCII-Bindestrich statt Halbgeviertstrich"
+        },
+        {
+          "pattern": "\\b[Ll]evels A[–-]D\\b",
+          "flags": "",
+          "note": "Plural — die Kennung heisst Level"
+        },
+        {
+          "pattern": "\\bA[–-]D (classification|level|grade)s?\\b",
+          "flags": "i",
+          "note": "nachgestellt"
+        },
+        {
+          "pattern": "\\bABCD\\b",
+          "flags": "",
+          "note": "zusammengezogen (Code-Bezeichner in Backticks ausgenommen)"
+        },
+        {
+          "pattern": "\\b(Stufe|Klasse|Kategorie)n? A[–-]D\\b",
+          "flags": "",
+          "note": "deutsche Umbenennung"
+        }
+      ],
+      "exceptions": "Bezeichner in Backticks (`abcd-classification.ts`, `/api/abcd-classify`) sind Code und kein Text."
+    },
+    {
+      "id": "provenance-model-proposal",
+      "concept": "Herkunftswert proposed",
+      "source": "lib/provenance.ts",
+      "en": "Model proposal",
+      "de": "Model proposal (Oberflaechentext, bleibt englisch)",
+      "variants": [
+        {
+          "pattern": "\\bAI[- ][Gg]enerated\\b",
+          "flags": "",
+          "note": "alter Badge-Text"
+        },
+        {
+          "pattern": "\\bModel Proposal\\b",
+          "flags": "",
+          "note": "Proposal gross"
+        },
+        {
+          "pattern": "\\bKI-generiert\\b",
+          "flags": "",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "provenance-not-determined",
+      "concept": "Herkunftswert not-determined",
+      "source": "lib/provenance.ts, DESIGN.md §4",
+      "en": "Not determined (im Satz: not determined)",
+      "de": "nicht bestimmt",
+      "variants": [
+        {
+          "pattern": "\\bnot computed\\b",
+          "flags": "i",
+          "note": "alter Text"
+        },
+        {
+          "pattern": "\\bNo verdict\\b",
+          "flags": "",
+          "note": "alter Text"
+        },
+        {
+          "pattern": "\\bundetermined\\b",
+          "flags": "i",
+          "note": ""
+        },
+        {
+          "pattern": "\\bNot Determined\\b",
+          "flags": "",
+          "note": "Determined gross"
+        },
+        {
+          "pattern": "\\bnicht ermittelt(bar)?\\b|\\bunbestimmt\\b",
+          "flags": "i",
+          "note": "deutsche Nebenform"
+        }
+      ]
+    },
+    {
+      "id": "provenance-other",
+      "concept": "die uebrigen Herkunftswerte",
+      "source": "lib/provenance.ts",
+      "en": "Proven · Confirmed · Reconstructed · Imported · Simulation · Demonstrated · mock · Stale",
+      "de": "wie englisch (Oberflaechentext)",
+      "variants": [
+        {
+          "pattern": "\\bSigned[- ]off\\b",
+          "flags": "i",
+          "note": "alter Text fuer Confirmed"
+        },
+        {
+          "pattern": "\\bStale-Notice\\b|\\bCatalog Match\\b",
+          "flags": "",
+          "note": "alte Badges"
+        },
+        {
+          "pattern": "\\bModel estimate\\b",
+          "flags": "i",
+          "note": "alter Text fuer Simulation"
+        },
+        {
+          "pattern": "\\bDemonstrated \\(mock\\)|\\bDemonstrated - mock\\b",
+          "flags": "",
+          "note": "Trenner ist ·"
+        }
+      ]
+    },
+    {
+      "id": "self-declaration",
+      "concept": "der Satz zur Selbstauskunft — Verantwortung liegt beim angemeldeten Konto",
+      "source": "DESIGN.md §4 (Confirmed) und §9 Glossar, lib/architecture-contract.ts",
+      "en": "a self-declaration, not a mandate",
+      "de": "eine Selbstauskunft, kein Mandat",
+      "variants": [
+        {
+          "pattern": "self-declaration, not an organi[sz]ational (mandate|approval)",
+          "flags": "i",
+          "note": "Langform"
+        },
+        {
+          "pattern": "\\bself declaration\\b",
+          "flags": "i",
+          "note": "ohne Bindestrich"
+        },
+        {
+          "pattern": "\\bSelbsterkl(ae|ä)rung\\b",
+          "flags": "i",
+          "note": "deutsches Synonym"
+        },
+        {
+          "pattern": "Selbstauskunft, kein (Organisationsmandat|organisatorisches Mandat)",
+          "flags": "i",
+          "note": "Langform deutsch"
+        }
+      ]
+    },
+    {
+      "id": "stages-as-tools",
+      "concept": "die sieben Stufen — ab 3.0.1 Werkzeuge des Arbeitsraums, nicht das Produkt",
+      "source": "lib/workflow-steps.ts, DESIGN.md §2.3 Punkt 3, ROADMAP 3.0.1",
+      "en": "the seven stages as tools: Analyze · Design · Transformation · Documentation · Testing · Economics · Delivery",
+      "de": "die sieben Stufen als Werkzeuge (Namen englisch)",
+      "variants": [
+        {
+          "pattern": "\\bTCO (stage|step|page)\\b|\\bTCO-(Stufe|Seite)\\b|\\bStufe TCO\\b",
+          "flags": "i",
+          "note": "die Stufe heisst Economics; TCO ist nur der Ordner"
+        },
+        {
+          "pattern": "\\bAnalyse (stage|step)\\b",
+          "flags": "",
+          "note": "britische Schreibweise — die Stufe heisst Analyze"
+        },
+        {
+          "pattern": "\\b(Handover|Übergabe) stage\\b",
+          "flags": "i",
+          "note": "die Stufe heisst Delivery"
+        }
+      ]
+    },
+    {
+      "id": "workspace",
+      "concept": "der Arbeitsraum eines Projekts",
+      "source": "DESIGN.md §2.3, components/workspace",
+      "en": "workspace",
+      "de": "Arbeitsraum",
+      "variants": [
+        {
+          "pattern": "\\bWork ?bench\\b",
+          "flags": "i",
+          "note": ""
+        },
+        {
+          "pattern": "\\bwork space\\b",
+          "flags": "i",
+          "note": "getrennt"
+        },
+        {
+          "pattern": "\\bArbeitsbereich\\b",
+          "flags": "",
+          "note": "deutsches Synonym"
+        }
+      ]
+    },
+    {
+      "id": "sharing",
+      "concept": "Teilen = Einsicht per Einladung an eine bestaetigte E-Mail-Adresse",
+      "source": "CLAUDE.md, ROADMAP Phase 5, docs/CONCEPT-EINSICHT-PER-EINLADUNG.md",
+      "en": "read access by invitation",
+      "de": "Einsicht per Einladung",
+      "variants": [
+        {
+          "pattern": "\\b(public|open|shareable) (share )?link\\b",
+          "flags": "i",
+          "note": "offene Links gibt es nicht (§8)"
+        },
+        {
+          "pattern": "\\bread-only access by invite\\b|\\bview access by invitation\\b",
+          "flags": "i",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "bpmn-format",
+      "concept": "das Austauschformat mit SAP Signavio",
+      "source": "ROADMAP §6, tests/signavio-claims-guard.spec.ts",
+      "en": "BPMN 2.0 XML",
+      "de": "BPMN 2.0 XML",
+      "variants": [
+        {
+          "pattern": "\\bBPMN ?2(?!\\.0)\\b|\\bBPMN-2\\.0-XML\\b|\\bBPMN 2\\.0-XML\\b",
+          "flags": "",
+          "note": ""
+        }
+      ]
+    }
+  ],
+  "retired": [
+    {
+      "id": "seven-stages-as-product",
+      "what": "die sieben Stufen als das Produkt ('7-stage workflow', 'siebenstufiger Ablauf') — ab 3.0.1 sind sie Werkzeuge im Arbeitsraum. Dass es sieben Stufen gibt, bleibt wahr; falsch wird nur, sie als den Weg durch das Produkt zu beschreiben.",
+      "source": "ROADMAP 3.0.1, 3.0.8 'nirgends mehr die sieben Stufen als Produkt'",
+      "patterns": [
+        "\\b(7|seven)[- ]stages?[- ](workflow|flow|process|pipeline|journey|product)\\b",
+        "\\bthrough (a|the) (7|seven)[- ]stage",
+        "\\b(7|seven)[- ]step (workflow|flow|process)\\b",
+        "\\b(7|sieben)[- ]?(Stufen|Schritte)[- ]?(Workflow|Ablauf|Prozess)\\b",
+        "\\bsiebenstufige[nrs]?\\b",
+        "\\bThe (7|seven)[- ]stage\\b"
+      ],
+      "allowIfLine": "(as tools|als Werkzeug|toolbar|Werkzeugleiste)",
+      "samples": {
+        "hit": "The 7-stage workflow takes custom code from analysis to delivery.",
+        "allowed": "the seven stages remain as tools in the workspace"
+      }
+    },
+    {
+      "id": "dark-mode",
+      "what": "Dark Mode, Theme-Schalter, `.dark`-Ueberschreibungen",
+      "source": "ROADMAP 1.6, §9 (15.09.2026)",
+      "patterns": [
+        "\\bdark[- ]mode\\b",
+        "\\bdark theme\\b",
+        "\\bDunkelmodus\\b",
+        "`dark` class"
+      ],
+      "samples": {
+        "hit": "Styling: Tailwind v4, dark mode via `dark` class from profile.",
+        "allowed": "Dark Mode entfällt (1.6)."
+      }
+    },
+    {
+      "id": "signavio-unverified",
+      "what": "Signavio-Import und BPMN-Import (die Rueckrichtung wartet bis nach 3.0, ROADMAP Phase 4), Signavio-Aussagen als geprueft oder zugesagt, Signavio-API-Anbindung — bis 4.3 protokolliert ist, gilt nur der Export als 'BPMN 2.0 XML'",
+      "source": "ROADMAP 0.2, Phase 4 (nur Ausgangsrichtung, 18.09.2026), 4.3, §8, Abschluss 3.0",
+      "patterns": [
+        "Signavio[- ]importable",
+        "importable into (SAP )?Signavio",
+        "validated for (SAP )?Signavio",
+        "tested with (SAP )?Signavio",
+        "\\bSignavio[- ]API\\b",
+        "Signavio (API )?(connector|integration)\\b",
+        "import(s|ed)? (directly )?into (SAP )?Signavio",
+        "\\bSignavio[- ]Import\\b|\\bBPMN[- ]import\\b|\\bimport(s|ing)? (a |the )?BPMN\\b"
+      ],
+      "samples": {
+        "hit": "Export a Signavio-importable BPMN file.",
+        "allowed": "No Signavio API connection — exchange runs through BPMN 2.0 XML files."
+      }
+    },
+    {
+      "id": "documentation-generator",
+      "what": "der alte 1.000-Zeichen-Dokumentationsgenerator mit erfundenen Rollen, KPIs und Dauer; components/ProcessDocumentation.tsx",
+      "source": "ROADMAP 3.0.5 (Weg C)",
+      "patterns": [
+        "\\bProcessDocumentation(\\.tsx)?\\b",
+        "\\b1[.,]000[- ](char(acter)?s?|Zeichen)\\b",
+        "\\b(roles|KPIs)(, | and )(KPIs|roles|durations?)\\b"
+      ],
+      "samples": {
+        "hit": "The documentation stage generates roles, KPIs and duration for each step.",
+        "allowed": "The documentation stage writes from the engine results."
+      }
+    },
+    {
+      "id": "pilot-banner",
+      "what": "Pilot-Banner und KI-Werbeetiketten",
+      "source": "ROADMAP 3.0.6, DESIGN.md §3.1 Blockliste",
+      "patterns": [
+        "Powered by Generative AI",
+        "\\bAI[- ]powered\\b",
+        "\\bKI-gest(ue|ü)tzt\\b"
+      ],
+      "samples": {
+        "hit": "Powered by Generative AI",
+        "allowed": "The model's name appears in the meta line."
+      }
+    },
+    {
+      "id": "not-built-tenancy",
+      "what": "Tenants, Organisationskonten, SSO, Self-Hosted Edition",
+      "source": "ROADMAP §8",
+      "patterns": [
+        "\\bmulti[- ]?tenan(t|cy)\\b",
+        "\\bSSO\\b",
+        "\\bsingle sign[- ]on\\b",
+        "\\bself[- ]hosted (edition|version|deployment)\\b",
+        "\\bon[- ]prem(ise)? edition\\b",
+        "\\bOrganisationskont(o|en)\\b|\\borgani[sz]ation accounts?\\b"
+      ],
+      "samples": {
+        "hit": "Enterprise customers get SSO and a self-hosted edition.",
+        "allowed": "Deliberately not built: tenants, SSO, guests."
+      }
+    },
+    {
+      "id": "not-built-roles",
+      "what": "Rollen an Beitraegen, 'Playing as', Self-Play, Rollen-Mandate, Rechtestufen, Gaeste, offene Links, Decision Request",
+      "source": "ROADMAP §8",
+      "patterns": [
+        "\\bPlaying as\\b",
+        "\\bself-play\\b",
+        "\\brole mandates?\\b|\\bRollen-?Mandat",
+        "\\bDecision Request\\b",
+        "\\bguest (access|users?)\\b|\\bG(ae|ä)ste ohne Konto\\b",
+        "\\b(comment|edit) permissions?\\b|\\bRechtestufen?\\b"
+      ],
+      "samples": {
+        "hit": "Send a Decision Request to the owner.",
+        "allowed": "Sharing is read access by invitation."
+      }
+    },
+    {
+      "id": "not-built-portfolio",
+      "what": "ALM-Adapter, Portfolio-Steuerung, Wellen- und Kapazitaetsplanung, Process Mining, Prozess-Repository, schreibende MCP-Tools",
+      "source": "ROADMAP §8",
+      "patterns": [
+        "\\bALM[- ]adapters?\\b",
+        "\\bportfolio (steering|management)\\b|\\bPortfolio-Steuerung\\b",
+        "\\bwave planning\\b|\\bWellenplanung\\b",
+        "\\bcapacity planning\\b|\\bKapazit(ae|ä)tsplanung\\b",
+        "\\bprocess mining\\b",
+        "\\bwrit(e|ing) MCP tools?\\b|\\bschreibende MCP"
+      ],
+      "samples": {
+        "hit": "Plan migration waves with portfolio steering.",
+        "allowed": "Export, and after 3.0 a read-only MCP."
+      }
+    }
+  ]
+}
