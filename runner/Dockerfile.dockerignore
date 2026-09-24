@@ -1,0 +1,10 @@
+# Allowlist: everything is excluded, then exactly what runner/Dockerfile copies.
+*
+!runner/package.json
+!runner/package-lock.json
+!runner/server.ts
+!runner/relay.ts
+!lib/test-sandbox/*.ts
+!lib/sandbox-module-guard.ts
+!lib/test-verdicts.ts
+!lib/google-id-token.ts
