@@ -5,7 +5,7 @@ import { initializeApp, getApps } from 'firebase/app';
 import { getAuth, connectAuthEmulator, createUserWithEmailAndPassword } from 'firebase/auth';
 import { adminSetDoc } from './helpers/admin-seed';
 import firebaseConfig from '../firebase-config.json';
-import { workspaceBackHref } from '../lib/workspace-back-href';
+import { stageBackLink, workspaceBackHref } from '../lib/workspace-back-href';
 
 /**
  * The seven stages look like one product, and this is what keeps them that way.
@@ -241,9 +241,20 @@ test.describe('"Back to workspace" leads to the view and layer the stage was ope
     expect(workspaceBackHref({ projectId: 'p-1', shell: false, search: '?view=it' })).toBe('/dashboard');
   });
 
-  test('the link waits for the profile, so a workspace account is never sent to the dashboard (f8d5367e0a00)', () => {
+  test('the link waits for the profile, so a workspace account is never sent to the dashboard (f8d5367e0a00, ba5d2cdeda03)', () => {
+    // While the profile loads, every account reads as having no workspace: the
+    // header must hold the place, not offer a way that may be the wrong one.
+    expect(stageBackLink({ projectId: 'p-1', profileLoading: true, shell: false, search: '?view=it' })).toEqual({ kind: 'pending' });
+    expect(stageBackLink({ projectId: 'p-1', profileLoading: false, shell: true, search: '?view=it' })).toEqual({
+      kind: 'link', href: '/project/p-1?view=it', to: 'workspace',
+    });
+    expect(stageBackLink({ projectId: 'p-1', profileLoading: false, shell: false, search: '' })).toEqual({
+      kind: 'link', href: '/dashboard', to: 'dashboard',
+    });
+    expect(stageBackLink({ projectId: '', profileLoading: false, shell: true, search: '' })).toEqual({ kind: 'none' });
+    // …and the header renders from that decision, not from a second copy of it.
     const src = fs.readFileSync(path.join(process.cwd(), 'components/StageHeader.tsx'), 'utf8');
-    expect(src).toMatch(/const backHref = projectId && !profileLoading \?/);
-    expect(src).toContain('const { profile, loading: profileLoading } = useUserProfile();');
+    expect(src).toContain('const back = stageBackLink({ projectId, profileLoading, shell, search });');
+    expect(src).not.toContain('workspaceBackHref(');
   });
 });

@@ -27,3 +27,26 @@ export function workspaceBackHref({
   const hash = from && LAYER_ID.test(from) ? `#${from}` : '';
   return `/project/${encodeURIComponent(projectId)}${query}${hash}`;
 }
+
+/**
+ * What the stage header shows where "Back to workspace" stands: nothing on the
+ * demo (no project), a held place while the profile is still loading — before
+ * that every account reads as having no workspace, and a click would send a
+ * workspace user to the dashboard (QA review of 472315d93455, f8d5367e0a00) —
+ * and the link once it is known where it leads.
+ */
+export function stageBackLink({
+  projectId,
+  profileLoading,
+  shell,
+  search,
+}: {
+  projectId: string;
+  profileLoading: boolean;
+  shell: boolean;
+  search: string;
+}): { kind: 'none' } | { kind: 'pending' } | { kind: 'link'; href: string; to: 'workspace' | 'dashboard' } {
+  if (!projectId) return { kind: 'none' };
+  if (profileLoading) return { kind: 'pending' };
+  return { kind: 'link', href: workspaceBackHref({ projectId, shell, search }), to: shell ? 'workspace' : 'dashboard' };
+}

@@ -6,7 +6,7 @@ import { useParams } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { PHASES, type PhaseKey } from '@/lib/workflow-steps';
-import { workspaceBackHref } from '@/lib/workspace-back-href';
+import { stageBackLink } from '@/lib/workspace-back-href';
 import { workspaceShellEnabled } from '@/lib/workspace-shell';
 import { BACK_LINK_CLASS } from '@/components/BackLink';
 
@@ -98,23 +98,22 @@ export default function StageHeader({
   // account, and a click in that moment would send a workspace user to the
   // dashboard (QA review of 472315d93455, f8d5367e0a00). The place is kept, so
   // nothing below moves when the link appears.
-  const backHref = projectId && !profileLoading ? workspaceBackHref({ projectId, shell, search }) : null;
-  const backPending = Boolean(projectId) && profileLoading;
+  const back = stageBackLink({ projectId, profileLoading, shell, search });
 
   return (
     <header
       data-stage-header={stage ?? ''}
       className={`mt-6 mb-8 ${centred ? 'text-center' : ''}`}
     >
-      {backPending && (
+      {back.kind === 'pending' && (
         <span aria-hidden="true" className={`${BACK_LINK_CLASS} mb-3 invisible`}>
           <ArrowLeft size={16} aria-hidden="true" /> Back to workspace
         </span>
       )}
-      {backHref && (
+      {back.kind === 'link' && (
         <Link
-          href={backHref}
-          data-stage-back={shell ? 'workspace' : 'dashboard'}
+          href={back.href}
+          data-stage-back={back.to}
           className={`${BACK_LINK_CLASS} mb-3`}
         >
           <ArrowLeft size={16} aria-hidden="true" /> Back to workspace
