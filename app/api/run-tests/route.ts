@@ -14,6 +14,8 @@ import { liveRunnerPermitted } from '@/lib/runner-egress-attestation';
 import { LIVE_TEST_EXECUTION } from '@/lib/locked-paths';
 import { parseTapOutput, packageNameOf, applyRunnerVerdicts } from '@/lib/test-verdicts';
 import { testRunSubject, TEST_RUN_RECEIPT_VERSION, type TestRunReceipt } from '@/lib/test-receipt';
+import { loadDraftForRun, recordDraftExecution } from '@/lib/repair-draft-store';
+import type { RepairDraft } from '@/lib/repair-draft';
 import { logger, errMessage } from '@/lib/logger';
 
 /**
@@ -268,7 +270,25 @@ export async function POST(req: Request) {
   // `tests` and `code` are deliberately not read out of the body any more — see
   // the ownership block below. What is left is which project, which of its cases
   // and which environment; all three are checked before anything runs.
-  const { projectId, selectedTestIds, s4Environment } = await req.json();
+  //
+  // Roadmap 8.7: `draftId` is the one exception, and it is not code — it names
+  // a repair draft the server itself wrote (`lib/repair-draft.ts`). With it the
+  // runner executes exactly that draft and records the receipt on the draft,
+  // never on the project; see the draft block below and step 6.
+  const { projectId, selectedTestIds, s4Environment, draftId: rawDraftId } = await req.json();
+  const draftId = typeof rawDraftId === 'string' && rawDraftId ? rawDraftId.replace(/[^a-zA-Z0-9_-]/g, '') : '';
+  if (rawDraftId !== undefined && rawDraftId !== null && (!draftId || draftId !== rawDraftId)) {
+    return NextResponse.json(
+      { output: '', error: 'Invalid repair draft id.', exitCode: 1 },
+      { status: 400 },
+    );
+  }
+  if (draftId && s4Environment === 'live') {
+    return NextResponse.json(
+      { output: '', error: 'A repair draft runs in the sandbox only.', exitCode: 1 },
+      { status: 400 },
+    );
+  }
 
   // The documented lock (lib/locked-paths.ts, G0:R0) refuses a live run before any work:
   // nothing is written, bundled, probed or loaded for a path that is closed.
@@ -342,14 +362,39 @@ export async function POST(req: Request) {
     );
   }
 
+  // Roadmap 8.7: a repair draft instead of the stored artefacts. Only the
+  // caller's own draft on this project, intact and not yet adopted — the store
+  // refuses everything else — and then exactly its code and suite, nothing the
+  // body says. Without this the retry after an auto-heal ran the old code.
+  let draft: RepairDraft | null = null;
+  if (draftId) {
+    try {
+      const { db } = await getAdminDb();
+      const loaded = await loadDraftForRun(db, { projectId: sanitizedProjectId, uid: decodedToken.uid, draftId });
+      if (!('draft' in loaded)) {
+        return NextResponse.json(
+          { output: '', error: loaded.error, exitCode: 1, code: loaded.code },
+          { status: loaded.status },
+        );
+      }
+      draft = loaded.draft;
+    } catch {
+      return NextResponse.json(
+        { output: '', error: 'The repair draft could not be read.', exitCode: 1 },
+        { status: 500 },
+      );
+    }
+  }
+
   const storedSuite = projectData.testSuite as { code?: unknown; spec?: unknown } | undefined;
-  const testCode =
-    storedSuite && typeof storedSuite.code === 'string' && storedSuite.code
+  const testCode = draft
+    ? draft.suiteCode || null
+    : storedSuite && typeof storedSuite.code === 'string' && storedSuite.code
       ? storedSuite.code
       : storedSuite && typeof storedSuite.spec === 'string' && storedSuite.spec
         ? storedSuite.spec
         : null;
-  const code = typeof projectData.generatedCode === 'string' ? projectData.generatedCode : '';
+  const code = draft ? draft.generatedCode : typeof projectData.generatedCode === 'string' ? projectData.generatedCode : '';
   if (!testCode) {
     return NextResponse.json(
       { output: '', error: "No test code provided. Please click 'Regenerate Tests' to create a Node.js test suite.", exitCode: 1 },
@@ -478,7 +523,7 @@ export async function POST(req: Request) {
       // `buildError` lets the client auto-heal (ask the AI to repair the offending
       // generated module/test code) and retry, rather than surfacing a dead end.
       return NextResponse.json(
-        { output: '', error: `Compilation failed:\n${msg}`, exitCode: 1, testResults: [], buildError: true },
+        { output: '', error: `Compilation failed:\n${msg}`, exitCode: 1, testResults: [], buildError: true, ...(draft ? { draftId: draft.draftId } : {}) },
         { status: 200 },
       );
     }
@@ -794,11 +839,14 @@ if (ALLOWED_SUFFIXES.length === 0) {
         { status: 501 },
       );
     }
+    // Roadmap 8.7: a draft run names the draft's digests — what actually ran —
+    // and the draft itself. The run and the case list are the project's, as
+    // for every run: the draft only replaces code and suite.
     const receipt: TestRunReceipt = {
       v: TEST_RUN_RECEIPT_VERSION,
       runId: subject.runId,
-      codeDigest: subject.codeDigest,
-      suiteDigest: subject.suiteDigest,
+      codeDigest: draft ? draft.codeDigest : subject.codeDigest,
+      suiteDigest: draft ? draft.suiteDigest : subject.suiteDigest,
       casesDigest: subject.casesDigest,
       environment: 'mock',
       scope: { selected: selectedScope, cases: storedCases.length },
@@ -809,8 +857,39 @@ if (ALLOWED_SUFFIXES.length === 0) {
       verdicts: testResults
         .filter((r) => known.has(r.id))
         .map((r) => ({ id: r.id, status: r.status as TestRunReceipt['verdicts'][number]['status'] })),
+      ...(draft ? { draft: { id: draft.draftId, digest: draft.draftDigest } } : {}),
     };
     let recorded = false;
+    // A draft run is recorded on the draft and nowhere else: no verdicts and no
+    // receipt reach the project, so trying a candidate cannot turn Testing
+    // green. Adoption (`/api/projects/{id}/repair-drafts`, compare-and-swap)
+    // carries this receipt onto the project together with the code it names.
+    if (draft) {
+      try {
+        const { db } = await getAdminDb();
+        recorded = await recordDraftExecution(db, {
+          projectId: sanitizedProjectId,
+          draftId: draft.draftId,
+          execution: { receipt, testResults },
+        });
+      } catch (draftErr) {
+        logger.error('run-tests: the draft execution could not be recorded', {
+          route: 'api/run-tests',
+          projectId: sanitizedProjectId,
+          error: errMessage(draftErr),
+        });
+      }
+      return NextResponse.json({
+        output: stdout,
+        error: stderr,
+        exitCode,
+        testResults,
+        stubbedPackages: [...stubbedPackages].sort(),
+        draftId: draft.draftId,
+        draftReceipt: recorded ? receipt : null,
+        receipt: null,
+      });
+    }
     try {
       const { db } = await getAdminDb();
       await db

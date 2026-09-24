@@ -119,6 +119,18 @@ export interface TestRunReceipt {
   exitCode: number;
   /** One entry per case the runner reported on. */
   verdicts: Array<{ id: string; status: TestRunVerdict }>;
+  /**
+   * Roadmap 8.7 — present when the run executed a repair draft rather than the
+   * stored artefacts: the draft's id and `draftDigest` (`lib/repair-draft.ts`).
+   * `codeDigest` and `suiteDigest` above are then the draft's, which is what
+   * actually ran. Such a receipt is written onto the draft, never onto the
+   * project; it reaches the project only by adoption, in the same transaction
+   * as the code it names — so the coverage check below needs no special case.
+   *
+   * Optional and additive, so the version stays 2: it adds provenance and
+   * changes the meaning of no other claim. Absent means "the stored artefacts ran".
+   */
+  draft?: { id: string; digest: string };
 }
 
 const VERDICTS: readonly string[] = ['Passed', 'Failed', 'Not run', 'Skipped', 'Todo', 'Error'];
@@ -166,6 +178,11 @@ export function isTestRunReceipt(value: unknown): value is TestRunReceipt {
     typeof r.executedAt === 'string' &&
     typeof r.executedBy === 'string' &&
     typeof r.exitCode === 'number' &&
+    (r.draft === undefined ||
+      (!!r.draft &&
+        typeof r.draft === 'object' &&
+        typeof (r.draft as { id?: unknown }).id === 'string' &&
+        typeof (r.draft as { digest?: unknown }).digest === 'string')) &&
     Array.isArray(r.verdicts) &&
     r.verdicts.every(
       (entry) =>

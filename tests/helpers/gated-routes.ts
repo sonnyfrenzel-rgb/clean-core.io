@@ -36,6 +36,9 @@ export const GATED_ROUTES: GatedRoute[] = [
   // import. The sign-off it records is carried by the audit pack's decision
   // record, so a token obtained before the second factor must not reach it.
   { file: 'app/api/projects/[projectId]/commands/route.ts', method: 'POST', path: (p) => `/api/projects/${p}/commands`, body: { command: 'revoke-architecture' } },
+  // Roadmap 8.7: repair drafts. Adoption rewrites the generated code and puts a
+  // receipt on the project — the same weight as a run, behind the same factor.
+  { file: 'app/api/projects/[projectId]/repair-drafts/route.ts', method: 'POST', path: (p) => `/api/projects/${p}/repair-drafts`, body: { action: 'adopt', draftId: 'none', expectedDraftDigest: 'none' } },
   // Roadmap 1.4: the admin-only switch for the workspace shell. Both verbs gate
   // on the factor; only GET is knocked on here, because POST checks
   // administrator status first and the probe account is not one — it would
