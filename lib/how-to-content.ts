@@ -87,7 +87,7 @@ export const HOW_TO_PHASE_CONTENT: Readonly<Record<PhaseKey, PhaseHowTo>> = {
       'On the RAP track the draft is a RAP design inside SAP S/4HANA; on the CAP track it is a SAP CAP design on SAP BTP.',
       'It covers the project structure, service endpoints, data consistency, security requirements and a phased roadmap.',
       'The draft is model output. Review it before you accept it.',
-      'Accepting records the target, your account and the time on the server: a self-declaration, not an organisational approval.',
+      'Accepting records the target, your account and the time on the server: a self-declaration, not a mandate.',
     ],
     questions: [
       {
@@ -136,7 +136,7 @@ export const HOW_TO_PHASE_CONTENT: Readonly<Record<PhaseKey, PhaseHowTo>> = {
       'The process documentation is read out of the whole analysed source — the process element by element, what each part does, the update task and the lanes the code proves, every statement with its lines — and, when you ask for it, a model writes a business layer with SOPs, a RACI matrix and control checkpoints.',
     details: [
       'The process can be exported as BPMN 2.0 XML and the documentation as Confluence HTML.',
-      'An owner, roles, KPIs or durations are not in the source, so the documentation lists them as not determined instead of filling them in.',
+      'An owner, the roles, performance indicators or durations are not in the source, so the documentation lists them as not determined instead of filling them in.',
       'The business layer can be generated once the documentation exists. It is model output, not a reading of the code.',
     ],
     questions: [

@@ -73,7 +73,7 @@ const doesDo = [
   'Generates a first Clean-Core-compliant draft plus signed evidence.',
   'Runs deterministic analysis before any AI.',
   'Recommends RAP / CAP with a transparent rationale.',
-  'Produces tests, BPMN, TCO and an audit pack.',
+  'Produces tests, BPMN 2.0 XML, a cost simulation and an audit pack.',
 ];
 
 const doesNotDo = [
@@ -128,7 +128,7 @@ export default function WhitepaperPage() {
         <div className="max-w-4xl mx-auto px-6 relative z-10 text-center">
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-50 text-emerald-700 font-bold text-xs mb-8 border border-emerald-100 shadow-sm">
             <ShieldCheck className="w-4 h-4" />
-            <span className="uppercase tracking-wider">Free Community Edition · Edition 2.2</span>
+            <span className="uppercase tracking-wider">Free Community Edition</span>
           </div>
 
           <h1 className="text-3xl sm:text-4xl md:text-7xl font-black tracking-tighter mb-6 leading-[0.9] text-gray-950">
@@ -147,7 +147,7 @@ export default function WhitepaperPage() {
               { label: 'Author', value: 'Felix Frenzel' },
               { label: 'Platform', value: 'Clean-Core.io' },
               { label: 'Classification', value: 'Public · Community Guide' },
-              { label: 'Edition', value: `2.2 · ${APP_VERSION}` },
+              { label: 'Edition', value: APP_VERSION },
             ].map((m) => (
               <div key={m.label} className="bg-white/80 backdrop-blur-sm border border-gray-200/80 rounded-xl p-3">
                 <div className="text-[10px] font-black uppercase tracking-wider text-gray-400 mb-1">{m.label}</div>
@@ -207,7 +207,7 @@ export default function WhitepaperPage() {
                 is: the files, the layout and the generated tests, for compiling and
                 activating in your system.
               */}
-              A guided 7-stage workflow takes you from Analyze → Design → Transformation → Documentation → Testing → TCO → Delivery, and lets you export the generated package — all modularized files, standard abapGit layout and the generated tests — to compile, activate and test in your own system.
+              Each project opens in one workspace with three views — Business, IT and Management — and the seven stages Analyze · Design · Transformation · Documentation · Testing · Economics · Delivery as its tools. Delivery lets you export the generated package — all modularized files, standard abapGit layout and the generated tests — to compile, activate and test in your own system.
             </p>
           </div>
         </section>
@@ -216,13 +216,13 @@ export default function WhitepaperPage() {
         <section id="benefits-governance">
           <SectionEyebrow number="03" total="08" />
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tighter text-gray-950 mb-4">Benefits, Part 2 — Transparency &amp; Governance</h2>
-          <p className="text-gray-600 leading-relaxed mb-8">Version 2.2 makes the reasoning inspectable and the progress auditable — so a recommendation survives scrutiny in a board room, not just a demo.</p>
+          <p className="text-gray-600 leading-relaxed mb-8">Clean-Core.io makes the reasoning inspectable and the progress auditable — so a recommendation survives scrutiny in a board room, not just a demo.</p>
           <CardGrid cards={benefitsGovernance} />
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-8">
             {[
               { v: '3 Scores', l: 'Clean Core · Complexity · Criticality' },
               { v: 'BPMN 2.0', l: '+ RACI & Level-5 SOP blueprints' },
-              { v: 'TCO model', l: 'Priced with your own figures' },
+              { v: 'Economics', l: 'A simulation on your own figures' },
             ].map((s) => (
               <div key={s.v} className="bg-slate-50 border border-gray-200 rounded-2xl p-5 text-center">
                 <div className="text-lg font-black text-gray-900">{s.v}</div>
@@ -231,7 +231,7 @@ export default function WhitepaperPage() {
             ))}
           </div>
           <div className="bg-emerald-50/70 border border-emerald-200 border-l-4 border-l-green-600 rounded-xl p-6 mt-4">
-            <p className="text-sm text-gray-700 leading-relaxed"><strong>Portable by design:</strong> outputs are standard — abapGit ZIP, ABAP-Unit / Express tests, BPMN 2.0 XML (import into SAP Signavio or SAP Build not yet verified) and a signed audit pack. You own what you generate. No lock-in.</p>
+            <p className="text-sm text-gray-700 leading-relaxed"><strong>Portable by design:</strong> outputs are standard — abapGit ZIP, ABAP-Unit / Express tests, BPMN 2.0 XML files (there is no connection to a Signavio workspace) and a signed audit pack. You own what you generate. No lock-in.</p>
           </div>
         </section>
 
@@ -408,7 +408,7 @@ export default function WhitepaperPage() {
             <div className="bg-slate-900 p-1 rounded-md"><div className="w-2 h-2 rounded-sm bg-green-600" /></div>
             <span className="font-bold text-gray-600">Clean-Core<span className="text-gray-400">.io</span></span>
           </div>
-          <span>Community Whitepaper · Edition 2.2 · {APP_VERSION}</span>
+          <span>Community Whitepaper · {APP_VERSION}</span>
           <Link href="/impressum" className="hover:text-green-600 transition-colors">Impressum</Link>
         </div>
       </footer>

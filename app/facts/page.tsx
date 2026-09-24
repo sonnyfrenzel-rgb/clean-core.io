@@ -10,7 +10,7 @@ const BASE = process.env.NEXT_PUBLIC_APP_URL || 'https://clean-core.io';
 export const metadata: Metadata = withTwitterCard({
   title: 'Facts — the source for every public number | Clean-Core.io',
   description:
-    'Every number this site states in public — object count, successor count, the A–D level distribution, both synced catalog files with their hash and sync date, the engine and rule version, and the reference run — in one place, and as JSON.',
+    'Every number this site states in public — object count, successor count, the Level A–D distribution, both synced catalog files with their hash and sync date, the engine and rule version, and the reference run — in one place, and as JSON.',
   alternates: { canonical: `${BASE}/facts` },
   openGraph: {
     title: 'Facts — the source for every public number',
@@ -40,7 +40,7 @@ export default function FactsPage() {
     '@type': 'Dataset',
     name: 'Clean-Core.io public facts',
     description:
-      'The object count, successor count, A-D level distribution, catalog artefact provenance, engine version, rule version and reference-run figures every public Clean-Core.io page derives from.',
+      'The object count, successor count, Level A–D distribution, catalog artefact provenance, engine version, rule version and reference-run figures every public Clean-Core.io page derives from.',
     creator: { '@type': 'Organization', name: 'Clean-Core.io', url: BASE },
     url: `${BASE}/facts`,
     isAccessibleForFree: true,
@@ -94,7 +94,7 @@ export default function FactsPage() {
 
       {/* A-D distribution */}
       <section className="space-y-4">
-        <h2 className="text-2xl font-black tracking-tight text-gray-950">A–D level distribution</h2>
+        <h2 className="text-2xl font-black tracking-tight text-gray-950">Level A–D distribution</h2>
         <p className="text-sm text-slate-600 leading-relaxed">
           A census of SAP&apos;s own published data — not of any customer&apos;s code. The rule that
           produces it, with its version and the two source files, is at{' '}
