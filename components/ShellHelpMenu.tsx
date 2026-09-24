@@ -3,6 +3,7 @@
 import React, { useCallback, useEffect, useId, useRef, useState } from 'react';
 import Link from 'next/link';
 import { ChevronDown, CircleHelp, Keyboard, X } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 /**
  * The Help menu of the shell bar, and the "Keyboard shortcuts" it opens —
@@ -16,20 +17,144 @@ import { ChevronDown, CircleHelp, Keyboard, X } from 'lucide-react';
  * added here in the same change. Every entry below points at the handler that
  * implements it, so the next reader can check the list against the code.
  *
- * The menu is a disclosure (a button with `aria-expanded` and a panel), not an
- * ARIA `menu`: it holds a link, and a `role="menu"` would promise arrow-key
- * navigation over `menuitem`s that a link list does not have. The dialog is a
- * native `<dialog>` opened with `showModal()`, so the page behind it is inert
- * and Escape closes it without code of ours that could forget either; the
- * focus is handed back to what opened it.
+ * **A menu button in the WAI-ARIA sense** (block D, step D.6), like the account
+ * menu beside it — both run on `useShellMenu` below. Until D.6 this was a
+ * disclosure, because a `role="menu"` without the keyboard of a menu is a
+ * promise the list did not keep. It keeps it now: the items are `menuitem`s,
+ * the arrow keys, Home and End move between them, Escape closes and gives the
+ * focus back, Tab leaves. The guard is `tests/a11y-source-guard.spec.ts`.
+ *
+ * The dialog is a native `<dialog>` opened with `showModal()`, so the page
+ * behind it is inert and Escape closes it without code of ours that could
+ * forget either; the focus is handed back to what opened it.
  *
  * `?` (Shift + /) opens the list from anywhere that is not a text field.
  *
  * Below `sm` the trigger is not shown: on a phone the shell bar already holds
- * the logo, the way back, the quota and the account, and a fifth element pushed
- * it past the screen. The assistant is in the account menu there, and a phone
- * has no keyboard to list shortcuts for; a tablet with one still gets `?`.
+ * the logo, the path, the quota and the account, and a fifth element pushed it
+ * past the screen. The assistant is in the account menu there, and a phone has
+ * no keyboard to list shortcuts for; a tablet with one still gets `?`.
  */
+
+/**
+ * The keyboard of a menu button — WAI-ARIA APG "Menu Button", for the two
+ * menus of the shell bar (Help here, the account menu in `app/(app)/layout.tsx`).
+ *
+ *   on the button   Enter, Space, ↓ open and focus the first item; ↑ the last
+ *   in the menu     ↓ ↑ move (and wrap), Home / End jump, Escape closes and
+ *                   returns the focus to the button, Tab closes and moves on
+ *   anywhere        a pointer press outside the menu closes it
+ *
+ * Items are found by `role="menuitem"` inside the element `menuRef` points at,
+ * so a menu whose items depend on the account (Admin Console, Show tips again)
+ * needs no list of its own. Every item carries `tabIndex={-1}`: the menu is one
+ * stop, and the arrow keys move inside it.
+ */
+export function useShellMenu() {
+  const [open, setOpen] = useState(false);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const focusOnOpen = useRef<'first' | 'last'>('first');
+  const menuId = useId();
+
+  const items = useCallback(
+    () => Array.from(menuRef.current?.querySelectorAll<HTMLElement>('[role="menuitem"]') ?? []),
+    [],
+  );
+
+  const close = useCallback((returnFocus: boolean) => {
+    setOpen(false);
+    if (returnFocus) triggerRef.current?.focus();
+  }, []);
+
+  // Into the menu once it has rendered.
+  useEffect(() => {
+    if (!open) return;
+    const list = items();
+    (focusOnOpen.current === 'last' ? list[list.length - 1] : list[0])?.focus();
+  }, [open, items]);
+
+  // Escape from wherever the focus is, and a press outside the menu.
+  useEffect(() => {
+    if (!open) return undefined;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return;
+      event.preventDefault();
+      close(true);
+    };
+    const onPointer = (event: MouseEvent) => {
+      const target = event.target as Node;
+      if (triggerRef.current?.contains(target) || menuRef.current?.contains(target)) return;
+      setOpen(false);
+    };
+    document.addEventListener('keydown', onKey);
+    document.addEventListener('mousedown', onPointer);
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.removeEventListener('mousedown', onPointer);
+    };
+  }, [open, close]);
+
+  const openAt = useCallback((where: 'first' | 'last') => {
+    focusOnOpen.current = where;
+    setOpen(true);
+  }, []);
+
+  const triggerProps = {
+    ref: triggerRef,
+    type: 'button' as const,
+    'aria-haspopup': 'menu' as const,
+    'aria-expanded': open,
+    'aria-controls': open ? menuId : undefined,
+    onClick: () => (open ? close(false) : openAt('first')),
+    onKeyDown: (event: React.KeyboardEvent<HTMLButtonElement>) => {
+      if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return;
+      event.preventDefault();
+      openAt(event.key === 'ArrowUp' ? 'last' : 'first');
+    },
+  };
+
+  const menuProps = {
+    ref: menuRef,
+    id: menuId,
+    role: 'menu' as const,
+    onKeyDown: (event: React.KeyboardEvent<HTMLDivElement>) => {
+      const list = items();
+      if (!list.length) return;
+      const at = list.indexOf(document.activeElement as HTMLElement);
+      let next: HTMLElement | undefined;
+      if (event.key === 'ArrowDown') next = list[(at + 1) % list.length];
+      else if (event.key === 'ArrowUp') next = list[(at - 1 + list.length) % list.length];
+      else if (event.key === 'Home') next = list[0];
+      else if (event.key === 'End') next = list[list.length - 1];
+      else if (event.key === 'Tab') {
+        setOpen(false);
+        return;
+      } else return;
+      event.preventDefault();
+      next?.focus();
+    },
+  };
+
+  return { open, close, triggerRef, triggerProps, menuProps };
+}
+
+/**
+ * The look of a shell menu: the panel, and its items — set once on the
+ * `role="menu"` element for every `menuitem` inside it, so the two menus and
+ * their items cannot drift apart. 13 px / 600 in ink, a muted row on hover,
+ * the global focus ring (§1.6) on the item the arrow keys reached; no green
+ * (ADR-007 — green is for what is proven).
+ */
+export const SHELL_MENU_PANEL =
+  'absolute right-0 z-20 mt-2 w-64 max-w-[calc(100vw-2rem)] rounded-cc-card border border-cc-line bg-cc-surface p-1 shadow-cc-dialog';
+export const SHELL_MENU_ITEMS = cn(
+  'flex flex-col',
+  '[&_[role=menuitem]]:flex [&_[role=menuitem]]:w-full [&_[role=menuitem]]:items-center [&_[role=menuitem]]:gap-2',
+  '[&_[role=menuitem]]:rounded-cc-row [&_[role=menuitem]]:px-3 [&_[role=menuitem]]:py-2 [&_[role=menuitem]]:text-left',
+  '[&_[role=menuitem]]:text-[13px] [&_[role=menuitem]]:font-semibold [&_[role=menuitem]]:text-cc-ink [&_[role=menuitem]]:no-underline',
+  '[&_[role=menuitem]:hover]:bg-cc-surface-muted [&_[role=menuitem]]:pointer-coarse:min-h-11',
+);
 
 interface Shortcut {
   keys: string[];
