@@ -38,9 +38,9 @@ export const NOT_DETERMINED_LABEL = 'Not determined';
 
 /** What this document is. Printed at the top of every rendering. */
 export const PROCESS_DOCUMENTATION_DISCLAIMER =
-  'Read by the engine out of the whole source the signed run analysed. No language model wrote any of it. '
-  + 'Every statement names the lines it was read from, or says that it is not determined and why. '
-  + 'Business names and lanes from the naming stage are model proposals and are marked as such.';
+  'Read by the engine out of the whole source the signed run analysed. No language model wrote its process structure '
+  + 'or its statements. Every statement names the lines it was read from, or says that it is not determined and why. '
+  + 'The one exception is marked where it appears: business names and lanes from the naming stage are model proposals.';
 
 /**
  * What a document written before 3.0.5 is, in one sentence. It is shown, never

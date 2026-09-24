@@ -248,7 +248,11 @@ test.describe('the stored form', () => {
   test('the Markdown says where it comes from and carries the gaps', () => {
     const { doc } = documentOf('Z_MM_PO_APPROVAL.abap');
     const md = processDocumentationToMarkdown(doc);
-    expect(md).toContain('No language model wrote any of it');
+    // Not "no model wrote any of it": the naming stage's names and lanes are
+    // model proposals inside the same document (QA review of 4b4586aff273).
+    expect(md).toContain('No language model wrote its process structure or its statements.');
+    expect(md).not.toContain('No language model wrote any of it');
+    expect(md).toContain('business names and lanes from the naming stage are model proposals');
     expect(md).toContain('## Not determined');
     for (const gap of doc.notDetermined) expect(md).toContain(`**${gap.subject}:** ${NOT_DETERMINED_LABEL}`);
     expect(md).toContain('M_BANF_EKG');
