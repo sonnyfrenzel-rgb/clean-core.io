@@ -1,6 +1,6 @@
 /**
  * Fixed wording outward, the reason into the server log — for the sites of
- * SEC-2026-525.
+ * SEC-2026-525, SEC-2026-481, SEC-2026-492 and SEC-2026-497.
  *
  * Source-level, like `tests/route-hardening-b88c77b.spec.ts`, whose convention
  * this follows: what each finding names is a value that reaches the response,
@@ -64,4 +64,28 @@ test('SEC-2026-525: the metadata endpoint\'s error body stays in the log too', (
   const src = code('app/api/fetch-s4-metadata/route.ts');
   expect(src).not.toMatch(/errorBody \? errorBody\.substring/);
   expect(src).toContain("logger.warn('s4 metadata endpoint rejected'");
+});
+
+test('SEC-2026-481, SEC-2026-492: the catch answers a fixed sentence and logs the reason', () => {
+  const sites = [
+    { file: 'app/api/projects/[projectId]/commands/route.ts', fixed: "{ error: 'Failed to run the command.' }", log: "logger.error('project command failed'" },
+    { file: 'app/api/consent/route.ts', fixed: "{ error: 'Failed to record consent.' }", log: "logger.error('consent record failed'" },
+  ];
+  for (const site of sites) {
+    const src = code(site.file);
+    expect(src, `${site.file} lost the fixed answer`).toContain(site.fixed);
+    expect(src, `${site.file} lost the log line`).toContain(site.log);
+    for (const hit of src.matchAll(/\{\s*status:\s*500\s*\}/g)) {
+      const before = src.slice(Math.max(0, (hit.index ?? 0) - 400), hit.index);
+      const answered = before.slice(before.lastIndexOf('NextResponse.json('));
+      expect(answered, `${site.file} answers 500 with a caught message`).not.toMatch(/\w+\??\.message|\berror: message\b/);
+    }
+  }
+});
+
+test('SEC-2026-497: the $metadata 404 names no caught error text', () => {
+  const src = code('app/api/fetch-odata-metadata/route.ts');
+  expect(src).not.toMatch(/lastError = err\??\.message/);
+  expect(src).not.toMatch(/lastError = errMessage\(/);
+  expect(src).toContain("logger.warn('odata metadata candidate failed'");
 });

@@ -472,9 +472,15 @@ export async function POST(req: NextRequest) {
             });
           }
 
-          lastError = `HTTP ${response.status} from ${candidateUrl}`;
+          lastError = `HTTP ${response.status}`;
         } catch (err: any) {
-          lastError = err.message;
+          // The reason goes to the server log only; the caller gets a fixed
+          // sentence (SEC-2026-497).
+          logger.warn('odata metadata candidate failed', {
+            route: 'api/fetch-odata-metadata',
+            error: errMessage(err),
+          });
+          lastError = 'the request did not complete';
         }
       }
 

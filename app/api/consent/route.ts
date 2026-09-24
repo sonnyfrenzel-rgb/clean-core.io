@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyRequestAuth, getAdminDb } from '@/lib/firebase-admin';
 import { recordConsent } from '@/lib/consent';
 import { TERMS_VERSION } from '@/lib/constants';
+import { logger, errMessage } from '@/lib/logger';
 
 /**
  * POST /api/consent
@@ -53,7 +54,13 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json({ ok: true, termsVersion: TERMS_VERSION });
-  } catch (err: any) {
-    return NextResponse.json({ error: err?.message || 'Failed to record consent.' }, { status: 500 });
+  } catch (err: unknown) {
+    // The reason goes to the server log; the caller gets a fixed sentence
+    // (SEC-2026-492).
+    logger.error('consent record failed', {
+      route: 'api/consent',
+      error: errMessage(err),
+    });
+    return NextResponse.json({ error: 'Failed to record consent.' }, { status: 500 });
   }
 }

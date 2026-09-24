@@ -14,6 +14,7 @@ import { deriveProjectDecision } from '@/lib/decision-facts';
 import type { EvidenceChange } from '@/lib/run-evidence-digest';
 import type { DocumentReference, Transaction } from 'firebase-admin/firestore';
 import { isFirestoreId } from '@/lib/firestore-id';
+import { logger, errMessage } from '@/lib/logger';
 
 /**
  * POST /api/projects/{projectId}/commands  — roadmap 0.7
@@ -237,7 +238,12 @@ export async function POST(
 
     return NextResponse.json({ ok: true, fields: outcome.fields });
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Failed to run the command.';
-    return NextResponse.json({ error: message }, { status: 500 });
+    // The reason goes to the server log; the caller gets a fixed sentence
+    // (SEC-2026-481).
+    logger.error('project command failed', {
+      route: 'api/projects/[projectId]/commands',
+      error: errMessage(err),
+    });
+    return NextResponse.json({ error: 'Failed to run the command.' }, { status: 500 });
   }
 }
