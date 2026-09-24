@@ -286,6 +286,16 @@ test.describe('the card, as the reader sees it', () => {
       ...executed,
       testRunReceipt: receiptFor(executed),
     });
+    // The runs the projects name have to exist. Since roadmap 3.0.2 an id
+    // without a readable run is "could not be read", not a finished Analyze;
+    // these fixtures named runs they never created. `userId` sits on the run
+    // because the rule for runs reads it there.
+    await adminSetDoc(`projects/${OPEN_ID}/runs`, 'run-open', {
+      userId: adminUid, status: 'completed', createdAt: new Date(), cleanCoreScore: 62,
+    });
+    await adminSetDoc(`projects/${DONE_ID}/runs`, 'run-done', {
+      userId: adminUid, status: 'completed', createdAt: new Date(), cleanCoreScore: 62,
+    });
   });
 
   test('an open point arrives with its reason, its "why this one", and a Reconstructed chip', async ({ page }) => {
