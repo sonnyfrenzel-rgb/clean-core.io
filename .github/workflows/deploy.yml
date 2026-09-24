@@ -133,9 +133,143 @@ jobs:
       - name: Dependency Audit (production)
         run: npm audit --omit=dev --audit-level=high
 
-  # Job 2: Build & Deploy to Google Cloud Run
-  deploy:
+  # Job 2a: the isolated test runners (roadmap 8.9, SECURITY.md §7).
+  #
+  # A job in this pipeline rather than a workflow of its own, for three reasons:
+  # the runner image carries the execution core the validate job just tested, so
+  # it must pass the same gate (validate + security) before it ships; the app
+  # deploy below must not go out ahead of the runner it calls, which only
+  # `needs:` can order; and it signs in exactly the way the app deploy does, with
+  # the same Workload Identity provider, without a second copy of that setup.
+  #
+  # Off until the project owner has created the network (runner-net, subnets
+  # runner-mock / runner-live, tag-based firewall, private DNS for run.app) and
+  # the service account without roles: `vars.RUNNER_DEPLOY_ENABLED == 'true'`.
+  # Skipped, the app deploys as before — and without RUNNER_URL a deployed app
+  # runs no tests at all ("dort oder gar nicht").
+  #
+  # No secret of any kind is read in this job. The runners get RUNNER_MODE and,
+  # for the live one, the app origin it may relay to — neither is a secret.
+  deploy-runner:
     needs: [validate, security]
+    if: vars.RUNNER_DEPLOY_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+
+      # Security: github.ref_name and the variables are passed via env and
+      # checked for shape before they reach an output.
+      - name: Set Runner Context
+        id: runner-ctx
+        env:
+          REF_NAME: ${{ github.ref_name }}
+          PROXY_ORIGIN_MAIN: ${{ vars.S4_PROXY_BASE_URL_MAIN }}
+          PROXY_ORIGIN_DEV: ${{ vars.S4_PROXY_BASE_URL_DEV }}
+        run: |
+          case "$REF_NAME" in
+            main) suffix="";     proxy_origin="$PROXY_ORIGIN_MAIN" ;;
+            dev)  suffix="-dev"; proxy_origin="$PROXY_ORIGIN_DEV" ;;
+            *)
+              echo "::error::The test runners deploy from main and dev only (got $REF_NAME)." >&2
+              exit 1
+              ;;
+          esac
+          if [ -n "$proxy_origin" ] && ! printf '%s' "$proxy_origin" | grep -Eq '^https://[a-z0-9.-]+$'; then
+            echo "::error::S4_PROXY_BASE_URL_* must be a plain https origin." >&2
+            exit 1
+          fi
+          echo "mock_service=clean-core-runner${suffix}" >> "$GITHUB_OUTPUT"
+          echo "live_service=clean-core-runner-live${suffix}" >> "$GITHUB_OUTPUT"
+          echo "proxy_origin=${proxy_origin}" >> "$GITHUB_OUTPUT"
+          echo "image=europe-west1-docker.pkg.dev/cleancore-491216/cloud-run-source-deploy/clean-core-runner:${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
+
+      - name: Authenticate with Google Cloud
+        id: gcp-auth
+        uses: google-github-actions/auth@c200f3691d83b41bf9bbd8638997a462592937ed # v2
+        with:
+          workload_identity_provider: 'projects/819734065839/locations/global/workloadIdentityPools/github-pool/providers/github-provider'
+          service_account: '819734065839-compute@developer.gserviceaccount.com'
+          project_id: 'cleancore-491216'
+          token_format: 'access_token'
+
+      # One image for both services, built from the repository root with the
+      # allowlist in runner/Dockerfile.dockerignore: Node, the bundled runner
+      # and esbuild. No app code, no .env, no secrets enter the build context.
+      - name: Build and Push Runner Image
+        id: image
+        env:
+          IMAGE: ${{ steps.runner-ctx.outputs.image }}
+          ACCESS_TOKEN: ${{ steps.gcp-auth.outputs.access_token }}
+        run: |
+          printf '%s' "$ACCESS_TOKEN" | docker login -u oauth2accesstoken --password-stdin https://europe-west1-docker.pkg.dev
+          docker build -f runner/Dockerfile -t "$IMAGE" .
+          docker push "$IMAGE"
+          digest="$(docker inspect --format='{{index .RepoDigests 0}}' "$IMAGE")"
+          echo "digest=${digest}" >> "$GITHUB_OUTPUT"
+
+      # The mock runner: its VPC egress reaches nothing.
+      - name: Deploy Mock Runner
+        uses: google-github-actions/deploy-cloudrun@251330ba9a8a34bfbc1622895f42e1d53fd14522 # v2
+        with:
+          service: ${{ steps.runner-ctx.outputs.mock_service }}
+          region: 'europe-west1'
+          image: ${{ steps.image.outputs.digest }}
+          project_id: 'cleancore-491216'
+          flags: |
+            --no-allow-unauthenticated
+            --ingress=internal
+            --service-account=clean-core-runner@cleancore-491216.iam.gserviceaccount.com
+            --network=runner-net
+            --subnet=runner-mock
+            --vpc-egress=all-traffic
+            --network-tags=runner-mock
+            --concurrency=1
+            --max-instances=3
+            --memory=1Gi
+            --cpu=1
+            --timeout=120
+          env_vars_update_strategy: overwrite
+          env_vars: |
+            RUNNER_MODE=mock
+
+      # The live runner: its VPC egress reaches only the app, through Private
+      # Google Access. It relays to that one origin and holds no credential.
+      - name: Deploy Live Runner
+        uses: google-github-actions/deploy-cloudrun@251330ba9a8a34bfbc1622895f42e1d53fd14522 # v2
+        with:
+          service: ${{ steps.runner-ctx.outputs.live_service }}
+          region: 'europe-west1'
+          image: ${{ steps.image.outputs.digest }}
+          project_id: 'cleancore-491216'
+          flags: |
+            --no-allow-unauthenticated
+            --ingress=internal
+            --service-account=clean-core-runner@cleancore-491216.iam.gserviceaccount.com
+            --network=runner-net
+            --subnet=runner-live
+            --vpc-egress=all-traffic
+            --network-tags=runner-live
+            --concurrency=1
+            --max-instances=2
+            --memory=1Gi
+            --cpu=1
+            --timeout=120
+          env_vars_update_strategy: overwrite
+          env_vars: |
+            RUNNER_MODE=live
+            RUNNER_PROXY_ORIGIN=${{ steps.runner-ctx.outputs.proxy_origin }}
+
+  # Job 2: Build & Deploy to Google Cloud Run
+  #
+  # Waits for the runners when they deploy, and goes ahead when that job is
+  # switched off (skipped) — never when it failed.
+  deploy:
+    needs: [validate, security, deploy-runner]
+    if: ${{ !cancelled() && needs.validate.result == 'success' && needs.security.result == 'success' && (needs.deploy-runner.result == 'success' || needs.deploy-runner.result == 'skipped') }}
     runs-on: ubuntu-latest
     # The one job that authenticates to Google Cloud, and the only one that may
     # mint an OIDC token. It installs nothing, so no dependency's install script
@@ -153,6 +287,14 @@ jobs:
         id: env-ctx
         env:
           REF_NAME: ${{ github.ref_name }}
+          RUNNER_URL_MAIN: ${{ vars.RUNNER_URL_MAIN }}
+          RUNNER_URL_DEV: ${{ vars.RUNNER_URL_DEV }}
+          RUNNER_LIVE_URL_MAIN: ${{ vars.RUNNER_LIVE_URL_MAIN }}
+          RUNNER_LIVE_URL_DEV: ${{ vars.RUNNER_LIVE_URL_DEV }}
+          S4_PROXY_BASE_URL_MAIN: ${{ vars.S4_PROXY_BASE_URL_MAIN }}
+          S4_PROXY_BASE_URL_DEV: ${{ vars.S4_PROXY_BASE_URL_DEV }}
+          APP_VPC_SUBNET: ${{ vars.APP_VPC_SUBNET }}
+          RUNNER_SA: ${{ vars.RUNNER_SERVICE_ACCOUNT }}
         run: |
           case "$REF_NAME" in
             main)
@@ -189,6 +331,44 @@ jobs:
               exit 1
               ;;
           esac
+
+          # Roadmap 8.9: where the app finds the isolated runners and where the
+          # live runner finds the app. Empty is allowed and means "not set":
+          # without RUNNER_URL a deployed app runs no tests (fail closed), and
+          # without the live pair the live path stays refused. Anything that is
+          # set has to be a plain https origin.
+          case "$REF_NAME" in
+            main) runner_url="$RUNNER_URL_MAIN"; runner_live_url="$RUNNER_LIVE_URL_MAIN"; proxy_base="$S4_PROXY_BASE_URL_MAIN" ;;
+            *)    runner_url="$RUNNER_URL_DEV";  runner_live_url="$RUNNER_LIVE_URL_DEV";  proxy_base="$S4_PROXY_BASE_URL_DEV" ;;
+          esac
+          for v in "$runner_url" "$runner_live_url" "$proxy_base"; do
+            if [ -n "$v" ] && ! printf '%s' "$v" | grep -Eq '^https://[a-z0-9.-]+$'; then
+              echo "::error::RUNNER_URL_*, RUNNER_LIVE_URL_* and S4_PROXY_BASE_URL_* must be plain https origins." >&2
+              exit 1
+            fi
+          done
+          echo "runner_url=${runner_url}" >> "$GITHUB_OUTPUT"
+          echo "runner_live_url=${runner_live_url}" >> "$GITHUB_OUTPUT"
+          echo "proxy_base=${proxy_base}" >> "$GITHUB_OUTPUT"
+          if [ -n "$RUNNER_SA" ] && ! printf '%s' "$RUNNER_SA" | grep -Eq '^[a-z0-9-]+@[a-z0-9-]+\.iam\.gserviceaccount\.com$'; then
+            echo "::error::RUNNER_SERVICE_ACCOUNT must be a service account e-mail." >&2
+            exit 1
+          fi
+          echo "runner_sa=${RUNNER_SA}" >> "$GITHUB_OUTPUT"
+
+          # An internal-ingress runner answers only requests that come out of
+          # the VPC. When the owner has given the app a subnet for that, the
+          # app's private-range egress goes there; its public egress (Gemini,
+          # mail, tenants) is unchanged. Unset, the app keeps no VPC egress.
+          if [ -n "$APP_VPC_SUBNET" ]; then
+            if ! printf '%s' "$APP_VPC_SUBNET" | grep -Eq '^[a-z][a-z0-9-]{0,62}$'; then
+              echo "::error::APP_VPC_SUBNET must be a subnet name." >&2
+              exit 1
+            fi
+            echo "app_network_flags=--network=runner-net --subnet=${APP_VPC_SUBNET} --vpc-egress=private-ranges-only" >> "$GITHUB_OUTPUT"
+          else
+            echo "app_network_flags=" >> "$GITHUB_OUTPUT"
+          fi
 
       # F-15: Assert no emulator flag leaks into production deploy
       - name: Assert No Emulator Flag in Deploy
@@ -241,6 +421,7 @@ jobs:
             --cpu=2
             --allow-unauthenticated
             --service-account=clean-core-run@cleancore-491216.iam.gserviceaccount.com
+            ${{ steps.env-ctx.outputs.app_network_flags }}
             --set-build-env-vars=NEXT_PUBLIC_FIRESTORE_DB_ID=${{ steps.env-ctx.outputs.db_id }},NEXT_PUBLIC_APP_URL=${{ steps.env-ctx.outputs.app_url }},NODE_OPTIONS=--max-old-space-size=4096
           env_vars: |
             NEXT_PUBLIC_FIRESTORE_DB_ID=${{ steps.env-ctx.outputs.db_id }}
@@ -258,3 +439,7 @@ jobs:
             PILOT_APPROVAL_SECRET=${{ secrets.PILOT_APPROVAL_SECRET }}
             NODE_OPTIONS=--max-old-space-size=4096
             COMMIT_SHA=${{ github.sha }}
+            RUNNER_URL=${{ steps.env-ctx.outputs.runner_url }}
+            RUNNER_LIVE_URL=${{ steps.env-ctx.outputs.runner_live_url }}
+            RUNNER_SERVICE_ACCOUNT=${{ steps.env-ctx.outputs.runner_sa }}
+            S4_PROXY_BASE_URL=${{ steps.env-ctx.outputs.proxy_base }}
