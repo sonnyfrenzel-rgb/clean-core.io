@@ -22,7 +22,7 @@ import { buildClassModel } from '@/lib/abap/class-model-resolver';
 import type { ClassModel, SupportFinding } from '@/lib/abap/class-model';
 // The required-artefact table and its matcher live in lib/ so a spec can run the
 // real gate instead of a copy of it (QA review of 9e408888bfec, 3c05340dc39b).
-import { missingArtefacts, usableTestSuite, type ProjectFile } from '@/lib/transformation-artefacts';
+import { holdsStoredPackage, missingArtefacts, usableTestSuite, type ProjectFile } from '@/lib/transformation-artefacts';
 import { matchCdsView } from '@/lib/abap/cds-catalog';
 import { extractSelects, parseSelect } from '@/lib/abap/select-parser';
 import VerificationRail from '@/components/VerificationRail';
@@ -756,15 +756,8 @@ CMD ["node", "srv/service.js"]`
         // The transaction may have committed without the answer reaching us.
         // Read the project again instead of claiming either outcome.
         const reread = await loadProjectAndHydrate(projectId as string).catch(() => null);
-        // All of it, not the code alone: an earlier run can have left the same
-        // code with another suite (QA review of 35f67702209b, 546d27f6f092).
-        const rereadSuite = reread?.testSuite as { spec?: unknown; config?: unknown } | undefined;
-        const holdsThisPackage =
-          reread?.generatedCode === packaged &&
-          reread?.status === 'transformed' &&
-          rereadSuite?.spec === tests.spec &&
-          (rereadSuite?.config ?? '') === (tests.config ?? '');
-        if (!reread || !holdsThisPackage) {
+        // All of it, not the code alone (`holdsStoredPackage`, 546d27f6f092).
+        if (!reread || !holdsStoredPackage(reread, packaged, tests)) {
           throw new Error(`${err.message} The project does not hold this package now — reload the stage to see which version is stored before generating again.`);
         }
         stored = { generatedCode: packaged, testSuite: reread.testSuite, status: String(reread.status ?? '') };

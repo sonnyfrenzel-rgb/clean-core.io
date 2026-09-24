@@ -117,3 +117,24 @@ export const usableTestSuite = (tests: unknown, isAbapCloud: boolean): Generated
   if (!isAbapCloud && !hasText(config)) return null;
   return { config: typeof config === 'string' ? config : '', spec };
 };
+
+/**
+ * After a lost answer the page rereads the project. The store counts as done
+ * only when all of it is there — code, suite and status — never the code
+ * alone: an earlier run can have left the same code with another suite
+ * (roadmap 3.0.11, QA review of 35f67702209b, 546d27f6f092).
+ */
+export const holdsStoredPackage = (
+  reread: { generatedCode?: unknown; testSuite?: unknown; status?: unknown } | null | undefined,
+  packaged: string,
+  tests: GeneratedTestSuite,
+): boolean => {
+  if (!reread) return false;
+  const suite = reread.testSuite as { spec?: unknown; config?: unknown } | null | undefined;
+  return (
+    reread.generatedCode === packaged &&
+    reread.status === 'transformed' &&
+    suite?.spec === tests.spec &&
+    (suite?.config ?? '') === (tests.config ?? '')
+  );
+};

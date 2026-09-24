@@ -363,13 +363,21 @@ test('the design is compared beside the contract fingerprint, not inside it', ()
   expect(revision).toContain('`design=${digestOf(state.solutionDesign)}`');
 });
 
-test('a lost answer counts as stored only when code, suite and status all match what was sent (546d27f6f092)', () => {
+test('a lost answer counts as stored only when code, suite and status all match what was sent (546d27f6f092, 1b9001cdab7f)', async () => {
+  const { holdsStoredPackage } = await import('../lib/transformation-artefacts');
+  const packaged = JSON.stringify([{ path: 'srv/service.ts', content: 'x' }]);
+  const tests = { config: 'cfg', spec: 'spec-new' };
+  const stored = { generatedCode: packaged, testSuite: { config: 'cfg', spec: 'spec-new' }, status: 'transformed' };
+  expect(holdsStoredPackage(stored, packaged, tests)).toBe(true);
+  // Same code, another suite: an earlier run, not this one.
+  expect(holdsStoredPackage({ ...stored, testSuite: { config: 'cfg', spec: 'spec-old' } }, packaged, tests)).toBe(false);
+  expect(holdsStoredPackage({ ...stored, testSuite: { config: 'other', spec: 'spec-new' } }, packaged, tests)).toBe(false);
+  expect(holdsStoredPackage({ ...stored, status: 'designed' }, packaged, tests)).toBe(false);
+  expect(holdsStoredPackage({ ...stored, generatedCode: '[]' }, packaged, tests)).toBe(false);
+  expect(holdsStoredPackage(null, packaged, tests)).toBe(false);
+  // ABAP Cloud keeps no config: absent and empty are the same.
+  expect(holdsStoredPackage({ ...stored, testSuite: { spec: 'spec-new' } }, packaged, { config: '', spec: 'spec-new' })).toBe(true);
+  // And the page decides by it.
   const page = readFileSync('app/(app)/project/[projectId]/transformation/page.tsx', 'utf8');
-  const recovery = page.slice(page.indexOf('if (!(err instanceof CommandAnswerLostError)) throw err;'));
-  const check = recovery.slice(0, recovery.indexOf('stored = {'));
-  expect(check).toContain('reread?.generatedCode === packaged');
-  expect(check).toContain("reread?.status === 'transformed'");
-  expect(check).toContain('rereadSuite?.spec === tests.spec');
-  expect(check).toContain("(rereadSuite?.config ?? '') === (tests.config ?? '')");
-  expect(check).toMatch(/if \(!reread \|\| !holdsThisPackage\)/);
+  expect(page).toContain('if (!reread || !holdsStoredPackage(reread, packaged, tests))');
 });
