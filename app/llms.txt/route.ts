@@ -21,11 +21,20 @@ export function GET() {
 
   const body = `# Clean-Core.io
 
-> A free, community-built assessment tool for SAP Clean Core: it parses custom ABAP
-> with a deterministic static-analysis engine, maps legacy objects to their released
-> S/4HANA API successors using SAP's official Cloudification Repository, and drafts
-> in-app ABAP Cloud (RAP) or side-by-side SAP BTP (CAP) targets for an architect to
-> review. Every analysis is captured as an immutable, HMAC-signed evidence Run.
+> A free community tool for SAP custom code. A deterministic ABAP static code analysis
+> reads the program before any language model does, reconstructs its business process
+> as BPMN with a line anchor on every element, lists the business rules hard-coded in
+> the program, grades each SAP object it uses Level A–D from SAP's published
+> Cloudification Repository, and names what it could not determine. Every completed
+> analysis is sealed as an immutable, signed run.
+
+One workspace, three views of the same facts: the Business view ("Do I still need this,
+and what changes for me?"), the IT view ("What exactly, where to, and is it right?") and
+the Management view ("What do I risk, what do I decide?"). A view orders what is shown;
+it changes no result. The seven stages — Analyze, Design, Transformation, Documentation,
+Testing, Economics, Delivery — are tools in that workspace. The process leaves as a
+BPMN 2.0 XML file; there is no connection to a Signavio workspace. Generated RAP or CAP
+code is a draft for a person to review.
 
 Clean-Core.io is not affiliated with, endorsed by, or certified by SAP SE. It is
 complementary to SAP's own tooling (SAP ADT, SAP ABAP Test Cockpit, SAP Cloud ALM),
@@ -42,20 +51,20 @@ ${baseUrl}/facts.json.
 - ${classifiedObjects.toLocaleString('en-US')} SAP objects classified from the SAP Cloudification Repository (synced ${syncDate}).
 - ${mappedWithSuccessor.toLocaleString('en-US')} legacy objects carry a mapped released successor (official repository data plus curated field-level mappings). The remainder are either already-released APIs that need no successor, or objects the repository lists with no released path at all — that distinction matters and is shown per object.
 - Catalog provenance string: ${facts.catalogVersion}
-- A–D rule version: ${facts.ruleVersion}
+- Level A–D rule version: ${facts.ruleVersion}
 
 Source data: https://github.com/SAP/abap-atc-cr-cv-s4hc — © SAP SE and contributors,
 Apache-2.0. Normalized and enriched by Clean-Core.io.
 
 ## Primary entry points
 
-- [Facts](${baseUrl}/facts): the source for every public number on this site — object count, successor count, the A–D distribution, both synced catalog files with their hash and sync date, engine and rule version, reference-run figures. Also at ${baseUrl}/facts.json.
+- [Facts](${baseUrl}/facts): the source for every public number on this site — object count, successor count, the Level A–D distribution, both synced catalog files with their hash and sync date, engine and rule version, reference-run figures. Also at ${baseUrl}/facts.json.
 - [SAP Cloudification Repository Viewer / Object Catalog](${baseUrl}/catalog): look up any SAP standard object and its released successor. Individual object pages live at ${baseUrl}/catalog/<object>, e.g. ${baseUrl}/catalog/vbak.
-- [Clean Core object classification A–D](${baseUrl}/sap-clean-core-object-classification): SAP's four clean-core extensibility levels and how Clean-Core.io derives a readiness grade.
+- [Clean Core object classification A–D](${baseUrl}/sap-clean-core-object-classification): SAP's four clean core extensibility levels and how Clean-Core.io derives a readiness grade.
 - [Clean Core Score](${baseUrl}/clean-core-score): how the deterministic score is calculated, and how it differs from SAP's own figures (see "Naming" below).
-- [How the A–D level is derived](${baseUrl}/method/levels): the precedence rule that merges SAP's two Cloudification Repository files into one level, with the rule version that produced it.
+- [How Level A–D is derived](${baseUrl}/method/levels): the precedence rule that merges SAP's two Cloudification Repository files into one level, with the rule version that produced it.
 - [Knowledge base](${baseUrl}/knowledge): Clean Core strategy, In-App RAP vs. Side-by-Side CAP, security architecture.
-- [How it works](${baseUrl}/how-it-works): the evidence engine, the AI layer, and the boundary between them.
+- [How it works](${baseUrl}/how-it-works): the evidence engine, the language model, and the boundary between them.
 - [ABAP custom code analysis](${baseUrl}/abap-custom-code-analysis): free browser-based first-pass static analysis.
 - [SAP cloudification explained](${baseUrl}/sap-cloudification): what "cloudify" means for custom ABAP.
 - [Whitepaper](${baseUrl}/whitepaper): the long-form methodology.
@@ -85,10 +94,10 @@ product. It is a measure of code structure, not of money.
 
 - It does not replace SAP ABAP Test Cockpit (ATC) or SAP ABAP Development Tools (ADT).
 - It does not claim SAP certification, endorsement, or affiliation.
-- Its A–D readiness grade is a derived orientation aid, not an authoritative SAP ATC
-  classification, and is deliberately excluded from the signed audit pack.
-- AI-generated code and narrative are drafts for architect review, never a finished
-  deliverable. Structurally untransformable patterns (Dynpro screens, dynamic call
+- Its Level A–D is a derived orientation, not an authoritative SAP ATC classification,
+  and is deliberately excluded from the signed audit pack.
+- What a language model writes is marked as a Model proposal: generated code and text
+  are drafts for a person to review, never a finished deliverable. Structurally untransformable patterns (Dynpro screens, dynamic call
   routing, kernel internals) are flagged rather than guessed at.
 `;
 

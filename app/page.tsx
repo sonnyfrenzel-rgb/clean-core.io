@@ -85,7 +85,7 @@ export const revalidate = 300;
 export const metadata: Metadata = withTwitterCard({
   title: 'SAP Clean Core Accelerator — Free ABAP Code Analysis | Clean-Core.io',
   description:
-    'Free community tool for SAP custom code: a deterministic ABAP static code analysis, the business process reconstructed from the code with a line anchor on every element, SAP clean core levels A–D from the Cloudification Repository, and a signed run for every completed analysis.',
+    'Free community tool for SAP custom code: a deterministic ABAP static code analysis, the business process reconstructed from the code with a line anchor on every element, the SAP clean core Level A–D of each SAP object from the Cloudification Repository, and a signed run for every completed analysis.',
   alternates: {
     canonical: 'https://clean-core.io',
   },
@@ -418,7 +418,7 @@ export default function Home() {
         operatingSystem: 'All',
         offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
         description:
-          'Free community tool for SAP custom code: deterministic ABAP static code analysis, the business process reconstructed from the code with line anchors, SAP clean core levels A–D from the Cloudification Repository, and signed runs.',
+          'Free community tool for SAP custom code: deterministic ABAP static code analysis, the business process reconstructed from the code with line anchors, the SAP clean core Level A–D of each SAP object from the Cloudification Repository, and signed runs.',
         datePublished: '2025-01-15',
         // Moves with every release instead of going stale at a typed date.
         dateModified: APP_RELEASE_DATE_ISO,
@@ -856,7 +856,7 @@ export default function Home() {
                 { t: 'Every element points to its lines', d: 'Start and end events, tasks, decisions and sub-processes each carry a line anchor. Decisions keep their condition from the code; proposed lanes are marked as proposals, never as your organisation.' },
                 { t: 'Business rules come out of the code', d: 'Literals in conditions — tolerances, plants, vendor lists, date limits — become rule candidates with their anchor. You keep, change or drop each one.' },
                 { t: 'Large processes stay readable', d: 'Levels instead of zoom: the map opens as an overview, a sub-process opens in place, and the same content is available as a list of steps.' },
-                { t: 'Leaves as a BPMN 2.0 XML file', d: 'Export the process as standard BPMN 2.0 XML; collapsed sub-processes stay real sub-processes. Import into SAP Signavio has not been verified yet.' },
+                { t: 'Leaves as a BPMN 2.0 XML file', d: 'Export the process as standard BPMN 2.0 XML; collapsed sub-processes stay real sub-processes. There is no connection to a Signavio workspace.' },
               ].map((f) => (
                 <div key={f.t} className={CARD}>
                   <h3 className="text-base font-bold text-cc-ink">{f.t}</h3>

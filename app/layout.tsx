@@ -10,8 +10,8 @@ const inter = Inter({
 export const revalidate = 300;
 
 export const metadata: Metadata = {
-  title: 'Clean-Core.io — Free SAP Clean Core Modernization Assistant',
-  description: 'Free community assistant for SAP Clean Core modernization: analyze custom ABAP, identify clean-core risks, draft RAP/CAP target designs, and export audit-friendly evidence packs for architect review. Complementary to SAP tooling.',
+  title: 'Clean-Core.io — Free SAP Clean Core Accelerator',
+  description: 'Free community tool that reads custom SAP ABAP and turns it into an evidence-backed Clean Core decision: the process reconstructed from the code with line anchors, Level A–D per SAP object, and a signed run for every completed analysis. Complementary to SAP tooling.',
   icons: {
     icon: [
       { url: '/icon.svg', type: 'image/svg+xml' },
@@ -20,8 +20,8 @@ export const metadata: Metadata = {
     apple: '/logo.png',
   },
   openGraph: {
-    title: 'Clean-Core.io — Free SAP Clean Core Modernization Assistant',
-    description: 'A free, community-built assistant that analyzes custom SAP ABAP and drafts clean-core-aligned RAP/CAP designs. Evidence-based and complementary to your SAP tooling — review and verify before you deploy.',
+    title: 'Clean-Core.io — Free SAP Clean Core Accelerator',
+    description: 'Free community web app that reads custom SAP ABAP and turns it into an evidence-backed Clean Core decision. Every statement is tied to a line of the code; complementary to your SAP tooling.',
     url: 'https://clean-core.io',
     type: 'website',
     siteName: 'Clean-Core.io',
@@ -36,8 +36,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Clean-Core.io — Free SAP Clean Core Modernization Assistant',
-    description: 'A free, community-built assistant that analyzes custom SAP ABAP and drafts clean-core-aligned RAP/CAP designs. Evidence-based and complementary to your SAP tooling — review and verify before you deploy.',
+    title: 'Clean-Core.io — Free SAP Clean Core Accelerator',
+    description: 'Free community web app that reads custom SAP ABAP and turns it into an evidence-backed Clean Core decision. Every statement is tied to a line of the code; complementary to your SAP tooling.',
     images: ['https://clean-core.io/og-image.png'],
   },
 };
