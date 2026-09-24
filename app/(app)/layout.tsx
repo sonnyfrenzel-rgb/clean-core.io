@@ -96,16 +96,27 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
     };
   }, [showLogoutConfirm]);
 
-  // Initialize banner state from sessionStorage to avoid flashing dismissed banners
+  // Initialize banner state from sessionStorage to avoid flashing dismissed banners.
+  // Storage throws in a browser that refuses it; unguarded, that throw took the
+  // whole shell down to the error page (tests/demo-workspace-tour.spec.ts).
   useEffect(() => {
-    const isBannerDismissed = sessionStorage.getItem('dismissPilotBanner') === 'true';
+    let isBannerDismissed = false;
+    try {
+      isBannerDismissed = sessionStorage.getItem('dismissPilotBanner') === 'true';
+    } catch {
+      /* no storage: the banner shows, which is the default anyway */
+    }
     if (isBannerDismissed) {
       setShowBanner(false);
     }
   }, []);
 
   const dismissBanner = () => {
-    sessionStorage.setItem('dismissPilotBanner', 'true');
+    try {
+      sessionStorage.setItem('dismissPilotBanner', 'true');
+    } catch {
+      /* no storage: dismissed for this page view only */
+    }
     setShowBanner(false);
   };
 

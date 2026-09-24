@@ -79,8 +79,18 @@ test('a community account gets the 404 the workspace gives it', async ({ page })
   await page.goto('/demo/workspace', { waitUntil: 'domcontentloaded' });
   await page.waitForTimeout(4000);
   await expect(page.locator('[data-demo-workspace]')).toHaveCount(0);
-  // And no help-menu entry for tips that do not exist for it.
+  // The workspace's 404 is the root `app/not-found.tsx`: `notFound()` in the
+  // client shell bubbles past the `(app)` layout, so this page carries no
+  // account menu — exactly as `/project/{id}` for the same account.
+  await expect(page.locator('h1')).toHaveText('404');
+  await expect(page.locator('[data-account-menu]')).toHaveCount(0);
+  // And no help-menu entry for tips that do not exist for it, where the menu is.
+  await page.goto('/dashboard', { waitUntil: 'domcontentloaded' });
+  // The initials say the shell holds this account's profile, so the menu is
+  // the one it gets — not the empty shell before the profile arrives.
+  await expect(page.locator('[data-account-menu]')).toHaveText('DC', { timeout: 90000 });
   await page.click('[data-account-menu]');
+  await expect(page.locator('#account-menu-panel')).toBeVisible();
   await expect(page.locator('[data-show-tips-again]')).toHaveCount(0);
 });
 
