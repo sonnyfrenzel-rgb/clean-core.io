@@ -1,0 +1,66 @@
+{
+  "$comment": "Ceilings of tests/design-source-guard.spec.ts for this group: per file and rule, the count may not rise, and when it falls the ceiling must fall in the same commit. Lower with `npm run design:baseline -- --group <group>`; never raise by hand. Rules: tests/helpers/design-rules.ts. Plan: Block D, luecken-und-plan.md §4.",
+  "group": "catalog",
+  "files": {
+    "app/catalog/[object]/not-found.tsx": {
+      "step": "D.25a",
+      "R2": 2,
+      "R4": 4,
+      "R5": 2,
+      "R7": 1
+    },
+    "app/catalog/[object]/page.tsx": {
+      "step": "D.25a",
+      "R1": 5,
+      "R2": 10,
+      "R4": 78,
+      "R5": 17,
+      "R7": 2,
+      "R17": 3
+    },
+    "app/catalog/browse/[letter]/page.tsx": {
+      "step": "D.25a",
+      "R2": 2,
+      "R4": 16,
+      "R5": 6,
+      "R7": 2
+    },
+    "app/catalog/module/[area]/page.tsx": {
+      "step": "D.25a",
+      "R1": 1,
+      "R2": 8,
+      "R4": 26,
+      "R5": 6,
+      "R7": 1,
+      "R11": 1,
+      "R18": 5
+    },
+    "app/catalog/page.tsx": {
+      "step": "D.25a",
+      "R2": 5,
+      "R4": 28,
+      "R5": 10,
+      "R7": 3
+    },
+    "app/method/levels/page.tsx": {
+      "step": "D.25a",
+      "R1": 1,
+      "R2": 25,
+      "R4": 91,
+      "R11": 3,
+      "R13": 1,
+      "R17": 2
+    },
+    "components/catalog/CatalogAttribution.tsx": {
+      "step": "D.25a",
+      "R4": 6
+    },
+    "components/catalog/CatalogSearch.tsx": {
+      "step": "D.25a",
+      "R4": 10,
+      "R5": 2,
+      "R7": 1,
+      "R18": 1
+    }
+  }
+}

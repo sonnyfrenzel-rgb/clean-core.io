@@ -1,0 +1,49 @@
+{
+  "$comment": "Ceilings of tests/design-source-guard.spec.ts for this group: per file and rule, the count may not rise, and when it falls the ceiling must fall in the same commit. Lower with `npm run design:baseline -- --group <group>`; never raise by hand. Rules: tests/helpers/design-rules.ts. Plan: Block D, luecken-und-plan.md §4.",
+  "group": "delivery",
+  "files": {
+    "app/(app)/project/[projectId]/delivery/page.tsx": {
+      "step": "D.19",
+      "R1": 18,
+      "R2": 11,
+      "R3": 6,
+      "R4": 103,
+      "R5": 16,
+      "R6": 2,
+      "R7": 7,
+      "R12": 28,
+      "R13": 4,
+      "R14": 1,
+      "R18": 1
+    },
+    "components/ComplianceReviewHints.tsx": {
+      "step": "D.19",
+      "R4": 19,
+      "R12": 2,
+      "R18": 1
+    },
+    "components/ModelStagesCard.tsx": {
+      "step": "D.19",
+      "R1": 2,
+      "R2": 4,
+      "R4": 22,
+      "R5": 2,
+      "R7": 1,
+      "R12": 5,
+      "R15": 1,
+      "R18": 3
+    },
+    "components/PersonalDataHints.tsx": {
+      "step": "D.19",
+      "R4": 20,
+      "R12": 3,
+      "R18": 1
+    },
+    "components/ReviewTasks.tsx": {
+      "step": "D.19",
+      "R4": 13,
+      "R12": 2,
+      "R18": 1
+    }
+  }
+}

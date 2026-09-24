@@ -1,0 +1,38 @@
+{
+  "$comment": "Ceilings of tests/design-source-guard.spec.ts for this group: per file and rule, the count may not rise, and when it falls the ceiling must fall in the same commit. Lower with `npm run design:baseline -- --group <group>`; never raise by hand. Rules: tests/helpers/design-rules.ts. Plan: Block D, luecken-und-plan.md §4.",
+  "group": "onboarding",
+  "files": {
+    "app/components/LegalOverlay.tsx": {
+      "step": "D.7",
+      "R3": 4,
+      "R8": 1,
+      "R10": 1,
+      "R12": 3
+    },
+    "components/TermsReacceptGate.tsx": {
+      "step": "D.7",
+      "R1": 1,
+      "R2": 3,
+      "R4": 29,
+      "R5": 4,
+      "R7": 1,
+      "R10": 1,
+      "R12": 10,
+      "R18": 3
+    },
+    "components/UserOnboarding.tsx": {
+      "step": "D.7",
+      "R1": 7,
+      "R2": 12,
+      "R3": 4,
+      "R4": 100,
+      "R5": 26,
+      "R7": 7,
+      "R8": 3,
+      "R10": 3,
+      "R12": 20,
+      "R14": 4,
+      "R18": 19
+    }
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "$comment": "Ceilings of tests/design-source-guard.spec.ts for this group: per file and rule, the count may not rise, and when it falls the ceiling must fall in the same commit. Lower with `npm run design:baseline -- --group <group>`; never raise by hand. Rules: tests/helpers/design-rules.ts. Plan: Block D, luecken-und-plan.md §4.",
+  "group": "admin",
+  "files": {
+    "app/(app)/admin/approve-tenant/page.tsx": {
+      "step": "D.21",
+      "R1": 5,
+      "R2": 8,
+      "R4": 83,
+      "R7": 6,
+      "R12": 21,
+      "R13": 1,
+      "R14": 1,
+      "R18": 10
+    },
+    "app/(app)/admin/page.tsx": {
+      "step": "D.21",
+      "R1": 10,
+      "R2": 15,
+      "R4": 123,
+      "R5": 22,
+      "R6": 5,
+      "R7": 6,
+      "R12": 16,
+      "R13": 3,
+      "R14": 1,
+      "R17": 8,
+      "R18": 26
+    },
+    "components/admin/RunnerSelftestPanel.tsx": {
+      "step": "D.21",
+      "R16": 1
+    },
+    "components/admin/UsageQuotaPanel.tsx": {
+      "step": "D.21",
+      "R1": 9,
+      "R2": 18,
+      "R3": 1,
+      "R4": 93,
+      "R5": 13,
+      "R7": 3,
+      "R12": 4,
+      "R13": 1,
+      "R17": 4,
+      "R18": 13
+    }
+  }
+}

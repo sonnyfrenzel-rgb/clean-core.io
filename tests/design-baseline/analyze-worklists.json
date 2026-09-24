@@ -1,0 +1,101 @@
+{
+  "$comment": "Ceilings of tests/design-source-guard.spec.ts for this group: per file and rule, the count may not rise, and when it falls the ceiling must fall in the same commit. Lower with `npm run design:baseline -- --group <group>`; never raise by hand. Rules: tests/helpers/design-rules.ts. Plan: Block D, luecken-und-plan.md §4.",
+  "group": "analyze-worklists",
+  "files": {
+    "components/analyze/AtcFindingsPanel.tsx": {
+      "step": "D.12",
+      "R1": 9,
+      "R2": 4,
+      "R4": 62,
+      "R5": 6,
+      "R7": 1,
+      "R12": 1,
+      "R16": 1,
+      "R17": 1,
+      "R18": 11
+    },
+    "components/analyze/AtcUpload.tsx": {
+      "step": "D.12",
+      "R1": 2,
+      "R2": 2,
+      "R4": 55,
+      "R5": 14,
+      "R7": 1,
+      "R9": 1,
+      "R12": 3,
+      "R14": 2,
+      "R16": 1,
+      "R17": 1,
+      "R18": 7
+    },
+    "components/analyze/GapAccordionCard.tsx": {
+      "step": "D.12",
+      "R1": 4,
+      "R4": 25,
+      "R5": 3,
+      "R8": 1,
+      "R12": 1,
+      "R17": 2,
+      "R18": 2
+    },
+    "components/analyze/GapsPrioritization.tsx": {
+      "step": "D.12",
+      "R1": 2,
+      "R2": 1,
+      "R4": 34,
+      "R5": 7,
+      "R12": 1,
+      "R17": 1
+    },
+    "components/analyze/GapsWorklist.tsx": {
+      "step": "D.12",
+      "R1": 17,
+      "R2": 6,
+      "R3": 1,
+      "R4": 98,
+      "R5": 18,
+      "R8": 2,
+      "R11": 1,
+      "R12": 8,
+      "R14": 8,
+      "R15": 1,
+      "R17": 5,
+      "R18": 11
+    },
+    "components/analyze/ModuleHeatmap.tsx": {
+      "step": "D.12",
+      "R2": 1,
+      "R3": 8,
+      "R4": 8,
+      "R5": 1,
+      "R12": 1,
+      "R16": 1,
+      "R18": 2
+    },
+    "components/analyze/UsageRiskMatrix.tsx": {
+      "step": "D.12",
+      "R1": 11,
+      "R2": 4,
+      "R4": 107,
+      "R5": 6,
+      "R7": 2,
+      "R12": 4,
+      "R16": 3,
+      "R17": 4,
+      "R18": 7
+    },
+    "components/analyze/UsageUpload.tsx": {
+      "step": "D.12",
+      "R1": 7,
+      "R2": 1,
+      "R4": 66,
+      "R5": 18,
+      "R7": 1,
+      "R9": 1,
+      "R12": 3,
+      "R14": 5,
+      "R16": 1,
+      "R18": 7
+    }
+  }
+}

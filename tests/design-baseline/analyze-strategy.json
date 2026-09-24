@@ -1,0 +1,72 @@
+{
+  "$comment": "Ceilings of tests/design-source-guard.spec.ts for this group: per file and rule, the count may not rise, and when it falls the ceiling must fall in the same commit. Lower with `npm run design:baseline -- --group <group>`; never raise by hand. Rules: tests/helpers/design-rules.ts. Plan: Block D, luecken-und-plan.md §4.",
+  "group": "analyze-strategy",
+  "files": {
+    "components/analyze/ArchitecturalNextSteps.tsx": {
+      "step": "D.13",
+      "R2": 1,
+      "R4": 10,
+      "R5": 4,
+      "R12": 2
+    },
+    "components/analyze/BusinessValueAudit.tsx": {
+      "step": "D.13",
+      "R1": 8,
+      "R2": 5,
+      "R3": 1,
+      "R4": 43,
+      "R5": 13,
+      "R7": 1,
+      "R12": 6,
+      "R15": 1,
+      "R17": 2,
+      "R18": 4
+    },
+    "components/analyze/ExtensibilityDecisionMatrix.tsx": {
+      "step": "D.13",
+      "R1": 18,
+      "R2": 13,
+      "R4": 93,
+      "R5": 20,
+      "R7": 1,
+      "R12": 6,
+      "R13": 3,
+      "R14": 6,
+      "R15": 1,
+      "R17": 5,
+      "R18": 7
+    },
+    "components/analyze/ModernizationStrategy.tsx": {
+      "step": "D.13",
+      "R1": 3,
+      "R2": 1,
+      "R4": 19,
+      "R5": 2,
+      "R12": 4,
+      "R13": 1,
+      "R17": 4,
+      "R18": 1
+    },
+    "components/analyze/PlainEnglishGuide.tsx": {
+      "step": "D.13",
+      "R1": 3,
+      "R2": 2,
+      "R4": 20,
+      "R5": 7,
+      "R12": 3,
+      "R17": 2,
+      "R18": 2
+    },
+    "components/analyze/TargetScopeMapping.tsx": {
+      "step": "D.13",
+      "R1": 2,
+      "R4": 27,
+      "R5": 4,
+      "R12": 5,
+      "R13": 1,
+      "R15": 1,
+      "R17": 1,
+      "R18": 1
+    }
+  }
+}

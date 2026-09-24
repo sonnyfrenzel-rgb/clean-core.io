@@ -1,0 +1,160 @@
+{
+  "$comment": "Ceilings of tests/design-source-guard.spec.ts for this group: per file and rule, the count may not rise, and when it falls the ceiling must fall in the same commit. Lower with `npm run design:baseline -- --group <group>`; never raise by hand. Rules: tests/helpers/design-rules.ts. Plan: Block D, luecken-und-plan.md §4.",
+  "group": "workspace",
+  "files": {
+    "components/demo/DemoTourStop.tsx": {
+      "step": "D.29",
+      "R18": 3
+    },
+    "components/demo/DemoWorkspaceShell.tsx": {
+      "step": "D.29",
+      "R18": 5
+    },
+    "components/process-map/BpmnEditor.tsx": {
+      "step": "D.29",
+      "R7": 7,
+      "R18": 10
+    },
+    "components/process-map/ProcessBreadcrumb.tsx": {
+      "step": "D.29",
+      "R18": 3
+    },
+    "components/process-map/ProcessCodeCard.tsx": {
+      "step": "D.29",
+      "R7": 1,
+      "R8": 1,
+      "R18": 2
+    },
+    "components/process-map/ProcessFilters.tsx": {
+      "step": "D.29",
+      "R18": 5
+    },
+    "components/process-map/ProcessHints.tsx": {
+      "step": "D.29",
+      "R7": 1,
+      "R18": 3
+    },
+    "components/process-map/ProcessMap.tsx": {
+      "step": "D.29",
+      "R7": 1,
+      "R18": 2
+    },
+    "components/process-map/ProcessMapLegend.tsx": {
+      "step": "D.29",
+      "R18": 4
+    },
+    "components/process-map/ProcessMiniMap.tsx": {
+      "step": "D.29",
+      "R1": 1,
+      "R18": 3
+    },
+    "components/process-map/ProcessOutline.tsx": {
+      "step": "D.29",
+      "R9": 1,
+      "R18": 3
+    },
+    "components/process-map/ProcessSearch.tsx": {
+      "step": "D.29",
+      "R8": 1,
+      "R18": 2
+    },
+    "components/process-map/ProcessStepList.tsx": {
+      "step": "D.29",
+      "R18": 2
+    },
+    "components/workspace/AskThisCase.tsx": {
+      "step": "D.29",
+      "R18": 3
+    },
+    "components/workspace/CoachMarks.tsx": {
+      "step": "D.29",
+      "R18": 2
+    },
+    "components/workspace/CommandSearch.tsx": {
+      "step": "D.29",
+      "R8": 1,
+      "R10": 1,
+      "R18": 3
+    },
+    "components/workspace/DecisionCard.tsx": {
+      "step": "D.29",
+      "R18": 12
+    },
+    "components/workspace/FirstLook.tsx": {
+      "step": "D.29",
+      "R18": 6,
+      "R19": 1
+    },
+    "components/workspace/GlossaryText.tsx": {
+      "step": "D.29",
+      "R1": 1,
+      "R12": 1,
+      "R18": 3
+    },
+    "components/workspace/ItAnswers.tsx": {
+      "step": "D.29",
+      "R18": 6,
+      "R19": 2
+    },
+    "components/workspace/LayerBar.tsx": {
+      "step": "D.29",
+      "R18": 6
+    },
+    "components/workspace/LayerSection.tsx": {
+      "step": "D.29",
+      "R18": 2
+    },
+    "components/workspace/ManagementAnswers.tsx": {
+      "step": "D.29",
+      "R19": 1
+    },
+    "components/workspace/ManagementOverview.tsx": {
+      "step": "D.29",
+      "R11": 3,
+      "R12": 1,
+      "R18": 2,
+      "R19": 1
+    },
+    "components/workspace/NewProject.tsx": {
+      "step": "D.29",
+      "R7": 2,
+      "R18": 7
+    },
+    "components/workspace/NextStepCard.tsx": {
+      "step": "D.29",
+      "R18": 1
+    },
+    "components/workspace/NotDeterminedCard.tsx": {
+      "step": "D.29",
+      "R18": 3
+    },
+    "components/workspace/PublicCloudFitPanel.tsx": {
+      "step": "D.29",
+      "R18": 16
+    },
+    "components/workspace/ShellSwitch.tsx": {
+      "step": "D.29",
+      "R18": 1
+    },
+    "components/workspace/StatusLine.tsx": {
+      "step": "D.29",
+      "R18": 1
+    },
+    "components/workspace/SteeringOnePager.tsx": {
+      "step": "D.29",
+      "R19": 2
+    },
+    "components/workspace/ToolBar.tsx": {
+      "step": "D.29",
+      "R18": 2
+    },
+    "components/workspace/WorkspaceListReport.tsx": {
+      "step": "D.29",
+      "R18": 4
+    },
+    "components/workspace/WorkspaceShell.tsx": {
+      "step": "D.29",
+      "R18": 3
+    }
+  }
+}

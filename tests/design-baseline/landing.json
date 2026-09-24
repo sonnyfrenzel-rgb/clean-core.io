@@ -1,0 +1,125 @@
+{
+  "$comment": "Ceilings of tests/design-source-guard.spec.ts for this group: per file and rule, the count may not rise, and when it falls the ceiling must fall in the same commit. Lower with `npm run design:baseline -- --group <group>`; never raise by hand. Rules: tests/helpers/design-rules.ts. Plan: Block D, luecken-und-plan.md §4.",
+  "group": "landing",
+  "files": {
+    "app/page.tsx": {
+      "step": "D.27",
+      "R1": 20,
+      "R2": 31,
+      "R3": 1,
+      "R4": 201,
+      "R5": 81,
+      "R7": 1,
+      "R13": 10,
+      "R14": 4,
+      "R15": 2,
+      "R17": 7,
+      "R18": 18
+    },
+    "components/BenefitCard.tsx": {
+      "step": "D.27",
+      "R1": 5,
+      "R2": 10,
+      "R4": 53,
+      "R5": 11,
+      "R18": 12
+    },
+    "components/FooterCTA.tsx": {
+      "step": "D.27",
+      "R4": 8,
+      "R5": 6,
+      "R7": 2,
+      "R13": 1
+    },
+    "components/HeroCTA.tsx": {
+      "step": "D.27",
+      "R2": 2,
+      "R4": 12,
+      "R5": 6,
+      "R7": 3,
+      "R13": 2
+    },
+    "components/LandingModals.tsx": {
+      "step": "D.27",
+      "R1": 23,
+      "R2": 25,
+      "R3": 5,
+      "R4": 202,
+      "R5": 53,
+      "R7": 9,
+      "R10": 1,
+      "R13": 3,
+      "R14": 1,
+      "R18": 27
+    },
+    "components/LandingProcess.tsx": {
+      "step": "D.27",
+      "R2": 3,
+      "R4": 8,
+      "R5": 5,
+      "R18": 1
+    },
+    "components/PilotWarningBanner.tsx": {
+      "step": "D.27",
+      "R1": 4,
+      "R2": 3,
+      "R4": 13,
+      "R5": 3,
+      "R7": 1,
+      "R8": 4,
+      "R13": 1,
+      "R14": 1,
+      "R17": 1,
+      "R18": 3
+    },
+    "components/PricingCTA.tsx": {
+      "step": "D.27",
+      "R2": 3,
+      "R4": 15,
+      "R5": 6,
+      "R7": 3,
+      "R13": 1
+    },
+    "components/SamplePackageDownload.tsx": {
+      "step": "D.27",
+      "R1": 5,
+      "R2": 3,
+      "R4": 31,
+      "R5": 13,
+      "R7": 1,
+      "R14": 4,
+      "R17": 1,
+      "R18": 2
+    },
+    "components/SectionHeader.tsx": {
+      "step": "D.27",
+      "R1": 1,
+      "R2": 2,
+      "R4": 9,
+      "R5": 6,
+      "R17": 1,
+      "R18": 1
+    },
+    "components/TransformationReplay.tsx": {
+      "step": "D.27",
+      "R1": 13,
+      "R2": 6,
+      "R4": 79,
+      "R5": 33,
+      "R7": 3,
+      "R13": 3,
+      "R14": 10,
+      "R18": 5
+    },
+    "components/TransformationShowroom.tsx": {
+      "step": "D.27",
+      "R1": 23,
+      "R2": 16,
+      "R3": 6,
+      "R4": 237,
+      "R5": 40,
+      "R14": 1,
+      "R18": 18
+    }
+  }
+}

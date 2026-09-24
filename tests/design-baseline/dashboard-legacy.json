@@ -1,0 +1,102 @@
+{
+  "$comment": "Ceilings of tests/design-source-guard.spec.ts for this group: per file and rule, the count may not rise, and when it falls the ceiling must fall in the same commit. Lower with `npm run design:baseline -- --group <group>`; never raise by hand. Rules: tests/helpers/design-rules.ts. Plan: Block D, luecken-und-plan.md §4.",
+  "group": "dashboard-legacy",
+  "files": {
+    "app/(app)/dashboard/page.tsx": {
+      "step": "D.22",
+      "R1": 24,
+      "R2": 30,
+      "R3": 93,
+      "R4": 394,
+      "R5": 100,
+      "R6": 2,
+      "R7": 40,
+      "R9": 2,
+      "R10": 8,
+      "R12": 67,
+      "R13": 15,
+      "R14": 20,
+      "R17": 14,
+      "R18": 44
+    },
+    "components/FileList.tsx": {
+      "step": "D.22",
+      "R3": 2,
+      "R16": 2
+    },
+    "components/FileUpload.tsx": {
+      "step": "D.22",
+      "R4": 1,
+      "R6": 1
+    },
+    "components/JiraIntegrationModal.tsx": {
+      "step": "D.22",
+      "R3": 6,
+      "R4": 18,
+      "R6": 1,
+      "R7": 3,
+      "R10": 1,
+      "R12": 4,
+      "R18": 1
+    },
+    "components/ProcessStrip.tsx": {
+      "step": "D.22",
+      "R1": 5,
+      "R2": 4,
+      "R4": 22,
+      "R5": 3,
+      "R18": 3
+    },
+    "components/Skeleton.tsx": {
+      "step": "D.22",
+      "R4": 3,
+      "R12": 1,
+      "R13": 1
+    },
+    "components/StarterExamples.tsx": {
+      "step": "D.22",
+      "R1": 3,
+      "R2": 6,
+      "R3": 1,
+      "R4": 42,
+      "R5": 12,
+      "R6": 1,
+      "R7": 3,
+      "R12": 3,
+      "R15": 1,
+      "R16": 1,
+      "R17": 3,
+      "R18": 8
+    },
+    "components/UpgradeToEnterpriseModal.tsx": {
+      "step": "D.22",
+      "R2": 1,
+      "R3": 1,
+      "R4": 9,
+      "R7": 2,
+      "R10": 1,
+      "R12": 3
+    },
+    "components/process-states/ProcessStatesPanel.tsx": {
+      "step": "D.22",
+      "R6": 1
+    },
+    "components/process-states/StateChoice.tsx": {
+      "step": "D.22",
+      "R7": 1,
+      "R18": 3
+    },
+    "components/process-target/IstSollComparison.tsx": {
+      "step": "D.22",
+      "R18": 5
+    },
+    "components/process-target/TargetAnchorNote.tsx": {
+      "step": "D.22",
+      "R18": 2
+    },
+    "components/process-target/TargetModelView.tsx": {
+      "step": "D.22",
+      "R18": 5
+    }
+  }
+}

@@ -1,0 +1,72 @@
+{
+  "$comment": "Ceilings of tests/design-source-guard.spec.ts for this group: per file and rule, the count may not rise, and when it falls the ceiling must fall in the same commit. Lower with `npm run design:baseline -- --group <group>`; never raise by hand. Rules: tests/helpers/design-rules.ts. Plan: Block D, luecken-und-plan.md §4.",
+  "group": "documentation",
+  "files": {
+    "app/(app)/project/[projectId]/documentation/page.tsx": {
+      "step": "D.16a",
+      "R1": 76,
+      "R2": 69,
+      "R3": 80,
+      "R4": 286,
+      "R5": 85,
+      "R7": 8,
+      "R10": 1,
+      "R11": 10,
+      "R12": 48,
+      "R13": 10,
+      "R14": 1,
+      "R15": 2,
+      "R17": 16,
+      "R18": 32
+    },
+    "components/DocumentSection.tsx": {
+      "step": "D.16b",
+      "R4": 5,
+      "R5": 3,
+      "R12": 4,
+      "R15": 2
+    },
+    "components/MermaidDiagram.tsx": {
+      "step": "D.16b",
+      "R4": 5,
+      "R12": 1
+    },
+    "components/PresentationViewer.tsx": {
+      "step": "D.16b",
+      "R1": 5,
+      "R2": 13,
+      "R4": 89,
+      "R5": 9,
+      "R7": 3,
+      "R11": 2,
+      "R12": 12,
+      "R13": 8,
+      "R16": 1,
+      "R17": 1,
+      "R18": 7
+    },
+    "components/ProcessFlow.tsx": {
+      "step": "D.16b",
+      "R1": 8,
+      "R2": 5,
+      "R3": 4,
+      "R4": 64,
+      "R5": 19,
+      "R12": 6,
+      "R15": 1,
+      "R17": 2,
+      "R18": 6
+    },
+    "components/documentation/ProcessDocumentationView.tsx": {
+      "step": "D.16b",
+      "R1": 1,
+      "R4": 46,
+      "R11": 1,
+      "R12": 7
+    },
+    "components/process-revisions/RevisionCompare.tsx": {
+      "step": "D.16b",
+      "R18": 5
+    }
+  }
+}

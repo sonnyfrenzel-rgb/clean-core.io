@@ -23,7 +23,8 @@
     "rules:verify": "tsx scripts/rules-deploy.ts --verify",
     "retention:verify": "tsx scripts/retention-verify.ts",
     "rules:record": "tsx scripts/rules-deploy.ts",
-    "roadmap:status": "node scripts/roadmap/status.mjs"
+    "roadmap:status": "node scripts/roadmap/status.mjs",
+    "design:baseline": "tsx scripts/design/baseline.ts"
   },
   "dependencies": {
     "@google/genai": "^1.17.0",

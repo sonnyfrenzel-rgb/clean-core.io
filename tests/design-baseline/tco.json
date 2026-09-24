@@ -1,0 +1,32 @@
+{
+  "$comment": "Ceilings of tests/design-source-guard.spec.ts for this group: per file and rule, the count may not rise, and when it falls the ceiling must fall in the same commit. Lower with `npm run design:baseline -- --group <group>`; never raise by hand. Rules: tests/helpers/design-rules.ts. Plan: Block D, luecken-und-plan.md §4.",
+  "group": "tco",
+  "files": {
+    "app/(app)/project/[projectId]/tco/page.tsx": {
+      "step": "D.18",
+      "R1": 15,
+      "R2": 18,
+      "R3": 12,
+      "R4": 99,
+      "R5": 8,
+      "R7": 1,
+      "R12": 14,
+      "R13": 2,
+      "R16": 1,
+      "R17": 1
+    },
+    "components/tco/OptionComparison.tsx": {
+      "step": "D.18",
+      "R1": 9,
+      "R2": 15,
+      "R3": 2,
+      "R4": 60,
+      "R5": 2,
+      "R7": 2,
+      "R12": 4,
+      "R16": 1,
+      "R17": 1,
+      "R18": 3
+    }
+  }
+}

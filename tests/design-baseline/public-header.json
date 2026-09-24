@@ -1,0 +1,39 @@
+{
+  "$comment": "Ceilings of tests/design-source-guard.spec.ts for this group: per file and rule, the count may not rise, and when it falls the ceiling must fall in the same commit. Lower with `npm run design:baseline -- --group <group>`; never raise by hand. Rules: tests/helpers/design-rules.ts. Plan: Block D, luecken-und-plan.md §4.",
+  "group": "public-header",
+  "files": {
+    "app/catalog/layout.tsx": {
+      "step": "D.24",
+      "R1": 1,
+      "R2": 3,
+      "R3": 1,
+      "R4": 10,
+      "R5": 5,
+      "R7": 1,
+      "R18": 1
+    },
+    "app/features/layout.tsx": {
+      "step": "D.24",
+      "R1": 1,
+      "R2": 3,
+      "R3": 2,
+      "R4": 10,
+      "R5": 5,
+      "R7": 1,
+      "R18": 1
+    },
+    "components/SapTrademarkNotice.tsx": {
+      "step": "D.24",
+      "R1": 1,
+      "R4": 1
+    },
+    "components/SiteFooter.tsx": {
+      "step": "D.24",
+      "R1": 2,
+      "R2": 2,
+      "R4": 12,
+      "R5": 5,
+      "R18": 1
+    }
+  }
+}
