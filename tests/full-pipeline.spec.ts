@@ -228,7 +228,7 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
     // --- STAGE 1: ANALYZE & SECURITY SCANS ---
     console.log('Executing Stage 1: Upload and Security checks...');
     // Read the safe ABAP example file Z_INVOICE_EXTRACTOR.txt
-    const abapFilePath = path.join(process.cwd(), 'abap-test-files', 'Z_INVOICE_EXTRACTOR.txt');
+    const abapFilePath = path.join(process.cwd(), 'public', 'starter-examples', 'Z_INVOICE_EXTRACTOR.txt');
     const abapCode = fs.readFileSync(abapFilePath, 'utf8');
 
     // Simulate drag-and-drop / select file interaction via hidden input

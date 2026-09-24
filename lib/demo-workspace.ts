@@ -43,7 +43,7 @@ export interface DemoWorkspaceData {
   itFindings: ItFindingsSource;
 }
 
-const DEMO_PATH = path.join(process.cwd(), 'abap-test-files', DEMO_SOURCE_FILE);
+const DEMO_PATH = path.join(process.cwd(), 'public', 'starter-examples', DEMO_SOURCE_FILE);
 
 /** The BPMN and its model, exactly as `hooks/useProcessMap.ts` builds them — without a naming, because a demo calls no model. */
 export function demoProcessMap(source: string): ProcessMapModel {

@@ -38,9 +38,6 @@ scratch/
 .vscode/
 .DS_Store
 
-# Abap Test Fixtures (nur bei Bedarf relevant)
-abap-test-files/
-
 # Build-Skripte (selten im Kontext gebraucht)
 scripts/
 

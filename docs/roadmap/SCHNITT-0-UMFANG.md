@@ -296,7 +296,7 @@ stehen hier mit Grund.
 entschieden und Werkzeuge gemessen werden.
 
 **Was es schon gibt.** Sieben Starterbeispiele (`lib/starter-examples.ts`,
-`abap-test-files/`) und der öffentliche Referenz-Run.
+`public/starter-examples/`) und der öffentliche Referenz-Run.
 
 **Arbeitspakete.** 18 weitere Fälle über alle 11 Konstruktklassen; je Fall Ground
 Truth (Findings je Zeile, Nachfolger mit Typ, Level in beiden Sichten, Hand-Work,

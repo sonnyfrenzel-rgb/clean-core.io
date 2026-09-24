@@ -215,7 +215,6 @@ export const IGNORED_PATHS = [
   /^scratch\//,
   /^tmp\//,
   /^dist\//,
-  /^abap-test-files\//,
   /\.(png|jpe?g|gif|svg|ico|webp|pdf|mp4|woff2?|ttf|zip)$/i,
   /-debug\.log$/,
   // Credential-shaped files are never read, let alone sent. They should not be in

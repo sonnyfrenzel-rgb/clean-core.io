@@ -1,6 +1,6 @@
 /**
  * Diagnostic: run the full Analyze → Design generation pipeline against every
- * legacy ABAP example in abap-test-files/, using the REAL prompts and the REAL
+ * legacy ABAP example in public/starter-examples/, using the REAL prompts and the REAL
  * deterministic engine, and validate that the Design output parses into the
  * shape the Design page renderer expects.
  *
@@ -17,7 +17,7 @@ import { buildAbapEvidence } from '../lib/abap/evidence-model';
 import { routeExtensibility } from '../lib/abap/extensibility-router';
 
 const MODEL = process.argv[2] || 'gemini-3-flash-preview';
-const EXAMPLES_DIR = path.join(process.cwd(), 'abap-test-files');
+const EXAMPLES_DIR = path.join(process.cwd(), 'public', 'starter-examples');
 
 // --- load GEMINI_API_KEY from .env.local / .env (no dotenv dep) ---
 function loadKey(): string {

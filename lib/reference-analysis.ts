@@ -21,7 +21,7 @@ import { getMergedCatalogVersion, MERGED_TABLE_MAP } from '@/lib/abap/catalog-se
  */
 
 export const REFERENCE_FILE = 'ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC.abap';
-const REFERENCE_PATH = path.join(process.cwd(), 'abap-test-files', REFERENCE_FILE);
+const REFERENCE_PATH = path.join(process.cwd(), 'public', 'starter-examples', REFERENCE_FILE);
 
 /**
  * Findings the engine hands back untouched rather than transforming.

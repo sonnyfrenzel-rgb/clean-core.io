@@ -48,7 +48,7 @@ test.describe('the demo is a real run, not a story about one', () => {
   test('its figures are the engine’s, recomputed here independently', () => {
     const demo = buildDemoProject();
 
-    const source = read(path.posix.join('abap-test-files', DEMO_SOURCE_FILE));
+    const source = read(path.posix.join('public', 'starter-examples', DEMO_SOURCE_FILE));
     const evidence = buildAbapEvidence(source, DEMO_SOURCE_FILE, 'private');
     const route = routeExtensibility(evidence, 'private');
 

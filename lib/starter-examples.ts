@@ -7,9 +7,9 @@
  * their own IP.
  *
  * The sources live in `public/starter-examples/` and are fetched on demand, so the
- * ABAP text never enters the client bundle. They are the same files the engine is
- * regression-tested against (`abap-test-files/`), so what a visitor sees here is
- * exactly what the analyzer is known to handle.
+ * ABAP text never enters the client bundle. The engine's regression specs read
+ * these same files, so what a visitor sees here is exactly what the analyzer is
+ * known to handle.
  */
 
 export interface StarterExample {

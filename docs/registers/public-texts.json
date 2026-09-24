@@ -607,7 +607,7 @@
       "saysToday": "ABAP-Quelltext, keine Aussage ueber das Produkt.",
       "wrongWith30": [],
       "decision": "delete",
-      "reason": "Byte-gleiche Kopie von public/starter-examples/Z_BUSINESS_PARTNER_SYNC.txt; kein Code und kein Test liest den Pfad, nur README.md Zeile 15 verlinkt ihn (mit der README umstellen).",
+      "reason": "Entscheidung Sonny 24.09.2026: geloescht - byte-gleich mit public/starter-examples/Z_BUSINESS_PARTNER_SYNC.txt (am 24.09.2026 verglichen). Code, Specs und Skripte lesen seither public/starter-examples/.",
       "effort": "XS",
       "guard": {
         "removed": "exempt",
@@ -616,7 +616,8 @@
       },
       "measured": {
         "lines": 114
-      }
+      },
+      "executed": "2026-09-24"
     },
     {
       "path": "abap-test-files/Z_EMPLOYEE_EXPENSE_VAL.txt",
@@ -626,7 +627,7 @@
       "saysToday": "ABAP-Quelltext, keine Aussage ueber das Produkt.",
       "wrongWith30": [],
       "decision": "delete",
-      "reason": "Byte-gleiche Kopie von public/starter-examples/Z_EMPLOYEE_EXPENSE_VAL.txt; kein Code und kein Test liest den Pfad, nur README.md Zeile 15 verlinkt ihn (mit der README umstellen).",
+      "reason": "Entscheidung Sonny 24.09.2026: geloescht - byte-gleich mit public/starter-examples/Z_EMPLOYEE_EXPENSE_VAL.txt (am 24.09.2026 verglichen). Code, Specs und Skripte lesen seither public/starter-examples/.",
       "effort": "XS",
       "guard": {
         "removed": "exempt",
@@ -635,7 +636,8 @@
       },
       "measured": {
         "lines": 106
-      }
+      },
+      "executed": "2026-09-24"
     },
     {
       "path": "abap-test-files/Z_INVOICE_EXTRACTOR.txt",
@@ -645,7 +647,7 @@
       "saysToday": "ABAP-Quelltext, keine Aussage ueber das Produkt.",
       "wrongWith30": [],
       "decision": "delete",
-      "reason": "Byte-gleiche Kopie von public/starter-examples/Z_INVOICE_EXTRACTOR.txt; kein Code und kein Test liest den Pfad, nur README.md Zeile 15 verlinkt ihn (mit der README umstellen).",
+      "reason": "Entscheidung Sonny 24.09.2026: geloescht - byte-gleich mit public/starter-examples/Z_INVOICE_EXTRACTOR.txt (am 24.09.2026 verglichen). Code, Specs und Skripte lesen seither public/starter-examples/.",
       "effort": "XS",
       "guard": {
         "removed": "exempt",
@@ -654,7 +656,8 @@
       },
       "measured": {
         "lines": 88
-      }
+      },
+      "executed": "2026-09-24"
     },
     {
       "path": "abap-test-files/Z_MATERIAL_STOCK_CALC.txt",
@@ -664,7 +667,7 @@
       "saysToday": "ABAP-Quelltext, keine Aussage ueber das Produkt.",
       "wrongWith30": [],
       "decision": "delete",
-      "reason": "Byte-gleiche Kopie von public/starter-examples/Z_MATERIAL_STOCK_CALC.txt; kein Code und kein Test liest den Pfad, nur README.md Zeile 15 verlinkt ihn (mit der README umstellen).",
+      "reason": "Entscheidung Sonny 24.09.2026: geloescht - byte-gleich mit public/starter-examples/Z_MATERIAL_STOCK_CALC.txt (am 24.09.2026 verglichen). Code, Specs und Skripte lesen seither public/starter-examples/.",
       "effort": "XS",
       "guard": {
         "removed": "exempt",
@@ -673,7 +676,8 @@
       },
       "measured": {
         "lines": 100
-      }
+      },
+      "executed": "2026-09-24"
     },
     {
       "path": "abap-test-files/Z_ORDER_INTEGRITY_CHECK.txt",
@@ -683,7 +687,7 @@
       "saysToday": "ABAP-Quelltext, keine Aussage ueber das Produkt.",
       "wrongWith30": [],
       "decision": "delete",
-      "reason": "Byte-gleiche Kopie von public/starter-examples/Z_ORDER_INTEGRITY_CHECK.txt; kein Code und kein Test liest den Pfad, nur README.md Zeile 15 verlinkt ihn (mit der README umstellen).",
+      "reason": "Entscheidung Sonny 24.09.2026: geloescht - byte-gleich mit public/starter-examples/Z_ORDER_INTEGRITY_CHECK.txt (am 24.09.2026 verglichen). Code, Specs und Skripte lesen seither public/starter-examples/.",
       "effort": "XS",
       "guard": {
         "removed": "exempt",
@@ -692,7 +696,8 @@
       },
       "measured": {
         "lines": 100
-      }
+      },
+      "executed": "2026-09-24"
     },
     {
       "path": "abap-test-files/Z_SALES_ORDER_CREATOR.txt",
@@ -702,7 +707,7 @@
       "saysToday": "ABAP-Quelltext, keine Aussage ueber das Produkt.",
       "wrongWith30": [],
       "decision": "delete",
-      "reason": "Byte-gleiche Kopie von public/starter-examples/Z_SALES_ORDER_CREATOR.txt; kein Code und kein Test liest den Pfad, nur README.md Zeile 15 verlinkt ihn (mit der README umstellen).",
+      "reason": "Entscheidung Sonny 24.09.2026: geloescht - byte-gleich mit public/starter-examples/Z_SALES_ORDER_CREATOR.txt (am 24.09.2026 verglichen). Code, Specs und Skripte lesen seither public/starter-examples/.",
       "effort": "XS",
       "guard": {
         "removed": "exempt",
@@ -711,7 +716,8 @@
       },
       "measured": {
         "lines": 99
-      }
+      },
+      "executed": "2026-09-24"
     },
     {
       "path": "clean-core-video/README.md",
@@ -3172,14 +3178,16 @@
       "decision": "delete",
       "referencedFrom": [
         "docs/archiv/roadmap-2.7/clean-core-review-und-roadmap-2026-09-08.md"
-      ]
+      ],
+      "note": "Ziel am 24.09.2026 geloescht; Archiv und Korpus bleiben woertlich (Geschichte), der Verweis zeigt in die Git-Geschichte."
     },
     {
       "target": "abap-test-files/Z_SALES_ORDER_CREATOR.txt",
       "decision": "delete",
       "referencedFrom": [
         "docs/archiv/roadmap-2.7/clean-core-review-und-roadmap-2026-09-08.md"
-      ]
+      ],
+      "note": "Ziel am 24.09.2026 geloescht; Archiv und Korpus bleiben woertlich (Geschichte), der Verweis zeigt in die Git-Geschichte."
     },
     {
       "target": "clean-core-video/README.md",
@@ -3188,7 +3196,8 @@
         "docs/archiv/roadmap-2.7/clean-core-review-und-roadmap-2026-09-08.md",
         "docs/korpus/anhang/gegenreview/MANIFEST.sha256.json",
         "docs/korpus/referenzkorpus-v2.1.md"
-      ]
+      ],
+      "note": "Ziel am 24.09.2026 geloescht; Archiv und Korpus bleiben woertlich (Geschichte), der Verweis zeigt in die Git-Geschichte."
     },
     {
       "target": "docs/roadmap/SCHNITT-0-UMFANG.md",
@@ -3241,6 +3250,16 @@
       "status": "vollzogen",
       "files": [
         "clean-core-video/"
+      ]
+    },
+    {
+      "id": "delete-abap-test-files",
+      "date": "2026-09-24",
+      "by": "Sonny",
+      "decision": "abap-test-files/ komplett loeschen (alle acht Dateien byte-gleich mit public/starter-examples/); Leser auf public/starter-examples/ umgestellt.",
+      "status": "vollzogen",
+      "files": [
+        "abap-test-files/"
       ]
     }
   ]

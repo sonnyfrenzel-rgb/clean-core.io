@@ -107,7 +107,7 @@ test.describe('ABAP Data Coupling Analyzer Tests', () => {
   test('should analyze the 1000-LOC golden file and correctly identify tables and skip false positives', () => {
     const fs = require('fs');
     const path = require('path');
-    const abapFilePath = path.join(__dirname, '../abap-test-files/ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC.abap');
+    const abapFilePath = path.join(__dirname, '../public/starter-examples/ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC.abap');
     const abapCode = fs.readFileSync(abapFilePath, 'utf8');
 
     const coupling = extractDataCoupling(abapCode);

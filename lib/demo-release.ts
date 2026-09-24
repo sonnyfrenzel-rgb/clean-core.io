@@ -12,7 +12,7 @@ import { TOUR_STATIONS, type TourPlace } from '@/lib/demo-tour';
  *
  * **How the demo is produced today.** It is not stored. `lib/demo-project.ts`
  * and `lib/demo-workspace.ts` run the engine of the deployed release over
- * `abap-test-files/Z_MM_PO_APPROVAL.abap` on the server, so what a reader sees
+ * `public/starter-examples/Z_MM_PO_APPROVAL.abap` on the server, so what a reader sees
  * cannot drift from the engine that serves it. What *can* drift is everything
  * written about it: the tour's stations need a rule to reveal, a construct the
  * engine did not judge, a process with levels, a successor with evidence; the

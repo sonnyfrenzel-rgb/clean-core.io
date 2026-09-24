@@ -31,7 +31,7 @@ import {
  *
  * Everything with a number on it comes from a run of the engine this release
  * ships — `buildAbapEvidence`, `routeExtensibility`, the two assessment scores —
- * over `abap-test-files/Z_MM_PO_APPROVAL.abap`, at request time. Nothing is
+ * over `public/starter-examples/Z_MM_PO_APPROVAL.abap`, at request time. Nothing is
  * transcribed. `DESIGN.md` §6.1.2 asks for the demo to be regenerated whenever
  * the engine or the rule version moves; computing it instead of storing it makes
  * that automatic, and makes a figure that drifts from the engine impossible
@@ -55,7 +55,7 @@ import {
  * Server-only: reads from the filesystem.
  */
 
-const DEMO_PATH = path.join(process.cwd(), 'abap-test-files', DEMO_SOURCE_FILE);
+const DEMO_PATH = path.join(process.cwd(), 'public', 'starter-examples', DEMO_SOURCE_FILE);
 
 /** The demo's deployment assumption, stated rather than implied. */
 const DEMO_DEPLOYMENT = 'private' as const;

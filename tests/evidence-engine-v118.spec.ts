@@ -125,7 +125,7 @@ test.describe('Evidence Engine v1.18 — Codex Improvements', () => {
   test('golden 1000-LOC file should produce valid evidence report', () => {
     const fs = require('fs');
     const path = require('path');
-    const abapFilePath = path.join(__dirname, '../abap-test-files/ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC.abap');
+    const abapFilePath = path.join(__dirname, '../public/starter-examples/ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC.abap');
     const abapCode = fs.readFileSync(abapFilePath, 'utf8');
 
     const report = buildAbapEvidence(abapCode, 'golden.abap', 'public');

@@ -57,14 +57,13 @@ test.describe('the named gaps are recorded', () => {
 });
 
 test.describe('every registered example ships its source', () => {
-  // A card whose file is missing, misnamed or out of step with its twin renders fine and fails the user on click.
+  // A card whose file is missing, misnamed or out of step with its declared size renders fine and fails the user on click.
   for (const ex of STARTER_EXAMPLES) {
-    test(`${ex.name}: the file exists, matches its test twin and its declared size`, () => {
+    test(`${ex.name}: the file exists and matches its declared size`, () => {
       const code = source(ex.file);
       expect(code.trim().length).toBeGreaterThan(0);
       expect(code.split(/\r?\n/).filter((line, i, all) => i < all.length - 1 || line !== '').length).toBe(ex.lines);
       expect(code.toLowerCase()).toContain(ex.name.toLowerCase());
-      expect(fs.readFileSync(path.join(ROOT, 'abap-test-files', ex.file), 'utf8')).toBe(code);
     });
   }
 });
