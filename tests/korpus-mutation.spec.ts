@@ -1,6 +1,11 @@
 import { test, expect } from '@playwright/test';
 import {
   compareAll,
+  compareCase,
+  forbiddenViolations,
+  readCases,
+  readForbiddenConclusions,
+  readWithEngine,
   ENGINE_PRODUCER,
   NO_PRODUCER,
   PROBE_PRODUCERS,
@@ -338,6 +343,46 @@ test('V2 — das Fallbuch verletzt sich nicht selbst (die Kalibrierung der Kernb
       'Kernbildung in forbiddenCores zu weitherzig — dann wird sie enger begründet, nicht die Schwelle ' +
       'verschoben — oder das Fallbuch widerspricht sich.',
   ).toEqual('');
+});
+
+test('V4 — die Probe sagt jeden Kern einer verbotenen Aussage, nicht nur den ersten', () => {
+  // QA-Review von 4b4586aff273: die Probe sagte nur `cores[0]`, und eine
+  // Regression, die einen späteren Kern nicht mehr erkennt, blieb unbemerkt.
+  const probe = PROBE_PRODUCERS.forbidden();
+  let multiCore = 0;
+  for (const korpusCase of readCases()) {
+    const reading = readWithEngine(korpusCase, undefined, probe);
+    const said = reading.businessStatements.filter((statement) => (statement.id ?? '').startsWith('V-'));
+    const conclusions = readForbiddenConclusions(korpusCase).filter((entry) => entry.cores.length > 0);
+    multiCore += conclusions.filter((entry) => entry.cores.length > 1).length;
+    const cores = conclusions.flatMap((entry) => entry.cores);
+    expect(said.map((statement) => statement.text), korpusCase.id).toEqual(cores);
+    // Jeder einzelne Kern schlägt für sich an, an seinem eigenen Satz.
+    const violations = forbiddenViolations(conclusions, reading);
+    for (const statement of said) {
+      expect(
+        violations.some((v) => v.statementId === statement.id && v.core === statement.text),
+        `${korpusCase.id}: der Kern «${statement.text}» wurde gesagt und nicht erkannt`,
+      ).toBe(true);
+    }
+  }
+  expect(multiCore, 'kein Fall hat eine verbotene Aussage mit mehr als einem Kern — dann prüft V4 nichts').toBeGreaterThan(0);
+});
+
+test('V5 — auch ein Fall ohne Sollfachsatz wird gegen seine verbotenen Aussagen gemessen', () => {
+  // QA-Review von 4b4586aff273: der Zweig ohne Sollfachsatz kehrte vor der
+  // Prüfung zurück, und eine gesagte verbotene Aussage blieb ungeprüft.
+  const korpusCase = readCases().find((c) => readForbiddenConclusions(c).some((entry) => entry.cores.length > 0));
+  expect(korpusCase, 'kein Fall mit vergleichbarer verbotener Aussage').toBeTruthy();
+  if (!korpusCase) return;
+  const withoutStatements = { ...korpusCase, expected: { ...korpusCase.expected, businessStatements: [] } };
+  const result = compareCase(withoutStatements, readWithEngine(withoutStatements, undefined, PROBE_PRODUCERS.forbidden()))
+    .find((r) => r.class === 'fachsaetze');
+  const aspect = result ? forbiddenAspect(result) : undefined;
+  expect(aspect?.status).toBe('compared');
+  expect(aspect?.total).toBeGreaterThan(0);
+  expect(aspect?.compared, 'jede verbotene Aussage wurde gesagt; keine darf als eingehalten gelten').toBe(0);
+  expect(result?.verdict).toBe('engine-defekt');
 });
 
 test('V3 — der Erzeuger des Produkts nennt seine Zahl', () => {

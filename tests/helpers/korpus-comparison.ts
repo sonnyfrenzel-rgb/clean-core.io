@@ -1539,16 +1539,21 @@ export const PROBE_PRODUCERS = {
         text: statement.text ?? '',
         anchors: statement.anchors.map((anchor) => ({ file: anchor.file, line: anchor.line })),
       }));
+      // Jeden Kern, nicht nur den ersten (QA-Review von 4b4586aff273): eine
+      // Regression, die einen späteren Kern nicht mehr erkennt, bliebe sonst
+      // unbemerkt.
       const said = readForbiddenConclusions(korpusCase)
         .filter((entry) => entry.cores.length > 0)
-        .map((entry, index) => ({
-          id: `V-${index + 1}`,
-          text: entry.cores[0],
-          anchors:
-            entry.anchors.length > 0
-              ? entry.anchors.map((anchor) => ({ file: anchor.file, line: anchor.line as number | null }))
-              : [{ file: fallback, line: 1 as number | null }],
-        }));
+        .flatMap((entry, index) =>
+          entry.cores.map((core, coreIndex) => ({
+            id: `V-${index + 1}-${coreIndex + 1}`,
+            text: core,
+            anchors:
+              entry.anchors.length > 0
+                ? entry.anchors.map((anchor) => ({ file: anchor.file, line: anchor.line as number | null }))
+                : [{ file: fallback, line: 1 as number | null }],
+          })),
+        );
       return [...echoed, ...said];
     },
   }),
@@ -1915,26 +1920,92 @@ function compareBusinessStatements(korpusCase: KorpusCase, reading: EngineReadin
     aspects,
   });
 
+  const produced = reading.businessStatements;
+
+  // --- Die verbotenen Aussagen (Roadmap 17.9) ------------------------------
+  //
+  // Dieselbe Maschine wie der Inhaltsvergleich, umgedreht: derselbe
+  // Dice-Koeffizient, dieselbe Schwelle, dieselbe Ankerlogik — nur ist ein
+  // Treffer hier ein **Fehler**. Was ein Kern ist und was nicht vergleichbar
+  // bleibt, steht in `forbiddenCores`; wie die Aussagen ohne Anker behandelt
+  // werden, in `FORBIDDEN_WHOLE_SLICE`.
+  //
+  // Vor dem Zweig ohne Sollfachsatz gemessen, nicht danach: die verbotenen
+  // Aussagen hängen nicht an den Sollsätzen, sondern an dem, was der Erzeuger
+  // sagt — und der sagt auch in einem Fall ohne Sollsatz etwas. Bis zum
+  // QA-Review von 4b4586aff273 kehrte dieser Zweig vorher zurück, und eine
+  // verbotene Aussage in so einem Fall blieb ungeprüft.
+  const conclusions = readForbiddenConclusions(korpusCase);
+  const comparableConclusions = conclusions.filter((entry) => entry.cores.length > 0);
+  const uncomparableConclusions = conclusions.filter((entry) => entry.cores.length === 0);
+  const violations = forbiddenViolations(comparableConclusions, reading);
+  const violated = new Set(violations.map((entry) => entry.conclusion.raw));
+  const forbiddenChecked = produced.length > 0 && comparableConclusions.length > 0;
+  const forbiddenFacet = facet(
+    'verbotene-aussagen',
+    forbiddenChecked ? comparableConclusions.length - violated.size : 0,
+    comparableConclusions.length,
+    conclusions.length === 0
+      ? 'Dieser Fall nennt keine verbotene Aussage; es gibt hier nichts zu verletzen und nichts zu belegen.'
+      : comparableConclusions.length === 0
+        ? `Alle ${conclusions.length} verbotenen Aussagen dieses Falls sind nicht vergleichbar: aus keiner ` +
+          `lässt sich ein Kern mit ${MIN_FORBIDDEN_CORE_TOKENS} Inhaltswörtern bilden (forbiddenCores). ` +
+          `${sample(uncomparableConclusions.map((entry) => entry.clause))}.`
+        : !forbiddenChecked
+          ? `${conclusions.length} verbotene Aussage(n), davon ${comparableConclusions.length} mit einem Kern — ` +
+            `aber kein erzeugter Satz, gegen den sich messen ließe. ${reading.producer.note}`
+          : `Zähler: eingehaltene verbotene Aussagen. Nenner: die ${comparableConclusions.length} von ` +
+            `${conclusions.length}, aus denen sich ein Kern bilden lässt (forbiddenCores). ` +
+            `Nicht vergleichbar und deshalb weder verletzt noch bestanden: ` +
+            `${uncomparableConclusions.length === 0 ? 'keine' : sample(uncomparableConclusions.map((entry) => entry.clause))}.`,
+    forbiddenChecked ? 'compared' : 'not_checked',
+  );
+  const forbiddenEvidence =
+    conclusions.length === 0
+      ? ' Der Fall nennt keine verbotene Aussage.'
+      : ` Verbotene Aussagen: ${comparableConclusions.length} von ${conclusions.length} mit Kern` +
+        `${forbiddenChecked ? '' : ' (nichts erzeugt, also nichts gemessen)'}, ` +
+        `${violated.size} davon verletzt: ${sample(
+          violations.map((entry) => `${entry.statementId} → «${entry.core}» ${entry.score.toFixed(2)}`),
+        )}.`;
+
   if (statements.length === 0) {
+    if (conclusions.length === 0) {
+      return done(
+        {
+          case: korpusCase.id,
+          class: 'fachsaetze',
+          state: 'disagree',
+          verdict: 'nicht-vergleichbar',
+          evidence:
+            'Der Fall führt keine fachlichen Ground-Truth-Kandidaten; es gibt hier weder etwas zu prüfen noch etwas zu vergleichen.',
+        },
+        [
+          facet('fachsatzinhalt', 0, 0, 'Kein Sollfachsatz im Fall.', 'not_checked'),
+          facet(
+            'verbotene-aussagen',
+            0,
+            0,
+            'Kein Sollfachsatz im Fall; ohne erzeugte Aussage gibt es auch keine verbotene zu verletzen.',
+            'not_checked',
+          ),
+        ],
+        { compared: 0, total: 0 },
+      );
+    }
     return done(
       {
         case: korpusCase.id,
         class: 'fachsaetze',
         state: 'disagree',
-        verdict: 'nicht-vergleichbar',
+        // Eine verbotene Aussage bleibt ein Defekt des Erzeugers, auch wenn der
+        // Fall keinen Sollsatz führt, mit dem sich sonst vergleichen ließe.
+        verdict: violated.size > 0 ? 'engine-defekt' : 'nicht-vergleichbar',
         evidence:
-          'Der Fall führt keine fachlichen Ground-Truth-Kandidaten; es gibt hier weder etwas zu prüfen noch etwas zu vergleichen.',
+          `Der Fall führt keine fachlichen Ground-Truth-Kandidaten; es gibt keinen Sollsatz zu vergleichen. ` +
+          `Erzeuger „${reading.producer.name}" lieferte ${produced.length} Satz/Sätze.${forbiddenEvidence}`,
       },
-      [
-        facet('fachsatzinhalt', 0, 0, 'Kein Sollfachsatz im Fall.', 'not_checked'),
-        facet(
-          'verbotene-aussagen',
-          0,
-          0,
-          'Kein Sollfachsatz im Fall; ohne erzeugte Aussage gibt es auch keine verbotene zu verletzen.',
-          'not_checked',
-        ),
-      ],
+      [facet('fachsatzinhalt', 0, 0, 'Kein Sollfachsatz im Fall.', 'not_checked'), forbiddenFacet],
       { compared: 0, total: 0 },
     );
   }
@@ -1954,7 +2025,6 @@ function compareBusinessStatements(korpusCase: KorpusCase, reading: EngineReadin
   }
 
   // --- Teil 2: der Inhalt, über den Anker als Schlüssel ---------------------
-  const produced = reading.businessStatements;
   const keysOf = (anchors: Array<{ file: string | null; line: number | null }>) => anchorKeys(anchors, reading);
 
   /**
@@ -1999,18 +2069,8 @@ function compareBusinessStatements(korpusCase: KorpusCase, reading: EngineReadin
   const comparedCount = takenExpected.size;
   const extra = produced.filter((_, index) => !takenProduced.has(index)).length;
 
-  // --- Teil 3: die verbotenen Aussagen (Roadmap 17.9) ----------------------
-  //
-  // Dieselbe Maschine, umgedreht: derselbe Dice-Koeffizient, dieselbe Schwelle,
-  // dieselbe Ankerlogik — nur ist ein Treffer hier ein **Fehler**. Was ein
-  // Kern ist und was nicht vergleichbar bleibt, steht in `forbiddenCores`;
-  // wie die Aussagen ohne Anker behandelt werden, in `FORBIDDEN_WHOLE_SLICE`.
-  const conclusions = readForbiddenConclusions(korpusCase);
-  const comparableConclusions = conclusions.filter((entry) => entry.cores.length > 0);
-  const uncomparableConclusions = conclusions.filter((entry) => entry.cores.length === 0);
-  const violations = forbiddenViolations(comparableConclusions, reading);
-  const violated = new Set(violations.map((entry) => entry.conclusion.raw));
-  const forbiddenChecked = produced.length > 0 && comparableConclusions.length > 0;
+  // --- Teil 3, die verbotenen Aussagen, steht oben vor dem Zweig ohne
+  // Sollfachsatz (`forbiddenFacet`, `forbiddenEvidence`).
 
   // --- Teil 4: Status, Zähler, Nenner --------------------------------------
   const aspects: FacetAspect[] = [
@@ -2039,25 +2099,7 @@ function compareBusinessStatements(korpusCase: KorpusCase, reading: EngineReadin
         : `Dice über normalisierte Inhaltswörter, Schwelle ${STATEMENT_MATCH_THRESHOLD.toFixed(2)} (am Korpus kalibriert, siehe STATEMENT_MATCH_THRESHOLD).`,
       comparedCount > 0 ? 'compared' : 'not_checked',
     ),
-    facet(
-      'verbotene-aussagen',
-      forbiddenChecked ? comparableConclusions.length - violated.size : 0,
-      comparableConclusions.length,
-      conclusions.length === 0
-        ? 'Dieser Fall nennt keine verbotene Aussage; es gibt hier nichts zu verletzen und nichts zu belegen.'
-        : comparableConclusions.length === 0
-          ? `Alle ${conclusions.length} verbotenen Aussagen dieses Falls sind nicht vergleichbar: aus keiner ` +
-            `lässt sich ein Kern mit ${MIN_FORBIDDEN_CORE_TOKENS} Inhaltswörtern bilden (forbiddenCores). ` +
-            `${sample(uncomparableConclusions.map((entry) => entry.clause))}.`
-          : !forbiddenChecked
-            ? `${conclusions.length} verbotene Aussage(n), davon ${comparableConclusions.length} mit einem Kern — ` +
-              `aber kein erzeugter Satz, gegen den sich messen ließe. ${reading.producer.note}`
-            : `Zähler: eingehaltene verbotene Aussagen. Nenner: die ${comparableConclusions.length} von ` +
-              `${conclusions.length}, aus denen sich ein Kern bilden lässt (forbiddenCores). ` +
-              `Nicht vergleichbar und deshalb weder verletzt noch bestanden: ` +
-              `${uncomparableConclusions.length === 0 ? 'keine' : sample(uncomparableConclusions.map((entry) => entry.clause))}.`,
-      forbiddenChecked ? 'compared' : 'not_checked',
-    ),
+    forbiddenFacet,
   ];
 
   /**
@@ -2101,22 +2143,13 @@ function compareBusinessStatements(korpusCase: KorpusCase, reading: EngineReadin
         ? `Kein erzeugter Satz steht an einer ABAP-Anweisung, die auch ein Sollsatz nennt — nicht verglichen, nicht verfehlt.`
         : `${comparedCount} von ${statements.length} Sollsätzen vergleichbar (Anker geteilt), davon ${hits.length} über der Schwelle: ${sample(hits)}. ` +
           `Darunter: ${sample(misses)}. Ohne Gegenstück: ${sample(uncovered)}. Erzeugte Sätze ohne Sollsatz an derselben Stelle: ${extra}.`;
-  const forbidden =
-    conclusions.length === 0
-      ? ' Der Fall nennt keine verbotene Aussage.'
-      : ` Verbotene Aussagen: ${comparableConclusions.length} von ${conclusions.length} mit Kern` +
-        `${forbiddenChecked ? '' : ' (nichts erzeugt, also nichts gemessen)'}, ` +
-        `${violated.size} davon verletzt: ${sample(
-          violations.map((entry) => `${entry.statementId} → «${entry.core}» ${entry.score.toFixed(2)}`),
-        )}.`;
-
   return done(
     {
       case: korpusCase.id,
       class: 'fachsaetze',
       state: agree ? 'agree' : 'disagree',
       verdict,
-      evidence: `${head}${tail}${forbidden}`,
+      evidence: `${head}${tail}${forbiddenEvidence}`,
     },
     aspects,
     { compared: comparedCount, total: statements.length },
