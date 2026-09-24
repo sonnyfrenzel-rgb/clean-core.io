@@ -1380,6 +1380,12 @@ einer Einladung) braucht Sonnys Abwägung gegen weitergeleitete Links.
 | UX-149 | medium | Fehlergrenze zeigt Roh-Fehlermeldung offen statt eingeklappt | sofort | eingeplant |
 | UX-152 | medium | Automatische Genehmigung läuft ohne Abbruchmöglichkeit | sofort | eingeplant |
 | UX-153 | medium | Eingeladene Leser landen auf Analyse-Start | — | zurückgestellt |
+| UX-157 | medium | Genehmigungsseite: Gegenentscheidung nur über zweiten Mail-Link | — | zurückgestellt |
+| UX-158 | medium | Einladen nur als Icon ohne sichtbaren Namen schwer findbar | 1.5 | eingeplant |
+| UX-159 | medium | Workspace-Laden zeigt Sehenden leere Seite | 1.4 | eingeplant |
+| UX-160 | medium | Importfehler ohne Rückmeldung an Nutzer | 1.4 | eingeplant |
+| UX-161 | medium | Export ohne sichtbare Bestätigung | 1.4 | eingeplant |
+| UX-162 | medium | Vor-Analyse überfrachtet den Start | — | zurückgestellt |
 | UX-008 | low | Slideshow-Steuerung ohne Namen, Pfeiltasten gekapert | 3.0.4 | behoben |
 | UX-011 | low | Wirre Befund-Begriffe und Sprachmix | 1.5 | eingeplant |
 | UX-013 | low | Vorschau widerspricht Editierbarkeit, Start irreführend | 1.5 | eingeplant |
@@ -1422,6 +1428,7 @@ einer Einladung) braucht Sonnys Abwägung gegen weitergeleitete Links.
 | UX-144 | low | Workspace-Gate lädt stumm für Screenreader | sofort | behoben |
 | UX-155 | low | Workspace-Laden für Sehende leer, nur sr-only-Text | 1.4 | eingeplant |
 | UX-156 | low | Rücksprung in zwei Großschreibungen | 1.5 | eingeplant |
+| UX-164 | low | Rücksprung in zwei Schreibweisen | 1.5 | eingeplant |
 ---
 
 ## 14. QA-Befunde aus der Vollprüfung

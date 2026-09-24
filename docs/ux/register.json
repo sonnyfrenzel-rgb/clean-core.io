@@ -1961,6 +1961,102 @@
       "status": "eingeplant",
       "step": "1.5",
       "updatedAt": "2026-09-24T07:21:18.523Z"
+    },
+    {
+      "id": "UX-157",
+      "fingerprint": "5476ad0b67d7",
+      "title": "Genehmigungsseite: Gegenentscheidung nur über zweiten Mail-Link",
+      "severity": "medium",
+      "area": "release",
+      "firstSeenHead": "81810c8026e04c8c392e2b4d143f39655b963495",
+      "createdAt": "2026-09-24T12:35:02.449Z",
+      "status": "zurückgestellt",
+      "reason": "Ein Button je Link ist die Entscheidung UX-152 B (Sonny, 24.09.): Token ist an eine Aktion gebunden. Gegenaktion auf derselben Seite braucht eine neue Produktentscheidung; nur der Hinweis text-xs slate-400 (approve-tenant/page.tsx:307) waere klein zu verbessern.",
+      "updatedAt": "2026-09-24T12:35:02.449Z"
+    },
+    {
+      "id": "UX-158",
+      "fingerprint": "2abc5bc1e7ae",
+      "title": "Einladen nur als Icon ohne sichtbaren Namen schwer findbar",
+      "severity": "medium",
+      "area": "release",
+      "firstSeenHead": "81810c8026e04c8c392e2b4d143f39655b963495",
+      "createdAt": "2026-09-24T12:35:02.749Z",
+      "status": "eingeplant",
+      "step": "1.5",
+      "updatedAt": "2026-09-24T12:35:02.749Z"
+    },
+    {
+      "id": "UX-159",
+      "fingerprint": "558bb33a88af",
+      "title": "Workspace-Laden zeigt Sehenden leere Seite",
+      "severity": "medium",
+      "area": "release",
+      "firstSeenHead": "81810c8026e04c8c392e2b4d143f39655b963495",
+      "createdAt": "2026-09-24T12:35:02.992Z",
+      "status": "eingeplant",
+      "step": "1.4",
+      "updatedAt": "2026-09-24T12:35:02.992Z"
+    },
+    {
+      "id": "UX-160",
+      "fingerprint": "b6b0724c964b",
+      "title": "Importfehler ohne Rückmeldung an Nutzer",
+      "severity": "medium",
+      "area": "release",
+      "firstSeenHead": "81810c8026e04c8c392e2b4d143f39655b963495",
+      "createdAt": "2026-09-24T12:35:03.233Z",
+      "status": "eingeplant",
+      "step": "1.4",
+      "updatedAt": "2026-09-24T12:35:03.233Z"
+    },
+    {
+      "id": "UX-161",
+      "fingerprint": "ecffab93644a",
+      "title": "Export ohne sichtbare Bestätigung",
+      "severity": "medium",
+      "area": "release",
+      "firstSeenHead": "81810c8026e04c8c392e2b4d143f39655b963495",
+      "createdAt": "2026-09-24T12:35:03.492Z",
+      "status": "eingeplant",
+      "step": "1.4",
+      "updatedAt": "2026-09-24T12:35:03.492Z"
+    },
+    {
+      "id": "UX-162",
+      "fingerprint": "35ee32b7b9c9",
+      "title": "Vor-Analyse überfrachtet den Start",
+      "severity": "medium",
+      "area": "release",
+      "firstSeenHead": "81810c8026e04c8c392e2b4d143f39655b963495",
+      "createdAt": "2026-09-24T12:35:03.741Z",
+      "status": "zurückgestellt",
+      "reason": "Der Analyse-Start wird im 3.0-Umbau nach den Mockups 2.8 ersetzt; ein Akkordeon im alten Screen waere Wegwerfarbeit.",
+      "updatedAt": "2026-09-24T12:35:03.741Z"
+    },
+    {
+      "id": "UX-163",
+      "fingerprint": "83e6dd1c0712",
+      "title": "Eine dark:-Variante bleibt ohne Dark Mode zurück",
+      "severity": "low",
+      "area": "release",
+      "firstSeenHead": "81810c8026e04c8c392e2b4d143f39655b963495",
+      "createdAt": "2026-09-24T12:35:03.994Z",
+      "status": "widerlegt",
+      "reason": "Die einzige Fundstelle ist components/cc/Button.tsx:41, der Schluessel der Button-Variante 'dark', keine Tailwind-Variante dark:. Es gibt keine Stelle mit einem Dark-Mode-Rest.",
+      "updatedAt": "2026-09-24T12:35:03.994Z"
+    },
+    {
+      "id": "UX-164",
+      "fingerprint": "96782481156f",
+      "title": "Rücksprung in zwei Schreibweisen",
+      "severity": "low",
+      "area": "release",
+      "firstSeenHead": "81810c8026e04c8c392e2b4d143f39655b963495",
+      "createdAt": "2026-09-24T12:35:04.218Z",
+      "status": "eingeplant",
+      "step": "1.5",
+      "updatedAt": "2026-09-24T12:35:04.218Z"
     }
   ]
 }
