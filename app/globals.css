@@ -268,6 +268,18 @@
   --color-cc-code-literal: var(--cc-code-literal);
   --color-cc-code-name: var(--cc-code-name);
   --color-cc-code-hl: var(--cc-code-hl);
+  /* §1.8 chart palettes, reachable as utilities (roadmap 3.0.10). Declared
+     here rather than written as literals, because a colour class Tailwind does
+     not know emits nothing and the bar silently takes its parent's colour. */
+  --color-cc-chart-1: var(--cc-chart-1);
+  --color-cc-chart-2: var(--cc-chart-2);
+  --color-cc-chart-3: var(--cc-chart-3);
+  --color-cc-chart-4: var(--cc-chart-4);
+  --color-cc-chart-5: var(--cc-chart-5);
+  --color-cc-seq-1: var(--cc-seq-1);
+  --color-cc-seq-2: var(--cc-seq-2);
+  --color-cc-seq-3: var(--cc-seq-3);
+  --color-cc-seq-4: var(--cc-seq-4);
 
   --radius-cc-card: var(--cc-radius-card);
   --radius-cc-row: var(--cc-radius-row);
@@ -348,6 +360,15 @@
   [data-steering-print] li {
     break-inside: avoid;
   }
+
+  /* Roadmap 3.0.10: a chart that only works on screen is not finished. The
+     bars keep their fill on paper — every figure is also in the table beside
+     them, so a printer that drops colour still loses no number. */
+  [data-chart-segment],
+  [data-chart-swatch] {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
 }
 
 @media (forced-colors: active) {
@@ -363,6 +384,24 @@
 
   [data-cc-form='dashed'] {
     border-style: dashed;
+  }
+
+  /* Roadmap 3.0.10: under a contrast theme the fills go, so every segment of a
+     chart becomes an outlined box in the theme's own text colour, in the same
+     order as the rows of its table — and "not determined" stays dashed, the
+     one area that must never read as a category. */
+  [data-chart-segment],
+  [data-chart-swatch] {
+    border: 1px solid CanvasText;
+  }
+
+  [data-chart-segment][data-not-determined],
+  [data-chart-swatch][data-not-determined] {
+    border-style: dashed;
+  }
+
+  [data-chart-line] {
+    stroke: CanvasText;
   }
 }
 

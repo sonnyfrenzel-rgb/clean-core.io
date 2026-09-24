@@ -13,6 +13,7 @@ import {
   type RunHistoryEntry,
 } from '@/lib/management-answers';
 import { notDetermined } from '@/lib/workspace-model';
+import ManagementOverview from './ManagementOverview';
 import type { Project } from '@/lib/types';
 
 /**
@@ -23,12 +24,13 @@ import type { Project } from '@/lib/types';
  * make up — a Clean Core Score without a run, a trend line through one point —
  * it cannot, because the model hands it `null` and the reason instead.
  *
- * **The form of this view is step 3.0.10, not this one.** Diagrams, an overview
- * screen a board reads in one look, *not determined* as a visible area of every
- * chart: that step draws it. What is built here is what that step will draw —
- * and the one thing it cannot add afterwards is the coverage of each figure, so
- * every figure arrives with it and this component prints it beside the number
- * rather than in a popover.
+ * **The form of this view is step 3.0.10** — `ManagementOverview.tsx`: the one
+ * answer sentence, the charts and *not determined* as a visible area of each.
+ * These four answers sit under it, one action deeper (§2.11), and the overview
+ * draws from the same `ManagementView` rather than from a second derivation.
+ * The one thing that step could not have added afterwards is the coverage of
+ * each figure, so every figure arrives with it and is printed beside the
+ * number rather than in a popover.
  *
  * **The run history is read here, not in the model.** `projects/{id}/runs` is
  * owner-only in `firestore.rules`, so an invited reader's read is refused — and
@@ -112,18 +114,18 @@ export default function ManagementAnswers({
 
   return (
     <section data-management-view="" aria-labelledby="management-answers-heading" className="cc">
-      <h2
-        id="management-answers-heading"
-        data-management-headline=""
-        className="m-0 text-[16px] leading-snug font-bold text-cc-ink"
+      {/* Roadmap 3.0.10: the overview answers first — one sentence and at most
+          six cards, each with its answer as its title. The four detailed
+          answers below stay one action deeper (§2.11: nothing lost, nothing
+          first); the headline the overview prints is this view's own sentence
+          wherever there is no signed run to say more about. */}
+      <ManagementOverview
+        project={project}
+        projectId={projectId}
+        view={view}
+        detailCount={view.answers.length}
       >
-        {view.headline}
-      </h2>
-      <p className="m-0 mt-1 text-[12px] leading-snug font-medium text-cc-ink-muted">
-        {view.question} — this one project. No comparison with any other.
-      </p>
-
-      <div className="mt-4 space-y-4">
+      <div className="space-y-4">
         {view.answers.map((answer) => (
           <div key={answer.id} data-management-answer={answer.id}>
             <CcCard
@@ -165,6 +167,7 @@ export default function ManagementAnswers({
           </div>
         ))}
       </div>
+      </ManagementOverview>
     </section>
   );
 }
