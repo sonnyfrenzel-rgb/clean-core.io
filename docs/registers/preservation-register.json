@@ -1548,8 +1548,8 @@
           {
             "field": "documentation",
             "locator": "[data-stage-output=\"documentation\"]",
-            "text": "Enterprise BPMN Blueprint",
-            "why": "the blueprint line of the integrity report"
+            "text": "Process blueprint, earlier form",
+            "why": "the blueprint line of the integrity report. The reference case seeds a blueprint of the L1-L4 form the old generator wrote; since roadmap 3.0.5 the delivery report names that form as earlier and a document read from the code as 'Process documentation, read from the code'"
           },
           {
             "field": "auditMetadata",
