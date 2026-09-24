@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { Download, FileCode, FileText, ShieldAlert } from 'lucide-react';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { PROVENANCE_VALUES } from '@/lib/provenance';
@@ -127,6 +127,21 @@ const CHECKS: CcCheckMessage[] = [
   },
 ];
 
+/**
+ * The check of the invite demo, on leaving the field and on submit (§2.7):
+ * what is wrong and how it becomes right. The dialog's form is `noValidate`,
+ * so this is the only check there is — a demo that closed on an empty address
+ * would teach the pattern the wrong way round (QA c07adecd2fb5, 910b9b225271).
+ */
+function inviteProblem(value: string): string | null {
+  const address = value.trim();
+  if (address === '') return "Enter the reader's e-mail address, like name@example.com.";
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(address)) {
+    return 'This is not an e-mail address. Enter one like name@example.com.';
+  }
+  return null;
+}
+
 function Section({ id, title, children }: { id: string; title: string; children: React.ReactNode }) {
   return (
     <section className="mt-8" aria-labelledby={id}>
@@ -151,6 +166,14 @@ export default function DesignSystemGallery() {
   const [toastOpen, setToastOpen] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [invitee, setInvitee] = useState('');
+  const [inviteError, setInviteError] = useState<string | null>(null);
+  const [inviteFailures, setInviteFailures] = useState(0);
+  const inviteRef = useRef<HTMLInputElement>(null);
+  const closeInvite = () => {
+    setDialogOpen(false);
+    setInviteError(null);
+    setInviteFailures(0);
+  };
 
   const filtered = useMemo(
     () =>
@@ -705,11 +728,19 @@ export default function DesignSystemGallery() {
         open={dialogOpen}
         title="Invite a reader"
         lead="Read access to this project, bound to one confirmed e-mail address, including the source code."
-        onClose={() => setDialogOpen(false)}
-        onSubmit={() => setDialogOpen(false)}
+        onClose={closeInvite}
+        onSubmit={() => {
+          const problem = inviteProblem(invitee);
+          setInviteError(problem);
+          if (problem) {
+            setInviteFailures((n) => n + 1);
+            return;
+          }
+          closeInvite();
+        }}
         actions={
           <>
-            <CcButton variant="ghost" onClick={() => setDialogOpen(false)}>
+            <CcButton variant="ghost" onClick={closeInvite}>
               Cancel
             </CcButton>
             <CcButton variant="primary" type="submit">
@@ -718,16 +749,48 @@ export default function DesignSystemGallery() {
           </>
         }
       >
-        <CcField label="E-mail address" required help="The link works only for this address.">
+        {inviteFailures > 0 && inviteError ? (
+          <div className="mb-3">
+            <CcMessageStrip
+              key={inviteFailures}
+              state="error"
+              headline="The invitation was not sent."
+              announce
+              actions={
+                <CcButton variant="ghost" onClick={() => inviteRef.current?.focus()}>
+                  Go to the e-mail address
+                </CcButton>
+              }
+            >
+              Check the e-mail address below.
+            </CcMessageStrip>
+          </div>
+        ) : null}
+        <CcField
+          label="E-mail address"
+          required
+          help="The link works only for this address."
+          valueState={inviteError ? 'error' : undefined}
+          message={inviteError ?? undefined}
+        >
           {(control) => (
             <input
+              ref={inviteRef}
               id={control.id}
               type="email"
               aria-describedby={control.describedBy}
+              aria-invalid={control.invalid || undefined}
               required={control.required}
               aria-required={control.ariaRequired}
               value={invitee}
-              onChange={(event) => setInvitee(event.target.value)}
+              onChange={(event) => {
+                setInvitee(event.target.value);
+                // Once an error is shown, it goes the moment the input is right.
+                if (inviteError) setInviteError(inviteProblem(event.target.value));
+              }}
+              onBlur={() => {
+                if (invitee.trim() !== '') setInviteError(inviteProblem(invitee));
+              }}
               className={control.className}
             />
           )}

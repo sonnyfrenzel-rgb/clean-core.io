@@ -361,6 +361,39 @@ test.describe('and paint themselves consistently', () => {
     await expect(opener).toBeFocused();
   });
 
+  test('the dialog does not accept an empty or malformed address (QA c07adecd2fb5, 910b9b225271)', async ({ page }) => {
+    test.setTimeout(180 * 1000);
+    await openGallery(page, admin);
+
+    await page.getByRole('button', { name: 'Open dialog' }).click();
+    const dialog = page.getByRole('dialog', { name: 'Invite a reader' });
+    const email = dialog.getByRole('textbox', { name: /E-mail address/ });
+    await expect(email).toBeFocused();
+    await email.fill('');
+
+    // Empty: the dialog stays, the strip on top takes the focus (§2.7), the
+    // field says what is wrong and how it becomes right.
+    await page.keyboard.press('Enter');
+    await expect(dialog).toBeVisible();
+    const strip = dialog.locator('[data-cc-message-strip="error"]');
+    await expect(strip).toBeFocused();
+    await expect(email).toHaveAttribute('aria-invalid', 'true');
+    await expect(email).toHaveAccessibleDescription(/Enter the reader's e-mail address/);
+
+    // Malformed: still not sent.
+    await email.fill('reader@example');
+    await dialog.getByRole('button', { name: 'Send invitation' }).click();
+    await expect(dialog).toBeVisible();
+    await expect(email).toHaveAccessibleDescription(/This is not an e-mail address/);
+
+    // Put right, the error goes as it is typed, and the invitation goes out.
+    await email.fill('reader@example.com');
+    await expect(email).not.toHaveAttribute('aria-invalid', 'true');
+    await expect(strip).toHaveCount(0);
+    await dialog.getByRole('button', { name: 'Send invitation' }).click();
+    await expect(dialog).toBeHidden();
+  });
+
   test('every field with an asterisk says aria-required on its control (QA c07adecd2fb5, 14f0276e65ff)', async ({ page }) => {
     test.setTimeout(180 * 1000);
     await openGallery(page, admin);
