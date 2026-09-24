@@ -3,7 +3,7 @@ import { initializeApp, getApps } from 'firebase/app';
 import { getAuth, connectAuthEmulator, createUserWithEmailAndPassword } from 'firebase/auth';
 import { initializeApp as initAdminApp, getApps as getAdminApps } from 'firebase-admin/app';
 import { getFirestore, type Firestore } from 'firebase-admin/firestore';
-import { getAuth as getAdminAuth } from 'firebase-admin/auth';
+import { adminSetCustomClaim } from './helpers/admin-seed';
 import firebaseConfig from '../firebase-config.json';
 import { verifyRunIntegrity } from '../lib/run-signature';
 import { legacyForms, seedLegacyForms, storedFingerprint } from './helpers/legacy-forms';
@@ -69,7 +69,8 @@ test.describe('historical project forms, opened in the workspace', () => {
     const cred = await createUserWithEmailAndPassword(auth, ADMIN, PASSWORD);
     owner = cred.user.uid;
     // The claim first, so the token minted at sign-in already carries it.
-    await getAdminAuth(adminApp).setCustomUserClaims(owner, { admin: true });
+    // Through the seed route: firebase-admin/auth cannot be required by a spec on this Node (jose is ESM-only).
+    await adminSetCustomClaim(owner, { admin: true });
     await db.doc(`users/${owner}`).set({
       firstName: 'Legacy', lastName: 'Admin', email: ADMIN,
       tier: 'pilot', status: 'approved', isAdmin: true, workspaceShell: true,
@@ -96,13 +97,21 @@ test.describe('historical project forms, opened in the workspace', () => {
         await expect(shell).toHaveAttribute('data-workspace-shell', view);
         // The document id is the one in the path, whatever the document carries.
         await expect(page.locator('[data-workspace-title]')).toContainText(String(form.project.name));
-        // Let every read the view makes on open finish before the record is compared.
-        await page.waitForLoadState('networkidle', { timeout: 60000 }).catch(() => {});
-
-        const shown = await page.locator('[data-not-determined-record]').evaluateAll((els) =>
-          els.map((el) => el.getAttribute('data-not-determined-record') || ''),
-        );
-        expect(shown.sort(), `${key} in ${view}`).toEqual([...form.gaps].sort());
+        // Wait for what is compared, not for the network to go quiet: the
+        // workspace keeps Firestore listeners open, so 'networkidle' never
+        // arrived and every view waited out its full minute (24 views, one
+        // test timeout). The gaps are derived once the reads are in; poll them.
+        await expect
+          .poll(
+            async () =>
+              (
+                await page.locator('[data-not-determined-record]').evaluateAll((els) =>
+                  els.map((el) => el.getAttribute('data-not-determined-record') || ''),
+                )
+              ).sort(),
+            { message: `${key} in ${view}`, timeout: 30000 },
+          )
+          .toEqual([...form.gaps].sort());
 
         const text = await page.locator('[data-workspace-shell]').innerText();
         expect(text, `${key} in ${view}`).not.toMatch(/\bundefined\b|\bNaN\b|\[object Object\]/);

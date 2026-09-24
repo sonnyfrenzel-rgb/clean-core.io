@@ -282,6 +282,18 @@ test.describe('the layers on the screen', () => {
         { objectName: 'CHECK_VENDOR', type: 'Form Routine', criticality: 'Medium', lineStart: 225, lineEnd: 234 },
       ],
     });
+    // The run the project names has to exist. Until roadmap 3.0.2 the workspace
+    // showed a run as proven from the id on the project alone, and this fixture
+    // never created one; since then an id without a readable run is "could not
+    // be read", which is the honest answer — so the fixture gives it a run.
+    // `userId` on the run itself: the rule for runs reads it there, not on the project.
+    await adminSetDoc(`projects/${RUN_ID}/runs`, 'run-4b8c1f2e9a77', {
+      userId: cred.user.uid,
+      status: 'completed', createdAt: new Date(), cleanCoreScore: 62,
+      codeInventory: [
+        { objectName: 'CHECK_VENDOR', type: 'Form Routine', criticality: 'Medium', lineStart: 225, lineEnd: 234 },
+      ],
+    });
   });
 
   test('an empty layer is a place: it names itself and says why it is empty', async ({ page }) => {
