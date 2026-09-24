@@ -30,6 +30,12 @@
 /** Where the demo lives. One route, one demo, for every account. */
 export const DEMO_ROUTE = '/demo';
 
+/**
+ * The same demo in the 3.0 workspace, with its tour (roadmap 3.0.7). Behind the
+ * workspace switch until 3.0, so it is linked only from screens behind it.
+ */
+export const DEMO_WORKSPACE_ROUTE = '/demo/workspace';
+
 /** The eighth starter example — the case the 3.0 mockups are drawn around. */
 export const DEMO_SOURCE_FILE = 'Z_MM_PO_APPROVAL.abap';
 export const DEMO_OBJECT_NAME = 'Z_MM_PO_APPROVAL';

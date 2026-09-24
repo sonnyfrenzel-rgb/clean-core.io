@@ -11,6 +11,7 @@ import {
   type CoachMarkContext,
   type CoachMarkId,
 } from '@/lib/coach-marks';
+import { SHOW_TIPS_EVENT } from '@/lib/show-tips-again';
 
 /**
  * The three coach marks, held once for the whole screen — `DESIGN.md` §6.2.
@@ -47,6 +48,11 @@ export function useCoachMarks(context: CoachMarkContext): CoachMarkState {
 
   useEffect(() => {
     setDismissed(readDismissedMarks());
+    // "Show tips again" in the help menu clears storage and says so; the list
+    // held here is read again rather than left hiding the tips (roadmap 3.0.7).
+    const again = () => setDismissed(readDismissedMarks());
+    window.addEventListener(SHOW_TIPS_EVENT, again);
+    return () => window.removeEventListener(SHOW_TIPS_EVENT, again);
   }, []);
 
   // Destructured, not passed whole: the caller builds the context object inline,

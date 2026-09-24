@@ -16,6 +16,7 @@
     "build:guide-pdf": "tsx scripts/generate-guide-pdf.ts",
     "sync:catalog": "tsx scripts/sync-cloudification-repo.ts latest",
     "sync:catalog:all": "tsx scripts/sync-cloudification-repo.ts all",
+    "demo:regenerate": "tsx scripts/regenerate-demo.ts",
     "sync:content-dates": "node scripts/sync-content-dates.mjs",
     "deploy:rules": "tsx scripts/rules-deploy.ts --deploy",
     "rules:check": "tsx scripts/rules-deploy.ts",

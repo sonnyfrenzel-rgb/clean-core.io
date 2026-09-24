@@ -170,6 +170,7 @@ export default function FirstLook({
   projectId,
   buildUp = true,
   onReading,
+  namingFrom = 'project',
 }: {
   project: Project | null;
   projectId: string;
@@ -185,6 +186,12 @@ export default function FirstLook({
    * parsing the source a second time.
    */
   onReading?: (reading: SourceReading) => void;
+  /**
+   * Where stage 3's naming comes from. `'none'` for the demo (roadmap 3.0.7):
+   * it has no project document to read a naming from and calls no model, so
+   * the stage reports the absence instead of asking a route that would refuse.
+   */
+  namingFrom?: 'project' | 'none';
 }) {
   const source = typeof project?.legacyCode === 'string' ? project.legacyCode : '';
   const hasSource = source.trim().length > 0;
@@ -240,6 +247,10 @@ export default function FirstLook({
   /* ---- stage 3's work: the stored naming of roadmap 2.4, or none ---- */
   useEffect(() => {
     if (!hasSource) return;
+    if (namingFrom === 'none') {
+      setNaming({ record: null });
+      return;
+    }
     let cancelled = false;
     void (async () => {
       const record = await fetchProcessNaming(projectId);
@@ -248,7 +259,7 @@ export default function FirstLook({
     return () => {
       cancelled = true;
     };
-  }, [projectId, hasSource]);
+  }, [projectId, hasSource, namingFrom]);
 
   /* ---- stage 4's work ---- */
   useEffect(() => {

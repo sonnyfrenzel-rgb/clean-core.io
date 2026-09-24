@@ -11,7 +11,7 @@ import { useUserProfile } from '@/hooks/useUserProfile';
 import { useModelAvailability } from '@/hooks/useModelAvailability';
 import { t } from '@/lib/cc-messages';
 import { describeRunCost, type RunCost } from '@/lib/run-cost';
-import { DEMO_LIST_TAGLINE, DEMO_PROJECT_TITLE, DEMO_ROUTE, DEMO_TAG } from '@/lib/demo-marks';
+import { DEMO_LIST_TAGLINE, DEMO_PROJECT_TITLE, DEMO_TAG, DEMO_WORKSPACE_ROUTE } from '@/lib/demo-marks';
 import {
   applyWorkspaceFilter,
   filterIsActive,
@@ -155,7 +155,8 @@ export default function WorkspaceListReport({ demo }: { demo: WorkspaceDemoRow }
       stale: null,
       lastChange: null,
       hasSource: false,
-      href: DEMO_ROUTE,
+      // The new workspace opens the demo in the new workspace (roadmap 3.0.7).
+      href: DEMO_WORKSPACE_ROUTE,
     }),
     [demo.lines, demo.findings],
   );

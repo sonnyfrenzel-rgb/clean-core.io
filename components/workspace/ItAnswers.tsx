@@ -49,7 +49,19 @@ import {
  * when it answered. A screen that says "no findings" while it is still asking is
  * the same fabrication as one that shows a zero for something it did not measure.
  */
-export default function ItAnswers({ projectId }: { projectId: string }) {
+export default function ItAnswers({
+  projectId,
+  findings,
+}: {
+  projectId: string;
+  /**
+   * The answer of the findings route, when the caller already has it — the demo
+   * workspace (roadmap 3.0.7) computes it on the server with the same
+   * `findingsOf` the route runs, and has no project the route could read. When
+   * given, nothing is fetched.
+   */
+  findings?: ItFindingsSource;
+}) {
   /**
    * The answer together with the project it answers for. A client navigation
    * keeps this component mounted and changes `projectId`; an answer of the
@@ -57,7 +69,7 @@ export default function ItAnswers({ projectId }: { projectId: string }) {
    */
   const [loaded, setLoaded] = useState<{ projectId: string; source: ItFindingsSource | null } | null>(null);
   const source: ItFindingsSource | null | undefined =
-    loaded && loaded.projectId === projectId ? loaded.source : undefined;
+    findings ?? (loaded && loaded.projectId === projectId ? loaded.source : undefined);
   /** The reader's chosen finding. `null` means "the first one", never "none". */
   const [selectedId, setSelectedId] = useState<string | null>(null);
   /** The chain link the table is filtered by, or `null`. */
@@ -65,7 +77,7 @@ export default function ItAnswers({ projectId }: { projectId: string }) {
   const [showAll, setShowAll] = useState(false);
 
   useEffect(() => {
-    if (!projectId) return;
+    if (!projectId || findings) return;
     let cancelled = false;
     const setSource = (value: ItFindingsSource | null) => {
       if (!cancelled) setLoaded({ projectId, source: value });
@@ -96,7 +108,7 @@ export default function ItAnswers({ projectId }: { projectId: string }) {
     return () => {
       cancelled = true;
     };
-  }, [projectId]);
+  }, [projectId, findings]);
 
   const view = useMemo(
     () => itFindingsView(source ?? null, selectedId),

@@ -16,6 +16,9 @@ import { APP_VERSION } from '@/lib/version';
 import UserOnboarding from '@/components/UserOnboarding';
 import TermsReacceptGate from '@/components/TermsReacceptGate';
 import { runsAreSelfFunded, runsRemaining } from '@/lib/run-quota-rule';
+import { Lightbulb } from 'lucide-react';
+import { workspaceShellEnabled } from '@/lib/workspace-shell';
+import { showTipsAgain } from '@/lib/show-tips-again';
 
 export default function AppLayout({children}: {children: React.ReactNode}) {
   const pathname = usePathname();
@@ -322,6 +325,19 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
                     >
                       <HelpCircle size={18} /> {assistantLabel}
                     </button>
+
+                    {/* Roadmap 3.0.7, DESIGN.md §6.2: brings back the coach marks
+                        and restarts the demo tour — both live in this browser
+                        only. Behind the workspace switch, like the tips. */}
+                    {workspaceShellEnabled(profile) && (
+                      <button
+                        onClick={() => { setShowUserDropdown(false); showTipsAgain(); }}
+                        data-show-tips-again=""
+                        className="flex items-center gap-3 w-full p-3 text-sm font-bold text-gray-700 hover:bg-gray-50 hover:text-green-600 rounded-xl transition-all text-left"
+                      >
+                        <Lightbulb size={18} /> Show tips again
+                      </button>
+                    )}
 
                     <button 
                       onClick={() => { setShowUserDropdown(false); setShowLogoutConfirm(true); }}
