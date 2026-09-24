@@ -127,6 +127,9 @@ export default function WorkspaceShell({
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [statusOpen, setStatusOpen] = useState(false);
   const [aboutOpen, setAboutOpen] = useState(false);
+  /** Bumped by the Decision card after each command, so the overview above it rereads the decision. */
+  const [decisionRevision, setDecisionRevision] = useState(0);
+  const onDecisionChanged = useCallback(() => setDecisionRevision((n) => n + 1), []);
   const aboutId = useId();
 
   /**
@@ -487,7 +490,7 @@ export default function WorkspaceShell({
           thing the hydrated project does not carry. */}
       {view === 'management' && (
         <div className="mt-5 max-w-3xl">
-          <ManagementAnswers project={project} projectId={projectId} />
+          <ManagementAnswers project={project} projectId={projectId} decisionRevision={decisionRevision} />
         </div>
       )}
 
@@ -521,7 +524,7 @@ export default function WorkspaceShell({
           the confirmation is a write, so the Stand check of 6.9 hangs off it. */}
       {view === 'management' && (
         <div id="decision-card" className="mt-5 max-w-3xl">
-          <DecisionCard projectId={projectId} beforeWrite={stand.checkBeforeWrite} />
+          <DecisionCard projectId={projectId} beforeWrite={stand.checkBeforeWrite} onChanged={onDecisionChanged} />
         </div>
       )}
 

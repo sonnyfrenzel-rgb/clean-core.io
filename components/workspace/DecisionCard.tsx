@@ -57,10 +57,13 @@ const STATUS_OF: Record<DecisionStatus, ObjectStatusValue> = {
 export default function DecisionCard({
   projectId,
   beforeWrite,
+  onChanged,
 }: {
   projectId: string;
   /** The Stand check of roadmap 6.9: a write against an overtaken screen stops first. */
   beforeWrite?: () => Promise<boolean>;
+  /** Called after a command wrote the decision, so other readers of it reread. */
+  onChanged?: () => void;
 }) {
   const [load, setLoad] = useState<Load>({ state: 'loading' });
   const [reload, setReload] = useState(0);
@@ -137,15 +140,17 @@ export default function DecisionCard({
         expectedEvidenceDigest: answer.evidenceDigest ?? '',
       });
       setReload((n) => n + 1);
+      onChanged?.();
     } catch (err: unknown) {
       setRefusal({
         headline: draftSaved ? 'Not confirmed. The draft was saved.' : 'Nothing was written.',
         sentence: err instanceof Error ? err.message : 'The server refused the confirmation.',
       });
+      if (draftSaved) onChanged?.();
     } finally {
       setBusy(false);
     }
-  }, [answer, beforeWrite, projectId]);
+  }, [answer, beforeWrite, onChanged, projectId]);
 
   const withdraw = useCallback(async () => {
     setAsking(null);
@@ -155,6 +160,7 @@ export default function DecisionCard({
     try {
       await runProjectCommand(projectId, { command: 'withdraw-decision' });
       setReload((n) => n + 1);
+      onChanged?.();
     } catch (err: unknown) {
       setRefusal({
         headline: 'Nothing was written.',
@@ -163,7 +169,7 @@ export default function DecisionCard({
     } finally {
       setBusy(false);
     }
-  }, [beforeWrite, projectId]);
+  }, [beforeWrite, onChanged, projectId]);
 
   const cancel = useCallback(() => setAsking(null), []);
 

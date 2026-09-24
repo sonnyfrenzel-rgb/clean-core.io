@@ -373,6 +373,21 @@ test.describe('(a) one sentence, at most six cards', () => {
     const component = read('components/workspace/ManagementOverview.tsx');
     expect(component, 'the overview writes').not.toMatch(/setDoc|updateDoc|addDoc|method:\s*'(POST|PUT|PATCH|DELETE)'/);
   });
+
+  test('a command of the Decision card makes the overview reread the decision', () => {
+    // QA review of 4b4586aff273: the overview read the decision once per
+    // project, so after a confirmation it still said "open".
+    const component = read('components/workspace/ManagementOverview.tsx');
+    expect(component).toMatch(/'decision',[\s\S]*?\}, \[projectId, decisionRevision\]\);/);
+    const answers = read('components/workspace/ManagementAnswers.tsx');
+    expect(answers).toContain('decisionRevision={decisionRevision}');
+    const shell = read('components/workspace/WorkspaceShell.tsx');
+    expect(shell).toMatch(/<ManagementAnswers[^>]*decisionRevision=\{decisionRevision\}/);
+    expect(shell).toMatch(/<DecisionCard[^>]*onChanged=\{onDecisionChanged\}/);
+    const card = read('components/workspace/DecisionCard.tsx');
+    // Both successful commands tell the shell.
+    expect(card.match(/setReload\(\(n\) => n \+ 1\);\s*onChanged\?\.\(\);/g)?.length).toBe(2);
+  });
 });
 
 /* -------------------------------------------------------- on the screen */

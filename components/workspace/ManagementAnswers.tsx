@@ -40,9 +40,12 @@ import type { Project } from '@/lib/types';
 export default function ManagementAnswers({
   project,
   projectId,
+  decisionRevision = 0,
 }: {
   project: Project | null;
   projectId: string;
+  /** Passed through to the overview, which rereads the decision when it changes. */
+  decisionRevision?: number;
 }) {
   /**
    * `undefined` while the read is in flight, `null` when it failed or was
@@ -123,6 +126,7 @@ export default function ManagementAnswers({
         project={project}
         projectId={projectId}
         view={view}
+        decisionRevision={decisionRevision}
         detailCount={view.answers.length}
       >
       <div className="space-y-4">

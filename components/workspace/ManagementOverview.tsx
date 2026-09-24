@@ -267,16 +267,55 @@ function TrendLine({ points, label }: { points: readonly TrendChartPoint[]; labe
 
 /* -------------------------------------------------------- component */
 
+/** One GET of a project route, answered as a `Loaded` — never a guessed empty value. */
+async function readProjectRoute<T>(
+  projectId: string,
+  path: string,
+  set: (v: Loaded<T>) => void,
+  accept: (json: unknown) => T | null,
+  what: string,
+  isCancelled: () => boolean,
+): Promise<void> {
+  try {
+    const token = await getAuth().currentUser?.getIdToken();
+    if (!token) {
+      if (!isCancelled()) set({ state: 'absent', reason: `You are signed out, so ${what} could not be read.` });
+      return;
+    }
+    const res = await fetch(`/api/projects/${encodeURIComponent(projectId)}/${path}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const json = (await res.json().catch(() => null)) as { error?: unknown } | null;
+    if (isCancelled()) return;
+    const value = res.ok ? accept(json) : null;
+    if (value === null) {
+      const said = json && typeof json.error === 'string' ? json.error : `${what} could not be read (${res.status}).`;
+      set({ state: 'absent', reason: said });
+      return;
+    }
+    set({ state: 'ready', value });
+  } catch {
+    if (!isCancelled()) set({ state: 'absent', reason: `${what} could not be read.` });
+  }
+}
+
 export default function ManagementOverview({
   project,
   projectId,
   view,
+  decisionRevision = 0,
   detailCount,
   children,
 }: {
   project: Project | null;
   projectId: string;
   view: ManagementView;
+  /**
+   * Counts the decision commands the Decision card completed. The card writes
+   * through its own route; without this the overview kept the decision it read
+   * on mount until a remount (QA review of 4b4586aff273).
+   */
+  decisionRevision?: number;
   /** How many detailed answers `children` holds, for the button that unfolds them. */
   detailCount: number;
   /** The detailed answers of 6.4, folded under the overview (§2.11: nothing lost, nothing first). */
@@ -291,41 +330,27 @@ export default function ManagementOverview({
   useEffect(() => {
     if (!projectId) return;
     let cancelled = false;
-    const read = async <T,>(
-      path: string,
-      set: (v: Loaded<T>) => void,
-      accept: (json: unknown) => T | null,
-      what: string,
-    ) => {
-      try {
-        const token = await getAuth().currentUser?.getIdToken();
-        if (!token) {
-          if (!cancelled) set({ state: 'absent', reason: `You are signed out, so ${what} could not be read.` });
-          return;
-        }
-        const res = await fetch(`/api/projects/${encodeURIComponent(projectId)}/${path}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const json = (await res.json().catch(() => null)) as { error?: unknown } | null;
-        if (cancelled) return;
-        const value = res.ok ? accept(json) : null;
-        if (value === null) {
-          const said = json && typeof json.error === 'string' ? json.error : `${what} could not be read (${res.status}).`;
-          set({ state: 'absent', reason: said });
-          return;
-        }
-        set({ state: 'ready', value });
-      } catch {
-        if (!cancelled) set({ state: 'absent', reason: `${what} could not be read.` });
-      }
-    };
-    void read<ItFindingsSource>(
+    void readProjectRoute<ItFindingsSource>(
+      projectId,
       'findings',
       setFindings,
       (j) => (j && Array.isArray((j as ItFindingsSource).rows) ? (j as ItFindingsSource) : null),
       'The findings of this project',
+      () => cancelled,
     );
-    void read<DecisionRead>(
+    return () => {
+      cancelled = true;
+    };
+  }, [projectId]);
+
+  // The decision is read on its own, and again after every command the
+  // Decision card completed: a confirmed or withdrawn decision must not stay
+  // "open" here while the card below already says otherwise.
+  useEffect(() => {
+    if (!projectId) return;
+    let cancelled = false;
+    void readProjectRoute<DecisionRead>(
+      projectId,
       'decision',
       setDecision,
       (j) => {
@@ -333,11 +358,12 @@ export default function ManagementOverview({
         return d && d.draft ? { draft: d.draft, stored: d.stored ?? null } : null;
       },
       'The decision of this project',
+      () => cancelled,
     );
     return () => {
       cancelled = true;
     };
-  }, [projectId]);
+  }, [projectId, decisionRevision]);
 
   // The rows carry `objectName` and `kind` — all the resolver reads.
   const fitFindings = useMemo<PublicCloudFitFinding[] | null>(
