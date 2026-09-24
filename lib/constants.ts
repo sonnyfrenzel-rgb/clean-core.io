@@ -15,6 +15,23 @@ export const FIRESTORE_DB_ID = process.env.NEXT_PUBLIC_FIRESTORE_DB_ID || 'clean
 export const CONTACT_EMAIL = 'info@clean-core.io';
 
 /**
+ * The one sender every mail to a *user* carries (roadmap 3.0.9).
+ *
+ * There were four: "Clean-Core.io Team <team@…>", "Clean-Core.io <team@…>",
+ * "Felix from Clean-Core.io <info@…>" (the survey) and, for the operator,
+ * "Clean-Core <system@…>". A recipient's filter learns a sender by the pair of
+ * display name and address; four identities for thirty recipients means none of
+ * them builds a history. Seed run 20260924-a: the survey under the personal name
+ * landed in spam everywhere except Gmail, while the operator reports from the
+ * same domain arrived. Mails to the operator keep their own senders — they go to
+ * one watched mailbox and are sorted there by sender.
+ *
+ * `team@` is a sending identity, not a mailbox; replies go to CONTACT_EMAIL.
+ */
+export const USER_MAIL_FROM = 'Clean-Core.io <team@clean-core.io>';
+export const USER_MAIL_REPLY_TO = CONTACT_EMAIL;
+
+/**
  * Free community transformation quota granted per account (a one-time,
  * lifetime allotment — not reset daily/monthly). Single source of truth for the
  * client default and the server-side quota gate (`reserveRunQuota`).

@@ -6,7 +6,10 @@ import { assertRateLimit, getClientIp } from '@/lib/rate-limit';
 import { wrapEmailDocument } from '@/lib/email-layout';
 import { buildWelcomeEmail, WELCOME_EMAIL_SUBJECT } from '@/lib/welcome-email';
 import { buildAdminSignupEmail, buildAdminSignupSubject } from '@/lib/admin-signup-email';
-import { CONTACT_EMAIL, TERMS_VERSION } from '@/lib/constants';
+import { CONTACT_EMAIL, TERMS_VERSION, USER_MAIL_FROM } from '@/lib/constants';
+// The shared converter (roadmap 3.0.9): this route kept a private copy that
+// turned `&szlig;` into a space, so the welcome imprint read "Hellerstra e 9".
+import { htmlToText } from '@/lib/mail-text';
 import { recordEmailSent } from '@/lib/email-events';
 
 /**
@@ -150,7 +153,7 @@ export async function POST(request: NextRequest) {
     const resendApiKey = process.env.RESEND_API_KEY;
     if (resendApiKey) {
       await sendMail(resendApiKey, {
-        from: 'Clean-Core.io Team <team@clean-core.io>',
+        from: USER_MAIL_FROM,
         to: rawEmail,
         subject: WELCOME_EMAIL_SUBJECT,
         html: welcomeHtml,
@@ -240,37 +243,4 @@ async function sendMail(
   } catch (err) {
     console.error(`[Email] Error sending ${msg.label}:`, err);
   }
-}
-
-/**
- * A readable plain-text part derived from the HTML body.
- *
- * Deliberately crude — it keeps link targets, collapses the table scaffolding
- * and drops the styling. The point is that a text/plain alternative exists at
- * all; a hand-written second copy would drift from the HTML within one edit.
- */
-function htmlToText(html: string): string {
-  return html
-    .replace(/<style[\s\S]*?<\/style>/gi, '')
-    .replace(/<a[^>]*href="([^"]*)"[^>]*>([\s\S]*?)<\/a>/gi, (_m, href, label) =>
-      `${String(label).replace(/<[^>]+>/g, '').trim()} (${href})`)
-    .replace(/<(br|\/p|\/div|\/tr|\/h[1-6]|\/li)[^>]*>/gi, '\n')
-    .replace(/<li[^>]*>/gi, '- ')
-    .replace(/<[^>]+>/g, '')
-    .replace(/&nbsp;/g, ' ')
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&rsquo;|&#x27;/g, "'")
-    .replace(/&ldquo;|&rdquo;|&quot;/g, '"')
-    .replace(/&mdash;/g, '—')
-    .replace(/&rarr;/g, '->')
-    .replace(/&bull;/g, '*')
-    .replace(/&[a-z]+;/gi, ' ')
-    .replace(/[ \t]+/g, ' ')
-    .replace(/\n{3,}/g, '\n\n')
-    .split('\n')
-    .map((l) => l.trim())
-    .join('\n')
-    .trim();
 }

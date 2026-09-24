@@ -14,8 +14,8 @@ Specs in `tests/mail-seed-test.spec.ts`).
 
 Die echte Mail, nicht eine ähnliche. Jeder Typ übernimmt den Resend-Aufruf
 seiner Produktionsstelle Feld für Feld: Absender, `reply_to`, HTML aus der
-echten Vorlage, Textteil (oder keinen, wo die Produktion keinen schickt),
-`List-Unsubscribe`/`List-Unsubscribe-Post` (nur die Umfrage). Einziger
+echten Vorlage, Textteil, `List-Unsubscribe`/`List-Unsubscribe-Post` (nur die
+Umfrage). Einziger
 Unterschied: der Empfänger und ein Präfix im Betreff,
 `[Seed 3.0.9 <typ> <run-id>] <Original-Betreff>`.
 
@@ -67,8 +67,17 @@ Stelle im Code, die an Resend sendet, als Typ vorkommt.
    ```
 
    Ausgabe je Typ: Absender, Betreff, Größe von HTML und Text, Header,
-   Link-Hosts — mit Hinweis auf jeden Link, der nicht mit
-   `https://clean-core.io/` beginnt. Die gerenderten Mails liegen danach unter
+   Anzahl der Links und Link-Hosts — und die **Regelprüfung** (`WARNING  : …`
+   je Verstoß, am Ende `POLICY    : …`). Die Regeln stammen aus Lauf
+   20260924-a und üblicher Praxis (`mailPolicyWarnings` in
+   `scripts/lib/mail-seed.ts`): jede Mail hat einen Textteil; kein Emoji und
+   kein Ausrufezeichen im Betreff; jeder Link beginnt mit
+   `https://clean-core.io/` (Ausnahme mit Begründung in `LINK_EXCEPTIONS`:
+   der GitHub-Link im Security-Alarm an den Betreiber); jede Nutzer-Mail kommt
+   von `Clean-Core.io <team@clean-core.io>` mit Antwort an
+   `info@clean-core.io` (`USER_MAIL_FROM` in `lib/constants.ts`). Eine Warnung
+   wird im Produkt behoben, nie im Werkzeug — `tests/mail-seed-test.spec.ts`
+   ist rot, solange eine Produktions-Mail eine Regel verletzt. Die gerenderten Mails liegen danach unter
    `scratch/mail-seed-20260925-a/<typ>__<label>.html`, dazu `plan.json` und die
    leere Auswertung `placement.csv`.
 

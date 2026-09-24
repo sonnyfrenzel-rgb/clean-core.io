@@ -1,6 +1,11 @@
-import { CONTACT_EMAIL } from '@/lib/constants';
+import { USER_MAIL_FROM, USER_MAIL_REPLY_TO } from '@/lib/constants';
 import { recordEmailSent } from '@/lib/email-events';
 import { mockMailAllowed } from '@/lib/mail-delivery-mode';
+import { htmlToText } from '@/lib/mail-text';
+
+// The shared converter lives in `lib/mail-text.ts` (pure, no imports), so the
+// register route, the admin routes and the seed test use the very same one.
+export { htmlToText };
 
 /**
  * One way out for the mails phase 5 sends, with the answer the caller has to act
@@ -38,7 +43,8 @@ export type MailOutcome =
   | { delivered: true; mocked: boolean; messageId: string | null }
   | { delivered: false; reason: 'not-configured' | 'rejected'; detail: string };
 
-const DEFAULT_FROM = 'Clean-Core.io Team <team@clean-core.io>';
+/** The one sender of every user mail, `lib/constants.ts` (roadmap 3.0.9). */
+const DEFAULT_FROM = USER_MAIL_FROM;
 
 export async function sendTransactionalMail(msg: OutgoingMail): Promise<MailOutcome> {
   const apiKey = process.env.RESEND_API_KEY;
@@ -71,7 +77,7 @@ export async function sendTransactionalMail(msg: OutgoingMail): Promise<MailOutc
         subject: msg.subject,
         // `team@` is a sending identity, not a mailbox at the provider: a reply
         // to it bounces, and both invitation mails invite a reply.
-        reply_to: CONTACT_EMAIL,
+        reply_to: USER_MAIL_REPLY_TO,
         html: msg.html,
         // HTML-only is a long-standing spam signal. Generated from the same
         // markup so it cannot drift from what the reader sees.
@@ -99,47 +105,4 @@ export async function sendTransactionalMail(msg: OutgoingMail): Promise<MailOutc
     );
   }
   return { delivered: true, mocked: false, messageId };
-}
-
-/**
- * A readable plain-text part derived from the HTML body.
- *
- * Deliberately crude — it keeps link targets, collapses the table scaffolding
- * and drops the styling. The point is that a `text/plain` alternative exists at
- * all; a hand-written second copy would drift from the HTML within one edit.
- */
-export function htmlToText(html: string): string {
-  return html
-    .replace(/<style[\s\S]*?<\/style>/gi, '')
-    .replace(/<a[^>]*href="([^"]*)"[^>]*>([\s\S]*?)<\/a>/gi, (_m, href, label) =>
-      `${String(label).replace(/<[^>]+>/g, '').trim()} (${href})`)
-    .replace(/<(br|\/p|\/div|\/tr|\/h[1-6]|\/li)[^>]*>/gi, '\n')
-    .replace(/<li[^>]*>/gi, '- ')
-    .replace(/<[^>]+>/g, '')
-    .replace(/&nbsp;/g, ' ')
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&rsquo;|&#x27;/g, "'")
-    .replace(/&ldquo;|&rdquo;|&quot;/g, '"')
-    .replace(/&mdash;/g, '—')
-    .replace(/&ndash;/g, '–')
-    .replace(/&rarr;/g, '->')
-    .replace(/&bull;/g, '*')
-    // German letters, because the last line of every one of these mails is an
-    // imprint. Without them the catch-all below turned each entity into a space
-    // and the operator's own address read "Hellerstra e 9" in the text/plain
-    // part — a legal notice mangled by its own fallback (found 18.09.2026 while
-    // reading the invitation mail out for a legal review).
-    .replace(/&auml;/g, 'ä').replace(/&ouml;/g, 'ö').replace(/&uuml;/g, 'ü')
-    .replace(/&Auml;/g, 'Ä').replace(/&Ouml;/g, 'Ö').replace(/&Uuml;/g, 'Ü')
-    .replace(/&szlig;/g, 'ß')
-    .replace(/&sect;/g, '§')
-    .replace(/&[a-z]+;/gi, ' ')
-    .replace(/[ \t]+/g, ' ')
-    .replace(/\n{3,}/g, '\n\n')
-    .split('\n')
-    .map((l) => l.trim())
-    .join('\n')
-    .trim();
 }

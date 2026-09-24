@@ -143,7 +143,7 @@ async function main() {
     JSON.stringify(plan.map((m) => ({
       type: m.type, audience: m.audience, source: m.source, label: m.label, domain: m.domain,
       subject: m.subject, htmlBytes: m.htmlBytes, textBytes: m.textBytes, headers: m.headers,
-      hosts: m.hosts, foreignHosts: m.foreignHosts,
+      hosts: m.hosts, foreignHosts: m.foreignHosts, linkCount: m.linkCount, warnings: m.warnings,
     })), null, 2),
   );
 
@@ -160,11 +160,23 @@ async function main() {
     console.log(`  size     : html ${first.htmlBytes} B, ${first.textBytes === null ? 'NO text part' : `text ${first.textBytes} B`}`);
     const headers = Object.keys(first.headers);
     console.log(`  headers  : ${headers.length ? headers.join(', ') : '(none beyond the provider defaults)'}`);
-    console.log(`  links    : ${first.hosts.join(' ') || '(none)'}`);
-    if (first.foreignHosts.length) console.log(`  NOTE     : links outside https://clean-core.io/: ${first.foreignHosts.join(' ')}`);
+    console.log(`  links    : ${first.linkCount} in the HTML part; hosts ${first.hosts.join(' ') || '(none)'}`);
+    const exception = seed.LINK_EXCEPTIONS[t.type];
+    if (exception) console.log(`  allowed  : ${exception.hosts.join(' ')} (${exception.why})`);
+    // The policy of roadmap 3.0.9 (seed run 20260924-a), per type. A warning
+    // is a difference from what the product should send — fixed in the
+    // product, never in this tool.
+    if (first.warnings.length) for (const w of first.warnings) console.log(`  WARNING  : ${w}`);
+    else console.log('  policy   : ok (text part, plain subject, links on clean-core.io, sender)');
     for (const m of plan.filter((p) => p.type === t.type)) console.log(`    -> ${m.label} (${m.domain})`);
     console.log('');
   }
+
+  const flagged = types.filter((t) => plan.find((m) => m.type === t.type)!.warnings.length > 0);
+  console.log(flagged.length
+    ? `POLICY    : ${flagged.length} of ${types.length} type(s) with warnings: ${flagged.map((t) => t.type).join(', ')}`
+    : `POLICY    : all ${types.length} type(s) pass`);
+  console.log('');
 
   if (!SEND) {
     console.log('DRY RUN — nothing sent. To send, pick a run id and confirm it:');

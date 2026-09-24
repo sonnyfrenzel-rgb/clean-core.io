@@ -8,9 +8,16 @@
  * `List-Unsubscribe` header measures something nobody sends, so every entry
  * below copies the payload of its production call site field by field and
  * names that call site in `source`. Where production differs between mails —
- * the tenant mails have no plain-text part, only the survey carries RFC 8058
- * headers, three different sender identities — the seed differs the same way.
- * Evening those out would be fixing the mail inside the measuring instrument.
+ * only the survey carries RFC 8058 headers, the operator mails keep their own
+ * senders — the seed differs the same way. Evening those out would be fixing
+ * the mail inside the measuring instrument; a difference is fixed in the
+ * product, and the seed follows.
+ *
+ * What the seed does check is whether production keeps the rules the first
+ * measurement (run 20260924-a) taught: `mailPolicyWarnings` lists, per type, a
+ * missing text part, an emoji or exclamation mark in the subject, a link
+ * outside https://clean-core.io/ and a user mail under any sender but the one.
+ * The dry run prints the list; `tests/mail-seed-test.spec.ts` fails on it.
  *
  * Three of the templates are not modules but template literals inside route
  * handlers (`request-tenant-access`, `send-tenant-approval-email`,
@@ -18,9 +25,8 @@
  * way `tests/email-responsive.spec.ts` already does, and every `${…}` hole is
  * filled from an explicit table. An unknown hole is an error, not a blank: a
  * template that grew a new variable must stop the seed test, not ship a mail
- * with a gap in it. The same goes for the register route's own copy of
- * `htmlToText`, which differs from the one in `lib/transactional-mail.ts` and
- * is what the welcome mail's text part is really built with.
+ * with a gap in it. Every text part comes from the one converter every call
+ * site uses, `lib/mail-text.ts`.
  *
  * What this module never does: write to Firestore, sign a token, or call a
  * route. Every link that production signs (survey vote, unsubscribe,
@@ -38,11 +44,12 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 
-import { APP_BASE_URL, CONTACT_EMAIL } from '../../lib/constants';
+import { APP_BASE_URL, CONTACT_EMAIL, USER_MAIL_FROM, USER_MAIL_REPLY_TO } from '../../lib/constants';
 import { APP_VERSION } from '../../lib/version';
 import { escapeHtml } from '../../lib/utils';
 import { wrapEmailDocument } from '../../lib/email-layout';
-import { htmlToText } from '../../lib/transactional-mail';
+import { htmlToText } from '../../lib/mail-text';
+import { ownDomainVerifyEmailLink } from '../../lib/auth-action-link';
 import { buildWelcomeEmail, WELCOME_EMAIL_SUBJECT } from '../../lib/welcome-email';
 import { buildAdminSignupEmail, buildAdminSignupSubject } from '../../lib/admin-signup-email';
 import {
@@ -137,7 +144,7 @@ export interface ProductionMail {
   replyTo?: string;
   subject: string;
   html: string;
-  /** `undefined` where production sends HTML only — kept that way on purpose. */
+  /** `undefined` where production sends HTML only — which the policy flags. */
   text?: string;
   /** Mail headers, e.g. RFC 8058 on the survey. */
   headers?: Record<string, string>;
@@ -218,26 +225,6 @@ export function renderSourceTemplate(source: string, name: string, scope: Record
     i++;
   }
   return out;
-}
-
-/**
- * The register route's own `htmlToText`, compiled from its source. It is not
- * the one in `lib/transactional-mail.ts` (it lacks the German entities), and
- * the welcome mail's text part is built with this one — so the seed is too.
- */
-let registerHtmlToText: ((html: string) => string) | null = null;
-export function registerRouteHtmlToText(html: string): string {
-  if (!registerHtmlToText) {
-    const src = routeSource('app/api/account/register/route.ts');
-    const head = 'function htmlToText(html: string): string {';
-    const start = src.indexOf(head);
-    if (start < 0) throw new Error('htmlToText not found in the register route');
-    const end = src.indexOf('\n}', start);
-    const body = src.slice(start + head.length, end);
-    // The body is plain JavaScript (no annotations); a type in it would fail here, loudly.
-    registerHtmlToText = new Function('html', body) as (html: string) => string;
-  }
-  return registerHtmlToText(html);
 }
 
 /* --------------------------------------------------------- sample payloads */
@@ -322,27 +309,26 @@ export const SEED_MAIL_TYPES: SeedMailType[] = [
     build: ({ recipient }) => {
       const html = wrapEmailDocument(buildWelcomeEmail({ name: escapeHtml(SEED_NAME), recipient: escapeHtml(recipient.address) }));
       return {
-        from: 'Clean-Core.io Team <team@clean-core.io>',
+        from: USER_MAIL_FROM,
         replyTo: CONTACT_EMAIL,
         subject: WELCOME_EMAIL_SUBJECT,
         html,
-        text: registerRouteHtmlToText(html),
+        text: htmlToText(html),
       };
     },
   },
   {
-    // The same template through the admin console's "approve" path, which sends
-    // it without a text part — a real difference, measured as one.
+    // The same template through the admin console's "approve" path. It went out
+    // without a text part until run 20260924-a put it in spam at Microsoft 365
+    // next to the identical welcome mail with one in the inbox.
     type: 'welcome-approval',
     audience: 'nutzer',
     source: APPROVAL,
     template: 'lib/welcome-email.ts',
-    build: ({ recipient }) => ({
-      from: 'Clean-Core.io Team <team@clean-core.io>',
-      replyTo: CONTACT_EMAIL,
-      subject: WELCOME_EMAIL_SUBJECT,
-      html: wrapEmailDocument(buildWelcomeEmail({ name: escapeHtml(SEED_NAME), recipient: escapeHtml(recipient.address) })),
-    }),
+    build: ({ recipient }) => {
+      const html = wrapEmailDocument(buildWelcomeEmail({ name: escapeHtml(SEED_NAME), recipient: escapeHtml(recipient.address) }));
+      return { from: USER_MAIL_FROM, replyTo: CONTACT_EMAIL, subject: WELCOME_EMAIL_SUBJECT, html, text: htmlToText(html) };
+    },
   },
   {
     type: 'invitation',
@@ -356,8 +342,8 @@ export const SEED_MAIL_TYPES: SeedMailType[] = [
         buildInvitationEmail({ inviterName: escapeHtml(SEED_NAME), recipient: escapeHtml(ctx.recipient.address), link, expires }),
         'Clean-Core.io — invitation',
       );
-      // lib/transactional-mail.ts: DEFAULT_FROM, reply_to CONTACT_EMAIL, text from htmlToText.
-      return { from: 'Clean-Core.io Team <team@clean-core.io>', replyTo: CONTACT_EMAIL, subject: INVITATION_EMAIL_SUBJECT, html, text: htmlToText(html) };
+      // lib/transactional-mail.ts: DEFAULT_FROM, reply_to USER_MAIL_REPLY_TO, text from htmlToText.
+      return { from: USER_MAIL_FROM, replyTo: USER_MAIL_REPLY_TO, subject: INVITATION_EMAIL_SUBJECT, html, text: htmlToText(html) };
     },
   },
   {
@@ -366,16 +352,18 @@ export const SEED_MAIL_TYPES: SeedMailType[] = [
     source: 'app/api/projects/[projectId]/invitations/[invitationId]/accept/route.ts',
     template: 'lib/invitation-email.ts',
     build: (ctx) => {
-      // Production: Firebase Admin `generateEmailVerificationLink`, which points at
-      // the project's authDomain. Same host and shape; an oobCode Firebase never issued.
+      // Production: Firebase Admin `generateEmailVerificationLink` (a link on the
+      // project's authDomain), rewritten by `ownDomainVerifyEmailLink` onto
+      // /auth/action on our own domain. Same shape here, through the same
+      // function; an oobCode Firebase never issued.
       const cfg = JSON.parse(fs.readFileSync(path.join(ROOT, 'firebase-config.json'), 'utf8')) as { authDomain: string; apiKey: string };
       const q = new URLSearchParams({ mode: 'verifyEmail', oobCode: unsignedToken('oob', ctx).replace('.', ''), apiKey: cfg.apiKey, lang: 'en' });
-      const link = `https://${cfg.authDomain}/__/auth/action?${q}`;
+      const link = ownDomainVerifyEmailLink(`https://${cfg.authDomain}/__/auth/action?${q}`);
       const html = wrapEmailDocument(
         buildAddressConfirmationEmail({ recipient: escapeHtml(ctx.recipient.address), link }),
         'Clean-Core.io — confirm your address',
       );
-      return { from: 'Clean-Core.io Team <team@clean-core.io>', replyTo: CONTACT_EMAIL, subject: ADDRESS_CONFIRMATION_SUBJECT, html, text: htmlToText(html) };
+      return { from: USER_MAIL_FROM, replyTo: USER_MAIL_REPLY_TO, subject: ADDRESS_CONFIRMATION_SUBJECT, html, text: htmlToText(html) };
     },
   },
   {
@@ -386,11 +374,13 @@ export const SEED_MAIL_TYPES: SeedMailType[] = [
     build: ({ recipient }) => {
       const src = routeSource(TENANT_REQ);
       const scope = { name: escapeHtml(SEED_NAME), email: escapeHtml(recipient.address), APP_VERSION };
+      const html = wrapEmailDocument(renderSourceTemplate(src, 'pendingHtml', scope));
       return {
-        from: 'Clean-Core.io Team <team@clean-core.io>',
+        from: USER_MAIL_FROM,
         replyTo: CONTACT_EMAIL,
         subject: renderSourceTemplate(src, 'pendingSubject', scope),
-        html: wrapEmailDocument(renderSourceTemplate(src, 'pendingHtml', scope)),
+        html,
+        text: htmlToText(html),
       };
     },
   },
@@ -405,11 +395,13 @@ export const SEED_MAIL_TYPES: SeedMailType[] = [
         name: escapeHtml(SEED_NAME), email: escapeHtml(recipient.address), APP_VERSION,
         BASE_URL: tenantRouteBaseUrl(), dashboardUrl: `${tenantRouteBaseUrl()}/dashboard`,
       };
+      const html = wrapEmailDocument(renderSourceTemplate(src, 'emailHtml', scope));
       return {
-        from: 'Clean-Core.io <team@clean-core.io>',
+        from: USER_MAIL_FROM,
         replyTo: CONTACT_EMAIL,
         subject: renderSourceTemplate(src, 'emailSubject', scope),
-        html: wrapEmailDocument(renderSourceTemplate(src, 'emailHtml', scope)),
+        html,
+        text: htmlToText(html),
       };
     },
   },
@@ -424,11 +416,13 @@ export const SEED_MAIL_TYPES: SeedMailType[] = [
         name: escapeHtml(SEED_NAME), email: escapeHtml(recipient.address), APP_VERSION,
         BASE_URL: tenantRouteBaseUrl(), dashboardUrl: `${tenantRouteBaseUrl()}/dashboard`,
       };
+      const html = wrapEmailDocument(renderSourceTemplate(src, 'emailHtml', scope));
       return {
-        from: 'Clean-Core.io <team@clean-core.io>',
+        from: USER_MAIL_FROM,
         replyTo: CONTACT_EMAIL,
         subject: renderSourceTemplate(src, 'emailSubject', scope),
-        html: wrapEmailDocument(renderSourceTemplate(src, 'emailHtml', scope)),
+        html,
+        text: htmlToText(html),
       };
     },
   },
@@ -450,8 +444,8 @@ export const SEED_MAIL_TYPES: SeedMailType[] = [
         unsubscribeUrl,
       };
       return {
-        from: 'Felix from Clean-Core.io <info@clean-core.io>',
-        replyTo: 'info@clean-core.io',
+        from: USER_MAIL_FROM,
+        replyTo: USER_MAIL_REPLY_TO,
         subject: SURVEY_SUBJECT,
         html: wrapEmailDocument(renderSurveyInviteEmail(input), 'Clean-Core.io survey'),
         text: renderSurveyInviteText(input),
@@ -482,7 +476,7 @@ export const SEED_MAIL_TYPES: SeedMailType[] = [
         replyTo: CONTACT_EMAIL,
         subject: buildAdminSignupSubject(SEED_NAME),
         html,
-        text: registerRouteHtmlToText(html),
+        text: htmlToText(html),
       };
     },
   },
@@ -501,11 +495,13 @@ export const SEED_MAIL_TYPES: SeedMailType[] = [
         motivation: escapeHtml('Seed test 3.0.9 — deliverability measurement, not a real request.'),
         approveUrl: url('approve'), rejectUrl: url('reject'), APP_VERSION,
       };
+      const html = wrapEmailDocument(renderSourceTemplate(src, 'emailHtml', scope));
       return {
         from: 'Clean-Core.io <system@clean-core.io>',
         replyTo: CONTACT_EMAIL,
         subject: renderSourceTemplate(src, 'emailSubject', scope),
-        html: wrapEmailDocument(renderSourceTemplate(src, 'emailHtml', scope)),
+        html,
+        text: htmlToText(html),
       };
     },
   },
@@ -580,6 +576,59 @@ export function linkHosts(mail: Pick<ProductionMail, 'html' | 'text' | 'headers'
   return [...hosts].sort();
 }
 
+/* ------------------------------------------------------------ the policy */
+
+/**
+ * Links a mail may carry outside https://clean-core.io/, per type, with the
+ * reason. Only operator mails have any: they go to one watched mailbox.
+ */
+export const LINK_EXCEPTIONS: Record<string, { hosts: string[]; why: string }> = {
+  'security-alert': {
+    hosts: ['https://github.com'],
+    why: 'links the failed GitHub Actions run; operator mail, never to a user',
+  },
+};
+
+// Emoji and their building blocks: pictographs, variation selector 16, keycaps,
+// regional indicators (flags).
+const EMOJI = /[\p{Extended_Pictographic}\u{FE0F}\u{20E3}\u{1F1E6}-\u{1F1FF}]/u;
+
+/**
+ * What seed run 20260924-a and ordinary practice say every product mail must
+ * keep. An empty list is a pass; each entry is one sentence naming the rule.
+ *
+ * - a `text/plain` part (M365: the same mail without one went to spam);
+ * - a plain subject: no emoji, no exclamation mark;
+ * - every link on https://clean-core.io/ (mailto: is not a link to a site),
+ *   apart from the documented `LINK_EXCEPTIONS`;
+ * - user mails under the one sender, `USER_MAIL_FROM` with replies to
+ *   `USER_MAIL_REPLY_TO`. Operator mails keep their own and are not checked.
+ */
+export function mailPolicyWarnings(
+  t: Pick<SeedMailType, 'type' | 'audience'>,
+  mail: ProductionMail,
+  /** Extra origins counted as own — only for a render whose APP_BASE_URL is not production (specs). */
+  alsoOwn: string[] = [],
+): string[] {
+  const out: string[] = [];
+  if (mail.text === undefined || mail.text.trim() === '') out.push('no text/plain part');
+  if (EMOJI.test(mail.subject)) out.push(`emoji in the subject: "${mail.subject}"`);
+  if (mail.subject.includes('!')) out.push(`exclamation mark in the subject: "${mail.subject}"`);
+  const allowed = new Set([...(LINK_EXCEPTIONS[t.type]?.hosts ?? []), ...alsoOwn]);
+  const foreign = linkHosts(mail).filter((h) => h !== 'https://clean-core.io' && !h.startsWith('mailto:') && !allowed.has(h));
+  if (foreign.length) out.push(`links outside https://clean-core.io/: ${foreign.join(' ')}`);
+  if (t.audience === 'nutzer') {
+    if (mail.from !== USER_MAIL_FROM) out.push(`user mail not from "${USER_MAIL_FROM}": "${mail.from}"`);
+    if (mail.replyTo !== USER_MAIL_REPLY_TO) out.push(`user mail reply-to is not ${USER_MAIL_REPLY_TO}: ${mail.replyTo ?? '(none)'}`);
+  }
+  return out;
+}
+
+/** How many `<a href>` the HTML part carries — buttons and plain links alike. */
+export function htmlLinkCount(html: string): number {
+  return (html.match(/<a\s[^>]*href=/gi) || []).length;
+}
+
 export interface SeedMessage {
   type: string;
   audience: SeedMailType['audience'];
@@ -595,6 +644,10 @@ export interface SeedMessage {
   hosts: string[];
   /** Links that do not start with https://clean-core.io/ — roadmap 3.0.9 wants none. */
   foreignHosts: string[];
+  /** Number of links in the HTML part. */
+  linkCount: number;
+  /** `mailPolicyWarnings` for this message; empty is a pass. */
+  warnings: string[];
   idempotencyKey: string;
   html: string;
   /** The exact JSON body for `POST https://api.resend.com/emails`. */
@@ -623,6 +676,8 @@ export function buildSeedMessage(t: SeedMailType, ctx: SeedContext): SeedMessage
     headers: mail.headers || {},
     hosts,
     foreignHosts: hosts.filter((h) => h !== 'https://clean-core.io' && !h.startsWith('mailto:')),
+    linkCount: htmlLinkCount(mail.html),
+    warnings: mailPolicyWarnings(t, mail),
     idempotencyKey: seedIdempotencyKey(ctx.runId, t.type, ctx.recipient.address),
     html: mail.html,
     payload,

@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createApprovalToken } from '@/lib/approval-token';
 import { APP_VERSION } from '@/lib/version';
 import { verifyRequestAuth, getAdminDb, assertAccountActive, QuotaError, issueTenantApprovalNonce } from '@/lib/firebase-admin';
-import { APP_BASE_URL, CONTACT_EMAIL } from '@/lib/constants';
+import { APP_BASE_URL, CONTACT_EMAIL, USER_MAIL_FROM } from '@/lib/constants';
+import { htmlToText } from '@/lib/mail-text';
 import { escapeHtml } from '@/lib/utils';
 import { assertRateLimit, getClientIp } from '@/lib/rate-limit';
 import { wrapEmailDocument } from '@/lib/email-layout';
@@ -77,7 +78,10 @@ export async function POST(request: NextRequest) {
     const approveUrl = `${APP_BASE_URL}/admin/approve-tenant?${new URLSearchParams({ uid, token: approveToken, action: 'approve' })}`;
     const rejectUrl = `${APP_BASE_URL}/admin/approve-tenant?${new URLSearchParams({ uid, token: rejectToken, action: 'reject' })}`;
 
-    const emailSubject = `🚀 S/4HANA Live Tenant Access Request: ${name}`;
+    // Plain subjects, no emoji and no exclamation mark (roadmap 3.0.9): both
+    // are classic bulk-mail markers, and these are transactional mails.
+    const emailSubject = `S/4HANA tenant access request: ${name}`;
+    const pendingSubject = `Clean-Core.io: your S/4HANA tenant access request is under review`;
     const emailHtml = `
       <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 24px; background-color: #f8fafc; color: #0f172a;">
         <!-- Card Container -->
@@ -199,6 +203,7 @@ export async function POST(request: NextRequest) {
           subject: emailSubject,
           reply_to: CONTACT_EMAIL,
           html: wrapEmailDocument(emailHtml),
+          text: htmlToText(wrapEmailDocument(emailHtml)),
         }),
       });
 
@@ -214,7 +219,6 @@ export async function POST(request: NextRequest) {
       // ALSO send a pending confirmation email to the applicant (professional S/4HANA integration pending email)
       try {
         console.log(`[Email] Sending S/4HANA Integration Pending notification email to applicant ${email}...`);
-        const pendingSubject = `⏳ Clean-Core.io: We are reviewing your S/4HANA Tenant Request!`;
         const pendingHtml = `
           <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 24px; background-color: #f8fafc; color: #0f172a;">
             <div style="background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 24px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.06); overflow: hidden; padding: 40px;">
@@ -300,11 +304,13 @@ export async function POST(request: NextRequest) {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            from: 'Clean-Core.io Team <team@clean-core.io>',
+            from: USER_MAIL_FROM,
             to: email,
             subject: pendingSubject,
             reply_to: CONTACT_EMAIL,
             html: wrapEmailDocument(pendingHtml),
+            // HTML-only was a spam signal (roadmap 3.0.9, seed run 20260924-a).
+            text: htmlToText(wrapEmailDocument(pendingHtml)),
           }),
         });
         console.log('[Email] Success sending pending tenant connection welcome email to applicant.');
@@ -343,7 +349,7 @@ export async function POST(request: NextRequest) {
 
         console.log('\n======================================================');
         console.log(`📬   [MOCK PENDING EMAIL SENT TO APPLICANT: ${email}]   📬`);
-        console.log(`Subject: ⏳ Clean-Core.io: We are reviewing your S/4HANA Tenant Request!`);
+        console.log(`Subject: ${pendingSubject}`);
         console.log(`System Version: ${APP_VERSION}`);
         console.log('======================================================\n');
       } else {

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { recordEmailSent } from '@/lib/email-events';
-import { CONTACT_EMAIL } from '@/lib/constants';
+import { CONTACT_EMAIL, USER_MAIL_FROM } from '@/lib/constants';
+import { htmlToText } from '@/lib/mail-text';
 import { APP_VERSION } from '@/lib/version';
 import { verifyAdminRequest, assertAdminStepUp, getAdminAuth } from '@/lib/firebase-admin';
 import { escapeHtml } from '@/lib/utils';
@@ -59,7 +60,7 @@ export async function POST(request: NextRequest) {
     const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://clean-core.io';
     const dashboardUrl = `${BASE_URL}/dashboard`;
 
-    const emailSubject = `🎉 S/4HANA Live Tenant Integration Unlocked!`;
+    const emailSubject = `Your S/4HANA tenant access on Clean-Core.io is active`;
     const emailHtml = `
       <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 24px; background-color: #f8fafc; color: #0f172a;">
         <!-- Card Container -->
@@ -192,11 +193,13 @@ export async function POST(request: NextRequest) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          from: 'Clean-Core.io <team@clean-core.io>',
+          from: USER_MAIL_FROM,
           to: email,
           subject: emailSubject,
           reply_to: CONTACT_EMAIL,
           html: wrapEmailDocument(emailHtml),
+          // HTML-only was a spam signal (roadmap 3.0.9, seed run 20260924-a).
+          text: htmlToText(wrapEmailDocument(emailHtml)),
         }),
       });
       // The response was never looked at. Resend answering 400 or 500 produced

@@ -29,11 +29,15 @@ import { SURVEY_CAMPAIGN, SURVEY_OPEN_DAYS, SURVEY_SUBJECT } from '../lib/survey
 import { renderSurveyInviteEmail, renderSurveyInviteText } from '../lib/survey/invite-email';
 import { claimSend, completeSend, failSend, recordInvited, sendIdempotencyKey } from '../lib/survey/outbox';
 import { wrapEmailDocument } from '../lib/email-layout';
-import { FIRESTORE_DB_ID, APP_BASE_URL } from '../lib/constants';
+import { FIRESTORE_DB_ID, APP_BASE_URL, USER_MAIL_FROM, USER_MAIL_REPLY_TO } from '../lib/constants';
 
 const PROJECT_ID = 'cleancore-491216';
-const FROM = 'Felix from Clean-Core.io <info@clean-core.io>';
-const REPLY_TO = 'info@clean-core.io';
+// The one sender of every user mail (roadmap 3.0.9). This was
+// "Felix from Clean-Core.io <info@…>": a fourth identity, and in seed run
+// 20260924-a the only user mail with a text part that still went to spam at
+// every provider but Gmail, while the operator reports from info@ arrived.
+const FROM = USER_MAIL_FROM;
+const REPLY_TO = USER_MAIL_REPLY_TO;
 const BASE_URL = 'https://clean-core.io';
 
 /**

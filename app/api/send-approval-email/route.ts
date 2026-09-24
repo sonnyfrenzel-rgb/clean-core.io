@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { CONTACT_EMAIL } from '@/lib/constants';
+import { CONTACT_EMAIL, USER_MAIL_FROM } from '@/lib/constants';
+import { htmlToText } from '@/lib/mail-text';
 import { recordEmailSent } from '@/lib/email-events';
 import { verifyAdminRequest, assertAdminStepUp, getAdminAuth, getAdminDb } from '@/lib/firebase-admin';
 import { escapeHtml } from '@/lib/utils';
@@ -103,10 +104,10 @@ export async function POST(request: NextRequest) {
     const fromProfile = [profile.firstName, profile.lastName].filter((p: unknown) => typeof p === 'string' && p).join(' ').trim();
     const rawName = (fromProfile || account.displayName || email.split('@')[0]).slice(0, 200);
 
-    const emailHtml = buildWelcomeEmail({
+    const emailHtml = wrapEmailDocument(buildWelcomeEmail({
       name: escapeHtml(rawName),
       recipient: escapeHtml(email),
-    });
+    }));
 
     const resendApiKey = process.env.RESEND_API_KEY;
     if (resendApiKey) {
@@ -118,11 +119,15 @@ export async function POST(request: NextRequest) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          from: 'Clean-Core.io Team <team@clean-core.io>',
+          from: USER_MAIL_FROM,
           to: email,
           subject: WELCOME_EMAIL_SUBJECT,
           reply_to: CONTACT_EMAIL,
-          html: wrapEmailDocument(emailHtml),
+          html: emailHtml,
+          // The same welcome mail went out here without a text part. Seed run
+          // 20260924-a, Microsoft 365: with one (register route) inbox, without
+          // one (this route, identical HTML and subject) spam.
+          text: htmlToText(emailHtml),
         }),
       });
 

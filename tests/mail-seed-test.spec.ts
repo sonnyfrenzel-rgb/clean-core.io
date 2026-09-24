@@ -10,8 +10,12 @@ import {
   seedIdempotencyKey,
   renderSourceTemplate,
   SEED_MAIL_TYPES,
+  mailPolicyWarnings,
+  LINK_EXCEPTIONS,
+  type ProductionMail,
   type SeedRecipient,
 } from '../scripts/lib/mail-seed';
+import { APP_BASE_URL, USER_MAIL_FROM, USER_MAIL_REPLY_TO } from '../lib/constants';
 
 /**
  * The deliverability seed test of roadmap 3.0.9 (`scripts/mail-seed-test.ts`).
@@ -93,27 +97,57 @@ test.describe('every mail renders from its real template, with the prefix and no
     expect(one('survey').payload.headers).toMatchObject({ 'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click' });
     expect(String((one('survey').payload.headers as Record<string, string>)['List-Unsubscribe'])).toMatch(/^<https:\/\/clean-core\.io\/api\/unsubscribe\?t=/);
     expect(one('welcome').payload.headers).toBeUndefined();
-    // Text part where production sends one, none where it does not.
-    expect(one('welcome').payload.text).toBeTruthy();
-    for (const type of ['welcome-approval', 'tenant-pending', 'tenant-approval', 'tenant-revoke', 'tenant-request']) {
-      expect(one(type).payload.text, `${type} grew a text part production does not send`).toBeUndefined();
-    }
-    // Senders exactly as the call sites write them.
-    expect(one('survey').payload.from).toBe('Felix from Clean-Core.io <info@clean-core.io>');
+    // Operator mails keep their own senders; the security alert has no reply_to.
     expect(one('admin-signup').payload.from).toBe('Clean-Core <system@clean-core.io>');
+    expect(one('tenant-request').payload.from).toBe('Clean-Core.io <system@clean-core.io>');
+    expect(one('usage-report').payload.from).toBe('Clean-Core.io Report <info@clean-core.io>');
     expect(one('security-alert').payload.reply_to).toBeUndefined();
-    // The two invitation routes take the default sender of lib/transactional-mail.ts.
+    // Every user mail, the survey included, under the one sender (3.0.9).
+    for (const t of SEED_MAIL_TYPES.filter((x) => x.audience === 'nutzer')) {
+      expect(one(t.type).payload.from, `${t.type} is not sent under the one user sender`).toBe(USER_MAIL_FROM);
+      expect(one(t.type).payload.reply_to).toBe(USER_MAIL_REPLY_TO);
+    }
+    // And every mail has a text part now — the policy below says why.
+    for (const m of plan) expect(String(m.payload.text ?? '').length, `${m.type} has no text part`).toBeGreaterThan(100);
+  });
+
+  test('every sender in the seed is the one its call site really uses', () => {
+    // A literal in the call site, or the shared constant: the two invitation
+    // routes take DEFAULT_FROM of lib/transactional-mail.ts, which is
+    // USER_MAIL_FROM; the survey script assigns it to its FROM.
+    expect(read('lib/constants.ts')).toContain(`export const USER_MAIL_FROM = '${USER_MAIL_FROM}';`);
+    expect(read('lib/transactional-mail.ts')).toMatch(/const DEFAULT_FROM = USER_MAIL_FROM;/);
+    const one = (type: string) => plan.find((m) => m.type === type && m.label === 'gmail')!;
     for (const t of SEED_MAIL_TYPES) {
       const from = String(one(t.type).payload.from);
-      expect(read(t.source) + read('lib/transactional-mail.ts'), `${t.type}: ${t.source} no longer sends from ${from}`)
-        .toContain(`'${from}'`);
+      const src = read(t.source);
+      const call = src.indexOf('sendTransactionalMail({');
+      const viaTransactional = call > -1 && !/\bfrom:/.test(src.slice(call, src.indexOf('})', call)));
+      const usesConstant = /from: USER_MAIL_FROM\b|const FROM = USER_MAIL_FROM;/.test(src) || viaTransactional;
+      if (from === USER_MAIL_FROM) {
+        expect(usesConstant, `${t.type}: ${t.source} no longer sends from ${from}`).toBe(true);
+      } else {
+        expect(src, `${t.type}: ${t.source} no longer sends from ${from}`).toContain(`'${from}'`);
+      }
     }
   });
 
-  test('the welcome text part is built by the register route\'s own converter', () => {
+  test('every text part comes from the one shared converter, German letters intact', () => {
     const w = plan.find((m) => m.type === 'welcome')!;
-    // That copy lacks the German entities, so the imprint reads as production sends it.
-    expect(String(w.payload.text)).toContain('Hellerstra e 9');
+    // The register route's private copy turned `&szlig;` into a space.
+    expect(String(w.payload.text)).toContain('Hellerstraße 9');
+    expect(String(w.payload.text)).not.toContain('Hellerstra e');
+    // No second copy of the converter anywhere in the product.
+    const copies: string[] = [];
+    const walk = (rel: string) => {
+      for (const e of fs.readdirSync(path.join(ROOT, rel), { withFileTypes: true })) {
+        const r = `${rel}/${e.name}`;
+        if (e.isDirectory()) { if (e.name !== 'node_modules') walk(r); continue; }
+        if (/\.(ts|tsx|mjs)$/.test(e.name) && /function htmlToText\s*\(/.test(read(r))) copies.push(r);
+      }
+    };
+    ['app', 'lib', 'scripts'].forEach(walk);
+    expect(copies).toEqual(['lib/mail-text.ts']);
   });
 
   test('no link carries a token anybody signed', () => {
@@ -183,6 +217,69 @@ test.describe('every mail renders from its real template, with the prefix and no
   });
 });
 
+/* ------------------------------------------------------------ the policy */
+
+test.describe('every product mail keeps the rules of run 20260924-a', () => {
+  const now = new Date('2026-09-24T10:00:00Z');
+  const ctx = { runId: 'spec-0002', recipient: RECIPIENTS[0], now };
+
+  test('no production payload draws a warning: text part, plain subject, own links, one user sender', () => {
+    // In this process APP_BASE_URL is the local fallback, so links built from it
+    // are the product's own; the command-line test below renders with the
+    // production base URL and checks the same catalogue without that allowance.
+    const report = SEED_MAIL_TYPES.map((t) => ({ type: t.type, warnings: mailPolicyWarnings(t, t.build(ctx), [APP_BASE_URL]) }))
+      .filter((r) => r.warnings.length > 0);
+    expect(report, 'a product mail breaks the 3.0.9 mail policy').toEqual([]);
+  });
+
+  test('the policy itself goes red on each rule', () => {
+    const good: ProductionMail = {
+      from: USER_MAIL_FROM,
+      replyTo: USER_MAIL_REPLY_TO,
+      subject: 'Your workspace is live',
+      html: '<p><a href="https://clean-core.io/dashboard">Open</a></p>',
+      text: 'Open (https://clean-core.io/dashboard)',
+    };
+    const user = { type: 'x', audience: 'nutzer' as const };
+    const operator = { type: 'x', audience: 'betrieb' as const };
+    expect(mailPolicyWarnings(user, good)).toEqual([]);
+    const cases: [Partial<ProductionMail>, RegExp][] = [
+      [{ text: undefined }, /no text\/plain part/],
+      [{ text: '  ' }, /no text\/plain part/],
+      [{ subject: '\u{1F389} Unlocked' }, /emoji in the subject/],
+      [{ subject: '\u23F3 Pending' }, /emoji in the subject/],
+      [{ subject: '\u{1F512} Suspended' }, /emoji in the subject/],
+      [{ subject: 'Access unlocked!' }, /exclamation mark/],
+      [{ html: '<a href="https://cleancore-491216.firebaseapp.com/__/auth/action?mode=verifyEmail">x</a>' }, /links outside/],
+      [{ html: '<a href="http://clean-core.io/x">x</a>' }, /links outside/],
+      [{ from: 'Felix from Clean-Core.io <info@clean-core.io>' }, /user mail not from/],
+      [{ from: 'Clean-Core.io Team <team@clean-core.io>' }, /user mail not from/],
+      [{ replyTo: undefined }, /reply-to/],
+    ];
+    for (const [change, rule] of cases) {
+      const warnings = mailPolicyWarnings(user, { ...good, ...change });
+      expect(warnings.join(' | '), JSON.stringify(change)).toMatch(rule);
+    }
+    // The operator's mails keep their senders — only the sender rule is theirs to skip.
+    expect(mailPolicyWarnings(operator, { ...good, from: 'Clean-Core <system@clean-core.io>' })).toEqual([]);
+    expect(mailPolicyWarnings(operator, { ...good, text: undefined })).toEqual(['no text/plain part']);
+    // A documented exception is per type, not a free pass for every mail.
+    expect(LINK_EXCEPTIONS['security-alert'].hosts).toEqual(['https://github.com']);
+    expect(mailPolicyWarnings(user, { ...good, html: '<a href="https://github.com/x">x</a>' }).join(' ')).toMatch(/links outside/);
+    for (const [type, e] of Object.entries(LINK_EXCEPTIONS)) {
+      expect(SEED_MAIL_TYPES.find((t) => t.type === type)?.audience, `${type}: a user mail with a link exception`).toBe('betrieb');
+      expect(e.why.length).toBeGreaterThan(10);
+    }
+  });
+
+  test('the dry run prints the warning list per type', () => {
+    const cli = read('scripts/mail-seed-test.ts');
+    expect(cli).toContain('WARNING  : ${w}');
+    expect(cli).toMatch(/POLICY {4}: /);
+    expect(read('scripts/lib/mail-seed.ts')).toContain('warnings: mailPolicyWarnings(t, mail)');
+  });
+});
+
 /* ----------------------------------------------------------- the CLI gate */
 
 const TSX = path.join(ROOT, 'node_modules', 'tsx', 'dist', 'cli.mjs');
@@ -222,6 +319,7 @@ test.describe('the command line', () => {
     const r = runCli(['--run-id', 'spec-dry', '--only', 'welcome,survey']);
     expect(r.status, r.out).toBe(0);
     expect(r.out).toContain('DRY RUN');
+    expect(r.out).toContain('POLICY    : all 2 type(s) pass');
     expect(r.calls, 'a dry run called the network').toEqual([]);
     const out = path.join(r.dir, 'scratch', 'mail-seed-spec-dry');
     expect(fs.existsSync(path.join(out, 'welcome__gmail.html'))).toBe(true);
@@ -229,6 +327,16 @@ test.describe('the command line', () => {
     expect(fs.existsSync(path.join(out, 'send-log.json'))).toBe(false);
     // The console names providers, never addresses.
     expect(r.out).not.toContain('seed-gmail@example.com');
+  });
+
+  test('the dry run over the whole catalogue, on the production base URL, reports no policy warning', () => {
+    const r = runCli(['--run-id', 'spec-policy']);
+    expect(r.status, r.out).toBe(0);
+    expect(r.calls).toEqual([]);
+    expect(r.out, 'the dry run flags a product mail').toContain(`POLICY    : all ${SEED_MAIL_TYPES.length} type(s) pass`);
+    expect(r.out).not.toContain('WARNING  :');
+    const plan = JSON.parse(fs.readFileSync(path.join(r.dir, 'scratch', 'mail-seed-spec-policy', 'plan.json'), 'utf8')) as { type: string; warnings: string[] }[];
+    expect(plan.filter((m) => m.warnings.length)).toEqual([]);
   });
 
   test('--send without the confirmation stops before anything is sent', () => {
