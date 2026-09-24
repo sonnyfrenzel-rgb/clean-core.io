@@ -42,6 +42,8 @@
  *       11/12/13/14/15/22 px ........................ §1.2, ADR-047 (E-1)
  */
 
+import ts from 'typescript';
+
 export const RULE_IDS = [
   'R1', 'R2', 'R3', 'R4', 'R5', 'R6', 'R7', 'R8', 'R9', 'R10',
   'R11', 'R12', 'R13', 'R14', 'R15', 'R16', 'R17', 'R18', 'R19',
@@ -285,13 +287,39 @@ export function isWorkspaceFile(rel: string): boolean {
 // ---------------------------------------------------------------------------
 
 /**
- * Blank out comments, keeping every newline so line numbers survive. `//` after
- * a colon or inside a quote-opened run is a URL, not a comment.
+ * Blank out comments, keeping every newline so line numbers survive.
+ *
+ * With the TypeScript parser, not a regex: a regex cannot tell `//` in a
+ * comment from `//` in `title="x//"`, a URL in JSX text or a template literal,
+ * and it used to blank the rest of such a line — hiding whatever violation
+ * stood after it (QA review of c07adecd2fb5, finding 01bcfd747ee8). The parser
+ * knows where a string, an attribute or JSX text ends, so only trivia between
+ * tokens is treated as comment. Still pure: `typescript` is a library, not I/O.
  */
-export function stripComments(text: string): string {
-  return text
-    .replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, ' '))
-    .replace(/(^|[^:'"`\\])\/\/.*$/gm, (m, p: string) => p + ' '.repeat(m.length - p.length));
+export function stripComments(text: string, rel = 'probe.tsx'): string {
+  const kind = /\.tsx$/.test(rel) ? ts.ScriptKind.TSX : /\.ts$/.test(rel) ? ts.ScriptKind.TS : ts.ScriptKind.TSX;
+  const sf = ts.createSourceFile(rel, text, ts.ScriptTarget.Latest, false, kind);
+  const ranges: ts.CommentRange[] = [];
+  const seen = new Set<number>();
+  const collect = (pos: number) => {
+    if (seen.has(pos)) return;
+    seen.add(pos);
+    ranges.push(...(ts.getLeadingCommentRanges(text, pos) ?? []), ...(ts.getTrailingCommentRanges(text, pos) ?? []));
+  };
+  const visit = (node: ts.Node) => {
+    // JSX text owns its whitespace and any `//` in it: it is copy, not trivia.
+    if (node.kind === ts.SyntaxKind.JsxText) return;
+    const children = node.getChildren(sf);
+    if (children.length === 0) collect(node.pos);
+    else children.forEach(visit);
+  };
+  visit(sf);
+
+  const out = text.split('');
+  for (const r of ranges) {
+    for (let i = r.pos; i < r.end; i++) if (out[i] !== '\n' && out[i] !== '\r') out[i] = ' ';
+  }
+  return out.join('');
 }
 
 interface Tag {
@@ -413,7 +441,7 @@ const px = (v: number, unit: string) => (unit === 'px' || !unit ? v : v * 16);
  * exceptions (the library defines the patterns other files may not write).
  */
 export function scanFile(rel: string, source: string): Hit[] {
-  const code = stripComments(source);
+  const code = stripComments(source, rel);
   const hits: Hit[] = [];
   const lineStarts: number[] = [0];
   for (let i = 0; i < code.length; i++) if (code[i] === '\n') lineStarts.push(i + 1);

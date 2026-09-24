@@ -178,6 +178,30 @@ test.describe('design source guard (DESIGN.md, app-wide ratchet)', () => {
     expect(scanFile('components/workspace/Probe.tsx', allowed).map((h) => `${h.rule} ${h.snippet}`)).toEqual([]);
   });
 
+  test('a `//` that is not a comment hides nothing after it (QA c07adecd2fb5, 01bcfd747ee8)', () => {
+    // The comment stripper used to be a regex that blanked the rest of a line
+    // from any `//` not preceded by a colon or a quote — an attribute value, a
+    // sentence in JSX text or a template literal took the violation after it
+    // out of the count.
+    const hidden = [
+      '<span title="x//" className="text-[10px]">y</span>',
+      '<p>see // this <span className="text-[10px]">y</span></p>',
+      'const u = `a//b ${x} text-[10px]`;',
+      "const p = 'app/**/*.tsx'; const q = 'text-[10px]';",
+    ];
+    for (const source of hidden) {
+      expect(scanFile('components/Probe.tsx', source).map((h) => h.rule), source).toContain('R1');
+    }
+    // Real comments still carry prose, in every form the files use.
+    const comments = 'const a = 1; // text-[10px]\n/* text-[9px] */\nconst b = <div>{/* text-[8px] */}</div>;';
+    expect(scanFile('components/Probe.tsx', comments)).toEqual([]);
+  });
+
+  test('2 px (`*-0.5`) is counted outside a chip, an identifier or an icon, and only there (dc7435453a94)', () => {
+    expect(scanFile('components/Probe.tsx', '<div className="p-0.5">x</div>').map((h) => h.rule)).toEqual(['R18']);
+    expect(scanFile('components/Probe.tsx', '<span className="rounded-full p-0.5">chip</span>')).toEqual([]);
+  });
+
   test('every group of the plan has its own baseline file', () => {
     // Parallel steps edit different JSON files; that only holds if each group
     // exists as its own file (an empty `files` is fine — it means "clean").
