@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createApprovalToken } from '@/lib/approval-token';
 import { APP_VERSION } from '@/lib/version';
-import { verifyRequestAuth, getAdminDb, assertAccountActive, QuotaError } from '@/lib/firebase-admin';
+import { verifyRequestAuth, getAdminDb, assertAccountActive, QuotaError, issueTenantApprovalNonce } from '@/lib/firebase-admin';
 import { APP_BASE_URL, CONTACT_EMAIL } from '@/lib/constants';
 import { escapeHtml } from '@/lib/utils';
 import { assertRateLimit, getClientIp } from '@/lib/rate-limit';
@@ -65,12 +65,16 @@ export async function POST(request: NextRequest) {
     const name = escapeHtml(body.name || (decodedToken as any).name || rawEmail);
     const motivation = escapeHtml(body.motivation || '');
 
-    // Action-bound, expiring tokens; fail-closed (no fallback secret).
-    const approveToken = createApprovalToken(uid, 'tenant', 'approve');
-    const rejectToken = createApprovalToken(uid, 'tenant', 'reject');
+    // Action-bound, expiring tokens; fail-closed (no fallback secret). Both carry
+    // this request's one-time nonce (UX-152): whichever link is used first
+    // consumes it, and a new request replaces it, so no link outlives its request.
+    const nonce = await issueTenantApprovalNonce(uid);
+    const approveToken = createApprovalToken(uid, 'tenant', 'approve', undefined, nonce);
+    const rejectToken = createApprovalToken(uid, 'tenant', 'reject', undefined, nonce);
 
     // URLs built with URLSearchParams (correct encoding — not HTML-escaping).
-    const approveUrl = `${APP_BASE_URL}/admin/approve-tenant?${new URLSearchParams({ uid, token: approveToken, auto: 'true' })}`;
+    // No `auto`: the page shows the request and waits for a click (UX-152).
+    const approveUrl = `${APP_BASE_URL}/admin/approve-tenant?${new URLSearchParams({ uid, token: approveToken, action: 'approve' })}`;
     const rejectUrl = `${APP_BASE_URL}/admin/approve-tenant?${new URLSearchParams({ uid, token: rejectToken, action: 'reject' })}`;
 
     const emailSubject = `🚀 S/4HANA Live Tenant Access Request: ${name}`;

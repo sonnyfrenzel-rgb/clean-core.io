@@ -1,3 +1,4 @@
+import { randomBytes } from 'crypto';
 import { FIRESTORE_DB_ID, COMMUNITY_QUOTA, termsVersionInForce } from '@/lib/constants';
 import { verifyApprovalToken } from '@/lib/approval-token';
 import { encrypt, decrypt } from './s4-credentials';
@@ -749,6 +750,7 @@ export async function deleteUserDataAndAccount(
   await tryDelete('user_secrets', () => db.recursiveDelete(db.collection('user_secrets').doc(uid)));
   await tryDelete('registration_requests', () => db.collection('registration_requests').doc(uid).delete());
   await tryDelete('tenant_access_requests', () => db.collection('tenant_access_requests').doc(uid).delete());
+  await tryDelete(TENANT_APPROVAL_NONCES, () => db.collection(TENANT_APPROVAL_NONCES).doc(uid).delete());
   await tryDelete('s4_credentials', () => db.collection('s4_credentials').doc(uid).delete());
   await tryDelete('mfa_secrets', () => db.collection('mfa_secrets').doc(uid).delete());
   await tryDelete('mfa_pending', () => db.collection('mfa_pending').doc(uid).delete());
@@ -885,6 +887,26 @@ export async function deleteUserDataAndAccount(
 // Tenant access is a separate, still-manual approval and keeps its token flow.
 
 /**
+ * Where the one-time nonce of a tenant access request lives (UX-152). No rule in
+ * `firestore.rules` matches it, so no browser reads or writes it; only the Admin
+ * SDK does — the same shape as `projects/{id}/invitations`.
+ */
+export const TENANT_APPROVAL_NONCES = 'tenant_access_nonces';
+
+/**
+ * A fresh nonce for the approve and reject links of one request. Issuing a new
+ * one replaces the previous, so every link of an earlier request stops working
+ * the moment the user asks again.
+ */
+export async function issueTenantApprovalNonce(uid: string): Promise<string> {
+  await ensureInitialized();
+  const nonce = randomBytes(16).toString('hex');
+  const { db } = await getAdminDb();
+  await db.collection(TENANT_APPROVAL_NONCES).doc(uid).set({ nonce, issuedAt: new Date().toISOString() });
+  return nonce;
+}
+
+/**
  * Server-side cryptographic token validation and tenant connection approval.
  */
 export async function approveTenantWithToken(
@@ -896,9 +918,30 @@ export async function approveTenantWithToken(
   await ensureInitialized();
 
   // Audit P2: action/type-bound, expiring, timing-safe, fail-closed.
-  verifyApprovalToken(token, { uid, requestType: 'tenant', action });
+  const { nonce } = verifyApprovalToken(token, { uid, requestType: 'tenant', action });
 
   const { db } = await getAdminDb();
+
+  // UX-152 (Sonny, 24.09.2026, option B): one use per request, for both links.
+  //
+  // The token carries the nonce `/api/request-tenant-access` stored for this
+  // request in `tenant_access_nonces/{uid}`, a collection no rule opens to a
+  // browser. Using either link consumes it, in the same transaction as the
+  // decision — so the second link of the same mail, a replay of the first, and
+  // every link minted for an earlier request of the same user are refused. Until
+  // this step the reject link checked nothing at all: used days later it
+  // revoked access the administrator had granted in the meantime, and an
+  // approve link from a previous request approved the next one unread.
+  // A token without a nonce (minted before this step) is refused outright.
+  const nonceRef: DocumentReference = db.collection(TENANT_APPROVAL_NONCES).doc(uid);
+  const consumeNonce = async (tx: Transaction) => {
+    const snap = await tx.get(nonceRef);
+    const stored = snap.exists ? (snap.data()?.nonce as string | undefined) : undefined;
+    if (!nonce || !stored || stored !== nonce) {
+      throw new Error('Invalid verification token: This approval link has already been used or belongs to an earlier request.');
+    }
+    return () => tx.delete(nonceRef);
+  };
 
   if (action === 'approve') {
     // The request has to still be open, and this is what makes the token
@@ -919,6 +962,7 @@ export async function approveTenantWithToken(
     // arriving together cannot both find it pending.
     const requestRef: DocumentReference = db.collection('tenant_access_requests').doc(uid);
     await db.runTransaction(async (tx: Transaction) => {
+      const consume = await consumeNonce(tx);
       const snapshot = await tx.get(requestRef);
       const status = snapshot.exists ? (snapshot.data()?.status as string | undefined) : undefined;
       if (!snapshot.exists) throw new Error('This tenant access request no longer exists.');
@@ -929,16 +973,20 @@ export async function approveTenantWithToken(
         s4TenantAccessRequested: false
       }, { merge: true });
       tx.set(requestRef, { status: 'approved' }, { merge: true });
+      consume();
     });
   } else if (action === 'reject') {
-    // Clean request status on user document
-    await db.collection('users').doc(uid).set({
-      s4TenantAccessRequested: false,
-      s4TenantAccessAllowed: false
-    }, { merge: true });
-
-    // Delete tenant access request document
-    await db.collection('tenant_access_requests').doc(uid).delete();
+    await db.runTransaction(async (tx: Transaction) => {
+      const consume = await consumeNonce(tx);
+      // Clean request status on user document
+      tx.set(db.collection('users').doc(uid), {
+        s4TenantAccessRequested: false,
+        s4TenantAccessAllowed: false
+      }, { merge: true });
+      // Delete tenant access request document
+      tx.delete(db.collection('tenant_access_requests').doc(uid));
+      consume();
+    });
   }
 }
 

@@ -205,8 +205,21 @@ test.describe('Clean-Core.io Security, Compliance & Onboarding Gates E2E Tests',
     const beforeDoc = await getDoc(doc(firestoreDb, 'users', normalUserUid));
     expect(beforeDoc.data()?.s4TenantAccessAllowed).not.toBe(true);
 
-    // Generate valid approval token (Audit P2: action-bound, expiring)
-    const validToken = createApprovalToken(normalUserUid, 'tenant', 'approve');
+    // Generate valid approval tokens (Audit P2: action-bound, expiring; UX-152:
+    // one-time, bound to the nonce the request route stores server-side). The
+    // nonce is seeded here the way `/api/request-tenant-access` issues it.
+    const requestNonce = (n: number) => String(n).padStart(2, '0').repeat(16);
+    const nonce1 = requestNonce(1);
+    await adminSetDoc('tenant_access_nonces', normalUserUid, { nonce: nonce1, issuedAt: new Date().toISOString() });
+    const validToken = createApprovalToken(normalUserUid, 'tenant', 'approve', undefined, nonce1);
+    const rejectSameMail = createApprovalToken(normalUserUid, 'tenant', 'reject', undefined, nonce1);
+
+    // A token without a nonce — every link mailed before UX-152 — is refused.
+    const legacy = await request.post('/api/admin/approve-tenant', {
+      headers: { 'Authorization': `Bearer ${adminToken}` },
+      data: { uid: normalUserUid, token: createApprovalToken(normalUserUid, 'tenant', 'approve'), action: 'approve' },
+    });
+    expect(legacy.status(), 'a link without a one-time nonce was accepted').toBe(400);
 
     // The open request the approval answers. It was not here before 23.09.2026
     // and the approval went through anyway, which is the shape of the hole
@@ -230,6 +243,22 @@ test.describe('Clean-Core.io Security, Compliance & Onboarding Gates E2E Tests',
     const userDoc = await getDoc(doc(firestoreDb, 'users', normalUserUid));
     expect(userDoc.data()?.s4TenantAccessAllowed).toBe(true);
 
+    // UX-152: the decision consumed the nonce, so the other link of the same
+    // mail is dead. Until then a reject link used days later revoked access the
+    // administrator had granted in the meantime — it checked nothing at all.
+    expect(await adminDocExists('tenant_access_nonces', normalUserUid), 'the nonce survived its use').toBe(false);
+    const lateReject = await request.post('/api/admin/approve-tenant', {
+      headers: { 'Authorization': `Bearer ${adminToken}` },
+      data: { uid: normalUserUid, token: rejectSameMail, action: 'reject' },
+    });
+    expect(lateReject.status(), 'the reject link of an already-decided request still worked').toBe(400);
+    expect((await adminGetDoc('users', normalUserUid))?.s4TenantAccessAllowed, 'a stale reject link revoked granted access').toBe(true);
+
+    // The user asks again: a new request, a new nonce. The next steps use it.
+    const nonce2 = requestNonce(2);
+    await adminSetDoc('tenant_access_nonces', normalUserUid, { nonce: nonce2, issuedAt: new Date().toISOString() });
+    await adminSetDoc('tenant_access_requests', normalUserUid, { userId: normalUserUid, status: 'pending' });
+
     // 3. The same link, a second time, after the decision was reversed.
     //
     // `lib/approval-token.ts` signs `uid.requestType.action.exp` and nothing
@@ -241,7 +270,7 @@ test.describe('Clean-Core.io Security, Compliance & Onboarding Gates E2E Tests',
     // that the approval now needs the request to still be open.
     const rejectRes = await request.post('/api/admin/approve-tenant', {
       headers: { 'Authorization': `Bearer ${adminToken}` },
-      data: { uid: normalUserUid, token: createApprovalToken(normalUserUid, 'tenant', 'reject'), action: 'reject' },
+      data: { uid: normalUserUid, token: createApprovalToken(normalUserUid, 'tenant', 'reject', undefined, nonce2), action: 'reject' },
     });
     expect(rejectRes.status()).toBe(200);
     expect(await adminDocExists('tenant_access_requests', normalUserUid)).toBe(false);
@@ -263,6 +292,17 @@ test.describe('Clean-Core.io Security, Compliance & Onboarding Gates E2E Tests',
       data: { uid: normalUserUid, token: validToken, action: 'approve' },
     });
     expect(secondUse.status(), 'a link for an already-approved request was accepted again').not.toBe(200);
+
+    // UX-152: the approve link of an earlier request does not approve a new one
+    // the administrator has not read — the new request carries a new nonce.
+    await adminSetDoc('tenant_access_nonces', normalUserUid, { nonce: requestNonce(3), issuedAt: new Date().toISOString() });
+    await adminSetDoc('tenant_access_requests', normalUserUid, { userId: normalUserUid, status: 'pending' });
+    const earlierLink = await request.post('/api/admin/approve-tenant', {
+      headers: { 'Authorization': `Bearer ${adminToken}` },
+      data: { uid: normalUserUid, token: validToken, action: 'approve' },
+    });
+    expect(earlierLink.status(), 'an approve link from an earlier request approved the next one').toBe(400);
+    expect((await adminGetDoc('users', normalUserUid))?.s4TenantAccessAllowed).toBe(false);
   });
 
   test('registration activates the account and records consent server-side', async ({ request }) => {

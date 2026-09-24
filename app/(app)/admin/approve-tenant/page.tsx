@@ -15,7 +15,6 @@ function TenantApprovalContent() {
   
   const uid = searchParams.get('uid');
   const actionParam = searchParams.get('action'); // 'approve' or 'reject'
-  const autoParam = searchParams.get('auto') === 'true';
   const tokenParam = searchParams.get('token') || '';
 
   const [status, setStatus] = useState<'loading' | 'unauthorized' | 'ready' | 'processing' | 'approved' | 'rejected' | 'error'>('loading');
@@ -169,22 +168,10 @@ function TenantApprovalContent() {
     }
   };
 
-  // Handle Automatic Actions — placed after the two handlers on purpose. It used
-  // to sit above them and call consts that were not yet initialised; that only
-  // works because an effect runs after its render, which is a coincidence, not a
-  // guarantee anybody wrote down.
-  useEffect(() => {
-    if (status !== 'ready') return;
-
-    if (actionParam === 'reject') {
-      handleReject();
-    } else if (autoParam) {
-      const timer = setTimeout(() => {
-        handleApprove();
-      }, 1000);
-      return () => clearTimeout(timer);
-    }
-  }, [status, actionParam, autoParam]);
+  // No automatic action (UX-152, Sonny 24.09.2026). Until then `?action=reject`
+  // declined the moment the page loaded and `?auto=true` approved after a
+  // second, so an administrator who opened the mail to read the request had
+  // already decided it. The page now shows the request and waits for a click.
 
   if (profileLoading || status === 'loading') {
     return (
@@ -293,20 +280,35 @@ function TenantApprovalContent() {
                 <p>• Enables Basic Auth or Client Credentials storage</p>
               </div>
 
+              {/* One button: the link's token is bound to one action, so the other
+                  button could only ever be refused. The other decision is the
+                  other link of the same mail — and whichever is used first
+                  closes both (UX-152). */}
               <div className="flex flex-col sm:flex-row gap-3 pt-2">
-                <button
-                  onClick={handleApprove}
-                  className="flex-[2] bg-gradient-to-r from-blue-600 to-sky-600 hover:from-blue-700 hover:to-sky-700 text-white py-4 rounded-xl font-black text-sm uppercase tracking-wider transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2"
-                >
-                  Approve Request <ArrowRight className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={handleReject}
-                  className="flex-1 bg-red-950/30 hover:bg-red-900/20 text-red-400 border border-red-900/50 py-4 rounded-xl font-bold text-sm uppercase tracking-wider transition-all active:scale-95"
-                >
-                  Decline Request
-                </button>
+                {actionParam === 'reject' ? (
+                  <button
+                    onClick={handleReject}
+                    data-tenant-decision="reject"
+                    className="flex-1 bg-red-950/30 hover:bg-red-900/20 text-red-400 border border-red-900/50 py-4 rounded-xl font-bold text-sm uppercase tracking-wider transition-all active:scale-95"
+                  >
+                    Decline Request
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleApprove}
+                    data-tenant-decision="approve"
+                    className="flex-[2] bg-gradient-to-r from-blue-600 to-sky-600 hover:from-blue-700 hover:to-sky-700 text-white py-4 rounded-xl font-black text-sm uppercase tracking-wider transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2"
+                  >
+                    Approve Request <ArrowRight className="w-4 h-4" />
+                  </button>
+                )}
               </div>
+              <p className="text-xs text-slate-400">
+                {actionParam === 'reject'
+                  ? 'To approve instead, open the Approve link in the same mail.'
+                  : 'To decline instead, open the Decline link in the same mail.'}{' '}
+                Each link works once, and using either closes both.
+              </p>
             </div>
           </motion.div>
         )}
