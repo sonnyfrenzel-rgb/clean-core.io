@@ -132,6 +132,15 @@ export default function GlossaryChatbot() {
   const { profile } = useUserProfile();
   const chatEndRef = useRef<HTMLDivElement>(null);
   const toggleRef = useRef<HTMLButtonElement>(null);
+  /**
+   * What opened the panel, and whether Escape asked for focus to go back.
+   * The floating toggle is not always the opener: the header, the account
+   * menu and the help menu open the panel by event — and with the desktop
+   * toggle switched off in the profile the toggle is `md:hidden` the moment
+   * the panel closes, so focusing it would drop focus on the body.
+   */
+  const openerRef = useRef<HTMLElement | null>(null);
+  const returnFocusRef = useRef(false);
 
   /**
    * Roadmap 6.8, owner decision of 15.09.2026: **no second chat**. The same
@@ -195,21 +204,40 @@ export default function GlossaryChatbot() {
   }, [messages, loading]);
 
   // UX-045: the panel is not modal (the page stays usable beside it), but
-  // Escape closes it and hands focus back to the toggle.
+  // Escape closes it and hands focus back to what opened it.
   useEffect(() => {
     if (!isOpen) return;
     const handleKey = (event: KeyboardEvent) => {
       if (event.key !== 'Escape') return;
+      returnFocusRef.current = true;
       setIsOpen(false);
-      toggleRef.current?.focus();
     };
     document.addEventListener('keydown', handleKey);
     return () => document.removeEventListener('keydown', handleKey);
   }, [isOpen]);
 
-  // Listen for global trigger to open the chatbot
+  // After the close has rendered, so what is hidden is known: focus goes to
+  // the control that opened the panel, else to the toggle — whichever is
+  // still in the document and actually shown.
   useEffect(() => {
-    const handleOpen = () => setIsOpen(true);
+    if (isOpen || !returnFocusRef.current) return;
+    returnFocusRef.current = false;
+    const shown = (el: HTMLElement | null): el is HTMLElement =>
+      Boolean(el && el.isConnected && el.getClientRects().length > 0);
+    const target = [openerRef.current, toggleRef.current].find(shown);
+    target?.focus();
+  }, [isOpen]);
+
+  // Listen for global trigger to open the chatbot. A menu item closes with
+  // its menu, so a dispatcher can name the control to come back to.
+  useEffect(() => {
+    const handleOpen = (event: Event) => {
+      const detail = (event as CustomEvent<{ returnFocusTo?: HTMLElement | null } | null>).detail;
+      const active = document.activeElement;
+      openerRef.current =
+        detail?.returnFocusTo ?? (active instanceof HTMLElement && active !== document.body ? active : null);
+      setIsOpen(true);
+    };
     window.addEventListener('open-chatbot', handleOpen);
     return () => window.removeEventListener('open-chatbot', handleOpen);
   }, []);
@@ -445,7 +473,10 @@ CRITICAL GUARDRAILS AND SAFETY RULES:
       <button
         ref={toggleRef}
         type="button"
-        onClick={() => setIsOpen((prev) => !prev)}
+        onClick={() => {
+          openerRef.current = toggleRef.current;
+          setIsOpen((prev) => !prev);
+        }}
         aria-expanded={isOpen}
         aria-controls={isOpen ? 'chatbot-panel' : undefined}
         aria-label={isOpen ? 'Close the assistant' : assistantLabel}

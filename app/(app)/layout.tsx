@@ -319,7 +319,7 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
                     </Link>
 
                     <button 
-                      onClick={() => { setShowUserDropdown(false); window.dispatchEvent(new CustomEvent('open-chatbot')); }}
+                      onClick={() => { setShowUserDropdown(false); window.dispatchEvent(new CustomEvent('open-chatbot', { detail: { returnFocusTo: accountButtonRef.current } })); }}
                       data-assistant-trigger="menu"
                       className="flex items-center gap-3 w-full p-3 text-sm font-bold text-gray-700 hover:bg-gray-50 hover:text-green-600 rounded-xl transition-all text-left"
                     >

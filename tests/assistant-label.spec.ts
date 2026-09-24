@@ -9,6 +9,7 @@ import {
 } from 'firebase/auth';
 import firebaseConfig from '../firebase-config.json';
 import { adminSetDoc } from './helpers/admin-seed';
+import { TERMS_VERSION } from '../lib/constants';
 
 /**
  * The name on the button is the name of the thing that opens.
@@ -199,5 +200,44 @@ test.describe('and inside a project', () => {
     // that makes the name true.
     await expect(page.locator('[data-chatbot-title]')).toHaveText('Ask this case');
     await expect(page.locator('[data-chatbot-scope]')).toContainText('only from the evidence of this project');
+  });
+});
+
+test.describe('Escape hands the focus back to what opened the panel', () => {
+  /**
+   * QA review of 60b94e108964 (39bca17901ef). Escape used to focus the floating
+   * toggle. With the desktop toggle switched off in the profile, that toggle is
+   * `md:hidden` the moment the panel closes, so a reader who opened the panel
+   * from the header was left with the focus on the body.
+   */
+  const OWNER = `${unique('assistant-focus')}@cleancore-test.io`;
+
+  test.beforeAll(async () => {
+    test.setTimeout(120 * 1000);
+    const cred = await createUserWithEmailAndPassword(clientAuth, OWNER, PASSWORD);
+    await adminSetDoc('users', cred.user.uid, {
+      firstName: 'Assistant', lastName: 'Focus', email: OWNER,
+      tier: 'pilot', status: 'approved',
+      transformationsUsed: 0, transformationsLimit: 5, createdAt: new Date(),
+      termsVersionAccepted: TERMS_VERSION, termsAcceptedAt: new Date(),
+      desktopChatbotEnabled: false,
+    });
+  });
+
+  test('opened from the header with the desktop toggle off, Escape returns to the header button', async ({ page }) => {
+    test.setTimeout(240 * 1000);
+    await page.setViewportSize({ width: 1280, height: 900 });
+
+    await signIn(page, OWNER);
+    await page.goto('/knowledge', { waitUntil: 'domcontentloaded' });
+
+    const trigger = page.locator('[data-assistant-trigger="header"]');
+    await openFrom(page, trigger);
+
+    await page.keyboard.press('Escape');
+    await expect(page.locator('[data-chatbot-scope]')).toBeHidden();
+    // The premise: the floating toggle is not there to take the focus.
+    await expect(page.locator('[data-chatbot-toggle]')).toBeHidden();
+    await expect(trigger, 'the focus fell on the body instead of the button that opened the panel').toBeFocused();
   });
 });

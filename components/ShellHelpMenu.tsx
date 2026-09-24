@@ -209,7 +209,7 @@ export default function ShellHelpMenu({
             data-assistant-trigger="help"
             onClick={() => {
               setMenuOpen(false);
-              window.dispatchEvent(new CustomEvent('open-chatbot'));
+              window.dispatchEvent(new CustomEvent('open-chatbot', { detail: { returnFocusTo: triggerRef.current } }));
             }}
             className={item}
           >
