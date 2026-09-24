@@ -1408,7 +1408,7 @@ einer Einladung) braucht Sonnys Abwägung gegen weitergeleitete Links.
 | UX-074 | low | Settings-Karten mit beliebigem Farbstreifen | 1.5 | eingeplant |
 | UX-078 | low | Admin-Zeilen ohne erweiterten Zustand | 3.0.4 | eingeplant |
 | UX-079 | low | Deaktivierter Register-Button erklärt sich nicht | 5.1 | eingeplant |
-| UX-080 | low | Showroom-Tabs ohne sichtbaren Tastaturfokus | 3.0.4 | eingeplant |
+| UX-080 | low | Showroom-Tabs ohne sichtbaren Tastaturfokus | 3.0.4 | behoben |
 | UX-081 | low | Autoplay ignoriert reduzierte Bewegung | 3.0.4 | eingeplant |
 | UX-082 | low | Zwei Header-Muster auf öffentlichen Seiten | 3.0.6 | eingeplant |
 | UX-083 | low | Download-Fehler bleibt unsichtbar | 3.0 | eingeplant |
