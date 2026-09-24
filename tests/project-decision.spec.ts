@@ -1,6 +1,13 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { test, expect } from '@playwright/test';
+import { test, expect, type APIRequestContext } from '@playwright/test';
+import { initializeApp, getApps } from 'firebase/app';
+import { getAuth, connectAuthEmulator, createUserWithEmailAndPassword } from 'firebase/auth';
+import { initializeApp as initAdmin, getApps as adminApps } from 'firebase-admin/app';
+import { getFirestore as adminFirestore, type Firestore } from 'firebase-admin/firestore';
+import firebaseConfig from '../firebase-config.json';
+import { FIRESTORE_DB_ID } from '../lib/constants';
+import { adminSetDoc, adminGetDoc } from './helpers/admin-seed';
 import {
   DECISION_BINDINGS,
   DECISION_VERSION,
@@ -39,9 +46,13 @@ import { validateProjectCommand, type ProjectCommandState } from '../lib/project
  * Vertrag; Bedingungen mit Status; Zeitleiste; umkehrbar ja/nein. Bestätigt vom
  * Konto — Selbstauskunft, kein organisatorisches Mandat."*
  *
- * Pure: no browser, no emulator, no server. Every branch of the model and of
- * the two new commands is reachable from a function call, which is why the step
- * is built as a module and a command rather than as a page with logic in it.
+ * Pure, except the last block: no browser, no emulator, no server. Every branch
+ * of the model and of the two new commands is reachable from a function call,
+ * which is why the step is built as a module and a command rather than as a
+ * page with logic in it. The last block (QA review of 4b4586aff273) drives the
+ * three decision commands through `/api/projects/[id]/commands` against the
+ * emulator, because the token, the ownership check, the server clock and the
+ * journal entry live in the route and not in the validator.
  */
 
 /* ---------- fixtures ---------- */
@@ -568,4 +579,172 @@ test('the self-declaration is the product\'s one sentence, and the mockup\'s', (
     'utf8',
   );
   expect(mockup).toContain('a self-declaration, not an organisational mandate');
+});
+
+/* ====================================== the three commands, through the route */
+
+const DECISION_OWNER = `decision-owner-${Date.now()}@example.com`;
+const DECISION_STRANGER = `decision-stranger-${Date.now()}@example.com`;
+const DECISION_PASSWORD = 'DecisionRoute123!';
+const DECISION_PROJECT = `decision-route-${Date.now()}`;
+
+const clientApp = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
+const clientAuth = getAuth(clientApp);
+if (process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === 'true') {
+  try {
+    connectAuthEmulator(clientAuth, 'http://127.0.0.1:9099', { disableWarnings: true });
+  } catch {
+    /* already connected */
+  }
+}
+const adminDb = (): Firestore => {
+  const app = adminApps()[0] ?? initAdmin({ projectId: firebaseConfig.projectId });
+  return adminFirestore(app, FIRESTORE_DB_ID);
+};
+const journal = async (action: string) =>
+  (await adminDb().collection('audit_events').where('action', '==', `${action}:${DECISION_PROJECT}`).get()).size;
+
+test.describe('8.4 — the decision commands through /api/projects/[id]/commands (emulator)', () => {
+  test.describe.configure({ mode: 'serial' });
+
+  let ownerToken = '';
+  let strangerToken = '';
+  const d = decisionFixture();
+
+  test.beforeAll(async () => {
+    test.setTimeout(120_000);
+    const owner = await createUserWithEmailAndPassword(clientAuth, DECISION_OWNER, DECISION_PASSWORD);
+    ownerToken = await owner.user.getIdToken();
+    await adminSetDoc('users', owner.user.uid, {
+      firstName: 'Decision', lastName: 'Owner', email: DECISION_OWNER, tier: 'pilot', status: 'approved',
+      transformationsUsed: 0, transformationsLimit: 5, mfaEnabled: false, createdAt: new Date(),
+    });
+    const stranger = await createUserWithEmailAndPassword(clientAuth, DECISION_STRANGER, DECISION_PASSWORD);
+    strangerToken = await stranger.user.getIdToken();
+    await adminSetDoc('users', stranger.user.uid, {
+      firstName: 'Not', lastName: 'Yours', email: DECISION_STRANGER, tier: 'pilot', status: 'approved',
+      transformationsUsed: 0, transformationsLimit: 5, mfaEnabled: false, createdAt: new Date(),
+    });
+    await adminSetDoc('projects', DECISION_PROJECT, {
+      name: 'Decision route fixture',
+      userId: owner.user.uid,
+      createdAt: new Date(),
+      status: 'analyzed',
+      legacyCode: SOURCE,
+      activeRunId: 'run-1',
+      originalRecommendation: RUN.originalRecommendation,
+    });
+    // The run the decision is bound to; its digest is `DIGEST`, which the
+    // fixture decision names.
+    await adminSetDoc(`projects/${DECISION_PROJECT}/runs`, 'run-1', {
+      ...RUN,
+      runId: 'run-1',
+      projectId: DECISION_PROJECT,
+      userId: owner.user.uid,
+    });
+  });
+
+  const post = (request: APIRequestContext, token: string | null, data: Record<string, unknown>) =>
+    request.post(`/api/projects/${DECISION_PROJECT}/commands`, {
+      headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}), 'Content-Type': 'application/json' },
+      data,
+    });
+  const confirmBody = (over: Record<string, unknown> = {}) => ({
+    command: 'confirm-decision',
+    expectedRunId: 'run-1',
+    expectedEvidenceDigest: DIGEST,
+    expectedDecisionFingerprint: d.fingerprint,
+    ...over,
+  });
+  const storedDecision = async () =>
+    ((await adminGetDoc('projects', DECISION_PROJECT)) || {}).decision as ProjectDecision | undefined;
+
+  test('without a token nothing is drafted', async ({ request }) => {
+    const res = await post(request, null, { command: 'record-decision-draft', decision: d });
+    expect(res.status()).toBe(401);
+    expect(await storedDecision()).toBeUndefined();
+    expect(await journal('PROJECT_DECISION_DRAFTED')).toBe(0);
+  });
+
+  test('another account cannot draft on this project, and is told what a missing project is told', async ({ request }) => {
+    const res = await post(request, strangerToken, { command: 'record-decision-draft', decision: d });
+    expect(res.status()).toBe(404);
+    expect(await storedDecision()).toBeUndefined();
+    expect(await journal('PROJECT_DECISION_DRAFTED')).toBe(0);
+  });
+
+  test('the owner drafts: stored as a draft whatever it claims, with one journal entry', async ({ request }) => {
+    const res = await post(request, ownerToken, {
+      command: 'record-decision-draft',
+      decision: { ...d, status: 'confirmed', confirmation: { account: 'cto@example.com', at: '1999', selfDeclaration: 'x' } },
+    });
+    expect(res.status()).toBe(200);
+    const stored = await storedDecision();
+    expect(stored?.status).toBe('draft');
+    expect(stored?.confirmation).toBeNull();
+    expect(await journal('PROJECT_DECISION_DRAFTED')).toBe(1);
+  });
+
+  test('a confirmation of a decision that moved is refused and writes neither decision nor journal', async ({ request }) => {
+    const res = await post(request, ownerToken, confirmBody({ expectedDecisionFingerprint: 'e'.repeat(64) }));
+    expect(res.status()).toBe(409);
+    expect((await res.json()).code).toBe('decision-moved');
+    expect((await storedDecision())?.status).toBe('draft');
+    expect(await journal('PROJECT_DECISION_CONFIRMED')).toBe(0);
+  });
+
+  test('a confirmation from another account is refused', async ({ request }) => {
+    const res = await post(request, strangerToken, confirmBody());
+    expect(res.status()).toBe(404);
+    expect((await storedDecision())?.status).toBe('draft');
+    expect(await journal('PROJECT_DECISION_CONFIRMED')).toBe(0);
+  });
+
+  test('the owner confirms: the token names the confirmer and the server clock the time', async ({ request }) => {
+    const before = Date.now();
+    const res = await post(
+      request,
+      ownerToken,
+      confirmBody({ confirmation: { account: 'cto@example.com', at: '1999-01-01T00:00:00.000Z', selfDeclaration: 'x' } }),
+    );
+    expect(res.status()).toBe(200);
+    const stored = await storedDecision();
+    expect(stored?.status).toBe('confirmed');
+    expect(stored?.confirmation?.account, 'the body chose the confirmer').toBe(DECISION_OWNER);
+    expect(stored?.confirmation?.selfDeclaration).toBe(SELF_DECLARATION);
+    const at = Date.parse(String(stored?.confirmation?.at));
+    expect(at, 'not the server clock').toBeGreaterThanOrEqual(before - 60_000);
+    expect(at).toBeLessThanOrEqual(Date.now() + 60_000);
+    expect(await journal('PROJECT_DECISION_CONFIRMED')).toBe(1);
+  });
+
+  test('confirming twice is refused and journals nothing', async ({ request }) => {
+    const res = await post(request, ownerToken, confirmBody());
+    expect(res.status()).toBe(409);
+    expect((await res.json()).code).toBe('already-confirmed');
+    expect(await journal('PROJECT_DECISION_CONFIRMED')).toBe(1);
+  });
+
+  test('another account cannot withdraw it', async ({ request }) => {
+    const res = await post(request, strangerToken, { command: 'withdraw-decision' });
+    expect(res.status()).toBe(404);
+    expect((await storedDecision())?.status).toBe('confirmed');
+    expect(await journal('PROJECT_DECISION_WITHDRAWN')).toBe(0);
+  });
+
+  test('the owner withdraws: the confirmation stays on the record, one journal entry', async ({ request }) => {
+    const res = await post(request, ownerToken, { command: 'withdraw-decision' });
+    expect(res.status()).toBe(200);
+    const stored = await storedDecision();
+    expect(stored?.status).toBe('withdrawn');
+    expect(stored?.confirmation?.account).toBe(DECISION_OWNER);
+    expect(await journal('PROJECT_DECISION_WITHDRAWN')).toBe(1);
+  });
+
+  test('withdrawing again is refused and journals nothing', async ({ request }) => {
+    const res = await post(request, ownerToken, { command: 'withdraw-decision' });
+    expect(res.status()).toBe(409);
+    expect((await res.json()).code).toBe('not-confirmed');
+    expect(await journal('PROJECT_DECISION_WITHDRAWN')).toBe(1);
+  });
 });
