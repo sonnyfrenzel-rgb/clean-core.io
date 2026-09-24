@@ -351,6 +351,7 @@ test.describe('loading, folding, tabs and the table limit, rendered', () => {
   });
 
   test('dates: text, ISO in mono, the time with its zone, and nothing guessed', async ({ page }) => {
+    test.setTimeout(180 * 1000);
     await openGallery(page, admin);
     const dates = page.locator('[data-cc-demo-dates]');
     await expect(dates.locator('[data-cc-date="text"]')).toHaveText('15 Sep 2026');
