@@ -750,7 +750,12 @@ const str = (v: unknown, max = DECISION_MAX_TEXT): string | null =>
 
 /** `2026-09-23T11:00:00.000Z` — UTC, as `Date.prototype.toISOString()` writes it, and a real date. */
 function isIsoInstant(value: string): boolean {
-  return /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,3})?Z$/.test(value) && !Number.isNaN(Date.parse(value));
+  if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,3})?Z$/.test(value)) return false;
+  const parsed = Date.parse(value);
+  if (Number.isNaN(parsed)) return false;
+  // `Date.parse` rolls `2026-02-31` over into March instead of refusing it; the
+  // date and time the string names have to be the ones it parses to.
+  return new Date(parsed).toISOString().slice(0, 19) === value.slice(0, 19);
 }
 
 function readBinding(value: unknown): DecisionBinding | null {

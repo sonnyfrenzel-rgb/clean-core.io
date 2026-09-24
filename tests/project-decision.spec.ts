@@ -347,6 +347,28 @@ test.describe('8.4 — a condition without a status is a note', () => {
     record.conditions[0] = { ...record.conditions[0], statusBasis: 'attested', attestation: null };
     expect(normaliseProjectDecision(record).ok).toBe(false);
   });
+
+  test('an attestation dated on a day the calendar does not have is refused', () => {
+    const base = decisionFixture();
+    const target = base.conditions.find((c) => c.statusBasis === 'derived')!;
+    const d = decisionFixture({
+      attestations: [
+        { conditionId: target.id, status: 'waived', account: 'owner@example.com', at: '2026-09-23T11:00:00.000Z', note: 'For the pilot.' },
+      ],
+    });
+    const record = JSON.parse(JSON.stringify(d)) as ProjectDecision;
+    const own = record.conditions.find((c) => c.id === `account:${target.id}`)!;
+    expect(normaliseProjectDecision(record).ok).toBe(true);
+    // `Date.parse` accepts both and quietly moves them to another instant.
+    for (const at of ['2026-02-31T00:00:00Z', '2026-09-23T24:00:00.000Z']) {
+      own.attestation = { ...own.attestation!, at };
+      // Re-sealed, so the date is the only thing that can refuse it.
+      record.fingerprint = decisionFingerprint(record);
+      const read = normaliseProjectDecision(record);
+      expect(read.ok, at).toBe(false);
+      if (!read.ok) expect(read.error, at).not.toContain('fingerprint');
+    }
+  });
 });
 
 /* ================================================ the fingerprint, and status */
