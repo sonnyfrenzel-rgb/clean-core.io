@@ -384,7 +384,7 @@ export default function WorkspaceShell({
               </span>
             </div>
           ) : null}
-          {statusVisible && <WorkspaceStatusLine statuses={statuses} />}
+          {statusVisible && <WorkspaceStatusLine statuses={statuses} projectId={projectId} />}
         </div>
 
         <div className="mt-4">

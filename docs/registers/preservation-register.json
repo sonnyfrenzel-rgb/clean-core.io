@@ -251,21 +251,51 @@
       "subject": "testing",
       "statement": "No client path writes a verdict onto project.testCases[].status. POST /api/run-tests writes the verdicts it observed, with the Admin SDK, in the same write as testRunReceipt; the testing page only mirrors that answer into its own state.",
       "consequence": "Testing — and therefore Delivery — is reachable by running the suite, and green only behind the receipt: a row of owner-written Passed strings is 'done' and 'Self-reported', never proven. Before 2026-09-17 nothing stored the verdicts, so the honest path could not reach 'done' at all (QA 6c38e0c7c620).",
-      "evidence": "app/api/run-tests/route.ts sets { testCases, testRunReceipt } in one merge; hooks/useTestExecution.ts writes only generatedCode and testSuite to Firestore and mirrors the rest through setProject; hooks/useTestGeneration.ts writes testCases without a status field."
+      "evidence": "app/api/run-tests/route.ts sets { testCases, testRunReceipt } in one merge; hooks/useTestExecution.ts writes only generatedCode and testSuite to Firestore and mirrors the rest through setProject; hooks/useTestGeneration.ts writes testCases without a status field.",
+      "workspace": {
+        "kind": "inherited",
+        "where": [
+          {
+            "module": "lib/workspace-model.ts",
+            "evidence": "tests.filter((t) => t?.status === 'Simulated')"
+          }
+        ],
+        "note": "Execution reads the verdicts the server wrote; the workspace writes none."
+      }
     },
     {
       "id": "L-02",
       "subject": "delivery",
       "statement": "workflowSteps() Delivery counts only generated code, tests and documentation as gaps. A missing architect sign-off is not a gap.",
       "consequence": "The contract would report Delivery 'done' beside Design 'partial (Awaiting sign-off)' if every test passed. Only L-01 keeps that combination out of reach today.",
-      "evidence": "lib/workflow-steps.ts, the `gaps` array."
+      "evidence": "lib/workflow-steps.ts, the `gaps` array.",
+      "workspace": {
+        "kind": "inherited",
+        "where": [
+          {
+            "module": "lib/workspace-model.ts",
+            "evidence": "status: statusOfPhase(by.delivery)"
+          }
+        ],
+        "note": "Handover is the Delivery phase, gaps and all: a missing sign-off is not a handover gap there either — it shows as the Confirmed status beside it."
+      }
     },
     {
       "id": "L-03",
       "subject": "delivery",
       "statement": "businessDocumentation and testSuite go into the delivery ZIP but are not in stalenessTrackedArtefacts.",
       "consequence": "A bundle for the current source can contain a business SOP and a test suite written for the previous one, and nothing says so.",
-      "evidence": "app/(app)/project/[projectId]/delivery/page.tsx lines 352-384; lib/artefact-digest.ts TRACKED_ARTEFACTS."
+      "evidence": "app/(app)/project/[projectId]/delivery/page.tsx lines 352-384; lib/artefact-digest.ts TRACKED_ARTEFACTS.",
+      "workspace": {
+        "kind": "linked",
+        "where": [
+          {
+            "module": "components/workspace/ToolBar.tsx",
+            "evidence": "href={`/project/${projectId}/${tool.path}`}"
+          }
+        ],
+        "note": "The bundle is made only in the Delivery tool; the workspace downloads nothing."
+      }
     },
     {
       "id": "L-04",
@@ -287,35 +317,89 @@
       "subject": "analyze",
       "statement": "Analyze and Economics are the only stages that render no StaleNotice, although both can be PhaseState 'stale'.",
       "consequence": "On those two stages a stale state is visible in the stepper circle and nowhere in prose.",
-      "evidence": "StaleNotice is imported by design, transformation, documentation, testing and delivery only."
+      "evidence": "StaleNotice is imported by design, transformation, documentation, testing and delivery only.",
+      "workspace": {
+        "kind": "shown",
+        "where": [
+          {
+            "module": "lib/workspace-model.ts",
+            "evidence": "provenance: staleChip(by.analyze)"
+          },
+          {
+            "module": "lib/workspace-model.ts",
+            "evidence": "provenance: staleChip(by.tco)"
+          }
+        ],
+        "note": "The limit stands on the two stage pages; the workspace states it anyway — Provenance and Costs wear the Stale chip when their phase is stale."
+      }
     },
     {
       "id": "L-06",
       "subject": "design",
       "statement": "The design page auto-generates on load whenever an analysis exists and no solutionDesign does, without a user action and without a generationBlockers target of its own.",
       "consequence": "Opening stage 2 spends a model call. generationBlockers has no 'design' target, so the only thing that stops it is that a design already exists.",
-      "evidence": "app/(app)/project/[projectId]/design/page.tsx, the fetchProject effect; lib/workflow-steps.ts generationBlockers signature."
+      "evidence": "app/(app)/project/[projectId]/design/page.tsx, the fetchProject effect; lib/workflow-steps.ts generationBlockers signature.",
+      "workspace": {
+        "kind": "linked",
+        "where": [
+          {
+            "module": "components/workspace/ToolBar.tsx",
+            "evidence": "href={`/project/${projectId}/${tool.path}`}"
+          }
+        ],
+        "note": "The workspace generates nothing; opening the Design tool still generates by itself."
+      }
     },
     {
       "id": "L-07",
       "subject": "hydration",
       "statement": "The run document carries status: 'completed'; the hydrated project therefore always reads status 'completed', whatever the project document says.",
       "consequence": "Harmless only because lib/workflow-steps.ts refuses to read `status`. Any future reader of project.status on a hydrated project reads the run's value.",
-      "evidence": "app/api/runs/create/route.ts (run status 'completed', project status 'analyzed'); lib/project-loader.ts spread order."
+      "evidence": "app/api/runs/create/route.ts (run status 'completed', project status 'analyzed'); lib/project-loader.ts spread order.",
+      "workspace": {
+        "kind": "inherited",
+        "where": [
+          {
+            "module": "app/(app)/project/[projectId]/page.tsx",
+            "evidence": "await loadProjectAndHydrate(projectId)"
+          }
+        ],
+        "note": "The workspace loads through the same hydration and reads no project status, so the run's status cannot mislead it."
+      }
     },
     {
       "id": "L-09",
       "subject": "rules",
       "statement": "`presentation` is client-writable by firestore.rules and written by nothing.",
       "consequence": "An owner can put up to 1 MB of arbitrary text on their own project under a name the delivery page once used. Nothing reads it, so it is surface without a purpose rather than a leak.",
-      "evidence": "firestore.rules allowlist and isValidProject; no stage page, hook or route sets `presentation`."
+      "evidence": "firestore.rules allowlist and isValidProject; no stage page, hook or route sets `presentation`.",
+      "workspace": {
+        "kind": "inherited",
+        "where": [
+          {
+            "module": "lib/workspace-model.ts",
+            "evidence": "export function workspaceStatusLine"
+          }
+        ],
+        "note": "The workspace neither reads nor writes `presentation`."
+      }
     },
     {
       "id": "L-08",
       "subject": "economics",
       "statement": "Economics can never be PhaseState 'done' in this release, and workflowSummary().next skips it.",
       "consequence": "Deliberate (CR-23 / E12-F02): the model runs on assumed effort coefficients, not observed costs.",
-      "evidence": "lib/workflow-steps.ts, the `economics` phase and workflowSummary."
+      "evidence": "lib/workflow-steps.ts, the `economics` phase and workflowSummary.",
+      "workspace": {
+        "kind": "shown",
+        "where": [
+          {
+            "module": "lib/next-step.ts",
+            "evidence": "Economics stays a model estimate, which nothing in this release can complete."
+          }
+        ],
+        "note": "Costs never reaches done, and \"Nothing is open\" says why."
+      }
     }
   ],
   "stages": [
@@ -506,6 +590,33 @@
           }
         ],
         "notYetAnchored": []
+      },
+      "workspace": {
+        "kind": "shown",
+        "facet": "provenance",
+        "where": [
+          {
+            "module": "components/workspace/ToolBar.tsx",
+            "evidence": "href={`/project/${projectId}/${tool.path}`}"
+          },
+          {
+            "module": "components/workspace/StatusLine.tsx",
+            "evidence": "data-workspace-status-tool={phase.key}"
+          },
+          {
+            "module": "lib/workspace-model.ts",
+            "evidence": "label: 'Source fingerprint'"
+          },
+          {
+            "module": "lib/workspace-model.ts",
+            "evidence": "label: 'Clean Core score the estimate starts from'"
+          },
+          {
+            "module": "lib/workspace-model.ts",
+            "evidence": "value: `${nameOr(entry.accessType"
+          }
+        ],
+        "note": "The signed run as the Provenance status and the Evidence layer (run, fingerprint), inventory and data coupling in the Architecture layer, usage in the Need layer, the score in the Costs layer. The worklist, the extensibility route and the analysis report are read in the Analyze tool."
       }
     },
     {
@@ -698,6 +809,25 @@
             "why": "each requirement is behind its own label button and the reference case sets none of them"
           }
         ]
+      },
+      "workspace": {
+        "kind": "shown",
+        "facet": "confirmed",
+        "where": [
+          {
+            "module": "components/workspace/ToolBar.tsx",
+            "evidence": "href={`/project/${projectId}/${tool.path}`}"
+          },
+          {
+            "module": "components/workspace/StatusLine.tsx",
+            "evidence": "data-workspace-status-tool={phase.key}"
+          },
+          {
+            "module": "lib/workspace-model.ts",
+            "evidence": "const signedOff = project?.approvedByArchitect === true;"
+          }
+        ],
+        "note": "The design state and the sign-off as the Confirmed status. The solution design itself is read in the Design tool."
       }
     },
     {
@@ -817,6 +947,25 @@
           }
         ],
         "notYetAnchored": []
+      },
+      "workspace": {
+        "kind": "shown",
+        "facet": null,
+        "where": [
+          {
+            "module": "components/workspace/ToolBar.tsx",
+            "evidence": "href={`/project/${projectId}/${tool.path}`}"
+          },
+          {
+            "module": "components/workspace/StatusLine.tsx",
+            "evidence": "data-workspace-status-tool={phase.key}"
+          },
+          {
+            "module": "lib/workspace-model.ts",
+            "evidence": "evidenceOf(by.transformation)"
+          }
+        ],
+        "note": "No facet of its own: state, badge and detail in the \"Why?\" of Handover, with a link to the tool. The code is read in the Transformation tool."
       }
     },
     {
@@ -941,6 +1090,25 @@
           }
         ],
         "notYetAnchored": []
+      },
+      "workspace": {
+        "kind": "shown",
+        "facet": null,
+        "where": [
+          {
+            "module": "components/workspace/ToolBar.tsx",
+            "evidence": "href={`/project/${projectId}/${tool.path}`}"
+          },
+          {
+            "module": "components/workspace/StatusLine.tsx",
+            "evidence": "data-workspace-status-tool={phase.key}"
+          },
+          {
+            "module": "lib/workspace-model.ts",
+            "evidence": "evidenceOf(by.documentation)"
+          }
+        ],
+        "note": "No facet of its own: state, badge and detail in the \"Why?\" of Handover, with a link to the tool. The blueprint is read in the Documentation tool; what it becomes is roadmap 3.0.5."
       }
     },
     {
@@ -1123,6 +1291,25 @@
           }
         ],
         "notYetAnchored": []
+      },
+      "workspace": {
+        "kind": "shown",
+        "facet": "execution",
+        "where": [
+          {
+            "module": "components/workspace/ToolBar.tsx",
+            "evidence": "href={`/project/${projectId}/${tool.path}`}"
+          },
+          {
+            "module": "components/workspace/StatusLine.tsx",
+            "evidence": "data-workspace-status-tool={phase.key}"
+          },
+          {
+            "module": "lib/workspace-model.ts",
+            "evidence": "const mockOnly = tests.length > 0 && executed === 0 && simulated > 0;"
+          }
+        ],
+        "note": "The verdicts as the Execution status, mock only and failed as statuses of their own. The cases and the suite are read in the Testing tool."
       }
     },
     {
@@ -1205,6 +1392,25 @@
           }
         ],
         "notYetAnchored": []
+      },
+      "workspace": {
+        "kind": "shown",
+        "facet": "costs",
+        "where": [
+          {
+            "module": "components/workspace/ToolBar.tsx",
+            "evidence": "href={`/project/${projectId}/${tool.path}`}"
+          },
+          {
+            "module": "components/workspace/StatusLine.tsx",
+            "evidence": "data-workspace-status-tool={phase.key}"
+          },
+          {
+            "module": "lib/workspace-model.ts",
+            "evidence": "value: 'assumed effort coefficients, not observed costs'"
+          }
+        ],
+        "note": "The Costs status with the Simulation chip and the Costs layer; the model itself is run in the Economics tool."
       }
     },
     {
@@ -1370,6 +1576,25 @@
           }
         ],
         "notYetAnchored": []
+      },
+      "workspace": {
+        "kind": "shown",
+        "facet": "handover",
+        "where": [
+          {
+            "module": "components/workspace/ToolBar.tsx",
+            "evidence": "href={`/project/${projectId}/${tool.path}`}"
+          },
+          {
+            "module": "components/workspace/StatusLine.tsx",
+            "evidence": "data-workspace-status-tool={phase.key}"
+          },
+          {
+            "module": "lib/workspace-model.ts",
+            "evidence": "label: 'Audit pack exported'"
+          }
+        ],
+        "note": "The Handover status with every blocker in its detail, the audit-pack export date in the Evidence layer. The downloads and the audit pack are made in the Delivery tool."
       }
     }
   ],
@@ -1451,6 +1676,19 @@
         },
         "handoverBlockers": [],
         "staleNoticeOnOwnStage": false
+      },
+      "workspace": {
+        "kind": "shown",
+        "statusLine": {
+          "provenance": "done/proven",
+          "need": "not-started",
+          "standard": "not-started",
+          "costs": "partial/simulation",
+          "confirmed": "not-started",
+          "execution": "not-started",
+          "handover": "not-started"
+        },
+        "nextStep": "design"
       }
     },
     {
@@ -1522,6 +1760,19 @@
         },
         "handoverBlockers": [],
         "staleNoticeOnOwnStage": false
+      },
+      "workspace": {
+        "kind": "shown",
+        "statusLine": {
+          "provenance": "done/proven",
+          "need": "not-started",
+          "standard": "not-started",
+          "costs": "partial/simulation",
+          "confirmed": "partial",
+          "execution": "not-started",
+          "handover": "not-started"
+        },
+        "nextStep": "design"
       }
     },
     {
@@ -1601,6 +1852,19 @@
         },
         "handoverBlockers": [],
         "staleNoticeOnOwnStage": false
+      },
+      "workspace": {
+        "kind": "shown",
+        "statusLine": {
+          "provenance": "done/proven",
+          "need": "not-started",
+          "standard": "not-started",
+          "costs": "partial/simulation",
+          "confirmed": "draft/confirmed",
+          "execution": "not-started",
+          "handover": "partial"
+        },
+        "nextStep": "documentation"
       }
     },
     {
@@ -1693,6 +1957,19 @@
           "the generated code"
         ],
         "staleNoticeOnOwnStage": true
+      },
+      "workspace": {
+        "kind": "shown",
+        "statusLine": {
+          "provenance": "done/proven",
+          "need": "not-started",
+          "standard": "not-started",
+          "costs": "partial/simulation",
+          "confirmed": "draft/confirmed",
+          "execution": "not-started",
+          "handover": "partial/stale"
+        },
+        "nextStep": "transformation"
       }
     },
     {
@@ -1796,6 +2073,19 @@
         },
         "handoverBlockers": [],
         "staleNoticeOnOwnStage": false
+      },
+      "workspace": {
+        "kind": "shown",
+        "statusLine": {
+          "provenance": "done/proven",
+          "need": "not-started",
+          "standard": "not-started",
+          "costs": "partial/simulation",
+          "confirmed": "draft/confirmed",
+          "execution": "partial",
+          "handover": "partial"
+        },
+        "nextStep": "testing"
       }
     },
     {
@@ -1866,6 +2156,19 @@
         },
         "handoverBlockers": [],
         "staleNoticeOnOwnStage": false
+      },
+      "workspace": {
+        "kind": "shown",
+        "statusLine": {
+          "provenance": "done/proven",
+          "need": "not-started",
+          "standard": "not-started",
+          "costs": "partial/simulation",
+          "confirmed": "not-started",
+          "execution": "not-started",
+          "handover": "not-started"
+        },
+        "nextStep": "design"
       }
     },
     {
@@ -1971,7 +2274,155 @@
         ],
         "staleNoticeOnOwnStage": true,
         "handoverDownloadsDisabled": true
+      },
+      "workspace": {
+        "kind": "shown",
+        "statusLine": {
+          "provenance": "partial/stale",
+          "need": "not-started",
+          "standard": "not-started",
+          "costs": "partial/stale",
+          "confirmed": "partial/stale",
+          "execution": "partial/stale",
+          "handover": "partial/stale"
+        },
+        "nextStep": "analyze"
       }
     }
-  ]
+  ],
+  "workspace": {
+    "roadmapStep": "3.0.3",
+    "page": "app/(app)/project/[projectId]/page.tsx",
+    "shell": "components/workspace/WorkspaceShell.tsx",
+    "model": "lib/workspace-model.ts",
+    "guard": "tests/preservation-workspace.spec.ts",
+    "reachability": "Behind the admin-only switch (`workspaceShellEnabled`) until roadmap 3.0.1 opens it for every account. Until then everything recorded under `workspace` is true of the preview, and a community account still meets the seven stages alone — which is the reason the stages stay whole.",
+    "kinds": {
+      "shown": "the workspace itself states it — a status, a chip, a layer row, the \"Why?\" of a status or the Next step card",
+      "linked": "it lives on the stage page and the workspace opens that stage as a tool; the workspace neither repeats nor bypasses it",
+      "inherited": "the workspace reads the same contract or the same data, so the entry holds there unchanged",
+      "gap": "not met in the workspace; `note` says why and which roadmap step owns it"
+    },
+    "phaseFacets": {
+      "analyze": "provenance",
+      "design": "confirmed",
+      "transformation": null,
+      "documentation": null,
+      "testing": "execution",
+      "tco": "costs",
+      "delivery": "handover"
+    },
+    "unfacetedPhasesReadBy": "handover",
+    "expectations": {
+      "phaseStates": {
+        "kind": "shown",
+        "where": [
+          {
+            "module": "lib/workspace-model.ts",
+            "evidence": "export function statusOfPhase(step: RailStep)"
+          },
+          {
+            "module": "components/workspace/StatusLine.tsx",
+            "evidence": "data-status={entry.status}"
+          }
+        ],
+        "note": "The five phases with a facet as an object status: empty → not started, done → done or draft (done only when proven), partial → partial, mock only or failed, stale → partial with the Stale chip. Transformation and Documentation have no facet; their state is stated in the \"Why?\" of Handover."
+      },
+      "badges": {
+        "kind": "shown",
+        "where": [
+          {
+            "module": "components/workspace/StatusLine.tsx",
+            "evidence": "{phase.label} · {phase.badge}"
+          }
+        ],
+        "note": "In the \"Why?\" of the status that rests on the phase, in the phase contract's own words. The status line itself speaks the object-status vocabulary of DESIGN.md §4.1, not the badge."
+      },
+      "detailContains": {
+        "kind": "shown",
+        "where": [
+          {
+            "module": "components/workspace/StatusLine.tsx",
+            "evidence": "{phase.detail}"
+          },
+          {
+            "module": "components/workspace/NextStepCard.tsx",
+            "evidence": "{point.reason}"
+          }
+        ],
+        "note": "Every phase detail in a \"Why?\"; the detail of the next open phase also on the Next step card."
+      },
+      "generationBlockers": {
+        "kind": "linked",
+        "where": [
+          {
+            "module": "components/workspace/StatusLine.tsx",
+            "evidence": "data-workspace-status-tool={phase.key}"
+          },
+          {
+            "module": "components/workspace/NextStepCard.tsx",
+            "evidence": "Open {point.label}"
+          }
+        ],
+        "note": "Enforced on the stage page, and the workspace generates nothing, so nothing here can launder a stale state. Where a blocker stands, the Next step card points at the stage the blocker sends the reader to."
+      },
+      "handoverBlockers": {
+        "kind": "shown",
+        "where": [
+          {
+            "module": "lib/workspace-model.ts",
+            "evidence": "detail: by.delivery.detail"
+          },
+          {
+            "module": "lib/workflow-steps.ts",
+            "evidence": "Handover blocked — built for a previous source: ${blockers.join"
+          }
+        ],
+        "note": "The stale Delivery detail names every blocker, and it is the detail of Handover."
+      },
+      "staleNoticeOnOwnStage": {
+        "kind": "shown",
+        "where": [
+          {
+            "module": "lib/workspace-model.ts",
+            "evidence": "return step.state === 'stale' ? 'stale' : null;"
+          }
+        ],
+        "note": "The Stale chip beside the facet; for Transformation and Documentation the stale detail in the \"Why?\" of Handover. The StaleNotice itself stays on the stage page."
+      },
+      "handoverDownloadsDisabled": {
+        "kind": "linked",
+        "where": [
+          {
+            "module": "components/workspace/StatusLine.tsx",
+            "evidence": "data-workspace-status-tool={phase.key}"
+          }
+        ],
+        "note": "The handover downloads exist only on the Delivery page; the workspace offers none that could bypass the block."
+      }
+    },
+    "notAssessedHere": {
+      "L-04": "Roadmap 3.0.5 retires this limit on its own branch (the Documentation stage writes `documentation` from the engine), so 3.0.3 leaves the entry untouched. Today it lives only in the Documentation tool, which the workspace links."
+    },
+    "openGaps": [
+      {
+        "id": "WG-01",
+        "subject": "reachability",
+        "statement": "The workspace is behind the admin-only switch; a community account cannot open it.",
+        "step": "3.0.1"
+      },
+      {
+        "id": "WG-02",
+        "subject": "navigation",
+        "statement": "The way back from a stage leads to /dashboard, not to the workspace of the project with its view and layer (DESIGN.md §2.3, \"Back to workspace\"). Pointing it at the workspace before the switch is open would send a community account to a 404.",
+        "step": "3.0.1"
+      },
+      {
+        "id": "WG-03",
+        "subject": "phone",
+        "statement": "The \"Why?\" of a status is its own 24-px target; on breakpoint S value and anchor are to be one 44-px target (DESIGN.md §2.10).",
+        "step": "3.0.4"
+      }
+    ]
+  }
 }

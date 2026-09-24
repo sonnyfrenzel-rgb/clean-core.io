@@ -252,6 +252,34 @@ export interface WorkspaceStatus {
    * attribute, which is the ordinary case for "not started".
    */
   provenance: ProvenanceValue | null;
+  /**
+   * The phases whose evidence this status rests on, each in the phase
+   * contract's own words — what its "Why?" names and links to (roadmap 3.0.3).
+   *
+   * Seven phases and seven facets, but not one to one: *Need* and *Standard*
+   * read no phase, and *Handover* reads three — Delivery itself, and the
+   * Transformation and Documentation it hands over. Those two have no facet of
+   * their own (`DESIGN.md` §2.3 names seven, and neither is among them), so
+   * without this list their badge and detail — "Generated — not compiled or
+   * tested" — would exist on the stage pages and nowhere in the workspace, and
+   * the preservation register's reference cases for them would pass only
+   * through a tool link. Empty exactly when `from` is `null`.
+   */
+  restsOn: PhaseEvidence[];
+}
+
+/** One phase as a status's "Why?" states it — never re-derived, copied from `workflowSteps()`. */
+export interface PhaseEvidence {
+  key: PhaseKey;
+  label: string;
+  /** The route segment under `/project/{id}/` — the stage tool that holds the phase. */
+  path: string;
+  badge: string;
+  detail: string;
+}
+
+function evidenceOf(step: RailStep): PhaseEvidence {
+  return { key: step.key, label: step.label, path: step.path, badge: step.badge, detail: step.detail };
 }
 
 /**
@@ -305,6 +333,7 @@ export function workspaceStatusLine(project: Project | null): WorkspaceStatus[] 
     detail: by.analyze.detail,
     from: 'analyze',
     provenance: staleChip(by.analyze) ?? (by.analyze.proven ? 'proven' : null),
+    restsOn: [evidenceOf(by.analyze)],
   };
 
   // Need — "do I still need this?" (§5.6). Rule confirmation does not exist in
@@ -320,6 +349,7 @@ export function workspaceStatusLine(project: Project | null): WorkspaceStatus[] 
           detail: `Usage imported for ${usageCount} object${usageCount === 1 ? '' : 's'}. No business rule has been confirmed — rule confirmation comes with the process model.`,
           from: null,
           provenance: 'imported',
+          restsOn: [],
         }
       : {
           facet: 'need',
@@ -329,6 +359,7 @@ export function workspaceStatusLine(project: Project | null): WorkspaceStatus[] 
             'No business rule confirmed and no usage imported. Usage that was never imported is unknown, never “unused”.',
           from: null,
           provenance: null,
+          restsOn: [],
         };
 
   // Standard — a standard candidate is only worth showing with the evidence
@@ -342,6 +373,7 @@ export function workspaceStatusLine(project: Project | null): WorkspaceStatus[] 
     detail: 'No standard candidate carries an evidence level yet, so none is claimed here.',
     from: null,
     provenance: null,
+    restsOn: [],
   };
 
   const costs: WorkspaceStatus = {
@@ -351,6 +383,7 @@ export function workspaceStatusLine(project: Project | null): WorkspaceStatus[] 
     detail: by.tco.detail,
     from: 'tco',
     provenance: staleChip(by.tco) ?? (by.tco.state === 'partial' ? 'simulation' : null),
+    restsOn: [evidenceOf(by.tco)],
   };
 
   // Confirmed — the architecture sign-off. A self-declaration by the signed-in
@@ -365,6 +398,7 @@ export function workspaceStatusLine(project: Project | null): WorkspaceStatus[] 
     detail: by.design.detail,
     from: 'design',
     provenance: staleChip(by.design) ?? (signedOff ? 'confirmed' : null),
+    restsOn: [evidenceOf(by.design)],
   };
 
   // Execution — a test run. "mock only" is its own object status because a
@@ -389,6 +423,7 @@ export function workspaceStatusLine(project: Project | null): WorkspaceStatus[] 
     detail: by.testing.detail,
     from: 'testing',
     provenance: staleChip(by.testing) ?? (mockOnly ? 'demonstrated-mock' : by.testing.proven ? 'proven' : null),
+    restsOn: [evidenceOf(by.testing)],
   };
 
   const handover: WorkspaceStatus = {
@@ -398,6 +433,9 @@ export function workspaceStatusLine(project: Project | null): WorkspaceStatus[] 
     detail: by.delivery.detail,
     from: 'delivery',
     provenance: staleChip(by.delivery),
+    // Delivery first, because it is the status; then what it hands over and has
+    // no facet of its own (see `restsOn`).
+    restsOn: [evidenceOf(by.delivery), evidenceOf(by.transformation), evidenceOf(by.documentation)],
   };
 
   return [provenance, need, standard, costs, confirmed, execution, handover];

@@ -260,3 +260,32 @@ The reason and the four conditions for reopening are in `lib/locked-paths.ts` an
 5. If the change removes a limit in §6, delete the limit and its assertion in the
    same commit. A limit that is quietly fixed and quietly left in the register is
    the same failure as one that is quietly introduced.
+
+## 9. The register in the new workspace (roadmap 3.0.3)
+
+The seven stages stay as tools; the question the rebuild adds is where each
+entry of this register is met in the workspace (`/project/{id}`). The answer is
+in the JSON, not here: every stage, reference case and known limit carries a
+`workspace` field, and a top-level `workspace` block says how each kind of
+reference-case expectation is met and which gaps are still open.
+
+- **Four kinds.** `shown` — the workspace states it (a status, a chip, a layer
+  row, the "Why?" of a status, the Next step card). `linked` — it lives on the
+  stage page and the workspace opens that stage as a tool, without repeating or
+  bypassing it. `inherited` — the workspace reads the same contract or data.
+  `gap` — not met, with the roadmap step that owns it.
+- **Seven phases, seven facets, not one to one.** Transformation and
+  Documentation have no facet of their own (`DESIGN.md` §2.3); the "Why?" of
+  *Handover* states both, badge and detail, with a link to each tool. Every
+  reference case's badges and details can therefore be read in the workspace.
+- **Open gaps** (`workspace.openGaps`): WG-01 the workspace is behind the admin
+  switch (3.0.1); WG-02 the way back from a stage leads to the dashboard, not
+  to the workspace (3.0.1); WG-03 the "Why?" target on a phone (3.0.4). Each
+  is held by an assertion, so closing one has to update the register.
+- **L-04** is left to 3.0.5, which retires it (`workspace.notAssessedHere`).
+
+[`tests/preservation-workspace.spec.ts`](../tests/preservation-workspace.spec.ts)
+checks it: every cited piece of evidence is in the module named, every
+reference case run through `workspaceStatusLine`, `nextOpenPoint` and
+`workspaceTools` says what the case expects, and — against the emulator and a
+running server — every case opened in the workspace paints it.
