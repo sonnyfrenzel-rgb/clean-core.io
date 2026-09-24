@@ -1107,6 +1107,28 @@
       }
     },
     {
+      "path": "docs/MAIL-SEED-TEST.md",
+      "kind": "runbook",
+      "purpose": "Runbook Mail-Seed-Test (Roadmap 3.0.9): jede Produkt-Mail einmal an Seed-Postfaecher, Zustellung je Typ und Anbieter festhalten, bevor an DKIM, Absender oder Tracking gedreht wird",
+      "audience": "Sonny, Agenten",
+      "saysToday": "Stand 24.09.2026: dreizehn Mail-Typen (acht an Nutzer, fuenf an den Betreiber), Versand nur mit --send und Bestaetigung, Werkzeug scripts/mail-seed-test.ts.",
+      "wrongWith30": [],
+      "decision": "keep",
+      "reason": "Aktives Runbook eines Werkzeugs aus 3.0.9; beschreibt Mails, nicht die Oberflaeche, und bleibt mit 3.0 richtig.",
+      "effort": "none",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "referencedBy": [
+        "scripts/mail-seed-test.ts",
+        "tests/mail-seed-test.spec.ts"
+      ],
+      "measured": {
+        "lines": 118
+      }
+    },
+    {
       "path": "docs/OPERATIONS.md",
       "kind": "runbook",
       "purpose": "Betrieb und Monitoring (Cloud Run, Health, Backups, Rules)",
