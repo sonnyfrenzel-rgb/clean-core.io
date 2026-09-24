@@ -69,7 +69,7 @@ export default function CcSelect<T extends string>({
           value={value}
           disabled={disabled}
           required={control.required}
-          aria-required={control.required || undefined}
+          aria-required={control.ariaRequired}
           aria-invalid={control.invalid || undefined}
           aria-describedby={control.describedBy}
           data-cc-select=""

@@ -65,7 +65,7 @@ export default function CcTextarea({
           readOnly={readOnly}
           maxLength={maxLength}
           required={control.required}
-          aria-required={control.required || undefined}
+          aria-required={control.ariaRequired}
           aria-invalid={control.invalid || undefined}
           aria-describedby={control.describedBy}
           data-cc-textarea=""

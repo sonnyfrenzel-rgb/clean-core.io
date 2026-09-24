@@ -450,6 +450,7 @@ export default function DesignSystemGallery() {
                   id={control.id}
                   aria-describedby={control.describedBy}
                   required={control.required}
+                  aria-required={control.ariaRequired}
                   defaultValue="scmon_po_2026Q3.zip"
                   className={control.className}
                 />
@@ -467,6 +468,7 @@ export default function DesignSystemGallery() {
                   aria-describedby={control.describedBy}
                   aria-invalid={control.invalid}
                   required={control.required}
+                  aria-required={control.ariaRequired}
                   placeholder="YYYY-MM-DD"
                   className={control.className}
                 />
@@ -723,6 +725,7 @@ export default function DesignSystemGallery() {
               type="email"
               aria-describedby={control.describedBy}
               required={control.required}
+              aria-required={control.ariaRequired}
               value={invitee}
               onChange={(event) => setInvitee(event.target.value)}
               className={control.className}

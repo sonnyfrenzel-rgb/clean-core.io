@@ -56,6 +56,13 @@ export interface CcFieldProps {
     describedBy: string | undefined;
     invalid: boolean;
     required: boolean;
+    /**
+     * Put this on the control as `aria-required`. A native `required` says it
+     * too, but a custom control has no native attribute, and §2.7 asks for the
+     * asterisk *and* `aria-required` — so the contract hands out both, and a
+     * caller cannot pass one without the other (QA c07adecd2fb5, 14f0276e65ff).
+     */
+    ariaRequired: true | undefined;
     className: string;
   }) => React.ReactNode;
 }
@@ -90,6 +97,7 @@ export default function CcField({
         describedBy,
         invalid: valueState === 'error',
         required,
+        ariaRequired: required || undefined,
         className: cn(CONTROL_BASE, state ? state.borderStrong : 'border-cc-field-border'),
       })}
       <CcFieldMessage id={messageId} valueState={valueState} message={message} />
@@ -113,7 +121,7 @@ export const CC_CONTROL_HEIGHT: Record<CcDensity, string> = {
  */
 export function CcRequiredMark() {
   return (
-    <span className="ml-1 text-cc-error" aria-hidden={true}>
+    <span data-cc-required-mark="" className="ml-1 text-cc-error" aria-hidden={true}>
       *
     </span>
   );

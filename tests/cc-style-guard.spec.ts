@@ -361,6 +361,31 @@ test.describe('and paint themselves consistently', () => {
     await expect(opener).toBeFocused();
   });
 
+  test('every field with an asterisk says aria-required on its control (QA c07adecd2fb5, 14f0276e65ff)', async ({ page }) => {
+    test.setTimeout(180 * 1000);
+    await openGallery(page, admin);
+    // The dialog's field counts too, so open it.
+    await page.getByRole('button', { name: 'Open dialog' }).click();
+    await expect(page.getByRole('dialog', { name: 'Invite a reader' })).toBeVisible();
+
+    const fields = await page.locator('[data-cc-field]').evaluateAll((els) =>
+      els
+        .filter((el) => el.querySelector('label [data-cc-required-mark]'))
+        .map((el) => {
+          const control = el.querySelector('input, select, textarea, [role]:not(label)');
+          return {
+            label: (el.querySelector('label')?.textContent || '').trim(),
+            ariaRequired: control?.getAttribute('aria-required') ?? null,
+          };
+        }),
+    );
+    expect(fields.length, 'no required field on the gallery — the check would be vacuous').toBeGreaterThan(2);
+    expect(
+      fields.filter((f) => f.ariaRequired !== 'true').map((f) => f.label),
+      'an asterisk without aria-required on the control (DESIGN.md §2.7)',
+    ).toEqual([]);
+  });
+
   test('the message popover lists the checks and jumps to their element', async ({ page }) => {
     test.setTimeout(180 * 1000);
     await openGallery(page, admin);
