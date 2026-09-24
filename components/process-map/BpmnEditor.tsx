@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import 'bpmn-js/dist/assets/diagram-js.css';
+import { saveDraft } from './draft-save';
 import 'bpmn-js/dist/assets/bpmn-js.css';
 import 'bpmn-js/dist/assets/bpmn-font/css/bpmn-embedded.css';
 import './process-map.css';
@@ -335,6 +336,8 @@ export default function BpmnEditor({
   const [hintsOn, setHintsOn] = useState(true);
   const [saving, setSaving] = useState(false);
   const [name, setName] = useState('');
+  /** Incremented on every change to the draft — see `draft-save.ts`. */
+  const changeCountRef = useRef(0);
 
   /**
    * The selection is reported upward only for elements the reconstruction
@@ -392,9 +395,12 @@ export default function BpmnEditor({
       const publish = () => {
         const held = modelerRef.current;
         if (!held) return;
+        const ticket = ++changeCountRef.current;
         setDirty(commandStack.canUndo());
         void held.saveXML({ format: true }).then((result) => {
-          if (cancelled || !result.xml) return;
+          // A later change has already been serialised or is on its way; an
+          // earlier answer arriving after it must not overwrite it.
+          if (cancelled || !result.xml || ticket !== changeCountRef.current) return;
           setDraftXml(result.xml);
           draftChangeRef.current(result.xml);
         }).catch(() => {
@@ -637,9 +643,15 @@ export default function BpmnEditor({
     setSaving(true);
     try {
       const keep = save ?? NO_PLACE_TO_KEEP_IT;
-      const result = await keep({ xml: draftXml, baseXml, fileName });
+      const held = modelerRef.current;
+      const { result, clean } = await saveDraft({
+        serialise: async () => (held ? (await held.saveXML({ format: true })).xml : undefined),
+        fallbackXml: draftXml,
+        changes: () => changeCountRef.current,
+        keep: (xml) => keep({ xml, baseXml, fileName }),
+      });
       setSaved(result.message);
-      if (result.ok) setDirty(false);
+      if (clean) setDirty(false);
     } catch {
       setSaved('The model could not be kept. Your draft is still on the canvas.');
     } finally {
