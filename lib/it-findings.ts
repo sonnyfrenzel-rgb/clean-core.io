@@ -234,18 +234,25 @@ export function chainOf(row: ItFindingRow): ItChain {
     row.targetOptions.length > 0 ? listOf(row.targetOptions) : null,
   ].filter((part): part is string => part !== null);
 
+  // One link carries one chip. Where the successor is the whole answer it is
+  // *Imported*; as soon as a route the engine derived stands beside it, the
+  // value is partly derived and the chip is the weaker *Reconstructed* — the
+  // detail says which half is SAP's published data.
+  const successorOnly = row.successor !== null && row.targetOptions.length === 0;
   const target: ChainLink = targetParts.length > 0
     ? {
         id: 'target',
         label: CHAIN_LABELS.target,
         value: targetParts.join(' · '),
-        detail: TARGET_DRAFT_NOTE,
+        detail:
+          row.successor && !successorOnly
+            ? `The successor ${row.successor} is SAP's published data; the route beside it is derived from the code. ${TARGET_DRAFT_NOTE}`
+            : TARGET_DRAFT_NOTE,
         anchor: null,
         // The successor is SAP's published data and the route is derived from
-        // the code. Where the successor carries the answer the chip is
-        // *Imported*; a route alone is *Reconstructed*. Neither is a proposal by
-        // a model: nothing in this chain calls one.
-        provenance: row.successor ? 'imported' : 'reconstructed',
+        // the code. Neither is a proposal by a model: nothing in this chain
+        // calls one.
+        provenance: successorOnly ? 'imported' : 'reconstructed',
       }
     : {
         id: 'target',

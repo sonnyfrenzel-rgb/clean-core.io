@@ -133,6 +133,21 @@ test.describe('the chain belongs to a chosen finding', () => {
     }
   });
 
+  // QA review of 4b4586aff273: a successor and a derived route were joined into
+  // one value and the whole of it was marked *Imported*.
+  test('a target link is Imported only when SAP\'s successor is the whole of it', () => {
+    const target = (over: Partial<ItFindingRow>) => chainOf(row(over)).links.find((l) => l.id === 'target')!;
+
+    const both = target({ successor: 'API_SALES_ORDER_SRV', targetOptions: ['Developer Extensibility / RAP'] });
+    expect(both.value).toContain('API_SALES_ORDER_SRV');
+    expect(both.value).toContain('Developer Extensibility / RAP');
+    expect(both.provenance, 'an engine-derived route was labelled as imported').toBe('reconstructed');
+    expect(both.detail).toContain('published data');
+
+    expect(target({ successor: 'API_SALES_ORDER_SRV', targetOptions: [] }).provenance).toBe('imported');
+    expect(target({ successor: null, targetOptions: ['Developer Extensibility / RAP'] }).provenance).toBe('reconstructed');
+  });
+
   test('the coverage says how many findings the chain is complete for, and names each stop', () => {
     const view = itFindingsView(
       source([
