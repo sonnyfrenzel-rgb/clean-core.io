@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { logger, errMessage } from '@/lib/logger';
 import { verifyRequestAuth, getAdminDb, assertMfaSatisfied } from '@/lib/firebase-admin';
 import { mayReadProject } from '@/lib/project-readers';
+import { assertRateLimit } from '@/lib/rate-limit';
 import { findingsOf } from '@/lib/it-findings-build';
 
 /**
@@ -62,6 +63,14 @@ export async function GET(
         { error: q?.message || 'Multi-factor authentication required.' },
         { status: q?.status || 403 },
       );
+    }
+    // Every read runs the catalog-backed engine over up to MAX_SOURCE_BYTES of
+    // source: a budget of its own, as the decision read has.
+    try {
+      await assertRateLimit(`findings-read:${decodedToken.uid}`, 240, 60 * 60 * 1000);
+    } catch (rateErr: unknown) {
+      const q = rateErr as { message?: string; status?: number };
+      return NextResponse.json({ error: q?.message || 'Too many requests.' }, { status: q?.status || 429 });
     }
 
     const { projectId } = await params;
