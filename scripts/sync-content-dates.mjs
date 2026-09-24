@@ -44,14 +44,20 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const ROUTE_SOURCES = {
   '/': [
     'app/page.tsx',
-    'components/BenefitCard.tsx',
     'components/TransformationShowroom.tsx',
     'components/LandingProcess.tsx',
     'lib/how-to-content.ts',
     'lib/reference-analysis.ts',
     'lib/facts.ts',
     'lib/abap/catalog-service.ts',
-    'lib/abap/support-matrix.ts',
+    'lib/trust-claims.ts',
+    'lib/starter-examples.ts',
+    'lib/provenance.ts',
+    'lib/clean-core-level.ts',
+    'lib/abap/public-cloud-fit.ts',
+    'lib/landing-shots.ts',
+    'lib/abap/abcd-classification.ts',
+    'lib/abap/catalog-index.ts',
   ],
   '/clean-core-explained': [
     'app/(app)/clean-core-explained/page.tsx',

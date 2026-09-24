@@ -6,27 +6,14 @@ test.describe('Stage 1 & 2: Analysis & Solution Design E2E Tests', () => {
     await page.goto('/');
   });
 
-  test('should verify landing page features and visual compliance checkpoints', async ({ page }) => {
+  test('the landing page links every feature page', async ({ page }) => {
+    // The six feature cards went with the 3.0 landing page (roadmap 3.0.6); the
+    // feature pages did not — they have search reach and the page links into
+    // them from the sections that describe each feature.
     await page.goto('/');
-    
-    // 1. Verify that all 6 main feature cards are present using stable data-testid selectors
-    const extensibilityCard = page.getByTestId('feature-extensibility-routing');
-    await expect(extensibilityCard).toBeVisible();
-
-    const apiHubCard = page.getByTestId('feature-sap-api-hub-mapping');
-    await expect(apiHubCard).toBeVisible();
-
-    const dualEngineCard = page.getByTestId('feature-dual-rap-cap-engine');
-    await expect(dualEngineCard).toBeVisible();
-
-    const valueAuditCard = page.getByTestId('feature-business-value-audit-tco');
-    await expect(valueAuditCard).toBeVisible();
-
-    const adtCockpitCard = page.getByTestId('feature-adt-cockpit-simulation');
-    await expect(adtCockpitCard).toBeVisible();
-
-    const bpmnCard = page.getByTestId('feature-bpmn-2-0-business-sop');
-    await expect(bpmnCard).toBeVisible();
+    for (const slug of ['extensibility-routing', 'cloudification-catalog', 'rap-cap-engine', 'modernization-assessment', 'audit-evidence', 'process-blueprints']) {
+      await expect(page.locator(`main a[href="/features/${slug}"]`).first(), `/features/${slug}`).toBeVisible();
+    }
   });
 
   test('should verify the global glossary overlays toggle behavior', async ({ page }) => {

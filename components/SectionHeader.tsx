@@ -14,6 +14,11 @@ import React from 'react';
  * `tests/landing-style-guard.spec.ts`, which reads the rendered page and compares
  * every section heading's computed style against the first one.
  *
+ * With 3.0 (roadmap 3.0.6, `DESIGN.md` §1.7) the weights follow the product's
+ * scale — nothing above 800 — and the colours are the `--cc-*` tokens: the
+ * eyebrow is 12px/700 on the brand surface, the heading 800 in `--cc-ink`, the
+ * lead 500 in `--cc-ink-muted`. Pill, size step and lead width stay.
+ *
  * Three knobs, because the page genuinely has three cases and no more:
  * `align` for the one section that reads left, `tone` for the dark footer, and
  * `titleId` where something needs to label itself for assistive technology.
@@ -38,14 +43,14 @@ export default function SectionHeader({
   const centered = align === 'center';
 
   return (
-    <div className={`mb-16 ${centered ? 'text-center' : 'text-center md:text-left'}`}>
+    <div className={`mb-12 md:mb-14 ${centered ? 'text-center' : 'text-center md:text-left'}`}>
       {eyebrow && (
         <span
           data-section-eyebrow
-          className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider mb-4 border ${
+          className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-[0.08em] mb-4 border ${
             tone === 'dark'
               ? 'text-emerald-300 bg-emerald-950/60 border-emerald-800/60'
-              : 'text-emerald-700 bg-emerald-50 border-emerald-100'
+              : 'text-cc-brand-strong bg-cc-brand-surface border-green-200'
           }`}
         >
           {eyebrow}
@@ -58,8 +63,8 @@ export default function SectionHeader({
       <h2
         id={titleId}
         data-section-heading
-        className={`text-3xl sm:text-4xl md:text-6xl font-black mb-6 tracking-tighter text-balance ${
-          tone === 'dark' ? 'text-white' : 'text-gray-950'
+        className={`text-3xl sm:text-4xl md:text-5xl font-extrabold mb-5 tracking-[-0.03em] leading-[1.1] text-balance ${
+          tone === 'dark' ? 'text-white' : 'text-cc-ink'
         }`}
       >
         {title}
@@ -67,9 +72,9 @@ export default function SectionHeader({
 
       {children && (
         <p
-          className={`text-base sm:text-lg md:text-xl font-light max-w-3xl ${
+          className={`text-base sm:text-lg md:text-[19px] leading-relaxed font-medium max-w-3xl text-pretty ${
             centered ? 'mx-auto' : ''
-          } ${tone === 'dark' ? 'text-gray-400' : 'text-gray-700'}`}
+          } ${tone === 'dark' ? 'text-gray-300' : 'text-cc-ink-muted'}`}
         >
           {children}
         </p>

@@ -73,7 +73,8 @@ test.describe('the landing page shows the phases the product has', () => {
   test('the process section advertises nothing the product does not do', async ({ page }) => {
     test.setTimeout(240_000);
     await page.goto('/', { waitUntil: 'domcontentloaded', timeout: 200_000 });
-    const section = await page.locator('#process').innerText();
+    // Since 3.0.6 the seven stages sit in the showroom section; #process is the BPMN section.
+    const section = await page.locator('#showroom').innerText();
 
     for (const claim of RETIRED_CLAIMS) {
       expect(section.toLowerCase(), `"${claim}" is back on the landing page`).not.toContain(claim.toLowerCase());

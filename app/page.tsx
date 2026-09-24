@@ -1,504 +1,1121 @@
 import type { Metadata } from 'next';
 import { withTwitterCard } from '@/lib/page-metadata';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Suspense } from 'react';
-import { 
-  RotateCw, 
-  Users, 
-  Layers, 
-  Globe, 
-  Cpu, 
-  Activity, 
-  ShieldCheck, 
-  Shield, 
-  Check, 
+import {
   ArrowRight,
-  Sparkles
+  Archive,
+  Check,
+  CircleHelp,
+  Code2,
+  Eye,
+  EyeOff,
+  FileCheck,
+  FileCode,
+  Hammer,
+  Key,
+  Layers,
+  Lock,
+  MapPin,
+  Search,
+  Server,
+  ShieldCheck,
+  Trash2,
+  Users,
+  BookOpen,
+  BarChart3,
+  Briefcase,
+  Menu,
+  CircleSlash,
+  RotateCw,
 } from 'lucide-react';
-import PilotWarningBanner from '@/components/PilotWarningBanner';
 import HeaderAuthButton from '@/components/HeaderAuthButton';
-import HeroCTA from '@/components/HeroCTA';
-import PricingCTA from '@/components/PricingCTA';
-import FooterCTA from '@/components/FooterCTA';
 import SapTrademarkNotice from '@/components/SapTrademarkNotice';
 import LandingModals from '@/components/LandingModals';
 import LandingProcess from '@/components/LandingProcess';
-import QuickAnswer from '@/components/QuickAnswer';
 import SectionHeader from '@/components/SectionHeader';
 import SiteFooter from '@/components/SiteFooter';
 import TransformationShowroom from '@/components/TransformationShowroom';
 import TransformationReplay from '@/components/TransformationReplay';
 import SamplePackageDownload from '@/components/SamplePackageDownload';
+import AuthLink from '@/components/landing/AuthLink';
+import ViewsStage, { type StageView } from '@/components/landing/ViewsStage';
+import { publicButton } from '@/components/landing/public-button';
 import { APP_VERSION, APP_RELEASE_DATE, APP_RELEASE_DATE_ISO } from '@/lib/version';
 import { getFacts, formatObjectCount } from '@/lib/facts';
-import { SUPPORT_MATRIX } from '@/lib/abap/support-matrix';
-import { PHASES } from '@/lib/workflow-steps';
-import BenefitCard from '@/components/BenefitCard';
 import { getReferenceAnalysis } from '@/lib/reference-analysis';
+import { gradeSapObject } from '@/lib/abap/catalog-service';
+import { getAllCatalogObjectNames, objectToSlug } from '@/lib/abap/catalog-index';
+import { CLEAN_CORE_LEVEL } from '@/lib/clean-core-level';
+import { PROVENANCE, type ProvenanceValue } from '@/lib/provenance';
+import { PUBLIC_CLOUD_FIT_BUCKETS, PUBLIC_CLOUD_FIT_BUCKET_LABELS, PUBLIC_CLOUD_FIT_BUCKET_MEANINGS } from '@/lib/abap/public-cloud-fit';
+import { STARTER_EXAMPLES } from '@/lib/starter-examples';
+import { TRUST_CLAIMS, TRUST_PLEDGE, SECURITY_MODEL_URL, type TrustClaim } from '@/lib/trust-claims';
+import { DEMO_OBJECT_NAME, DEMO_ROUTE } from '@/lib/demo-marks';
+import { landingShotSrc } from '@/lib/landing-shots';
+import { landingShotSize } from '@/lib/landing-shot-size';
+import type { CloudReadinessGrade } from '@/lib/abap/abcd-classification';
+
+/**
+ * The public start page — roadmap 3.0.6, built along
+ * `docs/roadmap/clean-core-landing-v3_0.html` (accepted 15.09.2026) and
+ * `DESIGN.md`.
+ *
+ * Three rules hold the page together:
+ *
+ *   - **Every product view is the real workspace.** The pictures are captures of
+ *     the demo project `Z_MM_PO_APPROVAL` (`lib/landing-shots.ts`, taken by
+ *     `tests/capture-screens.spec.ts` with `CAPTURE_LANDING=1`), never a drawing.
+ *   - **Every figure and every claim is read, not typed.** Object counts from
+ *     `lib/facts.ts`, the reference run from `lib/reference-analysis.ts`, levels
+ *     from the catalog at render time, provenance words from `lib/provenance.ts`,
+ *     the four buckets from `lib/abap/public-cloud-fit.ts`, the trust lines from
+ *     `lib/trust-claims.ts` — each of those has its own guard.
+ *   - **One header.** Every section title comes from `SectionHeader`
+ *     (`tests/landing-style-guard.spec.ts`).
+ *
+ * The pilot banner is gone: "Powered by Generative AI" is the kind of line
+ * `DESIGN.md` §3.1 forbids. Whether the transformation showroom stays here or
+ * moves to /how-it-works is an open decision; until it is made the showroom
+ * keeps its place and its structure (section `#showroom`).
+ */
+export const revalidate = 300;
 
 export const metadata: Metadata = withTwitterCard({
-  title: 'SAP Clean Core Accelerator — Free ABAP Analysis | Clean-Core.io',
-  description: 'Free SAP Clean Core tool: analyze custom ABAP, get a Clean Core Score, and generate the first Clean-Core-compliant RAP/CAP draft for review — with verifiable abapGit exports and ABAP-Unit tests. Community-built, complementary to SAP ADT/ATC.',
+  title: 'SAP Clean Core Accelerator — Free ABAP Code Analysis | Clean-Core.io',
+  description:
+    'Free community tool for SAP custom code: a deterministic ABAP static code analysis, the business process reconstructed from the code with a line anchor on every element, SAP clean core levels A–D from the Cloudification Repository, and a signed run for every completed analysis.',
   alternates: {
     canonical: 'https://clean-core.io',
   },
   openGraph: {
-    title: 'The SAP Architect\'s Clean Core Accelerator | Clean-Core.io',
-    description: 'Free community tool that generates the first Clean-Core-compliant draft for review. Transforms legacy ABAP into RAP or CAP architectures with verifiable abapGit exports and ABAP-Unit tests.',
+    title: 'SAP Clean Core Accelerator | Clean-Core.io',
+    description:
+      'Understand a piece of custom ABAP and decide what happens to it. Every statement is tied to a line of your code; what could not be determined is said, not guessed. Free for the SAP community.',
     url: 'https://clean-core.io',
     type: 'website',
     siteName: 'Clean-Core.io',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'The SAP Architect\'s Clean Core Accelerator | Clean-Core.io',
-    description: 'Free community tool that generates the first Clean-Core-compliant draft for review. Transforms legacy ABAP into RAP or CAP architectures with verifiable abapGit exports and ABAP-Unit tests.',
-  }
+    title: 'SAP Clean Core Accelerator | Clean-Core.io',
+    description:
+      'Understand a piece of custom ABAP and decide what happens to it. Every statement is tied to a line of your code; what could not be determined is said, not guessed. Free for the SAP community.',
+  },
 });
+
+/** The navigation to the pages with search reach — header and phone menu read the same list. */
+const NAV: Array<{ href: string; label: string }> = [
+  { href: '/clean-core-explained', label: 'Clean Core Explained' },
+  { href: '/how-it-works', label: 'How It Works' },
+  { href: '/sap-clean-core-object-classification', label: 'Classification A–D' },
+  { href: '/catalog', label: 'SAP Object Catalog' },
+  { href: '/knowledge', label: 'Knowledge Base' },
+];
+
+/**
+ * Real SAP objects for each level, graded at render time. An example is shown
+ * under a level only while the catalog still puts it there — a list typed next
+ * to the ladder would drift the first time SAP reclassifies an object.
+ */
+const LEVEL_EXAMPLES: Array<{ name: string; note: string }> = [
+  { name: 'I_PRODUCT', note: 'Released CDS view.' },
+  { name: 'BAPI_PO_CREATE1', note: 'Classic BAPI SAP still recommends for classic ABAP.' },
+  { name: 'REUSE_ALV_GRID_DISPLAY', note: 'An SAP object neither repository file lists — internal by default.' },
+  { name: 'VBAK', note: 'Sales document table, not to be released; SAP names a successor.' },
+];
+
+/** Objects with a catalog page the lookup offers as a first click. */
+const CATALOG_EXAMPLES = ['VBAK', 'BSEG', 'KNA1', 'CDHDR', 'DD07T'];
+
+/** The icon a trust line carries — `lib/trust-claims.ts` keeps icons out of the claim. */
+const TRUST_ICON: Record<TrustClaim['icon'], React.ReactNode> = {
+  residency: <MapPin size={18} aria-hidden="true" />,
+  access: <Lock size={18} aria-hidden="true" />,
+  proxy: <Server size={18} aria-hidden="true" />,
+  seal: <FileCheck size={18} aria-hidden="true" />,
+  tracking: <EyeOff size={18} aria-hidden="true" />,
+  erasure: <Trash2 size={18} aria-hidden="true" />,
+  training: <Key size={18} aria-hidden="true" />,
+  security: <BookOpen size={18} aria-hidden="true" />,
+  free: <Users size={18} aria-hidden="true" />,
+};
+
+const BUCKET_ICON: Record<string, React.ReactNode> = {
+  retire: <Archive size={18} aria-hidden="true" />,
+  'no-catalogued-path': <CircleSlash size={18} aria-hidden="true" />,
+  rebuild: <Hammer size={18} aria-hidden="true" />,
+  keep: <Check size={18} aria-hidden="true" />,
+};
+
+/** When an object lands in a bucket — `DESIGN.md` §5.6, as `lib/abap/public-cloud-fit.ts` checks it. */
+const BUCKET_RULE: Record<string, string> = {
+  retire:
+    'The rule it serves is confirmed “Drop”, or a usage import shows no executions over at least 13 months — then it is a candidate, an open check, not a verdict.',
+  'no-catalogued-path':
+    'Needed, below the target platform’s bar, and SAP’s Cloudification Repository names no released API and no successor for it.',
+  rebuild:
+    'Needed, below the bar, and a successor or an extension path is named — and every modification or own write to an SAP table.',
+  keep: 'Needed and permitted on the target platform: Public Edition level A only, Private Edition level A or B.',
+};
+
+const PROVENANCE_GROUPS: Array<{ form: string; meaning: string; values: ProvenanceValue[] }> = [
+  { form: 'Filled', meaning: 'settled', values: ['proven', 'confirmed', 'stale'] },
+  { form: 'Outline', meaning: 'derived or imported', values: ['reconstructed', 'imported', 'not-determined'] },
+  { form: 'Dashed', meaning: 'provisional', values: ['proposed', 'simulation', 'demonstrated-mock'] },
+];
+
+const PROVENANCE_CHIP: Record<string, string> = {
+  filled: 'border',
+  outline: 'border bg-white',
+  dashed: 'border border-dashed bg-white',
+};
+const STATE_CHIP: Record<string, string> = {
+  success: 'text-cc-success bg-cc-success-bg border-cc-success-border',
+  information: 'text-cc-information bg-cc-information-bg border-cc-information-border',
+  warning: 'text-cc-warning bg-cc-warning-bg border-cc-warning-line',
+  neutral: 'text-cc-neutral bg-cc-neutral-bg border-cc-neutral',
+  error: 'text-cc-error bg-cc-error-bg border-cc-error-border',
+};
+const LEVEL_CHIP: Record<CloudReadinessGrade, string> = {
+  A: 'bg-cc-information-bg border-cc-information-border text-cc-information',
+  B: 'bg-gray-100 border-gray-300 text-gray-700',
+  C: 'bg-cc-warning-bg border-cc-warning-border text-cc-warning',
+  D: 'bg-cc-error-bg border-cc-error-border text-cc-error',
+  Unknown: 'bg-cc-neutral-bg border-cc-neutral-border text-cc-neutral',
+};
+
+function LevelChip({ grade }: { grade: CloudReadinessGrade }) {
+  return (
+    <span
+      className={`inline-flex h-6 min-w-[26px] items-center justify-center rounded border px-1.5 text-[13px] font-semibold ${LEVEL_CHIP[grade]}`}
+      aria-label={`Level ${CLEAN_CORE_LEVEL[grade].code}`}
+    >
+      {CLEAN_CORE_LEVEL[grade].code}
+    </span>
+  );
+}
+
+function ProvenanceWord({ value }: { value: ProvenanceValue }) {
+  const p = PROVENANCE[value];
+  return (
+    <span
+      className={`inline-flex items-center rounded-full px-2.5 py-px text-xs font-semibold leading-[18px] whitespace-nowrap ${PROVENANCE_CHIP[p.form]} ${STATE_CHIP[p.state]}`}
+      data-provenance={value}
+    >
+      {p.label}
+    </span>
+  );
+}
+
+function Anchor({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="inline-flex min-h-6 items-center rounded border border-cc-line bg-gray-100 px-1.5 font-cc-mono text-xs font-semibold text-gray-800">
+      {children}
+    </span>
+  );
+}
+
+function TextLink({ href, children }: { href: string; children: React.ReactNode }) {
+  const external = href.startsWith('http');
+  const cls =
+    'inline-flex items-center gap-1 font-semibold text-cc-brand-strong underline decoration-green-300 underline-offset-4 hover:decoration-cc-brand-strong';
+  return external ? (
+    <a href={href} className={cls} rel="noopener noreferrer" target="_blank">
+      {children}
+    </a>
+  ) : (
+    <Link href={href} className={cls}>
+      {children}
+    </Link>
+  );
+}
+
+/** A product picture in a window frame. The picture is always a capture, never a drawing. */
+function Shot({ shot, alt, caption, priority = false }: { shot: Parameters<typeof landingShotSrc>[0]; alt: string; caption?: string; priority?: boolean }) {
+  const size = landingShotSize(shot);
+  return (
+    <figure className="m-0">
+      {caption && <figcaption className="mb-3 text-center text-sm font-medium text-cc-ink-muted">{caption}</figcaption>}
+      <div className="overflow-hidden rounded-[20px] border border-gray-300 bg-white shadow-[0_24px_64px_rgb(11_28_48/0.10)]">
+        <Image
+          src={landingShotSrc(shot)}
+          alt={alt}
+          width={size.width}
+          height={size.height}
+          priority={priority}
+          sizes="(min-width: 1280px) 1200px, 100vw"
+          className="h-auto w-full"
+        />
+      </div>
+    </figure>
+  );
+}
+
+const CARD = 'min-w-0 rounded-3xl border border-cc-line bg-cc-surface p-5 sm:p-8';
 
 export default function Home() {
   const facts = getFacts();
-
-  /**
-   * The SAP-versus-Clean-Core.io comparison, defined once.
-   *
-   * It used to be two copies of the same array in the JSX below — one for the
-   * stacked cards under `md`, one for the desktop rows — and they had drifted in
-   * three places: the same cell was labelled "Not Supported" in one and "Not
-   * Available" in the other, one row was titled "Sandbox Verification (BYOT)" and
-   * the other "Sandbox Verification", and the object count said `23,000+` in both
-   * while the trust badge directly above it rendered the live figure from the
-   * catalog. On a page whose whole argument is "verifiable, not asserted", that
-   * last one is the most expensive place on the site to carry a stale number.
-   *
-   * So the count is interpolated from the same `facts` the trust badge uses, and
-   * `level` is the single source for how a cell reads. Both renderers derive
-   * their styling from it rather than comparing badge strings, which is what let
-   * the labels drift apart in the first place.
-   *
-   * Roadmap 0.2 (`UX-E14-F01:R0`): the `23,000+` fallback that used to sit here
-   * is gone rather than merely hidden from the markup — `lib/facts.ts` is now the
-   * only source for this figure, and a number nobody can trace to it is exactly
-   * the failure mode Phase 0 exists to close.
-   */
   const catalogObjects = formatObjectCount(facts);
+  const reference = getReferenceAnalysis();
+  const withPage = new Set(getAllCatalogObjectNames());
+  const referenceExample = STARTER_EXAMPLES.find((e) => e.name === reference.fileName.replace(/(_\d+LOC)?\.abap$/i, '')) ?? STARTER_EXAMPLES[STARTER_EXAMPLES.length - 1];
+  const demoExample = STARTER_EXAMPLES.find((e) => e.name === DEMO_OBJECT_NAME);
+  const lines = (n: number) => n.toLocaleString('en-US');
 
-  const comparisonRows: Array<{
-    title: string;
-    sap: { badge: string; level: 'partial' | 'weak' | 'none'; desc: string };
-    cc: { badge: string; desc: string };
-  }> = [
+  const ladder = (['A', 'B', 'C', 'D'] as const).map((level) => ({
+    level,
+    label: CLEAN_CORE_LEVEL[level].label,
+    examples: LEVEL_EXAMPLES.filter((e) => gradeSapObject(e.name).grade === level),
+  }));
+
+  const catalogExamples = CATALOG_EXAMPLES.filter((n) => withPage.has(n)).map((name) => ({
+    name,
+    grade: gradeSapObject(name),
+    successor: reference.rollCall.find((o) => o.name === name && o.fromSapData)?.successor ?? null,
+  }));
+
+  const views: StageView[] = [
     {
-      title: "Clean Core Violation Scanning",
-      sap: { badge: "Static Check", level: "partial", desc: "Identifies unreleased APIs & direct database reads." },
-      cc: { badge: "Automated", desc: "Calculates Local Compliance score & prioritizes packages." }
+      key: 'business',
+      label: 'Business',
+      question: 'Do I still need this, and what changes for me?',
+      src: landingShotSrc('business'),
+      alt: `Business view of the demo project ${DEMO_OBJECT_NAME}: the process, its rules hard-coded in the program with their line anchors, and what could not be determined.`,
+      ...landingShotSize('business'),
     },
     {
-      title: "Developer HUD & Feedback",
-      sap: { badge: "Static Logs", level: "weak", desc: "Requires manually parsing warning lists or waiting for PDF consulting reports." },
-      cc: { badge: "Interactive", desc: "Visualizes compliance scores, code-minimap heatmaps, and developer checklists in real-time." }
+      key: 'it',
+      label: 'IT',
+      question: 'What exactly, where to, and is it right?',
+      src: landingShotSrc('it'),
+      alt: `IT view of the demo project ${DEMO_OBJECT_NAME}: findings, the chain from requirement to anchor, finding and target draft, and the clean core levels across the findings.`,
+      ...landingShotSize('it'),
     },
     {
-      title: "SAP Object Successor Mapping",
-      sap: { badge: "ATC Flags Only", level: "partial", desc: "SAP ATC flags unreleased API usage but doesn't resolve to successors." },
-      cc: { badge: "Resolved + Synced", desc: `Maps against SAP's official Cloudification Repository (${catalogObjects}) with curated field-level precision. Auto-synced weekly.` }
+      key: 'management',
+      label: 'Management',
+      question: 'What do I risk, what do I decide?',
+      src: landingShotSrc('management'),
+      alt: `Management view of the demo project ${DEMO_OBJECT_NAME}: what is backed by evidence, what stands in the way of a decision, and the four buckets.`,
+      ...landingShotSize('management'),
     },
-    {
-      title: "Code Refactoring (Remediation)",
-      sap: { badge: "Manual Only", level: "weak", desc: "Developers must rewrite legacy code from scratch." },
-      cc: { badge: "Refactored", desc: "Converts legacy statements into BTP CAP Node.js/RAP syntax." }
-    },
-    // These two rows read "✕ Not Available" until 31 August 2026, and both were
-    // wrong in a way an SAP architect spots in under a minute. SAP ships ABAP Unit
-    // and the CDS Test Double Framework, and it ships Signavio and Cloud ALM for
-    // process modelling. A page whose argument is "verifiable, not asserted" cannot
-    // be the one place that is verifiably wrong about a competitor. `~` is also the
-    // stronger claim: it names what the tool actually adds instead of inventing a gap.
-    // The same rule cuts the other way: the last row no longer says the BPMN output
-    // is handed to Signavio, because that import was never tested (roadmap step 0.2;
-    // the round trip is proven in step 4.3).
-    {
-      title: "Sandbox Verification (BYOT)",
-      sap: { badge: "Frameworks Only", level: "partial", desc: "ABAP Unit and the CDS Test Double Framework are on board; the test environment is assembled by hand." },
-      // Not "Validated", not "runs test suites against your S/4HANA sandbox": running
-      // tests against a tenant is locked (lib/locked-paths.ts, G0:R0). What ships is
-      // the sandbox run and a read-only connection check.
-      cc: { badge: "Sandbox + Connection Check", desc: "Runs the generated tests against mocks in a restricted Node.js process and checks your S/4HANA sandbox connection read-only. Running tests against the tenant itself is locked until the isolated live runner has passed its external review." }
-    },
-    {
-      title: "Business Process Blueprinting",
-      sap: { badge: "Separate Licence", level: "partial", desc: "Not in the ATC/ADT core scope — covered by SAP Signavio and SAP Cloud ALM under their own licences." },
-      cc: { badge: "Visualized", desc: "Generates BPMN 2.0 XML flows directly from the code analysis; import into SAP Signavio has not been verified yet." }
-    }
   ];
 
-  // Both figures are computed from what actually ships, not typed into the copy:
-  // the object count from the generated catalog artifact, the coverage split from
-  // the same support matrix the engine runs on. If either changes, the landing
-  // page changes with it — it cannot quietly drift into a claim.
-  const constructs = Object.values(SUPPORT_MATRIX);
-  const fullyCovered = constructs.filter((c) => c.level === 'fully').length;
+  /**
+   * The FAQ, once. The visible accordion and the JSON-LD `FAQPage` read this
+   * list, so the two cannot say different things (roadmap 3.0.6).
+   */
+  const faq: Array<{ q: string; a: string; more?: { href: string; label: string }; lang?: string }> = [
+    {
+      q: 'What is SAP clean core?',
+      a: 'Clean core keeps the SAP S/4HANA standard unmodified: extensions use only released, upgrade-stable interfaces — in-app with ABAP Cloud or side-by-side on SAP BTP. SAP’s clean core level concept grades what an extension uses from A (released APIs and extension points) to D (not recommended: modifications, implicit enhancements, writes to SAP tables).',
+      more: { href: '/clean-core-explained', label: 'Clean core, explained without the jargon' },
+    },
+    {
+      q: 'What does Clean-Core.io do with my ABAP?',
+      a: 'A deterministic engine reads the program before any language model does. It reconstructs the business process with a line anchor on every element, lists the business rules hard-coded in the program, shows the clean core level of each SAP object the code uses, and names what it could not determine. Every completed analysis is sealed as a signed run. Generated code is a draft you review.',
+      more: { href: '/how-it-works', label: 'How it works, and its limits' },
+    },
+    {
+      q: 'Is my code used to train models?',
+      a: TRUST_CLAIMS.find((c) => c.id === 'training')!.text,
+      more: { href: '/datenschutz#source-code', label: 'Privacy Policy §3' },
+    },
+    {
+      q: 'What does it cost?',
+      a: 'Nothing. Clean-Core.io is a free community project with no paid tier, and we accept no payment. An account has five analysis runs; each starter example is free the first time you run it. After that you continue with your own Gemini API key, which Google bills under your own agreement with Google.',
+    },
+    {
+      q: 'Does it replace ABAP Test Cockpit?',
+      a: 'No. ABAP Test Cockpit stays the check to rely on. The level Clean-Core.io shows is its reading of SAP’s published data — an orientation, never part of a signed audit pack. Confirm with ABAP Test Cockpit, and import your ATC results to compare them with the engine.',
+    },
+    {
+      q: 'Does it work with SAP Signavio?',
+      a: 'Clean-Core.io exports the process as a standard BPMN 2.0 XML file. Import into SAP Signavio has not been verified yet, so we do not claim it, and there is no connection to a Signavio workspace.',
+    },
+    {
+      q: 'What is the SAP Cloudification Repository viewer?',
+      a: 'The SAP object catalog on Clean-Core.io shows SAP’s published Cloudification Repository and object classification: for each SAP object its release state, clean core level and, where SAP names one, its successor — synced from SAP’s public repository. It needs no account.',
+      more: { href: '/catalog', label: 'Open the SAP object catalog' },
+    },
+    {
+      q: 'Who can see my projects?',
+      a: 'Only the account that created a project, and anyone that account invites. An invitation is bound to one confirmed e-mail address, gives read access including the source code, expires, and can be revoked at any time. There are no public links.',
+    },
+    {
+      q: 'Can I try the demo without an account?',
+      a: 'No. The demo project lives in your workspace, so it needs a free account. Inside it nothing you do is saved, and nothing counts against your analysis runs.',
+    },
+    {
+      q: 'How does clean core reduce S/4HANA upgrade risk?',
+      a: 'Custom code that reads or modifies the SAP standard directly is what makes an upgrade expensive: a modification has to be adjusted in SPAU before the upgrade can proceed, native SQL bypasses the database abstraction, and every direct table read relies on a structure SAP never promised to keep. Clean core replaces those with released APIs. Clean-Core.io names them in your own ABAP, object by object against SAP’s published Cloudification Repository, and flags what a generator cannot reach instead of transforming it into something plausible and wrong.',
+    },
+    {
+      q: 'Wie reduziert Clean Core das Upgrade-Risiko in S/4HANA?',
+      a: 'Teuer wird ein Upgrade durch Eigenentwicklungen, die direkt auf dem SAP-Standard lesen oder ihn modifizieren: Eine Modifikation muss in SPAU angepasst werden, bevor das Upgrade weiterlaufen kann, Native SQL umgeht die Datenbankabstraktion, und jeder direkte Tabellenzugriff baut auf einer Struktur, die SAP nie zugesagt hat. Clean Core ersetzt das durch freigegebene APIs. Clean-Core.io benennt sie in Ihrem eigenen ABAP, Objekt für Objekt gegen SAPs veröffentlichtes Cloudification Repository, und markiert, was ein Generator nicht erreicht, statt es in etwas Plausibles und Falsches zu überführen.',
+      lang: 'de',
+    },
+    {
+      q: 'Is Clean-Core.io an SAP product?',
+      a: 'No. It is an independent community project, not affiliated with or endorsed by SAP SE. It follows SAP’s clean core level concept and reads SAP’s published Cloudification Repository.',
+    },
+  ];
 
-  // The published reference run. Computed at request time from a file that ships
-  // in this repository, so no figure below can drift from what the engine does.
-  const reference = getReferenceAnalysis();
+  /**
+   * Where Clean-Core.io stands next to SAP's own tools. Defined once and
+   * rendered once — a table on wide screens that stacks on a phone through CSS,
+   * not a second copy (`tests/landing-consistency-guard.spec.ts`).
+   */
+  const toolchainRows: Array<{ tool: string; purpose: string; relation: string }> = [
+    {
+      tool: 'ABAP Test Cockpit (ATC)',
+      purpose: 'The authoritative check for clean core violations — keep using it.',
+      relation: `Reads the same SAP Cloudification Repository (${catalogObjects} classified objects) and shows its reading as level A–D. Import ATC results to compare them with the engine.`,
+    },
+    {
+      tool: 'ABAP Development Tools (ADT)',
+      purpose: 'Where ABAP is developed, compiled and unit-tested; ABAP Unit and the CDS Test Double Framework are on board.',
+      relation: 'Generated drafts arrive as an abapGit package that you import, compile and test there.',
+    },
+    {
+      tool: 'SAP Signavio',
+      purpose: 'Process modelling, under its own licence.',
+      relation: 'The process leaves as a BPMN 2.0 XML file. Import into SAP Signavio has not been verified yet; there is no connection to a Signavio workspace.',
+    },
+    {
+      tool: 'SAP Cloud ALM',
+      purpose: 'Project and application lifecycle, under SAP’s licence.',
+      relation: 'No adapter. The handover package is a set of files you take along.',
+    },
+  ];
+
   const schemaJson = {
-    "@context": "https://schema.org",
-    "@graph": [
+    '@context': 'https://schema.org',
+    '@graph': [
       {
-        "@type": "Organization",
-        "@id": "https://clean-core.io/#organization",
-        "name": "Clean-Core.io",
-        "url": "https://clean-core.io",
-        "logo": "https://clean-core.io/logo.png",
-        "sameAs": [
-          "https://github.com/sonnyfrenzel-rgb/clean-core.io",
-          "https://www.linkedin.com/company/clean-core-io"
-        ],
-        "founder": {
-          "@type": "Person",
-          "name": "Felix Frenzel",
-          "jobTitle": "Founder & Community Builder",
-          "url": "https://www.linkedin.com/in/felix-frenzel-3327741b8/",
-          "sameAs": [
-            "https://www.linkedin.com/in/felix-frenzel-3327741b8/",
-            "https://github.com/sonnyfrenzel-rgb"
-          ]
-        }
-      },
-      {
-        "@type": "SoftwareApplication",
-        "@id": "https://clean-core.io/#software",
-        "name": "Clean-Core.io",
-        "url": "https://clean-core.io",
-        "applicationCategory": "BusinessApplication",
-        "operatingSystem": "All",
-        "offers": {
-          "@type": "Offer",
-          "price": "0",
-          "priceCurrency": "USD"
+        '@type': 'Organization',
+        '@id': 'https://clean-core.io/#organization',
+        name: 'Clean-Core.io',
+        url: 'https://clean-core.io',
+        logo: 'https://clean-core.io/logo.png',
+        sameAs: ['https://github.com/sonnyfrenzel-rgb/clean-core.io', 'https://www.linkedin.com/company/clean-core-io'],
+        founder: {
+          '@type': 'Person',
+          name: 'Felix Frenzel',
+          jobTitle: 'Founder & Community Builder',
+          url: 'https://www.linkedin.com/in/felix-frenzel-3327741b8/',
+          sameAs: ['https://www.linkedin.com/in/felix-frenzel-3327741b8/', 'https://github.com/sonnyfrenzel-rgb'],
         },
-        "description": "Automated ABAP custom code analysis and S/4HANA modernization following official SAP Clean Core guidelines.",
-        "datePublished": "2025-01-15",
-        // Tracks the release constant so the freshness signal moves with every ship
-        // instead of going stale at a hardcoded date.
-        "dateModified": APP_RELEASE_DATE_ISO
       },
       {
-        "@type": "FAQPage",
-        "@id": "https://clean-core.io/#faq",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "What is the SAP Clean Core strategy?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "The Clean Core strategy keeps the ERP standard free of custom developments by extending via in-app key-user tools or side-by-side on SAP BTP."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How does Clean-Core.io help with ABAP modernization?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Clean-Core.io automatically analyzes ABAP code and converts it to SAP BTP CAP Node.js services or cloud-ready RAP components."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How do you accelerate SAP Clean Core custom ABAP refactoring?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Clean-Core.io accelerates Clean Core modernization — it speeds the work up for you, it doesn't blindly automate it. A deterministic engine parses your custom ABAP (classes, reports, custom tables) with deterministic static (token- and rule-based) and data-flow analysis, then maps direct database reads (e.g. VBAK, BSEG) to released successor APIs using SAP's official Cloudification Repository — the same source behind the SAP ABAP Test Cockpit (ATC) — plus hand-curated field-level mappings. Tightly-coupled logic is drafted into cloud-compliant SAP Business Technology Platform (BTP) Cloud Application Programming Model (CAP) services or in-app RESTful Application Programming Model (RAP) components for you to review. Every finding is evidence-backed and traceable — and frozen into a signed, exportable audit evidence pack."
-            }
-          },
-          // The three below answer benefit-intent queries that already place on
-          // this page (positions 2–10) without being marked up as question and
-          // answer — the difference between text a reader scrolls past and
-          // something an answer engine will quote. Every answer is the visible
-          // BenefitCard copy restated, not a new claim; keep it that way, and
-          // keep the market's favourite figures ("20–30% faster upgrades",
-          // "reduce TCO by 62%") out of it. The German pair is deliberate: the
-          // German phrasings hold the better positions on this English page.
-          {
-            "@type": "Question",
-            "name": "What does a free SAP custom code assessment on Clean-Core.io give me?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Two answers, both as drafts you correct. First, what the program actually does — one sentence a process owner can contradict, and with it the process, the operating procedure, who owns which step, and what the code is still worth to the business, all in business language: the generator is not allowed a single technical term. Second, what it will cost to move — every finding split into what a released SAP successor settles, what is your decision, and what stays hand work, with the object-to-API mapping named object by object. The limits are published before you upload anything, and every run is frozen into a signed audit trail you can hand to a reviewer. It is free for the SAP community: no sales call, no trial, no card."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How does Clean Core reduce S/4HANA upgrade risk?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Custom code that reads or modifies the SAP standard directly is what makes an upgrade expensive: a core modification has to be reset in SPAU before the upgrade can proceed, native SQL bypasses the database abstraction the target model depends on, and every direct table read is a contract SAP never promised to keep. Clean core replaces those with released APIs — an upgrade-stable contract in place of the direct table read that carries the risk today — extended in-app with ABAP Cloud (RAP) or side-by-side on SAP BTP (CAP). Clean-Core.io names them in your own ABAP rather than guessing: findings are mapped against SAP's published Cloudification Repository object by object, and anything structurally out of reach for a generator is flagged and isolated instead of being transformed into something plausible and wrong."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Wie reduziert Clean Core das Upgrade-Risiko in S/4HANA?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Teurer wird ein Upgrade durch Eigenentwicklungen, die direkt auf dem SAP-Standard lesen oder ihn modifizieren: Eine Kernmodifikation muss in SPAU zurückgesetzt werden, bevor das Upgrade überhaupt laufen kann, Native SQL umgeht die Datenbankabstraktion, auf der das Zielmodell aufsetzt, und jeder direkte Tabellenzugriff ist ein Vertrag, den SAP nie zugesagt hat. Clean Core ersetzt das durch freigegebene APIs — ein upgrade-stabiler Vertrag anstelle des direkten Tabellenzugriffs, der heute das Risiko trägt — in-app mit ABAP Cloud (RAP) oder side-by-side auf der SAP BTP (CAP). Clean-Core.io benennt sie in Ihrem eigenen ABAP, statt sie zu raten: Befunde werden Objekt für Objekt gegen SAPs veröffentlichtes Cloudification Repository gemappt, und alles, was für einen Generator strukturell unerreichbar ist, wird markiert und isoliert statt in etwas Plausibles und Falsches überführt."
-            }
-          }
-        ]
+        '@type': 'SoftwareApplication',
+        '@id': 'https://clean-core.io/#software',
+        name: 'Clean-Core.io',
+        url: 'https://clean-core.io',
+        applicationCategory: 'BusinessApplication',
+        operatingSystem: 'All',
+        offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+        description:
+          'Free community tool for SAP custom code: deterministic ABAP static code analysis, the business process reconstructed from the code with line anchors, SAP clean core levels A–D from the Cloudification Repository, and signed runs.',
+        datePublished: '2025-01-15',
+        // Moves with every release instead of going stale at a typed date.
+        dateModified: APP_RELEASE_DATE_ISO,
       },
       {
-        "@type": "BreadcrumbList",
-        "itemListElement": [
-          { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://clean-core.io" },
-          { "@type": "ListItem", "position": 2, "name": "How It Works", "item": "https://clean-core.io/how-it-works" },
-          { "@type": "ListItem", "position": 3, "name": "ABAP Analysis", "item": "https://clean-core.io/abap-custom-code-analysis" },
-          { "@type": "ListItem", "position": 4, "name": "Clean Core Score", "item": "https://clean-core.io/clean-core-score" },
-          { "@type": "ListItem", "position": 5, "name": "Knowledge Base", "item": "https://clean-core.io/knowledge" },
-          { "@type": "ListItem", "position": 6, "name": "About", "item": "https://clean-core.io/about" }
-        ]
-      }
-    ]
+        '@type': 'FAQPage',
+        '@id': 'https://clean-core.io/#faq',
+        mainEntity: faq.map((f) => ({
+          '@type': 'Question',
+          name: f.q,
+          ...(f.lang ? { inLanguage: f.lang } : {}),
+          acceptedAnswer: { '@type': 'Answer', text: f.a },
+        })),
+      },
+      {
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://clean-core.io' },
+          { '@type': 'ListItem', position: 2, name: 'How It Works', item: 'https://clean-core.io/how-it-works' },
+          { '@type': 'ListItem', position: 3, name: 'ABAP Analysis', item: 'https://clean-core.io/abap-custom-code-analysis' },
+          { '@type': 'ListItem', position: 4, name: 'Clean Core Score', item: 'https://clean-core.io/clean-core-score' },
+          { '@type': 'ListItem', position: 5, name: 'Knowledge Base', item: 'https://clean-core.io/knowledge' },
+          { '@type': 'ListItem', position: 6, name: 'About', item: 'https://clean-core.io/about' },
+        ],
+      },
+    ],
   };
 
-
   return (
-    <div className="min-h-screen bg-white font-sans text-gray-900">
-      {/* JSON-LD Structured Data */}
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(schemaJson) }}
-      />
+    <div className="min-h-screen bg-cc-page font-sans text-cc-ink">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schemaJson) }} />
 
-      {/* Pilot Warning Banner */}
-      <PilotWarningBanner />
-      
-      {/* Header */}
-      <header className="bg-white/80 backdrop-blur-md border-b border-gray-200 sticky top-0 z-50 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-4">
-          <Link href="/" className="flex items-center gap-2 sm:gap-3 text-green-600 hover:opacity-80 transition-opacity shrink-0">
-            <div className="bg-green-600/10 p-2 rounded-xl hidden sm:block">
-              <RotateCw className="w-5 h-5 sm:w-6 sm:h-6" />
-            </div>
-            <div className="flex flex-col">
-              <span className="font-bold text-lg sm:text-2xl tracking-tight text-gray-900 leading-none">Clean-Core<span className="text-green-600">.io</span></span>
-              <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-gray-500 mt-1">Free Community Edition</span>
-            </div>
+      <a
+        href="#main"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[200] focus:rounded-lg focus:bg-white focus:px-4 focus:py-3 focus:text-sm focus:font-bold focus:shadow-xl"
+      >
+        Skip to content
+      </a>
+
+      {/* Header — logo, the pages with search reach, and the sign-in button where it always was. */}
+      <header className="sticky top-0 z-50 border-b border-cc-line bg-white/90 backdrop-blur-md">
+        <div className="mx-auto flex h-[72px] max-w-7xl items-center gap-3 px-4 sm:gap-6 sm:px-6 lg:px-8">
+          <Link href="/" className="flex shrink-0 items-center gap-2.5" aria-label="Clean-Core.io home">
+            <span className="grid h-9 w-9 place-items-center rounded-[10px] bg-cc-brand-surface text-cc-brand">
+              <RotateCw size={20} aria-hidden="true" />
+            </span>
+            <span className="hidden flex-col min-[400px]:flex">
+              <span className="text-base font-extrabold leading-tight tracking-[-0.02em] text-cc-ink sm:text-lg">
+                Clean-Core<span className="text-cc-brand">.io</span>
+              </span>
+              <span className="text-xs font-semibold leading-tight text-cc-ink-muted">Free Community Edition</span>
+            </span>
           </Link>
-
-          {/* Desktop Navigation */}
-          <nav className="hidden lg:flex items-center gap-7 xl:gap-9">
-            <Link href="/clean-core-explained" className="whitespace-nowrap text-xs font-black text-gray-600 hover:text-green-600 transition-colors uppercase tracking-wider">
-              Clean Core Explained
-            </Link>
-            <Link href="/how-it-works" className="whitespace-nowrap text-xs font-black text-gray-600 hover:text-green-600 transition-colors uppercase tracking-wider">
-              How It Works
-            </Link>
-            <Link href="/sap-clean-core-object-classification" className="hidden xl:inline whitespace-nowrap text-xs font-black text-gray-600 hover:text-green-600 transition-colors uppercase tracking-wider">
-              Classification A–D
-            </Link>
-            <Link href="/knowledge" className="whitespace-nowrap text-xs font-black text-gray-600 hover:text-green-600 transition-colors uppercase tracking-wider">
-              Knowledge Base
-            </Link>
+          <nav aria-label="Main" className="hidden items-center gap-6 lg:flex">
+            {NAV.map((n) => (
+              <Link key={n.href} href={n.href} className="whitespace-nowrap py-1.5 text-[15px] font-semibold text-cc-ink-muted hover:text-cc-ink">
+                {n.label}
+              </Link>
+            ))}
           </nav>
-
-          <div className="shrink-0 flex items-center gap-3">
-             <div className="hidden 2xl:flex text-xs font-semibold bg-gray-100 text-gray-600 px-3 py-1 rounded-full items-center gap-1">
-               <Users size={14} /> Free for the SAP Community
-             </div>
-             <HeaderAuthButton />
+          <div className="ml-auto flex shrink-0 items-center gap-2">
+            <HeaderAuthButton />
+            <details className="group relative lg:hidden">
+              <summary
+                aria-label="Menu"
+                className="grid h-11 w-11 cursor-pointer list-none place-items-center rounded-full border border-cc-field-border bg-white text-cc-ink [&::-webkit-details-marker]:hidden"
+              >
+                <Menu size={18} aria-hidden="true" />
+              </summary>
+              <nav aria-label="Main" className="absolute right-0 top-12 hidden w-64 max-w-[calc(100vw-2rem)] rounded-2xl group-open:block border border-cc-line bg-white p-2 shadow-cc-dialog">
+                {NAV.map((n) => (
+                  <Link key={n.href} href={n.href} className="flex min-h-11 items-center rounded-lg px-3 text-base font-semibold text-cc-ink hover:bg-cc-surface-muted">
+                    {n.label}
+                  </Link>
+                ))}
+              </nav>
+            </details>
           </div>
         </div>
       </header>
 
-      {/* Hero Section */}
-      <section className="relative pt-24 pb-32 md:pt-40 md:pb-56 overflow-hidden bg-slate-50/30">
-        <style>{`
-          @keyframes float-slow {
-            0%, 100% { transform: translateY(0px) rotate(0deg); }
-            50% { transform: translateY(-20px) rotate(4deg); }
-          }
-          @keyframes float-slower {
-            0%, 100% { transform: translateY(0px) rotate(0deg); }
-            50% { transform: translateY(20px) rotate(-4deg); }
-          }
-          @keyframes drift-up-left {
-            0% { transform: translateY(120px) translateX(0); opacity: 0; }
-            15% { opacity: 0.45; }
-            85% { opacity: 0.45; }
-            100% { transform: translateY(-500px) translateX(-25px); opacity: 0; }
-          }
-          @keyframes drift-up-right {
-            0% { transform: translateY(120px) translateX(0); opacity: 0; }
-            15% { opacity: 0.65; }
-            85% { opacity: 0.65; }
-            100% { transform: translateY(-500px) translateX(25px); opacity: 0; }
-          }
-          @keyframes pulse-slow {
-            0%, 100% { transform: scale(1); opacity: 0.22; }
-            50% { transform: scale(1.18); opacity: 0.32; }
-          }
-          .animate-float-slow {
-            animation: float-slow 7.5s ease-in-out infinite;
-          }
-          .animate-float-slower {
-            animation: float-slower 9.5s ease-in-out infinite;
-          }
-          .animate-pulse-slow {
-            animation: pulse-slow 8.5s ease-in-out infinite;
-          }
-        `}</style>
-
-        {/* Background Mesh Gradient Blobs */}
-        <div className="absolute top-[10%] left-[5%] w-[380px] h-[380px] bg-indigo-300 rounded-full blur-[130px] opacity-25 animate-pulse-slow z-0 pointer-events-none" />
-        <div className="absolute top-[22%] right-[5%] w-[420px] h-[420px] bg-emerald-300 rounded-full blur-[150px] opacity-20 animate-float-slow z-0 pointer-events-none" />
-        <div className="absolute bottom-[10%] left-[20%] w-[450px] h-[450px] bg-teal-200 rounded-full blur-[140px] opacity-20 animate-float-slower z-0 pointer-events-none" />
-
-        {/* Grid Background */}
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808006_1px,transparent_1px),linear-gradient(to_bottom,#80808006_1px,transparent_1px)] bg-[size:40px_40px] z-0"></div>
-        
-        {/* Left Particle Column: Legacy ABAP */}
-        <div className="hidden xl:flex absolute left-8 top-20 bottom-20 w-32 flex-col justify-around pointer-events-none overflow-hidden z-20">
-          {[
-            { text: 'REPORT Z_LEGACY', top: '12%', delay: '0s' },
-            { text: 'SELECT * FROM', top: '27%', delay: '1.8s' },
-            { text: 'FORM GET_DATA', top: '44%', delay: '0.9s' },
-            { text: 'CALL FUNCTION', top: '61%', delay: '2.5s' },
-            { text: 'DATA: lv_count', top: '78%', delay: '3.4s' },
-            { text: 'WRITE: / lv_val', top: '92%', delay: '4.8s' }
-          ].map((item, idx) => (
-            <div 
-              key={idx}
-              className="absolute bg-slate-100 text-slate-400 font-mono text-[10px] font-black px-3 py-1.5 rounded-lg border border-slate-200/50 shadow-sm whitespace-nowrap"
-              style={{
-                top: item.top,
-                animation: `drift-up-left 9s linear infinite`,
-                animationDelay: item.delay
-              }}
-            >
-              {item.text}
-            </div>
-          ))}
-        </div>
-
-        {/* Right Particle Column: Modern TS */}
-        <div className="hidden xl:flex absolute right-8 top-20 bottom-20 w-36 flex-col justify-around pointer-events-none overflow-hidden z-20">
-          {[
-            { text: "import { Router }", top: '17%', delay: '0.4s' },
-            { text: 'async function', top: '32%', delay: '2.2s' },
-            { text: 'express.json()', top: '49%', delay: '1.4s' },
-            { text: 'callGemini()', top: '66%', delay: '3.0s' },
-            { text: 'new PrismaClient()', top: '81%', delay: '0.1s' },
-            { text: 'res.status(200)', top: '94%', delay: '4.2s' }
-          ].map((item, idx) => (
-            <div 
-              key={idx}
-              className="absolute bg-emerald-50 text-emerald-600 font-mono text-[10px] font-black px-3 py-1.5 rounded-lg border border-emerald-200/50 shadow-md shadow-emerald-500/5 whitespace-nowrap"
-              style={{
-                top: item.top,
-                animation: `drift-up-right 9s linear infinite`,
-                animationDelay: item.delay
-              }}
-            >
-              {item.text}
-            </div>
-          ))}
-        </div>
-
-        <div className="max-w-6xl mx-auto px-6 relative z-10 text-center">
-          {/* Announcement — the newest thing we have made, in the most-seen spot on
-              the site. Distinct from the eyebrow badge below it on purpose: dark
-              chip, white pill, so the two read as announcement and category
-              rather than competing for the same job. */}
-          <div className="flex justify-center mb-5">
-            <Link
-              href="/clean-core-explained"
-              className="group inline-flex items-center gap-2.5 pl-2 pr-4 py-2 rounded-full bg-white border border-gray-200 shadow-sm hover:border-green-300 hover:shadow-md transition-all animate-in fade-in slide-in-from-bottom-2 duration-700"
-          >
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-gray-950 px-2.5 py-1 text-[10px] font-black uppercase tracking-widest text-white">
-              <Sparkles size={11} className="text-green-400" /> New
-            </span>
-            <span className="text-xs md:text-sm font-extrabold text-gray-800 group-hover:text-green-700 transition-colors">
-              SAP Clean Core, explained without the jargon
-            </span>
-            <ArrowRight
-              size={14}
-              className="text-green-600 transition-transform duration-200 group-hover:translate-x-1"
-            />
-            </Link>
-          </div>
-
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-50 text-emerald-700 font-bold text-xs md:text-sm mb-8 border border-emerald-100 shadow-sm animate-in fade-in slide-in-from-bottom-4 duration-700">
-            <ShieldCheck className="w-4 h-4" />
-            <span className="uppercase tracking-wider">Free for the SAP Community · Clean Core & ABAP Transformation</span>
-          </div>
-          <h1 className="text-4xl sm:text-5xl md:text-8xl font-black tracking-tighter mb-8 leading-[0.85] text-gray-950 animate-in fade-in slide-in-from-bottom-8 duration-1000">
-            The SAP Architect&apos;s <br className="hidden md:block" />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-600 to-emerald-500">Clean Core Accelerator</span>
-          </h1>
-          <p className="text-base sm:text-lg md:text-2xl text-gray-700 max-w-3xl mx-auto mb-12 leading-relaxed font-light animate-in fade-in slide-in-from-bottom-12 duration-1000 delay-200">
-            Generate the first Clean-Core-compliant draft for review and approval &mdash; grounded in SAP&apos;s own published object data, with the limits named before you upload, and the expert&apos;s judgment never replaced.
-          </p>
-          <div className="flex flex-col items-center justify-center gap-4 animate-in fade-in slide-in-from-bottom-16 duration-1000 delay-500">
-            <HeroCTA />
-            {/* Third in the hierarchy, and now shaped like it. As a bordered
-                pill it was a third button competing with two filled ones; the
-                hero asked the reader to choose between three equals before the
-                product had shown anything. */}
-            <div className="flex items-center justify-center mt-1">
-              <Link
-                href="/how-it-works"
-                className="text-xs sm:text-sm font-bold text-gray-500 hover:text-green-700 transition-colors flex items-center gap-1.5 px-2 py-2"
-              >
-                Explore How It Works &amp; Limitations <ArrowRight size={13} className="text-green-600" />
-              </Link>
-            </div>
-          </div>
-        </div>
-
-        {/* GEO Quick Answer Block */}
-        <div className="max-w-4xl mx-auto px-6 mt-16 relative z-20 animate-in fade-in slide-in-from-bottom-20 duration-1000 delay-600">
-          <QuickAnswer
-            question="How do you accelerate SAP Clean Core custom ABAP refactoring?"
-            answer="Clean-Core.io accelerates Clean Core modernization — it speeds the work up for you, it doesn't blindly automate it. A deterministic engine parses your custom ABAP (classes, reports, custom tables) with deterministic static (token- and rule-based) and data-flow analysis, then maps direct database reads (e.g. VBAK, BSEG) to released successor APIs using SAP's official Cloudification Repository — the same source behind the SAP ABAP Test Cockpit (ATC) — plus hand-curated field-level mappings. Tightly-coupled logic is drafted into cloud-compliant SAP Business Technology Platform (BTP) Cloud Application Programming Model (CAP) services or in-app RESTful Application Programming Model (RAP) components for you to review. Every finding is evidence-backed and traceable — and frozen into a signed, exportable audit evidence pack, so you get a faster first draft and a defensible decision trail with an architect always in the loop."
+      <main id="main">
+        {/* 1 · hero */}
+        <section id="hero" aria-labelledby="hero-title" className="relative overflow-hidden pt-16 pb-20 md:pt-24 md:pb-24">
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 opacity-[0.18]"
+            style={{
+              background:
+                'radial-gradient(38% 42% at 10% 12%,#6366f1 0%,transparent 70%),radial-gradient(34% 40% at 90% 10%,#16a34a 0%,transparent 70%),radial-gradient(46% 40% at 55% 62%,#0d9488 0%,transparent 72%)',
+            }}
           />
-        </div>
-        
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 opacity-[0.18] [mask-image:linear-gradient(#000,transparent_60%)]"
+            style={{
+              backgroundImage: 'linear-gradient(to right,#94a3b8 1px,transparent 1px),linear-gradient(to bottom,#94a3b8 1px,transparent 1px)',
+              backgroundSize: '40px 40px',
+            }}
+          />
+          <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="mx-auto max-w-4xl text-center">
+              <p className="inline-flex items-center gap-2 rounded-full border border-cc-line bg-white px-3.5 py-1.5 text-sm font-semibold text-cc-ink-muted shadow-cc">
+                <Users size={16} className="text-cc-brand-strong" aria-hidden="true" /> Free for the SAP Community
+              </p>
+              <h1 id="hero-title" className="mt-6 text-balance font-extrabold tracking-[-0.035em] text-cc-ink">
+                <span className="block text-4xl leading-[1.05] sm:text-5xl md:text-[64px]">SAP Clean Core Accelerator</span>
+                <span className="mt-3 block text-2xl leading-tight text-cc-ink-muted sm:text-3xl md:text-4xl">
+                  Understand a piece of custom ABAP and decide what happens to it.
+                </span>
+              </h1>
+              <p className="mx-auto mt-6 max-w-2xl text-pretty text-lg font-medium leading-relaxed text-cc-ink-muted md:text-xl">
+                Every statement is tied to a line of your code. Clean-Core.io reads the program before any model does,
+                reconstructs the process it runs, and tells you what it could not determine.
+              </p>
+              <div className="mt-9 flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:items-center">
+                <AuthLink to={DEMO_ROUTE} testId="hero-demo">
+                  Explore the demo <ArrowRight size={18} aria-hidden="true" />
+                </AuthLink>
+                <Link href="#start" className={publicButton('secondary')}>
+                  Start with your own code
+                </Link>
+              </div>
+              <p className="mt-3.5 text-sm font-medium text-cc-ink-muted">
+                Free for the SAP community. The demo project is waiting in your workspace after you sign in — nothing you do there is saved.
+              </p>
+              <p className="mt-3 flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm">
+                <TextLink href="/how-it-works">
+                  How it works, and its limits <ArrowRight size={14} aria-hidden="true" />
+                </TextLink>
+                <TextLink href="/whitepaper">Read the whitepaper</TextLink>
+              </p>
+            </div>
+            <div className="mx-auto mt-14 max-w-6xl">
+              <Shot
+                shot="hero"
+                priority
+                caption={`The demo project ${DEMO_OBJECT_NAME} in the workspace — fictitious code, captured from the product.`}
+                alt={`The workspace with the demo project ${DEMO_OBJECT_NAME} open in the Business view: the demo notice, the title with its line count and catalog version, the three views, the seven stages as tools, and the first layer.`}
+              />
+            </div>
+          </div>
+        </section>
+
+        {/* 2 · what */}
+        <section id="what" aria-labelledby="what-title" className="scroll-mt-20 border-y border-cc-line bg-cc-surface py-20 md:py-24">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <SectionHeader eyebrow="In one sentence" title="What is Clean-Core.io?" titleId="what-title">
+              Clean-Core.io is a free community tool for SAP custom code: a deterministic ABAP static code analysis reads
+              your program, reconstructs its business process with a line anchor on every element, shows SAP&apos;s clean
+              core level for each SAP object it uses, and seals every completed analysis as a signed run.
+            </SectionHeader>
+            <div className="grid gap-5 md:grid-cols-3">
+              {[
+                {
+                  icon: <FileCode size={20} aria-hidden="true" />,
+                  title: 'Code first',
+                  text: 'Reads your code before any model does. Every finding points to a line.',
+                  links: [
+                    { href: '/abap-custom-code-analysis', label: 'ABAP code analysis' },
+                    { href: '/features/extensibility-routing', label: 'Extensibility routing' },
+                  ],
+                },
+                {
+                  icon: <CircleHelp size={20} aria-hidden="true" />,
+                  title: 'Honest about limits',
+                  text: 'Says what it could not determine — and never passes an assumption off as a fact.',
+                  links: [
+                    { href: '/features/audit-evidence', label: 'Audit evidence' },
+                    { href: '/features/modernization-assessment', label: 'Modernization assessment' },
+                  ],
+                },
+                {
+                  icon: <Eye size={20} aria-hidden="true" />,
+                  title: 'Three views',
+                  text: 'One case, three views: Business, IT and Management see the same facts, each answering its own question.',
+                  links: [
+                    { href: '/how-it-works', label: 'How it works' },
+                    { href: '/how-to', label: 'How-to guide' },
+                  ],
+                },
+              ].map((d) => (
+                <div key={d.title} className={CARD}>
+                  <span className="grid h-10 w-10 place-items-center rounded-xl bg-cc-brand-surface text-cc-brand-strong">{d.icon}</span>
+                  <h3 className="mt-4 text-lg font-bold text-cc-ink">{d.title}</h3>
+                  <p className="mt-2 text-base font-medium leading-relaxed text-cc-ink-muted">{d.text}</p>
+                  <p className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-sm">
+                    {d.links.map((l) => (
+                      <TextLink key={l.href} href={l.href}>
+                        {l.label}
+                      </TextLink>
+                    ))}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* 3 · views */}
+        <section id="views" aria-labelledby="views-title" className="scroll-mt-20 py-20 md:py-24">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <SectionHeader eyebrow="Three views" title="One case, three views" titleId="views-title">
+              Business, IT and Management look at the same facts. Each view answers its own question — Do I still need
+              this? What exactly, where to? What do I risk, what do I decide? — and none of them changes a result.
+            </SectionHeader>
+            <div className="grid gap-8 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)] lg:items-start">
+              <div>
+                <ViewsStage views={views} />
+                <p className="mt-4 text-sm font-medium leading-relaxed text-cc-ink-muted">
+                  A view orders what you see. It is never stored with a project, a run, a signature or an audit pack, and
+                  it changes no result. You confirm as the signed-in account — a self-declaration, not an organisational
+                  mandate.
+                </p>
+              </div>
+              <ul className="m-0 flex list-none flex-col gap-4 p-0">
+                {[
+                  {
+                    icon: <Briefcase size={18} aria-hidden="true" />,
+                    name: 'Business',
+                    q: 'Do I still need this, and what changes for me?',
+                    a: 'Opens with the process, its business rules — the hard-coded ones too — standard fit, and what could not be determined.',
+                  },
+                  {
+                    icon: <Code2 size={18} aria-hidden="true" />,
+                    name: 'IT',
+                    q: 'What exactly, where to, and is it right?',
+                    a: 'Opens with the findings at their line, the successor SAP names, and the chain from requirement to anchor, finding and target draft.',
+                  },
+                  {
+                    icon: <BarChart3 size={18} aria-hidden="true" />,
+                    name: 'Management',
+                    q: 'What do I risk, what do I decide?',
+                    a: 'Opens with what is backed by evidence, what stands in the way of a decision, the four buckets and the open decision — costs only as a simulation.',
+                  },
+                ].map((v) => (
+                  <li key={v.name} className={CARD}>
+                    <h3 className="flex items-center gap-2 text-base font-bold text-cc-ink">
+                      <span className="text-cc-brand-strong">{v.icon}</span>
+                      {v.name}
+                    </h3>
+                    <p className="mt-1 text-base font-semibold text-cc-ink">{v.q}</p>
+                    <p className="mt-1 text-sm font-medium leading-relaxed text-cc-ink-muted">{v.a}</p>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        {/* 4 · clean core */}
+        <section id="clean-core" aria-labelledby="cc-title" className="scroll-mt-20 border-y border-cc-line bg-cc-surface py-20 md:py-24">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <SectionHeader eyebrow="SAP S/4HANA clean core" title="What does clean core mean?" titleId="cc-title">
+              Clean core keeps SAP S/4HANA standard. Clean core extensibility means extensions use only released,
+              upgrade-stable interfaces — in-app with ABAP Cloud or side-by-side on SAP BTP.
+            </SectionHeader>
+            <div className="grid gap-6 lg:grid-cols-2">
+              <div className={CARD}>
+                <h3 className="text-lg font-bold text-cc-ink">What clean core means</h3>
+                <p className="mt-2 text-base font-medium leading-relaxed text-cc-ink-muted">
+                  Keep the SAP core standard. An extension reaches it only through released interfaces:
+                </p>
+                <ol className="mt-4 flex list-none flex-col gap-3 p-0">
+                  {[
+                    { k: 'In-app', v: 'ABAP Cloud inside S/4HANA, against released APIs and extension points.', ok: true },
+                    { k: 'Side-by-side', v: 'An application on SAP BTP that talks to S/4HANA through a released API.', ok: true },
+                    { k: 'Modification', v: 'Changes SAP code. It has to be adjusted at every upgrade — what clean core avoids.', ok: false },
+                  ].map((r) => (
+                    <li key={r.k} className="flex gap-3 rounded-xl border border-cc-line bg-cc-surface-muted p-3.5">
+                      <span className={`mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full ${r.ok ? 'bg-cc-information-bg text-cc-information' : 'bg-cc-error-bg text-cc-error'}`}>
+                        {r.ok ? <Check size={14} aria-hidden="true" /> : <CircleSlash size={14} aria-hidden="true" />}
+                      </span>
+                      <span className="text-sm font-medium leading-relaxed text-cc-ink">
+                        <b className="font-bold">{r.k}.</b> {r.v}
+                      </span>
+                    </li>
+                  ))}
+                </ol>
+                <p className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-sm">
+                  <TextLink href="/clean-core-explained">
+                    Clean core, explained without the jargon <ArrowRight size={14} aria-hidden="true" />
+                  </TextLink>
+                  <TextLink href="/knowledge">Knowledge base</TextLink>
+                </p>
+              </div>
+              <div className={CARD}>
+                <h3 className="text-lg font-bold text-cc-ink">The four levels</h3>
+                <p className="mt-2 text-sm font-medium text-cc-ink-muted">Each with a real SAP object the catalog puts there today.</p>
+                <ol className="mt-4 flex list-none flex-col gap-2.5 p-0" data-landing-ladder="">
+                  {ladder.map((l) => (
+                    <li key={l.level} className="rounded-xl border border-cc-line p-3.5">
+                      <p className="flex items-center gap-2.5 text-sm font-semibold text-cc-ink">
+                        <LevelChip grade={l.level} />
+                        <span className="first-letter:uppercase">{l.label}</span>
+                      </p>
+                      {l.examples.map((e) => (
+                        <p key={e.name} className="mt-2 flex flex-wrap items-center gap-2 text-sm font-medium text-cc-ink-muted">
+                          {withPage.has(e.name) ? (
+                            <Link href={`/catalog/${objectToSlug(e.name)}`} className="font-cc-mono font-semibold text-cc-ink underline underline-offset-4">
+                              {e.name}
+                            </Link>
+                          ) : (
+                            <code className="font-cc-mono font-semibold text-cc-ink">{e.name}</code>
+                          )}
+                          <span>{e.note}</span>
+                          <ProvenanceWord value="imported" />
+                        </p>
+                      ))}
+                    </li>
+                  ))}
+                </ol>
+                <p className="mt-4 text-sm font-medium leading-relaxed text-cc-ink-muted">
+                  Levels follow SAP&apos;s clean core level concept. The level shown for an object is our reading of
+                  SAP&apos;s published data — an orientation, never part of a signed audit pack. Confirm with ABAP Test
+                  Cockpit.
+                </p>
+                <p className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-sm">
+                  <TextLink href="/method/levels">How levels are assigned</TextLink>
+                  <TextLink href="/sap-clean-core-object-classification">Object classification A–D</TextLink>
+                  <TextLink href="/clean-core-score">Clean Core Score — a grade, not a compliance percentage</TextLink>
+                </p>
+              </div>
+            </div>
+            <div className={`${CARD} mt-6`}>
+              <h3 className="text-lg font-bold text-cc-ink">Where the evidence comes from</h3>
+              <ol className="mt-4 grid list-none gap-3 p-0 md:grid-cols-5">
+                {[
+                  { t: 'Your ABAP source', d: 'Every statement keeps its program, include and line — that is what a line anchor points to. Includes that were not uploaded are named as not determined.', pv: 'reconstructed' as const },
+                  { t: 'Deterministic engine', d: 'Parses the code and finds the constructs, rules and SAP objects without a language model. The same file gives the same result.', pv: 'reconstructed' as const },
+                  { t: 'SAP’s published data', d: `The Cloudification Repository and SAP’s object classification, ${catalogObjects} objects, synced ${facts.catalogSyncDate}.`, pv: 'imported' as const },
+                  { t: 'Your imports, optional', d: 'ATC results and usage data you upload. They are marked as imported, never as proven.', pv: 'imported' as const },
+                  { t: 'A language model', d: 'Business names and drafts come last and are marked as a model proposal until someone confirms them.', pv: 'proposed' as const },
+                ].map((s, i) => (
+                  <li key={s.t} className="rounded-xl border border-cc-line bg-cc-surface-muted p-4">
+                    <p className="flex items-center gap-2 text-sm font-bold text-cc-ink">
+                      <span className="grid h-6 w-6 place-items-center rounded-full bg-cc-ink text-xs font-bold text-white">{i + 1}</span>
+                      {s.t}
+                    </p>
+                    <p className="mt-2 text-sm font-medium leading-relaxed text-cc-ink-muted">{s.d}</p>
+                    <p className="mt-2">
+                      <ProvenanceWord value={s.pv} />
+                    </p>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          </div>
+        </section>
+
+        {/* 5 · catalog */}
+        <section id="catalog" aria-labelledby="catalog-title" className="scroll-mt-20 py-20 md:py-24">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <SectionHeader eyebrow="SAP Cloudification Repository viewer" title="Look up an SAP object's release state and successor" titleId="catalog-title">
+              The SAP object catalog is a free viewer of SAP&apos;s Cloudification Repository and object classification:{' '}
+              {catalogObjects} classified objects with release state, clean core level and successor, synced {facts.catalogSyncDate}.
+            </SectionHeader>
+            <div className={`${CARD} mx-auto max-w-5xl`}>
+              <form role="search" action="/catalog" method="get">
+                <label htmlFor="landing-lookup" className="text-sm font-semibold text-cc-ink">
+                  SAP object name
+                </label>
+                <div className="mt-2 flex flex-col gap-3 sm:flex-row">
+                  <input
+                    id="landing-lookup"
+                    name="q"
+                    type="text"
+                    autoComplete="off"
+                    spellCheck={false}
+                    placeholder="for example VBAK or BAPI_PO_CREATE1"
+                    className="min-h-12 flex-1 rounded-full border border-cc-field-border bg-white px-5 font-cc-mono text-base text-cc-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cc-focus"
+                  />
+                  <button type="submit" className={publicButton('secondary')}>
+                    <Search size={18} aria-hidden="true" /> Look up
+                  </button>
+                </div>
+                <p className="mt-2 text-sm font-medium text-cc-ink-muted">Tables, CDS views, BAPIs, function modules and classes.</p>
+              </form>
+              <div className="mt-6 overflow-x-auto">
+                <table className="w-full min-w-[520px] border-collapse text-left text-sm">
+                  <caption className="sr-only">Example objects from the catalog</caption>
+                  <thead>
+                    <tr className="border-b border-cc-line text-xs font-semibold uppercase tracking-[0.08em] text-cc-ink-muted">
+                      <th scope="col" className="py-2 pr-4">Object</th>
+                      <th scope="col" className="py-2 pr-4">Level</th>
+                      <th scope="col" className="py-2 pr-4">Release state</th>
+                      <th scope="col" className="py-2">Successor SAP names</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {catalogExamples.map((o) => (
+                      <tr key={o.name} className="border-b border-cc-line last:border-0">
+                        <td className="py-2.5 pr-4">
+                          <Link href={`/catalog/${objectToSlug(o.name)}`} className="font-cc-mono font-semibold text-cc-ink underline underline-offset-4">
+                            {o.name}
+                          </Link>
+                        </td>
+                        <td className="py-2.5 pr-4">
+                          <LevelChip grade={o.grade.grade} />
+                        </td>
+                        <td className="py-2.5 pr-4 font-medium text-cc-ink-muted">{o.grade.state ?? 'not listed'}</td>
+                        <td className="py-2.5 font-cc-mono text-cc-ink">{o.successor ?? '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <p className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-sm">
+                <TextLink href="/catalog">
+                  Open the SAP object catalog <ArrowRight size={14} aria-hidden="true" />
+                </TextLink>
+                <TextLink href="/catalog/browse/a">Browse A–Z</TextLink>
+                <TextLink href="/catalog/module/mm">Materials Management</TextLink>
+                <TextLink href="/sap-cloudification">SAP cloudification, explained</TextLink>
+                <TextLink href="/features/cloudification-catalog">About the catalog</TextLink>
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* 6 · process */}
+        <section id="process" aria-labelledby="process-title" className="scroll-mt-20 border-y border-cc-line bg-cc-surface py-20 md:py-24">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <SectionHeader eyebrow="From code to process" title="How is the process reconstructed from ABAP?" titleId="process-title">
+              Clean-Core.io draws the process as BPMN from what the ABAP code does, puts a line anchor on every element,
+              and names what the code cannot show instead of drawing it.
+            </SectionHeader>
+            <Shot
+              shot="process"
+              caption={`The process map of the demo project, one level down — captured from the workspace.`}
+              alt={`The process map of ${DEMO_OBJECT_NAME} opened at one sub-process: levels and outline on the left, the BPMN diagram in the middle, path and overlay filters above it, and the count of elements that carry a line anchor.`}
+            />
+            <div className="mt-8 grid gap-5 md:grid-cols-2 lg:grid-cols-4">
+              {[
+                { t: 'Every element points to its lines', d: 'Start and end events, tasks, decisions and sub-processes each carry a line anchor. Decisions keep their condition from the code; proposed lanes are marked as proposals, never as your organisation.' },
+                { t: 'Business rules come out of the code', d: 'Literals in conditions — tolerances, plants, vendor lists, date limits — become rule candidates with their anchor. You keep, change or drop each one.' },
+                { t: 'Large processes stay readable', d: 'Levels instead of zoom: the map opens as an overview, a sub-process opens in place, and the same content is available as a list of steps.' },
+                { t: 'Leaves as a BPMN 2.0 XML file', d: 'Export the process as standard BPMN 2.0 XML; collapsed sub-processes stay real sub-processes. Import into SAP Signavio has not been verified yet.' },
+              ].map((f) => (
+                <div key={f.t} className={CARD}>
+                  <h3 className="text-base font-bold text-cc-ink">{f.t}</h3>
+                  <p className="mt-2 text-sm font-medium leading-relaxed text-cc-ink-muted">{f.d}</p>
+                </div>
+              ))}
+            </div>
+            <p className="mt-6 flex flex-wrap justify-center gap-x-5 gap-y-2 text-sm">
+              <span className="font-medium text-cc-ink-muted">Deep dives:</span>
+              <TextLink href="/features/process-blueprints">Process blueprints</TextLink>
+              <TextLink href="/features/rap-cap-engine">RAP and CAP drafts</TextLink>
+              <TextLink href="/features/cloudification-catalog">Cloudification catalog</TextLink>
+            </p>
+          </div>
+        </section>
+
+        {/* 7 · verify */}
+        <section id="verify" aria-labelledby="verify-title" className="scroll-mt-20 py-20 md:py-24">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <SectionHeader eyebrow="One reproducible run" title="Verify it yourself" titleId="verify-title">
+              Run the published {lines(referenceExample.lines)}-line example and you get the same result: the engine is
+              deterministic, the source file ships with the product, and every completed analysis is sealed as a signed run
+              you can verify.
+            </SectionHeader>
+            <div className="grid gap-6 lg:grid-cols-2">
+              <div className={CARD} data-landing-reference="">
+                <h3 className="text-lg font-bold text-cc-ink">The reference run</h3>
+                <p className="mt-2 text-sm font-medium text-cc-ink-muted">
+                  <code className="break-all font-cc-mono">{reference.fileName}</code>, analysed by the same engine the product uses,
+                  computed from the file when the page is built.
+                </p>
+                <div className="mt-5 flex flex-wrap gap-8">
+                  <p className="text-sm font-medium text-cc-ink-muted">
+                    <b className="block text-4xl font-extrabold tracking-[-0.02em] text-cc-ink">{lines(reference.linesOfCode)}</b>
+                    lines of code
+                  </p>
+                  <p className="text-sm font-medium text-cc-ink-muted">
+                    <b className="block text-4xl font-extrabold tracking-[-0.02em] text-cc-ink">{reference.totalFindings}</b>
+                    findings
+                  </p>
+                </div>
+                <ul className="mt-5 flex list-none flex-col gap-3 p-0">
+                  {[reference.resolved, reference.decision, reference.handedBack].map((b) => (
+                    <li key={b.label} className="flex gap-4 rounded-xl border border-cc-line bg-cc-surface-muted p-3.5">
+                      <span className="w-10 shrink-0 text-2xl font-extrabold text-cc-ink">{b.count}</span>
+                      <span>
+                        <b className="text-sm font-bold text-cc-ink">{b.label}</b>
+                        <span className="mt-0.5 block text-sm font-medium leading-relaxed text-cc-ink-muted">{b.meaning}</span>
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+                <p className="mt-5 text-sm">
+                  <TextLink href="/reference-analysis">
+                    Open the reference run <ArrowRight size={14} aria-hidden="true" />
+                  </TextLink>
+                </p>
+              </div>
+              <div className={CARD}>
+                <h3 className="text-lg font-bold text-cc-ink">SAP objects this run touched</h3>
+                <p className="mt-2 text-sm font-medium text-cc-ink-muted">
+                  With the successor from SAP&apos;s own release data. Where the engine uses a curated field-level mapping
+                  instead, the finding says so.
+                </p>
+                <ul className="mt-4 flex list-none flex-col gap-2 p-0" data-landing-rollcall="">
+                  {reference.rollCall
+                    .filter((o) => o.fromSapData && o.successor)
+                    .slice(0, 8)
+                    .map((o) => (
+                      <li key={o.name} className="flex flex-wrap items-center gap-2 text-sm">
+                        {withPage.has(o.name) ? (
+                          <Link href={`/catalog/${objectToSlug(o.name)}`} className="font-cc-mono font-semibold text-cc-ink underline underline-offset-4">
+                            {o.name}
+                          </Link>
+                        ) : (
+                          <code className="font-cc-mono font-semibold text-cc-ink">{o.name}</code>
+                        )}
+                        <ArrowRight size={14} className="text-cc-ink-muted" aria-hidden="true" />
+                        <code className="font-cc-mono text-cc-ink">{o.successor}</code>
+                      </li>
+                    ))}
+                </ul>
+                {reference.businessDecisions[0] && (
+                  <p className="mt-5 text-sm font-medium leading-relaxed text-cc-ink-muted">
+                    One finding lands on the business: {reference.businessDecisions[0].title}{' '}
+                    <Anchor>L{reference.businessDecisions[0].lineStart}</Anchor>. The engine&apos;s recommendation, quoted
+                    unedited: &ldquo;{reference.businessDecisions[0].recommendation}&rdquo;
+                  </p>
+                )}
+              </div>
+            </div>
+            <ol className="mt-6 grid list-none gap-4 p-0 md:grid-cols-3">
+              <li className={CARD}>
+                <b className="block text-base font-bold text-cc-ink">1 · Import the draft</b>
+                <span className="mt-1 block text-sm font-medium text-cc-ink-muted">Import the generated abapGit package into Eclipse ADT.</span>
+              </li>
+              <li className={CARD}>
+                <b className="block text-base font-bold text-cc-ink">2 · Compile and test</b>
+                <span className="mt-1 block text-sm font-medium text-cc-ink-muted">Compile the code and run the ABAP Unit tests in your own sandbox.</span>
+              </li>
+              <li className={CARD}>
+                <b className="block text-base font-bold text-cc-ink">3 · Check the seal</b>
+                <span className="mt-1 block text-sm font-medium text-cc-ink-muted">
+                  Verify the signed audit pack — <TextLink href="/verify-pack">verify a pack</TextLink>.
+                </span>
+              </li>
+            </ol>
+          </div>
+        </section>
+
+        {/* 8 · honest */}
+        <section id="honest" aria-labelledby="honest-title" className="scroll-mt-20 border-y border-cc-line bg-cc-surface py-20 md:py-24">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <SectionHeader eyebrow="Honest by design" title="How do I know what is proven and what is not?" titleId="honest-title">
+              Every statement carries its source as a word and a shape. Nothing simulated passes as proven: missing stays
+              missing, simulated stays simulated, reconstructed stays reconstructed.
+            </SectionHeader>
+            <div className="grid gap-6 lg:grid-cols-2">
+              <div className={CARD}>
+                <h3 className="text-lg font-bold text-cc-ink">Where a statement comes from</h3>
+                <p className="mt-2 text-sm font-medium text-cc-ink-muted">One fixed list. The shape says how firm a statement is.</p>
+                {PROVENANCE_GROUPS.map((g) => (
+                  <div key={g.form} className="mt-5">
+                    <p className="text-xs font-semibold uppercase tracking-[0.08em] text-cc-ink-muted">
+                      {g.form} · {g.meaning}
+                    </p>
+                    <ul className="mt-2 flex list-none flex-col gap-2 p-0">
+                      {g.values.map((v) => (
+                        <li key={v} className="grid grid-cols-[150px_minmax(0,1fr)] items-start gap-3 text-sm">
+                          <span>
+                            <ProvenanceWord value={v} />
+                          </span>
+                          <span className="font-medium text-cc-ink-muted">{PROVENANCE[v].meaning}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+              <div className={CARD}>
+                <h3 className="text-lg font-bold text-cc-ink">Four buckets, one rule per object</h3>
+                <p className="mt-2 text-sm font-medium text-cc-ink-muted">
+                  The first rule that applies wins, and every assignment shows its evidence. The buckets depend on the
+                  project&apos;s target platform.
+                </p>
+                <ul className="mt-4 flex list-none flex-col gap-3 p-0">
+                  {PUBLIC_CLOUD_FIT_BUCKETS.map((b) => (
+                    <li key={b} className="flex gap-3 rounded-xl border border-cc-line bg-cc-surface-muted p-3.5">
+                      <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-white text-cc-ink">{BUCKET_ICON[b]}</span>
+                      <span>
+                        <b className="text-sm font-bold text-cc-ink">{PUBLIC_CLOUD_FIT_BUCKET_LABELS[b]}</b>
+                        <span className="mt-0.5 block text-sm font-medium leading-relaxed text-cc-ink">{BUCKET_RULE[b]}</span>
+                        <span className="mt-0.5 block text-sm font-medium leading-relaxed text-cc-ink-muted">{PUBLIC_CLOUD_FIT_BUCKET_MEANINGS[b]}</span>
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+                <p className="mt-4 text-sm font-medium leading-relaxed text-cc-ink-muted">
+                  <b className="font-bold text-cc-ink">Why 13 months:</b> period-end and year-end programs run once a year,
+                  so a shorter usage window never makes an object a retire candidate. The same level B object is Keep in
+                  Private Edition and Rebuild or No catalogued path in Public Edition.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* 9 · toolchain */}
+        <section id="toolchain" aria-labelledby="tools-title" className="scroll-mt-20 py-20 md:py-24">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <SectionHeader eyebrow="Next to your SAP tools" title="Does it replace SAP's own tools?" titleId="tools-title">
+              No. ABAP Test Cockpit stays the authoritative check and ADT stays where code is built and tested;
+              Clean-Core.io prepares the evidence and the decision around them.
+            </SectionHeader>
+            <div className="mx-auto max-w-5xl overflow-hidden rounded-3xl border border-cc-line bg-cc-surface">
+              <table className="w-full border-collapse text-left text-sm">
+                <thead className="hidden md:table-header-group">
+                  <tr className="border-b border-cc-line bg-cc-surface-muted text-xs font-semibold uppercase tracking-[0.08em] text-cc-ink-muted">
+                    <th scope="col" className="px-5 py-3">SAP tool</th>
+                    <th scope="col" className="px-5 py-3">What it is for</th>
+                    <th scope="col" className="px-5 py-3">How Clean-Core.io relates</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {toolchainRows.map((row) => (
+                    <tr key={row.tool} className="block border-b border-cc-line last:border-0 md:table-row" data-landing-tool="">
+                      <th scope="row" className="block px-5 pt-4 pb-1 font-bold text-cc-ink md:table-cell md:py-4 md:align-top">
+                        {row.tool}
+                      </th>
+                      <td className="block px-5 py-1 font-medium text-cc-ink-muted md:table-cell md:py-4 md:align-top">
+                        <span className="text-xs font-semibold uppercase tracking-[0.08em] md:hidden">What it is for · </span>
+                        {row.purpose}
+                      </td>
+                      <td className="block px-5 pt-1 pb-4 font-medium text-cc-ink md:table-cell md:py-4 md:align-top">
+                        <span className="text-xs font-semibold uppercase tracking-[0.08em] text-cc-ink-muted md:hidden">How Clean-Core.io relates · </span>
+                        {row.relation}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        {/* 10 · demo */}
+        <section id="demo" aria-labelledby="demo-title" className="scroll-mt-20 border-y border-cc-line bg-cc-surface py-20 md:py-24">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <SectionHeader eyebrow="Demo project" title="Can I try it before I upload my own code?" titleId="demo-title">
+              Yes. Every account has the same fully worked demo project, built from a real run of the example{' '}
+              {DEMO_OBJECT_NAME} — fictitious code, a guided tour, and nothing you do there is saved or counted.
+            </SectionHeader>
+            <div className="grid gap-8 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)] lg:items-start">
+              <Shot
+                shot="tour"
+                caption="The demo project with its guided tour — captured from the workspace."
+                alt={`The demo project ${DEMO_OBJECT_NAME} with the tour open at its first station, “What this code decides”, and the Next, Pause tour and End tour buttons.`}
+              />
+              <div>
+                <h3 className="text-lg font-bold text-cc-ink">What the tour walks through</h3>
+                <ol className="mt-3 grid list-decimal grid-cols-2 gap-x-6 gap-y-1 pl-5 text-sm font-medium text-cc-ink-muted">
+                  {['Reveal line', 'Not determined', 'Map and source', 'Levels of a large process', 'Confirm a rule', 'Standard fit', 'IT chain', 'Management view', 'Four buckets', 'Costs as simulation', 'Decision', 'Handover'].map((s) => (
+                    <li key={s}>{s}</li>
+                  ))}
+                </ol>
+                <ul className="mt-5 flex list-none flex-col gap-2.5 p-0 text-sm font-medium text-cc-ink">
+                  <li className="flex gap-2.5">
+                    <Layers size={18} className="shrink-0 text-cc-brand-strong" aria-hidden="true" /> Confirm, decide, filter and edit. The state lives only in your browser and is gone with “Reset demo”.
+                  </li>
+                  <li className="flex gap-2.5">
+                    <Check size={18} className="shrink-0 text-cc-brand-strong" aria-hidden="true" /> Nothing counts against your analysis runs, and a demo run is never signed.
+                  </li>
+                  <li className="flex gap-2.5">
+                    <ShieldCheck size={18} className="shrink-0 text-cc-brand-strong" aria-hidden="true" /> One demo for every account, rebuilt when the engine or its rules change.
+                  </li>
+                </ul>
+                <div className="mt-6">
+                  <AuthLink to={DEMO_ROUTE}>
+                    Explore the demo <ArrowRight size={18} aria-hidden="true" />
+                  </AuthLink>
+                  <p className="mt-2 text-sm font-medium text-cc-ink-muted">Needs a free account. The demo is the first row in your workspace.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/*
-          The proof, moved up.
-
-          It used to sit after the process carousel, the business argument and the
-          SAP tool matrix — the one section on this page a reader can check
-          themselves, four screens below the claim it verifies. Grok, GPT-5.6-sol
-          and GLM-5v each proposed moving it independently; GPT put the reason
-          best: the first impression becomes less "AI landing page" and more
-          "checkable architecture tool".
-
-          Nothing in it changed except its place — and the process strip inside,
-          which answers the question the two halves left out.
+          The transformation showroom. Whether it moves to /how-it-works is open
+          (roadmap 3.0.6); until the owner decides, it keeps its place and its
+          structure — the replay, the three worked examples, the sample package,
+          and the seven stages, which in 3.0 are the tools of the workspace.
         */}
-        {/* Transformation Showroom */}
-        <section id="showroom" className="py-24 md:py-32 bg-slate-50/50 border-y border-gray-200/40 relative scroll-mt-14">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6">
-            <SectionHeader
-              eyebrow="Three Worked Examples"
-              title="See a real ABAP program transformed"
-            >
-              {/*
-                This read "Every output below is a real transformation — verified,
-                compiled and tested against Clean-Core Engine {APP_VERSION}". None of
-                those three words had a mechanism behind it: the outputs below are
-                fixed text in a component, there is no ABAP compiler anywhere in this
-                product, and nothing on this page is executed. The green ticks that
-                repeated the claim beside the code ("Service definition compiled",
-                "1 of 1 unit tests passed") are gone for the same reason — a corrected
-                sentence next to a badge that contradicts it is still a contradiction
-                (QA fa9e39148077, 1925189d0606; audit F-16: "compiled and tested"
-                without a named mechanism is not allowed).
-              */}
-              Three example programs, end to end: what each one is, what it does as a process, and
-              what the engine turns it into. The outputs below are fixed examples generated with
-              Clean-Core Engine {APP_VERSION}; nothing on this page was compiled or run. Your own
-              code goes through the same seven steps.
+        <section id="showroom" aria-labelledby="showroom-title" className="relative scroll-mt-20 overflow-hidden py-20 md:py-24">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6">
+            <SectionHeader eyebrow="Three worked examples" title="See a real ABAP program transformed" titleId="showroom-title">
+              Three example programs, end to end: what each one is, what it does as a process, and what the engine turns
+              it into. The outputs below are fixed examples generated with Clean-Core Engine {APP_VERSION}; nothing on
+              this page was compiled or run.
             </SectionHeader>
             <Suspense fallback={null}>
               <TransformationReplay />
@@ -508,542 +1125,244 @@ export default function Home() {
               <SamplePackageDownload />
             </Suspense>
           </div>
+          <div className="mt-16">
+            <div className="mx-auto max-w-7xl px-4 sm:px-6">
+              <SectionHeader eyebrow="The seven stages" title="The tools in your workspace">
+                Behind the three views sit seven stages, each a tool you open from the workspace. Each one produces
+                something you can read and check before the next — and a person signs the result, not the tool.
+              </SectionHeader>
+            </div>
+            <LandingProcess />
+          </div>
         </section>
 
-
-        {/* The seven phases. The lead names them from PHASES rather than spelling
-            them out: the sentence that stood here — "Upload, analyze, design,
-            transform, test, document, deliver" — was the stepper of July, with
-            Upload as a phase of its own and no Economics, and it had drifted
-            silently because nothing compared it to the product. */}
-        <div id="process" className="scroll-mt-14 relative z-20 animate-in fade-in slide-in-from-bottom-24 duration-1000 delay-700">
-          {/* This was the only section on the page without a header, so it read as
-              a widget floating between two arguments rather than as the step that
-              follows the examples. Same eyebrow, same heading scale, same lead
-              width as every other section. */}
-          <div className="max-w-7xl mx-auto px-4 sm:px-6">
-            <SectionHeader
-              eyebrow="The Seven Phases"
-              title="How a transformation actually runs"
-            >
-              {PHASES.map((p) => p.label).join(' · ')}. Each phase produces something you can
-              read and check before the next one starts &mdash; and an architect signs the result,
-              not the tool.
+        {/* 11 · start */}
+        <section id="start" aria-labelledby="start-title" className="scroll-mt-20 border-y border-cc-line bg-cc-surface py-20 md:py-24">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <SectionHeader eyebrow="Start · free" title="How do I start, and what does it cost?" titleId="start-title">
+              Nothing — Clean-Core.io is free. Each of the {STARTER_EXAMPLES.length} examples runs once at no cost, your own
+              code uses one of five free analysis runs, and after that you continue with your own Gemini API key.
             </SectionHeader>
-          </div>
-          <LandingProcess />
-        </div>
-
-        {/* Benefit card, placed after the slideshow: the reader has seen what the
-            product does, and this answers "so where does that leave me". Built
-            around the two questions a legacy decision waits on — the business one
-            first and larger, because the market answers only the technical one.
-            Replaces the unprovable "save days" claim with a reproducible run. */}
-        <div id="evidence" className="scroll-mt-14 max-w-6xl mx-auto px-6 mt-20 relative z-20 animate-in fade-in slide-in-from-bottom-24 duration-1000 delay-700">
-          <SectionHeader
-            eyebrow="One Reproducible Run"
-            title="Nobody can say what this program does"
-            titleId="benefit-heading"
-            align="left"
-          >
-            Somewhere in your S/4HANA transformation a Z-object is blocking a keep, adapt or retire
-            decision, because nobody can answer &ldquo;do we still need this?&rdquo; &mdash; so the
-            row sits in the spreadsheet until the upgrade date makes it an emergency. Every custom
-            code tool will size the work; none of them tells the business what the work is. This one
-            answers both, with the limits published before you upload anything.
-          </SectionHeader>
-          <BenefitCard
-            linesOfCode={reference.linesOfCode}
-            totalFindings={reference.totalFindings}
-            resolved={reference.resolved}
-            decision={reference.decision}
-            handedBack={reference.handedBack}
-            handedBackKinds={reference.handedBackKinds}
-            rollCall={reference.rollCall}
-            businessDecisions={reference.businessDecisions}
-            classifiedObjects={facts.objectCount}
-            constructsTotal={constructs.length}
-            constructsFullyCovered={fullyCovered}
-          />
-        </div>
-
-        {/*
-          The "Verifiable Integrity — No AI Black-Box Promises" section stood here.
-          It made the same argument as the benefit card a thousand pixels above it,
-          with the same three categories in the same three colours — Fully Grounded
-          / Quirk Review / Manual Handover against settled / your call / hand work —
-          and it was the louder of the two while being the one without a single
-          number in it. The card had the evidence and whispered; this had the
-          typography and shouted.
-
-          Merged into the card: the three descriptions became the meaning printed
-          under each computed number, which is where they were always going, and
-          the methodology link moved with them. The card carries the dark treatment
-          now, on the half that holds the proof.
-        */}
-
-
-        {/* Comparison Highlight Table */}
-        <div id="toolchain" className="scroll-mt-14 max-w-6xl mx-auto px-6 mt-20 relative z-20 animate-in fade-in slide-in-from-bottom-28 duration-1000 delay-800">
-          <div className="bg-white rounded-[2rem] p-6 sm:p-10 md:p-12 border border-slate-200 shadow-xl relative overflow-hidden">
-            {/* Glowing Accent */}
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_20%,rgba(16,185,129,0.04),transparent_45%)] pointer-events-none" />
-            
-            <div className="relative z-10">
-              <SectionHeader
-                eyebrow="Complements Your SAP Toolchain"
-                title="How we complement your SAP tools"
-                align="left"
-              >
-                The SAP ABAP Test Cockpit (ATC) is the authoritative check for Clean Core
-                violations &mdash; keep using it. Clean-Core.io picks up from there: it maps each
-                finding against SAP&apos;s Cloudification Repository and drafts BTP or RAP
-                scaffolding for you to review, then validate back in your ABAP Development Tools
-                (ADT) and ATC.
-              </SectionHeader>
-              <div className="text-center md:text-left -mt-10 mb-10">
-              {facts.objectCount > 0 && (
-                <div className="inline-flex items-center gap-2 mt-4 px-4 py-2 rounded-full bg-emerald-50 border border-emerald-200/60 text-emerald-800 text-xs font-bold">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                  {facts.objectCount.toLocaleString('en-US')} classified SAP objects · Auto-synced from SAP&apos;s official repository
-                </div>
-              )}
-              </div>
-            </div>
-
-            {/* Mobile View: Stacked Comparison Cards (hidden on desktop) */}
-            <div className="space-y-5 md:hidden relative z-10">
-              {comparisonRows.map((row, idx) => (
-                <div key={idx} className="bg-slate-50 rounded-2xl border border-slate-200/80 overflow-hidden">
-                  {/* Capability Title */}
-                  <div className="bg-slate-100/80 px-5 py-3 border-b border-slate-200/60">
-                    <h4 className="text-xs font-black text-slate-900 uppercase tracking-wider">
-                      {row.title}
-                    </h4>
-                  </div>
-                  
-                  <div className="divide-y divide-slate-200/50">
-                    {/* SAP Side */}
-                    <div className="px-5 py-4 space-y-2">
-                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">SAP Native Tooling</span>
-                      <span className={`inline-flex items-center gap-1.5 font-bold text-[11px] uppercase tracking-wider px-2.5 py-1 rounded-full ${
-                        row.sap.level === 'partial'
-                          ? 'text-slate-700 bg-slate-100 border border-slate-200/60' 
-                          : 'text-slate-400 bg-slate-50 border border-slate-200/40'
-                      }`}>
-                        {row.sap.level === 'none' && <span className="text-red-400">✕</span>}
-                        {row.sap.badge}
-                      </span>
-                      <p className="text-slate-500 text-xs leading-relaxed">{row.sap.desc}</p>
-                    </div>
-
-                    {/* Vs Divider */}
-                    <div className="flex items-center px-5 py-0 relative">
-                      <div className="absolute inset-x-5 top-1/2 -translate-y-1/2 h-px bg-slate-200/60" />
-                      <span className="relative z-10 mx-auto bg-slate-50 px-2.5 py-0.5 text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">vs</span>
-                    </div>
-
-                    {/* Clean-Core.io Side */}
-                    <div className="px-5 py-4 space-y-2 bg-emerald-50/30 border-l-[3px] border-l-emerald-400">
-                      <span className="text-[10px] font-black text-emerald-600 uppercase tracking-wider block">clean-core.io</span>
-                      <span className="inline-flex items-center gap-1.5 text-emerald-700 font-bold text-[11px] uppercase tracking-wider bg-emerald-50 border border-emerald-200/60 px-2.5 py-1 rounded-full">
-                        <span className="text-emerald-500">✓</span>
-                        {row.cc.badge}
-                      </span>
-                      <p className="text-slate-700 text-xs leading-relaxed">{row.cc.desc}</p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Desktop View: Comparison Rows (hidden on mobile) */}
-            <div className="hidden md:block relative z-10 space-y-3">
-              {/* Column Headers */}
-              <div className="grid grid-cols-[1fr_1fr_1fr] gap-4 px-2 pb-2">
-                <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Capability</div>
-                <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">SAP Native Tooling</div>
-                <div className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Clean-Core.io</div>
-              </div>
-
-              {comparisonRows.map((row, idx) => (
-                <div key={idx} className="grid grid-cols-[1fr_1fr_1fr] gap-4 items-stretch">
-                  {/* Capability Name */}
-                  <div className="flex items-center px-5 py-4 bg-slate-50/80 rounded-xl border border-slate-100">
-                    <span className="font-bold text-sm text-slate-900 leading-snug">{row.title}</span>
-                  </div>
-
-                  {/* SAP Column */}
-                  <div className="flex items-start gap-3 px-5 py-4 bg-slate-50/40 rounded-xl border border-slate-100/80">
-                    <span className={`mt-0.5 shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black ${
-                      row.sap.level === 'partial' 
-                        ? 'bg-amber-100 text-amber-600 border border-amber-200/60' 
-                        : row.sap.level === 'weak' 
-                        ? 'bg-slate-100 text-slate-400 border border-slate-200/60' 
-                        : 'bg-red-50 text-red-400 border border-red-200/40'
-                    }`}>
-                      {row.sap.level === 'partial' ? '~' : row.sap.level === 'weak' ? '–' : '✕'}
-                    </span>
-                    <div className="flex flex-col gap-1.5 min-w-0">
-                      <span className={`font-bold text-[11px] uppercase tracking-wider ${
-                        row.sap.level === 'partial' ? 'text-amber-700' : row.sap.level === 'weak' ? 'text-slate-500' : 'text-red-400'
-                      }`}>
-                        {row.sap.badge}
-                      </span>
-                      <span className="text-xs text-slate-400 leading-relaxed">{row.sap.desc}</span>
-                    </div>
-                  </div>
-
-                  {/* Clean-Core.io Column */}
-                  <div className="flex items-start gap-3 px-5 py-4 bg-emerald-50/50 rounded-xl border border-emerald-200/50 relative overflow-hidden">
-                    <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-emerald-400 rounded-l-xl" />
-                    <span className="mt-0.5 shrink-0 w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 border border-emerald-200/60 flex items-center justify-center text-[10px] font-black">✓</span>
-                    <div className="flex flex-col gap-1.5 min-w-0">
-                      <span className="font-bold text-[11px] uppercase tracking-wider text-emerald-700">{row.cc.badge}</span>
-                      <span className="text-xs text-slate-600 leading-relaxed">{row.cc.desc}</span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Features Section */}
-      <section id="capabilities" className="py-24 md:py-32 bg-white relative scroll-mt-14">
-        <div className="max-w-7xl mx-auto px-6">
-          <SectionHeader
-            eyebrow="Live Today"
-            title="What you can do today"
-          >
-            Every feature listed here is live and free to use &mdash; start with 5 transformations
-            or bring your own API key for unlimited access.
-          </SectionHeader>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {[
-              {
-                icon: <Layers className="w-8 h-8 text-green-600" />,
-                title: 'Extensibility Routing & Sign-Off',
-                desc: 'Classifies legacy custom logic against SAP Clean Core guidelines, routes between In-App RAP and Side-by-Side CAP tracks, and gates transformation behind an explicit architecture decision.',
-                link: '/features/extensibility-routing',
-                testId: 'feature-extensibility-routing'
-              },
-              {
-                icon: <Globe className="w-8 h-8 text-green-600" />,
-                title: 'SAP Cloudification Catalog',
-                desc: 'Maps legacy objects against SAP\'s official Cloudification Repository — the same source behind SAP ATC checks — layered with curated field-level mappings. Weekly auto-synced, versioned, and audit-traceable.',
-                link: '/features/cloudification-catalog',
-                testId: 'feature-sap-api-hub-mapping'
-              },
-              {
-                icon: <Cpu className="w-8 h-8 text-green-600" />,
-                title: 'Dual RAP & CAP Engine',
-                desc: 'Generates clean In-App ABAP Cloud RAP handlers or decoupled BTP CAP services. Powered by a deterministic evidence resolver that linearizes OO inheritance chains before translation, reducing structural AI hallucinations.',
-                link: '/features/rap-cap-engine',
-                testId: 'feature-dual-rap-cap-engine'
-              },
-              {
-                icon: <Activity className="w-8 h-8 text-green-600" />,
-                title: 'Modernization Assessment',
-                desc: 'Computes complexity and business-criticality scores, extracts a full code inventory, and maps data coupling with standard SAP table risk analysis — all before transformation.',
-                link: '/features/modernization-assessment',
-                isNew: true,
-                testId: 'feature-business-value-audit-tco'
-              },
-              {
-                icon: <ShieldCheck className="w-8 h-8 text-green-600" />,
-                title: 'Compliance & Audit Evidence',
-                desc: 'Visual compliance dashboard with exportable audit pack: input fingerprints, architecture decision records, model cards, and known limitations — ready for governance reviews.',
-                link: '/features/audit-evidence',
-                testId: 'feature-adt-cockpit-simulation'
-              },
-              {
-                icon: <Layers className="w-8 h-8 text-green-600" />,
-                title: 'BPMN 2.0 & Business Standard Operating Procedures',
-                desc: 'Maps modernized processes into standard BPMN 2.0 XML with swimlanes. Features a two-stage blueprint layer with Responsible-Accountable-Consulted-Informed (RACI) matrices, Level 5 Standard Operating Procedure (SOP) narratives, and internal compliance controls.',
-                link: '/features/process-blueprints',
-                testId: 'feature-bpmn-2-0-business-sop'
-              }
-            ].map((feature, idx) => (
-              <div 
-                key={idx}
-                data-testid={feature.testId}
-                className="bg-white/45 backdrop-blur-md p-8 md:p-10 rounded-[2.5rem] border border-gray-200/60 hover:border-green-400 hover:bg-white/95 transition-all hover:shadow-xl hover:shadow-green-500/5 group hover:-translate-y-1.5 duration-350 flex flex-col justify-between"
-              >
-                <div>
-                  <div className="w-16 h-16 rounded-2xl bg-gray-50 flex items-center justify-center mb-8 border border-gray-100 shadow-sm group-hover:scale-110 transition-all duration-300 group-hover:bg-green-50 group-hover:shadow-md group-hover:border-green-200">
-                    <div className="text-green-600 transition-colors">
-                      {feature.icon}
-                    </div>
-                  </div>
-                  <h3 className="text-2xl font-black mb-4 text-gray-955 tracking-tight flex items-center gap-2">
-                    {feature.title}
-                    {feature.isNew && (
-                      <span className="px-2 py-0.5 bg-green-600 text-white text-[9px] font-black rounded-md uppercase tracking-wider">NEW</span>
-                    )}
-                  </h3>
-                  <p className="text-gray-700 leading-relaxed font-medium text-sm md:text-base mb-6">{feature.desc}</p>
-                </div>
-                {feature.link && (
-                  <Link 
-                    href={feature.link}
-                    className="text-green-600 hover:text-green-700 font-bold text-sm inline-flex items-center gap-1 hover:underline mt-auto"
-                  >
-                    Learn more <ArrowRight size={14} />
-                  </Link>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Trust & Security Section */}
-      <section id="data" className="py-24 bg-slate-50/50 border-y border-gray-900/5 relative overflow-hidden scroll-mt-14">
-        {/* Background ambient lighting */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-green-500/5 rounded-full blur-[120px] pointer-events-none" />
-        
-        <div className="max-w-7xl mx-auto px-6 relative z-10">
-          <SectionHeader
-            eyebrow="Sovereign & Secured"
-            title="Your data stays yours"
-          >
-            European hosting, designed to support GDPR-aligned processing and erasure workflows,
-            with self-service data erasure control. We built the security architecture the way
-            we&apos;d want it for our own SAP systems.
-          </SectionHeader>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {[
-              {
-                icon: <Globe className="w-6 h-6 text-green-600" />,
-                title: "Belgium Hosting (Europe)",
-                desc: "Application storage and primary processing run in the europe-west1 GCP region (Belgium); AI and transactional-email subprocessors are disclosed separately."
-              },
-              {
-                icon: <ShieldCheck className="w-6 h-6 text-green-600" />,
-                title: "DSGVO / GDPR-aligned",
-                desc: "Art. 17 DSGVO erasure: purge all your uploads and data in Settings. Transactional emails are routed via the Resend API; subprocessors process data under their own terms."
-              },
-              {
-                icon: <Layers className="w-6 h-6 text-green-600" />,
-                title: "Cloud-Native Security",
-                desc: "Runs on Google Cloud Run with server-side encryption and stateless request handling — no persistent local data on the request path. Processing happens in managed, ephemeral containers."
-              },
-              {
-                icon: <Shield className="w-6 h-6 text-green-600" />,
-                title: "Hardened Stateless APIs",
-                desc: "Your BYOK API credentials are encrypted in transit, proxied securely server-side, and never trained or exposed to public LLM builders."
-              }
-            ].map((trust, idx) => (
-              <div 
-                key={idx}
-                className="bg-white/60 backdrop-blur-md p-6 rounded-3xl border border-gray-200/60 hover:border-green-400 hover:shadow-xl hover:shadow-green-500/5 hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between"
-              >
-                <div>
-                  <div className="w-12 h-12 bg-slate-50 rounded-xl flex items-center justify-center mb-6 border border-gray-100 shadow-sm">
-                    {trust.icon}
-                  </div>
-                  <h3 className="text-lg font-black text-gray-955 tracking-tight mb-2 uppercase">{trust.title}</h3>
-                  <p className="text-gray-600 text-xs md:text-sm leading-relaxed font-medium">{trust.desc}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Community Access & Capabilities Section */}
-      <section className="py-24 md:py-32 bg-white relative overflow-hidden scroll-mt-14" id="access">
-        <div className="max-w-6xl mx-auto px-6 relative z-10">
-          <SectionHeader
-            eyebrow="100% Free — No Credit Card Required"
-            title="Community access"
-          >
-            Every feature is included for free &mdash; no locked exports, no premium tiers. The
-            only limit is 5 transformations; bring your own Gemini API key for unlimited runs.
-            Both are 100&nbsp;% free.
-          </SectionHeader>
-
-          {/* The Free Community Model — positioning statement */}
-          <div className="max-w-4xl mx-auto mb-16">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <ol className="grid list-none gap-4 p-0 md:grid-cols-3">
               {[
-                { t: 'Free to use', d: 'Free for the SAP community — 5 transformations at no cost, or bring your own Gemini key (BYOK) for unlimited runs under your own terms.' },
-                { t: 'Built on open standards & open data', d: 'Our object catalog is grounded in SAP’s Apache-2.0 Cloudification Repository, and your output is portable — standard abapGit and tests. You own what you generate. No lock-in.' },
-                { t: 'Transparent by design', d: 'Every finding is tied to evidence and a source; coverage is shown per object — including the honest cases where there is no clean path. Belegt, nicht behauptet.' },
-                { t: 'A complement, not a replacement', d: 'We accelerate the first assessment and draft. The architecture decisions — and the judgment — stay with you. An independent product, not affiliated with or endorsed by SAP SE.' },
-              ].map((p) => (
-                <div key={p.t} className="rounded-3xl border border-gray-200 bg-white p-6 text-left hover:border-emerald-300 hover:shadow-lg transition-all">
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
-                    <h3 className="text-base font-black text-gray-900">{p.t}</h3>
-                  </div>
-                  <p className="text-sm text-gray-600 leading-relaxed">{p.d}</p>
-                </div>
+                { t: 'Create a free account', d: 'Sign up with Google or with e-mail and password. No payment, no card.' },
+                { t: 'Open the demo, an example or your code', d: 'The engine reads the source first. The process, its rules and what could not be determined appear with line anchors.' },
+                { t: 'Confirm and decide', d: 'Confirm the rules, decide per object and hand over. Every completed analysis is sealed as a signed, unchangeable run.' },
+              ].map((s, i) => (
+                <li key={s.t} className={`${CARD} flex gap-4`}>
+                  <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-cc-ink text-base font-bold text-white" aria-hidden="true">
+                    {i + 1}
+                  </span>
+                  <span>
+                    <b className="block text-base font-bold text-cc-ink">{s.t}</b>
+                    <span className="mt-1 block text-sm font-medium leading-relaxed text-cc-ink-muted">{s.d}</span>
+                  </span>
+                </li>
               ))}
+            </ol>
+            <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
+              <div className={CARD}>
+                <h3 className="text-lg font-bold text-cc-ink">Try an example</h3>
+                <p className="mt-1 text-sm font-medium text-cc-ink-muted">
+                  {STARTER_EXAMPLES.length} fictitious programs. Each is free the first time you run it; running it again
+                  uses one of your analysis runs, and you are told before it starts.
+                </p>
+                <ul className="mt-4 flex list-none flex-col gap-2 p-0" data-landing-examples="">
+                  {[...STARTER_EXAMPLES]
+                    .sort((a, b) => b.lines - a.lines)
+                    .map((e) => (
+                      <li key={e.name}>
+                        <details className="group rounded-xl border border-cc-line bg-cc-surface-muted open:bg-white">
+                          <summary className="flex min-h-11 cursor-pointer list-none flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2.5 [&::-webkit-details-marker]:hidden">
+                            <code className="font-cc-mono text-sm font-semibold text-cc-ink">{e.name}</code>
+                            <span className="text-xs font-medium text-cc-ink-muted">
+                              {lines(e.lines)} lines · {e.size}
+                              {e.name === demoExample?.name ? ' · basis of the demo project' : ''}
+                            </span>
+                          </summary>
+                          <div className="px-4 pb-4 text-sm font-medium leading-relaxed">
+                            <p className="text-cc-ink">{e.summary}</p>
+                            <p className="mt-1 text-cc-ink-muted">Shows: {e.demonstrates}</p>
+                          </div>
+                        </details>
+                      </li>
+                    ))}
+                </ul>
+                <div className="mt-5">
+                  <AuthLink to="/dashboard" variant="primary">
+                    Open an example
+                  </AuthLink>
+                </div>
+              </div>
+              <div className="flex flex-col gap-5">
+                <div data-testid="card-sandbox" className={CARD}>
+                  <span className="inline-flex rounded-full border border-cc-line bg-cc-surface-muted px-2.5 py-0.5 text-xs font-semibold text-cc-ink-muted">
+                    No API key needed
+                  </span>
+                  <h3 className="mt-3 text-lg font-bold text-cc-ink">Free Community Edition</h3>
+                  <ul className="mt-3 flex list-none flex-col gap-2 p-0 text-sm font-medium text-cc-ink">
+                    <li className="flex gap-2.5"><Check size={18} className="shrink-0 text-cc-brand-strong" aria-hidden="true" /> Five free analysis runs per account — once, not per month</li>
+                    <li className="flex gap-2.5"><Check size={18} className="shrink-0 text-cc-brand-strong" aria-hidden="true" /> Each example free the first time</li>
+                    <li className="flex gap-2.5"><Check size={18} className="shrink-0 text-cc-brand-strong" aria-hidden="true" /> Every stage and every view included</li>
+                  </ul>
+                  <div className="mt-5">
+                    <AuthLink to="/dashboard" variant="secondary">
+                      Get Started
+                    </AuthLink>
+                  </div>
+                </div>
+                <div data-testid="card-developer" className={CARD}>
+                  <span className="inline-flex rounded-full border border-cc-line bg-cc-surface-muted px-2.5 py-0.5 text-xs font-semibold text-cc-ink-muted">
+                    Your own Gemini key
+                  </span>
+                  <h3 className="mt-3 text-lg font-bold text-cc-ink">Free, with your own key</h3>
+                  <ul className="mt-3 flex list-none flex-col gap-2 p-0 text-sm font-medium text-cc-ink">
+                    <li className="flex gap-2.5"><Key size={18} className="shrink-0 text-cc-brand-strong" aria-hidden="true" /> No quota on analysis runs</li>
+                    <li className="flex gap-2.5"><Lock size={18} className="shrink-0 text-cc-brand-strong" aria-hidden="true" /> Your key is stored encrypted and used only through our server</li>
+                    <li className="flex gap-2.5"><CircleHelp size={18} className="shrink-0 text-cc-brand-strong" aria-hidden="true" /> Google bills your key under your own agreement with Google</li>
+                  </ul>
+                  <div className="mt-5">
+                    <AuthLink to="/settings" variant="secondary">
+                      Add Your Gemini Key
+                    </AuthLink>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
+        </section>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-            {/* Card 1: Free Community Edition (no API key needed) */}
-            <div data-testid="card-sandbox" className="relative flex flex-col p-8 sm:p-10 rounded-[2.5rem] border border-gray-200 bg-white text-gray-900 hover:border-green-300 hover:shadow-xl transition-all duration-300">
-              <div className="mb-8">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-xl font-black">Free Community Edition</h3>
-                  <span className="text-[9px] font-black uppercase tracking-widest bg-gray-100 text-gray-500 px-3 py-1 rounded-full border border-gray-200">No API key needed</span>
-                </div>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-4xl font-black">Free</span>
-                  <span className="text-sm text-gray-500 font-medium">5 transformations</span>
-                </div>
-                <p className="text-xs md:text-sm font-medium mt-2 text-gray-500">Register with name and email &mdash; your workspace is live straight away.</p>
-              </div>
-              <ul className="space-y-3.5 mb-10 flex-grow">
-                {[
-                  'Full 7-stage modernization workflow — every feature included',
-                  'Up to 5 ABAP-to-Cloud transformations (RAP / CAP)',
-                  'Deterministic evidence engine + compliance & criticality scoring',
-                  'SAP Business Accelerator Hub mapping & Clean Core routing',
-                  'abapGit ZIP export, ABAP-Unit tests, BPMN & Confluence exports',
-                  'Server-signed audit evidence pack'
-                ].map((f, i) => (
-                  <li key={i} className="flex items-start gap-3 text-sm font-bold">
-                    <Check className="w-5 h-5 shrink-0 text-green-600" /> {f}
-                  </li>
-                ))}
-              </ul>
-              <PricingCTA cta="Get Started" highlight={false} disabled={false} />
-            </div>
-
-            {/* Card 2: Developer Upgrade (BYOK) */}
-            <div data-testid="card-developer" className="relative flex flex-col p-8 sm:p-10 rounded-[2.5rem] border border-gray-900 bg-gray-950 text-white shadow-2xl transition-all duration-300">
-              <div className="absolute top-0 right-1/2 translate-x-1/2 -translate-y-1/2 bg-green-600 text-white text-[10px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest shadow-lg">
-                Unlimited · Free
-              </div>
-              <div className="mb-8">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-xl font-black">Free + Your Own Key</h3>
-                  <span className="text-[9px] font-black uppercase tracking-widest bg-green-500/10 text-green-400 px-3 py-1 rounded-full border border-green-500/20">BYOK</span>
-                </div>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-4xl font-black">Free</span>
-                  <span className="text-sm text-gray-400 font-medium">Unlimited transformations</span>
-                </div>
-                <p className="text-xs md:text-sm font-medium mt-2 text-gray-400">Bring your own Google Gemini API key &mdash; encrypted and stored securely.</p>
-              </div>
-              <ul className="space-y-3.5 mb-10 flex-grow">
-                {[
-                  'Everything in the Free Community Edition — no features locked',
-                  'Unlimited code transformations (via BYOK)*',
-                  'Live S/4HANA sandbox connection (encrypted, read-only, admin-gated)',
-                  'Ideal for developers running large or ongoing modernizations'
-                ].map((f, i) => {
-                  const isAll = f.toLowerCase().includes('includes all');
-                  return (
-                    <li key={i} className={`flex items-start gap-3 text-sm ${isAll ? 'text-green-400 font-extrabold tracking-wide uppercase text-xs border border-green-500/30 bg-green-500/5 px-3 py-2 rounded-xl' : 'font-bold'}`}>
-                      <Check className={`w-5 h-5 shrink-0 ${isAll ? 'text-green-400' : 'text-green-400'}`} /> {f}
+        {/* 12 · trust — the lines of `lib/trust-claims.ts`, each with the document that says so. */}
+        <section id="trust" aria-labelledby="trust-title" className="scroll-mt-20 py-20 md:py-24">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <SectionHeader eyebrow="Your code and your trust" title="Your data stays yours" titleId="trust-title">
+              Your code is stored in the EU, reaches the Google Gemini API only through our server, and is never sold or
+              commercially used. Each line below links to the document that says so.
+            </SectionHeader>
+            <div className="grid gap-6 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
+              <div className={CARD}>
+                <h3 className="text-lg font-bold text-cc-ink">What you confirm</h3>
+                <p className="mt-2 text-sm font-medium leading-relaxed text-cc-ink">
+                  {TRUST_PLEDGE.text}{' '}
+                  <span className="text-cc-ink-muted">
+                    ({TRUST_PLEDGE.sources.map((s, i) => (
+                      <span key={s.href}>
+                        {i > 0 && ', '}
+                        <TextLink href={s.href}>{s.label}</TextLink>
+                      </span>
+                    ))})
+                  </span>
+                </p>
+                <h3 className="mt-6 text-lg font-bold text-cc-ink">What we do so you can trust us</h3>
+                <ul className="mt-3 flex list-none flex-col gap-3 p-0" data-landing-trust="">
+                  {TRUST_CLAIMS.filter((c) => c.id !== 'free').map((c) => (
+                    <li key={c.id} className="flex gap-3">
+                      <span className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-cc-brand-surface text-cc-brand-strong">{TRUST_ICON[c.icon]}</span>
+                      <span className="text-sm font-medium leading-relaxed text-cc-ink">
+                        {c.text}
+                        <span className="mt-0.5 flex flex-wrap gap-x-3 text-xs">
+                          {c.sources.map((s) => (
+                            <TextLink key={s.href + s.label} href={s.href}>
+                              {s.label}
+                            </TextLink>
+                          ))}
+                        </span>
+                      </span>
                     </li>
-                  );
-                })}
-              </ul>
-              <PricingCTA cta="Add Your Gemini Key" highlight={true} disabled={false} />
+                  ))}
+                </ul>
+              </div>
+              <div className={CARD}>
+                <h3 className="text-lg font-bold text-cc-ink">A free community project</h3>
+                {TRUST_CLAIMS.filter((c) => c.id === 'free').map((c) => (
+                  <div key={c.id}>
+                    <p className="mt-2 text-lg font-semibold leading-relaxed text-cc-ink">{c.text}</p>
+                    <p className="mt-2 flex flex-wrap gap-x-3 text-xs">
+                      {c.sources.map((s) => (
+                        <TextLink key={s.href + s.label} href={s.href}>
+                          {s.label}
+                        </TextLink>
+                      ))}
+                    </p>
+                  </div>
+                ))}
+                <p className="mt-6 text-sm font-medium leading-relaxed text-cc-ink-muted">
+                  Clean-Core.io is independent and not affiliated with or endorsed by SAP SE. Generated output is a draft
+                  that you review before any productive use. The code of this product is public:{' '}
+                  <TextLink href="https://github.com/sonnyfrenzel-rgb/clean-core.io">github.com/sonnyfrenzel-rgb/clean-core.io</TextLink>.
+                </p>
+              </div>
             </div>
           </div>
+        </section>
 
-          {/* Live Tenant Security Profile */}
-          <div className="mt-12 max-w-4xl mx-auto border border-dashed border-gray-200 rounded-3xl p-6 pt-4 relative">
-            <div className="flex items-center justify-center gap-2 mb-5">
-              <div className="h-px flex-1 bg-gray-200" />
-              {/* No `whitespace-nowrap`. The label is 340px wide and sat between
-                  two flex-1 rules, so on a narrow viewport it could not shrink and
-                  pushed the whole page sideways instead. It fits on one line
-                  wherever there is room and wraps, centred, where there is not. */}
-              <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 px-2 text-center">
-                S/4HANA Sandbox Connection — Security Profile
-              </span>
-              <div className="h-px flex-1 bg-gray-200" />
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {[
-                { icon: <Shield className="w-5 h-5 text-green-600" />, title: 'Sandbox Only · Read-Only', desc: 'Connections are restricted to non-production sandbox systems. Only a connection check, OData metadata reads and one read-only call — no test execution against the tenant, no write operations, no production access.', link: '/tenant-security#read-only-scope' },
-                { icon: <ShieldCheck className="w-5 h-5 text-green-600" />, title: 'Encrypted · Stateless', desc: 'Credentials are AES-256-GCM encrypted. SAP transaction data is processed statelessly in memory — no customer ERP data is persisted on our infrastructure.', link: '/tenant-security#stateless-processing' },
-                { icon: <Globe className="w-5 h-5 text-green-600" />, title: 'Admin-Gated Onboarding', desc: 'Every sandbox connection request is manually reviewed and approved by an administrator before activation.', link: '/tenant-security#admin-onboarding-gate' }
-              ].map((item, idx) => (
-                <div key={idx} className="bg-gray-50 p-5 rounded-2xl border border-gray-200/60 text-center">
-                  <div className="w-10 h-10 mx-auto bg-white rounded-xl flex items-center justify-center mb-3 border border-gray-100 shadow-sm">{item.icon}</div>
-                  <h4 className="text-xs font-black text-gray-900 uppercase tracking-wider mb-1">{item.title}</h4>
-                  <p className="text-[11px] text-gray-500 leading-relaxed font-medium">{item.desc}</p>
-                  {item.link && (
-                    <Link href={item.link} className="mt-3 inline-flex items-center gap-1 text-[10px] font-bold text-green-600 hover:text-green-700 uppercase tracking-wider hover:underline">
-                      Learn more <ArrowRight size={10} />
-                    </Link>
-                  )}
-                </div>
+        {/* 13 · FAQ — the same list as the JSON-LD FAQPage above. */}
+        <section id="faq" aria-labelledby="faq-title" className="scroll-mt-20 border-t border-cc-line bg-cc-surface py-20 md:py-24">
+          <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+            <SectionHeader eyebrow="FAQ" title="Questions people ask first" titleId="faq-title" />
+            <div className="flex flex-col gap-3" data-landing-faq="">
+              {faq.map((f, i) => (
+                <details key={f.q} open={i === 0} lang={f.lang} className="group rounded-2xl border border-cc-line bg-cc-page">
+                  <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-4 px-5 py-3 [&::-webkit-details-marker]:hidden">
+                    <h3 className="text-base font-bold text-cc-ink" data-faq-question="">
+                      {f.q}
+                    </h3>
+                    <ArrowRight size={16} className="shrink-0 text-cc-ink-muted transition-transform group-open:rotate-90 motion-reduce:transition-none" aria-hidden="true" />
+                  </summary>
+                  <div className="px-5 pb-5 text-sm font-medium leading-relaxed text-cc-ink-muted">
+                    <p data-faq-answer="">{f.a}</p>
+                    {f.more && (
+                      <p className="mt-2">
+                        <TextLink href={f.more.href}>{f.more.label}</TextLink>
+                      </p>
+                    )}
+                  </div>
+                </details>
               ))}
             </div>
           </div>
+        </section>
+      </main>
 
-          {/* BYOK Explainer */}
-          <div className="mt-8 text-center text-xs md:text-sm text-gray-550 max-w-2xl mx-auto leading-relaxed border border-gray-100 bg-gray-50/50 p-5 rounded-3xl shadow-sm">
-            <span className="font-extrabold text-gray-800 uppercase tracking-wider block mb-1">* BYOK (Bring Your Own Key)</span>
-            Use your own Google Gemini API key to run unlimited transformations without any platform limits. Your API key is encrypted (AES-256-GCM) and stored in your authenticated user profile&mdash;it is used exclusively via our secure backend proxy and never exposed in plaintext.
-            <span className="block mt-2 text-[11px] text-gray-500 font-medium">* Usage is subject to your Google Gemini API key quota and billing &mdash; clean-core.io does not charge any platform fees.</span>
+      {/* Footer — every page with search reach, the legal pages, the version. */}
+      <footer id="site-footer" className="scroll-mt-24 bg-cc-ink py-16 text-white md:py-20">
+        <div className="mx-auto max-w-5xl px-4 sm:px-6">
+          <div className="flex flex-col items-center gap-5 text-center">
+            <p className="text-2xl font-extrabold tracking-[-0.02em] md:text-3xl">Read the code before you decide.</p>
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <AuthLink to={DEMO_ROUTE}>
+                Explore the demo <ArrowRight size={18} aria-hidden="true" />
+              </AuthLink>
+              <Link href="/whitepaper" className={publicButton('ghost')}>
+                Read the whitepaper
+              </Link>
+            </div>
           </div>
-        </div>
-      </section>
-
-      {/* Footer CTA */}
-      <footer className="py-24 md:py-32 bg-gray-950 text-white text-center">
-        <div className="max-w-4xl mx-auto px-6">
-          <SectionHeader tone="dark" title="Verify it yourself">
-            Import the generated abapGit package into your Eclipse ADT, compile the code, and run
-            the ABAP-Unit tests &mdash; all in your own sandbox.
-          </SectionHeader>
-          <FooterCTA />
-
-          <div id="site-footer" className="mt-20 pt-12 border-t border-gray-800 scroll-mt-24">
+          <div className="mt-14 border-t border-white/15 pt-12">
             <SiteFooter dark />
           </div>
-
-          <div className="mt-16 pt-12 border-t border-gray-800 text-sm text-gray-500 font-light">
-            <p>&copy; 2026 Clean-Core.io. All rights reserved.</p>
-            <p className="mt-2 text-xs text-gray-600 font-mono font-bold uppercase tracking-wider">
-              System Version: {APP_VERSION} • {APP_RELEASE_DATE}
+          <div className="mt-10 border-t border-white/15 pt-8 text-center text-sm text-gray-300">
+            <p className="flex flex-wrap justify-center gap-x-4 gap-y-2">
+              <Link href="/impressum" className="hover:text-white">Legal Notice</Link>
+              <Link href="/datenschutz" className="hover:text-white">Privacy Policy</Link>
+              <Link href="/terms" className="hover:text-white">Terms of Service</Link>
+              <Link href="/licenses" className="hover:text-white">Licenses</Link>
+              <a href={SECURITY_MODEL_URL} className="hover:text-white" rel="noopener noreferrer" target="_blank">SECURITY.md on GitHub</a>
             </p>
-            <p className="mt-4 flex flex-wrap justify-center gap-4">
-              <Link href="/impressum" className="hover:text-white transition-colors cursor-pointer">Legal Notice</Link>
-              <span className="text-gray-800">|</span>
-              <Link href="/datenschutz" className="hover:text-white transition-colors cursor-pointer">Privacy Policy</Link>
-              <span className="text-gray-800">|</span>
-              <Link href="/terms" className="hover:text-white transition-colors cursor-pointer">Terms of Service</Link>
-              <span className="text-gray-800">|</span>
-              <Link href="/licenses" className="hover:text-white transition-colors cursor-pointer">Licenses</Link>
+            <p className="mx-auto mt-6 max-w-2xl text-xs leading-relaxed text-gray-300">
+              Generated output is a draft that you review, test and approve before any productive use. The platform is
+              provided free of charge and without warranty (<Link href="/terms" className="underline hover:text-white">Terms of Service</Link>).
             </p>
-            <div className="mt-12 text-[10px] sm:text-[11px] text-gray-550 max-w-2xl mx-auto leading-relaxed border border-gray-900 bg-gray-950/50 p-6 rounded-2xl text-left space-y-3">
-              <span className="font-extrabold text-gray-400 uppercase tracking-widest block border-b border-gray-900 pb-1.5">Legal Disclaimer & Verification Notice</span>
-              <p>
-                <strong>Free Community Modernization Platform:</strong> Clean-Core.io is a free, community-built SAP Clean Core modernization platform for architects and developers, maintained by Felix Frenzel. A free, non-commercial community project — no subscriptions or paid tiers. Provided for research and evaluation; generated outputs are drafts to review before productive use.
-              </p>
-              <p>
-                <strong>AI-Assisted Drafts &mdash; Verify Before You Deploy:</strong> All solution designs, compliance scores, modular code transformations, and test suites are dynamically generated using third-party generative AI models (Google Gemini API). All artifacts are provided on an <em>&quot;AS IS&quot;</em> and <em>&quot;AS AVAILABLE&quot;</em> basis without warranties of any kind. This tool generates the first compliant draft&mdash;the architect reviews, tests, and approves. We provide the abapGit packages and ABAP-Unit tests so you can compile and verify every output in your own Eclipse ADT environment.
-              </p>
-              <p>
-                <strong>Limitation of Liability:</strong> In no event shall the administrator, contributors, or developers be held liable for any direct, indirect, incidental, special, exemplary, or consequential damages (including, but not limited to, loss of data, system crashes, integration failures, or business interruption) however caused and on any theory of liability, whether in contract, strict liability, or tort arising in any way out of the use of this software, even if advised of the possibility of such damage.
-              </p>
-              <p>
-                <strong>Data Privacy & GDPR:</strong> Primary application storage and compute run on European cloud nodes in the Belgium (europe-west1) region. Uploaded code is processed via server-side proxy layers and saved in your encrypted, access-controlled project workspace (not used by Google to train its models, per the Gemini API terms). Users retain the right to erasure (Art. 17 GDPR) via the settings dashboard; AI and email subprocessors are disclosed separately.
-              </p>
-              <div className="pt-1 border-t border-gray-900">
-                <SapTrademarkNotice className="!text-gray-550" />
-              </div>
+            <div className="mx-auto mt-4 max-w-2xl">
+              <SapTrademarkNotice className="!text-gray-300" />
             </div>
+            <p className="mt-6 font-cc-mono text-xs text-gray-300">
+              © 2026 Clean-Core.io · Version {APP_VERSION} · {APP_RELEASE_DATE}
+            </p>
           </div>
         </div>
       </footer>
 
-      {/* Modals & Overlays Controller */}
       <Suspense fallback={null}>
         <LandingModals />
       </Suspense>

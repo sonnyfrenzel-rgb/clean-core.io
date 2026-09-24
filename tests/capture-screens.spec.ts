@@ -399,9 +399,17 @@ test.describe('capture the landing page views', () => {
     await open('?view=business');
     await page.evaluate((key) => window.localStorage.removeItem(key), TOUR_STORAGE_KEY);
     await open('?view=business');
-    const stop = page.locator('[data-demo-tour-station]').first();
-    if (await stop.count()) await stop.scrollIntoViewIfNeeded();
-    await page.screenshot({ path: path.join(out, LANDING_SHOTS.tour), type: 'jpeg', quality: 82 });
+    // From the workspace itself down, without the account bar above it: the
+    // capture account is an administrator (the switch), and a public page has
+    // no business showing whose session took the picture.
+    const below = async () => {
+      const top = (await page.locator('[data-demo-workspace]').first().boundingBox())!.y;
+      return { x: 96, y: Math.max(0, top - 20), width: 1248, height: 820 };
+    };
+    await page.setViewportSize({ width: 1440, height: 1000 });
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await page.screenshot({ path: path.join(out, LANDING_SHOTS.tour), type: 'jpeg', quality: 82, clip: await below() });
+    await page.setViewportSize({ width: 1440, height: 900 });
 
     // Each view from its own first answer: the header above it is the same in all three.
     await page.evaluate(
@@ -427,8 +435,9 @@ test.describe('capture the landing page views', () => {
       await open(`?view=${view}`);
       if (view === 'business') {
         // The hero: the window as it opens, title, views and the first answer.
+        await page.setViewportSize({ width: 1440, height: 1000 });
         await page.evaluate(() => window.scrollTo(0, 0));
-        await page.screenshot({ path: path.join(out, LANDING_SHOTS.hero), type: 'jpeg', quality: 82 });
+        await page.screenshot({ path: path.join(out, LANDING_SHOTS.hero), type: 'jpeg', quality: 82, clip: await below() });
       }
       await page.setViewportSize({ width: 1440, height: 1000 });
       const clip = await regionOf(`[data-demo-tour-place="${PLACE[view]}"]`, 820);

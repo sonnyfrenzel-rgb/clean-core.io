@@ -24,34 +24,34 @@ const withoutComments = (rel: string) =>
     .replace(/\/\*[\s\S]*?\*\//g, '')
     .replace(/^\s*\/\/.*$/gm, '');
 
-test.describe('the comparison matrix has one definition', () => {
-  test('both breakpoints render the same array', () => {
+test.describe('the toolchain table has one definition', () => {
+  // Roadmap 3.0.6 replaced the SAP-versus-Clean-Core.io comparison matrix with
+  // the mockup's toolchain table (ATC, ADT, SAP Signavio, SAP Cloud ALM). The
+  // mechanism this guard protects stays: one array, one renderer — the table
+  // stacks on a phone through CSS rather than through a second copy, which is
+  // how the old matrix drifted in three places.
+  test('one array, rendered once', () => {
     const s = read('app/page.tsx');
-    expect(s).toContain('const comparisonRows');
-    // Once for the cards under `md`, once for the desktop rows.
-    expect((s.match(/comparisonRows\.map\(/g) || []).length).toBe(2);
+    expect(s).toContain('const toolchainRows');
+    expect((s.match(/toolchainRows\.map\(/g) || []).length).toBe(1);
+    expect(s).not.toContain('const comparisonRows');
   });
 
-  test('no capability row is spelled out inline any more', () => {
+  test('no tool row is spelled out inline', () => {
     const s = read('app/page.tsx');
-    const body = s.slice(s.indexOf('const comparisonRows'));
-    const decl = body.slice(0, body.indexOf('return ('));
-    const jsx = body.slice(body.indexOf('return ('));
-    // Every row title belongs to the one declaration; a second occurrence in the
-    // markup means the array has been copied back into the JSX.
-    for (const title of ['Sandbox Verification', 'Business Process Blueprinting', 'Developer HUD']) {
-      expect(decl, `${title} missing from the shared array`).toContain(title);
-      expect(jsx, `${title} written out in the markup again`).not.toContain(title);
+    const body = s.slice(s.indexOf('const toolchainRows'));
+    const decl = body.slice(0, body.indexOf('const schemaJson'));
+    const jsx = s.slice(s.lastIndexOf('return ('));
+    for (const tool of ['ABAP Test Cockpit (ATC)', 'ABAP Development Tools (ADT)', 'SAP Cloud ALM']) {
+      expect(decl, `${tool} missing from the shared array`).toContain(tool);
+      expect(jsx, `${tool} written out in the markup again`).not.toContain(tool);
     }
   });
 
-  test('the renderers style from the grade, not from the badge text', () => {
+  test('the ATC row reads the object count from lib/facts.ts', () => {
     const s = read('app/page.tsx');
-    // Comparing badge strings is what let "Not Supported" and "Not Available"
-    // drift apart while both still rendered correctly.
-    expect(s).not.toContain("row.sap.badge === 'Not Supported'");
-    expect(s).not.toContain("row.sap.badge === 'Static Check'");
-    expect((s.match(/row\.sap\.level === 'none'/g) || []).length).toBeGreaterThanOrEqual(1);
+    const decl = s.slice(s.indexOf('const toolchainRows'), s.indexOf('const schemaJson'));
+    expect(decl).toContain('${catalogObjects}');
   });
 });
 
@@ -122,11 +122,11 @@ test.describe('the legal pages are reachable without an account', () => {
 
 test.describe('the roll-call says whose naming it is', () => {
   test('the provenance difference is explained, not left to be found', () => {
-    const s = read('components/BenefitCard.tsx');
-    const jsx = s.slice(s.indexOf('return (')).replace(/\{\/\*[\s\S]*?\*\/\}/g, '');
+    const s = read('app/page.tsx');
+    const jsx = s.slice(s.lastIndexOf('return (')).replace(/\{\/\*[\s\S]*?\*\/\}/g, '');
     // The engine may hand a developer API_SALES_ORDER_SRV for VBAK while this
     // list shows SAP's I_SALESDOCUMENT. Unexplained, that reads as an error.
-    expect(jsx).toContain('successors SAP');
+    expect(jsx).toContain('successor from SAP');
     expect(jsx).toMatch(/curated field-level/);
   });
 });
