@@ -327,6 +327,27 @@
   .cc-no-print {
     display: none !important;
   }
+
+  /* Roadmap 8.6: while the steering one-pager is open, paper carries it and
+     nothing else. Every element that neither is the one-pager, sits inside
+     it, nor contains it is taken out of the flow — so the shell, the other
+     cards and the footer leave no blank pages behind, and the PDF is the one
+     page the reader saw. Without the one-pager open this rule matches nothing. */
+  body:has([data-steering-print])
+    *:not([data-steering-print]):not([data-steering-print] *):not(:has([data-steering-print])) {
+    display: none !important;
+  }
+
+  [data-steering-print] {
+    border: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+    color: #0b1c30 !important;
+  }
+
+  [data-steering-print] li {
+    break-inside: avoid;
+  }
 }
 
 @media (forced-colors: active) {

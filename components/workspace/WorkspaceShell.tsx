@@ -16,6 +16,7 @@ import PublicCloudFitPanel from './PublicCloudFitPanel';
 import ManagementAnswers from './ManagementAnswers';
 import ItAnswers from './ItAnswers';
 import DecisionCard from './DecisionCard';
+import SteeringOnePager from './SteeringOnePager';
 import FirstLook from './FirstLook';
 import AskThisCase from './AskThisCase';
 import CoachMarkNote from './CoachMarks';
@@ -444,7 +445,7 @@ export default function WorkspaceShell({
 
       {/* Everything the engine could not work out, with its reason — the reason
           to trust the rest of the screen (roadmap 1.4). */}
-      <div className="mt-5 max-w-3xl">
+      <div id="not-determined" className="mt-5 max-w-3xl">
         <CoachMarkNote
           mark={currentMark}
           slot="not-determined"
@@ -485,6 +486,19 @@ export default function WorkspaceShell({
         </div>
       )}
 
+      {/* The steering one-pager (roadmap 8.6, mockup screen 5: "Steering
+          one-pager" in Management's tool row) — figures only, each with its
+          coverage and a link to its evidence, and a "Not determined" column.
+          A view like Management itself: derived when opened, never stored,
+          not part of the signed audit pack; printed through the browser.
+          Placed after the answer, not above it: Management begins with its
+          answer sentence (ADR-029). */}
+      {view === 'management' && (
+        <div className="mt-5 max-w-3xl">
+          <SteeringOnePager project={project} projectId={projectId} />
+        </div>
+      )}
+
       {/* Public-Cloud-Fit and the four buckets (roadmap 6.7, `DESIGN.md` §5.6) —
           Management's own answer, so it renders only there rather than a stub
           appearing in the other two views ahead of its content. */}
@@ -501,7 +515,7 @@ export default function WorkspaceShell({
           reaches the SAP catalog) and writes only through the commands route;
           the confirmation is a write, so the Stand check of 6.9 hangs off it. */}
       {view === 'management' && (
-        <div className="mt-5 max-w-3xl">
+        <div id="decision-card" className="mt-5 max-w-3xl">
           <DecisionCard projectId={projectId} beforeWrite={stand.checkBeforeWrite} />
         </div>
       )}
