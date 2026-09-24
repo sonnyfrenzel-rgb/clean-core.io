@@ -547,6 +547,32 @@ test.describe('the reference cases, opened in the workspace', () => {
       }
       await page.keyboard.press('Escape');
 
+      // And every other status: its "Why?" opens, names each phase it rests
+      // on with that phase's badge, and links to that phase's tool. Opening
+      // only Handover's left a broken control or a wrong detail on the other
+      // four invisible to this test (QA review of 4b4586aff273, b30189096d30).
+      const stageRoute = (key: string) =>
+        register.stages.find((stage: { key: string }) => stage.key === key)?.route.split('/').pop() ?? key;
+      for (const facet of Object.keys(rc.workspace.statusLine)) {
+        if (facet === 'handover') continue;
+        const status = page.locator(`[data-workspace-status="${facet}"]`);
+        await status.locator('[data-cc-why]').click();
+        await expect(status.locator('[data-workspace-status-basis]'), `${rc.id}: ${facet} "Why?"`).toBeVisible();
+        const phases = (Object.keys(register.workspace.phaseFacets) as PhaseKey[]).filter(
+          (key) => (register.workspace.phaseFacets[key] ?? register.workspace.unfacetedPhasesReadBy) === facet,
+        );
+        for (const key of phases) {
+          await expect(status.locator(`[data-workspace-status-phase="${key}"]`), `${rc.id}: ${facet} names ${key}`).toBeVisible();
+          await expect(status.locator(`[data-workspace-status-tool="${key}"]`)).toHaveAttribute(
+            'href',
+            `/project/${projectId}/${stageRoute(key)}`,
+          );
+          const badge = (rc.expect.badges as Record<string, string>)[key];
+          if (badge) await expect(status.locator(`[data-workspace-status-phase="${key}"]`)).toContainText(badge);
+        }
+        await page.keyboard.press('Escape');
+      }
+
       if (rc.workspace.nextStep) {
         await expect(page.locator('[data-next-step-state="open"]')).toHaveAttribute(
           'data-next-step-key',
