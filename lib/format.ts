@@ -113,7 +113,10 @@ export function formatDateTime(value: unknown, options: { timeZone?: string } = 
   const part = (type: Intl.DateTimeFormatPartTypes) => parts.find((p) => p.type === type)?.value ?? '';
   const month = Number(part('month'));
   const hour = Number(part('hour')) % 24;
-  const zone = part('timeZoneName') === 'GMT' ? 'UTC' : part('timeZoneName');
+  // A zero offset is called UTC, however the ICU build spells it — "GMT"
+  // on one, "GMT+0" on another (Linux CI); both are the same clock.
+  const rawZone = part('timeZoneName');
+  const zone = /^(?:GMT|UTC)(?:[+-]0{1,2}(?::00)?)?$/.test(rawZone) ? 'UTC' : rawZone;
   return `${Number(part('day'))} ${MONTHS[month - 1]} ${part('year')}, ${pad(hour)}:${part('minute')} ${zone}`;
 }
 

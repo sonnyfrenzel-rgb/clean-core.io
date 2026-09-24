@@ -545,3 +545,13 @@ test.describe('and paint themselves consistently', () => {
     await expect(toast).toBeHidden({ timeout: 8000 });
   });
 });
+
+test.describe('a caller\'s busy state is not swallowed', () => {
+  test('CcButton keeps an aria-busy its caller passes, as well as its own busy (pipeline 36047501753)', () => {
+    const src = fs.readFileSync(path.join(process.cwd(), 'components/cc/Button.tsx'), 'utf8');
+    // The spread comes first and the component writes aria-busy after it, so the
+    // component's own value must include the caller's — otherwise NavigationButtons
+    // and the runner self-test lost their announced busy state.
+    expect(src).toContain("aria-busy={busy || rest['aria-busy'] || undefined}");
+  });
+});

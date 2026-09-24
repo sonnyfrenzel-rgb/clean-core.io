@@ -106,7 +106,7 @@ export default function CcButton({
     <button
       {...rest}
       type={type}
-      aria-busy={busy || undefined}
+      aria-busy={busy || rest['aria-busy'] || undefined}
       aria-disabled={busy || rest['aria-disabled'] || undefined}
       onClick={
         busy

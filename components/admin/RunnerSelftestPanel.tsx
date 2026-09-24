@@ -274,7 +274,7 @@ export default function RunnerSelftestPanel() {
             variant="primary"
             onClick={run}
             disabled={busy}
-            aria-busy={busy}
+            busy={busy}
             data-runner-selftest-run=""
           >
             {busy ? 'Running…' : 'Run self-test'}
