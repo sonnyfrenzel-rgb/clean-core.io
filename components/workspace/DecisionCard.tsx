@@ -66,7 +66,10 @@ export default function DecisionCard({
   const [reload, setReload] = useState(0);
   const [asking, setAsking] = useState<'confirm' | 'withdraw' | null>(null);
   const [busy, setBusy] = useState(false);
-  const [refusal, setRefusal] = useState<string | null>(null);
+  // The headline says what the refused action left behind: a confirmation that
+  // first recorded the draft has written that draft, so "Nothing was written"
+  // would be false there.
+  const [refusal, setRefusal] = useState<{ headline: string; sentence: string } | null>(null);
   const [conditionsOpen, setConditionsOpen] = useState(false);
   const [timelineOpen, setTimelineOpen] = useState(false);
 
@@ -120,10 +123,12 @@ export default function DecisionCard({
     setRefusal(null);
     if (beforeWrite && !(await beforeWrite())) return;
     setBusy(true);
+    let draftSaved = false;
     try {
       const draft = answer.draft;
       if (!answer.stored || answer.stored.fingerprint !== draft.fingerprint || answer.stored.status !== 'draft') {
         await runProjectCommand(projectId, { command: 'record-decision-draft', decision: draft });
+        draftSaved = true;
       }
       await runProjectCommand(projectId, {
         command: 'confirm-decision',
@@ -133,7 +138,10 @@ export default function DecisionCard({
       });
       setReload((n) => n + 1);
     } catch (err: unknown) {
-      setRefusal(err instanceof Error ? err.message : 'The server refused the confirmation.');
+      setRefusal({
+        headline: draftSaved ? 'Not confirmed. The draft was saved.' : 'Nothing was written.',
+        sentence: err instanceof Error ? err.message : 'The server refused the confirmation.',
+      });
     } finally {
       setBusy(false);
     }
@@ -148,7 +156,10 @@ export default function DecisionCard({
       await runProjectCommand(projectId, { command: 'withdraw-decision' });
       setReload((n) => n + 1);
     } catch (err: unknown) {
-      setRefusal(err instanceof Error ? err.message : 'The server refused the withdrawal.');
+      setRefusal({
+        headline: 'Nothing was written.',
+        sentence: err instanceof Error ? err.message : 'The server refused the withdrawal.',
+      });
     } finally {
       setBusy(false);
     }
@@ -311,8 +322,8 @@ export default function DecisionCard({
 
         {refusal ? (
           <div className="mt-2.5" data-decision-refusal="">
-            <CcMessageStrip state="error" headline="Nothing was written." announce={true}>
-              {refusal}
+            <CcMessageStrip state="error" headline={refusal.headline} announce={true}>
+              {refusal.sentence}
             </CcMessageStrip>
           </div>
         ) : null}

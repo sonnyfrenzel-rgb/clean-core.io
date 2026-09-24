@@ -270,6 +270,15 @@ test.describe('8.4 card — source guards', () => {
     expect(card).toMatch(/<CcMessageStrip state="error"/);
   });
 
+  test('a refused confirmation that first saved the draft does not claim nothing was written', () => {
+    // QA review of 4b4586aff273: the confirmation records the draft before it
+    // confirms; a refusal of the second command left the draft written while
+    // the strip said "Nothing was written."
+    expect(card).toMatch(/record-decision-draft', decision: draft \}\);\s*draftSaved = true;/);
+    expect(card).toMatch(/headline: draftSaved \? '[^']*draft was saved[^']*' : 'Nothing was written\.'/);
+    expect(card).not.toMatch(/headline="Nothing was written\."/);
+  });
+
   test('no role is stored or sent: Management, Business and IT are views only', () => {
     expect(card).not.toMatch(/\b(role|view)\s*:\s*'(management|business|it)'/i);
   });
