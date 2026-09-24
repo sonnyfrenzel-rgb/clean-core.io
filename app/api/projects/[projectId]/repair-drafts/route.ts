@@ -9,6 +9,7 @@ import {
 } from '@/lib/firebase-admin';
 import { assertRateLimit } from '@/lib/rate-limit';
 import { adoptRepairDraft, proposeRepairDraft } from '@/lib/repair-draft-store';
+import { isFirestoreId } from '@/lib/firestore-id';
 
 /**
  * POST /api/projects/{projectId}/repair-drafts — roadmap 8.7 (CR-10)
@@ -79,10 +80,11 @@ export async function POST(
     }
 
     const { projectId } = await params;
-    const safeProjectId = typeof projectId === 'string' ? projectId.replace(/[^a-zA-Z0-9_-]/g, '') : '';
-    if (!safeProjectId || safeProjectId !== projectId) {
+    // Checked before the id forms any document path (SEC-2026-514).
+    if (!isFirestoreId(projectId)) {
       return NextResponse.json({ error: 'Invalid project id.' }, { status: 400 });
     }
+    const safeProjectId = projectId;
 
     const body = await req.json().catch(() => null);
     const action = body && typeof body === 'object' ? (body as { action?: unknown }).action : undefined;

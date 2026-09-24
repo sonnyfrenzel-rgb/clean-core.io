@@ -9,6 +9,7 @@ import type { InputManifest } from '@/lib/input-manifest';
 import { sha256Hex } from '@/lib/artefact-digest';
 import { checkGeneratedPackage, generationInputsOf, generationRevision } from '@/lib/generation-revision';
 import type { DocumentReference, Timestamp, Transaction } from 'firebase-admin/firestore';
+import { isFirestoreId } from '@/lib/firestore-id';
 
 /**
  * The architecture contract of one project, and what may be generated against
@@ -120,6 +121,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ proj
     if (!auth.ok) return auth.response;
     const { projectId } = await params;
     if (!projectId) return NextResponse.json({ error: 'No project named.' }, { status: 400 });
+    // Checked before the id forms any document path (SEC-2026-514).
+    if (!isFirestoreId(projectId)) return NextResponse.json({ error: 'Invalid project id.' }, { status: 400 });
 
     const loaded = await loadProjectAndRun(projectId, auth.uid);
     // One answer for "not there" and "not yours".
@@ -189,6 +192,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pro
     if (!auth.ok) return auth.response;
     const { projectId } = await params;
     if (!projectId) return NextResponse.json({ error: 'No project named.' }, { status: 400 });
+    // Checked before the id forms any document path (SEC-2026-514).
+    if (!isFirestoreId(projectId)) return NextResponse.json({ error: 'Invalid project id.' }, { status: 400 });
 
     const loaded = await loadProjectAndRun(projectId, auth.uid);
     if (!loaded) return NextResponse.json({ error: 'No such project.' }, { status: 404 });

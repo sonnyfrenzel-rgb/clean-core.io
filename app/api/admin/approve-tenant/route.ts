@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyAdminRequest, approveTenantWithToken, assertAdminStepUp } from '@/lib/firebase-admin';
 import { logger, errMessage } from '@/lib/logger';
+import { isFirestoreId } from '@/lib/firestore-id';
 
 export async function POST(req: NextRequest) {
   try {
@@ -24,6 +25,10 @@ export async function POST(req: NextRequest) {
 
     if (!uid || !token || !action) {
       return NextResponse.json({ error: 'Missing required parameters: uid, token, action.' }, { status: 400 });
+    }
+    // Checked before the id forms any document path (SEC-2026-514).
+    if (!isFirestoreId(uid)) {
+      return NextResponse.json({ error: 'Invalid uid.' }, { status: 400 });
     }
 
     if (action !== 'approve' && action !== 'reject') {

@@ -1,4 +1,5 @@
 import type { Firestore } from 'firebase-admin/firestore';
+import { isFirestoreId } from '@/lib/firestore-id';
 import {
   REPAIR_DRAFT_COLLECTION,
   buildRepairDraft,
@@ -56,6 +57,10 @@ export async function proposeRepairDraft(
   const projectRef = db.collection('projects').doc(args.projectId);
   const body = (args.body && typeof args.body === 'object' ? args.body : {}) as Record<string, unknown>;
   const parentDraftId = typeof body.parentDraftId === 'string' && body.parentDraftId ? body.parentDraftId : null;
+  // Checked before the id forms any document path (SEC-2026-514).
+  if (parentDraftId !== null && !isFirestoreId(parentDraftId)) {
+    return { status: 400, code: 'invalid-draft', error: 'Invalid draft id.' };
+  }
 
   return db.runTransaction(async (tx): Promise<ProposeOutcome> => {
     const snap = await tx.get(projectRef);
@@ -161,6 +166,8 @@ export async function adoptRepairDraft(
   const body = (args.body && typeof args.body === 'object' ? args.body : {}) as Record<string, unknown>;
   const draftId = typeof body.draftId === 'string' ? body.draftId : '';
   if (!draftId) return { status: 400, code: 'missing-draft', error: 'Name the draft to adopt: draftId.' };
+  // Checked before the id forms any document path (SEC-2026-514).
+  if (!isFirestoreId(draftId)) return { status: 400, code: 'invalid-draft', error: 'Invalid draft id.' };
   const draftRef = draftsOf(db, args.projectId).doc(draftId);
 
   return db.runTransaction(async (tx): Promise<AdoptOutcome> => {

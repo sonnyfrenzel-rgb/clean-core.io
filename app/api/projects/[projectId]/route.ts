@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyRequestAuth, getAdminDb, assertAccountActive, QuotaError, assertMfaSatisfied } from '@/lib/firebase-admin';
 import { isProjectOwner, mayReadProject } from '@/lib/project-readers';
 import { logger, errMessage } from '@/lib/logger';
+import { isFirestoreId } from '@/lib/firestore-id';
 
 /**
  * GET /api/projects/{projectId}  — roadmap 5.4
@@ -48,6 +49,10 @@ export async function GET(
     const { projectId } = await params;
     if (!projectId || typeof projectId !== 'string') {
       return NextResponse.json({ error: 'Missing project id.' }, { status: 400 });
+    }
+    // Checked before the id forms any document path (SEC-2026-514).
+    if (!isFirestoreId(projectId)) {
+      return NextResponse.json({ error: 'Invalid project id.' }, { status: 400 });
     }
 
     const { db } = await getAdminDb();
@@ -120,6 +125,10 @@ export async function DELETE(
     const { projectId } = await params;
     if (!projectId || typeof projectId !== 'string') {
       return NextResponse.json({ error: 'Missing project id.' }, { status: 400 });
+    }
+    // Checked before the id forms any document path (SEC-2026-514).
+    if (!isFirestoreId(projectId)) {
+      return NextResponse.json({ error: 'Invalid project id.' }, { status: 400 });
     }
 
     const { db } = await getAdminDb();

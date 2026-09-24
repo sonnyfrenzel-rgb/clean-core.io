@@ -20,6 +20,7 @@ import {
 import { USER_ATTESTED_FILE, type AttestedFile } from '@/lib/audit-pack';
 import { attestationsOf, auditPackCovers, buildAuditPackContents } from '@/lib/audit-pack-build';
 import { canonicalAuditManifest, MANIFEST_VERSION_ED25519, MANIFEST_VERSION_HMAC } from '@/lib/audit-pack-canonical';
+import { isFirestoreId } from '@/lib/firestore-id';
 
 /**
  * POST /api/audit-pack/create  (v1.20 §5 — server-authoritative audit pack)
@@ -62,6 +63,10 @@ export async function POST(req: NextRequest) {
     const { projectId } = body;
     if (!projectId || typeof projectId !== 'string') {
       return NextResponse.json({ error: 'Missing required parameter: projectId.' }, { status: 400 });
+    }
+    // Checked before the id forms any document path (SEC-2026-514).
+    if (!isFirestoreId(projectId)) {
+      return NextResponse.json({ error: 'Invalid project id.' }, { status: 400 });
     }
 
     const { db } = await getAdminDb();

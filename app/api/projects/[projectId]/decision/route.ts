@@ -4,6 +4,7 @@ import { verifyRequestAuth, getAdminDb, assertMfaSatisfied } from '@/lib/firebas
 import { mayReadProject } from '@/lib/project-readers';
 import { assertRateLimit } from '@/lib/rate-limit';
 import { deriveProjectDecision, DECISION_MAX_SOURCE_BYTES } from '@/lib/decision-facts';
+import { isFirestoreId } from '@/lib/firestore-id';
 
 /**
  * The decision of one project, derived — roadmap 8.4, the half the workspace
@@ -58,6 +59,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ proj
 
     const { projectId } = await params;
     if (!projectId) return NextResponse.json({ error: 'No project named.' }, { status: 400 });
+    // Checked before the id forms any document path (SEC-2026-514).
+    if (!isFirestoreId(projectId)) return NextResponse.json({ error: 'Invalid project id.' }, { status: 400 });
 
     const { db } = await getAdminDb();
     const snap = await db.collection('projects').doc(projectId).get();

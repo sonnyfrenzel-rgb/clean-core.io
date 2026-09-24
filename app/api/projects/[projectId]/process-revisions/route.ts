@@ -23,6 +23,7 @@ import {
   type ProcessRevisionSummary,
   type RevisionAccount,
 } from '@/lib/process-revisions';
+import { isFirestoreId } from '@/lib/firestore-id';
 
 /**
  * The revisions of a project's process model — roadmap 3.2.
@@ -150,6 +151,10 @@ async function openProject(
   const { projectId } = await params;
   if (!projectId || typeof projectId !== 'string') {
     return { ok: false, response: NextResponse.json({ error: 'Missing project id.' }, { status: 400 }) };
+  }
+  // Checked before the id forms any document path (SEC-2026-514).
+  if (!isFirestoreId(projectId)) {
+    return { ok: false, response: NextResponse.json({ error: 'Invalid project id.' }, { status: 400 }) };
   }
 
   const { db } = await getAdminDb();

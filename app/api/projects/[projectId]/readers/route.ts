@@ -11,6 +11,7 @@ import { assertRateLimit } from '@/lib/rate-limit';
 import { logger, errMessage } from '@/lib/logger';
 import { projectReaderOverview, readersAfterRevoke, isProjectOwner } from '@/lib/project-readers';
 import type { Invitation, InvitationStatus } from '@/lib/invitations';
+import { isFirestoreId } from '@/lib/firestore-id';
 
 /**
  * Roadmap 5.5 — Übersicht und Widerruf.
@@ -137,6 +138,10 @@ async function openAsOwner(
   const { projectId } = await params;
   if (!projectId || typeof projectId !== 'string') {
     return { ok: false, response: NextResponse.json({ error: 'Missing project id.' }, { status: 400 }) };
+  }
+  // Checked before the id forms any document path (SEC-2026-514).
+  if (!isFirestoreId(projectId)) {
+    return { ok: false, response: NextResponse.json({ error: 'Invalid project id.' }, { status: 400 }) };
   }
 
   const { db } = await getAdminDb();

@@ -4,6 +4,7 @@ import { verifyRequestAuth, getAdminDb, assertMfaSatisfied } from '@/lib/firebas
 import { mayReadProject } from '@/lib/project-readers';
 import { assertRateLimit } from '@/lib/rate-limit';
 import { findingsOf } from '@/lib/it-findings-build';
+import { isFirestoreId } from '@/lib/firestore-id';
 
 /**
  * The findings of one project, with both catalog views — roadmap 8.1.
@@ -76,6 +77,10 @@ export async function GET(
     const { projectId } = await params;
     if (!projectId) {
       return NextResponse.json({ error: 'No project named.' }, { status: 400 });
+    }
+    // Checked before the id forms any document path (SEC-2026-514).
+    if (!isFirestoreId(projectId)) {
+      return NextResponse.json({ error: 'Invalid project id.' }, { status: 400 });
     }
 
     const { db } = await getAdminDb();

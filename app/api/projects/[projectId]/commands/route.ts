@@ -13,6 +13,7 @@ import { evidenceDigest } from '@/lib/run-evidence-digest';
 import { deriveProjectDecision } from '@/lib/decision-facts';
 import type { EvidenceChange } from '@/lib/run-evidence-digest';
 import type { DocumentReference, Transaction } from 'firebase-admin/firestore';
+import { isFirestoreId } from '@/lib/firestore-id';
 
 /**
  * POST /api/projects/{projectId}/commands  — roadmap 0.7
@@ -85,6 +86,10 @@ export async function POST(
     const { projectId } = await params;
     if (!projectId || typeof projectId !== 'string') {
       return NextResponse.json({ error: 'Missing project id.' }, { status: 400 });
+    }
+    // Checked before the id forms any document path (SEC-2026-514).
+    if (!isFirestoreId(projectId)) {
+      return NextResponse.json({ error: 'Invalid project id.' }, { status: 400 });
     }
 
     const { db } = await getAdminDb();

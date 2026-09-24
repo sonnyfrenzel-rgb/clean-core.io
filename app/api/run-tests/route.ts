@@ -18,6 +18,7 @@ import { capabilityKeyFromEnv, mintCapability } from '@/lib/s4-proxy-capability'
 import { registerCapability, revokeCapability } from '@/lib/s4-proxy-capability-store';
 import { credentialHeaders } from '@/lib/s4-proxy';
 import { logger, errMessage } from '@/lib/logger';
+import { isFirestoreId } from '@/lib/firestore-id';
 
 /**
  * POST /api/run-tests
@@ -108,8 +109,9 @@ export async function POST(req: Request) {
   // runner executes exactly that draft and records the receipt on the draft,
   // never on the project; see the draft block below and step 6.
   const { projectId, selectedTestIds, s4Environment, draftId: rawDraftId } = await req.json();
-  const draftId = typeof rawDraftId === 'string' && rawDraftId ? rawDraftId.replace(/[^a-zA-Z0-9_-]/g, '') : '';
-  if (rawDraftId !== undefined && rawDraftId !== null && (!draftId || draftId !== rawDraftId)) {
+  // Checked before the id forms any document path (SEC-2026-514).
+  const draftId = isFirestoreId(rawDraftId) ? rawDraftId : '';
+  if (rawDraftId !== undefined && rawDraftId !== null && !draftId) {
     return NextResponse.json(
       { output: '', error: 'Invalid repair draft id.', exitCode: 1 },
       { status: 400 },
@@ -132,13 +134,14 @@ export async function POST(req: Request) {
   }
 
   // ── Input validation ────────────────────────────────────────────────────
-  const sanitizedProjectId = (projectId || '').replace(/[^a-zA-Z0-9_-]/g, '');
-  if (!sanitizedProjectId) {
+  // Refused, not repaired: a stripped id would name a different project (SEC-2026-514).
+  if (!isFirestoreId(projectId)) {
     return NextResponse.json(
       { output: '', error: 'Invalid project ID.', exitCode: 1 },
       { status: 400 },
     );
   }
+  const sanitizedProjectId: string = projectId;
 
   // Per-user rate limit (skipped in emulator/E2E). Bounds burst abuse of the runner.
   try {

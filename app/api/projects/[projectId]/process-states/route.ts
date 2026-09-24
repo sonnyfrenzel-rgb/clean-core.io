@@ -25,6 +25,7 @@ import {
   type StateEntry,
   type StateSubject,
 } from '@/lib/process-states';
+import { isFirestoreId } from '@/lib/firestore-id';
 
 /**
  * Keep · Change deliberately · Drop · Clarify, per element and per rule —
@@ -170,6 +171,10 @@ async function openProject(
   const { projectId } = await params;
   if (!projectId || typeof projectId !== 'string') {
     return { ok: false, response: NextResponse.json({ error: 'Missing project id.' }, { status: 400 }) };
+  }
+  // Checked before the id forms any document path (SEC-2026-514).
+  if (!isFirestoreId(projectId)) {
+    return { ok: false, response: NextResponse.json({ error: 'Invalid project id.' }, { status: 400 }) };
   }
 
   const { db } = await getAdminDb();

@@ -22,6 +22,7 @@ import {
   normaliseInvitedEmail,
   type Invitation,
 } from '@/lib/invitations';
+import { isFirestoreId } from '@/lib/firestore-id';
 
 /**
  * Accepting an invitation — roadmap 5.3, and the place the whole phase is
@@ -122,6 +123,8 @@ export async function GET(
 
     const { projectId, invitationId } = await params;
     if (!projectId || !invitationId) return closed();
+    // Checked before the id forms any document path (SEC-2026-514).
+    if (!isFirestoreId(projectId) || !isFirestoreId(invitationId)) return closed();
 
     const { db } = await getAdminDb();
     const snap = await db
@@ -183,6 +186,10 @@ export async function POST(
     const { projectId, invitationId } = await params;
     if (!projectId || !invitationId) {
       return NextResponse.json({ error: 'Missing invitation.' }, { status: 400 });
+    }
+    // Checked before the id forms any document path (SEC-2026-514).
+    if (!isFirestoreId(projectId) || !isFirestoreId(invitationId)) {
+      return NextResponse.json({ error: 'Invalid invitation.' }, { status: 400 });
     }
 
     const { db, FieldValue } = await getAdminDb();

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { verifyAdminRequest, setAdminClaim, assertAdminStepUp } from '@/lib/firebase-admin';
 import { logger, errMessage } from '@/lib/logger';
+import { isFirestoreId } from '@/lib/firestore-id';
 
 /**
  * POST /api/admin/set-admin-claim
@@ -39,6 +40,10 @@ export async function POST(req: Request) {
 
   if (!uid || typeof uid !== 'string') {
     return NextResponse.json({ error: 'Missing required field: uid.' }, { status: 400 });
+  }
+  // Checked before the id forms any document path (SEC-2026-514).
+  if (!isFirestoreId(uid)) {
+    return NextResponse.json({ error: 'Invalid uid.' }, { status: 400 });
   }
 
   // This used to grant the claim for every value that was not the boolean false

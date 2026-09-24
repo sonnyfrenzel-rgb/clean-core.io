@@ -17,6 +17,7 @@ import { verifyModelReceipt } from '@/lib/model-receipt';
 import { looksLikeAbap } from '@/lib/abap-input-check';
 import { assertRateLimit } from '@/lib/rate-limit';
 import { readModelGaps, type ModelGap } from '@/lib/model-gaps';
+import { isFirestoreId } from '@/lib/firestore-id';
 
 /**
  * The most ABAP one request may be asked to analyse.
@@ -105,6 +106,11 @@ export async function POST(req: NextRequest) {
     // Validation
     if (!projectId) {
       return NextResponse.json({ error: 'Missing required parameter: projectId.' }, { status: 400 });
+    }
+    // The project id is checked before it forms any document path
+    // (SEC-2026-514, lib/firestore-id.ts).
+    if (!isFirestoreId(projectId)) {
+      return NextResponse.json({ error: 'Invalid project id.' }, { status: 400 });
     }
 
     const { db, FieldValue } = await getAdminDb();

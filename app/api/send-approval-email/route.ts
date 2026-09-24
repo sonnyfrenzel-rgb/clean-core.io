@@ -7,6 +7,7 @@ import { escapeHtml } from '@/lib/utils';
 import { mockMailAllowed } from '@/lib/mail-delivery-mode';
 import { wrapEmailDocument } from '@/lib/email-layout';
 import { buildWelcomeEmail, WELCOME_EMAIL_SUBJECT } from '@/lib/welcome-email';
+import { isFirestoreId } from '@/lib/firestore-id';
 
 /**
  * POST /api/send-approval-email
@@ -47,6 +48,10 @@ export async function POST(request: NextRequest) {
     const { uid } = body;
 
     if (!uid || typeof uid !== 'string' || uid.length > 128) {
+      return NextResponse.json({ error: 'Missing or invalid uid.' }, { status: 400 });
+    }
+    // Checked before the id forms any document path (SEC-2026-514).
+    if (!isFirestoreId(uid)) {
       return NextResponse.json({ error: 'Missing or invalid uid.' }, { status: 400 });
     }
 
