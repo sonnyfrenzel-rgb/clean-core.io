@@ -1860,9 +1860,10 @@
       "area": "release",
       "firstSeenHead": "ac27aeda7327fcaaf89b3023030ac5cc7ccc4619",
       "createdAt": "2026-09-24T07:21:13.369Z",
-      "status": "zurückgestellt",
+      "status": "eingeplant",
       "reason": "Produktentscheidung fuer Sonny: die Seite zeigt vor der Annahme bewusst nichts ueber das Projekt (Link an eine bestaetigte Adresse gebunden, Name erst nach POST accept, invitation page:67/89); die Mail nennt den Einladenden (lib/invitation-email.ts:85). Was vorher sichtbar sein darf, ist eine Abwaegung gegen Leck bei weitergeleiteten Links.",
-      "updatedAt": "2026-09-24T07:21:13.369Z"
+      "updatedAt": "2026-09-24T08:26:00.389Z",
+      "step": "sofort"
     },
     {
       "id": "UX-149",
@@ -1908,9 +1909,10 @@
       "area": "release",
       "firstSeenHead": "ac27aeda7327fcaaf89b3023030ac5cc7ccc4619",
       "createdAt": "2026-09-24T07:21:15.604Z",
-      "status": "zurückgestellt",
+      "status": "eingeplant",
       "reason": "Sicherheitsrelevant, verlaesst den UX-Fluss: GET-ausgeloeste Freigabe/Ablehnung per Mail-Link (app/api/request-tenant-access/route.ts:73-74 erzeugt auto=true und action=reject, approve-tenant/page.tsx:176-187 fuehrt sie aus), bereits im Grok-Review 26.08. benannt. Gehoert ins Security-Register.",
-      "updatedAt": "2026-09-24T07:21:15.604Z"
+      "updatedAt": "2026-09-24T08:26:00.607Z",
+      "step": "sofort"
     },
     {
       "id": "UX-153",

@@ -1293,6 +1293,8 @@ braucht, ist eine Designfrage, kein Fehler. UX-152 (automatische Freigabe per Ma
 ist sicherheitsrelevant und wandert ins Security-Register; UX-148 (Kontext vor Annahme
 einer Einladung) braucht Sonnys Abwägung gegen weitergeleitete Links.
 
+**Nachtrag 24.09.2026:** UX-148 und UX-152 sind nach Sonnys Entscheidung (jeweils Option B) eingeplant und gebaut — die Einladungsseite nennt dem eingeladenen, bestätigten Konto vor der Annahme Einladenden und Ablaufdatum (c6f7494); die Tenant-Freigabeseite handelt nicht mehr beim Öffnen, und beide Links eines Antrags gelten zusammen genau einmal (3a56171). Als behoben markiert werden sie, wenn die nächste UX-Review auf `main` es bestätigt.
+
 | ID | Schwere | Befund | Roadmap-Schritt | Status |
 |---|---|---|---|---|
 | UX-002 | critical | Null Befunde als Fully Supported besiegelt | 0.8 | behoben |
@@ -1374,9 +1376,9 @@ einer Einladung) braucht Sonnys Abwägung gegen weitergeleitete Links.
 | UX-140 | medium | Bestätigung verfällt nach Edit ohne Erklärung | sofort | behoben |
 | UX-146 | medium | Welcome-Mail-Detail nur per Hover-Titel lesbar | 3.0.4 | eingeplant |
 | UX-147 | medium | Read-only-Board verspricht weiter Diskussion | sofort | eingeplant |
-| UX-148 | medium | Einladung ohne Kontext erzwingt blindes Annehmen | — | zurückgestellt |
+| UX-148 | medium | Einladung ohne Kontext erzwingt blindes Annehmen | sofort | eingeplant |
 | UX-149 | medium | Fehlergrenze zeigt Roh-Fehlermeldung offen statt eingeklappt | sofort | eingeplant |
-| UX-152 | medium | Automatische Genehmigung läuft ohne Abbruchmöglichkeit | — | zurückgestellt |
+| UX-152 | medium | Automatische Genehmigung läuft ohne Abbruchmöglichkeit | sofort | eingeplant |
 | UX-153 | medium | Eingeladene Leser landen auf Analyse-Start | — | zurückgestellt |
 | UX-008 | low | Slideshow-Steuerung ohne Namen, Pfeiltasten gekapert | 3.0.4 | behoben |
 | UX-011 | low | Wirre Befund-Begriffe und Sprachmix | 1.5 | eingeplant |
@@ -2102,7 +2104,7 @@ benannt werden: `lite` übergeht Start, Ende und Verzweigungen (Rechnungsexport 
 17 statt 17 von 17) — gerade die Verzweigungen tragen ein BPMN fachlich. Unbenannte
 Knoten behalten ihr technisches Token, das ist kein Fehler, aber sichtbar. Der
 17.4-Lauf lief parallel und belastet die absoluten Latenzen beider Modelle gleich.
-**Offen für Sonny:** Tempo (lite) gegen Vollständigkeit an den Verzweigungen (Vorgabe).
+**Nachmessung und Entscheidung (Sonny, 24.09.2026, Weg C).** Der Prompt verlangt jetzt Start, Ende und Verzweigungen ausdrücklich beim Namen. Mit ihm, gleicher Aufbau: `lite` benennt **96 %** dieser Knoten (vorher 36 %) und 66 % aller, Median 2,0 s, 18/24 unter 3 s; die Vorgabe 100 % bzw. 82 %, 4,6 s, 2/24. Die Namensstufe läuft seitdem auf `gemini-3.5-flash-lite` (`NAMING_GEMINI_MODEL`, 91701bb).
 
 **Zwei Hebel sind größer als die Modellwahl, beide unabhängig einplanbar:** das
 Evidenz-JSON macht **49–56 %** des Analyse-Prompts aus und wird eingerückt
