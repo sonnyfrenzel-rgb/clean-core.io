@@ -174,6 +174,8 @@ test.describe('the audit-pack route signs the run and nothing the owner wrote', 
     const canonical = canonicalAuditManifest({
       files: manifest.files,
       attested: manifest.attested,
+      // Bound since manifest format 4 (roadmap 8.5): the handover chain is in the signed string.
+      covers: manifest.covers,
       projectId: manifest.projectId,
       runId: manifest.runId,
       runHash: manifest.runHash,

@@ -634,6 +634,8 @@ test.describe('the live emulator rules refuse every one of the six', () => {
     approvedBy: 'cto@example.com',
     usageReport: { records: [], source: 'manual', importedAt: '2026-09-16', warnings: [] },
     atcReport: { findings: [], source: 'atc', importedAt: '2026-09-18', warnings: [] },
+    // Roadmap 8.4 — a decision that claims to be confirmed, written past the command route.
+    decision: { status: 'confirmed', revision: 1, confirmation: { account: 'cto@example.com', at: '2026-09-24T08:00:00.000Z' } },
   };
 
   for (const field of SERVER_ONLY_PROJECT_FIELDS) {
