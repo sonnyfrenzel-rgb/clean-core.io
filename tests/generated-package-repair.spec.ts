@@ -222,3 +222,24 @@ test('nothing is written to the project until a run compiles — and the server 
   );
   expect(src).toContain("draftTarget = { kind: 'package', index: idx, path: pkg[idx].path }");
 });
+
+test('an adoption whose answer is lost is asked again, and an "already adopted" is read back from the project', () => {
+  // QA review of 4b4586aff273: the adoption POST could commit on the server and
+  // lose its response; the rejected fetch then ended the run as a failure while
+  // the project already held the repair, and the page kept the broken code.
+  const src = hookSource();
+  const start = src.indexOf("const adoption = { action: 'adopt'");
+  expect(start, 'the adoption request is no longer named — this guard names it').toBeGreaterThan(-1);
+  const end = src.indexOf('if (!adopted.ok) {', start);
+  expect(end).toBeGreaterThan(start);
+  const block = src.slice(start, end);
+  // The first call sits in a try, and its catch asks the same thing again.
+  expect(block).toMatch(/try \{\s*adopted = await repairDraftCall\(adoption\);\s*\} catch \{[\s\S]*adopted = await repairDraftCall\(adoption\);/);
+  // The server's "already adopted" is resolved against the project it wrote,
+  // and only when the stored receipt names this draft.
+  expect(block).toContain("adopted.data?.code === 'already-adopted'");
+  expect(block).toContain("getDoc(doc(getDb(), 'projects', projectId))");
+  expect(block).toContain('storedReceipt?.draft?.id === ran.id');
+  // The server code the hook waits for is the one `decideAdoption` sends.
+  expect(fs.readFileSync(path.join(ROOT, 'lib/repair-draft.ts'), 'utf8')).toContain("refuse(409, 'already-adopted'");
+});

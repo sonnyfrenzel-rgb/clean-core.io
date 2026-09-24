@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { getAuth } from '@/lib/firebase';
+import { doc, getDoc } from 'firebase/firestore';
+import { getAuth, getDb } from '@/lib/firebase';
 import { callGemini } from '@/lib/gemini';
 import { useUserProfile } from './useUserProfile';
 import type { Project, TestCase } from '@/lib/types';
@@ -277,7 +278,40 @@ Return ONLY the raw, corrected TypeScript source — no markdown fences, no comm
         setSandboxOutput(prev => prev + `\n[Auto-Healing] The run of draft ${ran.id} was not recorded, so it cannot be adopted. Nothing was saved.\n`);
         return result;
       }
-      const adopted = await repairDraftCall({ action: 'adopt', draftId: ran.id, expectedDraftDigest: ran.digest });
+      const adoption = { action: 'adopt', draftId: ran.id, expectedDraftDigest: ran.digest };
+      let adopted: Awaited<ReturnType<typeof repairDraftCall>>;
+      try {
+        adopted = await repairDraftCall(adoption);
+      } catch {
+        // The request may have reached the server and committed while its
+        // answer was lost (QA review of 4b4586aff273). Adoption is a
+        // compare-and-swap that refuses a second adoption of the same draft by
+        // name, so asking again is safe — and its answer says which it was.
+        setSandboxOutput(prev => prev + `\n[Auto-Healing] The answer to the adoption of draft ${ran.id} did not arrive. Asking the server again...\n`);
+        try {
+          adopted = await repairDraftCall(adoption);
+        } catch {
+          throw new Error(`The adoption of draft ${ran.id} was sent, but no answer arrived. The project may already hold the repair — reload it to see what is stored.`);
+        }
+      }
+      if (!adopted.ok && adopted.data?.code === 'already-adopted') {
+        // The lost request was adopted. What it wrote is read back from the
+        // project — the server's record, not this hook's guess.
+        const snap = await getDoc(doc(getDb(), 'projects', projectId));
+        const stored = (snap.exists() ? snap.data() : {}) as Partial<Project>;
+        const storedReceipt = stored.testRunReceipt as TestRunReceipt | undefined;
+        if (storedReceipt?.draft?.id === ran.id) {
+          const fields: Partial<Project> = {
+            generatedCode: stored.generatedCode,
+            testSuite: stored.testSuite,
+            testCases: stored.testCases,
+            testRunReceipt: storedReceipt,
+          };
+          if (setProject) setProject((prev: Project | null) => (prev ? { ...prev, ...fields } : prev));
+          setSandboxOutput(prev => prev + `\n[Auto-Healing] Draft ${ran.id} had been adopted by the request whose answer was lost. The project holds the repaired code.\n`);
+          return { ...result, receipt: storedReceipt };
+        }
+      }
       if (!adopted.ok) {
         setSandboxOutput(prev => prev + `\n[Auto-Healing] The repair compiled but was not adopted: ${adopted.data?.error || 'the server refused it.'}\n`);
         return result;
