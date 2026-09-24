@@ -2207,6 +2207,25 @@ dem, was es richtig macht, und nie an dem, was es dazudichtet.
 | 17.8 | **Weg B — das Modell erzeugt den Fachsatz**, mit einem Prompt, der verankerte Einzelsätze bestellt statt einer Executive Summary (heute: 0 von 173). Herkunft `proposed`, außerhalb der Signatur wie jedes Narrativ. **Voraussetzung:** die Vollständigkeitserklärung im Korpus (oben), sonst ist Erfindung straffrei. **Fertig, wenn** B die von A gemessene Zahl schlägt — sonst bleibt A allein, und das ist ein zulässiges Ergebnis. | M |
 | 17.9 | **Gebaut 23.09.2026.** **Verbotene Aussagen werden verglichen — die Halluzinationsmessung für 17.8** (Sonny, 23.09.2026). Der Korpus führt in **47 von 68 Fällen** ein Feld `forbiddenConclusions` mit **197 ausdrücklich verbotenen Aussagen**, 158 davon mit Ankerpräfix `source.abap:NN` — von Hand geschrieben, seit Monaten im Repository, und `tests/helpers/korpus-comparison.ts` nennt das Feld **null Mal**. Dasselbe Muster wie bei `fachsaetze` vor 17.5: ein Sollwert liegt da, nichts vergleicht ihn. Das ist die richtige Messung gegen Erfindung, und sie ersetzt die ursprünglich vorgesehene Vollständigkeitserklärung: ein „zusätzlicher" Satz der Engine ist **keine** Halluzination, sondern mehr Abdeckung als das Fallbuch geschrieben hat — eine Regel „Extras sind Fehler" hätte 17.7 dafür bestraft, gründlicher zu sein. Eine Halluzination ist eine Aussage, die der Code an ihrem Anker nicht trägt, und genau die benennen die 197 Sätze. **Die Maschine steht und wird nur umgedreht:** dasselbe Textmaß aus 17.5, dieselbe Schwelle, dieselben Anker — erreicht ein erzeugter Satz die Schwelle gegen eine *verbotene* Aussage, ist das ein Fehler statt eines Treffers. **Zwei Dinge sind Handwerk, nicht Grundsatz:** die 39 Aussagen ohne Ankerpräfix („gesamte Scheibe") gelten für den ganzen Fall statt für eine Zeile, und eine Verneinung („Kein Befund X melden") ist sprachlich nicht die Aussage X — das Maß braucht den Kern der verbotenen Aussage, nicht ihre Verpackung. **Fertig, wenn** `baseline.json` je Fall eine eigene Teilprüfung `verbotene-aussagen` mit Zähler und Nenner führt, ein Erzeuger, der absichtlich eine verbotene Aussage sagt, die Facette rot macht, und der heutige Engine-Erzeuger aus 17.7 seine Zahl nennt. **Gemessen:** 166 der 197 Sätze haben einen ableitbaren Kern, 31 nicht (durchweg Einstufungsurteile wie „Kein D“, aus denen sich kein Fachsatz bilden lässt); der Engine-Erzeuger aus 17.7 verletzt **4 von 166**. **Vor 17.8.** | M |
 
+**Ergebnis 17.8 (gemessen, 24.09.2026, freigegeben von Sonny).** Weg B ist gebaut
+und gemessen, nicht verdrahtet. `lib/business-statement-prompt.ts` bestellt je
+ABAP-Anweisung und BPMN-Element einen verankerten Fachsatz statt einer Executive
+Summary; `validateStatementAnswer` verwirft und zählt wie die Namensstufe (Datei,
+Zeile, Anweisung an der Zeile, Element am Anker, Fremdfelder, Markdown), Herkunft
+`proposed`, außerhalb jeder Signatur. **Gemessen über alle 68 Fälle,
+`gemini-3.8-flash`, zwei Durchgänge:** **7 und 9 von 173** Treffern gegen **69** der
+Engine; verbotene Aussagen 0 und 1 von 166 verletzt (die eine ist
+Wortüberschneidung, CC-061); verworfen 0 von 500 Sätzen; beide zusammen 72. Kosten
+3,80 $. **B schlägt A nicht — A bleibt allein.** Ehrliche Grenze: die Modellsätze
+sind beim Lesen überwiegend inhaltlich richtig, aber anders formuliert, und das
+Dice-Maß aus 17.5 ist auf Kürzung kalibriert, nicht auf unabhängige Formulierung. Ob
+B besser *erklärt*, kann dieses Maß nicht sagen, und das ist keine Zahl, die B
+nachträglich zum Sieger machen darf. Der Prompt wurde nach Probeläufen auf fünf
+Fällen einmal nachgeschärft, ohne getrennte Kontrollmenge — ein kleiner Vorteil für
+B, der am Ergebnis nichts ändert. **Die Vollständigkeitserklärung aus der Zeile 17.8
+ist nicht gebaut** (Sonny, 24.09.2026): 17.9 hat sie ersetzt, und ein Probebau hätte
+der Engine einen wahren Satz als Erfindung angerechnet (CC-054, `TYPES`-Zeile).
+
 **Ergebnis 17.9 (gemessen, 23.09.2026).** Die Teilprüfung `verbotene-aussagen`
 steht je Fall in `tests/korpus/baseline.json`: **162 eingehaltene von 166
 vergleichbaren** verbotenen Aussagen, in 46 der 68 Fälle überhaupt gemessen. Die
