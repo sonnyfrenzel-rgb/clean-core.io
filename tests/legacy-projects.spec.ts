@@ -49,7 +49,7 @@ import type { Project } from '../lib/types';
  * half is `tests/legacy-projects-page.spec.ts`, which needs the app server.
  */
 
-const SIGNING_KEY = 'legacy-projects-spec-key-not-a-secret-32b';
+const SIGNING_KEY = 'test-legacy-projects-spec-signing-key';
 const stamp = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
 const pid = (form: string) => `legacy-${form}-${stamp}`;
 

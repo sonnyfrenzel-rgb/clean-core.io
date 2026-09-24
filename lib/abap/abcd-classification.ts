@@ -151,6 +151,11 @@ const GRADE_SEVERITY: Record<CloudReadinessGrade, number> = { Unknown: 0, A: 1, 
  * F-05: worst-finding rollup. SAP rolls a customer object's clean-core level up to
  * its most-severe relevant finding. Unknown findings are ignored unless nothing is
  * assessable (then the object is Unknown); an empty list is treated as clean (A).
+ *
+ * The letter therefore says nothing about how many inputs were Unknown. A
+ * caller that shows it must show that count beside it — the only caller,
+ * `buildLevelOverlay` in lib/process-overlays.ts, writes "· N not determined"
+ * (tests/process-overlays.spec.ts, bfbbcc22a9f2).
  */
 export function worstGrade(grades: CloudReadinessGrade[]): CloudReadinessGrade {
   const assessable = grades.filter((g) => g !== 'Unknown');

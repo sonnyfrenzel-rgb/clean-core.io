@@ -735,7 +735,12 @@ function readAdbc(text: string, code: string, at: Anchor, sink: Sink, ctx: Conte
   }
   // The SQL text is in a variable: read what the source assigns to it. One
   // literal assignment is the statement; several are each a possible one; any
-  // other assignment, or none, leaves it unread.
+  // other assignment, or none, leaves it unread. Over the whole source, not
+  // only above the call: source order is not execution order in ABAP — a
+  // report's FORMs stand below the event block that PERFORMs them, so the
+  // assignment that builds the SQL is usually *below* the call
+  // (tests/abap-table-dependencies.spec.ts, 7a2f826bddf8 and d3ac29cc3e98,
+  // both refuted).
   const assigned = ctx.assignments.get(expression.toUpperCase()) ?? [];
   const texts = assigned.map(literalChainText);
   if (assigned.length === 0 || texts.some((t) => t === null)) {
