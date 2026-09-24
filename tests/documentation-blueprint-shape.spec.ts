@@ -5,10 +5,8 @@ import { initializeApp, getApps } from 'firebase/app';
 import { getAuth, connectAuthEmulator, createUserWithEmailAndPassword } from 'firebase/auth';
 import { adminSetDoc, adminGetDoc } from './helpers/admin-seed';
 import firebaseConfig from '../firebase-config.json';
-import {
-  checkBlueprintShape,
-  blueprintRejectionMessage,
-} from '../app/(app)/project/[projectId]/documentation/blueprint-schema';
+import { checkBlueprintShape } from '../app/(app)/project/[projectId]/documentation/blueprint-schema';
+import { sha256Hex } from '../lib/artefact-digest';
 
 /**
  * QA findings 0d8443fae823 / 58201e6aaedb — a blueprint with the wrong field
@@ -154,35 +152,51 @@ test.describe('the shape check itself', () => {
     expect(checkBlueprintShape('a sentence, not JSON').ok).toBe(false);
   });
 
-  test('the message says what was wrong, offers a retry, and invents no cause', () => {
-    const text = blueprintRejectionMessage(checkBlueprintShape(OBJECTS_INSTEAD_OF_LISTS).problems);
-    expect(text).toContain('nothing was saved');
-    expect(text).toContain('Generate again');
-    expect(text).toContain('not recorded');
-    // No number, no "should", no guess at a cause.
-    expect(text).not.toMatch(/\d+\s?%/);
-    expect(text).not.toMatch(/\bshould\b/i);
+  test('nothing writes this form any more — the model generator is gone from the stage', () => {
+    // Roadmap 3.0.5, Weg C: the check guards the read side only. The page reads
+    // the whole source through the engine; the prompt that sliced 1,000
+    // characters out of three artefacts and asked for L1–L4 is not in it.
+    const page = fs.readFileSync(path.join(SEGMENT, 'page.tsx'), 'utf8');
+    expect(page).not.toContain('.substring(0, 1000)');
+    expect(page).not.toContain('"l1_domain": {');
+    expect(page).toContain("import('@/lib/process-documentation-build')");
+    expect(fs.readFileSync(path.join(SEGMENT, 'blueprint-schema.ts'), 'utf8')).not.toContain('blueprintRejectionMessage');
   });
 });
 
-test.describe('the check runs before the write', () => {
+test.describe('the documentation is read from the code, and a legacy blueprint stays readable', () => {
   const EMAIL = `docshape-${Date.now()}@cleancore-test.io`;
   const PASSWORD = 'DocShape123!';
   const PROJECT_ID = `doc-shape-${Date.now()}`;
   const BROKEN_PROJECT_ID = `doc-shape-broken-${Date.now()}`;
+  const LEGACY_PROJECT_ID = `doc-shape-legacy-${Date.now()}`;
   const RUN_ID = `doc-shape-run-${Date.now()}`;
   let uid = '';
+
+  // The shipped example, so the rule after character 1,000 is a real one
+  // (QA24-A10): the 50,000 EUR emergency limit stands on line 422.
+  const SOURCE = fs.readFileSync(path.join(ROOT, 'public', 'starter-examples', 'Z_MM_PO_APPROVAL.abap'), 'utf8')
+    .replace(/\r\n/g, '\n');
+  const fingerprint = {
+    sha256: sha256Hex(SOURCE),
+    fileName: 'Z_MM_PO_APPROVAL.abap',
+    lineCount: SOURCE.split('\n').length,
+    byteSize: SOURCE.length,
+    objectType: 'Report',
+    uploadedAt: new Date().toISOString(),
+  };
 
   const projectFields = (overrides: Record<string, unknown>) => ({
     userId: uid,
     createdAt: new Date(),
     status: 'transformed',
-    legacyCode: 'REPORT z_shape.\nSELECT * FROM vbak INTO TABLE @DATA(lt).\n',
+    legacyCode: SOURCE,
     analysis: JSON.stringify({ cleanCoreScore: 62, standardFit: { potential: 'Medium' } }),
     cleanCoreScore: 62,
     solutionDesign: '# Target architecture\n\nSide-by-side on BTP.\n',
     generatedCode: 'export const ok = true;\n',
     activeRunId: RUN_ID,
+    inputFingerprint: fingerprint,
     ...overrides,
   });
 
@@ -202,18 +216,24 @@ test.describe('the check runs before the write', () => {
       transformationsUsed: 1, transformationsLimit: 50, createdAt: new Date(),
     });
 
-    await adminSetDoc('projects', PROJECT_ID, projectFields({ name: 'Blueprint gate fixture' }));
+    await adminSetDoc('projects', PROJECT_ID, projectFields({ name: 'Engine documentation fixture' }));
     await adminSetDoc('projects', BROKEN_PROJECT_ID, projectFields({
       name: 'Stored broken blueprint fixture',
       status: 'documented',
       // Exactly what the old code stored: parsed fine, drew not at all.
       documentation: JSON.stringify(OBJECTS_INSTEAD_OF_LISTS),
     }));
+    await adminSetDoc('projects', LEGACY_PROJECT_ID, projectFields({
+      name: 'Stored legacy blueprint fixture',
+      status: 'documented',
+      documentation: JSON.stringify(GOOD_BLUEPRINT),
+    }));
 
-    for (const id of [PROJECT_ID, BROKEN_PROJECT_ID]) {
+    for (const id of [PROJECT_ID, BROKEN_PROJECT_ID, LEGACY_PROJECT_ID]) {
       await adminSetDoc(`projects/${id}/runs`, RUN_ID, {
         runId: RUN_ID, projectId: id, userId: uid,
         createdAt: new Date().toISOString(), status: 'completed', cleanCoreScore: 62,
+        inputFingerprint: fingerprint,
       });
     }
   });
@@ -229,63 +249,53 @@ test.describe('the check runs before the write', () => {
     await page.waitForTimeout(4000);
   }
 
-  /** The stage must believe it may call a model; whether this machine has a key is not the subject. */
-  async function pretendTheStageMayGenerate(page: import('@playwright/test').Page) {
-    await page.route('**/api/model-stages*', (route) =>
-      route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          stages: { analyze: true, design: true, transformation: true, documentation: true, testing: true },
-          keyAvailable: true,
-          keySource: 'community',
-        }),
-      }),
-    );
-  }
-
-  test('a refused answer is not stored, and the reader is told what happened', async ({ page }) => {
-    test.setTimeout(120 * 1000);
-    await pretendTheStageMayGenerate(page);
-    await page.route('**/api/gemini', (route) =>
-      route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          text: '```json\n' + JSON.stringify(OBJECTS_INSTEAD_OF_LISTS) + '\n```',
-          receipt: null,
-        }),
-      }),
-    );
+  test('the button reads the whole source, calls no model and stores the engine form', async ({ page }) => {
+    test.setTimeout(180 * 1000);
+    let modelCalls = 0;
+    await page.route('**/api/gemini', (route) => {
+      modelCalls += 1;
+      return route.abort();
+    });
 
     await signIn(page);
     await page.goto(`/project/${PROJECT_ID}/documentation`, { waitUntil: 'domcontentloaded' });
 
-    // Found by its words, not by an attribute this change introduced: the
-    // counter-check has to run the old page far enough to store the answer,
-    // which is the behaviour under test.
-    const generate = page.getByRole('button', { name: /Start Architectural Mapping|Generate a new blueprint/i });
-    await expect(generate).toBeVisible({ timeout: 30000 });
-    await generate.click({ timeout: 15000 });
+    // Nothing is written by opening the stage.
+    const generate = page.locator('[data-generate-blueprint]');
+    await expect(generate).toBeEnabled({ timeout: 60000 });
+    expect((await adminGetDoc('projects', PROJECT_ID))?.documentation ?? null).toBeNull();
 
-    const panel = page.locator('[data-doc-error="rejected"]');
-    await expect(panel).toBeVisible({ timeout: 30000 });
-    await expect(panel).toContainText('nothing was saved');
-    await expect(panel).toContainText('Generate again');
-    await expect(panel).toContainText('l4_tasks');
+    await generate.click();
+    const view = page.locator('[data-engine-documentation]');
+    await expect(view).toBeVisible({ timeout: 60000 });
+    await expect(page.locator('[data-doc-gaps]')).toContainText('Process owner');
+    await expect(page.locator('[data-doc-statements]')).toContainText('50000.00');
 
-    // The stage is still the stage: the way to try again is on the screen.
-    await expect(generate).toBeVisible();
-
-    // And the project is untouched — this is the half that used to be permanent.
     const stored = await adminGetDoc('projects', PROJECT_ID);
-    expect(stored?.documentation ?? null).toBeNull();
-    expect(stored?.status).toBe('transformed');
+    const doc = JSON.parse(String(stored?.documentation));
+    expect(doc.format).toBe('engine-process-documentation');
+    expect(doc.sourceSha256).toBe(sha256Hex(SOURCE));
+    expect(JSON.stringify(doc)).not.toContain('l1_domain');
+    expect(String(stored?.generatedCode)).toContain('docs/process-blueprint.md');
+    expect(stored?.status).toBe('documented');
+    expect(modelCalls, 'the documentation stage called a model').toBe(0);
+  });
+
+  test('a legacy blueprint is shown as the earlier form and left untouched', async ({ page }) => {
+    test.setTimeout(120 * 1000);
+    await signIn(page);
+    await page.goto(`/project/${LEGACY_PROJECT_ID}/documentation`, { waitUntil: 'domcontentloaded' });
+
+    const notice = page.locator('[data-legacy-blueprint]');
+    await expect(notice).toBeVisible({ timeout: 30000 });
+    await expect(notice).toContainText('Earlier form');
+    await expect(page.locator('[data-stage-output="documentation"]')).toContainText('Order to Cash');
+    const stored = await adminGetDoc('projects', LEGACY_PROJECT_ID);
+    expect(stored?.documentation).toBe(JSON.stringify(GOOD_BLUEPRINT));
   });
 
   test('a blueprint an earlier build stored leaves the stage operable', async ({ page }) => {
     test.setTimeout(120 * 1000);
-    await pretendTheStageMayGenerate(page);
     await signIn(page);
     await page.goto(`/project/${BROKEN_PROJECT_ID}/documentation`, { waitUntil: 'domcontentloaded' });
 
@@ -295,9 +305,7 @@ test.describe('the check runs before the write', () => {
     await expect(notice).toContainText('Generating again replaces it');
 
     // The whole point of the finding: the button survives.
-    await expect(
-      page.getByRole('button', { name: /Start Architectural Mapping|Generate a new blueprint/i }),
-    ).toBeVisible();
+    await expect(page.locator('[data-generate-blueprint]')).toBeVisible();
     await expect(page.locator('[data-stage-title]').first()).toBeVisible();
   });
 });

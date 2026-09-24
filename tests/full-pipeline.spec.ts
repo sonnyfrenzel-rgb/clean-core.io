@@ -318,19 +318,19 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
     await page.click('button:has-text("Proceed to Documentation")');
     await page.waitForSelector('h1:has-text("Process Blueprint & Mapping")', { timeout: 45000 });
 
-    // Click "Start Architectural Mapping" if it is present (new project flow)
-    const startButton = page.locator('button:has-text("Start Architectural Mapping")');
+    // Roadmap 3.0.5: the documentation is read out of the code by the engine —
+    // the button waits until the map of the signed source is read.
+    const startButton = page.locator('[data-generate-blueprint]');
     try {
-      await expect(startButton).toBeVisible({ timeout: 5000 });
+      await expect(startButton).toBeEnabled({ timeout: 60000 });
       await startButton.click();
-      console.log('Triggered architectural blueprint documentation generation...');
+      console.log('Reading the process documentation from the code...');
     } catch (e) {
-      console.log('Documentation blueprint already exists or is generating, skipping click.');
+      console.log('Documentation already exists, skipping click.');
     }
 
-    // Verify BPMN process flows are active
-    await expect(page.locator('text=Interactive BPMN Map')).toBeVisible({ timeout: 60000 });
-    console.log('Stage 4 Complete: Architectural documentation mapped successfully.');
+    await expect(page.locator('[data-engine-documentation]')).toBeVisible({ timeout: 60000 });
+    console.log('Stage 4 Complete: process documentation read from the code.');
 
     // --- STAGE 5: TESTING SANDBOX ---
     console.log('Navigating to Stage 5: Testing Sandbox...');

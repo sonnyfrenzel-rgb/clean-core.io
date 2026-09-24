@@ -224,6 +224,14 @@
         ],
         "addedToProject": [],
         "caughtBy": "tests/preservation-register.spec.ts"
+      },
+      {
+        "at": "2026-09-24",
+        "step": "3.0.5",
+        "what": "Die Dokumentationsstufe schreibt `documentation` aus der Engine (Weg C): Format 'engine-process-documentation' statt L1-L4-JSON eines Modells. Kein neues Feld, keine Migration; alte Blueprints bleiben lesbar und werden als fruehere Form gekennzeichnet. L-04 ist damit behoben.",
+        "addedToRun": [],
+        "addedToProject": [],
+        "caughtBy": "tests/process-documentation.spec.ts"
       }
     ]
   },
@@ -264,7 +272,15 @@
       "subject": "documentation",
       "statement": "The blueprint prompt is built from 1,000-character slices of generatedCode, solutionDesign and analysis.",
       "consequence": "A business rule beyond the first 1,000 characters cannot reach the blueprint (QA24-A10).",
-      "evidence": "app/(app)/project/[projectId]/documentation/page.tsx, the `context` template."
+      "evidence": "app/(app)/project/[projectId]/documentation/page.tsx, the `context` template.",
+      "status": "resolved",
+      "resolved": {
+        "at": "2026-09-24",
+        "step": "3.0.5",
+        "decision": "Weg C, Sonny 24.09.2026",
+        "how": "The prompt and the model generator are gone. Stage 4 writes `documentation` with buildProcessDocumentation (lib/process-documentation-build.ts) over the whole source the active run signed: the process skeleton as BPMN elements, the business statements of 17.7, the update-task states of 2.12, the lanes the code proves and, when saved, the naming stage's names and lanes. Owner, roles, KPIs, duration and strategic goal are listed as not determined. Blueprints stored before stay readable, marked as the earlier form.",
+        "caughtBy": "tests/process-documentation.spec.ts (QA24-A10 on both starter examples) and tests/preservation-register.spec.ts"
+      }
     },
     {
       "id": "L-05",
@@ -810,7 +826,7 @@
       "route": "/project/{projectId}/documentation",
       "page": "app/(app)/project/[projectId]/documentation/page.tsx",
       "alsoWrites": [],
-      "purpose": "Write the process blueprint (L1-L4 plus a BPMN flow) and, on top of it, the business SOP and RACI layer.",
+      "purpose": "Read the process documentation out of the whole signed source (engine, no model; roadmap 3.0.5) and, on top of it, the business SOP and RACI layer. A legacy L1-L4 blueprint stored before 3.0.5 is still shown, marked as the earlier form.",
       "inputs": {
         "required": [
           {
@@ -822,24 +838,19 @@
         ],
         "optional": [
           {
+            "field": "legacyCode",
+            "from": "project",
+            "why": "the whole source is read by the engine, and only while it still hashes to the digest the active run signed (3.0.5; before it, 1,000-character slices of three artefacts went into a prompt, L-04)"
+          },
+          {
             "field": "generatedCode",
             "from": "project",
-            "why": "first 1,000 characters go into the prompt, and the blueprint is merged back into it"
-          },
-          {
-            "field": "solutionDesign",
-            "from": "project",
-            "why": "first 1,000 characters go into the prompt"
-          },
-          {
-            "field": "analysis",
-            "from": "run",
-            "why": "first 1,000 characters go into the prompt"
+            "why": "the documentation is merged back into it as docs/process-blueprint.md"
           },
           {
             "field": "documentation",
             "from": "project",
-            "why": "an existing blueprint is shown instead of generated"
+            "why": "an existing document is shown instead of read again: the engine form, or a legacy blueprint marked as the earlier form"
           },
           {
             "field": "businessDocumentation",
@@ -865,7 +876,7 @@
           "documentation",
           "businessDocumentation"
         ],
-        "note": "This is the one stage that writes an upstream stage's artefact: both generations insert docs/process-blueprint.md into generatedCode, inside a Firestore transaction that re-reads it."
+        "note": "This is the one stage that writes an upstream stage's artefact: the documentation inserts docs/process-blueprint.md and the business layer docs/business-documentation.md into generatedCode, each inside a Firestore transaction that re-reads it. Since 3.0.5 `documentation` holds the engine form (format 'engine-process-documentation', lib/process-documentation.ts); it stays client-written and client-writable in firestore.rules."
       },
       "preconditions": {
         "enforceActiveRun": true,
@@ -882,16 +893,20 @@
       },
       "errors": [
         {
-          "when": "the model returns an empty response",
-          "does": "throws 'Gemini returned an empty response.'; docError is shown and nothing is written."
+          "when": "the source is not the one the active run signed, or the process map has not been read yet",
+          "does": "docError says so before anything is built, the button waits, and nothing is written."
         },
         {
           "when": "generationBlockers is non-empty",
-          "does": "docError is set to the blocker text before any model call, and a StaleNotice repeats it."
+          "does": "docError is set to the blocker text before anything is built, and a StaleNotice repeats it."
         },
         {
-          "when": "the stored blueprint does not parse or has no l1_domain",
-          "does": "parsedDoc is null and the page renders the empty state; the stored text is not deleted."
+          "when": "the stored value is neither a readable engine document nor a legacy blueprint with l1_domain in a drawable shape",
+          "does": "the page renders the empty state with the stored-document notice; the stored text is not deleted."
+        },
+        {
+          "when": "the business layer's model returns an empty response",
+          "does": "throws 'Gemini returned an empty response.'; businessDocError is shown and nothing is written."
         },
         {
           "when": "loadProjectAndHydrate rejects",
@@ -906,7 +921,7 @@
             "field": "documentation",
             "locator": "[data-stage-output=\"documentation\"]",
             "text": "{json:project.documentation.l1_domain.name}",
-            "why": "the blueprint inventory; the domain name is printed at the top of it"
+            "why": "the reference case seeds a legacy blueprint, which is still shown under the earlier-form notice with its domain name at the top; an engine document renders the process element by element in the same container"
           },
           {
             "field": "businessDocumentation",
@@ -918,7 +933,7 @@
         "notShown": [
           {
             "field": "generatedCode",
-            "why": "read only into the prompt, and only its first 1000 characters (known limit L-04); the workspace copy it writes leaves as a download"
+            "why": "not read for the documentation since 3.0.5 (L-04 resolved); the stage only merges docs/process-blueprint.md into it, and that workspace copy leaves as a download"
           },
           {
             "field": "status",

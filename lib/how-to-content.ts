@@ -133,11 +133,11 @@ export const HOW_TO_PHASE_CONTENT: Readonly<Record<PhaseKey, PhaseHowTo>> = {
   },
   documentation: {
     summary:
-      'A model writes a process blueprint (business domain, process area, a BPMN flow and task specifications) and, when you ask for it, a business layer with SOPs, a RACI matrix and control checkpoints.',
+      'The process documentation is read out of the whole analysed source — the process element by element, what each part does, the update task and the lanes the code proves, every statement with its lines — and, when you ask for it, a model writes a business layer with SOPs, a RACI matrix and control checkpoints.',
     details: [
-      'The flow can be exported as BPMN 2.0 XML and the blueprint as Confluence HTML.',
-      'The business layer can be generated once a technical blueprint exists.',
-      'Like the design and the code, the blueprint is model output that nothing checks against the code it describes.',
+      'The process can be exported as BPMN 2.0 XML and the documentation as Confluence HTML.',
+      'An owner, roles, KPIs or durations are not in the source, so the documentation lists them as not determined instead of filling them in.',
+      'The business layer can be generated once the documentation exists. It is model output, not a reading of the code.',
     ],
     questions: [
       {

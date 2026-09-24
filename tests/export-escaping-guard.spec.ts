@@ -50,6 +50,19 @@ test('the documentation export escapes every value the model wrote', () => {
   expect(left, `unescaped in the documentation export: ${left.join(', ')}`).toEqual([]);
 });
 
+test('the engine documentation export (3.0.5) escapes every value it prints', () => {
+  // Names from the naming stage are model output, and every technical name,
+  // condition and business statement is a token of the customer's source.
+  const src = read(DOCS);
+  expect(src).toContain('const engineHtml = `');
+  const left = modelValues(src, 'const engineHtml = `', 'new Blob([engineHtml]');
+  expect(left, `unescaped in the engine documentation export: ${left.join(', ')}`).toEqual([]);
+  const rows = src.slice(src.indexOf('const stepRows = '), src.indexOf('const engineHtml = `'));
+  const raw = [...rows.matchAll(/\$\{([^{}]*)\}/g)].map((m) => m[1].trim())
+    .filter((e) => !e.startsWith('esc(') && e !== 'name' && !e.includes('?'));
+  expect(raw, `unescaped in the engine documentation rows: ${raw.join(', ')}`).toEqual([]);
+});
+
 test('the design preview is not written into a window of our own origin', () => {
   const s = read(DESIGN);
   // `window.open('', '_blank')` inherits this origin, and `document.write` then

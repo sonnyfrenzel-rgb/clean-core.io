@@ -1,5 +1,15 @@
 /**
- * The shape this stage can actually render — checked before anything is stored.
+ * The shape of a **legacy** blueprint this stage can still render.
+ *
+ * Roadmap 3.0.5: nothing writes this form any more. The documentation is read
+ * out of the code (`lib/process-documentation.ts`), and the model generator
+ * that produced L1–L4 JSON is gone. Projects that stored one before keep it —
+ * it is shown under a notice that says what it is — so this check now guards
+ * only the read side: a stored legacy blueprint that the page cannot draw
+ * becomes an explained empty state instead of a crash. The write-side half
+ * described below went with the generator.
+ *
+ * The history, as it was:
  *
  * The blueprint is written by a language model and parsed with `extractJSON`,
  * which only proves that the text was JSON. It proved nothing about the types,
@@ -163,23 +173,7 @@ export function checkBlueprintShape(parsed: unknown): BlueprintCheck {
   return { ok: problems.length === 0, problems };
 }
 
-/**
- * What the reader is told when a freshly generated blueprint is refused.
- *
- * It says what was wrong and that generating again is the way forward. It does
- * not say why the model answered like that, because nothing here knows: the
- * model is not asked for a reason and does not give one.
- */
-export function blueprintRejectionMessage(problems: BlueprintProblem[]): string {
-  const list = problems.slice(0, 4).join(' ');
-  const more = problems.length > 4 ? ` (and ${problems.length - 4} more.)` : '';
-  return (
-    `The model's answer was not a blueprint this stage can display, so nothing was saved. ${list}${more} ` +
-    'Why the model answered this way is not recorded. Generate again; the previous blueprint, if there was one, is untouched.'
-  );
-}
-
-/** The same refusal, for a blueprint an earlier build had already stored. */
+/** The refusal, for a blueprint an earlier build had already stored. */
 export const STORED_BLUEPRINT_REJECTED =
   'A blueprint is stored for this project, but it does not have the shape this stage can display, so it is not shown. ' +
   'Why it was stored in this form is not recorded. Generating again replaces it.';

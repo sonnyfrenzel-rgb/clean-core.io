@@ -17,7 +17,16 @@ import dynamic from 'next/dynamic';
 import { clsx } from 'clsx';
 import { callGemini } from '@/lib/gemini';
 import type { Project } from '@/lib/types';
-import { formatDocsToMarkdown, formatBusinessDocsToMarkdown } from '@/lib/markdownFormatter';
+import { formatBusinessDocsToMarkdown } from '@/lib/markdownFormatter';
+import {
+  LEGACY_BLUEPRINT_NOTICE,
+  anchorsWords,
+  processDocumentationToMarkdown,
+  readStoredDocumentation,
+  stepEvidence,
+  type ProcessDocumentation,
+} from '@/lib/process-documentation';
+import ProcessDocumentationView from '@/components/documentation/ProcessDocumentationView';
 import { saveAs } from '@/lib/fileSaver';
 import VerificationRail from '@/components/VerificationRail';
 import StageHeader from '@/components/StageHeader';
@@ -40,7 +49,6 @@ import type {
 import { PRODUCT_GEMINI_MODEL } from '@/lib/constants';
 import {
   checkBlueprintShape,
-  blueprintRejectionMessage,
   STORED_BLUEPRINT_REJECTED,
 } from './blueprint-schema';
 
@@ -146,7 +154,7 @@ const extractJSON = (text: string) => {
 export default function DocumentationPage() {
   const { projectId } = useParams();
   const router = useRouter();
-  const { profile } = useUserProfile();
+  useUserProfile();
   /** Roadmap 1.2 — this stage calls a model, so it has a switch and it can be keyless. */
   const modelAvailability = useModelAvailability();
 
@@ -219,148 +227,43 @@ export default function DocumentationPage() {
     return () => { isMounted = false; };
   }, [projectId]);
 
-  const generateDocumentation = useCallback(async () => {
-    if (!project || !projectId) return;
-    // Not from code or a design written for a previous source (E01-F01-US02):
-    // the blueprint would describe something other than the code under review.
-    const blocked = generationBlockers(project, 'documentation');
-    if (blocked.length > 0) {
-      setDocError(blocked.join(' '));
-      setDocRejected(false);
-      return;
-    }
-
-    const idStr = Array.isArray(projectId) ? projectId[0] : projectId;
-
-    setIsGeneratingDoc(true);
-    setDocError('');
-    setDocRejected(false);
-    
-    try {
-      const context = `
-        Project Name: ${project.name || 'Untitled Project'}
-        Code Snippet: ${(project.generatedCode || '').substring(0, 1000)}
-        Design Snippet: ${(project.solutionDesign || '').substring(0, 1000)}
-        Analysis Snippet: ${(project.analysis || '').substring(0, 1000)}
-      `;
-
-      const prompt = `Act as an Enterprise Business Process Architect.
-Based on the context, generate a comprehensive Process Documentation focusing heavily on Business Value, KPIs, and Roles.
-
-Return ONLY a JSON object wrapped in a markdown code block (\`\`\`json ... \`\`\`). 
-DO NOT include any text before or after the JSON.
-
-CRITICAL BPMN 2.0 & SAP SIGNAVIO INTEGRATION GUIDELINES:
-- In "l3_flow", you MUST map the role responsible for executing each task. Ensure that roles are standard enterprise actors (e.g. "System", "Finance Analyst", "CISO", "Developer").
-- Node "type" inside "l3_flow" MUST utilize standard BPMN 2.0 task classifications:
-  - "startEvent": The trigger point.
-  - "endEvent": The final state.
-  - "gateway" or "exclusiveGateway": Decisions.
-  - "serviceTask": Fully automated backend systems (e.g., calling standard released OData APIs).
-  - "userTask": Steps requiring human action (e.g., CISO approval, manual code check).
-  - "sendTask" / "receiveTask": Asynchronous messaging events.
-
-Structure exactly like this:
-{
-  "l1_domain": { "name": "...", "strategicGoal": "...", "owner": "..." },
-  "l2_group": { "name": "...", "processArea": "...", "kpis": ["...", "..."] },
-  "l3_flow": [
-    { "id": "Start", "name": "Process Trigger", "type": "startEvent", "role": "System", "next": ["Task1"] },
-    { "id": "Task1", "name": "First Step", "type": "serviceTask|userTask|gateway|endEvent", "role": "System|Developer|CISO|User", "next": ["End"] },
-    { "id": "End", "name": "Process Complete", "type": "endEvent", "role": "System", "next": [] }
-  ],
-  "l4_tasks": [
-    { 
-      "stepId": "Task1", 
-      "name": "...",
-      "description": "...", 
-      "inputs": ["..."], 
-      "outputs": ["..."], 
-      "systems": ["..."],
-      "complexity": "Low|Medium|High",
-      "estimatedDuration": "...",
-      "technicalMapping": "..." 
-    }
-  ]
-}
-
-Context:
-${context}`;
-
-      console.log('Generating documentation for project:', project.name);
-
-      const responseText = await callGemini(prompt, PRODUCT_GEMINI_MODEL, false, 'documentation');
-      
-      if (!responseText) {
-        throw new Error('Gemini returned an empty response.');
-      }
-      
-      const jsonString = responseText || '';
-      // Parsing is not validation. `extractJSON` proves the answer was JSON and
-      // nothing else; the page then reads `l4_tasks`, `l2_group.kpis` and the
-      // per-task lists with `.map`, `.find` and `.join`, and an object passes
-      // every `|| []` fallback on the way there. Checking the shape only before
-      // the *render* was too late: the document was already stored with
-      // `status: 'documented'`, so the crash came back on every reload
-      // (QA findings 0d8443fae823 / 58201e6aaedb). The gate belongs here,
-      // before the transaction, so a refused answer changes nothing.
-      const parsed = extractJSON(jsonString);
-      const shape = checkBlueprintShape(parsed);
-      if (!shape.ok) {
-        setDocRejected(true);
-        throw new Error(blueprintRejectionMessage(shape.problems));
-      }
-
-      setDocumentation(jsonString);
-      
-      // Both generations rewrite the same `generatedCode` field. Reading it
-      // back first was not enough — two tabs can both read before either
-      // writes, and the later write still drops the earlier file (QA reviews of
-      // 33471220d6e9 and 146ac2e1a724: 4db1e81408f4, ade8ec0b8903). The
-      // read and the write are one transaction; disabling the buttons is a
-      // courtesy on top, not the mechanism.
-      const projectDoc = doc(getDb(), 'projects', idStr);
-      const updatedCode = await runTransaction(getDb(), async (tx) => {
-        const snap = await tx.get(projectDoc);
-        const merged = addOrUpdateFileInWorkspace(snap.data()?.generatedCode ?? project.generatedCode, 'docs/process-blueprint.md', formatDocsToMarkdown(jsonString));
-        tx.update(projectDoc, { documentation: jsonString, generatedCode: merged, status: 'documented' });
-        return merged;
-      });
-
-      setProject(prev => prev ? { ...prev, documentation: jsonString, generatedCode: updatedCode, status: 'documented' } : null);
-      
-    } catch (err: unknown) {
-      console.error('Documentation generation error:', err);
-      setDocError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setIsGeneratingDoc(false);
-    }
-  }, [projectId, project, profile?.byokConfigured]);
-
   /**
-   * The stored blueprint, and — when there is one that cannot be drawn — the
-   * fact that it exists. The second half is what keeps a document written by an
-   * earlier build, before the gate above existed, from being silently
-   * indistinguishable from "nothing generated yet": the reader is told a
-   * blueprint is there, that it cannot be displayed, and that generating again
-   * replaces it. The same check as the write gate, so the two cannot drift.
+   * What is stored, sorted into three cases — roadmap 3.0.5.
+   *
+   * - `engineDoc`: the document the engine wrote (`lib/process-documentation.ts`).
+   * - `parsedDoc`: a blueprint a language model wrote before 3.0.5. It is shown
+   *   as it was, under a notice that says what it is — never migrated, never
+   *   deleted. Its shape is still checked before it is drawn: a document an
+   *   earlier build stored in a form the page cannot draw becomes an explained
+   *   empty state instead of a crash (QA 0d8443fae823 / 58201e6aaedb).
+   * - `storedBlueprintRejected`: something is stored and neither of the two
+   *   can be drawn from it. The reader is told so, and generating replaces it.
    */
-  const blueprint = useMemo<{ doc: any | null; rejected: boolean }>(() => {
-    if (!documentation) return { doc: null, rejected: false };
+  const blueprint = useMemo<{ engine: ProcessDocumentation | null; doc: any | null; rejected: boolean }>(() => {
+    const stored = readStoredDocumentation(documentation);
+    if (stored.kind === 'none') return { engine: null, doc: null, rejected: false };
+    if (stored.kind === 'engine') return { engine: stored.doc, doc: null, rejected: false };
+    if (stored.kind === 'engine-invalid') {
+      console.error('Stored documentation rejected:', stored.problems);
+      return { engine: null, doc: null, rejected: true };
+    }
     try {
-      const parsed = extractJSON(documentation);
+      const parsed = extractJSON(stored.raw);
       const shape = checkBlueprintShape(parsed);
       if (!shape.ok) {
         console.error('Stored documentation rejected:', shape.problems);
-        return { doc: null, rejected: true };
+        return { engine: null, doc: null, rejected: true };
       }
-      return { doc: parsed, rejected: false };
+      return { engine: null, doc: parsed, rejected: false };
     } catch (e) {
       console.error("Parsed documentation is invalid:", e);
-      return { doc: null, rejected: true };
+      return { engine: null, doc: null, rejected: true };
     }
   }, [documentation]);
+  const engineDoc = blueprint.engine;
+  /** The legacy blueprint, when that is what is stored. */
   const parsedDoc = blueprint.doc;
+  const hasDocument = Boolean(engineDoc || parsedDoc);
   const storedBlueprintRejected = blueprint.rejected;
 
   const parsedBusinessDoc = useMemo(() => {
@@ -386,9 +289,18 @@ ${context}`;
     setIsGeneratingBusinessDoc(true);
     setBusinessDocError('');
     
+    // Roadmap 3.0.5: the engine document goes in as its Markdown — the process
+    // element by element with its BPMN ids, and the business statements of the
+    // whole program. `stepId` below is then the element id the map and the
+    // `.bpmn` export use. A blueprint stored before 3.0.5 goes in as it was.
+    const blueprintContext = engineDoc ? processDocumentationToMarkdown(engineDoc) : documentation;
+    const stepsDescription = engineDoc
+      ? 'Process Documentation read from the ABAP code (BPMN elements with their ids and line ranges, and the business statements of the whole program). Use the element ids as stepId'
+      : 'Process Blueprint (BPMN flow and Level 4 tasks)';
+
     try {
       const prompt = `Act as an Enterprise Business Process, SOP & Compliance expert writing for a BUSINESS audience — process owners, master-data stewards, compliance and internal audit. This is the BUSINESS layer of the documentation.
-Based on the following Process Blueprint (BPMN flow and Level 4 tasks), generate the corresponding Business SOP & RACI Matrix layer.
+Based on the following ${stepsDescription}, generate the corresponding Business SOP & RACI Matrix layer.
 
 CRITICAL — PURE BUSINESS LANGUAGE (no IT/technical content):
 - Write exclusively in business and process terms. Describe WHAT happens for the business and WHO is responsible — never HOW it is implemented technically.
@@ -401,7 +313,7 @@ Return ONLY a JSON object wrapped in a markdown code block (\`\`\`json ... \`\`\
 DO NOT include any text before or after the JSON.
 
 Process Blueprint Context:
-${documentation}
+${blueprintContext}
 
 Structure the JSON exactly like this:
 {
@@ -463,7 +375,7 @@ Structure the JSON exactly like this:
     } finally {
       setIsGeneratingBusinessDoc(false);
     }
-  }, [projectId, project, documentation, profile?.byokConfigured]);
+  }, [projectId, project, documentation, engineDoc]);
 
   /**
    * Roadmap 2.6 — the source the active run signed, and nothing else.
@@ -494,6 +406,86 @@ Structure the JSON exactly like this:
     project?.name || '',
     modelAvailability,
   );
+
+  /**
+   * Roadmap 3.0.5, Weg C — the documentation is read out of the code.
+   *
+   * Until 3.0.5 this asked a language model for an L1–L4 blueprint from the
+   * first 1,000 characters of the generated code, the design and the analysis;
+   * the domain, the owner, the roles, the KPIs and the durations it returned
+   * were invented, and a rule after character 1,000 could not reach it (L-04,
+   * QA24-A10). Now it is `buildProcessDocumentation` over the whole source the
+   * active run signed and the map this page already drew from it — no model, no
+   * key and no network beyond the one write.
+   *
+   * Still on a button, never on opening the stage: writing the project is the
+   * reader's decision, and a stored legacy blueprint is only replaced when they
+   * ask for it.
+   */
+  const generateDocumentation = useCallback(async () => {
+    if (!project || !projectId) return;
+    // Not from code or a design written for a previous source (E01-F01-US02):
+    // the document would describe something other than the code under review.
+    const blocked = generationBlockers(project, 'documentation');
+    if (blocked.length > 0) {
+      setDocError(blocked.join(' '));
+      setDocRejected(false);
+      return;
+    }
+    if (!signedSource) {
+      setDocError('The documentation is read from the source the active run signed, and the source on this project no longer matches it. Re-run the analysis in stage 1 first.');
+      setDocRejected(false);
+      return;
+    }
+    if (!processMap.model) {
+      setDocError(processMap.status === 'failed' && processMap.reason
+        ? processMap.reason
+        : 'The process is still being read out of the source. Try again in a moment.');
+      setDocRejected(false);
+      return;
+    }
+
+    const idStr = Array.isArray(projectId) ? projectId[0] : projectId;
+
+    setIsGeneratingDoc(true);
+    setDocError('');
+    setDocRejected(false);
+
+    try {
+      const { buildProcessDocumentation } = await import('@/lib/process-documentation-build');
+      const built = buildProcessDocumentation({ source: signedSource.source, map: processMap.model });
+      const stored = JSON.stringify(built);
+      // The reader of the stored value is the gate: what is written must read
+      // back as an engine document, or nothing is written.
+      if (readStoredDocumentation(stored).kind !== 'engine') {
+        setDocRejected(true);
+        throw new Error('The documentation could not be put together from this source, so nothing was saved.');
+      }
+
+      setDocumentation(stored);
+
+      // Both generations rewrite the same `generatedCode` field. Reading it
+      // back first was not enough — two tabs can both read before either
+      // writes, and the later write still drops the earlier file (QA reviews of
+      // 33471220d6e9 and 146ac2e1a724: 4db1e81408f4, ade8ec0b8903). The
+      // read and the write are one transaction; disabling the buttons is a
+      // courtesy on top, not the mechanism.
+      const projectDoc = doc(getDb(), 'projects', idStr);
+      const updatedCode = await runTransaction(getDb(), async (tx) => {
+        const snap = await tx.get(projectDoc);
+        const merged = addOrUpdateFileInWorkspace(snap.data()?.generatedCode ?? project.generatedCode, 'docs/process-blueprint.md', processDocumentationToMarkdown(built));
+        tx.update(projectDoc, { documentation: stored, generatedCode: merged, status: 'documented' });
+        return merged;
+      });
+
+      setProject(prev => prev ? { ...prev, documentation: stored, generatedCode: updatedCode, status: 'documented' } : null);
+    } catch (err: unknown) {
+      console.error('Documentation generation error:', err);
+      setDocError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setIsGeneratingDoc(false);
+    }
+  }, [projectId, project, signedSource, processMap.model, processMap.status, processMap.reason]);
 
   /**
    * Roadmap 2.9 — the open level and the selection live in the URL.
@@ -741,6 +733,10 @@ Structure the JSON exactly like this:
   };
 
   const downloadConfluenceHTML = () => {
+    if (engineDoc) {
+      downloadEngineConfluenceHTML(engineDoc);
+      return;
+    }
     if (!parsedDoc) return;
 
     /**
@@ -922,6 +918,45 @@ Structure the JSON exactly like this:
     saveAs(blob, `${fileName}_Confluence.html`);
   };
 
+  /**
+   * Roadmap 3.0.5 — the Confluence page of the engine document: the same
+   * content as the stage shows, every value escaped, nothing added. The
+   * business layer, when there is one, follows as a model proposal.
+   */
+  const downloadEngineConfluenceHTML = (engine: ProcessDocumentation) => {
+    const esc = escapeHtml;
+    const statementById = new Map(engine.statements.map((s) => [s.id, s]));
+    const stepRows = engine.steps.map((step) => {
+      const sentence = step.statementId ? statementById.get(step.statementId) : undefined;
+      const name = step.businessName
+        ? `${esc(step.businessName)} <small>(${esc(step.technicalName)}) — Model proposal</small>`
+        : esc(step.technicalName);
+      return `<tr><td><code>${esc(step.id)}</code><br>${esc(step.kind)}</td><td>${name}${step.lane ? `<br><small>Lane: ${esc(step.lane)} — Model proposal</small>` : ''}</td><td>${sentence ? esc(sentence.text) : ''}</td><td>${esc(stepEvidence(step))}</td></tr>`;
+    }).join('');
+    const statementSection = engine.statements
+      .map((s) => `<li>${esc(s.text)} <small>— ${esc(anchorsWords(s.anchors))}</small></li>`)
+      .join('');
+    const gapSection = engine.notDetermined
+      .map((g) => `<li><strong>${esc(g.subject)}:</strong> Not determined — ${esc(g.reason)}</li>`)
+      .join('');
+    const engineHtml = `<html><head><meta charset="utf-8"><style>
+      body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color: #172B4D; line-height: 1.6; padding: 20px; }
+      table { border-collapse: collapse; width: 100%; } th, td { border: 1px solid #DFE1E6; padding: 8px; text-align: left; vertical-align: top; }
+      th { background: #F4F5F7; } small { color: #6B778C; }
+    </style></head><body>
+      <h1>Process documentation — ${esc(engine.processName)}</h1>
+      <p><em>${esc(engine.disclaimer)}</em></p>
+      <p>${esc(engine.fileName)}, ${esc(String(engine.lineCount))} lines. ${esc(engine.overview)} ${esc(engine.traceability.sentence)}</p>
+      <h2>The process, element by element</h2>
+      <table><thead><tr><th>Element</th><th>Name</th><th>What it does</th><th>Lines</th></tr></thead><tbody>${stepRows}</tbody></table>
+      <h2>Business statements, across the whole program</h2><ul>${statementSection}</ul>
+      <h2>Not determined from the code</h2><ul>${gapSection}</ul>
+    </body></html>`;
+    const blob = new Blob([engineHtml], { type: 'text/html;charset=utf-8' });
+    const fileName = (project?.name || 'Project').replace(/\s+/g, '_');
+    saveAs(blob, `${fileName}_Confluence.html`);
+  };
+
   const phases = workflowSteps(project);
 
   if (loading) return (
@@ -1046,10 +1081,10 @@ Structure the JSON exactly like this:
             </button>
           )}
 
-          <div className={`flex flex-wrap gap-3 ${parsedDoc ? '' : 'hidden'}`}>
+          <div className={`flex flex-wrap gap-3 ${hasDocument ? '' : 'hidden'}`}>
             <button
               onClick={downloadConfluenceHTML}
-              disabled={!parsedDoc || isGeneratingDoc}
+              disabled={!hasDocument || isGeneratingDoc}
               className="flex items-center gap-2 px-6 py-3 rounded-xl transition-all font-bold text-xs md:text-sm uppercase tracking-widest border bg-white border-[#eff4ff] text-[#0b1c30] hover:bg-[#eff4ff] opacity-100 disabled:opacity-50"
             >
               <Download size={16} /> Export Confluence
@@ -1057,11 +1092,12 @@ Structure the JSON exactly like this:
 
             <button
               onClick={generateDocumentation}
-              disabled={isGeneratingDoc || isGeneratingBusinessDoc}
+              disabled={isGeneratingDoc || isGeneratingBusinessDoc || !signedSource || !processMap.model}
+              data-regenerate-documentation
               className="flex items-center gap-2 bg-gradient-to-br from-[#006b2c] to-[#00873a] text-white px-6 py-3 rounded-xl hover:shadow-lg transition-all font-bold text-xs md:text-sm uppercase tracking-widest disabled:opacity-50"
             >
               <RefreshCw className={`w-4 h-4 ${isGeneratingDoc ? 'animate-spin' : ''}`} />
-              {documentation ? 'Regenerate' : 'Generate Blueprint'}
+              {engineDoc ? 'Read again from the code' : 'Replace with the code reading'}
             </button>
           </div>
         </div>
@@ -1069,9 +1105,10 @@ Structure the JSON exactly like this:
 
       {/* Roadmap 2.5 — the process as the engine read it, above everything a
           model wrote. It exists as soon as the run does: no blueprint, no key
-          and no naming are needed for it, because it is the code. The blueprint
-          below it is a model's account of the same program and is marked as
-          one; putting the evidence first is the order `DESIGN.md` §5 asks for. */}
+          and no naming are needed for it, because it is the code. The
+          documentation below it is written from the same reading (3.0.5); a
+          blueprint stored before that is a model's account and is marked as
+          one. Putting the evidence first is the order `DESIGN.md` §5 asks for. */}
       {signedSource && (
         <div data-process-map-section className="mb-10 rounded-[2rem] border border-gray-100 bg-white p-6 md:p-8 shadow-sm">
           {processMap.model ? (
@@ -1145,10 +1182,10 @@ Structure the JSON exactly like this:
               <RefreshCw className="w-8 h-8 text-green-600" />
             </div>
           </div>
-          <div className="text-xl md:text-2xl font-black text-gray-900 mb-2 uppercase tracking-tight">Architecting Process</div>
-          <p className="text-gray-500 font-medium text-sm md:text-base">Analyzing business domains and generating BPMN structures...</p>
+          <div className="text-xl md:text-2xl font-black text-gray-900 mb-2 uppercase tracking-tight">Reading the process</div>
+          <p className="text-gray-500 font-medium text-sm md:text-base">Putting the documentation together from the whole source…</p>
         </div>
-      ) : parsedDoc ? (
+      ) : hasDocument ? (
         <div id="documentation-report" data-stage-output="documentation" className="space-y-8 mb-12 animate-in fade-in slide-in-from-bottom-8 duration-700">
           
           {/* Tab Switcher */}
@@ -1160,7 +1197,7 @@ Structure the JSON exactly like this:
                 activeTab === 'technical' ? "border-[#006b2c] text-[#006b2c]" : "border-transparent text-gray-400 hover:text-gray-600"
               )}
             >
-              Technical Blueprint
+              {engineDoc ? 'Process documentation' : 'Technical Blueprint'}
             </button>
             <button
               onClick={() => setActiveTab('business')}
@@ -1176,8 +1213,16 @@ Structure the JSON exactly like this:
             </button>
           </div>
 
-          {activeTab === 'technical' ? (
+          {activeTab === 'technical' && engineDoc ? (
+            <ProcessDocumentationView doc={engineDoc} />
+          ) : activeTab === 'technical' ? (
             <div className="space-y-8">
+              {/* Roadmap 3.0.5 — a blueprint stored before the engine wrote this
+                  stage. Shown as it was, never migrated and never deleted, and
+                  said to be what it is before anything in it is read. */}
+              <div data-legacy-blueprint className="rounded-[2rem] border border-amber-200 bg-amber-50 p-5 text-sm text-amber-900 flex flex-col md:flex-row md:items-center gap-3">
+                <p className="flex-1 font-medium leading-relaxed">{LEGACY_BLUEPRINT_NOTICE}</p>
+              </div>
               {/* L1 & L2 Grid */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* L1 Domain */}
@@ -1379,7 +1424,7 @@ Structure the JSON exactly like this:
                         <div className="flex items-center gap-1.5 text-slate-500 font-medium min-w-0 flex-1">
                           <Cpu size={12} className="text-green-600 shrink-0" />
                           <span className="break-words text-xs leading-none">
-                            {Array.isArray(task.systems) ? task.systems.join(', ') : (task.systems || 'Node.js')}
+                            {Array.isArray(task.systems) ? task.systems.join(', ') : (task.systems || 'Not stated')}
                           </span>
                         </div>
                         <div className="flex items-center gap-1 text-green-600 font-mono font-bold shrink-0">
@@ -1585,6 +1630,18 @@ Structure the JSON exactly like this:
                       </div>
                     </div>
                     
+                    {!modelAvailability.enabled('documentation') ? (
+                      <NotGenerated
+                        what="Business SOP and RACI layer"
+                        absence={modelAvailability.keyAvailable ? 'stage-off' : 'no-key'}
+                        stage="documentation"
+                        hint={
+                          modelAvailability.keyAvailable
+                            ? 'Turn the documentation stage back on in Settings to generate it.'
+                            : 'Add your own Gemini API key in Settings to generate it.'
+                        }
+                      />
+                    ) : (
                     <button
                       onClick={generateBusinessDocumentation}
                       disabled={isGeneratingBusinessDoc || isGeneratingDoc}
@@ -1593,7 +1650,8 @@ Structure the JSON exactly like this:
                       <Rocket className="w-4 h-4" />
                       <span>Generate Business Layer (AI)</span>
                     </button>
-                    
+                    )}
+
                     {businessDocError && (
                       <p className="text-rose-400 font-medium text-xs mt-4 animate-pulse">{businessDocError}</p>
                     )}
@@ -1617,34 +1675,29 @@ Structure the JSON exactly like this:
               {STORED_BLUEPRINT_REJECTED}
             </p>
           )}
-          {!modelAvailability.enabled('documentation') ? (
-            <NotGenerated
-              what="Documentation and business blueprint"
-              absence={modelAvailability.keyAvailable ? 'stage-off' : 'no-key'}
-              stage="documentation"
-              hint={
-                modelAvailability.keyAvailable
-                  ? 'Turn the documentation stage back on in Settings to generate it.'
-                  : 'Add your own Gemini API key in Settings to generate it.'
-              }
-            />
-          ) : (
-            <>
-              {/* A stored blueprint that cannot be drawn is not "nothing yet",
-                  and saying so would leave the reader to wonder where his
-                  documentation went. The button stays exactly where it is:
-                  regenerating is the way out, and it has to be reachable. */}
-              {!storedBlueprintRejected && (
-                <p className="text-gray-500 mb-6 font-medium">No enterprise specifications yet.</p>
-              )}
-              <button
-                onClick={generateDocumentation}
-                data-generate-blueprint
-                className="bg-[#0b1c30] text-white px-10 py-4 rounded-2xl font-black uppercase tracking-widest hover:bg-[#006b2c] transition-all shadow-xl hover:shadow-green-600/20"
-              >
-                {storedBlueprintRejected ? 'Generate a new blueprint' : 'Start Architectural Mapping'}
-              </button>
-            </>
+          {/* Roadmap 3.0.5 — no model is called for this document, so neither
+              a missing key nor a switched-off stage stands in its way. What
+              can: the source no longer being the one the run signed, or the
+              map not being read yet. Both are said, and the button waits. */}
+          {!storedBlueprintRejected && (
+            <p className="text-gray-500 mb-2 font-medium">No process documentation yet.</p>
+          )}
+          <p className="text-gray-500 mb-6 text-sm max-w-2xl mx-auto">
+            It is read out of the whole source the active run signed: the process element by element, what each part does,
+            the update task and the lanes the code proves, every statement with its lines. No language model is involved.
+          </p>
+          <button
+            onClick={generateDocumentation}
+            disabled={!signedSource || !processMap.model || isGeneratingDoc}
+            data-generate-blueprint
+            className="bg-[#0b1c30] text-white px-10 py-4 rounded-2xl font-black uppercase tracking-widest hover:bg-[#006b2c] transition-all shadow-xl hover:shadow-green-600/20 disabled:opacity-50"
+          >
+            {storedBlueprintRejected ? 'Replace with the code reading' : 'Read the documentation from the code'}
+          </button>
+          {!signedSource && (
+            <p data-documentation-needs-run className="text-gray-500 mt-4 text-xs">
+              There is no source here that the active run signed. Run the analysis in stage 1 first.
+            </p>
           )}
         </div>
       )}
@@ -1720,7 +1773,7 @@ Structure the JSON exactly like this:
                     <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block font-mono">Estimated Effort</span>
                     <span className="text-sm font-bold text-emerald-400 mt-1.5 flex items-center gap-1.5">
                       <Activity className="w-3.5 h-3.5" />
-                      {activeTask.estimatedDuration || '2 Days'}
+                      {activeTask.estimatedDuration || 'Not stated'}
                     </span>
                   </div>
                 </div>
@@ -1758,7 +1811,7 @@ Structure the JSON exactly like this:
                 <div>
                   <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2.5 font-mono">Target Platform & Tech Stack</h4>
                   <div className="flex flex-wrap gap-2">
-                    {(Array.isArray(activeTask.systems) ? activeTask.systems : [activeTask.systems || 'Node.js']).map((sys: string, idx: number) => (
+                    {(Array.isArray(activeTask.systems) ? activeTask.systems : [activeTask.systems || 'Not stated']).map((sys: string, idx: number) => (
                       <code key={idx} className="bg-slate-950 text-emerald-400 border border-slate-800 text-xs px-3 py-1.5 rounded-xl font-mono">
                         {sys}
                       </code>
@@ -1807,7 +1860,7 @@ Structure the JSON exactly like this:
         proceedPath={`/project/${projectId}/testing`}
         proceedLabel="Proceed to Testing"
         incomplete={!documentation}
-        incompleteReason="no blueprint has been generated"
+        incompleteReason="no process documentation has been read from the code yet"
       />
     </div>
   );

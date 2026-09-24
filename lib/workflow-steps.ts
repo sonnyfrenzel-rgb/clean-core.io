@@ -8,6 +8,7 @@ import {
   type UnverifiedInput,
 } from './input-manifest';
 import { coveringTestRunReceipt, executedPasses } from './test-receipt';
+import { isEngineDocumentation } from './process-documentation';
 
 /**
  * The seven phases, and what is actually on record for each.
@@ -436,11 +437,16 @@ export function workflowSteps(project: Project | null): RailStep[] {
       })
     : phase('transformation', { state: 'empty', badge: 'Not started', detail: 'No code generated yet.' });
 
-  // Same: a generated blueprint is on record, and nothing has checked it against
-  // the code it describes.
-  const documentation = hasDocs
-    ? phase('documentation', { state: 'done', badge: 'Generated', detail: 'Blueprint and BPMN flow generated.' })
-    : phase('documentation', { state: 'empty', badge: 'Not started', detail: 'No blueprint generated.' });
+  // Roadmap 3.0.5 — two forms can be on record. The engine's document is read
+  // out of the code with every statement anchored; it is still done and not
+  // proven, because nobody has confirmed the reading. A blueprint a model wrote
+  // before 3.0.5 stays done too — it is not migrated or taken away — and the
+  // detail says what it is and how to replace it.
+  const documentation = !hasDocs
+    ? phase('documentation', { state: 'empty', badge: 'Not started', detail: 'No blueprint generated.' })
+    : isEngineDocumentation(project?.documentation)
+      ? phase('documentation', { state: 'done', badge: 'Read from code', detail: 'Process documentation read from the code — every statement with its lines.' })
+      : phase('documentation', { state: 'done', badge: 'Generated', detail: 'Earlier model-written blueprint on record — read it again from the code.' });
 
   // Generated is not tested. The acceptance for E01-F01-US01 names exactly this
   // case: generated, never-executed tests must read as a draft in every view.

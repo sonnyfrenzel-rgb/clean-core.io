@@ -12,7 +12,7 @@ import { format } from 'date-fns';
 import nextDynamic from 'next/dynamic';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { quotaExhausted, runsRemaining, runsAreSelfFunded } from '@/lib/run-quota-rule';
-import { formatAnalysisToMarkdown, formatDesignToMarkdown, formatDocsToMarkdown, formatPresentationToMarkdown } from '@/lib/markdownFormatter';
+import { formatAnalysisToMarkdown, formatDesignToMarkdown, formatDocumentationToMarkdown, formatPresentationToMarkdown } from '@/lib/markdownFormatter';
 import { renderMarkdownSafe } from '@/lib/sanitize-html';
 import { saveAs } from '@/lib/fileSaver';
 import { workflowSteps, workflowSummary, testEvidence, phaseTone, PHASE_TONE_CLASS } from '@/lib/workflow-steps';
@@ -1870,7 +1870,7 @@ function ProjectTreeItem({ project, onDelete, onCopy, onExport, onProceed, isPro
       isExport: false, 
       canPDF: true 
     },
-    { id: 'docs', title: '7. Process Blueprint Specification', content: formatDocsToMarkdown(project.documentation), type: 'markdown', ext: '.md', isExport: false, canPDF: true },
+    { id: 'docs', title: '7. Process Documentation', content: formatDocumentationToMarkdown(project.documentation), type: 'markdown', ext: '.md', isExport: false, canPDF: true },
     { id: 'presentation', title: '8. Executive Summary Deck', content: formatPresentationToMarkdown(project.presentation), type: 'markdown', ext: '.md', isExport: false, canPDF: true },
   ].filter(d => d.content);
 

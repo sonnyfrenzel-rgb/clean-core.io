@@ -176,11 +176,11 @@ Execute automated tests and validate your modernized code.
 - **Test Results Dashboard**: TAP-formatted logs with pass/fail status, execution time, and model-written explanations
 
 ### Documentation Stage (/project/[id]/documentation)
-Auto-generate comprehensive migration documentation.
-- **Technical Documentation**: API specifications, data models, integration patterns
+Process documentation read out of the whole analysed source by the engine, with no model involved.
+- **Process Documentation**: the process element by element, what each part does, the update task and commits, and the lanes the code proves, every statement with its line numbers; owner, roles, KPIs and duration are listed as not determined because the code does not contain them
 - **Business Process Documentation**: BPMN 2.0 process diagrams as XML (import into SAP Signavio has not been verified yet)
-- **RACI Matrix**: Dynamic responsibility assignment matrix
-- **Standard Operating Procedures (SOPs)**: Step-by-step procedures with exception handling
+- **RACI Matrix** (model-written business layer, on request): responsibility assignment matrix
+- **Standard Operating Procedures (SOPs)** (model-written business layer, on request): step-by-step procedures with exception handling
 - **Risk & Control Framework**: Audit-ready control objectives and risk assessments
 - **Export Options**: BPMN 2.0 XML and Confluence HTML, and nothing else — the page offers no PDF export
 

@@ -373,7 +373,16 @@ export interface ProcessMapModel {
   /** 2.4's state and its one sentence, passed through unchanged. */
   naming: { state: NamingState; notice: string | null; named: number };
   /** The lanes 2.4 proposed, with the sentence every one of them carries. */
-  lanes: Array<{ key: string; name: string; statement: string; anchored: boolean }>;
+  lanes: Array<{
+    key: string;
+    name: string;
+    statement: string;
+    anchored: boolean;
+    /** The authorization object behind the lane, or null for a lane from naming alone. */
+    authorityObject: string | null;
+    /** The AUTHORITY-CHECK the lane rests on. Null exactly when it rests on none. */
+    anchor: { lineStart: number; lineEnd: number } | null;
+  }>;
 }
 
 /** The three the legend of roadmap 2.5 names, in the roadmap's order. */
@@ -583,6 +592,8 @@ export function buildProcessMapModel({ bpmn, named, fileName }: ProcessMapInput)
       name: lane.name,
       statement: lane.statement,
       anchored: lane.evidence === 'anchored',
+      authorityObject: lane.authorityObject,
+      anchor: lane.anchor ? { lineStart: lane.anchor.lineStart, lineEnd: lane.anchor.lineEnd } : null,
     })),
   };
 }

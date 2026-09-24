@@ -20,7 +20,8 @@ import type { ClassModel } from '@/lib/abap/class-model';
 import { Download, CheckCircle2, FileCode2, ArrowLeft, Home, RefreshCw, X, Rocket, ShieldCheck, Zap, Layout, Eye, Presentation, AlertCircle, Briefcase, BookOpen, Gauge, FileText } from 'lucide-react';
 import NavigationButtons from '@/components/NavigationButtons';
 import JSZip from 'jszip';
-import { formatAnalysisToMarkdown, formatDesignToMarkdown, formatDocsToMarkdown, formatBusinessDocsToMarkdown } from '@/lib/markdownFormatter';
+import { formatAnalysisToMarkdown, formatDesignToMarkdown, formatDocumentationToMarkdown, formatBusinessDocsToMarkdown } from '@/lib/markdownFormatter';
+import { isEngineDocumentation } from '@/lib/process-documentation';
 import { bundleSource, type RejectedBundlePath } from '@/lib/generated-package';
 
 import { useUserProfile } from '@/hooks/useUserProfile';
@@ -116,6 +117,8 @@ export default function DeliveryPage() {
   // present and says plainly what is not.
   const hasGeneratedCode = typeof project?.generatedCode === 'string' && project.generatedCode.trim().length > 0;
   const hasDocumentation = typeof project?.documentation === 'string' && project.documentation.trim().length > 0;
+  /** Roadmap 3.0.5 — the engine's document, or a blueprint a model wrote before it. */
+  const documentationFromCode = isEngineDocumentation(project?.documentation);
   const coveragePercentage =
     typeof project?.coverageEstimate?.percentage === 'number'
       ? project.coverageEstimate.percentage
@@ -409,7 +412,7 @@ ${isModular ? `- db/schema.cds: Database schema & entities.
       if (docs) {
         if (project.analysis) docs.file("business-analysis.md", formatAnalysisToMarkdown(project.analysis));
         if (project.solutionDesign) docs.file("solution-design.md", formatDesignToMarkdown(project.solutionDesign));
-        if (project.documentation) docs.file("process-blueprint.md", formatDocsToMarkdown(project.documentation));
+        if (project.documentation) docs.file("process-blueprint.md", formatDocumentationToMarkdown(project.documentation));
         if (project.businessDocumentation) docs.file("business-documentation.md", formatBusinessDocsToMarkdown(project.businessDocumentation));
         docs.file("developer-guidelines.md", generateDeveloperGuidelines(project));
       }
@@ -779,14 +782,20 @@ jobs:
                 )}
                 <div>
                   <span data-stage-output={hasDocumentation ? 'documentation' : undefined} className="text-white block font-bold">
-                    {hasDocumentation ? 'Enterprise BPMN Blueprint' : 'No blueprint generated'}
+                    {!hasDocumentation
+                      ? 'No blueprint generated'
+                      : documentationFromCode
+                        ? 'Process documentation, read from the code'
+                        : 'Process blueprint, earlier form'}
                   </span>
                   <span className="text-[10px] text-gray-400">
                     {!hasDocumentation
                       ? 'Run stage 4 to produce the documentation this line reports on'
                       : docsStale
                         ? 'Written for a previous source — regenerate in stage 4'
-                        : 'Docs: Mapped Level 1-4 architectural specs'}
+                        : documentationFromCode
+                          ? 'Every statement with its lines; owner, roles, KPIs and duration not determined'
+                          : 'Written by a language model from 1,000-character slices — read it again from the code in stage 4'}
                   </span>
                 </div>
               </li>

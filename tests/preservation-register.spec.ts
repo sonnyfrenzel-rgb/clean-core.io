@@ -910,9 +910,17 @@ test.describe('the register matches the code', () => {
     expect(delivery).toContain('project.testSuite.code');
     expect(delivery).toContain('project.businessDocumentation');
 
-    // L-04: the blueprint prompt still reads slices, not whole artefacts.
-    expect(limit('L-04').subject).toBe('documentation');
-    expect(src('app/(app)/project/[projectId]/documentation/page.tsx')).toContain('.substring(0, 1000)');
+    // L-04 — resolved in 3.0.5 (Weg C). The limit stays in the register, marked
+    // resolved, and what is asserted now is the fix: no slice, and the engine
+    // builder reads the whole source.
+    const l04 = register.knownLimits.find((l) => l.id === 'L-04') as { subject: string; status?: string; resolved?: { step?: string } };
+    expect(l04.subject).toBe('documentation');
+    expect(l04.status).toBe('resolved');
+    expect(l04.resolved?.step).toBe('3.0.5');
+    const docsPage = src('app/(app)/project/[projectId]/documentation/page.tsx');
+    expect(docsPage, 'the documentation stage slices its input again — L-04 is back').not.toContain('.substring(0, 1000)');
+    expect(docsPage).toContain("import('@/lib/process-documentation-build')");
+    expect(src('lib/process-documentation-build.ts')).toContain('buildBusinessStatements(source)');
 
     // L-05: Analyze and Economics are still the two stages without a StaleNotice.
     const withoutNotice = register.stages.filter((s) => !src(s.page).includes('<StaleNotice')).map((s) => s.key);

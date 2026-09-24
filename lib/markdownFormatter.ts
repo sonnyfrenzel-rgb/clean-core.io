@@ -1,5 +1,10 @@
 import { readStoredAnalysis, withoutUnapprovedMoney } from './money-honesty';
 import { sapApiHubUrl } from './export-safety';
+import {
+  LEGACY_BLUEPRINT_NOTICE,
+  processDocumentationToMarkdown,
+  readStoredDocumentation,
+} from './process-documentation';
 
 /**
  * Professional Markdown Formatting Engine
@@ -158,6 +163,26 @@ export function formatDesignToMarkdown(rawJson: string): string {
   }
 }
 
+/**
+ * `project.documentation` as Markdown, whichever form is stored — roadmap 3.0.5.
+ *
+ * The engine document (`lib/process-documentation.ts`) renders itself. A
+ * blueprint a language model wrote before 3.0.5 is rendered as it always was,
+ * under the notice that says what it is; nothing is migrated. This is what the
+ * delivery bundle's `docs/process-blueprint.md` and the dashboard export read.
+ */
+export function formatDocumentationToMarkdown(raw: string | undefined | null): string {
+  const stored = readStoredDocumentation(raw);
+  if (stored.kind === 'none') return '';
+  if (stored.kind === 'engine') return processDocumentationToMarkdown(stored.doc);
+  if (stored.kind === 'engine-invalid') {
+    return `# Process documentation\n\nA process documentation is stored for this project, but it is not in a shape this build can read. `
+      + `Read it again from the code in the documentation stage.\n`;
+  }
+  return `> ${LEGACY_BLUEPRINT_NOTICE}\n\n${formatDocsToMarkdown(stored.raw)}`;
+}
+
+/** The legacy L1–L4 blueprint. Kept for projects that stored one before 3.0.5. */
 export function formatDocsToMarkdown(rawJson: string): string {
   if (!rawJson) return '';
   try {

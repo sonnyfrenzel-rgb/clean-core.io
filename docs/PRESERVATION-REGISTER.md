@@ -189,9 +189,15 @@ has an assertion in the guard so that fixing it forces the register to be update
   `businessDocumentation`, and neither is tracked — so a bundle for the current
   source can contain a test suite and a business SOP written for the previous one,
   with nothing saying so.
-- **L-04 — the blueprint reads slices.** The documentation prompt is built from
-  the first 1,000 characters of `generatedCode`, `solutionDesign` and `analysis`.
-  A business rule beyond that cannot reach it (QA24-A10).
+- **L-04 — the blueprint reads slices. Resolved in 3.0.5 (Weg C, 24.09.2026).**
+  The documentation prompt was built from the first 1,000 characters of
+  `generatedCode`, `solutionDesign` and `analysis`, so a business rule beyond
+  that could not reach it (QA24-A10). The prompt and the generator are gone:
+  stage 4 now writes `documentation` from the engine over the whole signed
+  source (`lib/process-documentation-build.ts`), and owner, roles, KPIs and
+  duration are listed as not determined. Blueprints stored before stay readable
+  and are marked as the earlier form. The entry stays in the JSON with
+  `"status": "resolved"`, and the guard asserts the fix instead of the limit.
 - **L-05 — two stages show staleness only as a coloured circle.** Analyze and
   Economics are the only stages that render no `StaleNotice`, although
   `workflowSteps()` can put both in `stale` ("Source changed", "Modelled on the
