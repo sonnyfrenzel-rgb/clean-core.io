@@ -341,6 +341,43 @@ test.describe('8.3 — a deviation is recorded and applied', () => {
     expect(alt(c, 'in-app-rap').basis).toBe('stipulation');
     expect(alt(c, 'in-app-rap').reason).toContain('against the recommendation');
   });
+
+  // QA review of 4b4586aff273: the runtime field named the router's artifact,
+  // which belongs to the recommended route, and the headline called the other
+  // route rejected whatever its alternative said.
+  test('a deviation names the chosen route\'s artifact, not the recommended one\'s', () => {
+    const toRap = contractFor(SOURCE_OFF_STACK, 'public', {
+      deviation: { chosen: 'in-app-rap', reason: 'The RFC target is retired this quarter.' },
+    });
+    expect(field(toRap, 'runtime').statement).toContain('Target artifact: RAP Business Object.');
+    expect(field(toRap, 'runtime').statement).not.toContain('CAP Node.js');
+
+    const toCap = contractFor(SOURCE_ON_STACK, 'public', {
+      deviation: { chosen: 'side-by-side-cap', reason: 'The team runs everything on BTP.' },
+    });
+    expect(toCap.route.recommended).toBe('in-app-rap');
+    expect(field(toCap, 'runtime').statement).toContain('Target artifact: CAP Node.js / Java Application.');
+    expect(field(toCap, 'runtime').statement).not.toContain('RAP Business Object');
+
+    // Without a deviation the router's own artifact is what is named and cited.
+    const plain = contractFor(SOURCE_ON_STACK, 'public');
+    expect(field(plain, 'runtime').statement).toContain('Target artifact: RAP Business Object.');
+    expect(field(plain, 'runtime').citations).toEqual([{ kind: 'router', ref: 'targetArtifact' }]);
+  });
+
+  test('the headline does not call a route rejected that its alternative leaves open', () => {
+    const toCap = contractFor(SOURCE_ON_STACK, 'public', {
+      deviation: { chosen: 'side-by-side-cap', reason: 'The team runs everything on BTP.' },
+    });
+    expect(alt(toCap, 'in-app-rap').verdict).toBe('not-determined');
+    expect(toCap.summary).not.toContain('rejected');
+    expect(toCap.summary).toContain('On-stack ABAP Cloud with RAP not determined.');
+
+    // Where the alternative does reject, the headline still says so.
+    const recommended = contractFor(SOURCE_OFF_STACK, 'public');
+    expect(alt(recommended, 'in-app-rap').verdict).toBe('rejected');
+    expect(recommended.summary).toContain('On-stack ABAP Cloud with RAP rejected.');
+  });
 });
 
 /* ---------- canonical form, fingerprint, seam ---------- */

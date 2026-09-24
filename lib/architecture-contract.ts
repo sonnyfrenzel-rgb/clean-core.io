@@ -480,6 +480,17 @@ const RUNTIME_SENTENCES: Readonly<Record<TargetRoute, string>> = Object.freeze({
     'A decoupled runtime on SAP BTP: a CAP service (Node.js or Java) with its own lifecycle, reaching S/4HANA through released APIs and events.',
 });
 
+/**
+ * The artifact of each route, in the router's own words
+ * (`lib/abap/extensibility-router.ts`, `targetArtifact`). The router names the
+ * artifact of the route *it* recommends; a declared deviation needs the one of
+ * the route that was chosen instead.
+ */
+const TARGET_ARTIFACTS: Readonly<Record<TargetRoute, string>> = Object.freeze({
+  'in-app-rap': 'RAP Business Object',
+  'side-by-side-cap': 'CAP Node.js / Java Application',
+});
+
 const EDITION_NAMES: Readonly<Record<string, string>> = Object.freeze({
   public: 'S/4HANA Cloud, Public Edition',
   private: 'S/4HANA Cloud, Private Edition',
@@ -609,14 +620,20 @@ export function buildArchitectureContract(args: {
   }
 
   /* 2. Runtime — a rule of this platform, said to be one. */
+  // The router's artifact belongs to the recommended route. Under a deviation it
+  // would describe the route that was *not* chosen, so the chosen route's own
+  // artifact is named instead, and the router is not cited for it.
+  const followsRouter = chosen === recommended;
   fields.push({
     key: 'runtime',
     label: CONTRACT_FIELD_LABELS.runtime,
-    statement: `${RUNTIME_SENTENCES[chosen]} Target artifact: ${route.targetArtifact}.`,
+    statement: `${RUNTIME_SENTENCES[chosen]} Target artifact: ${
+      followsRouter ? route.targetArtifact : TARGET_ARTIFACTS[chosen]
+    }.`,
     notDeterminedReason: null,
     basis: 'stipulation',
     provenance: 'reconstructed',
-    citations: [{ kind: 'router', ref: 'targetArtifact' }],
+    citations: followsRouter ? [{ kind: 'router', ref: 'targetArtifact' }] : [],
     limits: [],
   });
 
@@ -885,9 +902,15 @@ export function buildArchitectureContract(args: {
     });
   }
 
-  const rejectedRoute = chosen === 'in-app-rap' ? 'side-by-side-cap' : 'in-app-rap';
+  // The other route's verdict is read from the alternatives, not assumed: under
+  // a deviation with no driver the on-stack route stays not determined, and the
+  // headline must not say more than the record it summarises.
+  const otherRoute = chosen === 'in-app-rap' ? 'side-by-side-cap' : 'in-app-rap';
+  const otherVerdict = alternatives.find((a) => a.id === otherRoute)?.verdict;
   const targetName = deployment ? EDITION_NAMES[deployment] || deployment : 'a target that was not bound';
-  const summary = `${ROUTE_LABELS[chosen]} on ${targetName}. ${ROUTE_LABELS[rejectedRoute]} rejected.${
+  const summary = `${ROUTE_LABELS[chosen]} on ${targetName}. ${ROUTE_LABELS[otherRoute]} ${
+    otherVerdict === 'rejected' ? 'rejected' : 'not determined'
+  }.${
     deviation ? ' Declared deviation from the recommended route.' : ''
   }`;
 
