@@ -142,7 +142,8 @@ export function credentialHeaders(cfg: S4ConfigResolved): { headers: Record<stri
   if (cfg.authType === 'basic') {
     if (!cfg.username || !cfg.password) return null;
     const basic = Buffer.from(`${cfg.username}:${cfg.password}`).toString('base64');
-    return { headers: { authorization: `Basic ${basic}` }, secrets: [cfg.password, basic] };
+    // The username too: it is half of the credential, and the runner has no use for it.
+    return { headers: { authorization: `Basic ${basic}` }, secrets: [cfg.password, cfg.username, basic] };
   }
   if (cfg.authType === 'sap_hub') {
     if (!cfg.password) return null;
@@ -154,11 +155,27 @@ export function credentialHeaders(cfg: S4ConfigResolved): { headers: Record<stri
   return null;
 }
 
-/** Replaces every credential value in a text with a marker. Short values are not searched for. */
+/**
+ * The shortest credential value the proxy can scrub from an answer. A shorter
+ * one would match ordinary text all over the answer and shred it, and skipping
+ * it would let it through — so the proxy refuses to forward for a connection
+ * holding one (`hasUnscrubbableSecret`) instead of choosing either.
+ */
+export const MIN_SCRUBBABLE_SECRET_CHARS = 4;
+
+export function hasUnscrubbableSecret(secrets: string[]): boolean {
+  return secrets.some((s) => s.length > 0 && s.length < MIN_SCRUBBABLE_SECRET_CHARS);
+}
+
+/**
+ * Replaces every non-empty credential value in a text with a marker, longest
+ * first (so a value contained in another is not left half-replaced). No value
+ * is skipped for being short; the handler never gets here with one.
+ */
 export function scrubSecrets(text: string, secrets: string[]): string {
   let out = text;
-  for (const s of secrets) {
-    if (s && s.length >= 4) out = out.split(s).join('[redacted]');
+  for (const s of [...secrets].filter(Boolean).sort((a, b) => b.length - a.length)) {
+    out = out.split(s).join('[redacted]');
   }
   return out;
 }
@@ -237,6 +254,12 @@ export async function handleS4ProxyRequest(
   if (!cfg) return refuse(403, 'No tenant connection is stored for this account.');
   const creds = credentialHeaders(cfg);
   if (!creds) return refuse(501, 'This authentication type is not available to test runs.');
+  if (hasUnscrubbableSecret(creds.secrets)) {
+    return refuse(
+      422,
+      `The stored tenant credentials contain a value shorter than ${MIN_SCRUBBABLE_SECRET_CHARS} characters, which cannot be kept out of the tenant's answer; the proxy does not forward with it.`,
+    );
+  }
 
   const reqUrl = new URL(req.url);
   const target = tenantTarget(cfg.url, claims.host, params.path, reqUrl.search);

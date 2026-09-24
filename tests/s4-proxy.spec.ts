@@ -178,9 +178,33 @@ test.describe('where it forwards', () => {
     expect(res.status).toBe(502);
   });
 
-  test('scrubbing replaces every credential value and leaves short ones alone', () => {
+  test('scrubbing replaces every credential value, short ones included, longest first', () => {
     expect(scrubSecrets('a SECRETX b SECRETX', ['SECRETX'])).toBe('a [redacted] b [redacted]');
-    expect(scrubSecrets('abc', ['ab'])).toBe('abc');
+    // No value is silently skipped for being short.
+    expect(scrubSecrets('abc', ['ab'])).toBe('[redacted]c');
+    // A value inside a longer one does not leave the longer one half-replaced.
+    expect(scrubSecrets('x USERPASS y USER', ['USER', 'USERPASS'])).toBe('x [redacted] y [redacted]');
+    expect(scrubSecrets('abc', ['', 'zz'])).toBe('abc');
+  });
+
+  test('the Basic-auth username is scrubbed from the answer', async () => {
+    const { deps, token } = setup({}, () => new Response('{"CreatedByUser":"TESTUSER"}', { status: 200, headers: { 'content-type': 'application/json' } }));
+    const res = await handleS4ProxyRequest(req('/sap/opu/x'), { capability: token, path: ['sap', 'opu', 'x'] }, deps);
+    expect(res.status).toBe(200);
+    expect(await res.text()).toBe('{"CreatedByUser":"[redacted]"}');
+  });
+
+  test('a credential too short to scrub is refused before anything reaches the tenant', async () => {
+    for (const conn of [
+      { ...CONNECTION, password: 'abc' },
+      { ...CONNECTION, username: 'SA' },
+      { url: `https://${HOST}`, password: 'k1', authType: 'sap_hub' as const },
+    ]) {
+      const { deps, token, rec } = setup({ loadConnection: async () => conn });
+      const res = await handleS4ProxyRequest(req('/sap/opu/x'), { capability: token, path: ['sap', 'opu', 'x'] }, deps);
+      expect(res.status, JSON.stringify(conn)).toBe(422);
+      expect(rec.forwarded).toHaveLength(0);
+    }
   });
 
   test('the route forwards through the SSRF-safe fetch and follows no redirect', () => {
