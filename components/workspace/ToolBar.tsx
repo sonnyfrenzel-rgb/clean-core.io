@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useId, useRef, useState } from 'react';
 import { ChevronDown, Wrench } from 'lucide-react';
 import CcButton from '@/components/cc/Button';
 import CcLinkButton from '@/components/cc/LinkButton';
@@ -42,6 +42,23 @@ export default function WorkspaceToolBar({
   open: boolean;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const panelId = useId();
+
+  // Escape closes the panel and hands the focus back to "Tools" (roadmap
+  // 3.0.4). It is a disclosure, not an ARIA `menu`: a `role="menu"` promises
+  // arrow-key navigation over `menuitem`s, and seven plain links under it were
+  // announced as a menu that then did not behave like one.
+  useEffect(() => {
+    if (!menuOpen) return undefined;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return;
+      setMenuOpen(false);
+      menuRef.current?.querySelector<HTMLButtonElement>('button[aria-controls]')?.focus();
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [menuOpen]);
 
   const links = tools.map((tool) => (
     <CcLinkButton key={tool.key} href={`/project/${projectId}/${tool.path}`}>
@@ -49,23 +66,19 @@ export default function WorkspaceToolBar({
     </CcLinkButton>
   ));
 
-  if (open) {
-    return (
-      <div data-workspace-tools="open" className="flex flex-wrap items-center gap-1.5">
-        <span className="text-[11px] font-semibold tracking-[0.08em] text-cc-ink-muted uppercase">
-          Tools
-        </span>
-        {links}
-      </div>
-    );
-  }
-
-  return (
-    <div data-workspace-tools="menu" className="relative">
+  const menu = (
+    <div
+      ref={menuRef}
+      data-workspace-tools="menu"
+      // In IT the bar is open — except on a phone, where §2.9 folds the toolbar
+      // into this menu in every view. Hidden by width, so the open bar and the
+      // menu are never both reachable at once.
+      className={open ? 'relative cc-no-print min-[601px]:hidden' : 'relative cc-no-print'}
+    >
       <CcButton
         onClick={() => setMenuOpen((v) => !v)}
         aria-expanded={menuOpen}
-        aria-haspopup="menu"
+        aria-controls={menuOpen ? panelId : undefined}
         icon={<Wrench size={16} aria-hidden={true} />}
       >
         Tools
@@ -73,7 +86,7 @@ export default function WorkspaceToolBar({
       </CcButton>
       {menuOpen && (
         <div
-          role="menu"
+          id={panelId}
           data-workspace-tools-panel=""
           className="absolute left-0 z-20 mt-1 flex w-64 max-w-[calc(100vw-2rem)] flex-col items-stretch gap-1.5 rounded-cc-card border border-cc-line bg-cc-surface p-3 shadow-cc-dialog"
         >
@@ -82,4 +95,23 @@ export default function WorkspaceToolBar({
       )}
     </div>
   );
+
+  if (open) {
+    return (
+      <>
+        <div
+          data-workspace-tools="open"
+          className="cc-no-print flex flex-wrap items-center gap-1.5 max-[600px]:hidden"
+        >
+          <span className="text-[11px] font-semibold tracking-[0.08em] text-cc-ink-muted uppercase">
+            Tools
+          </span>
+          {links}
+        </div>
+        {menu}
+      </>
+    );
+  }
+
+  return menu;
 }

@@ -50,6 +50,28 @@ import {
 import { recordGaps } from '@/lib/legacy-project';
 import type { Project } from '@/lib/types';
 
+type ContentBlock = 'layerBar' | 'nextStep' | 'layerSection' | 'firstLook' | 'ask' | 'notDetermined';
+
+/** Process and reveal line, *Not determined*, "Next step" — §2.3, §2.9. */
+const BUSINESS_ORDER: readonly ContentBlock[] = [
+  'firstLook',
+  'notDetermined',
+  'nextStep',
+  'layerBar',
+  'layerSection',
+  'ask',
+];
+
+/** "Next step" at the top of the content in IT and Management — §2.3 item 5. */
+const OTHER_ORDER: readonly ContentBlock[] = [
+  'layerBar',
+  'nextStep',
+  'layerSection',
+  'firstLook',
+  'ask',
+  'notDetermined',
+];
+
 /**
  * The Object Page of a project — `DESIGN.md` §2.3, roadmap step 1.4.
  *
@@ -249,10 +271,96 @@ export default function WorkspaceShell({
   const currentLayer = hashLayer ?? layers.find((l) => l.count !== null)?.key ?? LAYERS[0];
   const currentLayerSection = layers.find((l) => l.key === currentLayer) ?? layers[0];
 
+  /**
+   * The content under the header, as named blocks — so the order can follow
+   * the view (roadmap 3.0.4).
+   *
+   * Business reads in the order of `DESIGN.md` §2.3 and §2.9: the process and
+   * its plain sentence, then the reveal line and *Not determined*, then "Next
+   * step". That order holds at every width, so the phone order of breakpoint S
+   * is the DOM order and the focus order follows the reading order (§1.6),
+   * instead of a CSS `order` that would split the two — and the trust reason
+   * never slides under the content. In IT and Management "Next step" stands at
+   * the top of the content (§2.3 item 5).
+   */
+  const contentBlocks: Record<ContentBlock, React.ReactNode> = {
+    layerBar: (
+      <div className="mt-5">
+        <WorkspaceLayerBar layers={layers} current={currentLayer} onSelect={selectLayer} />
+      </div>
+    ),
+    // The rule-based "next step" (`DESIGN.md` §2.3 item 5, §5.5, roadmap 6.5)
+    // — the next open point in the one phase contract every other view already
+    // reads, or the plain statement that nothing is open. No model call:
+    // `lib/next-step.ts` is pure, and `tests/next-step.spec.ts` proves it never
+    // reaches the Gemini proxy. "Your next step" — the coach mark points at
+    // this card. Directly under the `h1` in IT and Management, so its title is
+    // an `h2` there, or the outline would skip a level (§2.3, §8).
+    nextStep: (
+      <div className="mt-5 max-w-3xl">
+        <div className="cc-no-print">
+          <CoachMarkNote
+            mark={currentMark}
+            slot="next-step"
+            onDismiss={marks.dismiss}
+            onDismissAll={marks.dismissAll}
+          />
+        </div>
+        <NextStepCard point={nextStep} projectId={projectId} level={view === 'business' ? 3 : 2} />
+      </div>
+    ),
+    // The content of the chosen layer (`DESIGN.md` §2.3 item 5, roadmap 6.2);
+    // the anchor bar scrolls the reader here by the section's own `id`.
+    layerSection: (
+      <div className="mt-5 max-w-3xl">
+        <WorkspaceLayerSection layer={currentLayerSection} />
+      </div>
+    ),
+    // The first look — four stages, then the head of the content (§5.1, §5.5):
+    // process name, traceability, the reveal line and the decisions.
+    firstLook: (
+      <div className="mt-5">
+        <FirstLook project={project} projectId={projectId} buildUp={buildUp} onReading={onReading} />
+      </div>
+    ),
+    // The first ten seconds after it (§5.3): one question already answered,
+    // out of the branches of the code and without a model call.
+    ask: answer ? (
+      <div className="mt-5 max-w-3xl">
+        <div className="cc-no-print">
+          <CoachMarkNote
+            mark={currentMark}
+            slot="decision"
+            onDismiss={marks.dismiss}
+            onDismissAll={marks.dismissAll}
+          />
+        </div>
+        <AskThisCase answer={answer} />
+      </div>
+    ) : null,
+    // Everything the engine could not work out, with its reason — the reason
+    // to trust the rest of the screen (roadmap 1.4).
+    notDetermined: (
+      <div id="not-determined" className="mt-5 max-w-3xl">
+        <div className="cc-no-print">
+          <CoachMarkNote
+            mark={currentMark}
+            slot="not-determined"
+            onDismiss={marks.dismiss}
+            onDismissAll={marks.dismissAll}
+          />
+        </div>
+        <NotDeterminedCard data={open} recorded={recorded} />
+      </div>
+    ),
+  };
+  const contentOrder: readonly ContentBlock[] =
+    view === 'business' ? BUSINESS_ORDER : OTHER_ORDER;
+
   return (
     <div className="cc" data-workspace-shell={view}>
       {/* Path — Shell Bar, §2.1. The workspace is one level above the case. */}
-      <div className="flex items-center justify-between gap-3">
+      <div className="cc-no-print flex items-center justify-between gap-3">
         <nav aria-label="Path" className="flex items-center gap-1 text-[12px] font-medium text-cc-ink-muted">
           <Link href="/dashboard" className="text-cc-ink-muted no-underline hover:text-cc-ink">
             My workspace
@@ -289,14 +397,16 @@ export default function WorkspaceShell({
                 onRefresh={stand.refresh}
               />
               {view !== 'it' && (
-                <CcButton
-                  onClick={() => setDetailsOpen((v) => !v)}
-                  aria-expanded={detailsOpen}
-                  data-workspace-details-toggle=""
-                >
-                  Details
-                  <ChevronDown size={14} aria-hidden={true} />
-                </CcButton>
+                <span className="cc-no-print">
+                  <CcButton
+                    onClick={() => setDetailsOpen((v) => !v)}
+                    aria-expanded={detailsOpen}
+                    data-workspace-details-toggle=""
+                  >
+                    Details
+                    <ChevronDown size={14} aria-hidden={true} />
+                  </CcButton>
+                </span>
               )}
             </div>
             {metaVisible && (
@@ -306,7 +416,7 @@ export default function WorkspaceShell({
             )}
           </div>
 
-          <div className="flex shrink-0 flex-col items-start gap-1.5">
+          <div className="cc-no-print flex shrink-0 flex-col items-start gap-1.5">
             <CcSegmentedControl
               label="View"
               value={view}
@@ -379,7 +489,7 @@ export default function WorkspaceShell({
                   ? 'Nothing on record yet for any of the seven'
                   : `${started} of ${statuses.length} have something on record`}
               </span>
-              <span className="ml-auto">
+              <span className="cc-no-print ml-auto">
                 <CcButton onClick={() => setStatusOpen(true)} aria-expanded={false}>
                   Show project status
                   <ChevronDown size={14} aria-hidden={true} />
@@ -390,78 +500,16 @@ export default function WorkspaceShell({
           {statusVisible && <WorkspaceStatusLine statuses={statuses} projectId={projectId} />}
         </div>
 
-        <div className="mt-4">
+        <div className="cc-no-print mt-4">
           <WorkspaceToolBar tools={tools} projectId={projectId} open={toolsOpen} />
         </div>
       </section>
 
-      <div className="mt-5">
-        <WorkspaceLayerBar layers={layers} current={currentLayer} onSelect={selectLayer} />
-        {/* "Your next step" — the coach mark now points at a real card rather
-            than the empty space above it (roadmap 6.5, `lib/next-step.ts`). */}
-        <div className="mt-2">
-          <CoachMarkNote
-            mark={currentMark}
-            slot="next-step"
-            onDismiss={marks.dismiss}
-            onDismissAll={marks.dismissAll}
-          />
-        </div>
-      </div>
-
-      {/* The rule-based "next step" (`DESIGN.md` §2.3 item 5, §5.5, roadmap
-          6.5) — the next open point in the one phase contract every other view
-          already reads, or the plain statement that nothing is open. No model
-          call: `lib/next-step.ts` is pure, and `tests/next-step.spec.ts` proves
-          it never reaches the Gemini proxy. */}
-      <div className="mt-5 max-w-3xl">
-        <NextStepCard point={nextStep} projectId={projectId} />
-      </div>
-
-      {/* The content of the chosen layer (`DESIGN.md` §2.3 item 5, roadmap
-          6.2). Below "Next step", because the page keeps one primary action
-          and it is that card (§1.5); the anchor bar above scrolls the reader
-          here by the section's own `id`. */}
-      <div className="mt-5 max-w-3xl">
-        <WorkspaceLayerSection layer={currentLayerSection} />
-      </div>
-
-      {/* The first look — four stages, then the head of the content (§5.1, §5.5):
-          process name, traceability, the reveal line and the decisions. */}
-      <div className="mt-5">
-        <FirstLook
-          project={project}
-          projectId={projectId}
-          buildUp={buildUp}
-          onReading={onReading}
-        />
-      </div>
-
-      {/* The first ten seconds after it (§5.3): one question already answered,
-          out of the branches of the code and without a model call. */}
-      {answer ? (
-        <div className="mt-5 max-w-3xl">
-          <CoachMarkNote
-            mark={currentMark}
-            slot="decision"
-            onDismiss={marks.dismiss}
-            onDismissAll={marks.dismissAll}
-          />
-          <AskThisCase answer={answer} />
-        </div>
-      ) : null}
-
-      {/* Everything the engine could not work out, with its reason — the reason
-          to trust the rest of the screen (roadmap 1.4). */}
-      <div id="not-determined" className="mt-5 max-w-3xl">
-        <CoachMarkNote
-          mark={currentMark}
-          slot="not-determined"
-          onDismiss={marks.dismiss}
-          onDismissAll={marks.dismissAll}
-        />
-        <NotDeterminedCard data={open} recorded={recorded} />
-      </div>
+      {/* Keyed, so a view switch reorders these blocks instead of remounting
+          them — the first look keeps its reading and does not build up again. */}
+      {contentOrder.map((key) => (
+        <React.Fragment key={key}>{contentBlocks[key]}</React.Fragment>
+      ))}
 
       {/* IT's own answer (ADR-029, `DESIGN.md` §5.6: *"die Kette gehört zu einem
           gewählten Befund … und die Abdeckung steht dabei"*) — roadmap 8.1: the
@@ -542,7 +590,7 @@ export default function WorkspaceShell({
       {/* "Show tips again", where §6.2 puts it: offered once the tips are gone,
           and never a button that undoes nothing. */}
       {marksReady && !marks.anyLeft ? (
-        <div className="mt-4">
+        <div className="cc-no-print mt-4">
           <CcButton onClick={marks.reset} data-coach-marks-reset="">
             Show tips again
           </CcButton>

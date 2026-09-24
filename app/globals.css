@@ -340,6 +340,35 @@
     display: none !important;
   }
 
+  /* Roadmap 3.0.4, §7.1 in full for the workspace. No background: the page
+     grey, the muted rows and the shadows go, and the text is ink on white —
+     chips keep their own rule above, because their form is their meaning. */
+  html,
+  body {
+    background: #fff !important;
+  }
+
+  .cc,
+  .cc *:not([data-cc-form]) {
+    background-color: transparent !important;
+    background-image: none !important;
+    box-shadow: none !important;
+    color: #0b1c30 !important;
+  }
+
+  /* Links print their target in brackets where it is not an anchor on this
+     page. Button-shaped links are actions, not references, and stay bare. */
+  .cc a[href]:not([href^='#']):not([data-cc-button])::after {
+    content: ' (' attr(href) ')';
+    font-weight: 500;
+  }
+
+  /* No break in the middle of a row either — a card already has its rule. */
+  .cc li,
+  .cc tr {
+    break-inside: avoid;
+  }
+
   /* Roadmap 8.6: while the steering one-pager is open, paper carries it and
      nothing else. Every element that neither is the one-pager, sits inside
      it, nor contains it is taken out of the flow — so the shell, the other
@@ -403,6 +432,31 @@
   [data-chart-line] {
     stroke: CanvasText;
   }
+
+  /* Roadmap 3.0.4. The ring takes the system's highlight, so it is the
+     colour the reader chose for "this is where I am" (§1.1, §1.6). */
+  .cc :focus-visible,
+  .cc:focus-visible {
+    outline: 2px solid Highlight;
+    outline-offset: 2px;
+  }
+
+  /* A chosen segment, the current layer and a pressed toggle were an ink
+     fill — and a fill is exactly what this mode takes away, which left the
+     three views looking unselected. The selection becomes the system's own. */
+  .cc [role='radio'][aria-checked='true'],
+  .cc [aria-current]:not([aria-current='false']),
+  .cc [aria-pressed='true'] {
+    forced-color-adjust: none;
+    background: Highlight;
+    color: HighlightText;
+    border-color: Highlight;
+  }
+
+  .cc button:disabled {
+    color: GrayText;
+    border-color: GrayText;
+  }
 }
 
 /* -------------------------------------------------------------
@@ -427,8 +481,20 @@
     min-width: 0;
   }
 
+  /* Hidden from the eye, not from the accessibility tree (roadmap 3.0.4,
+     QA ed9796910f5a): `display: none` removed the column headers, and with
+     them the only thing that told a screen reader what each cell was. The
+     `data-label` prefix below is what a sighted reader gets instead. */
   .doc-table thead {
-    display: none;
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
   }
 
   .doc-table tr {

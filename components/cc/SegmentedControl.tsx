@@ -74,7 +74,7 @@ export default function CcSegmentedControl<T extends string>({
             data-cc-segment={selected ? 'on' : 'off'}
             onClick={() => onChange(segment.value)}
             className={cn(
-              'inline-flex items-center gap-1 rounded-[6px] px-2 py-1 text-[12px] whitespace-nowrap',
+              'inline-flex items-center gap-1 rounded-[6px] px-2 py-1 text-[12px] whitespace-nowrap pointer-coarse:min-h-11 pointer-coarse:px-3',
               selected
                 ? 'bg-cc-ink text-cc-on-dark font-semibold'
                 : 'bg-transparent text-cc-ink-muted font-medium',

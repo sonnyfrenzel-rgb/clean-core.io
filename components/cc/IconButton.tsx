@@ -42,7 +42,7 @@ export default function CcIconButton({
         'inline-flex items-center justify-center rounded-cc-row border',
         'bg-cc-surface border-cc-field-border text-cc-ink-muted hover:bg-cc-surface-muted',
         'disabled:opacity-60 disabled:cursor-not-allowed',
-        density === 'compact' ? 'h-8 w-8' : 'h-11 w-11',
+        density === 'compact' ? 'h-8 w-8 pointer-coarse:h-11 pointer-coarse:w-11' : 'h-11 w-11',
       )}
     >
       {children}

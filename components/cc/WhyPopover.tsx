@@ -84,9 +84,22 @@ export default function CcWhyPopover({
         aria-expanded={open}
         aria-controls={open ? id : undefined}
         onClick={() => (open ? close() : setOpen(true))}
-        className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-cc-ink-muted bg-transparent text-[11px] font-bold leading-none text-cc-ink-muted"
+        className={
+          // The target and the glyph are two sizes (WG-03, roadmap 3.0.4). The
+          // ring stays 24px everywhere; the button around it grows to 44×44 on
+          // a phone (breakpoint S, §2.9) and under a coarse pointer, because
+          // there the "?" is the one thing a thumb has to hit (§2.10). Negative
+          // margins keep the row from growing by the difference.
+          'inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-transparent p-0 ' +
+          'max-[600px]:-m-2.5 max-[600px]:h-11 max-[600px]:w-11 pointer-coarse:-m-2.5 pointer-coarse:h-11 pointer-coarse:w-11'
+        }
       >
-        ?
+        <span
+          aria-hidden={true}
+          className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-cc-ink-muted text-[11px] leading-none font-bold text-cc-ink-muted"
+        >
+          ?
+        </span>
       </button>
 
       {open ? (
@@ -96,7 +109,7 @@ export default function CcWhyPopover({
           role="dialog"
           aria-label={`${t('why.label')}: ${subject}`}
           data-cc-why-popover=""
-          className="absolute top-7 left-0 z-20 w-72 rounded-cc-card border border-cc-line bg-cc-surface p-3.5 text-left shadow-cc-dialog"
+          className="absolute top-full left-0 z-20 mt-1 w-72 max-w-[calc(100vw-2rem)] rounded-cc-card border border-cc-line bg-cc-surface p-3.5 text-left shadow-cc-dialog"
         >
           <CcProvenanceChip value={provenance} />
           <dl className="mt-2.5 grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-1 text-[12px] leading-snug">

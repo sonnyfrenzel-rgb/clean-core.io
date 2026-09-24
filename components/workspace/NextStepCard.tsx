@@ -44,13 +44,20 @@ import { NEXT_STEP_PROVENANCE, NOTHING_OPEN, type NextOpenPoint } from '@/lib/ne
 export default function NextStepCard({
   point,
   projectId,
+  level = 3,
 }: {
   point: NextOpenPoint | null;
   projectId: string;
+  /**
+   * The heading level of the card title. A card is an `h3` (`DESIGN.md` §2.3),
+   * but in IT and Management this card stands directly under the project's
+   * `h1` with no section around it, and an `h3` there skips a level.
+   */
+  level?: 2 | 3;
 }) {
   return (
     <div data-next-step="">
-      <CcCard title="Next step" meta={<CcProvenanceChip value={point?.provenance ?? NEXT_STEP_PROVENANCE} />}>
+      <CcCard title="Next step" level={level} meta={<CcProvenanceChip value={point?.provenance ?? NEXT_STEP_PROVENANCE} />}>
         {point === null ? (
           <p
             data-next-step-state="none"

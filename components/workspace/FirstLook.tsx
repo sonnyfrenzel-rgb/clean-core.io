@@ -311,10 +311,22 @@ export default function FirstLook({
     ? [stages[0], stages[1], stages[2], finalStage]
     : stages;
 
-  const announcement = shown
-    .filter((s): s is FirstLookStage => s !== null)
-    .map((s) => `${s.label}: ${s.result}`)
-    .join(' ');
+  /**
+   * One announcement per stage, and only the newest (`DESIGN.md` §2.8, §8;
+   * roadmap 3.0.4). The region used to hold every stage reached so far, so each
+   * new stage made a screen reader repeat the ones before it — four stages, ten
+   * announcements. It also lived inside whichever branch below was rendering,
+   * so the region itself was replaced as the build-up moved on, and a live
+   * region that is inserted together with its text is not reliably read at all.
+   * It now stands once, after the card, for the whole life of this component.
+   */
+  const latest = [...shown].reverse().find((s): s is FirstLookStage => s !== null) ?? null;
+  const announcement = latest ? `${latest.label}: ${latest.result}` : '';
+  const live = (
+    <span aria-live="polite" data-first-look-live="" className="sr-only">
+      {announcement}
+    </span>
+  );
 
   /**
    * Reduced motion and Skip both mean *the end state*. Until the engine has it
@@ -324,14 +336,19 @@ export default function FirstLook({
   const endStateOnly = reduced || skipped || !buildUp;
 
   if (!complete && endStateOnly) {
+    // `level={2}`: in Business this card is the first thing under the
+    // project's `h1` (§2.9), and a card title there would skip a level (§2.3).
     return (
-      <section data-first-look="waiting" data-reduced-motion={reduced ? 'true' : 'false'} className="max-w-3xl">
-        <CcCard title="Reading your code" meta={<CcProvenanceChip value="reconstructed" />}>
-          <p className="m-0 text-[13px] leading-snug font-medium text-cc-ink">
-            Reading {sourceName}.
-          </p>
-        </CcCard>
-      </section>
+      <>
+        <section data-first-look="waiting" data-reduced-motion={reduced ? 'true' : 'false'} className="max-w-3xl">
+          <CcCard title="Reading your code" level={2} meta={<CcProvenanceChip value="reconstructed" />}>
+            <p className="m-0 text-[13px] leading-snug font-medium text-cc-ink">
+              Reading {sourceName}.
+            </p>
+          </CcCard>
+        </section>
+        {live}
+      </>
     );
   }
 
@@ -343,9 +360,11 @@ export default function FirstLook({
     ] as FirstLookStageId;
 
     return (
+      <>
       <section data-first-look="building" data-reached={reached} className="max-w-3xl">
         <CcCard
           title="Reading your code"
+          level={2}
           meta={<CcProvenanceChip value="reconstructed" />}
           actions={
             <CcButton onClick={skip} data-first-look-skip="">
@@ -362,17 +381,17 @@ export default function FirstLook({
           <p className="m-0 mt-2 text-[13px] leading-snug font-medium text-cc-ink-muted">
             {STAGE_LABELS[nextId]} — reading {sourceName}.
           </p>
-          <span aria-live="polite" data-first-look-live="" className="sr-only">
-            {announcement}
-          </span>
         </CcCard>
       </section>
+      {live}
+      </>
     );
   }
 
   /* ---------------------------------------------------------- the end state */
 
   return (
+    <>
     <section
       data-first-look={endStateOnly ? 'end-state' : 'complete'}
       data-reduced-motion={reduced ? 'true' : 'false'}
@@ -491,11 +510,9 @@ export default function FirstLook({
             <StageRow key={stage?.id ?? `done-${i}`} stage={stage} />
           ))}
         </ol>
-
-        <span aria-live="polite" data-first-look-live="" className="sr-only">
-          {announcement}
-        </span>
       </CcCard>
     </section>
+    {live}
+    </>
   );
 }

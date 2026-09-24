@@ -205,22 +205,23 @@ export default function CleanCoreExplainedPage() {
                     {ch.table.caption}
                   </figcaption>
                   <div className="overflow-x-auto rounded-2xl border border-gray-200">
-                    <table className="doc-table w-full text-sm border-collapse sm:min-w-[34rem]">
-                      <thead>
-                        <tr className="bg-gray-50">
+                    <table role="table" className="doc-table w-full text-sm border-collapse sm:min-w-[34rem]">
+                      <thead role="rowgroup">
+                        <tr role="row" className="bg-gray-50">
                           {ch.table.head.map((h) => (
-                            <th key={h} className="text-left px-4 py-3 text-[10px] font-black text-gray-500 uppercase tracking-widest border-b border-gray-200">
+                            <th key={h} role="columnheader" className="text-left px-4 py-3 text-[10px] font-black text-gray-500 uppercase tracking-widest border-b border-gray-200">
                               {h}
                             </th>
                           ))}
                         </tr>
                       </thead>
-                      <tbody>
+                      <tbody role="rowgroup">
                         {ch.table.rows.map((row, i) => (
-                          <tr key={i} className="border-b border-gray-100 last:border-0">
+                          <tr key={i} role="row" className="border-b border-gray-100 last:border-0">
                             {row.map((cell, j) => (
                               <td
                                 key={j}
+                                role="cell"
                                 data-label={ch.table!.head[j]}
                                 className={`px-4 py-3 align-top leading-relaxed ${j === 0 ? 'font-bold text-gray-900' : 'text-gray-600'}`}
                               >

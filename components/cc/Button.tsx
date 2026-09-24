@@ -42,8 +42,8 @@ export const CC_BUTTON_VARIANT_CLASSES: Record<CcButtonVariant, string> = {
 };
 
 export const CC_BUTTON_DENSITY_CLASSES: Record<CcDensity, string> = {
-  compact: 'min-h-[32px] px-3 text-[13px]',
-  cozy: 'min-h-[40px] px-4 text-[14px]',
+  compact: 'min-h-[32px] px-3 text-[13px] pointer-coarse:min-h-11',
+  cozy: 'min-h-[40px] px-4 text-[14px] pointer-coarse:min-h-11',
 };
 
 /** The shape both the button and the link wear, so neither can drift from it. */

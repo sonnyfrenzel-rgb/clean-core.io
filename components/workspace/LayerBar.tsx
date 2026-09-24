@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useId, useRef, useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import CcButton from '@/components/cc/Button';
@@ -32,6 +32,22 @@ export default function WorkspaceLayerBar({
   onSelect: (key: LayerKey) => void;
 }) {
   const [moreOpen, setMoreOpen] = useState(false);
+  const moreRef = useRef<HTMLButtonElement>(null);
+  const panelId = useId();
+
+  // Escape closes "More" and returns the focus to it (roadmap 3.0.4). A
+  // disclosure, not an ARIA menu: the panel holds buttons with a sentence under
+  // each, which is not a list of menuitems with arrow-key navigation.
+  useEffect(() => {
+    if (!moreOpen) return undefined;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return;
+      setMoreOpen(false);
+      moreRef.current?.focus();
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [moreOpen]);
   // The chosen layer always stands in the bar, filled or not. An empty layer
   // the reader opened from "More" has to be visible as the current one, or the
   // bar shows no selection at all while the section below it shows a layer —
@@ -43,7 +59,7 @@ export default function WorkspaceLayerBar({
     <nav
       data-workspace-layers=""
       aria-label="Layers"
-      className="relative flex flex-wrap items-center gap-x-1 gap-y-1 border-b border-cc-line"
+      className="cc-no-print relative flex flex-wrap items-center gap-x-1 gap-y-1 border-b border-cc-line"
     >
       {filled.map((layer) => {
         const on = layer.key === current;
@@ -56,7 +72,7 @@ export default function WorkspaceLayerBar({
             aria-current={on ? 'true' : undefined}
             onClick={() => onSelect(layer.key)}
             className={cn(
-              'inline-flex items-center gap-1.5 border-b-2 px-2.5 py-2 text-[13px] whitespace-nowrap',
+              'inline-flex items-center gap-1.5 border-b-2 px-2.5 py-2 text-[13px] whitespace-nowrap pointer-coarse:min-h-11',
               on
                 ? 'border-cc-ink font-bold text-cc-ink'
                 : 'border-transparent font-medium text-cc-ink-muted',
@@ -74,11 +90,12 @@ export default function WorkspaceLayerBar({
         <>
           <button
             type="button"
+            ref={moreRef}
             data-workspace-layer-more=""
             aria-expanded={moreOpen}
-            aria-haspopup="menu"
+            aria-controls={moreOpen ? panelId : undefined}
             onClick={() => setMoreOpen((v) => !v)}
-            className="inline-flex items-center gap-1.5 border-b-2 border-transparent px-2.5 py-2 text-[13px] font-medium text-cc-ink-muted whitespace-nowrap"
+            className="inline-flex items-center gap-1.5 border-b-2 border-transparent px-2.5 py-2 text-[13px] font-medium text-cc-ink-muted whitespace-nowrap pointer-coarse:min-h-11"
           >
             More
             <span className="font-cc-mono text-[11px] font-semibold">{empty.length} empty</span>
@@ -86,7 +103,7 @@ export default function WorkspaceLayerBar({
           </button>
           {moreOpen && (
             <div
-              role="menu"
+              id={panelId}
               data-workspace-layer-more-panel=""
               className="absolute top-full right-0 z-20 mt-1 w-80 max-w-[calc(100vw-2rem)] rounded-cc-card border border-cc-line bg-cc-surface p-3 shadow-cc-dialog"
             >

@@ -47,8 +47,20 @@ export default function CcAnchor({ children, tone = 'linked', onOpen, label }: C
   );
 
   if (!onOpen) {
+    // A label on a plain `span` is not read: ARIA does not name a generic
+    // element, so "Source line 243" never reached a screen reader and "243"
+    // did, as a bare number (roadmap 3.0.4). The label is spoken instead of the
+    // glyphs, which stay what a sighted reader and a printed page see.
+    if (label) {
+      return (
+        <span data-cc-anchor={tone} className={className}>
+          <span aria-hidden={true}>{children}</span>
+          <span className="sr-only">{label}</span>
+        </span>
+      );
+    }
     return (
-      <span data-cc-anchor={tone} className={className} aria-label={label}>
+      <span data-cc-anchor={tone} className={className}>
         {children}
       </span>
     );
