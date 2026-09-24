@@ -10,6 +10,9 @@ import { SELF_DECLARATION, normaliseProjectDecision } from '../lib/project-decis
 import { validateProjectCommand, type ProjectCommandState } from '../lib/project-commands';
 import { deriveDecisionDraft, readStoredDecision, type DecisionDraftFacts } from '../lib/decision-draft';
 import { conditionsSummary, decisionCardView } from '../lib/decision-card';
+import { deriveProjectDecision } from '../lib/decision-facts';
+import { PROCESS_STATE_COLLECTION } from '../lib/process-states';
+import { PROCESS_REVISION_COLLECTION } from '../lib/process-revisions';
 
 /**
  * Roadmap 8.4, second half — the "Open decision" card of the workspace
@@ -202,6 +205,56 @@ test.describe('8.4 card — a later change is a new revision', () => {
     const tampered = { ...first.draft, fingerprint: 'f'.repeat(64) };
     expect(readStoredDecision(tampered)).toBeNull();
     expect(deriveDecisionDraft(facts({ stored: tampered })).draft.revision).toBe(1);
+  });
+});
+
+test.describe('8.4 card — a confirmation derives from the transaction it commits in', () => {
+  // QA review of 8adfa0e6db63: the confirmation read the project in its
+  // transaction but derived the decision from ordinary reads of the run, the
+  // newest need revision and the baseline — a need revision written between
+  // those reads and the commit left the confirmation bound to the one before.
+  test('given a transaction, every read of the derivation goes through it', async () => {
+    const direct: string[] = [];
+    const viaTx: string[] = [];
+    const nothing = { empty: true, docs: [], exists: false, data: () => undefined };
+    type Node = { path: string; collection: (c: string) => Node; doc: (d: string) => Node; orderBy: () => Node; limit: () => Node; get: () => Promise<typeof nothing> };
+    const node = (p: string): Node => ({
+      path: p,
+      collection: (c) => node(`${p}/${c}`),
+      doc: (d) => node(`${p}/${d}`),
+      orderBy: () => node(`${p}?newest`),
+      limit: () => node(p),
+      get: async () => {
+        direct.push(p);
+        return nothing;
+      },
+    });
+    const db = { collection: (c: string) => node(c) };
+    const tx = {
+      get: async (r: Node) => {
+        viaTx.push(r.path);
+        return nothing;
+      },
+    };
+    const derived = await deriveProjectDecision(
+      db as unknown as Parameters<typeof deriveProjectDecision>[0],
+      'p1',
+      { legacyCode: SOURCE, activeRunId: 'run-1' },
+      '2026-09-24T12:00:00.000Z',
+      tx as unknown as Parameters<typeof deriveProjectDecision>[4],
+    );
+    expect(derived.ok).toBe(true);
+    expect(direct, 'read outside the transaction').toEqual([]);
+    expect(viaTx).toEqual([
+      'projects/p1/runs/run-1',
+      `projects/p1/${PROCESS_STATE_COLLECTION}?newest`,
+      `projects/p1/${PROCESS_REVISION_COLLECTION}/1`,
+    ]);
+  });
+
+  test('the command route hands its transaction to the derivation', () => {
+    const route = fs.readFileSync(path.resolve(__dirname, '..', 'app/api/projects/[projectId]/commands/route.ts'), 'utf8');
+    expect(route).toMatch(/deriveProjectDecision\(db, projectId, project, new Date\(\)\.toISOString\(\), tx\)/);
   });
 });
 

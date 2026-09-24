@@ -1,3 +1,4 @@
+import type { DocumentReference, Query, Transaction } from 'firebase-admin/firestore';
 import type { getAdminDb } from '@/lib/firebase-admin';
 import { sha256Hex } from '@/lib/artefact-digest';
 import { contractOfProject } from '@/lib/contract-build';
@@ -67,12 +68,14 @@ async function needFactsOf(
   db: AdminDb,
   projectId: string,
   source: string,
+  tx: Transaction | undefined,
 ): Promise<DecisionDraftFacts['need']> {
   const projectRef = db.collection('projects').doc(projectId);
 
   let revision = 0;
   let entries: StateEntry[] = [];
-  const statesSnap = await projectRef.collection(PROCESS_STATE_COLLECTION).orderBy('revision', 'desc').limit(1).get();
+  const newestState: Query = projectRef.collection(PROCESS_STATE_COLLECTION).orderBy('revision', 'desc').limit(1);
+  const statesSnap = await (tx ? tx.get(newestState) : newestState.get());
   if (!statesSnap.empty) {
     const data = (statesSnap.docs[0].data() || {}) as Record<string, unknown>;
     if (data.formatVersion === PROCESS_STATE_FORMAT_VERSION && typeof data.revision === 'number') {
@@ -88,7 +91,8 @@ async function needFactsOf(
 
   let undecided: number | null = null;
   let drops = entries.filter((e) => e.state === 'drop').length;
-  const baselineSnap = await projectRef.collection(PROCESS_REVISION_COLLECTION).doc('1').get();
+  const baselineRef: DocumentReference = projectRef.collection(PROCESS_REVISION_COLLECTION).doc('1');
+  const baselineSnap = await (tx ? tx.get(baselineRef) : baselineRef.get());
   if (baselineSnap.exists) {
     const baseline = baselineSnap.data() as Record<string, unknown>;
     const record = { ...baseline, savedAt: isoOf(baseline.savedAt) ?? '' };
@@ -113,12 +117,21 @@ export type ProjectDecisionDerivation =
   | { ok: true; answer: DecisionDraftAnswer; runId: string | null; evidenceDigest: string | null }
   | { ok: false; code: 'no-source' | 'too-large' };
 
-/** Derive the decision of the project `data` is the document of. `data.decision` is the stored record. */
+/**
+ * Derive the decision of the project `data` is the document of. `data.decision` is the stored record.
+ *
+ * `tx`: the transaction `data` was read in. A confirmation passes it, so the
+ * run, the newest need revision and the baseline are read in the same
+ * transaction as the project — a need revision written after these reads and
+ * before the confirmation commits then aborts the confirmation instead of
+ * leaving it bound to the revision before (QA review of 8adfa0e6db63).
+ */
 export async function deriveProjectDecision(
   db: AdminDb,
   projectId: string,
   data: Record<string, unknown>,
   now: string,
+  tx?: Transaction,
 ): Promise<ProjectDecisionDerivation> {
   const source = typeof data.legacyCode === 'string' ? data.legacyCode : '';
   if (!source.trim()) return { ok: false, code: 'no-source' };
@@ -127,7 +140,8 @@ export async function deriveProjectDecision(
   let run: Record<string, unknown> | null = null;
   const activeRunId = typeof data.activeRunId === 'string' && data.activeRunId ? data.activeRunId : null;
   if (activeRunId) {
-    const runSnap = await db.collection('projects').doc(projectId).collection('runs').doc(activeRunId).get();
+    const runRef: DocumentReference = db.collection('projects').doc(projectId).collection('runs').doc(activeRunId);
+    const runSnap = await (tx ? tx.get(runRef) : runRef.get());
     run = runSnap.exists ? (runSnap.data() as Record<string, unknown>) : null;
   }
   const digest = run ? evidenceDigest(run) : null;
@@ -145,7 +159,7 @@ export async function deriveProjectDecision(
       data.approvedByArchitect === true && typeof data.targetArchitecture === 'string'
         ? data.targetArchitecture
         : null,
-    need: await needFactsOf(db, projectId, source),
+    need: await needFactsOf(db, projectId, source, tx),
     handedOver: isoOf(auditMetadata.auditPackExportedAt) !== null,
     stored: data.decision,
     now,

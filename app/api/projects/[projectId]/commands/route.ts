@@ -12,6 +12,7 @@ import { validateProjectCommand, type ProjectCommandState } from '@/lib/project-
 import { evidenceDigest } from '@/lib/run-evidence-digest';
 import { deriveProjectDecision } from '@/lib/decision-facts';
 import type { EvidenceChange } from '@/lib/run-evidence-digest';
+import type { DocumentReference, Transaction } from 'firebase-admin/firestore';
 
 /**
  * POST /api/projects/{projectId}/commands  — roadmap 0.7
@@ -87,7 +88,7 @@ export async function POST(
     }
 
     const { db } = await getAdminDb();
-    const ref = db.collection('projects').doc(projectId);
+    const ref: DocumentReference = db.collection('projects').doc(projectId);
     const body = await req.json().catch(() => null);
     const email = typeof decodedToken.email === 'string' ? decodedToken.email : '';
     // Resolved before the transaction: it reads a different document, and a
@@ -125,10 +126,7 @@ export async function POST(
       | { status: 200; fields: Record<string, unknown> }
       | { status: number; error: string; code?: string; details?: EvidenceChange[]; activeRunId?: string };
     const outcome: CommandOutcome = await db.runTransaction(
-      async (tx: {
-        get: (r: unknown) => Promise<{ exists: boolean; data: () => Record<string, unknown> | undefined }>;
-        set: (r: unknown, data: Record<string, unknown>, opts?: { merge: boolean }) => void;
-      }): Promise<CommandOutcome> => {
+      async (tx: Transaction): Promise<CommandOutcome> => {
         const snap = await tx.get(ref);
         // Same answer for "no such project" and "not yours": a 404 that only
         // appears for projects that exist is a way to ask whether one does. The
@@ -171,7 +169,7 @@ export async function POST(
         // read here. Only for this command: it runs the catalog-backed engine.
         let derivedDecisionFingerprint: string | null = null;
         if (commandName === 'confirm-decision') {
-          const derived = await deriveProjectDecision(db, projectId, project, new Date().toISOString());
+          const derived = await deriveProjectDecision(db, projectId, project, new Date().toISOString(), tx);
           derivedDecisionFingerprint = derived.ok ? derived.answer.draft.fingerprint : null;
         }
 
