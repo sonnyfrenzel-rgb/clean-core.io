@@ -227,6 +227,10 @@ export function buildNamingPrompt(context: NamingContext): string {
     'Rules:',
     '- Use only node ids from the list below. Name each node at most once, and put each node in at most one lane.',
     `- A name is plain business language in English, one line, at most ${NAME_MAX_LENGTH} characters, no Markdown. Leave a node out if what is given does not tell you what it does for the business.`,
+    // Roadmap 17.3 (measured 24.09.2026): without this line the fast model named
+    // work steps only and left every start, end and decision on its technical
+    // token — the nodes a business reader recognises a process by.
+    '- Name every node of kind start, end, end-error, gateway and parallel-gateway. A start says what sets the process off, an end the outcome it reaches, a gateway the business question it decides (its conditions say which). Leave one of these out only if the list gives nothing to go on.',
     `- A lane is a role in this process as the program shows it, for example "Requester", "Approver" or "Batch run", at most ${LANE_NAME_MAX_LENGTH} characters. Never a job title, a person, a department or a position in an organisation chart: a lane is not an organisational statement.`,
     `- Base a lane on an authorization check from the list where one supports it, and give that check's id as "authorityCheck". Otherwise use null. At most ${MAX_LANES} lanes.`,
     '- Give no line numbers, anchors, confidence values or any other field.',

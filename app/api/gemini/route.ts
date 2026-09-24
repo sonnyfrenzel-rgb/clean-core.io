@@ -102,6 +102,7 @@ const ALLOWED_MODELS = new Set([
   'gemini-3.5-flash',       // GA — the longest-standing GA of the 3 line
   'gemini-2.5-flash',       // GA — stable fallback
   'gemini-3-flash-preview', // PREVIEW — the former default, kept for callers that pin it
+  'gemini-3.5-flash-lite',  // GA — the naming stage only (lib/constants.ts, roadmap 17.3)
 ]);
 
 /**

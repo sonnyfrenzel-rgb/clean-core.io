@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
-import { PRODUCT_GEMINI_MODEL } from '../lib/constants';
+import { PRODUCT_GEMINI_MODEL, NAMING_GEMINI_MODEL } from '../lib/constants';
 
 /**
  * One place decides which model the product calls.
@@ -58,6 +58,16 @@ test('the product model is a GA model, and the register agrees with it', () => {
   const route = read('app/api/gemini/route.ts');
   const register = route.slice(route.indexOf('const ALLOWED_MODELS'), route.indexOf('])', route.indexOf('const ALLOWED_MODELS')));
   expect(register, 'the product default is not in the server-side register, so every call would be refused').toContain(PRODUCT_GEMINI_MODEL);
+});
+
+test('the naming stage has its own model, a GA one, in the register, and only it uses it (17.3)', () => {
+  expect(NAMING_GEMINI_MODEL, 'the naming model is a preview model').not.toMatch(/preview/i);
+  const route = read('app/api/gemini/route.ts');
+  const register = route.slice(route.indexOf('const ALLOWED_MODELS'), route.indexOf('])', route.indexOf('const ALLOWED_MODELS')));
+  expect(register, 'the naming model is not in the server-side register, so every naming call would be refused').toContain(NAMING_GEMINI_MODEL);
+  // The exception is one stage wide: the naming client, and nothing else.
+  const users = sourceFiles().filter((f) => f !== 'lib/constants.ts' && /NAMING_GEMINI_MODEL/.test(read(f)) && !f.startsWith('tests/'));
+  expect(users).toEqual(['lib/process-naming-client.ts']);
 });
 
 test('the deploy-time escape hatch cannot run an unreviewed model', async () => {

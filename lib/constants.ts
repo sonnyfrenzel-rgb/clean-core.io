@@ -117,3 +117,18 @@ export const APP_BASE_URL: string =
  * the model they were issued under; nothing here rewrites them.
  */
 export const PRODUCT_GEMINI_MODEL = 'gemini-3.8-flash';
+
+/**
+ * The model of the naming stage — the one stage that does not use the product
+ * default (roadmap 17.3, Sonny 24.09.2026, option C).
+ *
+ * ADR-025 asks the naming stage for speed, and it is the stage with the
+ * strictest validation and no contact with a signature: every name is checked
+ * by `validateNamingAnswer` and carries `proposed`. Measured on the eight
+ * starter examples, three passes each, with the prompt that asks for starts,
+ * ends and decisions by name: `gemini-3.5-flash-lite` answered in 2.0 s median
+ * (18 of 24 within 3 s) against 4.6 s (2 of 24) for the default, and named 96 %
+ * of the start, end and decision nodes (default 100 %) and 66 % of all nodes
+ * (default 82 %). `docs/ROADMAP.md` §17 carries the full table.
+ */
+export const NAMING_GEMINI_MODEL = 'gemini-3.5-flash-lite';

@@ -1,5 +1,6 @@
 import { getAuth } from '@/lib/firebase';
 import { callGeminiWithReceipt } from '@/lib/gemini';
+import { NAMING_GEMINI_MODEL } from '@/lib/constants';
 import {
   NAMING_STAGE,
   isProcessNamingRecord,
@@ -69,7 +70,7 @@ export async function requestProcessNaming(
     context,
     {
       callModel: async (prompt) => {
-        const { text, receipt } = await callGeminiWithReceipt(prompt, undefined, true, NAMING_STAGE, signal);
+        const { text, receipt } = await callGeminiWithReceipt(prompt, NAMING_GEMINI_MODEL, true, NAMING_STAGE, signal);
         return { text, receipt };
       },
       store: async (submission) => {
