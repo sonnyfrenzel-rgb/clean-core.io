@@ -1,6 +1,6 @@
 # Security-Agent — Vollaudit jeder `main`-Version
 
-**Stand 15.09.2026 · eingeführt mit v2.9.15 · seit 15.09.2026 mit DeepSeek V4.1 Flash · läuft bei jedem Push auf `main`, bis Sonny ihn widerruft**
+**Stand 24.09.2026 (Prüfung in Stapeln) · eingeführt mit v2.9.15 · seit 15.09.2026 mit DeepSeek V4.1 Flash · läuft bei jedem Push auf `main`, bis Sonny ihn widerruft**
 
 Jede neue Version auf `main` bekommt ein vollständiges Sicherheitsaudit: ein CISO und
 fünf Security-Consultants, **DeepSeek V4.1 Flash über OpenRouter**, als Kette von
@@ -10,8 +10,13 @@ Befund, entscheidet im versiegelten Register und plant bestätigte Befunde nach 
 in die Roadmap ein. Der Agent selbst ändert nichts.
 
 Bis 15.09.2026 lief das Audit mit Claude Fable 5.1 in Claude Code (Ultracode, Budget
-25 $). Sonny hat auf DeepSeek V4.1 Flash umgestellt, der Kosten wegen: Ein Vollaudit
-schätzt sich jetzt auf höchstens rund 0,95 $.
+25 $). Sonny hat auf DeepSeek V4.1 Flash umgestellt, der Kosten wegen.
+
+**Seit 24.09.2026 prüft der CISO in Stapeln** (Sonnys Entscheidung, Option A; Budget
+3 → 5 $). Anlass: Beim Release v2.18.0 (81810c8, Lauf 35998405111) meldeten die
+Consultants 194 Kandidaten; der eine CISO-Aufruf erreichte seine Eingabegrenze, bevor
+auch nur ein Kandidat seinen Code bekam, bestätigte nichts — und die Mail sagte
+„0 Befunde, Risiko niedrig", was in Wahrheit „nicht geprüft" hieß (§1a).
 
 ---
 
@@ -28,9 +33,13 @@ schätzt sich jetzt auf höchstens rund 0,95 $.
                    │       Workflow-Rechte, Firestore-Regelblöcke, CSP, npm audit
                    │    2. fünf Consultants: jede Datei ihrer Domäne vollständig, mit Zeilennummern und
                    │       geschwärzt, dazu ihre Karteneinträge — am 15.09.2026 461 Dateien in 51 Aufrufen, vier gleichzeitig; eine große Datei in Teilen
-                   │    3. CISO: Zusammenfassung der Karte, gezählte Abdeckung, jeder Consultant-Befund
-                   │       mit dem Code an seinen Fundstellen, aus dem Repository gelesen → Bericht (Schema)
-                   │    4. versiegelt mit dem ÖFFENTLICHEN Schlüssel
+                   │    3. Kandidaten: Consultant-Befunde entdoppelt (Datei, nahe Zeilen, Befundklasse),
+                   │       nach Schwere geordnet, K-001 … benannt
+                   │    4. CISO prüft in Stapeln zu je 20, jeder Kandidat mit dem Code an seinen Fundstellen
+                   │       (aus dem Repository gelesen), jeder Aufruf ≤ 120.000 Zeichen → verifizierte Befunde;
+                   │       was nicht geprüft wurde, steht namentlich unter „Nicht verifiziert"
+                   │    5. CISO-Synthese: Kurzfazit, Einstufung, Härtung — um die verifizierten Befunde
+                   │    6. versiegelt mit dem ÖFFENTLICHEN Schlüssel
                    │
                    └─ deliver  (privater Schlüssel + Resend, kein Modell)
                         öffnen · deutsch rendern · Mail an den Administrator
@@ -43,7 +52,7 @@ schätzt sich jetzt auf höchstens rund 0,95 $.
 | Baustein | Datei | Aufgabe |
 |---|---|---|
 | Team und Grenzen | `scripts/security/lib/team.mjs` | Modell, Preise, Budget, Consultants mit ihren Domänen, Schemata — die einzige Stelle |
-| Pipeline | `scripts/security/lib/pipeline.mjs` | wer welche Datei liest, was jeder Aufruf sieht, Code-Kontext der Fundstellen, gezählte Abdeckung |
+| Pipeline | `scripts/security/lib/pipeline.mjs` | wer welche Datei liest, was jeder Aufruf sieht, Entdoppeln und Prüfstapel der Kandidaten, Code-Kontext der Fundstellen, gezählte Abdeckung |
 | CISO-Anweisung | `docs/security/ciso-brief.md` | Methode, aktuelle Angriffsmuster, Schweregrade, Berichtsaufbau |
 | Angriffsflächen-Karte | `scripts/security/lib/surface.mjs` | deterministisch, nur `node:`-Module |
 | Audit | `scripts/security/audit.mjs` | Karte, Consultant-Aufrufe, CISO-Aufruf, Bericht versiegeln |
@@ -55,6 +64,24 @@ schätzt sich jetzt auf höchstens rund 0,95 $.
 | Workflow | `.github/workflows/security-audit.yml` | drei Jobs, drei Vertrauensstufen |
 | Leitplanken im Test | `tests/security-audit-guard.spec.ts` | keine Werkzeuge, Schlüsseltrennung, keine Leaks, Budget, Pipeline, Mail-Look |
 | Arbeitsweise von Claude | `.claude/skills/security-audit-intake/SKILL.md` | wird nur geladen, wenn ein Bericht da ist |
+
+### 1a. Prüfung in Stapeln
+
+| Schritt | Regel | Stelle |
+|---|---|---|
+| Entdoppeln | zwei Befunde sind einer, wenn sie dieselbe Befundklasse haben (CWE, OWASP API/LLM/Top 10, sonst der Kategorietext) **und** dieselbe Datei an Zeilen höchstens 10 auseinander zitieren; transitiv. Der zusammengeführte Kandidat trägt die höchste Schwere, alle Fundstellen und **alle Quellen** (welcher Consultant was meldete) | `dedupeCandidates`, `AUDIT.dedupeLineDistance` |
+| Ordnen | schwerste zuerst, dann höchste Sicherheit; Namen `K-001`, `K-002`, … in dieser Reihenfolge | `planVerification` |
+| Stapeln | 20 Kandidaten je Aufruf, höchstens 25 Aufrufe (500 Kandidaten) | `AUDIT.verificationBatchSize`, `maxVerificationCalls` |
+| Code je Kandidat | Fenster von ±12 Zeilen um bis zu vier Fundstellen; jeder Kandidat bekommt einen gleichen Anteil der 120.000 Zeichen. Passt er nicht, schrumpfen Fenster und Textfelder schrittweise (±6, ±3, ±1, nur die Zeile) — der Code fällt nie als Erstes weg. Überlange Codezeilen werden bei 300 Zeichen gekürzt | `candidateEntry`, `verificationMessage` |
+| Budget | vor jedem Prüfaufruf gegen das tatsächlich Ausgegebene: Consultants + Prüfaufrufe + dieser Aufruf im ungünstigsten Fall + die Synthese | `runVerification` über `runBounded` |
+| Nicht verifiziert | was außerhalb der Aufrufgrenze, außerhalb des Budgets, nach Schwärzung über der Eingabegrenze oder in einem fehlgeschlagenen Aufruf lag, steht **namentlich** im versiegelten Bericht (`verification.notVerified`: ID, Titel, vorgeschlagene Schwere, Fundstellen, Consultants, Grund) — nie stillschweigend weggelassen, nie als „kein Befund" gezählt | `notVerifiedEntry`, `verificationLimitation` |
+| Überschrift | bleiben Kandidaten ungeprüft, lautet der Betreff „nicht vollständig geprüft: X von Y Kandidaten verifiziert, Z nicht" statt „Risiko …"; die Einstufung erscheint nur als „Einstufung des verifizierten Teils" | `renderAuditMail` |
+
+Ein Prüfaufruf, der zurückkommt, hat jeden seiner Kandidaten geprüft: was er behält, ist
+ein Befund, was er fallen lässt, hielt nicht. Scheitert ein Prüfaufruf, bleiben seine
+Kandidaten „nicht verifiziert"; das Log nennt nur ein Wort aus der geschlossenen Liste
+(`failureReason`) und eine Zahl. Scheitern alle Prüfaufrufe **und** die Synthese, bricht
+das Audit ab, statt ungeprüfte Kandidaten unter dem Namen des CISO zu versenden.
 
 ---
 
@@ -104,12 +131,13 @@ nicht — deshalb gilt die Bedingung auch hier.
 
 ## 3. Kosten
 
-DeepSeek V4.1 Flash: **0,15 $ je Mio. Eingabe-Token, 0,60 $ je Mio. Ausgabe-Token**
-(OpenRouter, 15.09.2026).
+DeepSeek V4.1 Flash: **0,22 $ je Mio. Eingabe-Token, 0,66 $ je Mio. Ausgabe-Token**
+(Fireworks über OpenRouter, 23.09.2026; bis dahin 0,15/0,60 beim billigsten Anbieter).
 
 | Maßnahme | Wirkung |
 |---|---|
-| **Budget 3 $ je Audit — geschätzt, vor jedem Aufruf gegen das tatsächlich Ausgegebene geprüft** | ein Aufruf, der es nach der Schätzung reißen würde, findet nicht statt; seine Dateien stehen als nicht gründlich gelesen im Bericht. Der CISO-Aufruf ist vorab reserviert, ein Bericht entsteht immer. Harte Grenze: das Kreditlimit am OpenRouter-Schlüssel |
+| **Budget 5 $ je Audit (seit 24.09.2026, vorher 3 $) — geschätzt, vor jedem Aufruf gegen das tatsächlich Ausgegebene geprüft** | ein Aufruf, der es nach der Schätzung reißen würde, findet nicht statt; die Dateien eines Consultant-Aufrufs stehen als nicht gründlich gelesen, die Kandidaten eines Prüfaufrufs als „nicht verifiziert" im Bericht. Alle 25 Prüfaufrufe und die Synthese sind vorab reserviert, bevor ein Consultant etwas ausgibt. Harte Grenze: das Kreditlimit am OpenRouter-Schlüssel |
+| Ungünstigster Fall eines Vollaudits | 60 Consultant-Aufrufe ≈ 1,33 $ + 25 Prüfaufrufe ≈ 0,86 $ + Synthese ≈ 0,01 $ = **≈ 2,20 $** — der Test hält ihn unter 80 % des Budgets. Erwartet je Release (Schätzung, nicht gemessen): rund 1 $, davon für 150–200 Kandidaten in 8–10 Prüfaufrufen etwa 0,10–0,20 $ |
 | Aufteilung nach Domänen | jede Datei wird von genau einem Consultant gelesen oder, bei Testdateien, nur über die Karte geprüft |
 | 100.000 Zeichen je Consultant-Aufruf, höchstens 60 Aufrufe, vier gleichzeitig; eine größere Datei wird in Teilen gelesen | gemessen am 15.09.2026: ein Aufruf mit 284.000 Zeichen lief 16,6 min und endete ohne lesbare Antwort, einer mit 100.000 Zeichen antwortete in 177 s für 0,007 $. Heute 461 Dateien in 51 Aufrufen, Schätzung im ungünstigsten Fall 0,94 $, rund eine halbe Stunde. Das Budget rechnet jeden laufenden Aufruf mit seinem ungünstigsten Fall, bis er abgerechnet ist |
 | Audit nur bei `main`-Releases | kein Audit und seit dem 16.09.2026 auch kein Selbsttest je Push auf `dev` — Sicherheit wird gründlich am Release geprüft, nicht stichprobenartig am Push |
@@ -123,7 +151,12 @@ scheiterte ein Aufruf, steht dort „unbekannt", nie 0 $.
 ## 4. Die Mail
 
 Betreff: `Security-Audit v… (commit) — Risiko …: n kritisch · n hoch · n mittel · n niedrig`.
-Inhalt in dieser Reihenfolge: Gesamtrisiko, Kurzfazit, Befunde (je Befund Fundstelle,
+Bleiben Kandidaten ungeprüft: `Security-Audit v… (commit) — nicht vollständig geprüft: X von Y
+Kandidaten verifiziert, Z nicht · n kritisch · …` — nie „Risiko niedrig" für einen Bericht,
+dessen Rest niemand geprüft hat. Oben steht dann „Prüfstand: Nicht vollständig geprüft"
+statt „Gesamtrisiko", und nach den Befunden die Liste **Nicht verifiziert** (ID `K-…`,
+vorgeschlagene Schwere, Titel, Fundstellen, Consultants, Grund).
+Inhalt in dieser Reihenfolge: Gesamtrisiko bzw. Prüfstand, Kurzfazit, Befunde (je Befund Fundstelle,
 Beschreibung, Voraussetzung, Auswirkung, Beleg, Empfehlung, **Prüfen vor dem Fix**,
 Sicherheit der Einschätzung), Härtung P1–P3, was gut ist, Umfang und Grenzen (gezählt,
 nicht geschätzt), Nachweis (Version, voller Commit, Modell, Aufrufe, Dauer, Kosten,
@@ -180,9 +213,10 @@ Alte Berichte bleiben nur mit dem alten Schlüssel lesbar.
 
 | Symptom | Ursache | Vorgehen |
 |---|---|---|
-| `audit` rot, „CISO call: OpenRouter answered HTTP 401/402" | Schlüssel oder Guthaben | OpenRouter-Konto prüfen; das Log enthält keine Inhalte |
+| `audit` rot, „the audit did not produce a report (every CISO call failed …)" oder Log „CISO verification calls failed: http-401/http-402" | Schlüssel oder Guthaben | OpenRouter-Konto prüfen; das Log enthält keine Inhalte |
 | `audit` rot, „HTTP 404 … no provider matches the data policy" | kein Anbieter des Modells erfüllt `data_collection: deny` | Anbieterliste des Modells bei OpenRouter prüfen; Modellwechsel nur als eigener Schritt |
 | Bericht nennt Dateien „outside the … cost cap" oder „model call failed" | Budget oder ein einzelner Aufruf | der Rest des Audits gilt; die Dateien stehen unter Umfang und Grenzen |
+| Betreff „nicht vollständig geprüft: X von Y Kandidaten verifiziert" | Prüfaufrufe gescheitert (Log: `CISO verification calls failed: <Wort> ×n`), Budget erschöpft oder mehr als 500 Kandidaten | die verifizierten Befunde gelten; die Liste „Nicht verifiziert" ist offen, nicht leer — `kritisch`/`hoch` darin von Hand an der Fundstelle prüfen (Skill `security-audit-intake`). Bei gescheiterten Aufrufen den Lauf neu starten |
 | „model call failed: OpenRouter answered HTTP 429" oder „the audit did not produce a report (CISO call: … HTTP 429)" | Ratenlimit des Anbieters trotz acht Wiederholungen — mit dessen Wartezeit (bis 120 s je Versuch, also bis 16 Minuten) oder 15 s, 30 s, 60 s, dann 120 s, zusammen rund 12 Minuten (seit 15.09.2026; vorher sechs mit rund 100 s, woran die Selbsttests von e3a7853 und 5a284ee scheiterten) | Lauf neu starten (`gh run rerun <id>`); hält es an, `concurrency` in `team.mjs` als eigener Schritt senken. Anbieter-Fallback für dasselbe Modell (`allow_fallbacks`) ist bewusst aus und nur mit Sonnys Entscheidung zu ändern |
 | `deliver` rot, „Resend rejected … HTTP 4xx" | Mailschlüssel oder Absenderdomain | Resend-Konto prüfen; der Bericht liegt 90 Tage als Artefakt |
 | Sitzungsstart meldet „produced no readable report", alle drei Jobs grün | bis 17.09.2026: zwei `inbox.mjs --brief` gleichzeitig (ein fortgesetzter Sitzungsstart startete den Hook zweimal) luden in dasselbe Verzeichnis, und `gh run download` überschreibt keine vorhandene Datei — der Bericht von e3817ce war die ganze Zeit lesbar. Seit dem Fix lädt jeder Aufruf in ein eigenes Verzeichnis (`fetchSealed` in `lib/envelope.mjs`) | `node scripts/security/inbox.mjs <sha>`; öffnet es den Bericht, war es kein Fehler des Audits |

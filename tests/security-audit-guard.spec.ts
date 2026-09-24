@@ -31,7 +31,8 @@ test.describe('the agent has no tools and a small budget', () => {
     // 0.15/0.60 until 23.09.2026, when the audit stopped routing by price: the
     // cheapest endpoint was the one answering nothing (AUDIT.providers).
     expect(AUDIT.price).toEqual({ input: 0.22, output: 0.66 });
-    expect(AUDIT.maxCostUsd).toBeLessThanOrEqual(3);
+    // Sonny, 24.09.2026 (option A): 3 → 5 USD with the verification in batches.
+    expect(AUDIT.maxCostUsd).toBe(5);
     expect(AUDIT.selfTestCostUsd).toBeLessThanOrEqual(0.2);
     // Read, never imported: audit.mjs is an entry point and would start an audit.
     const src = read('scripts/security/audit.mjs');
@@ -42,7 +43,9 @@ test.describe('the agent has no tools and a small budget', () => {
     // a row as a body that was not JSON, each time after some fifty consultant
     // calls had been paid for. Each call is asked once more on a non-JSON body;
     // the consultants are never wrapped, because one lost batch is one hole.
-    expect(src).toMatch(/callReviewer\(\{ apiKey, system: clean\('outgoing message', brief\), user: cisoUser, schema: FINDINGS_SCHEMA,/);
+    // The verification calls: the brief as system prompt, one batch of candidates as user message.
+    expect(src).toMatch(/messageFor: \(_, i\) => \(\{ system: clean\('outgoing message', brief\), user: sendableUsers\[i\] \}\)/);
+    expect(src).toMatch(/callReviewer\(\{ apiKey, system, user, schema: FINDINGS_SCHEMA,/);
     expect(src).toMatch(/callReviewer\(\{ apiKey, system: clean\('outgoing message', brief\), user: narrativeUser, schema: NARRATIVE_SCHEMA,/);
     const cisoBlock = src.slice(src.indexOf('const CISO_TRUNCATED_RETRIES'), src.indexOf('const secretFindings'));
     expect(cisoBlock).toMatch(/const CISO_TRUNCATED_RETRIES = 1;/);
@@ -50,9 +53,9 @@ test.describe('the agent has no tools and a small budget', () => {
     expect(src.match(/askAgainIfTruncated\(/g)?.length, 'wrapped more than the two CISO calls').toBe(2);
     expect(src.slice(0, src.indexOf('const CISO_TRUNCATED_RETRIES'))).not.toMatch(/askAgainIfTruncated\(/);
     // Neither loss throws away the other half; losing both does.
-    expect(cisoBlock).toMatch(/the consultants' own findings are reported, unverified/);
+    expect(cisoBlock).toMatch(/their candidates are listed as not verified/);
     expect(cisoBlock).toMatch(/the findings are reported without a synthesis/);
-    expect(cisoBlock).toMatch(/both CISO calls failed/);
+    expect(cisoBlock).toMatch(/every CISO call failed/);
     // The request the calls build: no tools, no fallback model, no provider that keeps prompts.
     const { buildRequest } = await import(path.resolve(ROOT, 'scripts/qa/lib/openrouter.mjs'));
     const req = buildRequest({ system: 's', user: 'u', schema: { type: 'object' }, effort: 'high', model: AUDIT.model });
@@ -84,7 +87,7 @@ test.describe('the agent has no tools and a small budget', () => {
     // Files are numbered and redacted before they are batched; each message is redacted again on the way out.
     expect(src).toMatch(/planBatches\(surface\.files\.list, \(path\) => clean\(path, numbered\(raw\(path\) \?\? ''\)\)/);
     expect(src).toMatch(/user: clean\('outgoing message', consultantMessage\(/);
-    expect(src).toMatch(/const cisoUser = clean\('outgoing message', /);
+    expect(src).toMatch(/const build = \(maxChars\) => clean\('outgoing message', VERIFY_PREFIX \+ verificationMessage\(/);
     // A location the model names is read only if it is a file of the map.
     expect(src).toMatch(/const text = inScope\.has\(path\) \? raw\(path\) : null;/);
     // The CISO brief is a repository file like any other: it leaves the runner through the same redaction.
@@ -206,7 +209,8 @@ test.describe('nothing the audit finds leaks', () => {
 
   test('the log carries counts and cost only, and a failure only its message', () => {
     const src = read('scripts/security/audit.mjs');
-    expect(src).toMatch(/const line = `Security audit \$\{surface\.head\.slice\(0, 12\)\}: completed, sealed · calls=\$\{payload\.calls\} failed=\$\{run\.failedCalls\} cost=\$\$\{costUsd \?\? 'unknown'\}`;/);
+    // Counts only: calls, failures, and how many candidates were verified — never a candidate.
+    expect(src).toMatch(/const line = `Security audit \$\{surface\.head\.slice\(0, 12\)\}: completed, sealed · calls=\$\{payload\.calls\} failed=\$\{payload\.failedCalls\} candidates=\$\{candidateCount\} verified=\$\{verifiedCount\} notVerified=\$\{notVerified\.length\} cost=\$\$\{costUsd \?\? 'unknown'\}`;/);
     expect(src).toMatch(/console\.error\(`Security audit failed: \$\{String\(err\?\.message \|\| err\)\.split\('\\n'\)\[0\]\}`\)/);
     expect(src.match(/console\.(log|error)\(/g)).toHaveLength(2);
     expect(read('scripts/security/deliver.mjs')).toMatch(/Resend rejected the audit mail: HTTP \$\{res\.status\}`/);
@@ -586,7 +590,7 @@ test.describe('the audit pipeline', () => {
   });
 
   test('the CISO verifies against the code at each location — and an invented file or line says so', async () => {
-    const { codeContext, cisoMessage, withCountedCoverage } = await lib('pipeline.mjs');
+    const { codeContext, withCountedCoverage } = await lib('pipeline.mjs');
     const lines = Array.from({ length: 40 }, (_, i) => `line ${i + 1}`);
     const readLines = (p: string) => (p === 'app/api/a/route.ts' ? lines : null);
     const context = codeContext({ locations: [{ file: 'app/api/a/route.ts', line: 20 }, { file: 'app/api/ghost.ts', line: 3 }, { file: 'app/api/a/route.ts', line: 99 }] }, readLines, 2);
@@ -601,47 +605,16 @@ test.describe('the audit pipeline', () => {
     expect(many).toContain('2 further location(s) without code in this input — not verifiable here: app/api/a/route.ts:9, app/api/a/route.ts:10');
 
     const coverage = { files_in_scope: 10, deep_read: 7, pattern_scanned_only: 3, notes: 'counted' };
-    const finding = { title: 'Missing auth', severity: 'hoch', category: 'API1', locations: [{ file: 'app/api/a/route.ts', line: 20 }], preconditions: 'p', impact: 'i', evidence: 'e', recommendation: 'r', verification: 'v', confidence: 0.8, verified: true };
-    const message = cisoMessage({
-      surface: { head: 'h', files: { total: 10, byDomain: {}, excluded: [] }, apiRoutes: [{ path: 'app/api/a/route.ts', methods: ['POST'], authMarkers: [] }], sinks: [], workflows: [], firestoreRules: { openRules: [] }, dependencies: {} },
-      results: [{ consultant: 'appsec-api', review: { findings: [finding], checked_sound: ['CSP'], notes: '' } }],
-      coverage, notRead: [{ path: 'lib/huge.ts', reason: 'larger than one call' }], failed: 1, readLines,
-    });
-    for (const part of ['10 files in scope · 7 read in depth by a consultant · 3 covered by the pattern scan only', '- lib/huge.ts: larger than one call', '1 consultant call(s) failed', '### C-1 · appsec-api · proposed hoch', '20|line 20', 'app/api/a/route.ts [POST]', '- appsec-api: CSP']) expect(message).toContain(part);
-
-    // The CISO's input is fitted into what the cost cap reserved: code goes in while it fits, every finding keeps its
-    // text, and a finding whose code no longer fits says its locations are not verifiable here.
-    const args = {
-      surface: { head: 'h', files: { total: 10, byDomain: {}, excluded: [] }, apiRoutes: [], sinks: [], workflows: [], firestoreRules: { openRules: [] }, dependencies: {} },
-      results: [{ consultant: 'appsec-api', review: { findings: Array.from({ length: 6 }, (_, i) => ({ ...finding, title: `Finding ${i + 1}` })), checked_sound: [], notes: '' } }],
-      coverage, notRead: [], failed: 0, readLines,
-    };
-    const full = cisoMessage(args);
-    const limit = full.length - 200;
-    const fitted = cisoMessage({ ...args, maxChars: limit });
-    expect(fitted.length).toBeLessThanOrEqual(limit);
-    for (let i = 1; i <= 6; i++) expect(fitted).toContain(`Finding ${i} (API1)`);
-    expect(fitted).toContain('### C-1 ·');
-    expect(fitted.split('app/api/a/route.ts:5-35').length - 1).toBe(5);
-    expect(fitted).toContain('1 location(s) without code in this input — the CISO input limit is reached; not verifiable here: app/api/a/route.ts:20');
-    expect(fitted.indexOf('Finding 6 (API1)')).toBeGreaterThan(fitted.indexOf('app/api/a/route.ts:5-35'));
-    // The accounting is exact: at the full size every finding keeps its code, one character less costs one block.
-    expect(cisoMessage({ ...args, maxChars: full.length })).toBe(full);
-    expect(cisoMessage({ ...args, maxChars: full.length - 1 }).split('app/api/a/route.ts:5-35').length - 1).toBe(5);
-    // Below what the findings' own text needs, no finding is dropped from the CISO's view: the message is longer than
-    // the reserve, and audit.mjs records the size in the sealed report.
-    const tiny = cisoMessage({ ...args, maxChars: 0 });
-    expect(tiny).not.toContain('20|line 20');
-    for (let i = 1; i <= 6; i++) expect(tiny).toContain(`Finding ${i} (API1)`);
-    expect(read('scripts/security/audit.mjs')).toContain('cisoInput: { chars: cisoUser.length, reservedChars: AUDIT.cisoInputChars }');
     const { AUDIT } = await lib('team.mjs');
-    // Both CISO calls are reserved out of the cap before a consultant spends,
-    // so the report is written even when the consultants have used the rest.
+    // Every CISO call is reserved out of the cap before a consultant spends —
+    // each verification call at its bounded size, and the narrative — so the
+    // report is written even when the consultants have used the rest.
     const auditSrc = read('scripts/security/audit.mjs');
-    expect(auditSrc).toContain('estimate(brief.length + CISO_FINDINGS_TASK.length + 2 + AUDIT.cisoInputChars, cisoTokens)');
+    expect(auditSrc).toContain('const verificationCallWorst = estimate(brief.length + CISO_FINDINGS_TASK.length + 2 + AUDIT.verificationInputChars, cisoTokens);');
+    expect(auditSrc).toContain('const cisoReserve = maxVerificationCalls * verificationCallWorst + narrativeReserve;');
     expect(auditSrc).toContain('estimate(brief.length + CISO_NARRATIVE_TASK.length + 2 + AUDIT.narrativeInputChars,');
-    expect(AUDIT.cisoInputChars).toBe(300_000);
-    expect(AUDIT.narrativeInputChars).toBeLessThan(AUDIT.cisoInputChars);
+    expect(auditSrc).toContain('verificationInput: { maxChars: Math.max(0, ...sendableUsers.map((m) => m.length)), reservedChars: AUDIT.verificationInputChars }');
+    expect(AUDIT.narrativeInputChars).toBeLessThan(AUDIT.verificationInputChars);
     expect(AUDIT.narrativeOutputTokens).toBeLessThan(AUDIT.cisoOutputTokens);
     // The narrative message is held inside the reserve it was costed with.
     const { narrativeMessage } = await lib('pipeline.mjs');
@@ -687,7 +660,7 @@ test.describe('the audit pipeline', () => {
     expect(firstViolation(REPORT_SCHEMA, report)).toBeNull();
     expect(report).toMatchObject({ risk_rating: 'niedrig', findings: [{ severity: 'mittel', description: '' }], hardening: [{ priority: 'P1' }], coverage: { files_in_scope: 9 } });
     // Each half of the split answer is coerced and validated on its own.
-    const { coerceFindings, coerceNarrative, coerceConsultantFindings, reportWithoutNarrative } = await lib('pipeline.mjs');
+    const { coerceFindings, coerceNarrative, reportWithoutNarrative } = await lib('pipeline.mjs');
     const { FINDINGS_SCHEMA, NARRATIVE_SCHEMA } = await lib('team.mjs');
     const half = { findings: coerceFindings({ findings: [{ title: 'F', severity: 'Medium' }] }) };
     expect(firstViolation(FINDINGS_SCHEMA, half)).toBeNull();
@@ -697,10 +670,8 @@ test.describe('the audit pipeline', () => {
     expect(prose).toMatchObject({ risk_rating: 'niedrig', hardening: [{ priority: 'P1' }] });
     expect(prose, 'the prose call never carries findings').not.toHaveProperty('findings');
 
-    // A lost call is not a lost audit: what is left is reported, and says so.
-    const carried = coerceConsultantFindings([{ consultant: 'app-web', review: { findings: [{ title: 'C', severity: 'hoch' }] } }]);
-    expect(carried[0]).toMatchObject({ title: 'C', severity: 'hoch' });
-    expect(carried[0].description, 'an unverified finding says whose it is').toContain('app-web');
+    // A lost narrative is not a lost audit: the verified findings are reported, and the report says what is missing.
+    const carried = coerceFindings({ findings: [{ title: 'C', severity: 'hoch' }] });
     const rescued = reportWithoutNarrative({ findings: carried, coverage: { files_in_scope: 1, deep_read: 1, pattern_scanned_only: 0, notes: '' }, reason: 'Testfall.' });
     // The rating is the worst finding the report will carry, so it is computed
     // from those findings and not from an empty list (QA 4930d2571216).
@@ -715,9 +686,9 @@ test.describe('the audit pipeline', () => {
     expect(src).toMatch(/coerce: coerceConsultant \}/);
     expect(src).toMatch(/coerce: coerceNarrative \}/);
     expect(src).toMatch(/coerceFindings\(answer\)/);
-    // The prose call is told whether anyone verified what it describes.
-    expect(src).toContain('verified: Boolean(verified)');
-    expect(read('scripts/security/lib/pipeline.mjs')).toContain('NOT verified against the code');
+    // The prose call is told how much was verified and how much was not.
+    expect(src).toContain('droppedNote: verifiedNote, verification, maxChars');
+    expect(read('scripts/security/lib/pipeline.mjs')).toContain('NOT verified.');
   });
 
   test('a rate limit on the last call cannot lose the report: both calls wait up to about 12 minutes', async () => {
@@ -782,7 +753,7 @@ test.describe('the audit pipeline', () => {
 
     // The budget still fits after the price rise, or the run ends in the floor instead of a report.
     const perCall = (AUDIT.batchChars / 3.5 / 1e6) * AUDIT.price.input + (AUDIT.consultantOutputTokens / 1e6) * AUDIT.price.output;
-    const ciso = (AUDIT.cisoInputChars / 3.5 / 1e6) * AUDIT.price.input + (AUDIT.cisoOutputTokens / 1e6) * AUDIT.price.output
+    const ciso = AUDIT.maxVerificationCalls * ((AUDIT.verificationInputChars / 3.5 / 1e6) * AUDIT.price.input + (AUDIT.cisoOutputTokens / 1e6) * AUDIT.price.output)
       + (AUDIT.narrativeInputChars / 3.5 / 1e6) * AUDIT.price.input + (AUDIT.narrativeOutputTokens / 1e6) * AUDIT.price.output;
     const worst = perCall * AUDIT.maxConsultantCalls + ciso;
     expect(worst, 'the worst case of a full run no longer fits the cap').toBeLessThan(AUDIT.maxCostUsd);
@@ -961,7 +932,7 @@ test.describe('the audit pipeline', () => {
     const src = read('scripts/security/audit.mjs');
     expect(src).toMatch(/const planned = deepReadCoverage\(\{ batches: plan\.batches, deepRead \}\);/);
     expect(src).toMatch(/if \(planned\.ratio < AUDIT\.minDeepReadRatio\) \{\s+throw new Error\(/);
-    expect(src.indexOf('AUDIT.minDeepReadRatio')).toBeLessThan(src.indexOf('const cisoUser'));
+    expect(src.indexOf('AUDIT.minDeepReadRatio')).toBeLessThan(src.indexOf('const plannedCheck'));
   });
 
   test('the CISO call is reserved before any consultant spends, and the audit runs its consultants through the bounded runner', () => {
@@ -969,8 +940,229 @@ test.describe('the audit pipeline', () => {
     expect(src).toMatch(/fits: \(committed, chars\) => committed \+ estimate\(chars, consultantTokens\) \+ cisoReserve <= cap,/);
     expect(src).toMatch(/const run = await runConsultants\(\{/);
     expect(src).toMatch(/concurrency: SELF_TEST \? 1 : AUDIT\.concurrency,/);
-    expect(src).toMatch(/const costUsd = !run\.failedCalls && usages\.every/);
+    expect(src).toMatch(/const costUsd = !run\.failedCalls && !check\.failedCalls && usages\.every/);
     // Secrets found in the code become findings without their value; a public-by-design key does not.
     expect(src).toMatch(/secretHits\.filter\(\(h\) => h\.path !== 'outgoing message' && !isPublicByDesign\(h\)\)/);
+  });
+});
+
+/**
+ * The CISO verifies in batches (Sonny, 24.09.2026, option A).
+ *
+ * Release v2.18.0 (81810c8, run 35998405111): five consultants reported 194
+ * candidates, the one CISO call reached its input limit before a single
+ * candidate's code fitted ("N location(s) without code in this input — the CISO
+ * input limit is reached"), confirmed nothing, and the mail said "0 findings,
+ * risk low" — which meant "not verified".
+ */
+test.describe('the CISO verifies in batches, and says what it did not verify', () => {
+  type Loc = { file: string; line: number };
+  type Candidate = { id: string; title: string; severity: string; locations: Loc[]; sources: { consultant: string; title: string }[] };
+  const finding = (over: Record<string, unknown> = {}) => ({
+    title: 'Missing auth', severity: 'hoch', category: 'CWE-862', locations: [{ file: 'app/api/a/route.ts', line: 20 }],
+    preconditions: 'p', impact: 'i', evidence: 'e', recommendation: 'r', verification: 'v', confidence: 0.8, verified: true, ...over,
+  });
+
+  test('duplicates are merged — same file, nearby lines, same issue class — and every source is kept', async () => {
+    const { dedupeCandidates, issueClass } = await lib('pipeline.mjs');
+    expect(issueClass({ category: 'CWE-79: XSS' })).toBe('cwe-79');
+    expect(issueClass({ category: 'cwe 079' })).toBe('cwe-79');
+    expect(issueClass({ category: 'API1:2023 BOLA' })).toBe('api-1');
+    expect(issueClass({ category: 'LLM01 Prompt Injection' })).toBe('llm-1');
+    expect(issueClass({ category: 'A01:2021' })).toBe('owasp-a1');
+    expect(issueClass({ category: '', title: 'Open Redirect!' })).toBe('title:open redirect');
+
+    const merged = dedupeCandidates([
+      { consultant: 'appsec-api', review: { findings: [finding({ severity: 'mittel', confidence: 0.9 }), finding({ title: 'Other class', category: 'CWE-79' })] } },
+      // Same class, same file, 6 lines apart: a duplicate — the more severe report leads.
+      { consultant: 'identity-crypto', review: { findings: [finding({ title: 'No token check', severity: 'kritisch', locations: [{ file: 'app/api/a/route.ts', line: 26 }, { file: 'lib/x.ts', line: 3 }] })] } },
+      // Same class, same file, far away: not a duplicate.
+      { consultant: 'data-rules', review: { findings: [finding({ locations: [{ file: 'app/api/a/route.ts', line: 200 }] })] } },
+      // Same class, other file: not a duplicate.
+      { consultant: 'ci-cloud-ai', review: { findings: [finding({ locations: [{ file: 'app/api/b/route.ts', line: 20 }] })] } },
+    ], { distance: 10 });
+    expect(merged).toHaveLength(4);
+    const lead = merged.find((c: Candidate) => c.sources.length > 1);
+    expect(lead.severity, 'the merged candidate keeps the highest severity').toBe('kritisch');
+    expect(lead.title).toBe('No token check');
+    expect(lead.sources.map((s: { consultant: string }) => s.consultant).sort()).toEqual(['appsec-api', 'identity-crypto']);
+    expect(lead.locations.map((l: Loc) => `${l.file}:${l.line}`).sort()).toEqual(['app/api/a/route.ts:20', 'app/api/a/route.ts:26', 'lib/x.ts:3']);
+    expect(lead.confidence).toBe(0.9);
+    // Nothing is lost: every report is a source of exactly one candidate.
+    expect(merged.reduce((n: number, c: Candidate) => n + c.sources.length, 0)).toBe(5);
+    // Merging is transitive: a chain of nearby reports is one candidate.
+    const chain = dedupeCandidates([{ consultant: 'appsec-api', review: { findings: [10, 18, 26].map((line) => finding({ locations: [{ file: 'a.ts', line }] })) } }], { distance: 10 });
+    expect(chain).toHaveLength(1);
+  });
+
+  test('batches are ordered by severity, each candidate carries its code, and every call stays under the input limit', async () => {
+    const { planVerification, verificationMessage } = await lib('pipeline.mjs');
+    const { AUDIT } = await lib('team.mjs');
+    const severities = ['info', 'niedrig', 'mittel', 'hoch', 'kritisch'];
+    // v2.18.0 in size: 194 candidates with long text and long code lines.
+    const candidates = Array.from({ length: 194 }, (_, i) => ({
+      ...finding({ title: `Finding ${i} ${'t'.repeat(800)}`, severity: severities[i % 5], preconditions: 'p'.repeat(3_000), impact: 'i'.repeat(3_000), evidence: 'e'.repeat(3_000),
+        locations: Array.from({ length: 6 }, (_, k) => ({ file: `lib/f${i % 30}.ts`, line: 10 + k * 40 })) }),
+      sources: [{ consultant: 'appsec-api', title: `Finding ${i}`, severity: severities[i % 5] }],
+    }));
+    const lines = Array.from({ length: 400 }, (_, i) => `const v${i} = "${'z'.repeat(400)}";`);
+    const plan = planVerification(candidates, { batchSize: AUDIT.verificationBatchSize, maxCalls: AUDIT.maxVerificationCalls });
+    expect(plan.batches).toHaveLength(Math.ceil(194 / AUDIT.verificationBatchSize));
+    expect(plan.beyond).toEqual([]);
+    for (const b of plan.batches) expect(b.length).toBeLessThanOrEqual(AUDIT.verificationBatchSize);
+    // Most severe first, named in that order.
+    const order = plan.candidates.map((c: Candidate) => c.severity);
+    expect(order.slice(0, 38).every((s: string) => s === 'kritisch')).toBe(true);
+    expect(order[38]).toBe('hoch');
+    expect(order.at(-1)).toBe('info');
+    expect(plan.candidates[0].id).toBe('K-001');
+    expect(plan.candidates.at(-1).id).toBe('K-194');
+
+    plan.batches.forEach((batch: Candidate[], i: number) => {
+      const message = verificationMessage({ batch, index: i, count: plan.batches.length, total: 194, readLines: () => lines, maxChars: AUDIT.verificationInputChars });
+      expect(message.length, `call ${i + 1} is inside the input limit`).toBeLessThanOrEqual(AUDIT.verificationInputChars);
+      // Every candidate of the call is in it, with code from its cited lines — the v2.18.0 failure cannot recur.
+      const entries: string[] = message.split(/\n\n(?=### K-)/).slice(1);
+      expect(entries.map((e) => e.slice(4, 9))).toEqual(batch.map((c) => c.id));
+      for (const e of entries) expect(e, 'a candidate without its code').toMatch(/^\d+\|const v\d+/m);
+      expect(message).not.toMatch(/input limit is reached/);
+    });
+
+    // A small call shows a wide window; a crowded one narrows it rather than dropping code.
+    const one = verificationMessage({ batch: plan.batches[0].slice(0, 1), index: 0, count: 1, total: 1, readLines: () => lines, maxChars: AUDIT.verificationInputChars });
+    expect(one).toContain(`\n${50 - AUDIT.verificationContextLines}|`);
+    expect(one).toContain(`\n${50 + AUDIT.verificationContextLines}|`);
+    const { candidateEntry } = await lib('pipeline.mjs');
+    const tight = candidateEntry(plan.candidates[0], () => lines, { maxChars: 2_500 });
+    expect(tight.length).toBeLessThanOrEqual(2_500);
+    expect(tight).toMatch(/^10\|const v9 /m);
+
+    // Past the call limit, candidates are returned by name — never dropped.
+    const capped = planVerification(candidates, { batchSize: 20, maxCalls: 3 });
+    expect(capped.batches.flat()).toHaveLength(60);
+    expect(capped.beyond).toHaveLength(134);
+    expect(capped.beyond[0]).toMatchObject({ candidate: { id: 'K-061' }, reason: 'outside the 3-call limit of the verification' });
+  });
+
+  test('a failed or unaffordable verification call leaves its candidates not verified, by name, with a closed-list reason', async () => {
+    const { planVerification, runVerification, notVerifiedEntry, verificationLimitation } = await lib('pipeline.mjs');
+    const candidates = Array.from({ length: 50 }, (_, i) => ({ ...finding({ title: `F${i}` }), sources: [{ consultant: 'data-rules', title: `F${i}`, severity: 'hoch' }] }));
+    const plan = planVerification(candidates, { batchSize: 10, maxCalls: 4 });
+    let n = 0;
+    const run = await runVerification({
+      batches: plan.batches,
+      capUsd: 5,
+      messageFor: () => ({ system: 's', user: 'u' }),
+      // One unit per call, three units of budget: the fourth call does not start.
+      fits: (committed: number) => committed + 1 <= 3,
+      worstCase: () => 1,
+      call: async () => {
+        n++;
+        if (n === 2) throw new Error('OpenRouter returned no review content (finish_reason=length, completion_tokens=1, reasoning_tokens=1, max_tokens=40000).');
+        return { review: { findings: [{ title: 'kept' }], notes: '' }, usage: { cost: 1 } };
+      },
+    });
+    expect(run.results).toHaveLength(2);
+    expect(run.results.map((r: { candidates: string[] }) => r.candidates[0])).toEqual(['K-001', 'K-021']);
+    expect(run.failedCalls).toBe(1);
+    expect(run.failureReasons).toEqual([{ reason: 'no-content-cut-at-length', count: 1 }]);
+    const open: { id: string; reason: string; severity: string }[] = [...run.notVerified, ...plan.beyond].map(notVerifiedEntry);
+    expect(open).toHaveLength(30);
+    expect(open.filter((o: { reason: string }) => o.reason === 'verification call failed (no-content-cut-at-length)').map((o: { id: string }) => o.id)).toEqual(Array.from({ length: 10 }, (_, i) => `K-${String(11 + i).padStart(3, '0')}`));
+    expect(open.filter((o: { reason: string }) => o.reason === 'outside the $5 cost cap')).toHaveLength(10);
+    expect(open.filter((o: { reason: string }) => /call limit/.test(o.reason))).toHaveLength(10);
+    // By name: title, proposed severity, where, who.
+    expect(open[0]).toEqual({ id: 'K-011', title: 'F10', severity: 'hoch', category: 'CWE-862', locations: [{ file: 'app/api/a/route.ts', line: 20 }], consultants: ['data-rules'], reason: 'verification call failed (no-content-cut-at-length)' });
+    // The reason never carries a model message.
+    for (const o of open) expect(o.reason).toMatch(/^(verification call failed \([a-z0-9-]+\)|outside the \$5 cost cap|outside the \d+-call limit of the verification)$/);
+
+    // The report's first limitation counts it, deterministically; nothing to say when everything was verified.
+    const limitation = verificationLimitation({ candidates: 50, verified: 20, notVerified: open });
+    expect(limitation).toContain('20 von 50 Kandidaten wurden am Code verifiziert, 30 nicht');
+    expect(limitation).toContain('30 hoch');
+    expect(verificationLimitation({ candidates: 5, verified: 5, notVerified: [] })).toBeNull();
+
+    // The narrative is told the same numbers and told not to call the risk low on the verified part.
+    const { narrativeMessage } = await lib('pipeline.mjs');
+    const msg = narrativeMessage({ surface: { head: 'x', files: { total: 1, byDomain: {} }, apiRoutes: [], firestoreRules: {}, dependencies: {} }, coverage: { files_in_scope: 1, deep_read: 1, pattern_scanned_only: 0 }, findings: [], notRead: [], failed: 0, verification: { candidates: 50, verified: 20, notVerified: open } });
+    expect(msg).toContain('50 candidate finding(s) after merging duplicates · 20 verified against the code · 30 NOT verified.');
+    expect(msg).toMatch(/do not rate the overall risk as low/);
+
+    // The audit wires it together that way.
+    const src = read('scripts/security/audit.mjs');
+    expect(src).toContain('const notVerified = [...check.notVerified, ...oversized, ...plannedCheck.beyond].map(notVerifiedEntry);');
+    expect(src).toContain('...[verificationLimitation({ candidates: candidateCount, verified: verifiedCount, notVerified })].filter(Boolean),');
+    expect(src).toMatch(/for \(const \{ reason, count \} of check\.failureReasons\) console\.warn\(`CISO verification calls failed: \$\{reason\} ×\$\{count\}/);
+    // A verification call that does not fit is checked against what was spent, with the narrative still reserved.
+    expect(src).toContain('fits: (committed, chars) => run.spent + committed + estimate(chars, cisoTokens) + narrativeReserve <= cap,');
+    // Only counts reach the public log line.
+    expect(src).toContain('candidates=${candidateCount} verified=${verifiedCount} notVerified=${notVerified.length}');
+  });
+
+  test('the headline says how much was verified — never "Risiko niedrig" while candidates remain unverified', async () => {
+    const { renderAuditMail } = await lib('mail.mjs');
+    const base = {
+      head: '81810c8aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', model: 'deepseek/deepseek-v4.1-flash', calls: 12, failedCalls: 1, durationMs: 60_000, costUsd: null, selfTest: false,
+      report: { executive_summary: 'S', risk_rating: 'niedrig', findings: [], hardening: [], positive_observations: [], coverage: { files_in_scope: 1, deep_read: 1, pattern_scanned_only: 0, notes: '' }, limitations: [] },
+    };
+    const open = [
+      { id: 'K-001', title: 'Unverified <b>thing</b>', severity: 'kritisch', category: 'CWE-1', locations: [{ file: 'app/api/x/route.ts', line: 4 }], consultants: ['appsec-api'], reason: 'verification call failed (timeout)' },
+      { id: 'K-002', title: 'Second', severity: 'hoch', category: 'CWE-2', locations: [], consultants: ['data-rules', 'appsec-api'], reason: 'outside the $5 cost cap' },
+    ];
+    const m = renderAuditMail({ ...base, verification: { reports: 3, candidates: 2, verified: 0, calls: 0, failedCalls: 1, notVerified: open } }, { version: 'v2.18.0', runUrl: 'u', sealedSha256: 's' });
+    expect(m.subject).toBe('Security-Audit v2.18.0 (81810c8) — nicht vollständig geprüft: 0 von 2 Kandidaten verifiziert, 2 nicht · 0 kritisch · 0 hoch · 0 mittel · 0 niedrig');
+    expect(m.subject).not.toMatch(/Risiko/);
+    expect(m.text).toContain('Nicht vollständig geprüft: 0 von 2 Kandidaten am Code verifiziert, 2 nicht.');
+    expect(m.text).toContain('Keine verifizierten Befunde — 2 Kandidaten sind nicht verifiziert');
+    expect(m.text).not.toContain('Keine Befunde, die der Prüfung standgehalten haben.');
+    // Listed by name, with where, who and why — in German.
+    expect(m.text).toContain('NICHT VERIFIZIERT (2)');
+    expect(m.text).toContain('K-001  KRITISCH (vorgeschlagen) Unverified <b>thing</b> — app/api/x/route.ts:4 — von appsec-api — Prüfaufruf fehlgeschlagen (timeout)');
+    expect(m.text).toContain('K-002  HOCH     (vorgeschlagen) Second — — — von data-rules, appsec-api — außerhalb des Budgets');
+    expect(m.html).toContain('Nicht vollständig geprüft');
+    expect(m.html).toContain('Nicht verifiziert (2)');
+    expect(m.html).toContain('Unverified &lt;b&gt;thing&lt;/b&gt;');
+    expect(m.html).not.toContain('<b>thing</b>');
+    expect(m.html).not.toMatch(/Gesamtrisiko/);
+    // The unverified candidates are not findings: the register never sees them as such.
+    expect(m.findings).toEqual([]);
+
+    // Everything verified: the rating is the headline again.
+    const done = renderAuditMail({ ...base, verification: { reports: 3, candidates: 2, verified: 2, calls: 1, failedCalls: 0, notVerified: [] } }, { version: 'v2.18.0', runUrl: 'u', sealedSha256: 's' });
+    expect(done.subject).toBe('Security-Audit v2.18.0 (81810c8) — Risiko niedrig: 0 kritisch · 0 hoch · 0 mittel · 0 niedrig');
+    expect(done.text).toContain('Alle 2 Kandidaten am Code verifiziert.');
+    expect(done.html).toContain('Gesamtrisiko');
+    expect(done.text).not.toContain('NICHT VERIFIZIERT');
+  });
+
+  test('the not-verified list reads on a 320px phone without sideways scrolling', async ({ page }) => {
+    const { renderAuditMail } = await lib('mail.mjs');
+    const long = 'app/api/admin/an/extremely/long/nested/route/path/that/would/overflow/route.ts';
+    const m = renderAuditMail({
+      head: 'c1f86075617b9757a45cad10c0ab2d900fa83f7f', model: 'm', calls: 1, failedCalls: 0, durationMs: 0, costUsd: 0.5, selfTest: false,
+      report: { executive_summary: 'S', risk_rating: 'mittel', findings: [], hardening: [], positive_observations: [], coverage: { files_in_scope: 1, deep_read: 1, pattern_scanned_only: 0, notes: '' }, limitations: [] },
+      verification: { reports: 1, candidates: 1, verified: 0, calls: 0, failedCalls: 0, notVerified: [{ id: 'K-001', title: 'x'.repeat(200), severity: 'hoch', category: 'c', locations: [{ file: long, line: 1234 }], consultants: ['appsec-api', 'frontend-supply-chain'], reason: 'outside the $5 cost cap' }] },
+    }, { version: 'v2.18.0', runUrl: 'u', sealedSha256: 'a'.repeat(64) });
+    await page.setViewportSize({ width: 320, height: 640 });
+    await page.setContent(m.html);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(0);
+  });
+
+  test('the budget: 5 USD, every verification call reserved before the consultants spend, and the worst case fits with room', async () => {
+    const { AUDIT } = await lib('team.mjs');
+    expect(AUDIT.maxCostUsd).toBe(5);
+    expect(AUDIT.verificationBatchSize).toBe(20);
+    expect(AUDIT.maxVerificationCalls * AUDIT.verificationBatchSize, 'room for v2.18.0 unmerged').toBeGreaterThanOrEqual(194);
+    const est = (chars: number, out: number) => (chars / 3.5 / 1e6) * AUDIT.price.input + (out / 1e6) * AUDIT.price.output;
+    const brief = read(AUDIT.briefPath).length;
+    const consultants = AUDIT.maxConsultantCalls * est(AUDIT.batchChars + 4_000, AUDIT.consultantOutputTokens);
+    const verification = AUDIT.maxVerificationCalls * est(brief + 400 + AUDIT.verificationInputChars, AUDIT.cisoOutputTokens);
+    const narrative = est(brief + 400 + AUDIT.narrativeInputChars, AUDIT.narrativeOutputTokens);
+    expect(consultants + verification + narrative, 'worst case of a full run').toBeLessThan(AUDIT.maxCostUsd * 0.8);
+    // The consultants' cap check subtracts the whole reserve; verification then checks against actual spend.
+    const src = read('scripts/security/audit.mjs');
+    expect(src).toContain('const maxVerificationCalls = SELF_TEST ? 1 : AUDIT.maxVerificationCalls;');
+    expect(src.indexOf('const cisoReserve')).toBeLessThan(src.indexOf('const run = await runConsultants'));
+    expect(src).toContain('const check = await runVerification({');
   });
 });

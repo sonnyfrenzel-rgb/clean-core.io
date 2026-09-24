@@ -47,12 +47,47 @@ export function counts(findings) {
   return Object.fromEntries(ORDER.map((s) => [s, findings.filter((f) => f.severity === s).length]));
 }
 
+/**
+ * How much of what the consultants reported the CISO verified at the code.
+ *
+ * The release audit of v2.18.0 (81810c8, run 35998405111) verified none of 194
+ * candidates — its one CISO call ran out of input before any code — and the
+ * subject read "Risiko niedrig: 0 kritisch · 0 hoch …". Since 24.09.2026 the
+ * sealed payload counts the candidates and names every one that was not
+ * verified; when any remain, the headline says so instead of a rating.
+ * Null for a payload from before that date, which carries no count.
+ */
+export function verificationState(payload) {
+  const v = payload?.verification;
+  if (!v) return null;
+  const notVerified = v.notVerified || [];
+  return { candidates: v.candidates ?? 0, verified: v.verified ?? 0, notVerified, complete: notVerified.length === 0 };
+}
+
+/** The reason a candidate was not verified, in German — the payload keeps the closed-list English form. */
+export function reasonDe(reason) {
+  const text = String(reason || '');
+  if (/cost cap/.test(text)) return 'außerhalb des Budgets';
+  if (/call limit/.test(text)) return 'außerhalb der Höchstzahl an Prüfaufrufen';
+  const failed = /verification call failed \(([a-z0-9-]+)\)/.exec(text);
+  if (failed) return `Prüfaufruf fehlgeschlagen (${failed[1]})`;
+  if (/after redaction/.test(text)) return 'Eingabe nach der Schwärzung über der Grenze';
+  return text;
+}
+
 export function renderAuditMail(payload, { version, runUrl, sealedSha256 }) {
   const r = payload.report;
   const findings = numbered(payload);
   const c = counts(findings);
+  const v = verificationState(payload);
+  const incomplete = Boolean(v && !v.complete);
   const tag = payload.selfTest ? '[SELBSTTEST] ' : '';
-  const subject = `${tag}Security-Audit ${version} (${payload.head.slice(0, 7)}) — Risiko ${r.risk_rating}: ${c.kritisch} kritisch · ${c.hoch} hoch · ${c.mittel} mittel · ${c.niedrig} niedrig`;
+  const tally = `${c.kritisch} kritisch · ${c.hoch} hoch · ${c.mittel} mittel · ${c.niedrig} niedrig`;
+  // Unverified candidates remain: the headline is how much was verified, never a rating of the verified part alone.
+  const subject = incomplete
+    ? `${tag}Security-Audit ${version} (${payload.head.slice(0, 7)}) — nicht vollständig geprüft: ${v.verified} von ${v.candidates} Kandidaten verifiziert, ${v.notVerified.length} nicht · ${tally}`
+    : `${tag}Security-Audit ${version} (${payload.head.slice(0, 7)}) — Risiko ${r.risk_rating}: ${tally}`;
+  const open = v?.notVerified || [];
   const cost = typeof payload.costUsd === 'number' ? `${payload.costUsd.toFixed(2)} $` : 'unbekannt';
   const minutes = Math.round((payload.durationMs || 0) / 60_000);
 
@@ -60,11 +95,22 @@ export function renderAuditMail(payload, { version, runUrl, sealedSha256 }) {
     subject,
     '',
     payload.selfTest ? 'SELBSTTEST der Audit-Kette an zwei Dateien mit kleinem Budget. Kein Audit-Ergebnis — geprüft wird, dass Analyse, Siegel und Zustellung funktionieren.\n' : '',
+    ...(v
+      ? [
+          'PRÜFSTAND',
+          incomplete
+            ? `  Nicht vollständig geprüft: ${v.verified} von ${v.candidates} Kandidaten am Code verifiziert, ${open.length} nicht. Die Einstufung „${r.risk_rating}" gilt nur für den verifizierten Teil.`
+            : `  Alle ${v.candidates} Kandidaten am Code verifiziert.`,
+          '',
+        ]
+      : []),
     'KURZFAZIT',
     r.executive_summary,
     '',
     'BEFUNDE',
-    ...(findings.length ? findings.map((f) => `  ${f.id}  ${f.severity.toUpperCase().padEnd(8)} ${f.title} — ${where(f)}`) : ['  Keine Befunde, die der Prüfung standgehalten haben.']),
+    ...(findings.length
+      ? findings.map((f) => `  ${f.id}  ${f.severity.toUpperCase().padEnd(8)} ${f.title} — ${where(f)}`)
+      : [incomplete ? `  Keine verifizierten Befunde — ${open.length} Kandidaten sind nicht verifiziert (unten namentlich).` : '  Keine Befunde, die der Prüfung standgehalten haben.']),
     '',
     ...findings.flatMap((f) => [
       `— ${f.id} · ${f.severity} · ${f.category}`,
@@ -79,6 +125,13 @@ export function renderAuditMail(payload, { version, runUrl, sealedSha256 }) {
       `  Sicherheit der Einschätzung: ${Math.round((f.confidence || 0) * 100)} %`,
       '',
     ]),
+    ...(open.length
+      ? [
+          `NICHT VERIFIZIERT (${open.length}) — Kandidaten der Berater, am Code nicht geprüft: weder Befund noch „kein Befund"`,
+          ...open.map((n) => `  ${n.id}  ${String(n.severity).toUpperCase().padEnd(8)} (vorgeschlagen) ${n.title} — ${where(n)} — von ${(n.consultants || []).join(', ') || '—'} — ${reasonDe(n.reason)}`),
+          '',
+        ]
+      : []),
     'HÄRTUNG',
     ...(r.hardening || []).map((h) => `  ${h.priority}  ${h.title} — ${h.rationale}`),
     '',
@@ -99,7 +152,7 @@ export function renderAuditMail(payload, { version, runUrl, sealedSha256 }) {
     `  Nachprüfen: node scripts/security/inbox.mjs ${payload.head.slice(0, 12)} — öffnet dasselbe Artefakt mit dem privaten Schlüssel.`,
   ].join('\n');
 
-  const html = wrapEmailDocument(renderHtmlBody({ payload, r, findings, c, version, runUrl, sealedSha256, cost, minutes }), `Security-Audit ${version}`);
+  const html = wrapEmailDocument(renderHtmlBody({ payload, r, findings, c, v, version, runUrl, sealedSha256, cost, minutes }), `Security-Audit ${version}`);
   return { subject, text, html, findings };
 }
 
@@ -123,8 +176,18 @@ const block = (title, body) => `<div style="margin-top: 12px;"><div style="font-
  * Gmail app at 320px is where this gets read, and a table of file paths is what
  * forces a sideways scroll there (the same reasoning as lib/usage-report-email.ts).
  */
-function renderHtmlBody({ payload, r, findings, c, version, runUrl, sealedSha256, cost, minutes }) {
-  const risk = SEVERITY_STYLE[r.risk_rating] || SEVERITY_STYLE.mittel;
+function renderHtmlBody({ payload, r, findings, c, v, version, runUrl, sealedSha256, cost, minutes }) {
+  const incomplete = Boolean(v && !v.complete);
+  const open = v?.notVerified || [];
+  const risk = incomplete ? SEVERITY_STYLE.hoch : SEVERITY_STYLE[r.risk_rating] || SEVERITY_STYLE.mittel;
+  const tallyHtml = `<strong>${c.kritisch}</strong> kritisch &middot; <strong>${c.hoch}</strong> hoch &middot; <strong>${c.mittel}</strong> mittel &middot; <strong>${c.niedrig}</strong> niedrig${c.info ? ` &middot; <strong>${c.info}</strong> info` : ''}`;
+  const unverified = (n) => `
+      <div style="padding: 10px 0; border-bottom: 1px solid #eef2f6; overflow-wrap: anywhere; word-break: break-word;">
+        <div>${chip(`${esc(n.severity)} &middot; vorgeschlagen`, SEVERITY_STYLE[n.severity] || SEVERITY_STYLE.info)} <span style="font-family: ${MONO}; font-size: 12px; color: #64748b; margin-left: 6px;">${esc(n.id)}</span></div>
+        <div style="font-size: 15px; font-weight: 700; color: #0f172a; margin-top: 4px; line-height: 1.35;">${esc(n.title)}</div>
+        <div style="font-family: ${MONO}; font-size: 12px; color: #475569; margin-top: 2px; word-break: break-word;">${esc(where(n))}</div>
+        <div style="font-size: 12px; color: #64748b; margin-top: 2px;">von ${esc((n.consultants || []).join(', ') || '—')} &middot; ${esc(reasonDe(n.reason))}</div>
+      </div>`;
   const finding = (f) => {
     const s = SEVERITY_STYLE[f.severity] || SEVERITY_STYLE.info;
     return `
@@ -147,7 +210,7 @@ function renderHtmlBody({ payload, r, findings, c, version, runUrl, sealedSha256
 <div class="wrap" style="font-family: ${FONT}; max-width: 600px; margin: 0 auto; padding: 40px 24px; background-color: #f8fafc; color: #0f172a; overflow-wrap: anywhere; word-break: break-word;">
 
   <div style="display: none; max-height: 0; overflow: hidden; opacity: 0; color: transparent; height: 0; width: 0;">
-    Risiko ${esc(r.risk_rating)}: ${c.kritisch} kritisch, ${c.hoch} hoch, ${c.mittel} mittel, ${c.niedrig} niedrig — ${esc(version)}.
+    ${incomplete ? `Nicht vollständig geprüft: ${esc(v.verified)} von ${esc(v.candidates)} Kandidaten verifiziert, ${open.length} nicht` : `Risiko ${esc(r.risk_rating)}`}: ${c.kritisch} kritisch, ${c.hoch} hoch, ${c.mittel} mittel, ${c.niedrig} niedrig — ${esc(version)}.
   </div>
 
   <div class="card" style="background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 24px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); overflow: hidden; padding: 40px;">
@@ -167,11 +230,17 @@ function renderHtmlBody({ payload, r, findings, c, version, runUrl, sealedSha256
     ${payload.selfTest ? `<div class="panel" style="background-color: #fffbeb; border: 1px solid #fde68a; border-radius: 16px; padding: 16px; margin-bottom: 20px; font-size: 14px; color: #92400e; line-height: 1.5;"><strong>Selbsttest</strong> der Audit-Kette an zwei Dateien mit kleinem Budget. Kein Audit-Ergebnis &mdash; geprüft wird, dass Analyse, Siegel und Zustellung funktionieren.</div>` : ''}
 
     <div class="panel" style="background-color: ${risk.bg}; border: 1px solid ${risk.border}; border-radius: 16px; padding: 22px; margin-bottom: 24px;">
-      ${label('Gesamtrisiko', risk.fg)}
+      ${incomplete
+        ? `${label('Prüfstand', risk.fg)}
+      <div style="font-size: 30px; font-weight: 800; color: ${risk.fg}; line-height: 1.1; margin-bottom: 10px;">Nicht vollständig geprüft</div>
+      <div style="font-size: 14px; color: #334155; line-height: 1.6;"><strong>${esc(v.verified)}</strong> von <strong>${esc(v.candidates)}</strong> Kandidaten am Code verifiziert &middot; <strong>${open.length}</strong> nicht verifiziert</div>
+      <div style="font-size: 14px; color: #334155; line-height: 1.6;">Verifiziert: ${tallyHtml}</div>
+      <div style="font-size: 13px; color: #475569; line-height: 1.5; margin-top: 4px;">Einstufung nur des verifizierten Teils: ${esc(r.risk_rating)}</div>`
+        : `${label('Gesamtrisiko', risk.fg)}
       <div style="font-size: 36px; font-weight: 800; color: ${risk.fg}; line-height: 1; margin-bottom: 10px; text-transform: capitalize;">${esc(r.risk_rating)}</div>
       <div style="font-size: 14px; color: #334155; line-height: 1.6;">
-        <strong>${c.kritisch}</strong> kritisch &middot; <strong>${c.hoch}</strong> hoch &middot; <strong>${c.mittel}</strong> mittel &middot; <strong>${c.niedrig}</strong> niedrig${c.info ? ` &middot; <strong>${c.info}</strong> info` : ''}
-      </div>
+        ${tallyHtml}
+      </div>`}
       <div style="font-family: ${MONO}; font-size: 12px; color: #64748b; margin-top: 6px; word-break: break-word;">Commit ${esc(payload.head.slice(0, 12))}</div>
     </div>
 
@@ -179,7 +248,14 @@ function renderHtmlBody({ payload, r, findings, c, version, runUrl, sealedSha256
     <p class="body-text" style="font-size: 15px; color: #0f172a; line-height: 1.6; margin: 0 0 26px 0;">${esc(r.executive_summary)}</p>
 
     ${label(`Befunde (${findings.length})`)}
-    ${findings.length ? findings.map(finding).join('') : '<p style="font-size: 14px; color: #94a3b8; font-style: italic; margin: 0 0 20px 0;">Keine Befunde, die der Prüfung standgehalten haben.</p>'}
+    ${findings.length ? findings.map(finding).join('') : `<p style="font-size: 14px; color: #94a3b8; font-style: italic; margin: 0 0 20px 0;">${incomplete ? `Keine verifizierten Befunde &mdash; ${open.length} Kandidaten sind nicht verifiziert (unten namentlich).` : 'Keine Befunde, die der Prüfung standgehalten haben.'}</p>`}
+
+    ${open.length ? `
+    <div class="panel" style="background-color: #fffbeb; border: 1px solid #fde68a; border-radius: 16px; padding: 18px; margin: 22px 0 18px 0;">
+      ${label(`Nicht verifiziert (${open.length})`, '#92400e')}
+      <div style="font-size: 13px; color: #92400e; line-height: 1.5; margin-bottom: 4px;">Kandidaten der Berater, am Code nicht geprüft &mdash; weder Befund noch &bdquo;kein Befund&ldquo;.</div>
+      ${open.map(unverified).join('')}
+    </div>` : ''}
 
     ${(r.hardening || []).length ? `
     <div class="panel" style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; padding: 18px; margin: 22px 0 18px 0;">

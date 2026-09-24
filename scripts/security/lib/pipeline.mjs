@@ -126,10 +126,36 @@ export function splitText(text, limit) {
  * @param worstCase  (inputChars) => number
  */
 export async function runConsultants({ batches, messageFor, call, fits, worstCase, capUsd, concurrency = 1 }) {
-  const results = new Array(batches.length);
+  const run = await runBounded({ count: batches.length, messageFor: (i) => messageFor(batches[i], i), call, fits, worstCase, concurrency });
+  const results = [];
   const notReviewed = [];
+  batches.forEach((b, i) => {
+    const o = run.outcomes[i];
+    if (!o) for (const f of b.files) notReviewed.push({ path: f.path, reason: `outside the $${capUsd} cost cap` });
+    else if (o.ok) results.push({ ...o.answer, consultant: b.consultant, files: b.files.map((f) => f.path), pinned: (b.pinned || []).map((p) => p.path) });
+    else for (const f of b.files) notReviewed.push({ path: f.path, reason: `model call failed: ${o.message}` });
+  });
+  // Failed calls first in the order they failed, then the ones the cap never started — as before the runner was shared.
+  notReviewed.sort((x, y) => (x.reason.startsWith('model call failed') ? 0 : 1) - (y.reason.startsWith('model call failed') ? 0 : 1));
+  return { results, notReviewed, failedCalls: run.failedCalls, spent: run.spent, failureReasons: run.failureReasons };
+}
+
+/**
+ * The bounded runner under both kinds of model call — the consultants and the
+ * CISO's verification batches. Calls run a few at a time; before one starts,
+ * what was spent plus the worst case of every call still running plus this
+ * call's worst case must fit. A settled call counts at its reported cost (or
+ * its worst case when it reports none or failed); the first call that does not
+ * fit with nothing running stops every call not yet started.
+ *
+ * Returns one outcome per index: `{ ok: true, answer }`, `{ ok: false, message,
+ * code }`, or `undefined` for a call the cap never started. `code` is the
+ * closed-list word of `failureReason` — the only part of a failure a public
+ * log may carry.
+ */
+export async function runBounded({ count, messageFor, call, fits, worstCase, concurrency = 1 }) {
+  const outcomes = new Array(count);
   const failures = new Map();
-  const started = new Set();
   const pending = new Set();
   let spent = 0;
   let inFlight = 0;
@@ -141,8 +167,8 @@ export async function runConsultants({ batches, messageFor, call, fits, worstCas
     for (;;) {
       if (stopped) return;
       const i = next++;
-      if (i >= batches.length) return;
-      const message = messageFor(batches[i], i);
+      if (i >= count) return;
+      const message = messageFor(i);
       const chars = message.system.length + message.user.length;
       const worst = worstCase(chars);
       // A call that does not fit beside the running ones waits for one of them to settle: a settled call counts at
@@ -155,7 +181,6 @@ export async function runConsultants({ batches, messageFor, call, fits, worstCas
         await Promise.race(pending);
         if (stopped) return;
       }
-      started.add(i);
       inFlight += worst;
       let task;
       task = (async () => {
@@ -163,14 +188,14 @@ export async function runConsultants({ batches, messageFor, call, fits, worstCas
         try {
           const r = await call(message);
           spent += typeof r.usage?.cost === 'number' ? r.usage.cost : worst;
-          results[i] = { ...r, consultant: batches[i].consultant, files: batches[i].files.map((f) => f.path), pinned: (batches[i].pinned || []).map((p) => p.path) };
+          outcomes[i] = { ok: true, answer: r };
         } catch (err) {
           failedCalls++;
           spent += worst;
-          const message = String(err?.message || err).split('\n')[0];
-          const code = failureReason(message);
+          const text = String(err?.message || err).split('\n')[0];
+          const code = failureReason(text);
           failures.set(code, (failures.get(code) || 0) + 1);
-          for (const f of batches[i].files) notReviewed.push({ path: f.path, reason: `model call failed: ${message}` });
+          outcomes[i] = { ok: false, message: text, code };
         } finally {
           inFlight -= worst;
           pending.delete(task);
@@ -181,15 +206,11 @@ export async function runConsultants({ batches, messageFor, call, fits, worstCas
     }
   };
   await Promise.all(Array.from({ length: Math.max(1, concurrency) }, worker));
-  batches.forEach((b, i) => {
-    if (!started.has(i)) for (const f of b.files) notReviewed.push({ path: f.path, reason: `outside the $${capUsd} cost cap` });
-  });
   return {
-    results: results.filter(Boolean),
-    notReviewed,
+    outcomes,
     failedCalls,
     spent,
-    failureReasons: [...failures].map(([reason, count]) => ({ reason, count })).sort((a, b) => b.count - a.count),
+    failureReasons: [...failures].map(([reason, n]) => ({ reason, count: n })).sort((a, b) => b.count - a.count),
   };
 }
 
@@ -329,75 +350,196 @@ export async function askAgainIfTruncated(call, { retries = 1, warn = () => {} }
   }
 }
 
+const RANK = { kritisch: 0, hoch: 1, mittel: 2, niedrig: 3, info: 4 };
+
 /**
- * What the CISO is shown: the map in numbers, the deterministic coverage, every consultant finding with its cited code.
- * The cited code is fitted into what remains of `maxChars` — the input the cost cap reserves for the CISO — after
- * everything else; a finding whose code no longer fits keeps its text and names its locations as not verifiable
- * here, like a location beyond MAX_CONTEXT_LOCATIONS. The findings' own text is never dropped to stay inside the
- * reserve: a consultant finding the CISO never saw would be a hole in the audit, and the overrun costs cents at
- * DeepSeek's input price. When the text alone outgrows the reserve the message is longer than `maxChars`, and
- * audit.mjs records the size next to the reserve in the sealed report.
+ * The issue class of a finding, for merging duplicates: a CWE, an OWASP API or
+ * LLM Top 10 entry, an OWASP Top 10 entry — or, without any of those, the
+ * category's own words (the title's when the category is empty). Two
+ * consultants who file the same defect under different taxonomies are not
+ * merged: a duplicate verified twice costs cents, two defects merged into one
+ * lose one of them.
  */
-export function cisoMessage({ surface, results, coverage, notRead, failed, readLines, maxChars = AUDIT.cisoInputChars }) {
-  const findings = results.flatMap((r) => (r.review.findings || []).map((f) => ({ ...f, consultant: r.consultant })));
-  const unauthenticatedRoutes = (surface.apiRoutes || []).filter((r) => !r.authMarkers.length).map((r) => `${r.path} [${r.methods.join(',')}]`);
-  const summary = {
-    head: surface.head,
-    files: { inScope: surface.files.total, byDomain: surface.files.byDomain, excluded: surface.files.excluded },
-    apiRoutes: surface.apiRoutes?.length || 0,
-    routesWithoutAuthMarker: unauthenticatedRoutes,
-    sinks: Object.entries((surface.sinks || []).reduce((n, s) => ({ ...n, [s.sink]: (n[s.sink] || 0) + 1 }), {})),
-    workflowsWithWritePermissions: (surface.workflows || []).filter((w) => w.writePermissions.length).map((w) => `${w.path}: ${w.writePermissions.join(',')}`),
-    openFirestoreRules: surface.firestoreRules?.openRules || [],
-    dependencies: surface.dependencies,
-  };
-  const head = [
-    '## Attack-surface summary',
-    '```json',
-    JSON.stringify(summary, null, 1),
-    '```',
-    '## Coverage — counted by the pipeline; use these numbers',
-    `${coverage.files_in_scope} files in scope · ${coverage.deep_read} read in depth by a consultant · ${coverage.pattern_scanned_only} covered by the pattern scan only.`,
-    notRead.length ? `Not read in depth, with reason:\n${notRead.map((n) => `- ${n.path}: ${n.reason}`).join('\n')}` : 'Every file assigned to a consultant was read.',
-    failed ? `${failed} consultant call(s) failed; their files are in the list above.` : '',
-    `## Consultant findings (${findings.length}) — verify each against its code before it enters the report`,
-  ].filter(Boolean);
-  const tail = [
-    '## Checked and found sound by the consultants',
-    results.flatMap((r) => (r.review.checked_sound || []).map((s) => `- ${r.consultant}: ${s}`)).join('\n') || '(nothing listed)',
-    '## Consultant notes',
-    results.map((r) => (r.review.notes ? `- ${r.consultant}: ${r.review.notes}` : '')).filter(Boolean).join('\n') || '(none)',
-  ];
-  const SEPARATOR = '\n\n';
-  const texts = findings.map((f, i) =>
-    [
-      `### C-${i + 1} · ${f.consultant} · proposed ${f.severity} · consultant verified: ${f.verified ? 'yes' : 'no'} · confidence ${f.confidence}`,
-      `${f.title} (${f.category})`,
-      `Preconditions: ${f.preconditions}`,
-      `Impact: ${f.impact}`,
-      `Evidence quoted: ${f.evidence}`,
-      `Recommendation: ${f.recommendation}`,
-      `How to verify: ${f.verification}`,
-      'Code at the cited locations:',
-    ].join('\n'),
-  );
-  const withoutCode = (f) => {
-    const locations = f.locations || [];
-    return `${locations.length} location(s) without code in this input — the CISO input limit is reached; not verifiable here: ${locations.map((l) => `${l.file}:${l.line}`).join(', ') || '(none named)'}`;
-  };
-  // Every finding's text and its short note are counted first, so the code of an early finding never pushes a later
-  // finding out; the code then goes in order while it fits.
-  let room = maxChars - [...head, ...tail].join(SEPARATOR).length - texts.reduce((n, t, i) => n + SEPARATOR.length + t.length + 1 + withoutCode(findings[i]).length, 0);
-  const entries = findings.map((f, i) => {
-    const note = withoutCode(f);
-    const code = codeContext(f, readLines);
-    if (code.length - note.length <= room) {
-      room -= code.length - note.length;
-      return `${texts[i]}\n${code}`;
-    }
-    return `${texts[i]}\n${note}`;
+export function issueClass(finding) {
+  const c = String(finding?.category || '');
+  let m;
+  if ((m = /CWE[-\s]?(\d+)/i.exec(c))) return `cwe-${Number(m[1])}`;
+  if ((m = /\bLLM\s?0?(\d{1,2})\b/i.exec(c))) return `llm-${Number(m[1])}`;
+  if ((m = /\bAPI\s?0?(\d{1,2})\b/i.exec(c))) return `api-${Number(m[1])}`;
+  if ((m = /\bA0?(\d{1,2})(?::20\d\d)?\b/.exec(c))) return `owasp-a${Number(m[1])}`;
+  const words = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9äöüß]+/g, ' ').trim();
+  return words(c) || `title:${words(finding?.title)}`;
+}
+
+/**
+ * Every consultant finding as one candidate for verification, duplicates merged.
+ *
+ * Two findings are duplicates when they share an issue class and cite the same
+ * file at lines at most `distance` apart; merging is transitive. The merged
+ * candidate keeps the text of its most severe, most confident report, the
+ * highest severity, every location, and every source — which consultant said
+ * what — so nothing a consultant reported disappears in the merge.
+ *
+ * The release audit of v2.18.0 (81810c8, run 35998405111) had 194 candidates
+ * from five consultants; a consultant reading a file in several calls and two
+ * domains meeting at one route report the same defect more than once.
+ */
+export function dedupeCandidates(results, { distance = AUDIT.dedupeLineDistance } = {}) {
+  const all = results.flatMap((r) => (r.review?.findings || []).map((f) => ({ ...f, consultant: r.consultant })));
+  const parent = all.map((_, i) => i);
+  const find = (i) => (parent[i] === i ? i : (parent[i] = find(parent[i])));
+  const classes = all.map(issueClass);
+  const near = (x, y) => (x.locations || []).some((a) => (y.locations || []).some((b) => a.file === b.file && Math.abs((Number(a.line) || 0) - (Number(b.line) || 0)) <= distance));
+  for (let i = 0; i < all.length; i++)
+    for (let j = i + 1; j < all.length; j++)
+      if (classes[i] === classes[j] && near(all[i], all[j])) parent[find(j)] = find(i);
+  const groups = new Map();
+  all.forEach((f, i) => {
+    const root = find(i);
+    if (!groups.has(root)) groups.set(root, []);
+    groups.get(root).push(f);
   });
-  return [...head, ...entries, ...tail].join(SEPARATOR);
+  return [...groups.values()].map((group) => {
+    const primary = [...group].sort((x, y) => (RANK[x.severity] ?? 9) - (RANK[y.severity] ?? 9) || (Number(y.confidence) || 0) - (Number(x.confidence) || 0))[0];
+    const seen = new Set();
+    const locations = group
+      .flatMap((f) => f.locations || [])
+      .filter((l) => {
+        const key = `${l.file}:${l.line}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+    return {
+      title: primary.title,
+      severity: primary.severity,
+      category: primary.category,
+      class: issueClass(primary),
+      locations,
+      preconditions: primary.preconditions,
+      impact: primary.impact,
+      evidence: primary.evidence,
+      recommendation: primary.recommendation,
+      verification: primary.verification,
+      confidence: Math.max(...group.map((f) => Number(f.confidence) || 0)),
+      verified: group.some((f) => f.verified === true),
+      // The primary report first, so the entry can say what else was merged into it.
+      sources: [primary, ...group.filter((f) => f !== primary)].map((f) => ({ consultant: f.consultant, title: f.title, severity: f.severity })),
+    };
+  });
+}
+
+/**
+ * The order and the batches of verification: most severe first, then most
+ * confident, each candidate named `K-001`, `K-002`, … in that order.
+ * `batchSize` candidates per call, at most `maxCalls` calls; the candidates
+ * beyond are returned by name with their reason — never dropped.
+ */
+export function planVerification(candidates, { batchSize = AUDIT.verificationBatchSize, maxCalls = AUDIT.maxVerificationCalls } = {}) {
+  const width = Math.max(3, String(candidates.length).length);
+  const ordered = candidates
+    .map((c, i) => ({ c, i }))
+    .sort((x, y) => (RANK[x.c.severity] ?? 9) - (RANK[y.c.severity] ?? 9) || (Number(y.c.confidence) || 0) - (Number(x.c.confidence) || 0) || x.i - y.i)
+    .map(({ c }, k) => ({ ...c, id: `K-${String(k + 1).padStart(width, '0')}` }));
+  const batches = [];
+  for (let k = 0; k < ordered.length && batches.length < maxCalls; k += batchSize) batches.push(ordered.slice(k, k + batchSize));
+  const planned = batches.reduce((n, b) => n + b.length, 0);
+  const beyond = ordered.slice(planned).map((candidate) => ({ candidate, reason: `outside the ${maxCalls}-call limit of the verification` }));
+  return { candidates: ordered, batches, beyond };
+}
+
+const clip = (value, n) => {
+  const t = String(value ?? '');
+  return t.length > n ? `${t.slice(0, n)} …` : t;
+};
+
+/**
+ * One candidate as the CISO sees it, with the code at its cited lines, in at
+ * most `maxChars` characters. The code window and the text fields shrink step
+ * by step until the entry fits its share of the call — the code is what the
+ * verification is for, so it is never the part that is left out first.
+ */
+export function candidateEntry(candidate, readLines, { maxChars, contextLines = AUDIT.verificationContextLines, maxLocations = AUDIT.verificationMaxLocations } = {}) {
+  // A minified line is one line; it must not eat a candidate's share.
+  const lines = (p) => readLines(p)?.map((l) => clip(l, 300)) ?? null;
+  const steps = [
+    { context: contextLines, field: 600, locations: maxLocations },
+    { context: Math.min(contextLines, 6), field: 400, locations: maxLocations },
+    { context: Math.min(contextLines, 3), field: 250, locations: maxLocations },
+    { context: 1, field: 150, locations: Math.min(maxLocations, 2) },
+    { context: 0, field: 100, locations: 1 },
+  ];
+  const others = (candidate.sources || []).slice(1);
+  const sources = [...new Set((candidate.sources || []).map((s) => s.consultant))].join(', ') || 'unknown';
+  let entry = '';
+  for (const step of steps) {
+    entry = [
+      `### ${candidate.id} · proposed ${candidate.severity} · from ${sources}${others.length ? ` (${others.length + 1} reports merged)` : ''} · consultant verified: ${candidate.verified ? 'yes' : 'no'} · confidence ${candidate.confidence}`,
+      `${clip(candidate.title, step.field)} (${clip(candidate.category, 120)})`,
+      `Preconditions: ${clip(candidate.preconditions, step.field)}`,
+      `Impact: ${clip(candidate.impact, step.field)}`,
+      `Evidence quoted: ${clip(candidate.evidence, step.field)}`,
+      `Recommendation: ${clip(candidate.recommendation, step.field)}`,
+      `How to verify: ${clip(candidate.verification, step.field)}`,
+      ...(others.length ? [`Also reported as: ${others.map((s) => `"${clip(s.title, 120)}" (${s.consultant}, ${s.severity})`).join('; ')}`] : []),
+      'Code at the cited locations:',
+      codeContext(candidate, lines, step.context, step.locations),
+    ].join('\n');
+    if (entry.length <= maxChars) return entry;
+  }
+  // A candidate with hundreds of locations: the list of those without code is what is cut, and it says so.
+  return `${entry.slice(0, Math.max(0, maxChars - 60))}\n(cut here: the entry did not fit its share)`;
+}
+
+/**
+ * The user message of one verification call: its candidates, each with its
+ * code, in at most `maxChars` characters. Every candidate gets an equal share
+ * of what the header leaves, so a full batch always fits — the failure of
+ * v2.18.0, where 194 candidates' text filled one call and not one of them got
+ * its code, cannot recur.
+ */
+export function verificationMessage({ batch, index, count, total, readLines, maxChars = AUDIT.verificationInputChars }) {
+  const head = [
+    `## Verification call ${index + 1} of ${count} — ${batch.length} of ${total} candidate findings (${batch[0]?.id}–${batch.at(-1)?.id})`,
+    'Each candidate below comes with the code at its cited lines, read from the repository at this commit. Judge each one against that code only. The other candidates are verified in other calls; do not guess about them.',
+    '## Candidates',
+  ].join('\n\n');
+  const SEPARATOR = '\n\n';
+  const share = Math.floor((maxChars - head.length - SEPARATOR.length * batch.length) / Math.max(1, batch.length));
+  const entries = batch.map((c) => candidateEntry(c, readLines, { maxChars: Math.max(0, share) }));
+  return [head, ...entries].join(SEPARATOR);
+}
+
+/**
+ * The verification calls, run through the bounded runner. A call that came back
+ * verified every candidate it was shown — the ones it kept are findings, the
+ * ones it dropped did not hold. A call that failed, or that the budget never
+ * started, leaves its candidates *not verified*, by name, with a reason from a
+ * closed list.
+ */
+export async function runVerification({ batches, messageFor, call, fits, worstCase, capUsd, concurrency = 1 }) {
+  const run = await runBounded({ count: batches.length, messageFor: (i) => messageFor(batches[i], i), call, fits, worstCase, concurrency });
+  const results = [];
+  const notVerified = [];
+  batches.forEach((b, i) => {
+    const o = run.outcomes[i];
+    if (o?.ok) results.push({ ...o.answer, candidates: b.map((c) => c.id) });
+    else for (const candidate of b) notVerified.push({ candidate, reason: o ? `verification call failed (${o.code})` : `outside the $${capUsd} cost cap` });
+  });
+  return { results, notVerified, failedCalls: run.failedCalls, spent: run.spent, failureReasons: run.failureReasons };
+}
+
+/** A not-verified candidate as the sealed report carries it: by name, with where, who and why. */
+export function notVerifiedEntry({ candidate, reason }) {
+  return {
+    id: candidate.id,
+    title: candidate.title,
+    severity: candidate.severity,
+    category: candidate.category,
+    locations: candidate.locations,
+    consultants: [...new Set((candidate.sources || []).map((s) => s.consultant))],
+    reason,
+  };
 }
 
 /*
@@ -442,15 +584,28 @@ export function coerceConsultant(answer) {
  * finding, the code under each of them, and the whole report in one answer;
  * three release audits in a row ended without one.
  */
-export function narrativeMessage({ surface, coverage, findings, notRead, failed, droppedNote, verified = true, maxChars = AUDIT.narrativeInputChars }) {
+export function narrativeMessage({ surface, coverage, findings, notRead, failed, droppedNote, verification = null, maxChars = AUDIT.narrativeInputChars }) {
   const bySeverity = findings.reduce((n, f) => ({ ...n, [f.severity]: (n[f.severity] || 0) + 1 }), {});
+  const open = verification?.notVerified || [];
+  const openBySeverity = open.reduce((n, c) => ({ ...n, [c.severity]: (n[c.severity] || 0) + 1 }), {});
   const head = [
-    verified
-      ? '## The findings of this audit: you verified them against the code. Neither add nor remove any.'
-      : '## The findings of this audit: reported by the consultants and NOT verified against the code, because the verifying call did not come back. Say so in the summary and in the limitations, claim no verification of your own, and neither add nor remove any.',
+    '## The findings of this audit: you verified them against the code. Neither add nor remove any.',
     '```json',
     JSON.stringify({ total: findings.length, bySeverity }, null, 1),
     '```',
+    // v2.18.0 (run 35998405111): nothing was verified and the report said "risk low".
+    // The unverified part is counted here so the prose cannot read the verified part as the whole.
+    ...(verification
+      ? [
+          `## Verification — counted by the pipeline; use these numbers`,
+          `${verification.candidates} candidate finding(s) after merging duplicates · ${verification.verified} verified against the code · ${open.length} NOT verified.`,
+          ...(open.length
+            ? [
+                `The ${open.length} candidate(s) not verified (proposed severities: ${JSON.stringify(openBySeverity)}) are listed by name in the report. They are neither findings nor "no finding". Say in the executive summary how many candidates were verified and how many were not, and do not rate the overall risk as low on the strength of the verified part alone.`,
+              ]
+            : []),
+        ]
+      : []),
     '## Coverage — counted by the pipeline; use these numbers',
     `${coverage.files_in_scope} files in scope · ${coverage.deep_read} read in depth by a consultant · ${coverage.pattern_scanned_only} covered by the deterministic scan only.`,
     notRead.length ? `Not read in depth: ${notRead.length} file(s), with reasons recorded in the report.` : 'Every file assigned to a consultant was read.',
@@ -482,7 +637,6 @@ export function narrativeMessage({ surface, coverage, findings, notRead, failed,
   // rather than observed: the least severe findings are dropped first, and
   // the message says how many, so the model cannot describe a report it was
   // not shown (QA review of 7b8add43fa26, 51e8afcef5fb).
-  const RANK = { kritisch: 0, hoch: 1, mittel: 2, niedrig: 3, info: 4 };
   const room = maxChars - head.join('\n\n').length - 200;
   const order = texts.map((_, i) => i).sort((x, y) => (RANK[findings[x].severity] ?? 9) - (RANK[findings[y].severity] ?? 9) || x - y);
   const kept = new Set();
@@ -499,20 +653,6 @@ export function narrativeMessage({ surface, coverage, findings, notRead, failed,
     ? `(${omitted} further finding(s) of the lowest severities are not listed here; they are in the report and counted above.)`
     : '';
   return [...head, body || '(no finding survived verification)', note].filter(Boolean).join('\n\n');
-}
-
-/**
- * The consultants' own findings in the report's shape — what goes in when the
- * verifying call does not come back. They are not a CISO's verdict, and the
- * report says so in its limitations; this only carries them across, keeping the
- * consultant's name so a reader can see whose finding it is.
- */
-export function coerceConsultantFindings(results) {
-  const findings = results.flatMap((r) => (r.review.findings || []).map((f) => ({ ...f, consultant: r.consultant })));
-  return coerceReport({ findings }).findings.map((f, i) => ({
-    ...f,
-    description: f.description || `Befund von ${findings[i]?.consultant || 'einem Berater'}, ohne zweite Prüfung am Code.`,
-  }));
 }
 
 /** The findings half of a report, coerced on its own (the first CISO call). */
@@ -545,7 +685,7 @@ export function reportWithoutNarrative({ findings, coverage, reason }) {
   return {
     executive_summary: [
       'Dieser Bericht hat keine CISO-Zusammenfassung: der abschließende Aufruf kam nicht zurück.',
-      `Er enthält die Befunde der Berater (${counted}) und die gezählte Abdeckung, sonst nichts.`,
+      `Er enthält die am Code verifizierten Befunde (${counted}) und die gezählte Abdeckung, sonst nichts.`,
       'Die Einstufung unten ist der schwerste Einzelbefund, nicht das Urteil eines Prüfers über das Ganze.',
     ].join(' '),
     risk_rating: worst,
@@ -555,7 +695,7 @@ export function reportWithoutNarrative({ findings, coverage, reason }) {
     coverage: { ...coverage },
     limitations: [
       `Die Synthese fehlt: ${reason}`,
-      'Die Befunde sind Beraterbefunde ohne die zweite Prüfung am Code; jeder ist vor einer Änderung selbst zu verifizieren.',
+      'Die Befunde hat der CISO am Code geprüft; eine Gesamteinschätzung über sie hinaus gibt es nicht.',
       'Ohne Synthese gibt es keine Härtungsempfehlungen und keine positiven Beobachtungen in diesem Bericht.',
     ],
   };
@@ -589,4 +729,19 @@ export function coerceReport(answer) {
 /** Coverage is counted, not estimated: the model's numbers are replaced; its notes are kept. */
 export function withCountedCoverage(report, coverage) {
   return { ...report, coverage: { ...coverage, notes: [coverage.notes, report.coverage?.notes].filter(Boolean).join(' ') } };
+}
+
+/**
+ * The limitation every report carries when candidates remain unverified — in
+ * German, deterministic, never left to the model. Null when every candidate was
+ * verified.
+ */
+export function verificationLimitation({ candidates, verified, notVerified }) {
+  if (!notVerified.length) return null;
+  const bySeverity = ['kritisch', 'hoch', 'mittel', 'niedrig', 'info']
+    .map((level) => [level, notVerified.filter((c) => c.severity === level).length])
+    .filter(([, n]) => n > 0)
+    .map(([level, n]) => `${n} ${level}`)
+    .join(', ');
+  return `Nicht vollständig geprüft: ${verified} von ${candidates} Kandidaten wurden am Code verifiziert, ${notVerified.length} nicht (vorgeschlagen: ${bySeverity}). Sie stehen namentlich unter „Nicht verifiziert"; ihre Zahl ist weder ein Befund noch „kein Befund".`;
 }

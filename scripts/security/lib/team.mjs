@@ -52,8 +52,15 @@ export const AUDIT = {
    * Estimated budget per main release, checked before every call against what was actually spent (as in the QA
    * agent). The whole repository is about 1.2 million input tokens in some fifty calls — under $1 at worst — so the cap catches outliers,
    * it does not ration coverage. The hard ceiling is the credit limit on the OpenRouter key.
+   *
+   * Sonny, 24.09.2026 (option A): 3 → 5 USD, together with the verification in
+   * batches below. The release audit of v2.18.0 (81810c8, run 35998405111) had
+   * 194 candidate findings and one CISO call to verify them in; the call's input
+   * limit was reached before a single candidate's code fitted, it confirmed
+   * nothing, and the mail said "0 findings, risk low". Verification now costs up
+   * to `maxVerificationCalls` calls, reserved before any consultant spends.
    */
-  maxCostUsd: 3,
+  maxCostUsd: 5,
   /** The self-test on dev proves the chain, not the judgement: two files, one consultant call, the CISO, the mail. */
   selfTestCostUsd: 0.2,
   selfTestFiles: ['app/api/health/route.ts', 'middleware.ts'],
@@ -78,16 +85,34 @@ export const AUDIT = {
   minDeepReadRatio: 0.85,
   /** Includes reasoning tokens. */
   consultantOutputTokens: 24_000,
+  /** Per verification call — at most `verificationBatchSize` findings plus reasoning. */
   cisoOutputTokens: 40_000,
   /**
-   * The second CISO call writes prose about findings it is handed, without any
-   * code: a fraction of the first call's input and output, and reserved out of
-   * the same cap.
+   * The narrative CISO call writes prose about findings it is handed, without
+   * any code: a fraction of a verification call's input and output, and
+   * reserved out of the same cap.
    */
   narrativeInputChars: 60_000,
   narrativeOutputTokens: 12_000,
-  /** The CISO's user message, in characters: reserved out of the cap before any consultant spends, and enforced when it is built (lib/pipeline.mjs cisoMessage). */
-  cisoInputChars: 300_000,
+  /**
+   * Verification in batches (lib/pipeline.mjs dedupeCandidates, planVerification,
+   * verificationMessage). Candidates are merged first — same file, lines at most
+   * `dedupeLineDistance` apart, same issue class — then verified
+   * `verificationBatchSize` at a time, most severe first, each with the code at
+   * its cited lines. One call's user message is at most
+   * `verificationInputChars`; every candidate gets an equal share of it, so a
+   * full batch always fits with its code. What the call limit or the budget
+   * leaves over is named in the report as not verified — never dropped, never
+   * counted as "no finding".
+   */
+  dedupeLineDistance: 10,
+  verificationBatchSize: 20,
+  verificationInputChars: 120_000,
+  /** 25 × 20 = 500 candidates; v2.18.0 had 194 before merging. */
+  maxVerificationCalls: 25,
+  /** Code lines around one cited location in a verification call, and how many locations of one candidate get code. */
+  verificationContextLines: 12,
+  verificationMaxLocations: 4,
   /**
    * The consultants read much code and answer compactly; the CISO weighs every finding against its code.
    * The CISO ran at `high` until 16.09.2026: the release audit of 33471220d6e9 then ended twice without a

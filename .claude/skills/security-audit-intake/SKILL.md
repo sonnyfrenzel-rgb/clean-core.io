@@ -44,6 +44,12 @@ Read only the cited locations (`Read` with `offset`/`limit`). For each finding d
 
 Treat `kritisch` and `hoch` as CONFIRMED until shown otherwise, and tell Sonny about them in your next message.
 
+**Not verified (`K-…`, since 24.09.2026).** When the CISO's verification ran out of calls or budget, or a
+verification call failed, the report lists the remaining consultant candidates by name under "Nicht verifiziert"
+and the subject says "nicht vollständig geprüft: X von Y Kandidaten verifiziert". They are neither findings nor
+"no finding", and they are not in the register. Read the cited lines of every `kritisch` and `hoch` candidate
+yourself and tell Sonny what you found; the rest waits for the next audit.
+
 ## 3. Record the decision (sealed)
 
 ```bash
@@ -73,5 +79,5 @@ A security fix is a normal roadmap step with the QA loop: smallest change, a tes
 
 ## 6. Report to Sonny
 
-German, outcome first: audit version, risk rating, counts, what you confirmed/refuted and why in one line each,
+German, outcome first: audit version, risk rating, counts, how many candidates were verified and how many not, what you confirmed/refuted and why in one line each,
 what you scheduled where, the actual cost from the report. Details of unfixed findings only in your direct reply.

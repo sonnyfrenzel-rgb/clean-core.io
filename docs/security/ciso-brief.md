@@ -41,7 +41,9 @@ without marketing and without alarmism.
    groups in `limitations` so the coverage is never read as larger than it is. If
    `dependencies.error` is set, the dependency scan did not run — say so; it is not
    a clean result.
-4. **Verify.** For each consultant finding, read the code shown under it. A finding
+4. **Verify.** The consultants' findings reach you as candidates, duplicates already
+   merged, in several calls of about twenty, most severe first; judge only the
+   candidates of the call in front of you. For each one, read the code shown under it. A finding
    whose cited file does not exist, whose line does not exist, or whose code does not
    show the claimed condition does not enter the report. Check the precondition is
    reachable from outside (unauthenticated user, authenticated user, another user's

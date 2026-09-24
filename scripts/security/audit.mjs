@@ -18,7 +18,7 @@ import { isPublicByDesign, publicByDesignValues } from '../qa/lib/config.mjs';
 import { callReviewer } from '../qa/lib/openrouter.mjs';
 import { redactSecrets } from '../qa/lib/redact.mjs';
 import { AUDIT_PUBLIC_PEM, sealFor } from './lib/envelope.mjs';
-import { askAgainIfTruncated, cisoMessage, coerceConsultant, coerceConsultantFindings, coerceFindings, coerceNarrative, consultantMessage, deepReadCoverage, narrativeMessage, numbered, planBatches, reportWithoutNarrative, runConsultants, withCountedCoverage } from './lib/pipeline.mjs';
+import { askAgainIfTruncated, coerceConsultant, coerceFindings, coerceNarrative, consultantMessage, dedupeCandidates, deepReadCoverage, failureReason, narrativeMessage, notVerifiedEntry, numbered, planBatches, planVerification, reportWithoutNarrative, runConsultants, runVerification, verificationLimitation, verificationMessage, withCountedCoverage } from './lib/pipeline.mjs';
 import { surfaceMap } from './lib/surface.mjs';
 import { AUDIT, CONSULTANTS, CONSULTANT_SCHEMA, FINDINGS_SCHEMA, NARRATIVE_SCHEMA } from './lib/team.mjs';
 
@@ -38,8 +38,8 @@ const CHARS_PER_TOKEN = 3.5;
  * if the other half does not.
  */
 export const CISO_FINDINGS_TASK = [
-  'Verify every consultant finding below against the code quoted with it, and answer with the findings that hold.',
-  'Drop what the code does not support; merge duplicates; correct a severity the code does not justify.',
+  'Verify every candidate finding below against the code quoted with it, and answer with the findings that hold.',
+  'Drop what the code does not support; merge duplicates among these candidates; correct a severity the code does not justify.',
   'Answer with findings only — no summary, no rating, no hardening list. Those are asked for separately.',
   'Every field of the schema is required for every finding, in German, in the voice your system prompt describes.',
 ].join(' ');
@@ -85,12 +85,14 @@ async function main() {
   const brief = readFileSync(AUDIT.briefPath, 'utf8');
 
   const plan = planBatches(surface.files.list, (path) => clean(path, numbered(raw(path) ?? '')), { only: SELF_TEST ? AUDIT.selfTestFiles : null, maxCalls: SELF_TEST ? 1 : AUDIT.maxConsultantCalls });
-  // The CISO's call is reserved out of the cap before any consultant spends: a report is always written. The reserve
-  // is the size cisoMessage enforces, plus the brief and the task around it.
-  // Both CISO calls are reserved out of the cap before any consultant spends:
-  // the audit is written even when the consultants have used everything else.
-  const cisoReserve = estimate(brief.length + CISO_FINDINGS_TASK.length + 2 + AUDIT.cisoInputChars, cisoTokens)
-    + estimate(brief.length + CISO_NARRATIVE_TASK.length + 2 + AUDIT.narrativeInputChars, SELF_TEST ? 6_000 : AUDIT.narrativeOutputTokens);
+  // Every CISO call is reserved out of the cap before any consultant spends —
+  // each verification call at the size verificationMessage enforces, plus the
+  // brief and the task around it, and the narrative — so the consultants can
+  // never use up what verifying their findings needs.
+  const maxVerificationCalls = SELF_TEST ? 1 : AUDIT.maxVerificationCalls;
+  const verificationCallWorst = estimate(brief.length + CISO_FINDINGS_TASK.length + 2 + AUDIT.verificationInputChars, cisoTokens);
+  const narrativeReserve = estimate(brief.length + CISO_NARRATIVE_TASK.length + 2 + AUDIT.narrativeInputChars, SELF_TEST ? 6_000 : AUDIT.narrativeOutputTokens);
+  const cisoReserve = maxVerificationCalls * verificationCallWorst + narrativeReserve;
 
   const run = await runConsultants({
     batches: plan.batches,
@@ -150,28 +152,57 @@ async function main() {
     );
   }
 
-  const cisoUser = clean('outgoing message', `${CISO_FINDINGS_TASK}\n\n${cisoMessage({ surface, results, coverage, notRead, failed: run.failedCalls, readLines })}`);
   // Each CISO call is asked once more when its 200 arrives with a body that is
   // not JSON (askAgainIfTruncated in lib/pipeline.mjs says why, and
   // tests/security-audit-guard.spec.ts exercises it). The consultants are never
   // wrapped: one lost batch is one hole, not a lost audit.
   const CISO_TRUNCATED_RETRIES = 1;
-  const consultantFindings = coerceConsultantFindings(results);
-  let verified = null;
-  let verifiedNote = '';
-  try {
-    verified = await askAgainIfTruncated(
-      () => callReviewer({ apiKey, system: clean('outgoing message', brief), user: cisoUser, schema: FINDINGS_SCHEMA, effort: SELF_TEST ? 'low' : AUDIT.cisoEffort, model: AUDIT.model, providers: AUDIT.providers, maxTokens: cisoTokens, timeoutMs: AUDIT.requestTimeoutMs, retries: AUDIT.rateLimitRetries, retryDelayMs: AUDIT.rateLimitDelayMs, coerce: (answer) => ({ findings: coerceFindings(answer), notes: String(answer?.notes || '') }) }),
-      { retries: CISO_TRUNCATED_RETRIES, warn: (n) => console.warn(`CISO findings call ${n} answered with a body that is not JSON — asking once more.`) },
-    );
-    verifiedNote = verified.review.notes || '';
-  } catch (err) {
-    // Fifty consultant calls are not thrown away because the last one failed.
-    // Their findings go into the report unverified, and the report says so.
-    console.warn(`CISO findings call failed (${String(err?.message || err).split('\n')[0]}) — the consultants' own findings are reported, unverified.`);
-  }
-  const findings = verified ? verified.review.findings : consultantFindings;
-  const synthesis = { findings: verified ? 'ciso' : 'consultants-unverified', narrative: 'ciso' };
+
+  // Verification in batches (Sonny, 24.09.2026, option A). At v2.18.0 one CISO
+  // call was handed 194 candidates, reached its input limit before any of their
+  // code, confirmed nothing, and the mail said "0 findings, risk low". Now: merge
+  // duplicates, order by severity, verify twenty at a time, each with its code,
+  // and name every candidate that was not verified.
+  const merged = dedupeCandidates(results);
+  const plannedCheck = planVerification(merged, { maxCalls: maxVerificationCalls });
+  const candidateCount = plannedCheck.candidates.length;
+  const VERIFY_PREFIX = `${CISO_FINDINGS_TASK}\n\n`;
+  const VERIFY_CAP = AUDIT.verificationInputChars;
+  // Redaction can lengthen a message after it is built; the bound holds for what is sent. A batch that still does
+  // not fit is not sent at all — its candidates are named as not verified rather than shown without their code.
+  const verifyMessages = plannedCheck.batches.map((batch, i) => {
+    const build = (maxChars) => clean('outgoing message', VERIFY_PREFIX + verificationMessage({ batch, index: i, count: plannedCheck.batches.length, total: candidateCount, readLines, maxChars }));
+    let user = build(VERIFY_CAP - VERIFY_PREFIX.length);
+    for (let attempt = 0; user.length > VERIFY_CAP && attempt < 3; attempt++) user = build(Math.max(1_000, VERIFY_CAP - VERIFY_PREFIX.length - (user.length - VERIFY_CAP)));
+    return user.length > VERIFY_CAP ? null : user;
+  });
+  const sendable = plannedCheck.batches.filter((_, i) => verifyMessages[i] !== null);
+  const sendableUsers = verifyMessages.filter((m) => m !== null);
+  const oversized = plannedCheck.batches.filter((_, i) => verifyMessages[i] === null).flat().map((candidate) => ({ candidate, reason: 'input over the limit after redaction' }));
+  const check = await runVerification({
+    batches: sendable,
+    capUsd: cap,
+    concurrency: SELF_TEST ? 1 : AUDIT.concurrency,
+    messageFor: (_, i) => ({ system: clean('outgoing message', brief), user: sendableUsers[i] }),
+    // Checked against what was actually spent: the consultants' cost, the verification calls settled or in flight,
+    // this call's worst case, and the narrative still to come.
+    fits: (committed, chars) => run.spent + committed + estimate(chars, cisoTokens) + narrativeReserve <= cap,
+    worstCase: (chars) => estimate(chars, cisoTokens),
+    call: ({ system, user }) =>
+      askAgainIfTruncated(
+        () => callReviewer({ apiKey, system, user, schema: FINDINGS_SCHEMA, effort: SELF_TEST ? 'low' : AUDIT.cisoEffort, model: AUDIT.model, providers: AUDIT.providers, maxTokens: cisoTokens, timeoutMs: AUDIT.requestTimeoutMs, retries: AUDIT.rateLimitRetries, retryDelayMs: AUDIT.rateLimitDelayMs, coerce: (answer) => ({ findings: coerceFindings(answer), notes: String(answer?.notes || '') }) }),
+        { retries: CISO_TRUNCATED_RETRIES, warn: (n) => console.warn(`CISO verification call ${n} answered with a body that is not JSON — asking once more.`) },
+      ),
+  });
+  // A fixed word per reason and a count — never a message, never a candidate.
+  for (const { reason, count } of check.failureReasons) console.warn(`CISO verification calls failed: ${reason} ×${count} — their candidates are listed as not verified.`);
+  const notVerified = [...check.notVerified, ...oversized, ...plannedCheck.beyond].map(notVerifiedEntry);
+  const verifiedCount = candidateCount - notVerified.length;
+  const reports = results.reduce((n, r) => n + (r.review?.findings?.length || 0), 0);
+  const verification = { reports, candidates: candidateCount, verified: verifiedCount, calls: check.results.length, failedCalls: check.failedCalls, notVerified };
+  const verifiedNote = check.results.map((r) => r.review.notes).filter(Boolean).join(' ');
+  const findings = check.results.flatMap((r) => r.review.findings);
+  const synthesis = { findings: !candidateCount ? 'no-candidates' : !notVerified.length ? 'ciso' : check.results.length ? 'ciso-partial' : 'none', narrative: 'ciso' };
 
   // Redaction runs after the message is built and replaces a secret-shaped
   // value with a longer marker, so the cleaned message can be larger than the
@@ -182,7 +213,7 @@ async function main() {
   // at the reserve and says so, because a request larger than its budget is a
   // request the cap did not authorise.
   const NARRATIVE_PREFIX = `${CISO_NARRATIVE_TASK}\n\n`;
-  const buildNarrative = (maxChars) => clean('outgoing message', NARRATIVE_PREFIX + narrativeMessage({ surface, coverage, findings, notRead, failed: run.failedCalls, droppedNote: verifiedNote, verified: Boolean(verified), maxChars }));
+  const buildNarrative = (maxChars) => clean('outgoing message', NARRATIVE_PREFIX + narrativeMessage({ surface, coverage, findings, notRead, failed: run.failedCalls, droppedNote: verifiedNote, verification, maxChars }));
   const NARRATIVE_CAP = AUDIT.narrativeInputChars;
   let narrativeUser = buildNarrative(NARRATIVE_CAP - NARRATIVE_PREFIX.length);
   for (let attempt = 0; narrativeUser.length > NARRATIVE_CAP && attempt < 3; attempt++) {
@@ -201,13 +232,13 @@ async function main() {
       { retries: CISO_TRUNCATED_RETRIES, warn: (n) => console.warn(`CISO narrative call ${n} answered with a body that is not JSON — asking once more.`) },
     );
   } catch (err) {
-    console.warn(`CISO narrative call failed (${String(err?.message || err).split('\n')[0]}) — the findings are reported without a synthesis.`);
+    console.warn(`CISO narrative call failed (${failureReason(String(err?.message || err).split('\n')[0])}) — the findings are reported without a synthesis.`);
     synthesis.narrative = 'none';
   }
-  if (!verified && !narrative) {
-    // Both halves gone: there is nothing a model contributed, and a report of
-    // raw consultant findings under a CISO's name would be a claim nobody made.
-    throw new Error(`the audit did not produce a report (both CISO calls failed; consultant calls ${results.length}, failed ${run.failedCalls})`);
+  if (candidateCount && !check.results.length && !narrative) {
+    // Nothing verified and no synthesis: there is nothing a model contributed,
+    // and a report of raw candidates under a CISO's name would be a claim nobody made.
+    throw new Error(`the audit did not produce a report (every CISO call failed; consultant calls ${results.length}, failed ${run.failedCalls}; verification calls failed ${check.failedCalls})`);
   }
 
   // A credential in the code is reported without a model and without its value; a public-by-design value is not.
@@ -237,16 +268,16 @@ async function main() {
       ...base,
       findings: reported,
       limitations: [
+        ...[verificationLimitation({ candidates: candidateCount, verified: verifiedCount, notVerified })].filter(Boolean),
         ...(base.limitations || []),
-        ...(verified ? [] : ['Die Befunde sind Beraterbefunde ohne die zweite Prüfung am Code: der verifizierende Aufruf kam nicht zurück. Jeder Befund ist vor einer Änderung selbst zu prüfen.']),
         ...(verifiedNote ? [`Aus der Verifikation: ${verifiedNote}`] : []),
       ],
     },
     coverage,
   );
 
-  const usages = [...results.map((r) => r.usage), verified?.usage, narrative?.usage].filter(Boolean);
-  const costUsd = !run.failedCalls && usages.every((u) => typeof u?.cost === 'number') ? Number(usages.reduce((n, u) => n + u.cost, 0).toFixed(4)) : null;
+  const usages = [...results.map((r) => r.usage), ...check.results.map((r) => r.usage), narrative?.usage].filter(Boolean);
+  const costUsd = !run.failedCalls && !check.failedCalls && usages.every((u) => typeof u?.cost === 'number') ? Number(usages.reduce((n, u) => n + u.cost, 0).toFixed(4)) : null;
   const payload = {
     version: 2,
     head: surface.head,
@@ -255,13 +286,14 @@ async function main() {
     selfTest: SELF_TEST,
     durationMs: Date.now() - started,
     costUsd,
-    calls: results.length + (verified ? 1 : 0) + (narrative ? 1 : 0),
+    calls: results.length + check.results.length + (narrative ? 1 : 0),
     // Which half of the report a model wrote, and which one is missing.
     synthesis,
-    failedCalls: run.failedCalls,
-    // Above the reserve only when the findings' text alone outgrows it — the code was then left out, and the cost
-    // estimate for the CISO was exceeded. Recorded in the sealed report, next to the actual cost.
-    cisoInput: { chars: cisoUser.length, reservedChars: AUDIT.cisoInputChars },
+    failedCalls: run.failedCalls + check.failedCalls,
+    // How many candidates were verified, and every one that was not — by name,
+    // with its reason. The mail's headline is built from this, not from the rating.
+    verification,
+    verificationInput: { maxChars: Math.max(0, ...sendableUsers.map((m) => m.length)), reservedChars: AUDIT.verificationInputChars },
     narrativeInput: { chars: narrativeUser.length, reservedChars: AUDIT.narrativeInputChars, truncated: narrativeTruncated },
     redactedSecrets: secretHits.length,
     surface: { files: surface.files.total, byDomain: surface.files.byDomain, apiRoutes: surface.apiRoutes.length, sinks: surface.sinks.length, dependencies: surface.dependencies.vulnerabilities || null },
@@ -271,7 +303,7 @@ async function main() {
   writeFileSync(join(OUT, 'security-audit.enc.json'), JSON.stringify(sealFor(payload, readFileSync(AUDIT_PUBLIC_PEM, 'utf8'))));
 
   // Only metadata reaches the public log: counts and cost, never a finding.
-  const line = `Security audit ${surface.head.slice(0, 12)}: completed, sealed · calls=${payload.calls} failed=${run.failedCalls} cost=$${costUsd ?? 'unknown'}`;
+  const line = `Security audit ${surface.head.slice(0, 12)}: completed, sealed · calls=${payload.calls} failed=${payload.failedCalls} candidates=${candidateCount} verified=${verifiedCount} notVerified=${notVerified.length} cost=$${costUsd ?? 'unknown'}`;
   console.log(line);
   if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, `### Security audit\n\n${line}\n\nThe report is sealed and goes to the owner by mail.\n`);
 }
