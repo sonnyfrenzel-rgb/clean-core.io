@@ -180,7 +180,9 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
     await page.waitForSelector('input[type="file"]', { state: 'attached', timeout: 45000 });
     console.log('Project created. Navigated to analyze page.');
 
-    // Seed Firestore document with preloaded passing testcases and test suite to bypass live generation flake
+    // Seed a test case and suite to bypass live generation flake. The case is
+    // seeded without a verdict (and without the word "Passed" anywhere), so a
+    // "Passed" on the page later can only come from the run this spec starts.
     const currentUrl = page.url();
     const projectId = currentUrl.split('/project/')[1].split('/')[0];
     console.log(`Extracted project ID for seeding: ${projectId}`);
@@ -198,9 +200,9 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
           description: 'Verify invoice extraction headers mapping',
           preconditions: 'Invoice data parsed',
           steps: ['1. Execute mapping'],
-          expectedResult: 'Passed',
-          status: 'Passed',
-          message: 'Passed'
+          expectedResult: 'Invoice header fields are mapped',
+          status: 'Pending',
+          message: ''
         }
       ],
       testSuite: {
@@ -336,11 +338,24 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
       console.log('Test suite preloaded. Proceeding directly to execution.');
     }
     
-    // Run automated unit tests in Sandbox
+    // The result card of the seeded case does not exist before the run: the
+    // results grid is filled only by an execution.
+    const resultCard = page.locator('div.group', {
+      has: page.locator('h4', { hasText: 'Extract Invoice Headers' }),
+    });
+    await expect(resultCard).toHaveCount(0);
+
+    // Run automated unit tests in Sandbox, and wait for this run's answer.
+    const runResponse = page.waitForResponse(
+      (r) => r.url().includes('/api/run-tests') && r.request().method() === 'POST',
+      { timeout: 60000 },
+    );
     await page.click('button:has-text("Run Selected")');
-    
-    // Verify that test console stubs resolve to visual Green success badges
-    await expect(page.locator('text=Passed').first()).toBeVisible({ timeout: 15000 });
+    expect((await runResponse).ok(), 'the sandbox run was refused').toBe(true);
+
+    // The verdict on that row is the one this execution produced.
+    await expect(resultCard).toHaveCount(1, { timeout: 15000 });
+    await expect(resultCard).toContainText('Passed', { timeout: 15000 });
     console.log('Stage 5 Complete: Sandbox test case runs executed.');
 
     // --- STAGE 6: ECONOMICS ---
