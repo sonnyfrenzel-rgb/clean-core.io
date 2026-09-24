@@ -50,7 +50,14 @@ import {
  * the same fabrication as one that shows a zero for something it did not measure.
  */
 export default function ItAnswers({ projectId }: { projectId: string }) {
-  const [source, setSource] = useState<ItFindingsSource | null | undefined>(undefined);
+  /**
+   * The answer together with the project it answers for. A client navigation
+   * keeps this component mounted and changes `projectId`; an answer of the
+   * previous project is then `undefined` (still asking), never its findings.
+   */
+  const [loaded, setLoaded] = useState<{ projectId: string; source: ItFindingsSource | null } | null>(null);
+  const source: ItFindingsSource | null | undefined =
+    loaded && loaded.projectId === projectId ? loaded.source : undefined;
   /** The reader's chosen finding. `null` means "the first one", never "none". */
   const [selectedId, setSelectedId] = useState<string | null>(null);
   /** The chain link the table is filtered by, or `null`. */
@@ -60,11 +67,14 @@ export default function ItAnswers({ projectId }: { projectId: string }) {
   useEffect(() => {
     if (!projectId) return;
     let cancelled = false;
+    const setSource = (value: ItFindingsSource | null) => {
+      if (!cancelled) setLoaded({ projectId, source: value });
+    };
     (async () => {
       try {
         const token = await getAuth().currentUser?.getIdToken();
         if (!token) {
-          if (!cancelled) setSource(null);
+          setSource(null);
           return;
         }
         const res = await fetch(`/api/projects/${encodeURIComponent(projectId)}/findings`, {
@@ -80,7 +90,7 @@ export default function ItAnswers({ projectId }: { projectId: string }) {
         }
         setSource((await res.json()) as ItFindingsSource);
       } catch {
-        if (!cancelled) setSource(null);
+        setSource(null);
       }
     })();
     return () => {
@@ -393,10 +403,14 @@ const COLUMNS = [
  */
 function gradeState(grade: CloudReadinessGrade): SemanticState {
   switch (grade) {
+    // DESIGN.md §1.8 (and the Clean-Core-Level row of the fixed vocabularies):
+    // A information, B neutral — never green, because the level is imported
+    // from SAP's classification file, not proven. Same mapping as the level
+    // marks of `ManagementOverview.tsx`.
     case 'A':
-      return 'success';
-    case 'B':
       return 'information';
+    case 'B':
+      return 'neutral';
     case 'C':
       return 'warning';
     case 'D':

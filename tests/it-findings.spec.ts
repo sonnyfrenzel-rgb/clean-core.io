@@ -304,6 +304,27 @@ test.describe('the level stays out of the signed record', () => {
     expect(read('app/api/projects/[projectId]/findings/route.ts')).not.toContain('export async function POST');
   });
 
+  test('an imported level is never green: A information, B neutral (DESIGN.md §1.8)', () => {
+    // QA review of 4b4586aff273: the panel drew an A with `success`.
+    const panel = read('components/workspace/ItAnswers.tsx');
+    const fn = panel.slice(panel.indexOf('function gradeState('));
+    const body = fn.slice(0, fn.indexOf('\n}\n'));
+    expect(body).not.toContain("'success'");
+    expect(body).toMatch(/case 'A':\s*return 'information';/);
+    expect(body).toMatch(/case 'B':\s*return 'neutral';/);
+    expect(body).toMatch(/case 'C':\s*return 'warning';/);
+    expect(body).toMatch(/case 'D':\s*return 'error';/);
+  });
+
+  test('an answer is shown only for the project it was read for', () => {
+    // QA review of 4b4586aff273: a client navigation kept the previous
+    // project's findings on screen until the new read resolved.
+    const panel = read('components/workspace/ItAnswers.tsx');
+    expect(panel).toMatch(/loaded && loaded\.projectId === projectId \? loaded\.source : undefined/);
+    expect(panel).toMatch(/setLoaded\(\{ projectId, source: value \}\)/);
+    expect(panel).not.toMatch(/useState<ItFindingsSource \| null \| undefined>/);
+  });
+
   test('the panel does not pull the 4 MB catalog into the browser', () => {
     // Imports, not prose: the doc comment of this component *names* the two
     // things it must not reach, and a substring guard would forbid explaining
