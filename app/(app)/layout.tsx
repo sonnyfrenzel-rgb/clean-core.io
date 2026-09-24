@@ -1,6 +1,6 @@
 'use client';
 
-import { User, RotateCw, LogOut, ArrowLeft, Settings, Shield, Zap, Crown, Infinity, HelpCircle, X, ShieldAlert } from 'lucide-react';
+import { User, RotateCw, LogOut, ArrowLeft, Settings, Shield, Zap, Crown, Infinity, HelpCircle, ShieldAlert } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { getAuth } from '@/lib/firebase';
@@ -40,7 +40,6 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
   // see the note on it in `hooks/useUserProfile.ts`.
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [showUserDropdown, setShowUserDropdown] = useState(false);
-  const [showBanner, setShowBanner] = useState(true);
   const accountButtonRef = useRef<HTMLButtonElement>(null);
   const logoutDialogRef = useRef<HTMLDivElement>(null);
 
@@ -96,30 +95,6 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
     };
   }, [showLogoutConfirm]);
 
-  // Initialize banner state from sessionStorage to avoid flashing dismissed banners.
-  // Storage throws in a browser that refuses it; unguarded, that throw took the
-  // whole shell down to the error page (tests/demo-workspace-tour.spec.ts).
-  useEffect(() => {
-    let isBannerDismissed = false;
-    try {
-      isBannerDismissed = sessionStorage.getItem('dismissPilotBanner') === 'true';
-    } catch {
-      /* no storage: the banner shows, which is the default anyway */
-    }
-    if (isBannerDismissed) {
-      setShowBanner(false);
-    }
-  }, []);
-
-  const dismissBanner = () => {
-    try {
-      sessionStorage.setItem('dismissPilotBanner', 'true');
-    } catch {
-      /* no storage: dismissed for this page view only */
-    }
-    setShowBanner(false);
-  };
-
   /**
    * What the assistant is called where the reader is standing.
    *
@@ -167,7 +142,7 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
   return (
     <div className="min-h-screen flex flex-col bg-[#f8f9ff]">
       {/* The first Tab stop of every signed-in page (roadmap 3.0.4, WCAG
-          2.4.1): past the banner and the shell bar, straight to the content.
+          2.4.1): past the shell bar, straight to the content.
           Invisible until it has the focus. */}
       <a
         href="#main-content"
@@ -184,38 +159,6 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
           and no way to give one. It renders nothing once a profile exists. */}
       <UserOnboarding />
 
-      {/* Warning Banner */}
-      {showBanner && (
-        <div className="cc-no-print bg-amber-50/95 backdrop-blur text-amber-900 py-2 sm:py-2.5 px-4 pr-4 sm:pr-40 text-center text-[10px] sm:text-xs font-semibold border-b border-amber-200 flex flex-wrap items-center justify-center gap-1.5 sm:gap-3 transition-all shrink-0 relative animate-in slide-in-from-top duration-300">
-          <span className="inline-flex items-center gap-1 bg-amber-100 text-amber-950 px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider select-none shrink-0">
-            Free Community Edition
-          </span>
-          <span className="leading-relaxed">
-            A free community project for SAP custom code. Generated output is a draft you review; provided without warranty.
-          </span>
-          {/* The public versions. These used to point into the settings page.
-              This shell wraps /knowledge, /how-to and /first-run — pages that are
-              reachable without an account and are in the sitemap — so those two
-              links pointed a signed-out reader at a route behind the login. A
-              privacy policy and an imprint have to be available without
-              registration, immediately and permanently (§ 5 DDG, Art. 12/13
-              GDPR); the footer of the same page already links them correctly. */}
-          <div className="flex items-center gap-2 font-black shrink-0">
-            <Link href="/datenschutz" className="underline hover:text-green-750 transition-colors">Privacy Policy</Link>
-            <span>•</span>
-            <Link href="/impressum" className="underline hover:text-green-750 transition-colors">Legal Notice</Link>
-            <span className="text-amber-300">|</span>
-            <button 
-              onClick={dismissBanner}
-              className="inline-flex items-center gap-1 bg-amber-200/80 hover:bg-amber-300 text-amber-950 px-2.5 py-0.5 rounded-full text-[9px] sm:text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer border border-amber-300/40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cc-focus hover:scale-105 active:scale-95 shadow-sm ml-1"
-              title="Dismiss warning"
-            >
-              <X size={10} strokeWidth={3} className="shrink-0" /> Dismiss
-            </button>
-          </div>
-        </div>
-      )}
-      
       <header className="cc-no-print bg-white/80 backdrop-blur-md border-b border-gray-200 sticky top-0 z-50 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-4">
           {/* Home means the dashboard for someone signed in and the landing page
@@ -429,12 +372,21 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
       <main id="main-content" tabIndex={-1} className="flex-1 focus:outline-none max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-32">
         {children}
       </main>
-      {/* Inside a workflow step the marketing footer becomes one line.
+      {/* The legal links of every page in this shell live here, in one of
+          the two branches below — never behind the login. This shell also wraps
+          /knowledge, /how-to, /first-run and /demo, pages reachable without an
+          account and in the sitemap, and a privacy policy and an imprint have to
+          be available without registration, immediately and permanently (§ 5
+          DDG, Art. 12/13 GDPR). The dismissible banner that used to repeat them
+          above the shell bar is gone (roadmap 3.0.6, decision 24.09.2026);
+          tests/landing-consistency-guard.spec.ts holds both branches to it.
+
+          Inside a workflow step the marketing footer becomes one line.
           It used to render in full under every step. On a phone that is roughly
           700 px of link lists — longer than the step above it — and a full
           footer reads as "page ends here", which is the wrong signal in the
           middle of a seven-stage flow. The legally required links stay, and the
-          complete footer keeps its place on every public page. */}
+          complete footer keeps its place on every other page. */}
       {isProjectStep ? (
         <footer className="cc-no-print border-t border-gray-100 bg-white/60">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[11px] font-bold text-gray-400">

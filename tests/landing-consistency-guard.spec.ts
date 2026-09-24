@@ -103,15 +103,44 @@ test.describe('stamped dates follow the release', () => {
 });
 
 test.describe('the legal pages are reachable without an account', () => {
-  test('the shell banner links the public versions', () => {
-    const s = read('app/(app)/layout.tsx');
+  // Roadmap 3.0.6 (decision 24.09.2026) removed the dismissible banner that
+  // used to repeat the two links above the shell bar. The footer is now the one
+  // place they stand on every page of this shell, so both of its branches are
+  // held to them: the one-line footer inside a workflow step, and SiteFooter
+  // everywhere else.
+  test('both footers of the shell link the public versions', () => {
+    const s = withoutComments('app/(app)/layout.tsx');
     // This layout wraps /knowledge, /how-to and /first-run, which are in the
     // sitemap and reachable signed-out. A privacy policy behind a login does not
     // satisfy § 5 DDG / Art. 12–13 GDPR.
     expect(s).not.toContain('/settings#privacy');
     expect(s).not.toContain('/settings#legal');
-    expect(s).toContain('href="/datenschutz"');
-    expect(s).toContain('href="/impressum"');
+    // The footer is not conditional on anything but the branch: one of the two
+    // renders on every route.
+    const branches = s.match(/\{isProjectStep \? \(([\s\S]*?)\) : \(([\s\S]*?)\)\}\s*<div className="cc-no-print">/);
+    expect(branches, 'the footer branch of the shell was not found').not.toBeNull();
+    const [, stepFooter, otherFooter] = branches!;
+    expect(stepFooter).toContain('<footer');
+    expect(stepFooter).toContain('href="/datenschutz"');
+    expect(stepFooter).toContain('href="/impressum"');
+    expect(stepFooter).toContain('href="/terms"');
+    expect(otherFooter).toContain('<footer');
+    expect(otherFooter).toContain('<SiteFooter />');
+    const site = read('components/SiteFooter.tsx');
+    expect(site).toContain("href: '/datenschutz'");
+    expect(site).toContain("href: '/impressum'");
+    expect(site).toContain("href: '/terms'");
+  });
+
+  test('a signed-out reader of a shell page finds both links in the footer', async ({ page }) => {
+    test.setTimeout(120000);
+    for (const route of ['/how-it-works', '/knowledge']) {
+      await page.goto(route, { waitUntil: 'domcontentloaded' });
+      const footer = page.locator('footer').last();
+      for (const href of ['/datenschutz', '/impressum']) {
+        await expect(footer.locator(`a[href="${href}"]`).first(), `${route} footer has no ${href}`).toBeVisible({ timeout: 60000 });
+      }
+    }
   });
 
   test('the logo is not a dead end for a signed-out reader', () => {

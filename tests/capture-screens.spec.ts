@@ -386,8 +386,6 @@ test.describe('capture the landing page views', () => {
       await expect(page.locator('[data-demo-ready="true"]')).toBeAttached({ timeout: 90000 });
       // The dev server's own badge is not part of the product.
       await page.addStyleTag({ content: 'nextjs-portal{display:none!important}' });
-      const dismiss = page.locator('button[title="Dismiss warning"]');
-      if (await dismiss.count()) await dismiss.first().click();
       await page.waitForTimeout(2500);
       await assertNoTermsGate(page, `/demo/workspace${query}`);
       if (process.env.CAPTURE_LANDING_DEBUG) {
