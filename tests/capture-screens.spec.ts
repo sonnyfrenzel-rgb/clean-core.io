@@ -4,7 +4,9 @@ import fs from 'fs';
 import path from 'path';
 import { initializeApp, getApps } from 'firebase/app';
 import { getAuth, connectAuthEmulator, createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
-import { adminMergeDoc, adminSetDoc } from './helpers/admin-seed';
+import { adminMergeDoc, adminSetDoc, adminSetCustomClaim } from './helpers/admin-seed';
+import { TOUR_STORAGE_KEY } from '../lib/demo-tour';
+import { LANDING_SHOTS, LANDING_SHOT_DIR } from '../lib/landing-shots';
 import firebaseConfig from '../firebase-config.json';
 import { TERMS_VERSION } from '../lib/constants';
 import { archivedTermsSha256 } from '../lib/terms-versions';
@@ -315,5 +317,155 @@ test.describe('capture', () => {
     // The capture is only useful if the workflow screens actually rendered.
     const captured = fs.readdirSync(OUT).filter((f) => f.endsWith('.jpg'));
     expect(captured.length).toBeGreaterThan(SCREENS.length);
+  });
+});
+
+/**
+ * The product views on the public landing page — roadmap 3.0.6.
+ *
+ * The landing page shows the workspace, and the workspace it shows has to be the
+ * real one: "kein Mockup-Bild auf einer öffentlichen Seite". So the pictures are
+ * taken here, from the demo project `Z_MM_PO_APPROVAL` in `/demo/workspace` —
+ * the same engine run every account opens — and committed under
+ * `public/landing/`. Run it with every release that changes the workspace or the
+ * engine, so picture and product cannot drift apart:
+ *
+ *   CAPTURE_LANDING=1 npx playwright test tests/capture-screens.spec.ts -g landing
+ *
+ * `CAPTURE_LANDING_DEBUG=<dir>` also writes each view as one full-page picture there,
+ * to choose a new excerpt from.
+ *
+ * `LANDING_SHOTS` (`lib/landing-shots.ts`) is the contract with `app/page.tsx`:
+ * the page names these files and nothing else. The account is an administrator with the workspace
+ * switch on, because until 3.0.1 that is who `/demo/workspace` opens for.
+ */
+
+test.describe('capture the landing page views', () => {
+  test.skip(process.env.CAPTURE_LANDING !== '1', 'set CAPTURE_LANDING=1 to run');
+
+  test('landing: photograph the demo workspace in its three views', async ({ page }) => {
+    test.setTimeout(600 * 1000);
+    const out = path.resolve(__dirname, '..', 'public', LANDING_SHOT_DIR);
+    fs.mkdirSync(out, { recursive: true });
+
+    if (!getApps().length) initializeApp(firebaseConfig);
+    const auth = getAuth();
+    try {
+      connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true });
+    } catch { /* already connected */ }
+    const email = `capture-landing-${Date.now()}@cleancore-test.io`;
+    const cred = await createUserWithEmailAndPassword(auth, email, PASSWORD);
+    await adminSetCustomClaim(cred.user.uid, { admin: true });
+    await adminSetDoc('users', cred.user.uid, {
+      termsVersionAccepted: TERMS_VERSION,
+      termsAcceptedAt: new Date(),
+      firstName: 'Demo',
+      lastName: 'Reader',
+      email,
+      tier: 'pilot',
+      status: 'approved',
+      transformationsUsed: 0,
+      transformationsLimit: 5,
+      mfaEnabled: false,
+      isAdmin: true,
+      workspaceShell: true,
+      createdAt: new Date(),
+    });
+
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/');
+    await page.click('a:has-text("Get Free Access"), button:has-text("Get Free Access")');
+    await page.waitForSelector('input[type="email"]');
+    await page.fill('input[type="email"]', email);
+    await page.fill('input[type="password"]', PASSWORD);
+    await page.click('button[type="submit"]:has-text("Sign In")');
+    await page.waitForTimeout(4000);
+
+    const open = async (query: string) => {
+      await page.goto(`/demo/workspace${query}`, { waitUntil: 'domcontentloaded' });
+      await expect(page.locator('[data-demo-ready="true"]')).toBeAttached({ timeout: 90000 });
+      // The dev server's own badge is not part of the product.
+      await page.addStyleTag({ content: 'nextjs-portal{display:none!important}' });
+      const dismiss = page.locator('button[title="Dismiss warning"]');
+      if (await dismiss.count()) await dismiss.first().click();
+      await page.waitForTimeout(2500);
+      await assertNoTermsGate(page, `/demo/workspace${query}`);
+      if (process.env.CAPTURE_LANDING_DEBUG) {
+        await page.screenshot({ path: path.join(process.env.CAPTURE_LANDING_DEBUG, `full${query.replace(/\W+/g, '-')}.jpg`), fullPage: true, type: 'jpeg', quality: 60 });
+      }
+    };
+
+    // The tour, as a first-time reader meets it.
+    await open('?view=business');
+    await page.evaluate((key) => window.localStorage.removeItem(key), TOUR_STORAGE_KEY);
+    await open('?view=business');
+    const stop = page.locator('[data-demo-tour-station]').first();
+    if (await stop.count()) await stop.scrollIntoViewIfNeeded();
+    await page.screenshot({ path: path.join(out, LANDING_SHOTS.tour), type: 'jpeg', quality: 82 });
+
+    // Each view from its own first answer: the header above it is the same in all three.
+    await page.evaluate(
+      (key) => window.localStorage.setItem(key, JSON.stringify({ index: 0, state: 'ended', inviting: false })),
+      TOUR_STORAGE_KEY,
+    );
+    const PLACE = { business: 'reveal', it: 'it-chain', management: 'management' } as const;
+    const regionOf = async (selector: string, height: number) => {
+      const el = page.locator(selector).first();
+      await el.waitFor({ state: 'visible', timeout: 60000 });
+      // Clear of the sticky shell header, and without the floating help button over an excerpt.
+      await page.addStyleTag({ content: '[data-chatbot-toggle]{display:none!important}' });
+      await el.evaluate((node) => {
+        (node as HTMLElement).style.scrollMarginTop = '120px';
+        node.scrollIntoView({ block: 'start' });
+      });
+      await page.waitForTimeout(1200);
+      const box = (await el.boundingBox())!;
+      const top = Math.max(0, box.y - 24);
+      return { x: 96, y: top, width: 1248, height: Math.min(height, 900 - top) };
+    };
+    for (const view of ['business', 'it', 'management'] as const) {
+      await open(`?view=${view}`);
+      if (view === 'business') {
+        // The hero: the window as it opens, title, views and the first answer.
+        await page.evaluate(() => window.scrollTo(0, 0));
+        await page.screenshot({ path: path.join(out, LANDING_SHOTS.hero), type: 'jpeg', quality: 82 });
+      }
+      await page.setViewportSize({ width: 1440, height: 1000 });
+      const clip = await regionOf(`[data-demo-tour-place="${PLACE[view]}"]`, 820);
+      await page.screenshot({ path: path.join(out, LANDING_SHOTS[view]), type: 'jpeg', quality: 82, clip });
+      await page.setViewportSize({ width: 1440, height: 900 });
+    }
+
+    // The process map, one level down so the reader can read the boxes.
+    await open('?view=business');
+    await page.setViewportSize({ width: 1440, height: 1000 });
+    const map = page.locator('[data-process-map]').first();
+    await map.waitFor({ state: 'visible', timeout: 60000 });
+    const level = map.getByText('READ_REQUISITION', { exact: true }).first();
+    if (await level.count()) {
+      await level.click();
+      await page.waitForTimeout(1500);
+      // Opening a level also opens its code; the picture is about the map.
+      await page.keyboard.press('Escape');
+      await page.waitForTimeout(800);
+    }
+    await page.addStyleTag({ content: '[data-chatbot-toggle]{display:none!important}' });
+    await map.evaluate((node) => {
+      (node as HTMLElement).style.scrollMarginTop = '110px';
+      node.scrollIntoView({ block: 'start' });
+    });
+    await page.waitForTimeout(1500);
+    const mapBox = (await map.boundingBox())!;
+    await page.screenshot({
+      path: path.join(out, LANDING_SHOTS.process),
+      type: 'jpeg',
+      quality: 82,
+      clip: { x: Math.max(0, mapBox.x - 16), y: Math.max(0, mapBox.y - 16), width: Math.min(1440, mapBox.width + 32), height: Math.min(1000 - Math.max(0, mapBox.y - 16), mapBox.height + 32) },
+    });
+    await page.setViewportSize({ width: 1440, height: 900 });
+
+    for (const file of Object.values(LANDING_SHOTS)) {
+      expect(fs.statSync(path.join(out, file)).size, file).toBeGreaterThan(20_000);
+    }
   });
 });
