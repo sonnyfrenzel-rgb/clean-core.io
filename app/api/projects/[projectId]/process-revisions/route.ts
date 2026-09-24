@@ -495,10 +495,14 @@ export async function GET(
 
     if (asked !== null) {
       const n = Number(asked);
-      if (!Number.isInteger(n) || n < 1) {
+      // The query string names a document here, so its id passes the same
+      // check as a path or body id (QA review of 46a7d64baad3): a whole number
+      // alone let `?revision=1e21` through as the document id "1e+21".
+      const revisionId = String(n);
+      if (!Number.isSafeInteger(n) || n < 1 || !isFirestoreId(revisionId)) {
         return NextResponse.json({ error: 'A revision is a whole number from 1 upwards.', code: 'bad-request' }, { status: 400 });
       }
-      const snap = await revisionsOf(db, gate.projectId).doc(String(n)).get();
+      const snap = await revisionsOf(db, gate.projectId).doc(revisionId).get();
       if (!snap.exists) return NextResponse.json({ error: 'No such revision.', code: 'not-found' }, { status: 404 });
       const record = recordOf(snap.data() as Record<string, unknown>);
       // A document of another format version is not a revision this build can

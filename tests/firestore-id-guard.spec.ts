@@ -106,6 +106,100 @@ test('every request-derived document id passes isFirestoreId before it forms a p
   expect(missing, missing.join('\n')).toEqual([]);
 });
 
+/**
+ * A value that is still the caller's value after the step: a type conversion,
+ * a trim or case change, a default. A lookup or a verification (`verifyToken(t)`)
+ * produces something else and ends the trail — following every mention made
+ * `email` in the unsubscribe route, which comes out of an HMAC check, look like
+ * a query id.
+ */
+function conversionOf(rhs: string, t: string): boolean {
+  const name = String.raw`${t}(?![\w$])`;
+  return new RegExp(String.raw`^(?:Number|String|parseInt|parseFloat|decodeURIComponent)\(\s*${name}[^()]*\)$`).test(rhs)
+    || new RegExp(String.raw`^${name}(?:\s*(?:\|\||\?\?)\s*[^()]+|\.(?:trim|toLowerCase|toUpperCase)\(\))*$`).test(rhs);
+}
+
+/**
+ * Query-derived values (QA review of 46a7d64baad3). The destructuring walk
+ * above sees `await params` and the body; a value read with
+ * `searchParams.get(...)` — from `req.nextUrl`, `new URL(req.url)` or any other
+ * URL — is just as much the caller's. Every local bound from one, and every
+ * local computed from such a local (`const n = Number(asked)`), is tainted; a
+ * `.doc(<expr>)` whose argument names a tainted local, or reads `searchParams`
+ * itself, must be preceded by `isFirestoreId(<that local>)`.
+ */
+function queryTainted(src: string): string[] {
+  const tainted = new Set<string>();
+  const binding = /(?:const|let)\s+([A-Za-z_$][\w$]*)\s*(?::[^=]+)?=\s*([^;]+);/g;
+  for (const m of src.matchAll(binding)) {
+    if (/searchParams\s*\.\s*(?:get|getAll)\s*\(/.test(m[2])) tainted.add(m[1]);
+  }
+  // Follow derivations until nothing new is found.
+  for (let grew = true; grew; ) {
+    grew = false;
+    for (const m of src.matchAll(binding)) {
+      if (tainted.has(m[1])) continue;
+      if ([...tainted].some((t) => conversionOf(m[2].trim(), t))) {
+        tainted.add(m[1]);
+        grew = true;
+      }
+    }
+  }
+  return [...tainted];
+}
+
+function queryIdViolations(src: string): string[] {
+  const out: string[] = [];
+  const tainted = queryTainted(src);
+  for (const m of src.matchAll(/\.doc\(([^()]*(?:\([^()]*\)[^()]*)*)\)/g)) {
+    const arg = m[1];
+    const at = m.index ?? 0;
+    if (/searchParams/.test(arg)) {
+      out.push(`.doc(${arg}) reads the query string directly`);
+      continue;
+    }
+    for (const t of tainted) {
+      if (!new RegExp(String.raw`(?<![\w$.])${t}(?![\w$])`).test(arg)) continue;
+      if (arg.trim() !== t) {
+        out.push(`.doc(${arg}) builds an id from the query value ${t}; bind it to a name and check that`);
+        continue;
+      }
+      const check = src.indexOf(`isFirestoreId(${t})`);
+      if (check < 0 || check > at) out.push(`.doc(${t}) is not preceded by isFirestoreId(${t})`);
+    }
+  }
+  return out;
+}
+
+test('the query-string walk sees a query-derived id and its derivations', () => {
+  const src = [
+    "const asked = req.nextUrl.searchParams.get('revision');",
+    'const n = Number(asked);',
+    'const snap = await col.doc(String(n)).get();',
+    "const other = new URL(req.url).searchParams.get('id') || '';",
+    'await col.doc(other).get();',
+    "await col.doc(url.searchParams.get('x')).get();",
+    "const fine = req.nextUrl.searchParams.get('y');",
+    'if (!isFirestoreId(fine)) return;',
+    'await col.doc(fine).get();',
+  ].join('\n');
+  expect(queryTainted(src).sort()).toEqual(['asked', 'fine', 'n', 'other']);
+  expect(queryIdViolations(src)).toHaveLength(3);
+});
+
+test('every query-derived document id passes isFirestoreId before it forms a path', () => {
+  const root = process.cwd();
+  const missing: string[] = [];
+  for (const file of routeFiles(path.join(root, 'app', 'api'))) {
+    const rel = path.relative(root, file).split(path.sep).join('/');
+    for (const v of queryIdViolations(fs.readFileSync(file, 'utf8'))) missing.push(`${rel}: ${v}`);
+  }
+  expect(missing, missing.join('\n')).toEqual([]);
+  // Not vacuous: the one route that names a document from its query string is seen.
+  const revisions = fs.readFileSync(path.join(root, 'app/api/projects/[projectId]/process-revisions/route.ts'), 'utf8');
+  expect(queryTainted(revisions)).toContain('revisionId');
+});
+
 test('no route repairs an id by stripping characters instead of refusing it', () => {
   const root = process.cwd();
   const offenders = routeFiles(path.join(root, 'app', 'api'))
