@@ -215,9 +215,10 @@ test.describe('no text offers the locked path', () => {
 
   test('the scan reaches the surfaces the claims were found on', () => {
     // `components/LandingSlideshow.tsx` was one of the four; it was removed with the
-    // July screenshots (roadmap 0.2, UX-102 follow-up) and `components/LandingProcess.tsx`
-    // renders that section now, so the self-test names the file that carries the text today.
-    for (const file of ['components/KnowledgeClient.tsx', 'components/LandingProcess.tsx', 'app/api/send-tenant-revoke-email/route.ts', 'lib/chatbot-knowledge.ts']) {
+    // July screenshots (roadmap 0.2, UX-102 follow-up); since 3.0.6 the words of that
+    // section live in `lib/landing-stages.ts` (the timeline in `components/landing/StageTimeline.tsx`
+    // renders them), so the self-test names the file that carries the text today.
+    for (const file of ['components/KnowledgeClient.tsx', 'lib/landing-stages.ts', 'app/api/send-tenant-revoke-email/route.ts', 'lib/chatbot-knowledge.ts']) {
       expect(SURFACES).toContain(file);
     }
     expect(SURFACES.length).toBeGreaterThan(200);

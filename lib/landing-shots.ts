@@ -7,9 +7,32 @@
  * writes these files under `public/landing/`. The page and the capture both read
  * this list, so a picture the capture no longer takes cannot stay on the page.
  *
- * Pure and import-free: the page reads it on the server, the spec in Node.
+ * Pure and import-free at runtime (one type import): the page reads it on the
+ * server, the spec in Node.
  */
+import type { PhaseKey } from './workflow-steps';
+
 export const LANDING_SHOT_DIR = 'landing';
+
+/**
+ * One picture per stage for the timeline in `#workspace-tools`, each taken on
+ * that stage of the demo project (`/demo/<stage>`). Keyed by `PhaseKey`, so a
+ * stage added to `PHASES` without a picture does not compile.
+ */
+export const STAGE_SHOTS = {
+  analyze: 'stage-analyze.jpg',
+  design: 'stage-design.jpg',
+  transformation: 'stage-transformation.jpg',
+  documentation: 'stage-documentation.jpg',
+  testing: 'stage-testing.jpg',
+  tco: 'stage-tco.jpg',
+  delivery: 'stage-delivery.jpg',
+} as const satisfies Record<PhaseKey, string>;
+
+/** The name under `LANDING_SHOTS` of one stage's picture. */
+export function stageShot<K extends PhaseKey>(key: K): `stage-${K}` {
+  return `stage-${key}`;
+}
 
 export const LANDING_SHOTS = {
   hero: 'workspace.jpg',
@@ -18,6 +41,13 @@ export const LANDING_SHOTS = {
   management: 'view-management.jpg',
   process: 'process-map.jpg',
   tour: 'demo-tour.jpg',
+  'stage-analyze': STAGE_SHOTS.analyze,
+  'stage-design': STAGE_SHOTS.design,
+  'stage-transformation': STAGE_SHOTS.transformation,
+  'stage-documentation': STAGE_SHOTS.documentation,
+  'stage-testing': STAGE_SHOTS.testing,
+  'stage-tco': STAGE_SHOTS.tco,
+  'stage-delivery': STAGE_SHOTS.delivery,
 } as const;
 
 export type LandingShot = keyof typeof LANDING_SHOTS;

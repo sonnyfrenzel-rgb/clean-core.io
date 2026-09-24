@@ -39,17 +39,26 @@ test.describe('the landing page shows the phases the product has', () => {
     test.setTimeout(240_000);
     await page.goto('/', { waitUntil: 'domcontentloaded', timeout: 200_000 });
 
+    // Since 3.0.6 a timeline: one panel per phase (`[data-landing-phase]`), one tab
+    // label per phase (`[data-landing-phase-title]`), and the same seven again as
+    // the phone list. All three follow PHASES.
     const cards = page.locator('[data-landing-phase]');
     await expect(cards).toHaveCount(PHASES.length);
     expect(await cards.evaluateAll((els) => els.map((el) => el.getAttribute('data-landing-phase')))).toEqual(
       PHASES.map((p) => p.key),
     );
     expect(await page.locator('[data-landing-phase-title]').allInnerTexts()).toEqual(PHASES.map((p) => p.label));
+    expect(
+      await page.locator('[data-landing-stage-item]').evaluateAll((els) => els.map((el) => el.getAttribute('data-landing-stage-item'))),
+    ).toEqual(PHASES.map((p) => p.key));
 
-    // Every card says something. An empty card would satisfy the order check.
+    // Every phase says something, in the HTML — the inactive panels are hidden,
+    // not absent, so the text is read as text content. An empty panel would
+    // satisfy the order check.
     for (const phase of PHASES) {
       const card = page.locator(`[data-landing-phase="${phase.key}"]`);
-      expect((await card.innerText()).trim().length, `${phase.key} has no text`).toBeGreaterThan(80);
+      const text = (await card.evaluate((el) => el.textContent ?? '')).trim();
+      expect(text.length, `${phase.key} has no text`).toBeGreaterThan(80);
     }
   });
 

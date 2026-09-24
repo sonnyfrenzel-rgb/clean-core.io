@@ -6,7 +6,8 @@ import { initializeApp, getApps } from 'firebase/app';
 import { getAuth, connectAuthEmulator, createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
 import { adminMergeDoc, adminSetDoc, adminSetCustomClaim } from './helpers/admin-seed';
 import { TOUR_STORAGE_KEY } from '../lib/demo-tour';
-import { LANDING_SHOTS, LANDING_SHOT_DIR } from '../lib/landing-shots';
+import { LANDING_SHOTS, LANDING_SHOT_DIR, STAGE_SHOTS } from '../lib/landing-shots';
+import { PHASES } from '../lib/workflow-steps';
 import firebaseConfig from '../firebase-config.json';
 import { TERMS_VERSION } from '../lib/constants';
 import { archivedTermsSha256 } from '../lib/terms-versions';
@@ -343,11 +344,8 @@ test.describe('capture', () => {
 test.describe('capture the landing page views', () => {
   test.skip(process.env.CAPTURE_LANDING !== '1', 'set CAPTURE_LANDING=1 to run');
 
-  test('landing: photograph the demo workspace in its three views', async ({ page }) => {
-    test.setTimeout(600 * 1000);
-    const out = path.resolve(__dirname, '..', 'public', LANDING_SHOT_DIR);
-    fs.mkdirSync(out, { recursive: true });
-
+  /** A fresh administrator account in the emulator, signed in on `page`. */
+  const signIn = async (page: Page) => {
     if (!getApps().length) initializeApp(firebaseConfig);
     const auth = getAuth();
     try {
@@ -380,6 +378,13 @@ test.describe('capture the landing page views', () => {
     await page.fill('input[type="password"]', PASSWORD);
     await page.click('button[type="submit"]:has-text("Sign In")');
     await page.waitForTimeout(4000);
+  };
+
+  test('landing: photograph the demo workspace in its three views', async ({ page }) => {
+    test.setTimeout(600 * 1000);
+    const out = path.resolve(__dirname, '..', 'public', LANDING_SHOT_DIR);
+    fs.mkdirSync(out, { recursive: true });
+    await signIn(page);
 
     const open = async (query: string) => {
       await page.goto(`/demo/workspace${query}`, { waitUntil: 'domcontentloaded' });
@@ -471,7 +476,64 @@ test.describe('capture the landing page views', () => {
     });
     await page.setViewportSize({ width: 1440, height: 900 });
 
-    for (const file of Object.values(LANDING_SHOTS)) {
+    for (const [shot, file] of Object.entries(LANDING_SHOTS)) {
+      if (shot.startsWith('stage-')) continue; // the next test takes those
+      expect(fs.statSync(path.join(out, file)).size, file).toBeGreaterThan(20_000);
+    }
+  });
+
+  /**
+   * One picture per stage for the timeline in `#workspace-tools`: each stage of
+   * the demo project at `/demo/<stage>`, from the stage title down — the demo
+   * tag stays in the picture, the account bar and the demo strip do not
+   * (Documentation: from its coupled tables, see below).
+   * Economics is photographed with figures entered, as a reader would enter
+   * them: its empty state is a refusal, not the stage.
+   */
+  test('landing: photograph the seven stages of the demo project', async ({ page }) => {
+    test.setTimeout(600 * 1000);
+    const out = path.resolve(__dirname, '..', 'public', LANDING_SHOT_DIR);
+    fs.mkdirSync(out, { recursive: true });
+    await signIn(page);
+    await page.setViewportSize({ width: 1440, height: 1000 });
+
+    for (const phase of PHASES) {
+      await page.goto(`/demo/${phase.key}`, { waitUntil: 'domcontentloaded' });
+      await expect(page.locator('[data-demo-ready="true"]')).toBeAttached({ timeout: 90000 });
+      await assertNoTermsGate(page, `/demo/${phase.key}`);
+      await page.addStyleTag({
+        content: 'nextjs-portal,[data-chatbot-toggle]{display:none!important}',
+      });
+      await expect(page.getByTestId(`demo-stage-${phase.key}`)).toBeVisible({ timeout: 60000 });
+      if (phase.key === 'tco') {
+        await page.fill('#demo-dev-rate', '800');
+        await page.fill('#demo-user-rate', '600');
+        await page.fill('#demo-investment', '40000');
+        await expect(page.getByTestId('demo-forecast')).toBeVisible({ timeout: 10000 });
+      }
+      await page.waitForTimeout(1500);
+      if (process.env.CAPTURE_LANDING_DEBUG) {
+        await page.screenshot({ path: path.join(process.env.CAPTURE_LANDING_DEBUG, `full-stage-${phase.key}.jpg`), fullPage: true, type: 'jpeg', quality: 60 });
+      }
+      // Documentation starts at the coupled tables: the object inventory above
+      // them has no line numbers yet (`extractCodeInventory` returns none), and
+      // a column of dashes under "Lines" is not what the stage is about.
+      const start =
+        phase.key === 'documentation'
+          ? page.locator('h3', { hasText: 'Tables this program is coupled to' }).locator('xpath=..')
+          : page.locator('[data-stage-title]').first();
+      await start.evaluate((node) => {
+        (node as HTMLElement).style.scrollMarginTop = '136px';
+        node.scrollIntoView({ block: 'start' });
+      });
+      await page.waitForTimeout(800);
+      // Below the sticky account bar, with the demo tag above the title in the picture.
+      const top = Math.max(0, (await start.boundingBox())!.y - (phase.key === 'documentation' ? 20 : 48));
+      const clip = { x: 96, y: top, width: 1248, height: Math.min(780, 1000 - top) };
+      await page.screenshot({ path: path.join(out, STAGE_SHOTS[phase.key]), type: 'jpeg', quality: 75, clip });
+    }
+
+    for (const file of Object.values(STAGE_SHOTS)) {
       expect(fs.statSync(path.join(out, file)).size, file).toBeGreaterThan(20_000);
     }
   });

@@ -44,8 +44,8 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const ROUTE_SOURCES = {
   '/': [
     'app/page.tsx',
-    'components/LandingProcess.tsx',
-    'lib/how-to-content.ts',
+    'components/landing/StageTimeline.tsx',
+    'lib/landing-stages.ts',
     'lib/reference-analysis.ts',
     'lib/facts.ts',
     'lib/abap/catalog-service.ts',

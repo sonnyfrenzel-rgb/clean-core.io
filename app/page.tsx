@@ -33,11 +33,11 @@ import {
 import HeaderAuthButton from '@/components/HeaderAuthButton';
 import SapTrademarkNotice from '@/components/SapTrademarkNotice';
 import LandingModals from '@/components/LandingModals';
-import LandingProcess from '@/components/LandingProcess';
 import SectionHeader from '@/components/SectionHeader';
 import SiteFooter from '@/components/SiteFooter';
 import AuthLink from '@/components/landing/AuthLink';
 import ViewsStage, { type StageView } from '@/components/landing/ViewsStage';
+import StageTimeline, { type TimelineStage } from '@/components/landing/StageTimeline';
 import { publicButton } from '@/components/landing/public-button';
 import { APP_VERSION, APP_RELEASE_DATE, APP_RELEASE_DATE_ISO } from '@/lib/version';
 import { getFacts, formatObjectCount } from '@/lib/facts';
@@ -50,7 +50,8 @@ import { PUBLIC_CLOUD_FIT_BUCKETS, PUBLIC_CLOUD_FIT_BUCKET_LABELS, PUBLIC_CLOUD_
 import { STARTER_EXAMPLES } from '@/lib/starter-examples';
 import { TRUST_CLAIMS, TRUST_PLEDGE, SECURITY_MODEL_URL, type TrustClaim } from '@/lib/trust-claims';
 import { DEMO_OBJECT_NAME, DEMO_ROUTE } from '@/lib/demo-marks';
-import { landingShotSrc } from '@/lib/landing-shots';
+import { landingShotSrc, stageShot } from '@/lib/landing-shots';
+import { landingStages } from '@/lib/landing-stages';
 import { landingShotSize } from '@/lib/landing-shot-size';
 import type { CloudReadinessGrade } from '@/lib/abap/abcd-classification';
 
@@ -300,6 +301,14 @@ export default function Home() {
       ...landingShotSize('management'),
     },
   ];
+
+  /** The seven stages for the timeline: words from `lib/landing-stages.ts`, one capture each. */
+  const stages: TimelineStage[] = landingStages().map((stage) => ({
+    ...stage,
+    src: landingShotSrc(stageShot(stage.key)),
+    alt: `${stage.title} stage of the demo project ${DEMO_OBJECT_NAME}: ${stage.shows}.`,
+    ...landingShotSize(stageShot(stage.key)),
+  }));
 
   /**
    * The FAQ, once. The visible accordion and the JSON-LD `FAQPage` read this
@@ -1117,7 +1126,7 @@ export default function Home() {
               demo project walks through all of them with a guided tour.
             </SectionHeader>
           </div>
-          <LandingProcess />
+          <StageTimeline stages={stages} />
           <div className="mx-auto mt-10 max-w-7xl px-4 text-center sm:px-6">
             <AuthLink to={DEMO_ROUTE} testId="tools-demo">
               Take the tour in the demo <ArrowRight size={18} aria-hidden="true" />
