@@ -181,8 +181,8 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
     console.log('Project created. Navigated to analyze page.');
 
     // Seed a test case and suite to bypass live generation flake. The case is
-    // seeded without a verdict (and without the word "Passed" anywhere), so a
-    // "Passed" on the page later can only come from the run this spec starts.
+    // seeded as `Pending` with no message, so a verdict on the page later can
+    // only come from the run this spec starts.
     const currentUrl = page.url();
     const projectId = currentUrl.split('/project/')[1].split('/')[0];
     console.log(`Extracted project ID for seeding: ${projectId}`);
@@ -345,18 +345,37 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
     });
     await expect(resultCard).toHaveCount(0);
 
-    // Run automated unit tests in Sandbox, and wait for this run's answer.
-    const runResponse = page.waitForResponse(
-      (r) => r.url().includes('/api/run-tests') && r.request().method() === 'POST',
-      { timeout: 60000 },
-    );
-    await page.click('button:has-text("Run Selected")');
-    expect((await runResponse).ok(), 'the sandbox run was refused').toBe(true);
+    // Which execution "Run Selected" starts is decided by the project's route,
+    // and the route of this example is decided by the evidence engine, not by a
+    // model: Z_INVOICE_EXTRACTOR has no Side-by-Side driver, so it is routed
+    // In-App (ABAP Cloud) in either deployment. An ABAP Cloud project gets the
+    // simulated ABAP Unit run in the browser (hooks/useTestExecution.ts) — it
+    // never reaches `/api/run-tests`, and it never says "Passed", because a mock
+    // is not a pass. Waiting for a run-tests POST here waited for a request this
+    // project cannot make. Stated as a precondition, so that a change of route
+    // fails here by name instead of as a timeout further down.
+    const { adminGetDoc } = await import('./helpers/admin-seed');
+    const routed = await adminGetDoc('projects', projectId);
+    expect(routed?.extensibilityRoute, 'the example is expected on the ABAP Cloud route').toContain('ABAP Cloud');
 
-    // The verdict on that row is the one this execution produced.
+    const runTestsRequests: string[] = [];
+    page.on('request', (r) => {
+      if (r.url().includes('/api/run-tests')) runTestsRequests.push(r.method());
+    });
+
+    await page.click('button:has-text("Run Selected")');
+
+    // The verdict on that row is the one this execution produced: the seed says
+    // `Pending`, and nothing but the simulated run writes `Simulated`. The
+    // terminal carries the run's own report, naming the seeded case.
     await expect(resultCard).toHaveCount(1, { timeout: 15000 });
-    await expect(resultCard).toContainText('Passed', { timeout: 15000 });
-    console.log('Stage 5 Complete: Sandbox test case runs executed.');
+    await expect(resultCard).toContainText('Simulated', { timeout: 15000 });
+    await expect(resultCard).not.toContainText('Passed');
+    const terminal = page.locator('pre', { hasText: 'SIMULATED ABAP UNIT TEST REPORT' });
+    await expect(terminal).toBeVisible({ timeout: 15000 });
+    await expect(terminal).toContainText('[SIMULATED PASS] TC_01: Extract Invoice Headers');
+    expect(runTestsRequests, 'a simulated ABAP Unit run must not reach the Node sandbox').toEqual([]);
+    console.log('Stage 5 Complete: simulated ABAP Unit run of the seeded case executed.');
 
     // --- STAGE 6: ECONOMICS ---
     console.log('Navigating to Stage 6: Economics...');
