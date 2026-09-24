@@ -664,19 +664,32 @@ const DECISION_PROJECT = `decision-route-${Date.now()}`;
 
 const clientApp = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 const clientAuth = getAuth(clientApp);
-if (process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === 'true') {
-  try {
-    connectAuthEmulator(clientAuth, 'http://127.0.0.1:9099', { disableWarnings: true });
-  } catch {
-    /* already connected */
-  }
+// Unconditionally: the route suite below creates accounts, and without the
+// emulator it would create them in the Firebase project of firebase-config.json.
+try {
+  connectAuthEmulator(clientAuth, `http://${process.env.FIREBASE_AUTH_EMULATOR_HOST || '127.0.0.1:9099'}`, { disableWarnings: true });
+} catch {
+  /* already connected */
 }
 const adminDb = (): Firestore => {
+  // The Admin SDK goes to the emulator only when this is set; otherwise to the real database.
+  if (!process.env.FIRESTORE_EMULATOR_HOST) throw new Error('FIRESTORE_EMULATOR_HOST is not set: this suite runs against the emulator only.');
   const app = adminApps()[0] ?? initAdmin({ projectId: firebaseConfig.projectId });
   return adminFirestore(app, FIRESTORE_DB_ID);
 };
 const journal = async (action: string) =>
   (await adminDb().collection('audit_events').where('action', '==', `${action}:${DECISION_PROJECT}`).get()).size;
+
+test('the route suite reaches Firebase only through the emulators', () => {
+  expect(clientAuth.emulatorConfig, 'the client Auth is not connected to the emulator').not.toBeNull();
+  const host = process.env.FIRESTORE_EMULATOR_HOST;
+  delete process.env.FIRESTORE_EMULATOR_HOST;
+  try {
+    expect(() => adminDb()).toThrow(/emulator/);
+  } finally {
+    if (host !== undefined) process.env.FIRESTORE_EMULATOR_HOST = host;
+  }
+});
 
 test.describe('8.4 — the decision commands through /api/projects/[id]/commands (emulator)', () => {
   test.describe.configure({ mode: 'serial' });
