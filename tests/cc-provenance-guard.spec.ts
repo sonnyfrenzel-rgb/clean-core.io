@@ -9,6 +9,7 @@ import {
   isProvenanceLabel,
 } from '../lib/provenance';
 import { OBJECT_STATUS_VALUES } from '../lib/object-status';
+import { SEVERITY, SEVERITY_VALUES } from '../lib/severity';
 import { createGalleryAdmin, openGallery, GALLERY_PATH, type GalleryAdmin } from './helpers/cc-gallery';
 
 /**
@@ -66,6 +67,35 @@ function ccSources(): { rel: string; text: string }[] {
   return out;
 }
 
+/**
+ * A severity word with a colour of its own — the free badge ADR-049 replaces.
+ *
+ * A source heuristic: a line that names one of the five words *as a value* —
+ * a string literal (`'High'`), an object key (`High:`) or JSX text (`>High<`) —
+ * with a colour class or a hex literal on the same line or the two either side.
+ * Comments are stripped first; they carry prose about severities on purpose.
+ * `components/cc/Identifier.tsx` never matches, because `CcSeverity` takes its
+ * classes from `STATE_CLASSES` rather than spelling them next to a word.
+ */
+const SEVERITY_TOKEN = /(['"`>]\s*(Critical|High|Medium|Low|Info)\s*['"`<])|(^|[\s{,])(Critical|High|Medium|Low|Info)\s*:\s*['"`#]/;
+const COLOUR =
+  /(?<![\w-])(?:bg|text|border|fill|stroke)-(?:cc-(?:error|warning|information|neutral|success)|(?:red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose|slate|gray|zinc|neutral|stone)-\d{2,3})|#[0-9a-fA-F]{3,8}\b/;
+
+function freeSeverityBadges(text: string): { line: number; snippet: string }[] {
+  // Comments go, but their newlines stay, so a hit keeps its line number.
+  const code = text
+    .replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, ' '))
+    .replace(/(^|[^:])\/\/.*$/gm, '$1');
+  const lines = code.split('\n');
+  const hits: { line: number; snippet: string }[] = [];
+  lines.forEach((line, i) => {
+    if (!SEVERITY_TOKEN.test(line)) return;
+    const window = lines.slice(Math.max(0, i - 2), i + 3).join('\n');
+    if (COLOUR.test(window)) hits.push({ line: i + 1, snippet: line.trim().slice(0, 100) });
+  });
+  return hits;
+}
+
 test.describe('the list itself', () => {
   test('nine values, each with a word, an icon, a state and a form', () => {
     expect(PROVENANCE_VALUES).toHaveLength(9);
@@ -99,6 +129,23 @@ test.describe('the list itself', () => {
     expect(byForm('dashed')).toEqual(['proposed', 'simulation', 'demonstrated-mock']);
   });
 
+  test('the fifth list: five severities, never green, colours as ADR-049 gives them', () => {
+    expect(SEVERITY_VALUES).toEqual(['Critical', 'High', 'Medium', 'Low', 'Info']);
+    const states = Object.fromEntries(SEVERITY_VALUES.map((v) => [v, SEVERITY[v].state]));
+    expect(states).toEqual({
+      Critical: 'error',
+      High: 'error',
+      Medium: 'warning',
+      Low: 'neutral',
+      Info: 'information',
+    });
+    for (const value of SEVERITY_VALUES) {
+      // The word is the value: a severity is printed exactly as the engine writes it.
+      expect(SEVERITY[value].label).toBe(value);
+      expect(SEVERITY[value].key).toMatch(/^severity\./);
+    }
+  });
+
   test('the retired wordings are recognised as not being labels', () => {
     for (const wording of Object.keys(RETIRED_PROVENANCE_WORDINGS)) {
       expect(isProvenanceLabel(wording), `"${wording}" is being accepted as a label`).toBe(false);
@@ -126,6 +173,56 @@ test.describe('nothing can write a badge of its own', () => {
       emitters,
       `more than one component paints a provenance badge:\n${emitters.join('\n')}`,
     ).toEqual(['components/cc/ProvenanceChip.tsx']);
+  });
+
+  test('only CcSeverity emits a severity identifier', () => {
+    const emitters = ccSources()
+      .filter((f) => /data-cc-severity=|data-cc-identifier="severity"/.test(f.text))
+      .map((f) => f.rel);
+    expect(emitters, `more than one component paints a severity:\n${emitters.join('\n')}`).toEqual([
+      'components/cc/Identifier.tsx',
+    ]);
+    const src = read('components/cc/Identifier.tsx');
+    expect(src, 'CcSeverity no longer reads its word from lib/severity.ts').toContain("from '@/lib/severity'");
+    const props = src.match(/export function CcSeverity\(\{[^}]*\}:\s*\{([^}]*)\}/);
+    expect(props, 'CcSeverity is not declared as a component with a props literal').not.toBeNull();
+    expect(props![1], 'CcSeverity grew a free-text label or children').not.toMatch(/\b(label|children)\b/);
+  });
+
+  test('the free-severity detector recognises the badges the product paints today', () => {
+    // Written the way they stand in the Altbestand on 24.09.2026 — the targets
+    // of the Lane B/C steps. If the detector stops seeing these, the guard
+    // below passes for the wrong reason.
+    const painted = [
+      `  Critical: 'bg-red-100 text-red-700',`,
+      `ef.severity === 'Critical' ? 'bg-red-100 text-red-700' :`,
+      `<span className={\`rounded-full text-[10px] \${colors[gap.severity as 'High' | 'Medium' | 'Low'] || 'bg-slate-50 text-slate-700'}\`}>`,
+      `const sevBg = g.severity === 'High' ? '#ffebe6' : '#e6fcff';`,
+      `<span className="rounded bg-cc-error-bg px-2 text-cc-error">High</span>`,
+    ];
+    for (const sample of painted) {
+      expect(freeSeverityBadges(sample).length, `not recognised: ${sample}`).toBeGreaterThan(0);
+    }
+    const fine = [
+      `<CcSeverity value="High" />`,
+      `{row.id} · {row.severity}`,
+      `<span className="text-cc-ink-muted">Low usage</span>`,
+      `const SAMPLE = { Critical: 2, High: 5 };`,
+    ];
+    for (const sample of fine) {
+      expect(freeSeverityBadges(sample), `a false alarm: ${sample}`).toEqual([]);
+    }
+  });
+
+  test('no severity is painted freehand in the new namespace', () => {
+    const offenders: string[] = [];
+    for (const { rel, text } of ccSources()) {
+      for (const hit of freeSeverityBadges(text)) offenders.push(`${rel}:${hit.line}: ${hit.snippet}`);
+    }
+    expect(
+      offenders,
+      `a severity with a colour of its own — use CcSeverity (DESIGN.md §4.1, ADR-049):\n${offenders.join('\n')}`,
+    ).toEqual([]);
   });
 
   test('no retired wording appears as text in the new namespace', () => {
@@ -243,7 +340,7 @@ test.describe('and the rendered badge says one of the nine', () => {
     }
   });
 
-  test('the four vocabularies do not look like one another', async ({ page }) => {
+  test('the five vocabularies do not look like one another', async ({ page }) => {
     test.setTimeout(180 * 1000);
     await openGallery(page, admin);
 
@@ -264,6 +361,7 @@ test.describe('and the rendered badge says one of the nine', () => {
         objectStatus: shapeOf('[data-cc-object-status]'),
         identifier: shapeOf('[data-cc-identifier]'),
         tag: shapeOf('[data-cc-tag="rule-property"]'),
+        severity: shapeOf('[data-cc-identifier="severity"]'),
       };
     });
 
@@ -271,6 +369,7 @@ test.describe('and the rendered badge says one of the nine', () => {
     expect(shapes.objectStatus, 'no object status').not.toBeNull();
     expect(shapes.identifier, 'no identifier').not.toBeNull();
     expect(shapes.tag, 'no rule-property tag').not.toBeNull();
+    expect(shapes.severity, 'no severity').not.toBeNull();
 
     // Pill with an icon.
     expect(parseFloat(shapes.provenance!.radius)).toBeGreaterThan(100);
@@ -288,6 +387,13 @@ test.describe('and the rendered badge says one of the nine', () => {
     // Tag: a 4px rectangle with no icon.
     expect(shapes.tag!.radius).toBe('4px');
     expect(shapes.tag!.icons, 'a rule-property tag has no icon').toBe(0);
+
+    // Severity: an identifier like the level (ADR-049) — a 4px rectangle with a
+    // visible edge and no icon, so it is never a pill and never a dot.
+    expect(shapes.severity!.radius, 'a severity is a 4px identifier, not a pill').toBe('4px');
+    expect(parseFloat(shapes.severity!.borderWidth), 'a severity has lost its edge').toBeGreaterThan(0);
+    expect(shapes.severity!.borderStyle).toBe('solid');
+    expect(shapes.severity!.icons, 'a severity carries its word, not an icon').toBe(0);
   });
 
   test('every object status is text as well as colour', async ({ page }) => {

@@ -7,7 +7,7 @@ import { ruleProperty, type RulePropertyValue } from '@/lib/rule-property';
  * The tag — `DESIGN.md` §4.1.
  *
  * A 4px rectangle on the muted surface, muted ink, no icon, no state colour.
- * Deliberately the quietest of the four vocabularies, because it is the one
+ * Deliberately the quietest of the five vocabularies, because it is the one
  * that repeats most: every business rule in a list carries one.
  *
  * `CcRulePropertyTag` is the fixed-list version and is what screens use. The

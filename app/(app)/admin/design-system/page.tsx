@@ -35,6 +35,7 @@ import CcToast from '@/components/cc/Toast';
 import CcWhyPopover from '@/components/cc/WhyPopover';
 import FormControlsGallery from './FormControlsGallery';
 import LoadingDisclosureGallery from './LoadingDisclosureGallery';
+import SeverityChartsGallery from './SeverityChartsGallery';
 
 /**
  * Every component of `DESIGN.md`, on one page, behind the admin gate.
@@ -323,6 +324,11 @@ export default function DesignSystemGallery() {
             </div>
           </CcCard>
         </div>
+      </Section>
+
+      {/* Block D, step D.5d — the fifth fixed list and the chart palettes. */}
+      <Section id="ds-severity" title="Severity and chart colours">
+        <SeverityChartsGallery />
       </Section>
 
       <Section id="ds-anchors" title="Anchors, artefact rows and Why?">
