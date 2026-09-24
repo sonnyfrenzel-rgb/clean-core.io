@@ -33,6 +33,7 @@ import CcTable from '@/components/cc/Table';
 import { CcRulePropertyTag, CcTag } from '@/components/cc/Tag';
 import CcToast from '@/components/cc/Toast';
 import CcWhyPopover from '@/components/cc/WhyPopover';
+import FormControlsGallery from './FormControlsGallery';
 
 /**
  * Every component of `DESIGN.md`, on one page, behind the admin gate.
@@ -504,6 +505,11 @@ export default function DesignSystemGallery() {
             </CcField>
           </div>
         </CcCard>
+      </Section>
+
+      {/* Block D, step D.5b — the controls of §2.7 beyond the text input. */}
+      <Section id="ds-form-controls" title="Form controls — checkbox, radio group, select, textarea, switch">
+        <FormControlsGallery />
       </Section>
 
       <Section id="ds-filters" title="Filter bar — matches, no matches, empty">
