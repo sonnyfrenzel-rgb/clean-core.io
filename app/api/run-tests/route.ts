@@ -32,8 +32,8 @@ import { logger, errMessage } from '@/lib/logger';
  *   in the isolated runner (`runner/`, a Cloud Run service with a service
  *   account without roles, no secrets, ingress internal, egress through a VPC
  *   without NAT), reached with the app's own ID token. The runner reports the
- *   SHA-256 of every file it ran and its revision; the report is checked
- *   against what was sent before anything is recorded
+ *   SHA-256 of every file it ran and its (self-reported) revision; the hashes
+ *   are checked against what was sent before anything is recorded
  *   (`lib/test-runner-client.ts`).
  *
  *   Without `RUNNER_URL` a deployed build refuses to run tests at all. Only an

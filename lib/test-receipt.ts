@@ -134,8 +134,9 @@ export interface TestRunReceipt {
   /**
    * Roadmap 8.9 — where the suite executed, as the executor reported it.
    *
-   *   - `kind: 'isolated'` — the isolated runner service; `revision` is its
-   *     `K_REVISION`, the Cloud Run revision that executed the run.
+   *   - `kind: 'isolated'` — the isolated runner service; `revision` is the
+   *     `K_REVISION` the runner reported. Self-reported: the app checks its
+   *     shape, not its value (it has no independent source for it).
    *   - `kind: 'local-emulator'` — the app's own child process, which exists
    *     only in an emulator build (local development and CI). Named, so it is
    *     never mistaken for the isolated runner.

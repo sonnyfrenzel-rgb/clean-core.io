@@ -7,9 +7,12 @@ import { normalizeSandboxPath, MAX_SANDBOX_PATH, type SandboxFile } from './file
  * The runner is a separate Cloud Run service (`runner/`), reachable only by the
  * app. It takes files and a suite, runs them the way `./core.ts` runs them, and
  * reports what it ran: the SHA-256 of every file it received, the suite's hash
- * and the revision it runs as. The app compares those hashes with what it sent
- * before it writes a receipt — a report about different files is not a report
- * about this run.
+ * and the revision it says it runs as. The app compares those hashes with what
+ * it sent before it writes a receipt — a report about different files is not a
+ * report about this run. The revision is not compared with anything: the app
+ * has no independent source for it (reading it from Cloud Run would need a role
+ * the app's account does not hold), so it is recorded as the runner reported it
+ * — self-reported, shape-checked only.
  *
  * Pure (node:crypto only): both sides import it, and the specs call it directly.
  */
@@ -53,7 +56,10 @@ export interface RunnerReport {
   /** SHA-256 of every received file, as received, sorted by path. */
   files: FileHash[];
   suiteSha256: string;
-  /** `K_REVISION` of the runner service — the revision that executed the run. */
+  /**
+   * `K_REVISION` as the runner reads it from its own environment. Self-reported:
+   * the app checks only its shape (`parseRunnerReport`), never its value.
+   */
   revision: string;
   mode: RunnerMode;
 }
@@ -73,6 +79,22 @@ export function hashRunInputs(files: SandboxFile[], suiteCode: string): { files:
   const digest = sha256Hex(JSON.stringify({ files: hashed, suite: suiteSha256 }));
   return { files: hashed, suiteSha256, digest };
 }
+
+/**
+ * The fixed network probe of the authorized negative test (roadmap 8.9): the
+ * destinations the runner's server process tries on `POST /selftest-network`.
+ * Shared so the runner and the app that judges its answer cannot drift — the
+ * app accepts an answer only when it names exactly these targets.
+ *
+ * These are sample destinations, not a proof of a general egress boundary: an
+ * unreached probe shows that these three were unreachable at that moment. The
+ * boundary itself is the runner VPC without NAT and its firewall (SECURITY.md §7).
+ */
+export const RUNNER_NETWORK_PROBES = [
+  { label: 'public host 8.8.8.8:53', host: '8.8.8.8', port: 53 },
+  { label: 'public host www.google.com:443', host: 'www.google.com', port: 443 },
+  { label: 'private address 10.10.0.1:443', host: '10.10.0.1', port: 443 },
+] as const;
 
 type Parsed<T> = { ok: true; value: T } | { ok: false; status: number; error: string };
 

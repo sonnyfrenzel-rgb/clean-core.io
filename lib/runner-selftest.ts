@@ -18,16 +18,22 @@
  *
  * What it does not claim: that the runner's service account has no roles. That
  * is an IAM fact, checked with `gcloud` against the project, and the operator
- * runbook (SECURITY.md §7) lists it next to this test.
+ * runbook (SECURITY.md §7) lists it next to this test. Nor that no network
+ * destination at all is reachable: the network probes try a few fixed
+ * destinations, and each probe name says which. An unreached sample is evidence,
+ * not a proof of the egress boundary — that boundary is the runner VPC without
+ * NAT and its firewall, checked where it is configured.
  */
+
+import { RUNNER_NETWORK_PROBES } from './test-sandbox/protocol';
 
 /** Names of the probes, in the order the suite runs them. */
 export const SELFTEST_PROBES = [
   'no secret-named environment variables',
   'no file outside the sandbox directory is readable',
-  'no connection to a public internet host',
-  'no connection to the metadata address',
-  'no connection to a private address',
+  'no connection to www.google.com:443 or 8.8.8.8:53',
+  'no connection to 169.254.169.254:80 from the sandbox',
+  'no connection to 10.10.0.1:443',
 ] as const;
 
 export type SelftestProbe = (typeof SELFTEST_PROBES)[number];
@@ -132,4 +138,66 @@ export function evaluateSelftest(report: { outcome: string; stdout: string; exit
 
 function escapeRegExp(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/** What the app concluded from one runner's `POST /selftest-network` answer. */
+export interface NetworkVerdict {
+  held: boolean;
+  /** Why it is not held, in words; null when it is. */
+  reason: string | null;
+}
+
+/**
+ * Judges a runner's network probe answer. Held only when the answer names
+ * exactly the targets in `RUNNER_NETWORK_PROBES` — each once, none missing,
+ * none extra — and every one of them is explicitly `reached: false`. An answer
+ * that leaves a probe out proves nothing about that probe, so it is not held.
+ */
+export function evaluateNetworkProbe(body: unknown): NetworkVerdict {
+  const probes = (body && typeof body === 'object' ? (body as { probes?: unknown }).probes : undefined);
+  if (!Array.isArray(probes)) return { held: false, reason: 'The runner answered without a probe list.' };
+  const expected = RUNNER_NETWORK_PROBES.map((p) => p.label as string);
+  const seen = new Map<string, number>();
+  for (const p of probes) {
+    const target = p && typeof p === 'object' ? (p as { target?: unknown }).target : undefined;
+    if (typeof target !== 'string') return { held: false, reason: 'The runner answered a probe without a target.' };
+    seen.set(target, (seen.get(target) ?? 0) + 1);
+  }
+  const missing = expected.filter((t) => !seen.has(t));
+  const unexpected = [...seen.keys()].filter((t) => !expected.includes(t));
+  const repeated = [...seen.entries()].filter(([, n]) => n > 1).map(([t]) => t);
+  if (missing.length || unexpected.length || repeated.length || probes.length !== expected.length) {
+    const parts = [
+      missing.length ? `missing: ${missing.join(', ')}` : '',
+      unexpected.length ? `unexpected: ${unexpected.join(', ')}` : '',
+      repeated.length ? `repeated: ${repeated.join(', ')}` : '',
+    ].filter(Boolean);
+    return { held: false, reason: `The runner did not answer the expected probe set (${parts.join('; ') || 'wrong count'}).` };
+  }
+  const reached = probes
+    .filter((p) => (p as { reached?: unknown }).reached !== false)
+    .map((p) => (p as { target: string }).target);
+  if (reached.length) return { held: false, reason: `Reached or not explicitly unreached: ${reached.join(', ')}.` };
+  return { held: true, reason: null };
+}
+
+/**
+ * The overall result of the negative test. `incomplete` when a runner the test
+ * needs is not configured on this deployment: the live runner is what the
+ * reopening condition is about, so a test that could not ask it is not a pass.
+ */
+export type SelftestStatus = 'held' | 'not-held' | 'incomplete';
+
+export function combineSelftest(parts: {
+  sandbox: { held: boolean };
+  mockNetwork: { held: boolean };
+  /** null when RUNNER_LIVE_URL is not configured. */
+  liveNetwork: { held: boolean } | null;
+}): { status: SelftestStatus; held: boolean } {
+  // A failure among the parts that did run outranks the part that could not.
+  if (!parts.sandbox.held || !parts.mockNetwork.held || (parts.liveNetwork && !parts.liveNetwork.held)) {
+    return { status: 'not-held', held: false };
+  }
+  if (parts.liveNetwork === null) return { status: 'incomplete', held: false };
+  return { status: 'held', held: true };
 }

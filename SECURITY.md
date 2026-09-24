@@ -207,7 +207,7 @@ App (API route, public service)
   │     registered in s4_proxy_capabilities, deleted when the run returns
   │  6. POST <runner>/run with the app's Google ID token (audience = runner URL)
   │  7. check the report: SHA-256 of every file and of the suite = what was sent, mode = asked for
-  │  8. verdicts + receipt (runner kind, K_REVISION, files digest) — mock runs only
+  │  8. verdicts + receipt (runner kind, self-reported K_REVISION, files digest) — mock runs only
   ▼
 Runner service (clean-core-runner / clean-core-runner-live, one image)
      SA without roles · no secrets · ingress internal · run.invoker: the app only
@@ -228,7 +228,7 @@ App credential proxy (GET|HEAD /api/s4-proxy/{capability}/sap/…)
 ### Security Properties
 - **The boundary is the service, not the process.** The runner's service account has no roles; the image contains Node, the bundled runner and esbuild — no app code, no `.env`, no secrets (`runner/Dockerfile`, `runner/Dockerfile.dockerignore`). A generated test that got past every Node-level guard would find no credential in its environment or file system and no network path out of the mock runner. The metadata server stays reachable from any Cloud Run instance; the token it hands out belongs to an account that may do nothing.
 - **"Dort oder gar nicht".** Without `RUNNER_URL` a deployed app refuses to run tests (HTTP 503). The local path exists only when the build itself was made for the Firebase emulator, and is named `local-emulator` wherever its result appears.
-- **What ran is what was sent.** The runner reports the SHA-256 of every file and of the suite plus its `K_REVISION`; the app refuses a report that does not match and writes the digest and the revision into the receipt (`lib/test-receipt.ts`, `runner`).
+- **What ran is what was sent.** The runner reports the SHA-256 of every file and of the suite plus its `K_REVISION`; the app refuses a report whose hashes do not match what it sent and writes the digest and the revision into the receipt (`lib/test-receipt.ts`, `runner`). The revision is self-reported: the app checks only its shape, because it has no independent source to compare it with.
 - **No credential ever reaches a runner.** A live run carries a capability; the credential proxy adds the credentials per request, for one host, one run, ten minutes at most, read-only methods.
 - **Node-level layers, kept as defense in depth.** Bundler with one resolver (imports must stay inside the run directory, bare packages become a stub), Permission Model (file system scoped to the run directory; no child processes, workers or addons), `--no-experimental-sqlite`, the module guard (`lib/sandbox-module-guard.ts`) and the network guard (`lib/test-sandbox/net-guard.ts`: closed on mock runs; on live runs exactly one loopback port, DNS closed on both). None of these is claimed as a boundary.
 - **No shell execution, minimal environment, output cap, 15 s timeout, 256 MB child heap.**
@@ -259,7 +259,7 @@ lifted, the route refuses a live run unless the live runner and the proxy are co
 
 **Reopens only when all of these hold:**
 - The isolated live runner and the credential proxy are deployed and configured (RUNNER_LIVE_URL, RUNNER_SERVICE_ACCOUNT, S4_PROXY_BASE_URL); without them the route refuses a live run even with this lock lifted.
-- The authorized negative test (tests/runner-isolation.spec.ts) has passed against the deployed runners: no foreign files, no secrets, no network beyond the app.
+- The authorized negative test (tests/runner-isolation.spec.ts) has been run against the deployed runners, with both runners configured, and every probe held: no secret-named variable, no file outside the sandbox directory, none of the fixed destinations it probes reachable (SECURITY.md §7.2) — and gcloud shows that the runner service account holds no role, since the metadata server stays reachable by design.
 - An external review of that runner is done and its findings are closed.
 - Sonny decides to reopen, and this entry, SECURITY.md §7.1 and the guard spec change in the same release.
 
@@ -282,7 +282,19 @@ reopening conditions in §7.1. The runners accept traffic only from the app, so 
 generated code travels: `POST /api/admin/runner-selftest` (administrators, fresh step-up) makes the app send
 a fixed probe suite (`lib/runner-selftest.ts`) to the mock runner's sandbox and ask both runners for a fixed
 network probe from their server process. Every probe passes only when the access fails: no secret-named
-environment variable, no file outside the sandbox directory, no public host, no private address.
+environment variable, no file outside the sandbox directory, and none of the fixed destinations reachable —
+`www.google.com:443`, `8.8.8.8:53` and `10.10.0.1:443` (plus `169.254.169.254:80` from inside the sandbox).
+The app accepts a runner's network answer only when it names exactly the expected targets
+(`RUNNER_NETWORK_PROBES`, `lib/test-sandbox/protocol.ts`). Without `RUNNER_LIVE_URL` the result is
+`incomplete`, never a pass.
+
+What it can prove: that on the deployed profile these files, variables and destinations were out of reach at
+the time of the run. What it cannot prove: that no other destination is reachable — the probes are samples; the
+egress boundary is the runner VPC without NAT and its firewall, and that has to be checked where it is
+configured. Nor the metadata server (below).
+
+**Status: not run yet.** The runners are being deployed for the first time; `run.invoker` and the runner URLs
+on the app are not configured yet. No result of this test exists.
 
 How the owner runs it, after the runners are deployed and `RUNNER_URL` is set:
 

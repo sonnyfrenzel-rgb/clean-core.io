@@ -222,3 +222,23 @@ test.describe('the receipt names the runner', () => {
     expect(verify).toBeLessThan(success);
   });
 });
+
+test.describe('the runner revision is described as what it is', () => {
+  // The app has no independent source for K_REVISION: it checks the shape, not
+  // the value. Any text saying the app checks the revision would be false.
+  test('a well-shaped revision the app never deployed is still accepted — so it is self-reported', () => {
+    const report = {
+      outcome: 'ran', stdout: '', stderr: '', exitCode: 0, stubbedPackages: [],
+      files: [], suiteSha256: hashRunInputs([], 'x').suiteSha256, revision: 'any-revision-the-runner-names', mode: 'mock',
+    };
+    expect(parseRunnerReport(report)?.revision).toBe('any-revision-the-runner-names');
+  });
+
+  test('SECURITY.md, the protocol and the receipt call it self-reported', () => {
+    const read = (p: string) => fs.readFileSync(path.join(process.cwd(), p), 'utf8');
+    expect(read('SECURITY.md')).toContain('The revision is self-reported');
+    expect(read('SECURITY.md')).not.toContain('refuses a report that does not match and writes the digest and the revision');
+    expect(read('lib/test-sandbox/protocol.ts')).toContain('self-reported, shape-checked only');
+    expect(read('lib/test-receipt.ts')).toContain('Self-reported');
+  });
+});

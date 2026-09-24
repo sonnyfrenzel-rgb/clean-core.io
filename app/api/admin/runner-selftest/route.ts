@@ -3,7 +3,13 @@ import { verifyAdminRequest, assertAdminStepUp } from '@/lib/firebase-admin';
 import { logger, errMessage } from '@/lib/logger';
 import { callIsolatedRunner, readRunnerConfig } from '@/lib/test-runner-client';
 import { fetchMetadataIdToken } from '@/lib/google-id-token';
-import { RUNNER_SELFTEST_SUITE, RUNNER_SELFTEST_FILE, evaluateSelftest } from '@/lib/runner-selftest';
+import {
+  RUNNER_SELFTEST_SUITE,
+  RUNNER_SELFTEST_FILE,
+  evaluateSelftest,
+  evaluateNetworkProbe,
+  combineSelftest,
+} from '@/lib/runner-selftest';
 
 /**
  * The authorized negative test of the isolated runners — roadmap 8.9.
@@ -26,7 +32,7 @@ export const dynamic = 'force-dynamic';
 
 const NETWORK_TIMEOUT_MS = 30_000;
 
-async function networkProbe(url: string): Promise<{ ok: boolean; held: boolean; detail: unknown }> {
+async function networkProbe(url: string): Promise<{ ok: boolean; held: boolean; reason: string | null; detail: unknown }> {
   try {
     const token = await fetchMetadataIdToken(url);
     const controller = new AbortController();
@@ -37,13 +43,13 @@ async function networkProbe(url: string): Promise<{ ok: boolean; held: boolean; 
       signal: controller.signal,
     });
     clearTimeout(timer);
-    if (!res.ok) return { ok: false, held: false, detail: `HTTP ${res.status}` };
-    const body = (await res.json()) as { probes?: Array<{ target: string; reached: boolean }> };
-    const probes = Array.isArray(body.probes) ? body.probes : [];
-    const held = probes.length > 0 && probes.every((p) => p.reached === false);
-    return { ok: true, held, detail: body };
+    if (!res.ok) return { ok: false, held: false, reason: `HTTP ${res.status}`, detail: `HTTP ${res.status}` };
+    const body: unknown = await res.json();
+    const verdict = evaluateNetworkProbe(body);
+    return { ok: true, held: verdict.held, reason: verdict.reason, detail: body };
   } catch (err: unknown) {
-    return { ok: false, held: false, detail: errMessage(err).slice(0, 200) };
+    const detail = errMessage(err).slice(0, 200);
+    return { ok: false, held: false, reason: detail, detail };
   }
 }
 
@@ -83,17 +89,23 @@ export async function POST(req: NextRequest) {
     const mockNetwork = await networkProbe(new URL(cfg.runnerUrl).origin);
     const liveNetwork = cfg.runnerLiveUrl ? await networkProbe(new URL(cfg.runnerLiveUrl).origin) : null;
 
-    const held = sandboxVerdict.held && mockNetwork.held && (liveNetwork === null || liveNetwork.held);
+    const { status, held } = combineSelftest({ sandbox: sandboxVerdict, mockNetwork, liveNetwork });
     logger.info('runner selftest', {
       route: 'api/admin/runner-selftest',
-      held,
+      status,
       sandbox: sandboxVerdict.held,
       mockNetwork: mockNetwork.held,
       liveNetwork: liveNetwork ? liveNetwork.held : 'not-configured',
     });
     return NextResponse.json({
       held,
+      status,
+      incomplete:
+        status === 'incomplete'
+          ? 'The live runner is not configured on this deployment (RUNNER_LIVE_URL), so its network probe was not run. Without it the test is not a pass.'
+          : null,
       file: RUNNER_SELFTEST_FILE,
+      // Self-reported by the runner (K_REVISION); the app has no independent value to compare it with.
       sandbox: { ...sandboxVerdict, revision: sandbox.ok ? sandbox.report.revision : null },
       network: { mock: mockNetwork, live: liveNetwork },
       notProbed:

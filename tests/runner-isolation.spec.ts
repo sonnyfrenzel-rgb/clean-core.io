@@ -8,7 +8,10 @@ import {
   RUNNER_SELFTEST_SUITE,
   SELFTEST_PROBES,
   evaluateSelftest,
+  evaluateNetworkProbe,
+  combineSelftest,
 } from '../lib/runner-selftest';
+import { RUNNER_NETWORK_PROBES } from '../lib/test-sandbox/protocol';
 import { executeSandboxRun } from '../lib/test-sandbox/core';
 
 /**
@@ -77,6 +80,78 @@ test.describe('the verdict reads only what was reported', () => {
   });
 });
 
+test.describe('the network verdict reads the whole expected probe set', () => {
+  const answer = (probes: Array<{ target: string; reached: boolean }>) => ({ mode: 'mock', revision: 'r', probes });
+  const allUnreached = () => RUNNER_NETWORK_PROBES.map((p) => ({ target: p.label as string, reached: false }));
+
+  test('every expected target, explicitly unreached: held', () => {
+    expect(evaluateNetworkProbe(answer(allUnreached()))).toEqual({ held: true, reason: null });
+  });
+
+  test('a missing probe is not held, even if the rest are unreached', () => {
+    const v = evaluateNetworkProbe(answer(allUnreached().slice(1)));
+    expect(v.held).toBe(false);
+    expect(v.reason).toContain(RUNNER_NETWORK_PROBES[0].label);
+  });
+
+  test('a single unreached probe is not the set', () => {
+    expect(evaluateNetworkProbe(answer([{ target: 'anything', reached: false }])).held).toBe(false);
+  });
+
+  test('an extra or repeated target is not held', () => {
+    expect(evaluateNetworkProbe(answer([...allUnreached(), { target: 'other', reached: false }])).held).toBe(false);
+    const rep = allUnreached();
+    rep[1] = { ...rep[0] };
+    expect(evaluateNetworkProbe(answer(rep)).held).toBe(false);
+  });
+
+  test('a reached probe, or one without an explicit false, is not held', () => {
+    const r = allUnreached();
+    r[2] = { ...r[2], reached: true };
+    expect(evaluateNetworkProbe(answer(r)).held).toBe(false);
+    const u = allUnreached().map((p, i) => (i === 0 ? { target: p.target } : p));
+    expect(evaluateNetworkProbe({ probes: u }).held).toBe(false);
+  });
+
+  test('no probe list is not held', () => {
+    expect(evaluateNetworkProbe({}).held).toBe(false);
+    expect(evaluateNetworkProbe(null).held).toBe(false);
+  });
+
+  test('the runner server probes exactly the shared list', () => {
+    const server = fs.readFileSync(path.join(process.cwd(), 'runner/server.ts'), 'utf8');
+    expect(server).toContain('for (const p of RUNNER_NETWORK_PROBES)');
+    expect(server).not.toMatch(/label:\s*'/);
+    for (const p of RUNNER_NETWORK_PROBES) expect(server).not.toContain(`'${p.host}'`);
+  });
+});
+
+test.describe('the overall result', () => {
+  const H = { held: true };
+  const N = { held: false };
+
+  test('without the live runner the test is incomplete, never held', () => {
+    expect(combineSelftest({ sandbox: H, mockNetwork: H, liveNetwork: null })).toEqual({ status: 'incomplete', held: false });
+  });
+
+  test('a failure outranks a missing runner', () => {
+    expect(combineSelftest({ sandbox: N, mockNetwork: H, liveNetwork: null }).status).toBe('not-held');
+  });
+
+  test('held only when every part ran and held', () => {
+    expect(combineSelftest({ sandbox: H, mockNetwork: H, liveNetwork: H })).toEqual({ status: 'held', held: true });
+    expect(combineSelftest({ sandbox: H, mockNetwork: H, liveNetwork: N }).held).toBe(false);
+    expect(combineSelftest({ sandbox: H, mockNetwork: N, liveNetwork: H }).held).toBe(false);
+  });
+
+  test('the admin route decides with these functions', () => {
+    const route = fs.readFileSync(path.join(process.cwd(), 'app/api/admin/runner-selftest/route.ts'), 'utf8');
+    expect(route).toContain('evaluateNetworkProbe(body)');
+    expect(route).toContain('combineSelftest(');
+    expect(route).not.toMatch(/liveNetwork === null \|\|/);
+  });
+});
+
 test.describe('the suite can fail', () => {
   test('without the sandbox and with a secret-named variable, the environment probe goes red', () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'runner-selftest-'));
@@ -119,7 +194,7 @@ test.describe('against the deployment (authorized, operator-run)', () => {
   const appUrl = process.env.RUNNER_SELFTEST_APP_URL;
   const adminToken = process.env.RUNNER_SELFTEST_ADMIN_TOKEN;
 
-  test('the deployed runners reach no foreign file, no secret and no network', async ({ request }) => {
+  test('the deployed runners reach no foreign file, no secret and none of the probed destinations', async ({ request }) => {
     test.skip(!appUrl || !adminToken, 'Set RUNNER_SELFTEST_APP_URL and RUNNER_SELFTEST_ADMIN_TOKEN (SECURITY.md §7) to run against the deployment.');
     test.setTimeout(180_000);
     const res = await request.post(`${appUrl}/api/admin/runner-selftest`, {
@@ -127,13 +202,18 @@ test.describe('against the deployment (authorized, operator-run)', () => {
     });
     const body = (await res.json()) as {
       held?: boolean;
+      status?: string;
       sandbox?: { held: boolean; reason: string | null };
       network?: { mock: { held: boolean; detail: unknown }; live: { held: boolean; detail: unknown } | null };
     };
     expect(res.status(), JSON.stringify(body).slice(0, 2000)).toBe(200);
     expect(body.sandbox?.held, body.sandbox?.reason ?? '').toBe(true);
     expect(body.network?.mock.held, JSON.stringify(body.network?.mock.detail)).toBe(true);
-    if (body.network?.live) expect(body.network.live.held, JSON.stringify(body.network.live.detail)).toBe(true);
+    // The live runner is what the reopening condition is about: an answer
+    // without its probe is incomplete, not a pass.
+    expect(body.network?.live, 'The live runner was not probed (RUNNER_LIVE_URL unset on the deployment).').not.toBeNull();
+    expect(body.network?.live?.held, JSON.stringify(body.network?.live?.detail)).toBe(true);
+    expect(body.status).toBe('held');
     expect(body.held).toBe(true);
   });
 });
