@@ -1,6 +1,6 @@
 # DESIGN.md — Clean-Core.io
 
-**Version 1.4.3 · 15.09.2026 · abgenommen von Sonny · verbindlich für alles, was zur Oberfläche von 3.0 gehört** (Roadmap-Schritte 1.4–1.7,
+**Version 1.5 · 24.09.2026 · abgenommen von Sonny · verbindlich für alles, was zur Oberfläche von 3.0 gehört** (Roadmap-Schritte 1.4–1.7,
 Phasen 2–8, 3.0). Das Zielbild zeigen die Mockups
 [`docs/roadmap/clean-core-mockups-v2_8.html`](docs/roadmap/clean-core-mockups-v2_8.html). Entscheidungen mit Datum
 und Begründung stehen im Entscheidungslog [`docs/design/decisions.md`](docs/design/decisions.md); diese Datei sagt
@@ -14,7 +14,9 @@ Look bleibt der von Clean-Core.io.
 
 **Zwei Räume, ein Look.** Die öffentlichen Seiten (Landing, Wissen, Whitepaper) behalten ihre großzügige Ästhetik —
 große Radien, Mesh-Hintergrund, grüne Akzente. Der **Arbeitsraum** ist ein Werkzeug: dicht, ruhig, und Grün heißt dort
-nur eines — belegt.
+nur eines — belegt. **Ein Look heißt: dieselben Tokens überall** (ADR-051) — auch öffentliche Seiten färben nur mit
+`--cc-*`-Tokens, nie mit der Tailwind-Palette oder Hex-Literalen; auch die Mesh-Farben der Landing sind Tokens. Was
+nur öffentlich gilt, sind die großen Radien (§1.4), Mesh und Raster als Hintergrund und `--cc-space-7`.
 
 ---
 
@@ -22,7 +24,8 @@ nur eines — belegt.
 
 Heute spricht die App zwei Farbdialekte (Tailwind `green-600`/`gray-950` und `#006b2c`/`#00873a`/`#0b1c30`), 78
 Button-Stile und Schrift bis hinunter auf 8 px. Das wird ein Satz **semantischer Tokens** in `app/globals.css`
-(`@theme`); neue Komponenten verwenden nur diese.
+(`@theme`); neue Komponenten verwenden nur diese. Das gilt für jede Seite — Arbeitsraum, Stufen, Konto und
+öffentliche Seiten (ADR-051).
 
 ### 1.1 Farbe
 
@@ -107,10 +110,13 @@ Fokusringe und Feldgrenzen bleiben sichtbar.
 | Fließtext | 14 px / 500, Zeilenhöhe 1,55 | Regeltext |
 | Tabellenzelle, Nebentext | 13 px / **500** | Zeilen |
 | Object Identifier (Titel) | 13 px / **600** | „Vendor block list validation" |
+| Meta/Chip | 12 px / **600** | Chip- und Tag-Text, Metazeile, Hinweis unter einem Feld |
 | Mikro-Label | 11 px / **600**, VERSALIEN, `0.08em` | Spaltenköpfe, Facetten-Label |
 
 **Untergrenze 11 px.** Kein Inhalt in Versalien, nur Labels. 900 gibt es im Arbeitsraum nicht — es flacht die
-Hierarchie ab. Landing- und Stufenköpfe bleiben bei `SectionHeader`/`StageHeader`.
+Hierarchie ab. **12 px ist eine eigene Stufe** (ADR-047), nicht die Lücke zwischen 11 und 13: Chips, Kennungen, Tags,
+Metazeilen und Feldhinweise, immer 600 — für Fließtext und Tabellenzellen nie. Der Stufenkopf (`StageHeader`) folgt
+dem Projekttitel, 22 px / 800 (§2.3, ADR-050); Landing-Köpfe bleiben bei `SectionHeader` (§1.7).
 
 ### 1.3 Abstand
 
@@ -125,6 +131,10 @@ Ein 4-px-Raster als Tokens; andere Abstände gibt es nicht.
 | `--cc-space-5` | 24 px | zwischen Abschnitten, Seitenrand ab M |
 | `--cc-space-6` | 32 px | Kopf der Object Page zu Inhalt |
 | `--cc-space-7` | 48 px | nur Landing |
+
+**Ein halber Schritt, genau einer** (ADR-048): **2 px** (Tailwind `*-0.5`) nur innerhalb von Chips, Kennungen und Tags
+(Innenabstand vertikal, Abstand Icon zu Wort) und zur optischen Ausrichtung eines Icons an der Textzeile. 6, 10 und
+14 px (`*-1.5`, `*-2.5`, `*-3.5`) gibt es nicht — auch nicht in `components/cc`; der Guard zählt sie als Ratsche bis null.
 
 ### 1.4 Form, Tiefe, Hintergrund
 
@@ -182,7 +192,8 @@ Radius wie das Element. Nie `outline: none` ohne diesen Ersatz. Die Fokusreihenf
 - **Diagramme, die Zustände zählen** (Level-Verteilung A–D, Befunde je Schwere), verwenden die Zustandsfarben — und
   beschriften jede Kategorie. Level: A `information`, B `neutral`, C `warning`, D `error`, jeweils mit dem Buchstaben
   (ADR-024) — die Level stammen aus SAPs Klassifikationsdatei, sind also *Imported*, kein Nachweis, und stehen nie im
-  signierten Audit-Pack; Grün bekommen sie deshalb nicht.
+  signierten Audit-Pack; Grün bekommen sie deshalb nicht. Schwere: Critical und High `error`, Medium `warning`, Low
+  `neutral`, Info `information`, jeweils mit dem Wort (ADR-049) — eine Schwere ist kein Nachweis und bekommt kein Grün.
 - **Alle anderen Diagramme** verwenden die kategoriale Palette und nie eine Zustandsfarbe: `#334155`, `#4f46e5`,
   `#0d9488`, `#9333ea`, `#c026d3`. Sequenziell (Mengen, Verlauf): Indigo `#e0e7ff` → `#a5b4fc` → `#6366f1` → `#3730a3`.
 - Jede Zahl im Diagramm auch als Text erreichbar (Tabelle oder `aria-label`).
@@ -206,6 +217,11 @@ Fiori-App und sagt das nie.
 | **List Report** | „My workspace" (Projektliste) | Filterleiste (§2.5), Toolbar „Projects (23)", Tabelle, Zeilenklick öffnet das Projekt |
 | **Object Page** | der Arbeitsraum eines Projekts | Kopf, Werkzeugleiste, Anchor Bar, Abschnitte, Fußleiste nur beim Bearbeiten (§2.3) |
 | **Overview** | Management-Sicht eines Projekts | Karten mit je einer Antwort, jede Zahl mit „Why?" |
+
+**Mit 3.0 ist alles neu, aus einem Guss** (ADR-052, Sonny 24.09.2026). Keine alte Oberfläche wird entfernt, statt
+umgebaut zu werden: das **alte Dashboard** (`/dashboard`) und die **alte Stufen-Demo** (`/demo/[stage]`) werden nach
+dieser Datei neu gebaut — Floorplan, Tokens, cc-Komponenten, Sprache — wie jede andere Seite. Was sie heute können,
+geht dabei nicht verloren. Die neue Demo folgt §6.1.2.
 
 ### 2.3 Object Page des Arbeitsraums
 
@@ -248,6 +264,13 @@ Sichten-Umschalter steht ein Satz, welche Frage die Sicht beantwortet; „About 
 | **Sicht** (Segmented Control) | ordnet denselben Inhalt nach einer Frage und wählt die erste Antwort (§5.6) | ändert keine Daten, filtert nichts weg, öffnet keine Seite | Business | URL (`?view=`) und Browser |
 | **Ebene** (Anchor Bar) | springt zu einem Abschnitt der Seite und markiert, wo man ist | wechselt nicht die Sicht | Need & process | URL-Fragment (`#need`) |
 | **Werkzeug** (Werkzeugleiste) | öffnet die Stufe als eigene Seite; „Back to workspace" kehrt zu Sicht und Ebene zurück | ist keine Fortschrittsanzeige | — | URL der Stufe |
+
+**Der Kopf einer Stufe** (ADR-050). Eine Stufe ist eine Werkzeug-Seite des Arbeitsraums, kein Landing-Abschnitt. Ihr
+Kopf kommt aus `StageHeader` und steht wie der Projekttitel: **22 px / 800, `-0.02em`, `--cc-ink`**, als `h1`. Das
+Icon steht neutral davor — 20 px, `--cc-ink-muted`, ohne Fläche; keine grüne Blase, denn Grün heißt im Arbeitsraum
+belegt (§1.1). Über dem Titel der Link **„Back to workspace"** (13 px / 600, `--cc-ink-muted`, Pfeil links; ein Link,
+kein Button), der zu Sicht und Ebene zurückführt, von denen die Stufe geöffnet wurde. Eyebrow und Lead bleiben, in der
+Skala von §1.2 (Mikro-Label, Fließtext).
 
 Beim Scrollen schrumpft der Kopf auf Titel, Sichten-Umschalter und die Facetten-Zeile — in Business die Zeile „Project
 status"; die Anchor Bar bleibt stehen. **Eine
@@ -385,6 +408,9 @@ Für Erstnutzer ist weniger mehr — die Tiefe bleibt, sie steht nur nicht zuers
 - **Jede sichtbare Zeichenkette neuer Oberflächen läuft über Textschlüssel** (Message-Katalog), auch solange es nur
   Englisch gibt; die deutsche Oberfläche kommt nach 3.0 (Roadmap §7). Herkunfts-Labels sind Schlüssel in
   `lib/provenance.ts`.
+- **Eine Ausnahme, ausdrücklich:** die deutsche Datenschutzerklärung `app/datenschutz/de` ist Rechtstext (ADR-053).
+  Sie bleibt deutsch und wörtlich, läuft nicht über Textschlüssel und ist von den Sprach-Guards ausgenommen; Look
+  (§1) und Struktur gelten für sie wie für jede Seite. Keine weitere Seite wird ohne neuen ADR zur Ausnahme.
 - **Zahlen:** `Intl.NumberFormat('en')`, Tausendertrennung; Prozent ganzzahlig; Einheit in der Spaltenüberschrift.
 - **Geld** (ADR-022): Kostenbeträge **entstehen** nur in Economics, auf Annahmen des Nutzers, mit Währungscode
   (Roadmap 0.4). Anderswo — Management-Sicht, Entscheidung, Export — erscheinen sie nur als Übernahme mit dem Chip
@@ -469,9 +495,11 @@ Liste eine eigene Form, eine eigene Datei im Code neben `lib/provenance.ts` und 
 | **Evidenzstufe** (Roadmap 7.2) | E0 none · E1 catalog reference · E2 documented · E3 demonstrated · E4 accepted in the target system | Kennung: Rechteck, Radius 4 px, Code in Mono, dahinter das Wort; neutral für alle Stufen — eine Belegreife, kein Zustand | `E1` catalog reference |
 | **Clean-Core-Level** | A · B · C · D | Kennung wie Evidenzstufe, Farbe nach §1.8 | `D` |
 | **Regel-Eigenschaft** | hard-coded in program · customizing · master data | Tag: Rechteck, Radius 4 px, `--cc-surface-muted`, Text `--cc-ink-muted`, kein Icon | hard-coded in program |
+| **Schwere eines Befunds** (ADR-049) | Critical · High · Medium · Low · Info — in `lib/severity.ts` | Kennung wie Level: Rechteck, Radius 4 px, das Wort in 12 px / 600 (§1.2); Farbe nach §1.8 — Critical und High `error`, Medium `warning`, Low `neutral`, Info `information`; nie `success` | `High` |
 
 Eine Regel-Eigenschaft sagt, **wo** eine Regel steht, und ist nie ein Nachweis; eine Evidenzstufe sagt, **wie stark**
-ein Standard-Kandidat belegt ist, und ist nie eine Herkunft.
+ein Standard-Kandidat belegt ist, und ist nie eine Herkunft. Eine Schwere sagt, **wie dringend** ein Befund ist — sie
+ist weder Herkunft noch Objektstatus, und kein Befund trägt eine Schwere, die nicht aus dieser Liste kommt.
 
 ---
 
@@ -892,6 +920,9 @@ Ziel: die Schwelle zur ersten eigenen Nutzung immer weiter senken.
   Browser und verschwindet mit „Reset demo". Nichts wird gespeichert, nichts zählt aufs Kontingent.
 - **Eine Demo für alle, keine Kopie je Konto.** Das Konto bleibt unverändert, es entstehen keine Daten je Nutzer, und
   die Demo ist immer auf dem Stand des Produkts — auch für Konten, die es schon gibt.
+- **Eine neue Demo, nicht die alte weitergeführt** (ADR-052). Die Stufen der Demo (heute `/demo/[stage]`) werden nach
+  dieser Datei neu gebaut: dieselben Stufenköpfe (§2.3), Tokens, Chips und Meldungen wie im eigenen Projekt. Die Demo
+  bleibt eine eigene Route ohne Pfad zu Signieren, Kontingent und Export — neu ist das Aussehen, nicht diese Grenze.
 - **Die Tour** — mehr Coach Marks als im eigenen Projekt, weil hier gelernt wird: rund zwölf Stationen entlang des
   Wegs — Enthüllung · Not determined · Prozesskarte und Quellspalte · Ebenen eines großen Prozesses · eine Regel
   bestätigen · Standard-Fit · IT-Kette · Management-Sicht · vier Töpfe · Kosten als Simulation · Entscheidung ·
@@ -983,7 +1014,7 @@ Sonny 15.09.2026):
 | Chips in drei Formen (gefüllt, Umriss, gestrichelt) nach §4; unter `forced-colors` und im Druck unterscheidbar | Guard aus Schritt 1.5 über `lib/provenance.ts`, gerendert mit `forcedColors: 'active'` |
 | Prozesskarte: ein Tab-Halt, Pfeiltasten, benannte Knoten, Schrittliste gleichwertig (§5.7) | gerenderter Tastatur-Test aus Schritt 2.5 |
 | Überschriftenfolge `h1` → `h2` → `h3` je Sicht; jede Live-Region höchstens eine Ansage je Ereignis; Message Box modal und `inert` dahinter | gerenderter Test aus Schritt 3.0.4 |
-| Objektstatus, Evidenzstufe, Level und Regel-Eigenschaft nur aus ihren festen Listen, in ihrer Form (§4.1) | Guard aus Schritt 1.5 |
+| Objektstatus, Evidenzstufe, Level, Regel-Eigenschaft und Schwere nur aus ihren festen Listen, in ihrer Form (§4.1) | Guard aus Schritt 1.5 |
 | Tokens statt Hex-Literale, vier Button-Stile, Schrift ≥ 11 px, Abstände aus der Skala | Style-Guard aus Schritt 1.5 |
 | Herkunft nur aus `lib/provenance.ts`; Grün nur für `proven`/`success` | Guard aus Schritt 1.5 |
 | Keine Zustandsfarbe ohne Text; Fokusring an jedem bedienbaren Element | Style-Guard, gerendert geprüft |
@@ -998,6 +1029,7 @@ Sonny 15.09.2026):
 
 | Version | Datum | Was |
 |---|---|---|
+| 1.5 | 24.09.2026 | Entscheidungen E-1 bis E-7 aus Block D („die ganze App aus einem Guss"), Sonny 24.09.2026 (ADR-047 bis ADR-053): 12 px / 600 als Stufe „Meta/Chip" in der Skala (§1.2); 2 px nur in Chips, Kennungen und zur Icon-Ausrichtung, 6/10/14 px nicht (§1.3); Stufenkopf wie Projekttitel 22 px / 800, `--cc-ink`, neutrales Icon, „Back to workspace" (§1.2, §2.3); Schwere eines Befunds als feste Liste `lib/severity.ts` mit Kennungsform und Farben (§1.8, §4.1, §8); Tokens statt Palette auch auf öffentlichen Seiten, große Radien und Mesh nur dort (Einleitung, §1); altes Dashboard und alte Stufen-Demo werden nach dieser Datei neu gebaut, nichts wird entfernt statt umgebaut (§2.2, §6.1.2); deutsche Datenschutzerklärung als Rechtstext-Ausnahme von §3 |
 | 1.4.3 | 15.09.2026 | Abgleich mit der abgenommenen Landingpage 3.0: Vertrauenssatz nennt den Admin-Zugriff, den `firestore.rules` zulässt; Quelle für den verschlüsselten Schlüssel ist Terms §5 und `/trust`, nicht `SECURITY.md` §4 (das sind S/4-Zugangsdaten); Tour-Stationen in der Sichten-Reihenfolge Business · IT · Management; Bewegung auf der Startseite, Fokusring auf Code-Fläche, Gewichte des `SectionHeader` |
 | 1.4.2 | 15.09.2026 | „Ask this case" läuft immer über die eingebettete Hilfe-KI, die für 3.0 ausgebaut wird (ADR-043, §6.2) |
 | 1.4.1 | 15.09.2026 | Klarstellungen aus dem letzten Mockup-Abgleich, keine neue Entscheidung: Projektstatus-Zeile ohne *Not determined* (steht in der Enthüllung); Werkzeuge als Menü in Business und Management, leere Ebenen unter „More" auch in §2.3; Pfad-Hervorhebung über Farbe statt Transparenz (Kontrast); die IT-Sicht der Sichten-Bühne ohne Level-Buchstaben für eine Kundentabelle; Evidenz-Fluss nebeneinander oder untereinander; kein leerer Arbeitsbereich neben der Demo; Demo-Titel „Demo ·"; eine Einladung je Bildschirm auch am Stationsende; Tour-Beispiel „3 of 12"; „derselbe eigene Quellstand" in §2.8 |
