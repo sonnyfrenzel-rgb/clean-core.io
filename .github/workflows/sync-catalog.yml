@@ -44,13 +44,20 @@ jobs:
           elif [ "$code" = "0" ]; then echo "changed=false" >> "$GITHUB_OUTPUT";
           else exit "$code"; fi
 
+      # The demo's release record names the catalog it was measured under
+      # (tests/demo-release-guard.spec.ts); without this the guard goes red on
+      # every new catalog.
+      - name: Regenerate the demo record
+        if: steps.sync.outputs.changed == 'true'
+        run: npm run demo:regenerate
+
       - name: Push the update to its branch
         if: steps.sync.outputs.changed == 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git checkout -B chore/sync-cloudification-repo
-          git add lib/abap/generated/
+          git add lib/abap/generated/ lib/demo-release.json
           git commit -m "chore(catalog): sync SAP Cloudification Repository"
           git push --force origin chore/sync-cloudification-repo
           {
