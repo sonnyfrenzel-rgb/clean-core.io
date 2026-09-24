@@ -20,7 +20,8 @@
       "patterns[]": "RegExp-Quellen; ein Treffer ist ein Verstoss, ausser die Zeile trifft allowIfLine oder den globalen negationLine",
       "allowIfLine": "optional: RegExp-Quelle, die die Zeile freigibt (z. B. 'als Werkzeuge' bei den sieben Stufen)",
       "samples": "hit/allowed: Beispielzeilen, an denen der Guard seine eigenen Ausdruecke prueft (Selbsttest, laeuft ab sofort)",
-      "baseline": "Zahl der Treffer am Stichtag, ueber alle Dateien mit guard.removed = check"
+      "baseline": "Zahl der Treffer am Stichtag, ueber alle Dateien mit guard.removed = check",
+      "decided": "optional: eine Entscheidung zur Lesart der Streichung, mit Datum"
     },
     "negationLine": "Eine Zeile, die das Entfernte ausdruecklich als entfernt oder nicht gebaut nennt, ist kein Verstoss — sie beschreibt den 3.0-Stand. Geprueft wird die Zeile zusammen mit ihrer Vorgaengerzeile, weil Markdown Saetze umbricht ('Deliberately not built: tenants, SSO,' / 'ALM adapters, portfolio steering.'). Heuristik, bewusst eng gehalten."
   },
@@ -400,6 +401,7 @@
       "id": "signavio-unverified",
       "what": "Signavio-Import und BPMN-Import (die Rueckrichtung wartet bis nach 3.0, ROADMAP Phase 4), Signavio-Aussagen als geprueft oder zugesagt, Signavio-API-Anbindung — bis 4.3 protokolliert ist, gilt nur der Export als 'BPMN 2.0 XML'",
       "source": "ROADMAP 0.2, Phase 4 (nur Ausgangsrichtung, 18.09.2026), 4.3, §8, Abschluss 3.0",
+      "decided": "Entscheidung Sonny 24.09.2026: die Lesart ist richtig - ein Import zurueck aus Signavio kommt, wenn ueberhaupt, erst nach 3.0. Bis dahin nennt kein oeffentlicher Text einen Signavio- oder BPMN-Import.",
       "patterns": [
         "Signavio[- ]importable",
         "importable into (SAP )?Signavio",

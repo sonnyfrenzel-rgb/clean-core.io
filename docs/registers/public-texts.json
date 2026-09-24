@@ -33,12 +33,12 @@
     "note": "Heute sind (a) und (b) nicht scharf (tests/public-texts-guard.spec.ts, PUBLIC_TEXTS_ARMED). Die Zahlen sind der Ausgangswert; mit 3.0 muessen beide auf 0.",
     "files": 99,
     "byDecision": {
-      "update": 23,
+      "update": 24,
       "keep": 12,
-      "delete": 11,
-      "archive": 53
+      "delete": 14,
+      "archive": 49
     },
-    "effortDaysRough": 24.8,
+    "effortDaysRough": 22.9,
     "removed": {
       "total": 30,
       "inFilesThatStay": 15,
@@ -71,7 +71,9 @@
         "layers#1": 1,
         "provenance-not-determined#4": 1
       }
-    }
+    },
+    "filesPresent": 88,
+    "updated": "2026-09-24 (Entscheidung Sonny 24.09.2026): byDecision neu gezaehlt; files = Eintraege einschliesslich vollzogener Loeschungen, filesPresent = Dateien, die es noch gibt. effortDaysRough = 24,8 minus Vollzogenes (SCREENING-GCP S, zwei Mails je S, sechs ABAP-Kopien und zwei Video-Dateien je XS; XS = 0,1, S = 0,5 Tage) plus CONCEPT-DE-LOCALIZATION von XS auf S. removed/terms bleiben der Ausgangswert vom Stichtag; der Test \"Ausgangswert\" misst den heutigen Stand."
   },
   "files": [
     {
@@ -983,10 +985,9 @@
           "what": "Guard (a) seven-stages-as-product: nennt, was 3.0 entfernt"
         }
       ],
-      "decision": "archive",
-      "archiveTarget": "docs/archiv/konzepte/",
-      "reason": "Ueberholt durch DESIGN.md §3 und ROADMAP §7; wenn die deutsche Oberflaeche ansteht, entsteht ein neues Konzept auf dem Arbeitsraum. Pfad in tests/survey-guard.spec.ts:400 und lib/survey/definition.ts:17 mitziehen.",
-      "effort": "XS",
+      "decision": "update",
+      "reason": "Entscheidung Sonny 24.09.2026: wird umgeschrieben, nicht archiviert - auf den Arbeitsraum (DESIGN.md §3 Textschluessel, ROADMAP §7 deutsche Oberflaeche nach 3.0). Das Umschreiben passiert mit der 3.0-Umstellung, nicht jetzt. Der Pfad bleibt; tests/survey-guard.spec.ts und lib/survey/definition.ts lesen ihn.",
+      "effort": "S",
       "guard": {
         "removed": "check",
         "terms": "check"
@@ -1346,17 +1347,17 @@
           "what": "Momentaufnahme; nennt interne Ressourcennamen in einem oeffentlichen Repo."
         }
       ],
-      "decision": "archive",
-      "archiveTarget": "docs/archiv/betrieb/",
-      "reason": "Erledigte oder liegengebliebene Momentaufnahme — vorher mit Sonny klaeren, ob offene Punkte in die Roadmap gehoeren, und ob die Ressourcennamen oeffentlich bleiben sollen.",
-      "effort": "S",
+      "decision": "delete",
+      "reason": "Entscheidung Sonny 24.09.2026: geloescht statt archiviert (Commit \"chore(security): die Bestandsaufnahme alter GCP-Ressourcen steht nicht mehr im oeffentlichen Repository\") - interne Ressourcennamen gehoeren nicht in ein oeffentliches Repository.",
+      "effort": "none",
       "guard": {
         "removed": "check",
         "terms": "check"
       },
       "measured": {
         "lines": 193
-      }
+      },
+      "executed": "2026-09-24"
     },
     {
       "path": "docs/SECURE_CODE_EXPORT.md",
@@ -2804,7 +2805,7 @@
       "saysToday": "AGB und Community-Richtlinien v2.0.0.",
       "wrongWith30": [],
       "decision": "keep",
-      "reason": "Versionierter Rechtstext, wird nie editiert (lib/terms-versions.ts). Ob 3.0 eine neue Fassung braucht (Einladungen, Einsicht inkl. Quellcode), entscheidet Sonny — dann als neue Datei.",
+      "reason": "Versionierter Rechtstext, wird nie editiert (lib/terms-versions.ts). Entscheidung Sonny 24.09.2026: keine neue AGB-Fassung fuer 3.0 - die Terms of Service sind aktuell. Erledigt.",
       "effort": "none",
       "guard": {
         "removed": "exempt",
@@ -3271,6 +3272,46 @@
       "files": [
         "docs/emails/",
         "scripts/send-community-mail.ts"
+      ]
+    },
+    {
+      "id": "terms-unchanged",
+      "date": "2026-09-24",
+      "by": "Sonny",
+      "decision": "Keine neue AGB-Fassung fuer 3.0; docs/terms/2026-07-07.md ist aktuell. Erledigt.",
+      "status": "vollzogen",
+      "files": [
+        "docs/terms/2026-07-07.md"
+      ]
+    },
+    {
+      "id": "delete-screening-gcp",
+      "date": "2026-09-24",
+      "by": "Sonny",
+      "decision": "docs/SCREENING-GCP-ALTLASTEN.md loeschen statt archivieren.",
+      "status": "vollzogen",
+      "files": [
+        "docs/SCREENING-GCP-ALTLASTEN.md"
+      ]
+    },
+    {
+      "id": "signavio-import-after-3.0",
+      "date": "2026-09-24",
+      "by": "Sonny",
+      "decision": "Die Lesart von \"Signavio-Import\" in der Streichliste ist richtig: ein Import zurueck aus Signavio kommt, wenn ueberhaupt, erst nach 3.0 (vocabulary.json, retired signavio-unverified).",
+      "status": "vermerkt",
+      "files": [
+        "docs/registers/vocabulary.json"
+      ]
+    },
+    {
+      "id": "concept-de-rewrite",
+      "date": "2026-09-24",
+      "by": "Sonny",
+      "decision": "docs/CONCEPT-DE-LOCALIZATION.md wird umgeschrieben (update), nicht archiviert; das Umschreiben kommt mit der 3.0-Umstellung.",
+      "status": "spaeter",
+      "files": [
+        "docs/CONCEPT-DE-LOCALIZATION.md"
       ]
     }
   ]
