@@ -20,6 +20,7 @@
  */
 
 import type { Project } from '@/lib/types';
+import { buildEvidenceChain, coversOf, type CoverEntry } from '@/lib/evidence-chain';
 import {
   generateExecutiveSummary,
   generateExecutiveSummaryDoc,
@@ -30,7 +31,9 @@ import {
   generateKnownLimitations,
   generateProvenanceManifest,
   generateInputManifestFile,
+  generateEvidenceChainFile,
   generateUserAttestations,
+  EVIDENCE_CHAIN_FILE,
   INPUT_MANIFEST_FILE,
   USER_ATTESTED_FILE,
   type UserAttestations,
@@ -125,6 +128,7 @@ export function buildAuditPackContents(src: AuditPackSource): AuditPackContents 
     '05-known-limitations.md': generateKnownLimitations(),
     '06-architecture-decision-record.md': generateArchitectureDecisionRecord(project),
     [INPUT_MANIFEST_FILE]: generateInputManifestFile(project),
+    [EVIDENCE_CHAIN_FILE]: generateEvidenceChainFile(project),
   };
   const attested: Record<string, string> = {
     [USER_ATTESTED_FILE]: generateUserAttestations(src.attested, {
@@ -136,6 +140,28 @@ export function buildAuditPackContents(src: AuditPackSource): AuditPackContents 
     }),
   };
   return { signed, attested };
+}
+
+/**
+ * The handover chain's coverage rows for this pack's manifest (roadmap 8.5).
+ *
+ * Built from the same signed input as `09-evidence-chain.json`, so the rows the
+ * signature binds and the rows the archive explains cannot say two different
+ * things. Nothing the owner writes reaches it — a `covers[]` a form could move
+ * would be a signed statement about the signature that the signed-over party
+ * controls.
+ */
+export function auditPackCovers(src: AuditPackSource): CoverEntry[] {
+  const project = signedGeneratorInput(src);
+  return coversOf(
+    buildEvidenceChain({
+      projectId: src.projectId,
+      runId: src.runId,
+      inputManifest: project.inputManifest,
+      sourceSha256: project.auditMetadata?.inputFingerprint?.sha256,
+      modelParticipation: project.auditMetadata?.modelCard?.modelParticipation,
+    }),
+  );
 }
 
 /** The owner's statements, picked from the project document by name. */

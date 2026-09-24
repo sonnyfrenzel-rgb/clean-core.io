@@ -18,7 +18,7 @@ import {
   unverifiedInputs,
 } from '@/lib/input-manifest';
 import { USER_ATTESTED_FILE, type AttestedFile } from '@/lib/audit-pack';
-import { attestationsOf, buildAuditPackContents } from '@/lib/audit-pack-build';
+import { attestationsOf, auditPackCovers, buildAuditPackContents } from '@/lib/audit-pack-build';
 import { canonicalAuditManifest, MANIFEST_VERSION_ED25519, MANIFEST_VERSION_HMAC } from '@/lib/audit-pack-canonical';
 
 /**
@@ -294,6 +294,20 @@ export async function POST(req: NextRequest) {
       attested: attestationsOf(projectData),
     });
 
+    // Roadmap 8.5 — the handover chain's coverage, from the same signed input.
+    // It goes into the canonical string, so the pack's statement about what its
+    // own signature covers is itself signed: an unbound covers[] could be moved
+    // from `attested` to `signed` by anyone holding the archive, and the pack
+    // would then read as though the platform had vouched for the account
+    // holder's own sign-off.
+    const covers = auditPackCovers({
+      projectId,
+      runId,
+      run: { ...runData, worklist: runData.worklist ?? [] },
+      auditMetadata: projectData.auditMetadata,
+      attested: attestationsOf(projectData),
+    });
+
     // 2. Hash server-side — every file the archive carries, signed or attested.
     // The attested file's digest says which self-declaration was sealed, not
     // that it is true; it used to be left out, and the omission let anyone
@@ -319,7 +333,7 @@ export async function POST(req: NextRequest) {
     const generatedAt = new Date().toISOString();
     const version = getSigningKeypair() ? MANIFEST_VERSION_ED25519 : MANIFEST_VERSION_HMAC;
     const canonicalManifest = canonicalAuditManifest({
-      files, attested, projectId, runId, runHash, engineVersion, sapApiCatalogVersion, version, generatedAt,
+      files, attested, covers, projectId, runId, runHash, engineVersion, sapApiCatalogVersion, version, generatedAt,
     });
     const manifestHash = sha(canonicalManifest);
 
@@ -346,6 +360,7 @@ export async function POST(req: NextRequest) {
       sapApiCatalogVersion,
       files,
       attested,
+      covers,
       manifestHash,
       signed: true,
       signature,

@@ -17,6 +17,7 @@
 
 import type { Project, WorklistItem } from '@/lib/types';
 import { APP_VERSION, APP_RELEASE_DATE } from '@/lib/version';
+import { buildEvidenceChain } from '@/lib/evidence-chain';
 // The escaper the HTML/Word executive summary below uses at every interpolation.
 // It is imported rather than defined here: one escaper, shared with the stage
 // exports, and its output is unchanged, so the signed bytes of a pack issued
@@ -65,6 +66,12 @@ export interface AuditPackManifest {
   files: ManifestFile[];
   /** Present since roadmap 0.12; absent on older packs. */
   attested?: AttestedFile[];
+  /**
+   * The handover chain's coverage — one row per link of *Requirement →
+   * Decision → Receipt → Delivery artefact* (roadmap 8.5). Bound into the
+   * signature from manifest format 4; absent on every pack sealed before it.
+   */
+  covers?: import('./evidence-chain').CoverEntry[];
   manifestHash: string;
   signed: boolean;
   signature: string;
@@ -639,6 +646,7 @@ model-generated drafts and user-attested inputs.
 | 05-known-limitations.md | static |
 | 06-architecture-decision-record.md | server-computed (evidence, engine recommendation, worklist from the signed run) |
 | ${INPUT_MANIFEST_FILE} | server-computed (the inputs the run bound itself to, with revision and hash) |
+| ${EVIDENCE_CHAIN_FILE} | server-computed (the handover chain, and the reason under every link this pack cannot fill). The same coverage rows are in \`covers[]\` in manifest.json, inside the signed string. |
 | ${USER_ATTESTED_FILE} | **user-attested — nobody vouches for what it says.** Project name, chosen target architecture, sign-off, approver, override reason, workflow status. The manifest binds the file's name and the SHA-256 of the bytes that were sealed, so you can tell it has not been rewritten since; it does not make the statement in it true. |
 | manifest.json | server-computed (file hashes, manifest hash, HMAC / Ed25519 signature, attested file names) |
 
@@ -706,6 +714,46 @@ export function generateInputManifestFile(project: Project): string {
       projectId: project.id ?? null,
       runId: project.activeRunId ?? null,
       ...body,
+    },
+    null,
+    2,
+  );
+}
+
+/** The pack's record of the handover chain and of what the signature covers. Signed. */
+export const EVIDENCE_CHAIN_FILE = '09-evidence-chain.json';
+
+/**
+ * Roadmap 8.5 — *Requirement → Decision → Receipt → Delivery artefact*, and the
+ * reason under every link the pack cannot fill.
+ *
+ * The verdicts are decided in `lib/evidence-chain.ts`; this function only
+ * writes them down, from the signed generator input and nothing else. `covers[]`
+ * in `manifest.json` carries the same rows in the string the signature covers,
+ * so a reader who has only the manifest sees which links are signed and a reader
+ * who opens the archive sees why the others are not.
+ */
+export function generateEvidenceChainFile(project: Project): string {
+  const chain = buildEvidenceChain({
+    projectId: project.id ?? '',
+    runId: project.activeRunId ?? '',
+    inputManifest: project.inputManifest,
+    sourceSha256: project.auditMetadata?.inputFingerprint?.sha256,
+    modelParticipation: project.auditMetadata?.modelCard?.modelParticipation,
+  });
+  return JSON.stringify(
+    {
+      about:
+        'The handover chain of this pack: Requirement → Decision → Receipt → Delivery artefact. ' +
+        '`coverage` says what the signature does for each link — `signed` (a server-generated file under `files`, ' +
+        'its bytes covered), `attested` (the account holder\'s own statement under `attested`: the name and, from ' +
+        'manifest format 3, the sealed bytes are bound, but nobody vouches for what it says), `not-determined` ' +
+        '(this pack carries no record of the link, and `reason` says why). The same rows are in `covers[]` in ' +
+        'manifest.json, inside the string the signature covers. A link is never omitted: an open link is a named ' +
+        'hole, not a shorter chain.',
+      projectId: project.id ?? null,
+      runId: project.activeRunId ?? null,
+      ...chain,
     },
     null,
     2,

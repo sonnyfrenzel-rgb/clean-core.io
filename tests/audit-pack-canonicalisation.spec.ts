@@ -11,6 +11,7 @@ import {
   MANIFEST_VERSION_ED25519,
   MANIFEST_VERSION_HMAC,
 } from '../lib/audit-pack-canonical';
+import { buildEvidenceChain, coversOf } from '../lib/evidence-chain';
 
 /**
  * Three ways a signed audit pack could be rewritten and still verify
@@ -47,6 +48,13 @@ const HA = sha(BODY_A);
 const HB = sha(BODY_B);
 
 const bound = { projectId: 'p-1', runId: 'r-1', runHash: 'h-1', engineVersion: 'v1.0', sapApiCatalogVersion: '2024.FPS02' };
+/**
+ * The handover chain of roadmap 8.5, as a pack with this file list carries it:
+ * the decision link points at the attested file, the other three are open. A
+ * manifest sealed in format 4 must name it, so every fixture below that claims
+ * today's version carries it too.
+ */
+const COVERS = coversOf(buildEvidenceChain({ projectId: 'p-1', runId: 'r-1' }));
 const GENUINE_FILES = [
   { path: 'a-findings.md', sha256: HA },
   { path: 'b-summary.md', sha256: HB },
@@ -100,9 +108,9 @@ async function sealedPack(key: KeyObject, opts: { attestation?: string; generate
   const attested = [{ path: '07-user-attested.md', provenance: 'user-attested' as const, sha256: sha(ATTESTATION) }];
   const generatedAt = opts.generatedAt ?? '2026-09-17T08:00:00.000Z';
   const files = GENUINE_FILES.map((f) => ({ ...f, bytes: 1 }));
-  const manifestHash = sha(canonicalAuditManifest({ files, attested, ...bound, version: MANIFEST_VERSION_ED25519, generatedAt }));
+  const manifestHash = sha(canonicalAuditManifest({ files, attested, covers: COVERS, ...bound, version: MANIFEST_VERSION_ED25519, generatedAt }));
   const manifest = {
-    version: MANIFEST_VERSION_ED25519, ...bound, generatedAt, files, attested, manifestHash,
+    version: MANIFEST_VERSION_ED25519, ...bound, generatedAt, files, attested, covers: COVERS, manifestHash,
     signed: true, signature: '', signatureEd25519: sign(null, Buffer.from(manifestHash, 'utf8'), key).toString('base64'),
   };
   return {
@@ -143,9 +151,9 @@ test.describe('a file list can no longer be replaced without moving the signed b
     expect(canonicalAuditManifest(parts)).toBe(formUpTo1709(parts));
     // In format 3 the same value is escaped, so the four boundaries in the run
     // suffix cannot be moved either.
-    const v3 = canonicalAuditManifest({ ...parts, version: MANIFEST_VERSION_HMAC, generatedAt: '2026-09-17T08:00:00.000Z' });
+    const v3 = canonicalAuditManifest({ ...parts, attested: [{ path: '07-user-attested.md', sha256: sha(ATTESTATION) }], covers: COVERS, version: MANIFEST_VERSION_HMAC, generatedAt: '2026-09-17T08:00:00.000Z' });
     expect(v3).toContain('2024.FPS02 + CR%3Alatest@407843e4 (25467 entries, fetched 2026-09-15)');
-    expect(canonicalAuditManifest({ ...parts, engineVersion: 'v1.0:2024.FPS02 + CR', sapApiCatalogVersion: 'latest@407843e4 (25467 entries, fetched 2026-09-15)', version: MANIFEST_VERSION_HMAC, generatedAt: '2026-09-17T08:00:00.000Z' }))
+    expect(canonicalAuditManifest({ ...parts, attested: [{ path: '07-user-attested.md', sha256: sha(ATTESTATION) }], covers: COVERS, engineVersion: 'v1.0:2024.FPS02 + CR', sapApiCatalogVersion: 'latest@407843e4 (25467 entries, fetched 2026-09-15)', version: MANIFEST_VERSION_HMAC, generatedAt: '2026-09-17T08:00:00.000Z' }))
       .not.toBe(v3);
   });
 
@@ -195,8 +203,8 @@ test.describe('a sealed self-declaration cannot be rewritten unnoticed', () => {
     const attested = [{ path: '07-user-attested.md', provenance: 'user-attested' as const, sha256: sha(ATTESTATION) }];
     const files = GENUINE_FILES.map((f) => ({ ...f, bytes: 1 }));
     const generatedAt = '2026-09-17T08:00:00.000Z';
-    const manifestHash = sha(canonicalAuditManifest({ files, attested, ...bound, version: MANIFEST_VERSION_HMAC, generatedAt }));
-    const manifest = { version: MANIFEST_VERSION_HMAC, ...bound, generatedAt, files, attested, manifestHash, signed: false, signature: '' };
+    const manifestHash = sha(canonicalAuditManifest({ files, attested, covers: COVERS, ...bound, version: MANIFEST_VERSION_HMAC, generatedAt }));
+    const manifest = { version: MANIFEST_VERSION_HMAC, ...bound, generatedAt, files, attested, covers: COVERS, manifestHash, signed: false, signature: '' };
 
     const intact = await verifyAuditPack((await packOf(manifest, {
       'a-findings.md': BODY_A, 'b-summary.md': BODY_B, '07-user-attested.md': ATTESTATION,
@@ -242,10 +250,10 @@ test.describe('the issue date is no longer a field anyone can choose', () => {
     const attested = [{ path: '07-user-attested.md', provenance: 'user-attested' as const, sha256: sha(ATTESTATION) }];
     const files = GENUINE_FILES.map((f) => ({ ...f, bytes: 1 }));
     const manifestHash = sha(canonicalAuditManifest({
-      files, attested, ...bound, version: MANIFEST_VERSION_HMAC, generatedAt: '2026-09-17T08:00:00.000Z',
+      files, attested, covers: COVERS, ...bound, version: MANIFEST_VERSION_HMAC, generatedAt: '2026-09-17T08:00:00.000Z',
     }));
     const buf = await packOf(
-      { version: MANIFEST_VERSION_HMAC, ...bound, generatedAt: '2019-01-01T00:00:00.000Z', files, attested, manifestHash, signed: false, signature: '' },
+      { version: MANIFEST_VERSION_HMAC, ...bound, generatedAt: '2019-01-01T00:00:00.000Z', files, attested, covers: COVERS, manifestHash, signed: false, signature: '' },
       { 'a-findings.md': BODY_A, 'b-summary.md': BODY_B, '07-user-attested.md': ATTESTATION },
     );
     const result = await verifyAuditPack(buf as unknown as Blob);
@@ -266,11 +274,15 @@ test.describe('the issue date is no longer a field anyone can choose', () => {
     const kp = keyPair();
     const { manifest, entries } = await sealedPack(kp.privateKey);
     // Relabelled 2.1, with the attested digest dropped the way a v2 pack carries it.
-    const downgraded = {
+    const downgraded: Record<string, unknown> = {
       ...manifest,
       version: '2.1',
       attested: manifest.attested.map(({ path, provenance }) => ({ path, provenance })),
     };
+    // A format-2 manifest carries neither an attested digest nor a covers[];
+    // leaving one in would be refused for saying so, which is a different
+    // sentence from the one this test is about.
+    delete downgraded.covers;
     const { code, out } = runCli(await writePack(downgraded, entries), kp.rawPublicBase64);
     expect(out).toContain('FAILED    manifest digest');
     expect(code).toBe(1);

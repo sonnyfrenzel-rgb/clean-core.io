@@ -8,7 +8,8 @@
 
 import JSZip from 'jszip';
 import type { AuditPackManifest } from './audit-pack';
-import { canonicalAuditManifest } from './audit-pack-canonical';
+import { canonicalAuditManifest, bindsCoverage } from './audit-pack-canonical';
+import { CHAIN_STEPS, CHAIN_STEP_LABELS, type CoverEntry } from './evidence-chain';
 
 /**
  * SHA-256 of bytes, or of the UTF-8 bytes of a string, using the Web Crypto API.
@@ -169,6 +170,20 @@ export interface FileVerifyResult {
   signed?: boolean;
 }
 
+/**
+ * One link of the handover chain, as this pack states it (roadmap 8.5).
+ *
+ * Reported rather than merely checked: the manifest hash already establishes
+ * that these rows are the ones that were sealed, and a reader's next question
+ * is which of the four links the signature actually stands behind.
+ */
+export interface CoverageResult {
+  step: string;
+  label: string;
+  coverage: string;
+  ref: string;
+}
+
 export interface VerifyResult {
   /**
    * True only for a pack this platform actually signed.
@@ -188,6 +203,11 @@ export interface VerifyResult {
   manifestHashValid: boolean;
   signatureValid: boolean | null; // null = unsigned or verification skipped
   manifest: AuditPackManifest | null;
+  /**
+   * The handover chain's coverage, or `null` for a pack sealed in a format that
+   * does not bind one — which is not the same as a pack that covers nothing.
+   */
+  covers?: CoverageResult[] | null;
   errors: string[];
 }
 
@@ -365,6 +385,11 @@ export async function verifyAuditPack(zipBlob: Blob | Buffer | Uint8Array): Prom
         sapApiCatalogVersion: manifest.sapApiCatalogVersion,
         version: manifest.version,
         generatedAt: manifest.generatedAt,
+        // Roadmap 8.5. Handed over exactly as the manifest carries it, defects
+        // and all: `canonicalManifestDefect` is what decides whether a covers[]
+        // can be read as a statement about this manifest, and a verifier that
+        // tidied it up first would be verifying a manifest nobody sealed.
+        covers: manifest.covers,
       });
     } catch (err: any) {
       errors.push(err?.message || 'This manifest has no unambiguous canonical form.');
@@ -413,6 +438,28 @@ export async function verifyAuditPack(zipBlob: Blob | Buffer | Uint8Array): Prom
       }
     }
 
+    // The handover chain, once the hash above has established that these rows
+    // are the sealed ones. A link the signature does not stand behind is said
+    // out loud here for the same reason an attested file is: a verdict that
+    // covers the archive in one sentence hides exactly the distinction this
+    // section exists to make.
+    let covers: CoverageResult[] | null = null;
+    if (bindsCoverage(manifest.version) && Array.isArray(manifest.covers)) {
+      covers = (manifest.covers as CoverEntry[]).map((c) => ({
+        step: String(c.step),
+        label: CHAIN_STEP_LABELS[c.step] ?? String(c.step),
+        coverage: String(c.coverage),
+        ref: String(c.ref ?? ''),
+      }));
+      const open = covers.filter((c) => c.coverage !== 'signed').map((c) => `${c.label} (${c.coverage})`);
+      if (open.length > 0) {
+        errors.push(
+          `The signature does not cover ${open.length} of ${CHAIN_STEPS.length} links of the handover chain: ${open.join(', ')}. ` +
+            'The reason for each is in 09-evidence-chain.json, which the signature does cover.',
+        );
+      }
+    }
+
     const allFilesValid = fileResults.every(f => f.valid);
     const integrityValid = allFilesValid && manifestHashValid && entryNames.counted && entryNames.duplicates.length === 0;
 
@@ -435,6 +482,7 @@ export async function verifyAuditPack(zipBlob: Blob | Buffer | Uint8Array): Prom
       manifestHashValid,
       signatureValid,
       manifest,
+      covers,
       errors,
     };
   } catch (err: any) {

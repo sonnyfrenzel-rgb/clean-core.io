@@ -191,6 +191,62 @@ function bindsIssuanceMetadata(version) {
   return Number.isFinite(major) && major >= 3;
 }
 
+/** True for a manifest whose signature binds the handover chain (roadmap 8.5, format 4). */
+function bindsCoverage(version) {
+  const major = Number.parseInt(String(version ?? ''), 10);
+  return Number.isFinite(major) && major >= 4;
+}
+
+/** The four links and the three coverage values — the same lists as `lib/evidence-chain.ts`. */
+const CHAIN_STEPS = ['requirement', 'decision', 'receipt', 'delivery'];
+const CHAIN_STEP_LABELS = {
+  requirement: 'Requirement',
+  decision: 'Decision',
+  receipt: 'Receipt',
+  delivery: 'Delivery artefact',
+};
+const COVERAGE_KINDS = ['signed', 'attested', 'not-determined'];
+
+/**
+ * Why this covers[] cannot be read as a statement about this manifest, or null —
+ * the same rules as `coversDefect` in `lib/audit-pack-canonical.ts`.
+ *
+ * The rows are bound into the signed string, so a forged covers[] fails the
+ * digest anyway. These rules catch the other half: a genuine signature over a
+ * covers[] that says something the manifest it sits in does not support — a
+ * link claiming the signature covers a file listed only under `attested`, or a
+ * chain with a link missing so that what is left reads complete.
+ */
+function coversDefect(manifest, attested) {
+  const covers = manifest.covers;
+  if (!Array.isArray(covers)) return 'a manifest of this version must name the handover chain in covers[]';
+  const signedPaths = new Set((manifest.files || []).map((f) => f.path));
+  const attestedPaths = new Set(attested.map((a) => a.path));
+  const seen = new Set();
+  for (const c of covers) {
+    const step = String((c && c.step) ?? '');
+    const coverage = String((c && c.coverage) ?? '');
+    const ref = typeof (c && c.ref) === 'string' ? c.ref : '';
+    if (!CHAIN_STEPS.includes(step)) return `covers names a link that is not part of the chain: ${JSON.stringify(step)}`;
+    if (!COVERAGE_KINDS.includes(coverage)) return `the chain link ${JSON.stringify(step)} carries an unknown coverage: ${JSON.stringify(coverage)}`;
+    if (seen.has(step)) return `the chain link ${JSON.stringify(step)} is listed twice`;
+    seen.add(step);
+    if (SEPARATOR.test(ref)) return `the chain link ${JSON.stringify(step)} names a file whose path contains a field separator: ${JSON.stringify(ref)}`;
+    if (coverage === 'signed' && !signedPaths.has(ref)) {
+      return `the chain link ${JSON.stringify(step)} claims the signature covers ${JSON.stringify(ref)}, which this manifest does not list under files`;
+    }
+    if (coverage === 'attested' && !attestedPaths.has(ref)) {
+      return `the chain link ${JSON.stringify(step)} points at ${JSON.stringify(ref)} as a user-attested file, which this manifest does not list under attested`;
+    }
+    if (coverage === 'not-determined' && ref !== '') {
+      return `the chain link ${JSON.stringify(step)} is not determined and still names a file: ${JSON.stringify(ref)}`;
+    }
+  }
+  const missing = CHAIN_STEPS.filter((step) => !seen.has(step));
+  if (missing.length > 0) return `covers does not account for every link of the chain; missing: ${missing.join(', ')}`;
+  return null;
+}
+
 /**
  * Names the archive's central directory lists more than once — the same check as
  * `duplicateEntryNames` in `lib/audit-pack-verify.ts`, repeated here for the same
@@ -302,6 +358,12 @@ function canonicalDefect(manifest, attested) {
   if (bound) {
     if (SEPARATOR.test(String(manifest.version))) return `version contains a field separator: ${JSON.stringify(manifest.version)}`;
     if (!ISO_INSTANT.test(String(manifest.generatedAt ?? ''))) return `generatedAt is not an ISO-8601 instant: ${JSON.stringify(String(manifest.generatedAt ?? ''))}`;
+  }
+  if (bindsCoverage(manifest.version)) {
+    const defect = coversDefect(manifest, attested);
+    if (defect) return defect;
+  } else if (manifest.covers !== undefined) {
+    return `covers[] is present but manifest version ${JSON.stringify(String(manifest.version ?? ''))} does not bind it`;
   }
   return null;
 }
@@ -439,7 +501,13 @@ async function main() {
     (attestedSorted.length
       ? `attested=${attestedSorted.map((a) => (bound ? `${a.path}:${a.sha256}` : a.path)).join(',')};`
       : '') +
-    (bound ? `issued=${manifest.version}:${manifest.generatedAt};` : '');
+    (bound ? `issued=${manifest.version}:${manifest.generatedAt};` : '') +
+    (bindsCoverage(manifest.version)
+      ? `covers=${[...(manifest.covers || [])]
+          .sort((a, b) => String(a.step).localeCompare(String(b.step)))
+          .map((x) => `${x.step}:${x.coverage}:${x.ref}`)
+          .join(',')};`
+      : '');
   const manifestHash = createHash('sha256').update(canonical).digest('hex');
   const hashOk = manifestHash === manifest.manifestHash;
   console.log(
@@ -447,6 +515,29 @@ async function main() {
       ? `${c.ok('OK')}        manifest digest ${manifestHash.slice(0, 16)}…`
       : c.bad(`FAILED    manifest digest is ${manifestHash.slice(0, 16)}… but the pack claims ${String(manifest.manifestHash).slice(0, 16)}…`),
   );
+
+  // 2b. The handover chain, once the digest above has established that these
+  //     rows are the ones that were sealed (roadmap 8.5). Printed link by link,
+  //     because the one thing a reader must not take away from a green line is
+  //     that the signature stands behind all four of them. A link the pack
+  //     cannot fill prints its own state, and the archive carries the reason.
+  let openLinks = 0;
+  if (bindsCoverage(manifest.version) && Array.isArray(manifest.covers)) {
+    const byStep = new Map(manifest.covers.map((x) => [String(x.step), x]));
+    console.log(`${c.dim('chain')}     Requirement -> Decision -> Receipt -> Delivery artefact`);
+    for (const step of CHAIN_STEPS) {
+      const row = byStep.get(step);
+      const coverage = String((row && row.coverage) ?? 'not-determined');
+      const ref = String((row && row.ref) ?? '');
+      if (coverage !== 'signed') openLinks += 1;
+      const mark = coverage === 'signed' ? c.ok('signed  ') : c.warn(coverage.padEnd(8));
+      console.log(
+        `  ${mark}  ${CHAIN_STEP_LABELS[step].padEnd(18)}${
+          ref ? c.dim(ref) : c.dim('no record in this pack - see 09-evidence-chain.json')
+        }`,
+      );
+    }
+  }
 
   // 3. The signature.
   if (!manifest.signatureEd25519) {
@@ -491,6 +582,12 @@ async function main() {
   }
 
   const verified = contentsOk && hashOk && sigOk;
+  // Two sentences, not one: a pack can be entirely genuine and still stand
+  // behind one link of four. Folding that into "Verified." is the comfortable
+  // version roadmap 8.5 was written against.
+  const chainNote = openLinks
+    ? `\n${openLinks} of ${CHAIN_STEPS.length} links of the handover chain are not covered by this signature; 09-evidence-chain.json says why for each.`
+    : '';
   // A pack sealed before attested contents were bound gets a verdict that names
   // the exception instead of one sentence that covers the whole archive: the
   // signed evidence is verified, the self-declaration inside it is not.
@@ -501,8 +598,10 @@ async function main() {
           ? c.ok('Verified. The signed evidence, the manifest and the signature all agree — checked offline, no secret involved.') +
             c.warn(
               `\n${unboundAttested} attested file(s) carry no digest in this pack's manifest version, so their contents are outside the check.`,
-            )
-          : c.ok('Verified. Contents, manifest and signature all agree — checked offline, no secret involved.')
+            ) +
+            c.warn(chainNote)
+          : c.ok('Verified. Contents, manifest and signature all agree — checked offline, no secret involved.') +
+            c.warn(chainNote)
         : c.bad('NOT verified. At least one check above failed.')) +
       '\n',
   );

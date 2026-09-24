@@ -59,12 +59,35 @@
  * content hash already pins the file, so a wrong byte count is contradicted by
  * the file itself.
  *
+ * Format, version 4 — the same string again, with one more section, for the
+ * handover chain of roadmap 8.5:
+ *
+ *   covers=<step>:<coverage>:<ref>,…;
+ *
+ * **Why `covers[]` is in the signed string and not beside it.** The point of
+ * naming the chain is to say which of its four links the signature stands
+ * behind. A `covers[]` that is merely carried in `manifest.json`, unbound, says
+ * that in a place anyone holding the pack can rewrite: move the decision link
+ * from `attested` to `signed` and the archive reads as though the platform had
+ * vouched for the account holder's own sign-off. It is bound, so the claim about
+ * the signature is itself signed. Both verifiers additionally hold every row to
+ * the manifest it sits in — a `signed` row must name a file listed under
+ * `files`, an `attested` row a file listed under `attested`, and a
+ * `not-determined` row nothing at all — so `covers[]` cannot promote a file
+ * across the boundary `lib/audit-pack-build.ts` draws, and all four links must
+ * be present exactly once, so a link cannot be dropped to make a chain look
+ * complete.
+ *
  * **Compatibility.** A manifest with no `version`, or a version below 3,
  * canonicalises exactly as before, down to the byte, so every pack already in
- * the world still verifies. A version-3 pack that had its `version` edited down
- * to `2.1` produces a different string and fails the hash, so the format cannot
- * be downgraded.
+ * the world still verifies; a version-3 pack canonicalises exactly as it did
+ * before version 4 existed, because the new section is written only from major
+ * 4 on. A pack that had its `version` edited down — 4 to 3, or 3 to 2.1 —
+ * produces a different string and fails the hash, so the format cannot be
+ * downgraded.
  */
+
+import { CHAIN_STEPS, COVERAGE_KINDS, type CoverEntry } from './evidence-chain';
 
 export interface CanonicalManifestParts {
   files: ReadonlyArray<{ path: string; sha256: string }>;
@@ -83,11 +106,17 @@ export interface CanonicalManifestParts {
   version?: string;
   /** `manifest.generatedAt` — bound from format 3 on, ignored before it. */
   generatedAt?: string;
+  /**
+   * The handover chain's coverage, one row per link (roadmap 8.5). Bound from
+   * format 4 on; a manifest below that version must not carry one, for the same
+   * reason an attested digest may not appear in a format it is not bound by.
+   */
+  covers?: ReadonlyArray<CoverEntry>;
 }
 
-/** The manifest version packs are issued with from 17.09.2026; `.1` when an Ed25519 key is configured. */
-export const MANIFEST_VERSION_HMAC = '3.0';
-export const MANIFEST_VERSION_ED25519 = '3.1';
+/** The manifest version packs are issued with from 23.09.2026; `.1` when an Ed25519 key is configured. */
+export const MANIFEST_VERSION_HMAC = '4.0';
+export const MANIFEST_VERSION_ED25519 = '4.1';
 
 /** Every character the canonical form uses as a separator. No path may contain one. */
 const SEPARATOR = /[:;,]/;
@@ -121,6 +150,51 @@ function escapeField(value: string): string {
 export function bindsIssuanceMetadata(version: string | undefined): boolean {
   const major = Number.parseInt(String(version ?? ''), 10);
   return Number.isFinite(major) && major >= 3;
+}
+
+/** True for a manifest whose signature binds the handover chain's `covers[]` (roadmap 8.5). */
+export function bindsCoverage(version: string | undefined): boolean {
+  const major = Number.parseInt(String(version ?? ''), 10);
+  return Number.isFinite(major) && major >= 4;
+}
+
+/**
+ * Why this `covers[]` cannot be read as a statement about this manifest, or null.
+ *
+ * Shared with `canonicalManifestDefect` and repeated in `scripts/verify-pack.mjs`;
+ * `tests/evidence-chain-covers.spec.ts` holds the two to the same verdicts.
+ */
+function coversDefect(
+  covers: ReadonlyArray<CoverEntry>,
+  signedPaths: ReadonlySet<string>,
+  attestedPaths: ReadonlySet<string>,
+): string | null {
+  const seen = new Set<string>();
+  for (const c of covers) {
+    if (!CHAIN_STEPS.includes(c?.step as never)) return `covers names a link that is not part of the chain: ${JSON.stringify(String(c?.step ?? ''))}`;
+    if (!COVERAGE_KINDS.includes(c?.coverage as never)) return `the chain link ${JSON.stringify(c.step)} carries an unknown coverage: ${JSON.stringify(String(c?.coverage ?? ''))}`;
+    if (seen.has(c.step)) return `the chain link ${JSON.stringify(c.step)} is listed twice`;
+    seen.add(c.step);
+    const ref = typeof c.ref === 'string' ? c.ref : '';
+    if (SEPARATOR.test(ref)) return `the chain link ${JSON.stringify(c.step)} names a file whose path contains a field separator: ${JSON.stringify(ref)}`;
+    // The boundary of roadmap 0.12, asked of every row: a link cannot say the
+    // signature covers a file the signature does not cover, and cannot point at
+    // a file the archive does not carry.
+    if (c.coverage === 'signed' && !signedPaths.has(ref)) {
+      return `the chain link ${JSON.stringify(c.step)} claims the signature covers ${JSON.stringify(ref)}, which this manifest does not list under files`;
+    }
+    if (c.coverage === 'attested' && !attestedPaths.has(ref)) {
+      return `the chain link ${JSON.stringify(c.step)} points at ${JSON.stringify(ref)} as a user-attested file, which this manifest does not list under attested`;
+    }
+    if (c.coverage === 'not-determined' && ref !== '') {
+      return `the chain link ${JSON.stringify(c.step)} is not determined and still names a file: ${JSON.stringify(ref)}`;
+    }
+  }
+  // Not a subset: a chain that drops the links it cannot fill reads as a
+  // complete one, which is the defect roadmap 8.5 exists to refuse.
+  const missing = CHAIN_STEPS.filter((s) => !seen.has(s));
+  if (missing.length > 0) return `covers does not account for every link of the chain; missing: ${missing.join(', ')}`;
+  return null;
 }
 
 /**
@@ -173,6 +247,20 @@ export function canonicalManifestDefect(m: CanonicalManifestParts): string | nul
     if (!ISO_INSTANT.test(String(m.generatedAt ?? ''))) return `generatedAt is not an ISO-8601 instant: ${JSON.stringify(String(m.generatedAt ?? ''))}`;
   }
 
+  if (bindsCoverage(m.version)) {
+    if (!Array.isArray(m.covers)) return 'a manifest of this version must name the handover chain in covers[]';
+    const defect = coversDefect(
+      m.covers,
+      new Set(m.files.map((f) => f.path)),
+      new Set((m.attested || []).map((a) => a.path)),
+    );
+    if (defect) return defect;
+  } else if (m.covers !== undefined) {
+    // The same rule as for an attested digest in a format that does not bind
+    // one: a statement that reads as signed and is not is worse than none.
+    return `covers[] is present but manifest version ${JSON.stringify(String(m.version ?? ''))} does not bind it`;
+  }
+
   return null;
 }
 
@@ -193,5 +281,9 @@ export function canonicalAuditManifest(m: CanonicalManifestParts): string {
     canonical += `attested=${section.join(',')};`;
   }
   if (bound) canonical += `issued=${m.version}:${m.generatedAt};`;
+  if (bindsCoverage(m.version)) {
+    const covers = [...(m.covers || [])].sort((a, b) => a.step.localeCompare(b.step));
+    canonical += `covers=${covers.map((c) => `${c.step}:${c.coverage}:${c.ref}`).join(',')};`;
+  }
   return canonical;
 }
