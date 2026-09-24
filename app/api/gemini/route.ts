@@ -18,6 +18,7 @@ import {
   STAGE_DISABLED_CODE,
 } from '@/lib/model-stages';
 import { getAuditSigningKey, MISSING_SIGNING_KEY_LOG } from '@/lib/audit-signing-key';
+import { isTransientModelError } from '@/lib/model-retry';
 import { issueModelReceipt } from '@/lib/model-receipt';
 import { PRODUCT_GEMINI_MODEL } from '@/lib/constants';
 
@@ -142,11 +143,7 @@ async function callWithRetry(
     return await fn();
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
-    const isRateLimited =
-      message.includes('429') ||
-      message.includes('RESOURCE_EXHAUSTED');
-
-    if (retries > 0 && isRateLimited) {
+    if (retries > 0 && isTransientModelError(message)) {
       await new Promise((resolve) => setTimeout(resolve, delay));
       return callWithRetry(fn, retries - 1, delay * 2);
     }
