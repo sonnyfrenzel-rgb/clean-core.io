@@ -789,7 +789,8 @@ export default function DesignSystemGallery() {
                 if (inviteError) setInviteError(inviteProblem(event.target.value));
               }}
               onBlur={() => {
-                if (invitee.trim() !== '') setInviteError(inviteProblem(invitee));
+                // Leaving the field empty is an answer too: it is required (69e0a7df21b1).
+                setInviteError(inviteProblem(invitee));
               }}
               className={control.className}
             />

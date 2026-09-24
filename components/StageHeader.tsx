@@ -6,7 +6,7 @@ import { useParams } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { PHASES, type PhaseKey } from '@/lib/workflow-steps';
-import { isWorkspaceView } from '@/lib/workspace-model';
+import { workspaceBackHref } from '@/lib/workspace-back-href';
 import { workspaceShellEnabled } from '@/lib/workspace-shell';
 import { BACK_LINK_CLASS } from '@/components/BackLink';
 
@@ -51,33 +51,6 @@ import { BACK_LINK_CLASS } from '@/components/BackLink';
  */
 
 /** A layer id on the workspace page: letters, digits and dashes, nothing that could leave the fragment. */
-const LAYER_ID = /^[A-Za-z][\w-]{0,63}$/;
-
-/**
- * Where "Back to workspace" leads. Pure, so the rule can be read and tested in
- * one place: the view and the layer come from the stage's own address and are
- * checked against what the workspace understands — a view in the URL is a
- * perspective, never a grant (ADR-018), and an unknown one is simply dropped.
- */
-export function workspaceBackHref({
-  projectId,
-  shell,
-  search,
-}: {
-  projectId: string;
-  /** Whether this account has the object-page workspace (`workspaceShellEnabled`). */
-  shell: boolean;
-  /** The stage's `location.search`, e.g. `?view=it&from=it-answers-heading`. */
-  search: string;
-}): string {
-  if (!shell) return '/dashboard';
-  const params = new URLSearchParams(search);
-  const view = params.get('view');
-  const from = params.get('from');
-  const query = isWorkspaceView(view) ? `?view=${view}` : '';
-  const hash = from && LAYER_ID.test(from) ? `#${from}` : '';
-  return `/project/${encodeURIComponent(projectId)}${query}${hash}`;
-}
 
 const noSubscription = () => () => {};
 const readSearch = () => window.location.search;
@@ -113,7 +86,7 @@ export default function StageHeader({
   // back to; it renders the header without the link.
   const params = useParams();
   const projectId = typeof params?.projectId === 'string' ? params.projectId : '';
-  const { profile } = useUserProfile();
+  const { profile, loading: profileLoading } = useUserProfile();
   const shell = workspaceShellEnabled(profile);
 
   // Read from the address in the browser only: the query is not part of the
@@ -121,13 +94,23 @@ export default function StageHeader({
   // depend on it — `useSearchParams` would force it to render on demand.
   const search = useSyncExternalStore(noSubscription, readSearch, serverSearch);
 
-  const backHref = projectId ? workspaceBackHref({ projectId, shell, search }) : null;
+  // Only once the profile is read: before that `shell` is false for every
+  // account, and a click in that moment would send a workspace user to the
+  // dashboard (QA review of 472315d93455, f8d5367e0a00). The place is kept, so
+  // nothing below moves when the link appears.
+  const backHref = projectId && !profileLoading ? workspaceBackHref({ projectId, shell, search }) : null;
+  const backPending = Boolean(projectId) && profileLoading;
 
   return (
     <header
       data-stage-header={stage ?? ''}
       className={`mt-6 mb-8 ${centred ? 'text-center' : ''}`}
     >
+      {backPending && (
+        <span aria-hidden="true" className={`${BACK_LINK_CLASS} mb-3 invisible`}>
+          <ArrowLeft size={16} aria-hidden="true" /> Back to workspace
+        </span>
+      )}
       {backHref && (
         <Link
           href={backHref}

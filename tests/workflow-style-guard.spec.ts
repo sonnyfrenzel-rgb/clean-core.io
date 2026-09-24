@@ -5,6 +5,7 @@ import { initializeApp, getApps } from 'firebase/app';
 import { getAuth, connectAuthEmulator, createUserWithEmailAndPassword } from 'firebase/auth';
 import { adminSetDoc } from './helpers/admin-seed';
 import firebaseConfig from '../firebase-config.json';
+import { workspaceBackHref } from '../lib/workspace-back-href';
 
 /**
  * The seven stages look like one product, and this is what keeps them that way.
@@ -188,6 +189,12 @@ test.describe('every stage renders its title identically', () => {
       await expect(back, `${stage} has no way back to the workspace`).toHaveCount(1);
       await expect(back).toHaveText(/Back to workspace/);
       expect(await back.evaluate((el) => el.tagName), `${stage}: the way back is not a link`).toBe('A');
+      // …and it leads where its kind says (QA 472315d93455, e5483b2e4ca7).
+      const kind = await back.getAttribute('data-stage-back');
+      const href = await back.getAttribute('href');
+      expect(href, `${stage}: "Back to workspace" leads to ${href}`).toBe(
+        kind === 'workspace' ? `/project/${encodeURIComponent(PROJECT_ID)}` : '/dashboard',
+      );
       const backBox = await back.boundingBox();
       const titleBox = await title.boundingBox();
       expect(
@@ -218,5 +225,25 @@ test.describe('every stage renders its title identically', () => {
       `stage titles disagree:\n${seen.map((s) => `${s.stage.padEnd(15)} ${s.key}`).join('\n')}`,
     ).toHaveLength(1);
     expect(offSpec, `stage headers off DESIGN.md §2.3:\n${offSpec.join('\n')}`).toEqual([]);
+  });
+});
+
+test.describe('"Back to workspace" leads to the view and layer the stage was opened from (QA 472315d93455, e5483b2e4ca7)', () => {
+  test('view and layer are kept, anything unknown is dropped, no workspace means the dashboard', () => {
+    expect(workspaceBackHref({ projectId: 'p-1', shell: true, search: '?view=it&from=it-answers-heading' })).toBe(
+      '/project/p-1?view=it#it-answers-heading',
+    );
+    expect(workspaceBackHref({ projectId: 'p-1', shell: true, search: '' })).toBe('/project/p-1');
+    // A view the workspace does not know, and a layer id that is not an id, are dropped.
+    expect(workspaceBackHref({ projectId: 'p-1', shell: true, search: '?view=admin&from=%3Cscript%3E' })).toBe('/project/p-1');
+    expect(workspaceBackHref({ projectId: 'p 1', shell: true, search: '' })).toBe('/project/p%201');
+    // Without the workspace switch /project/[id] is a 404 — the way back is the dashboard.
+    expect(workspaceBackHref({ projectId: 'p-1', shell: false, search: '?view=it' })).toBe('/dashboard');
+  });
+
+  test('the link waits for the profile, so a workspace account is never sent to the dashboard (f8d5367e0a00)', () => {
+    const src = fs.readFileSync(path.join(process.cwd(), 'components/StageHeader.tsx'), 'utf8');
+    expect(src).toMatch(/const backHref = projectId && !profileLoading \?/);
+    expect(src).toContain('const { profile, loading: profileLoading } = useUserProfile();');
   });
 });

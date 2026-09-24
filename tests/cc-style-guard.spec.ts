@@ -371,6 +371,12 @@ test.describe('and paint themselves consistently', () => {
     await expect(email).toBeFocused();
     await email.fill('');
 
+    // Leaving the empty field already says it is required (QA 472315d93455, 69e0a7df21b1).
+    await page.keyboard.press('Tab');
+    await expect(email).toHaveAttribute('aria-invalid', 'true');
+    await expect(email).toHaveAccessibleDescription(/Enter the reader's e-mail address/);
+    await email.focus();
+
     // Empty: the dialog stays, the strip on top takes the focus (§2.7), the
     // field says what is wrong and how it becomes right.
     await page.keyboard.press('Enter');
