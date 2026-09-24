@@ -566,7 +566,7 @@ QA24-A17 (ein Fingerprint ohne Bestätigung ist kein grüner Status).
 
 | # | Schritt | Größe |
 |---|---|---|
-| 3.0.1 | **Schalter für alle:** jedes Projekt öffnet im Arbeitsraum; die sieben Stufen bleiben als Werkzeuge | S |
+| 3.0.1 | **Schalter für alle:** jedes Projekt öffnet im Arbeitsraum; die sieben Stufen bleiben als Werkzeuge. Mit dem Schalter (Entscheidungen Sonny 24.09.2026): (a) die Landing-Aufnahmen (`lib/landing-shots.ts`, `CAPTURE_LANDING` in `tests/capture-screens.spec.ts`) werden mit einem normalen Community-Konto neu aufgenommen statt mit dem beschnittenen Admin-Konto; (b) „Explore the demo“ auf der Landingpage führt auf `/demo/workspace` (die Arbeitsraum-Demo mit der Tour), und `lib/return-path.ts` lässt `/demo/workspace` als Rücksprungziel der Anmeldung zu | S |
 | 3.0.2 | **Bestandsprojekte** öffnen ohne Verlust von IDs, Runs und Signaturen (C23-A02) | M |
 | 3.0.3 | **Erhaltungsregister im neuen Arbeitsraum:** jeder Referenzfall aus 1.1 besteht | S |
 | 3.0.4 | **Accessibility-Basis:** Tastatur, Screenreader, `forced-colors`, Telefon in Breakpoint S mit der Reihenfolge aus `DESIGN.md` §2.9, Druckbild nach §7.1; „Keyboard shortcuts" im Hilfe-Menü; Überschriftenfolge und Live-Regionen im gerenderten Test (§8) | M |
