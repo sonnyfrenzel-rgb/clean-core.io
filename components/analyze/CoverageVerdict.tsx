@@ -48,9 +48,9 @@ export default function CoverageVerdict({ findings, summary }: CoverageVerdictPr
         <div className="space-y-6 flex-1 w-full">
           <div className="flex items-center gap-2">
             <span className="text-[10px] font-bold tracking-widest text-green-400 uppercase bg-green-950/60 px-3 py-1 rounded-full border border-green-800/30">Deterministic Audit</span>
-            <button 
+            <button aria-label="What is Coverage Verdict?" type="button" 
               onClick={() => setShowExplanation(true)}
-              className="p-1 rounded-md text-slate-400 hover:text-white hover:bg-white/10 transition-all shrink-0"
+              className="p-1 rounded-md text-slate-400 hover:text-white hover:bg-white/10 transition-all shrink-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1d4ed8]"
               title="What is Coverage Verdict?"
             >
               <HelpCircle size={14} />
@@ -152,9 +152,9 @@ export default function CoverageVerdict({ findings, summary }: CoverageVerdictPr
       {showExplanation && (
         <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-md flex items-center justify-center z-[100] p-4 animate-in fade-in duration-300">
           <div className="bg-slate-900 text-white rounded-[2rem] p-8 md:p-10 max-w-lg w-full border border-slate-800 shadow-2xl relative animate-in zoom-in-95 duration-300 space-y-6">
-            <button 
+            <button aria-label="Close" type="button" 
               onClick={() => setShowExplanation(false)} 
-              className="absolute top-6 right-6 p-2 rounded-xl text-slate-400 hover:text-white bg-slate-800/50 hover:bg-slate-800 transition-all"
+              className="absolute top-6 right-6 p-2 rounded-xl text-slate-400 hover:text-white bg-slate-800/50 hover:bg-slate-800 transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1d4ed8]"
             >
               <X size={18} />
             </button>

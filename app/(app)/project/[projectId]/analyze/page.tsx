@@ -1404,10 +1404,10 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
                   
                   <div className="flex items-center gap-1.5 mb-4 relative z-10">
                     <span className="text-[10px] font-bold tracking-widest text-green-400 uppercase">Clean Core Score</span>
-                    <button 
+                    <button aria-label="Explain Clean Core Score" 
                       type="button"
                       onClick={() => setShowScoreModal(true)}
-                      className="p-1 rounded-md text-green-400 hover:text-white hover:bg-white/10 transition-all shrink-0"
+                      className="p-1 rounded-md text-green-400 hover:text-white hover:bg-white/10 transition-all shrink-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1d4ed8]"
                       title="Explain Clean Core Score"
                     >
                       <HelpCircle size={14} className="animate-pulse" />
@@ -2495,9 +2495,9 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
       {showScoreModal && (
         <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-md flex items-center justify-center z-[100] p-4 animate-in fade-in duration-300">
           <div className="bg-white rounded-[2rem] p-8 md:p-10 max-w-lg w-full border border-slate-200/50 shadow-2xl relative animate-in zoom-in-95 duration-300 space-y-6">
-            <button 
+            <button aria-label="Close" type="button" 
               onClick={() => setShowScoreModal(false)}
-              className="absolute top-6 right-6 p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all"
+              className="absolute top-6 right-6 p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1d4ed8]"
             >
               <X size={18} />
             </button>
@@ -2553,9 +2553,9 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
       {showConceptQuestion && (
         <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-md flex items-center justify-center z-[100] p-4 animate-in fade-in duration-300">
           <div className="bg-white rounded-[2rem] p-8 md:p-10 max-w-2xl w-full border border-slate-200/50 shadow-2xl relative animate-in zoom-in-95 duration-300 space-y-6 max-h-[90vh] overflow-y-auto">
-            <button 
+            <button aria-label="Close" type="button" 
               onClick={() => setShowConceptQuestion(false)}
-              className="absolute top-6 right-6 p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all"
+              className="absolute top-6 right-6 p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1d4ed8]"
             >
               <X size={18} />
             </button>

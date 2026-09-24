@@ -9,6 +9,7 @@ import { getDb } from '@/lib/firebase';
 import { loadProjectAndHydrate } from '@/lib/project-loader';
 import { enforceActiveRun } from '@/lib/run-guard';
 import Stepper from '@/components/Stepper';
+import { useDialogFocus } from '@/hooks/useDialogFocus';
 import { Code2, ArrowRight, ArrowLeft, RefreshCw, FileCode2, Terminal, AlertCircle, CheckCircle2, Cpu, Copy, Check, X, Folder, Lock, Unlock, Activity, Shield, Layers, Sparkles } from 'lucide-react';
 import clsx from 'clsx';
 import { DocumentSkeleton } from '@/components/Skeleton';
@@ -105,6 +106,10 @@ export default function TransformationPage() {
   const { profile } = useUserProfile();
 
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const closeDrawer = useCallback(() => setDrawerOpen(false), []);
+  // Roadmap 3.0.4: the audit drawer is a modal dialog — focus moves in, Tab
+  // stays inside, Escape closes, focus returns to the button that opened it.
+  const drawerRef = useDialogFocus<HTMLDivElement>(drawerOpen, closeDrawer);
   const [signedOffIds, setSignedOffIds] = useState<Set<string>>(new Set());
   const [findings, setFindings] = useState<SupportFinding[]>([]);
 
@@ -1139,11 +1144,11 @@ CMD ["node", "srv/service.js"]`
                     const totalLines = transformedCode.split('\n').length || 1;
                     const topPercent = Math.min(95, Math.max(5, (marker.line / totalLines) * 90 + 5));
                     return (
-                      <button
+                      <button aria-label={`Go to line ${marker.line}: ${marker.detail}`} type="button"
                         key={i}
                         onClick={() => scrollToLine(marker.line)}
                         className={clsx(
-                          "absolute w-3 h-3 rounded-full border border-black/40 shadow-sm transition-transform hover:scale-125 cursor-pointer focus:outline-none flex items-center justify-center",
+                          "absolute w-3 h-3 rounded-full border border-black/40 shadow-sm transition-transform hover:scale-125 cursor-pointer focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1d4ed8] flex items-center justify-center",
                           marker.level === 'fully' ? "bg-emerald-500 shadow-emerald-500/50" :
                           marker.level === 'partial' ? "bg-amber-500 shadow-amber-500/50" :
                           "bg-rose-500 shadow-rose-500/50"
@@ -1167,22 +1172,30 @@ CMD ["node", "srv/service.js"]`
       {drawerOpen && (
         <div className="fixed inset-0 z-[150] flex justify-end">
           {/* Backdrop */}
-          <div 
+          <div
+            aria-hidden
             className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
             onClick={() => setDrawerOpen(false)}
           />
           
           {/* Drawer Body */}
-          <div className="relative w-full max-w-lg bg-slate-900 border-l border-white/10 h-full shadow-2xl flex flex-col text-slate-100 z-10 animate-in slide-in-from-right duration-300">
+          <div
+            ref={drawerRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="grounding-audit-title"
+            tabIndex={-1}
+            className="relative w-full max-w-lg bg-slate-900 border-l border-white/10 h-full shadow-2xl flex flex-col text-slate-100 z-10 animate-in slide-in-from-right duration-300 focus:outline-none"
+          >
             {/* Header */}
             <div className="p-6 border-b border-white/5 flex items-center justify-between bg-slate-950/50">
               <div className="flex items-center gap-2">
                 <Shield className="w-5 h-5 text-green-400" />
-                <h3 className="text-xl font-bold tracking-tight">Grounded Grounding Audit</h3>
+                <h3 id="grounding-audit-title" className="text-xl font-bold tracking-tight">Grounded Grounding Audit</h3>
               </div>
-              <button 
+              <button aria-label="Close" type="button" 
                 onClick={() => setDrawerOpen(false)}
-                className="p-1.5 hover:bg-white/10 rounded-full transition-colors"
+                className="p-1.5 hover:bg-white/10 rounded-full transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1d4ed8]"
               >
                 <X size={20} />
               </button>

@@ -89,6 +89,15 @@ export default function TransformationShowroom() {
             border-bottom-color: #fff;
             box-shadow: 0 -2px 6px rgba(0,0,0,0.04);
           }
+
+          /* ── Keyboard focus (UX-080) ── the radios are visually hidden, so
+             the focus ring is drawn on the label that stands for them. */
+          #showroom-tab-1:focus-visible ~ .showroom-tab-bar .tab-label-1,
+          #showroom-tab-2:focus-visible ~ .showroom-tab-bar .tab-label-2,
+          #showroom-tab-3:focus-visible ~ .showroom-tab-bar .tab-label-3 {
+            outline: 2px solid #1d4ed8;
+            outline-offset: 2px;
+          }
         `}</style>
 
         {/* Hidden radios — must be siblings of .showroom-tab-bar & .showroom-panels */}

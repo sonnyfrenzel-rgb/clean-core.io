@@ -482,7 +482,6 @@ export default function AdminConsole() {
                       */}
                       {welcomeMailBadge(req.welcomeMailStatus) && (
                         <span
-                          title={req.welcomeMailDetail || undefined}
                           className={clsx(
                             'inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider border',
                             welcomeMailBadge(req.welcomeMailStatus)!.className,
@@ -493,6 +492,15 @@ export default function AdminConsole() {
                         </span>
                       )}
                     </div>
+
+                    {/* UX-110 / UX-146: the provider's reason ("mailbox does not
+                        exist") sat only in the badge's hover title — unreachable
+                        by keyboard, touch and screen reader. It is text now. */}
+                    {welcomeMailBadge(req.welcomeMailStatus) && req.welcomeMailDetail && (
+                      <p data-welcome-mail-detail className="text-xs text-gray-600 font-medium">
+                        <span className="font-bold text-gray-700">Mail provider:</span> {req.welcomeMailDetail}
+                      </p>
+                    )}
 
                     {/* Meta information */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5 text-xs text-gray-500 font-medium">

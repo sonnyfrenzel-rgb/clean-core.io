@@ -488,9 +488,9 @@ export default function LandingModals() {
               className="bg-white rounded-2xl sm:rounded-[2.5rem] w-full max-w-md shadow-2xl border border-gray-100 overflow-hidden relative max-h-[95vh] overflow-y-auto my-auto"
             >
               {/* Close Button */}
-              <button
+              <button aria-label="Close" type="button"
                 onClick={closeAuthModal}
-                className="absolute top-6 right-6 text-gray-400 hover:text-gray-900 bg-gray-50 hover:bg-gray-100 p-2 rounded-full transition-colors z-10"
+                className="absolute top-6 right-6 text-gray-400 hover:text-gray-900 bg-gray-50 hover:bg-gray-100 p-2 rounded-full transition-colors z-10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1d4ed8]"
               >
                 <X size={16} strokeWidth={2.5} />
               </button>
@@ -689,7 +689,9 @@ export default function LandingModals() {
                         <button
                           type="button"
                           onClick={() => setShowPassword(!showPassword)}
-                          className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                          className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1d4ed8]"
+                          aria-label="Show password"
+                          aria-pressed={showPassword}
                         >
                           {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                         </button>
@@ -932,7 +934,9 @@ export default function LandingModals() {
                         <button
                           type="button"
                           onClick={() => setShowPassword(!showPassword)}
-                          className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                          className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1d4ed8]"
+                          aria-label="Show password"
+                          aria-pressed={showPassword}
                         >
                           {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                         </button>

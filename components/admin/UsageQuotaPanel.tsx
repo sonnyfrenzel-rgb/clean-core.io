@@ -334,7 +334,9 @@ export default function UsageQuotaPanel() {
               {FILTERS.map((f) => (
                 <button
                   key={f.key}
+                  type="button"
                   onClick={() => setFilter(f.key)}
+                  aria-pressed={filter === f.key}
                   className={clsx(
                     'px-2.5 sm:px-3 py-2 rounded-lg text-[11px] font-black uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap',
                     filter === f.key ? 'bg-white text-gray-950 shadow' : 'text-gray-500 hover:text-gray-900',
@@ -401,14 +403,20 @@ export default function UsageQuotaPanel() {
 
             {visible.map((r) => (
               <div key={r.uid}>
+                {/* UX-078: the row says whether its detail is open, and which
+                    region it opens. */}
                 <button
+                  type="button"
                   onClick={() => setExpanded(expanded === r.uid ? null : r.uid)}
-                  className="w-full grid grid-cols-1 lg:grid-cols-12 gap-2 lg:gap-4 px-4 sm:px-6 py-4 lg:items-center text-left hover:bg-gray-50 transition-colors cursor-pointer"
+                  aria-expanded={expanded === r.uid}
+                  aria-controls={`usage-detail-${r.uid}`}
+                  className="w-full grid grid-cols-1 lg:grid-cols-12 gap-2 lg:gap-4 px-4 sm:px-6 py-4 lg:items-center text-left hover:bg-gray-50 transition-colors cursor-pointer focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[#1d4ed8]"
                 >
                   {/* Identity */}
                   <div className="lg:col-span-4 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <ChevronDown
+                        aria-hidden
                         className={clsx(
                           'w-3.5 h-3.5 text-gray-400 shrink-0 transition-transform',
                           expanded === r.uid && 'rotate-180',
@@ -483,6 +491,7 @@ export default function UsageQuotaPanel() {
                 <AnimatePresence initial={false}>
                   {expanded === r.uid && (
                     <motion.div
+                      id={`usage-detail-${r.uid}`}
                       data-testid="usage-detail"
                       initial={{ height: 0, opacity: 0 }}
                       animate={{ height: 'auto', opacity: 1 }}

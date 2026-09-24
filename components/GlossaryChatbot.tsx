@@ -131,6 +131,7 @@ export default function GlossaryChatbot() {
   const [loading, setLoading] = useState(false);
   const { profile } = useUserProfile();
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const toggleRef = useRef<HTMLButtonElement>(null);
 
   /**
    * Roadmap 6.8, owner decision of 15.09.2026: **no second chat**. The same
@@ -192,6 +193,19 @@ export default function GlossaryChatbot() {
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, loading]);
+
+  // UX-045: the panel is not modal (the page stays usable beside it), but
+  // Escape closes it and hands focus back to the toggle.
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKey = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return;
+      setIsOpen(false);
+      toggleRef.current?.focus();
+    };
+    document.addEventListener('keydown', handleKey);
+    return () => document.removeEventListener('keydown', handleKey);
+  }, [isOpen]);
 
   // Listen for global trigger to open the chatbot
   useEffect(() => {
@@ -429,10 +443,14 @@ CRITICAL GUARDRAILS AND SAFETY RULES:
 
       {/* Floating Glowing Assistant Toggle Button */}
       <button
+        ref={toggleRef}
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}
+        aria-expanded={isOpen}
+        aria-controls={isOpen ? 'chatbot-panel' : undefined}
+        aria-label={isOpen ? 'Close the assistant' : assistantLabel}
         className={clsx(
-          "fixed bottom-6 right-6 z-[80] p-4 rounded-full shadow-2xl transition-all duration-350 hover:scale-105 active:scale-95 group border flex items-center gap-2",
+          "fixed bottom-6 right-6 z-[80] p-4 rounded-full shadow-2xl transition-all duration-350 hover:scale-105 active:scale-95 group border flex items-center gap-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1d4ed8]",
           isOpen 
             ? "bg-slate-900 text-white border-slate-800" 
             : "bg-emerald-600 hover:bg-emerald-500 text-white border-emerald-500/30",
@@ -441,7 +459,7 @@ CRITICAL GUARDRAILS AND SAFETY RULES:
         title={isOpen ? 'Close the assistant' : assistantLabel}
         data-chatbot-toggle=""
       >
-        {isOpen ? <X size={20} /> : <MessageSquare size={20} className="group-hover:rotate-6 transition-transform" />}
+        {isOpen ? <X size={20} aria-hidden /> : <MessageSquare size={20} aria-hidden className="group-hover:rotate-6 transition-transform" />}
         {/* `DESIGN.md` §3.1, in so many words: „Ask AI" heißt „Ask this case".
             The old label was also the reason `findAiSymbolism` fires on the
             exact string "Ask AI about this case" in `lib/model-text.ts`.
@@ -458,7 +476,11 @@ CRITICAL GUARDRAILS AND SAFETY RULES:
 
       {/* Floating Chat Panel Wrapper */}
       {isOpen && (
-        <div className="fixed bottom-24 right-6 w-96 max-w-[calc(100vw-2rem)] h-[520px] bg-white border border-slate-200 shadow-2xl rounded-3xl z-[85] flex flex-col justify-between overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-4 duration-300">
+        <div
+          id="chatbot-panel"
+          role="dialog"
+          aria-labelledby="chatbot-panel-title"
+          className="fixed bottom-24 right-6 w-96 max-w-[calc(100vw-2rem)] h-[520px] bg-white border border-slate-200 shadow-2xl rounded-3xl z-[85] flex flex-col justify-between overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-4 duration-300">
           
           {/* Header */}
           <div className="bg-slate-900 text-white px-5 py-4 flex items-center justify-between shrink-0">
@@ -470,7 +492,7 @@ CRITICAL GUARDRAILS AND SAFETY RULES:
                 <PenLine size={16} />
               </div>
               <div>
-                <h4 className="text-xs font-extrabold text-white leading-none" data-chatbot-title="">
+                <h4 id="chatbot-panel-title" className="text-xs font-extrabold text-white leading-none" data-chatbot-title="">
                   {projectId ? 'Ask this case' : 'SAP Modernization Assistant'}
                 </h4>
                 <span className="text-[8px] font-bold text-emerald-400 uppercase tracking-widest block mt-0.5">
@@ -621,6 +643,7 @@ CRITICAL GUARDRAILS AND SAFETY RULES:
             <input
               type="text"
               placeholder="Ask S/4HANA Modernization Architect..."
+              aria-label="Your question"
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               disabled={loading}
@@ -629,9 +652,10 @@ CRITICAL GUARDRAILS AND SAFETY RULES:
             <button
               type="submit"
               disabled={loading || !inputValue.trim()}
+              aria-label="Send question"
               className="p-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-green-100 disabled:opacity-50 disabled:hover:bg-emerald-600 cursor-pointer shrink-0 transition-all active:scale-95"
             >
-              <Send size={14} />
+              <Send size={14} aria-hidden />
             </button>
           </form>
 

@@ -96,7 +96,7 @@ export default function JiraIntegrationModal({ isOpen, onClose, solutionDesign, 
               </div>
               <h3 className="font-bold tracking-tight text-gray-900 text-lg">Jira Enterprise Sync</h3>
             </div>
-            <button onClick={onClose} className="p-2 hover:bg-gray-200 rounded-full transition-colors text-gray-500">
+            <button aria-label="Close" type="button" onClick={onClose} className="p-2 hover:bg-gray-200 rounded-full transition-colors text-gray-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1d4ed8]">
               <X size={20} />
             </button>
           </div>

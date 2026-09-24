@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useDialogFocus } from '@/hooks/useDialogFocus';
 import { useParams, useRouter } from 'next/navigation';
 import { doc, updateDoc, runTransaction } from 'firebase/firestore';
 import { getDb } from '@/lib/firebase';
@@ -168,6 +169,9 @@ export default function DocumentationPage() {
   const [docRejected, setDocRejected] = useState(false);
   const [highlightedTaskId, setHighlightedTaskId] = useState<string | null>(null);
   const [activeTask, setActiveTask] = useState<any | null>(null);
+  // The task drawer is a modal (UX-034, roadmap 3.0.4): focus in, Tab kept
+  // inside, Escape closes, focus back to the task that opened it.
+  const taskDrawerRef = useDialogFocus<HTMLDivElement>(activeTask !== null, () => setActiveTask(null));
 
   // Stage 2 Business Documentation States
   const [businessDocumentation, setBusinessDocumentation] = useState('');
@@ -1748,6 +1752,11 @@ Structure the JSON exactly like this:
             
             {/* Slide-out Drawer Panel */}
             <motion.div
+              ref={taskDrawerRef}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="task-drawer-title"
+              tabIndex={-1}
               initial={{ x: '100%' }}
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
@@ -1755,9 +1764,11 @@ Structure the JSON exactly like this:
               className="fixed top-0 right-0 h-screen w-full md:w-[480px] xl:w-[550px] bg-slate-900/95 backdrop-blur-xl border-l border-slate-800 shadow-2xl z-[120] text-white p-6 md:p-8 flex flex-col overflow-hidden"
             >
               {/* Close Button */}
-              <button 
+              <button
+                type="button"
+                aria-label="Close task details"
                 onClick={() => setActiveTask(null)}
-                className="absolute top-6 right-6 text-slate-400 hover:text-white bg-slate-800/50 hover:bg-slate-800 p-2 rounded-full transition-colors z-10"
+                className="absolute top-6 right-6 text-slate-400 hover:text-white bg-slate-800/50 hover:bg-slate-800 p-2 rounded-full transition-colors z-10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
               >
                 <X size={18} />
               </button>
@@ -1772,7 +1783,7 @@ Structure the JSON exactly like this:
                 </div>
                 <div>
                   <span className="text-[10px] font-bold text-green-400 uppercase tracking-widest font-mono">Level 4 Task Specification</span>
-                  <h3 className="text-xl font-extrabold text-white mt-0.5 uppercase tracking-tight">{activeTask.name || `Task ${activeTask.stepId}`}</h3>
+                  <h3 id="task-drawer-title" className="text-xl font-extrabold text-white mt-0.5 uppercase tracking-tight">{activeTask.name || `Task ${activeTask.stepId}`}</h3>
                 </div>
               </div>
 

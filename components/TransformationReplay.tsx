@@ -114,6 +114,16 @@ export default function TransformationReplay() {
   }, [phase, typedLines]);
 
   const handlePlay = useCallback(() => {
+    // UX-081: with reduced motion requested, the replay does not tick and type —
+    // it shows the finished state at once, with the same text.
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      setPhase('done');
+      setPipelineStep(PIPELINE_STEPS.length);
+      setTypedLines(OUTPUT_LINES.length);
+      setTypedChars(0);
+      setProgressPct(100);
+      return;
+    }
     setPhase('pipeline');
     setPipelineStep(0);
     setTypedLines(0);
@@ -164,7 +174,7 @@ export default function TransformationReplay() {
             className="group relative inline-flex items-center gap-3 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 hover:from-emerald-900 hover:via-emerald-800 hover:to-emerald-900 text-white px-8 py-4 rounded-2xl font-black text-sm uppercase tracking-widest transition-all duration-500 shadow-xl hover:shadow-emerald-500/25 hover:scale-[1.02] active:scale-[0.98]"
           >
             <span className="relative flex h-5 w-5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-50 group-hover:opacity-75" />
+              <span className="motion-safe:animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-50 group-hover:opacity-75" />
               <span className="relative inline-flex items-center justify-center rounded-full h-5 w-5 bg-emerald-500">
                 <svg className="w-3 h-3 text-white ml-0.5" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M8 5v14l11-7z" />

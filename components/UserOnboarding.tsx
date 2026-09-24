@@ -6,6 +6,7 @@ import { getAuth } from '@/lib/firebase';
 import { ShieldCheck, ArrowRight, CheckCircle2, MessageSquare, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import LegalOverlay from '@/app/components/LegalOverlay';
+import { useDialogFocus } from '@/hooks/useDialogFocus';
 
 export default function UserOnboarding() {
   const { profile, loading, createProfile } = useUserProfile();
@@ -40,6 +41,15 @@ export default function UserOnboarding() {
     }
   }, [auth, firstName, lastName]);
 
+  // QA b0b3150a1974: each of the three screens is a modal dialog. Focus moves
+  // in and stays in; the sign-up itself is mandatory, so Escape does not close
+  // it — only the "Leave the sign-up?" question goes back on Escape. Called
+  // before the early returns below, for the same reason as the effect above.
+  const visible = !!auth && !loading && !profile && !!auth.currentUser;
+  const cancelDialogRef = useDialogFocus<HTMLDivElement>(visible && showCancelConfirmation, () => setShowCancelConfirmation(false));
+  const successDialogRef = useDialogFocus<HTMLDivElement>(visible && !showCancelConfirmation && showSuccess);
+  const formDialogRef = useDialogFocus<HTMLDivElement>(visible && !showCancelConfirmation && !showSuccess);
+
   // Firebase Auth is bypassed on the server; render nothing there.
   if (!auth) return null;
 
@@ -49,10 +59,16 @@ export default function UserOnboarding() {
   if (showCancelConfirmation) {
     return (
       <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-md z-[100] flex items-center justify-center p-4">
-        <motion.div 
+        <motion.div
+          ref={cancelDialogRef}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="onboarding-cancel-title"
+          aria-describedby="onboarding-cancel-desc"
+          tabIndex={-1}
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
-          className="bg-white rounded-[2rem] shadow-2xl w-full max-w-lg overflow-hidden border border-red-100 p-6 md:p-8"
+          className="bg-white rounded-[2rem] shadow-2xl w-full max-w-lg overflow-hidden border border-red-100 p-6 md:p-8 focus:outline-none"
         >
           <div className="flex flex-col items-center text-center">
             <div className="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center mb-6 shadow-inner text-red-600">
@@ -67,8 +83,8 @@ export default function UserOnboarding() {
                 it sat in the one product that positions itself on saying only
                 what it can show. The list keeps the three things the free
                 workspace actually does, and says so in the present tense. */}
-            <h2 className="text-2xl font-black mb-3 text-gray-900 tracking-tight uppercase">Leave the sign-up?</h2>
-            <p className="text-gray-500 font-medium text-sm mb-6 leading-relaxed">
+            <h2 id="onboarding-cancel-title" className="text-2xl font-black mb-3 text-gray-900 tracking-tight uppercase">Leave the sign-up?</h2>
+            <p id="onboarding-cancel-desc" className="text-gray-500 font-medium text-sm mb-6 leading-relaxed">
               Nothing is saved: no workspace is created and what you typed here is discarded. You can sign up again at any time.
             </p>
 
@@ -145,15 +161,20 @@ export default function UserOnboarding() {
   if (showSuccess) {
     return (
       <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-md z-[100] flex items-center justify-center p-4">
-        <motion.div 
+        <motion.div
+          ref={successDialogRef}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="onboarding-success-title"
+          tabIndex={-1}
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
-          className="bg-white rounded-[1.5rem] shadow-2xl w-full max-w-md p-8 text-center border border-gray-100"
+          className="bg-white rounded-[1.5rem] shadow-2xl w-full max-w-md p-8 text-center border border-gray-100 focus:outline-none"
         >
           <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
             <CheckCircle2 className="w-8 h-8 text-green-600" />
           </div>
-          <h2 className="text-2xl font-black mb-3">You're in</h2>
+          <h2 id="onboarding-success-title" className="text-2xl font-black mb-3">You're in</h2>
           <p className="text-gray-600 font-medium mb-6">
             Your Clean-Core.io workspace is active — there is nothing to approve and nothing to wait for.
           </p>
@@ -169,25 +190,31 @@ export default function UserOnboarding() {
 
   return (
     <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-md z-[100] flex items-center justify-center p-4">
-      <motion.div 
+      <motion.div
+        ref={formDialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="onboarding-title"
+        tabIndex={-1}
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
-        className="bg-white rounded-[1.5rem] md:rounded-[2.5rem] shadow-2xl w-full max-w-xl overflow-hidden max-h-[95vh] overflow-y-auto"
+        className="bg-white rounded-[1.5rem] md:rounded-[2.5rem] shadow-2xl w-full max-w-xl overflow-hidden max-h-[95vh] overflow-y-auto focus:outline-none"
       >
         <div className="bg-green-600 p-5 md:p-8 text-white relative">
           <button 
             type="button" 
             onClick={() => setShowCancelConfirmation(true)}
-            className="absolute top-5 right-5 md:top-6 md:right-6 p-1.5 rounded-full hover:bg-white/10 text-white/80 hover:text-white transition-colors"
+            className="absolute top-5 right-5 md:top-6 md:right-6 p-1.5 rounded-full hover:bg-white/10 text-white/80 hover:text-white transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
             title="Cancel"
+            aria-label="Cancel the sign-up"
           >
-            <X className="w-5 h-5" />
+            <X className="w-5 h-5" aria-hidden />
           </button>
           <div className="flex items-center gap-3 mb-2 md:mb-4">
             <div className="bg-white/20 p-1.5 md:p-2 rounded-lg md:rounded-xl">
               <ShieldCheck className="w-6 h-6 md:w-8 md:h-8" />
             </div>
-            <h2 className="text-xl md:text-3xl font-black tracking-tight uppercase">Join the platform</h2>
+            <h2 id="onboarding-title" className="text-xl md:text-3xl font-black tracking-tight uppercase">Join the platform</h2>
           </div>
           <p className="text-green-50 text-xs md:text-sm font-medium opacity-90 leading-relaxed">
             Two details and two agreements, then your Free Community Edition workspace is live. No approval step.
@@ -197,8 +224,10 @@ export default function UserOnboarding() {
         <form onSubmit={handleSubmit} className="p-5 md:p-8 space-y-4 md:space-y-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
             <div>
-              <label className="block text-[10px] md:text-xs font-black text-gray-400 mb-1.5 md:mb-2 uppercase tracking-widest">First Name</label>
+              <label htmlFor="onboarding-first-name" className="block text-[10px] md:text-xs font-black text-gray-400 mb-1.5 md:mb-2 uppercase tracking-widest">First Name</label>
               <input
+                id="onboarding-first-name"
+                autoComplete="given-name"
                 type="text"
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
@@ -208,8 +237,10 @@ export default function UserOnboarding() {
               />
             </div>
             <div>
-              <label className="block text-[10px] md:text-xs font-black text-gray-400 mb-1.5 md:mb-2 uppercase tracking-widest">Last Name</label>
+              <label htmlFor="onboarding-last-name" className="block text-[10px] md:text-xs font-black text-gray-400 mb-1.5 md:mb-2 uppercase tracking-widest">Last Name</label>
               <input
+                id="onboarding-last-name"
+                autoComplete="family-name"
                 type="text"
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
@@ -221,8 +252,9 @@ export default function UserOnboarding() {
           </div>
           
           <div>
-            <label className="flex items-center gap-2 text-[10px] md:text-xs font-black text-gray-400 mb-1.5 md:mb-2 uppercase tracking-widest"><MessageSquare size={14}/> Why do you want to join? (Optional)</label>
+            <label htmlFor="onboarding-motivation" className="flex items-center gap-2 text-[10px] md:text-xs font-black text-gray-400 mb-1.5 md:mb-2 uppercase tracking-widest"><MessageSquare size={14} aria-hidden /> Why do you want to join? (Optional)</label>
             <textarea
+              id="onboarding-motivation"
               value={motivation}
               onChange={(e) => setMotivation(e.target.value)}
               placeholder="Tell us a bit about your use-case..."
@@ -238,9 +270,9 @@ export default function UserOnboarding() {
                   type="checkbox" 
                   checked={agreedGDPR} 
                   onChange={(e) => setAgreedGDPR(e.target.checked)}
-                  className="sr-only"
+                  className="sr-only peer"
                 />
-                <div className={`w-4 h-4 md:w-5 md:h-5 border-2 rounded transition-all flex items-center justify-center ${agreedGDPR ? 'bg-green-600 border-green-600' : 'border-gray-300 group-hover:border-green-600'}`}>
+                <div className={`peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-[#1d4ed8] w-4 h-4 md:w-5 md:h-5 border-2 rounded transition-all flex items-center justify-center ${agreedGDPR ? 'bg-green-600 border-green-600' : 'border-gray-300 group-hover:border-green-600'}`}>
                   {agreedGDPR && <CheckCircle2 className="w-3 h-3 md:w-4 md:h-4 text-white" />}
                 </div>
               </div>
@@ -263,9 +295,9 @@ export default function UserOnboarding() {
                   type="checkbox" 
                   checked={agreedTerms} 
                   onChange={(e) => setAgreedTerms(e.target.checked)}
-                  className="sr-only"
+                  className="sr-only peer"
                 />
-                <div className={`w-4 h-4 md:w-5 md:h-5 border-2 rounded transition-all flex items-center justify-center ${agreedTerms ? 'bg-green-600 border-green-600' : 'border-gray-300 group-hover:border-green-600'}`}>
+                <div className={`peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-[#1d4ed8] w-4 h-4 md:w-5 md:h-5 border-2 rounded transition-all flex items-center justify-center ${agreedTerms ? 'bg-green-600 border-green-600' : 'border-gray-300 group-hover:border-green-600'}`}>
                   {agreedTerms && <CheckCircle2 className="w-3 h-3 md:w-4 md:h-4 text-white" />}
                 </div>
               </div>

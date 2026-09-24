@@ -143,7 +143,7 @@ export default function HowToClient() {
                 type="button"
                 onClick={toggleFullscreen}
                 aria-label={isFullscreen ? 'Exit fullscreen' : 'Show the walkthrough fullscreen'}
-                className="p-2 rounded-xl bg-slate-100 border border-slate-200 text-slate-600 hover:text-slate-800 hover:bg-slate-200 transition-all cursor-pointer flex items-center gap-1.5 text-xs font-black uppercase tracking-wider"
+                className="p-2 rounded-xl bg-slate-100 border border-slate-200 text-slate-600 hover:text-slate-800 hover:bg-slate-200 transition-all cursor-pointer flex items-center gap-1.5 text-xs font-black uppercase tracking-wider pointer-coarse:min-h-11 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1d4ed8]"
               >
                 {isFullscreen ? <Minimize2 size={14} strokeWidth={2.5} /> : <Maximize2 size={14} strokeWidth={2.5} />}
                 <span className="hidden sm:inline">{isFullscreen ? 'Exit' : 'Fullscreen'}</span>
@@ -155,11 +155,11 @@ export default function HowToClient() {
                   onClick={() => go(current - 1)}
                   disabled={current === 0}
                   aria-label="Previous phase"
-                  className="p-2 rounded-xl bg-slate-100 border border-slate-200 hover:border-slate-300 hover:bg-slate-200 text-slate-600 disabled:opacity-30 disabled:hover:bg-slate-100 transition-all cursor-pointer"
+                  className="p-2 rounded-xl bg-slate-100 border border-slate-200 hover:border-slate-300 hover:bg-slate-200 text-slate-600 disabled:opacity-30 disabled:hover:bg-slate-100 transition-all cursor-pointer pointer-coarse:min-h-11 pointer-coarse:min-w-11 inline-flex items-center justify-center focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1d4ed8]"
                 >
                   <ChevronLeft size={16} strokeWidth={2.5} />
                 </button>
-                <span className="text-xs font-mono font-bold text-slate-500">
+                <span className="text-xs font-mono font-bold text-slate-500" aria-hidden>
                   {step.n} / {steps.length}
                 </span>
                 <button
@@ -167,7 +167,7 @@ export default function HowToClient() {
                   onClick={() => go(current + 1)}
                   disabled={current === last}
                   aria-label="Next phase"
-                  className="p-2 rounded-xl bg-slate-100 border border-slate-200 hover:border-slate-300 hover:bg-slate-200 text-slate-600 disabled:opacity-30 disabled:hover:bg-slate-100 transition-all cursor-pointer"
+                  className="p-2 rounded-xl bg-slate-100 border border-slate-200 hover:border-slate-300 hover:bg-slate-200 text-slate-600 disabled:opacity-30 disabled:hover:bg-slate-100 transition-all cursor-pointer pointer-coarse:min-h-11 pointer-coarse:min-w-11 inline-flex items-center justify-center focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1d4ed8]"
                 >
                   <ChevronRight size={16} strokeWidth={2.5} />
                 </button>
@@ -187,7 +187,7 @@ export default function HowToClient() {
                 data-how-to-phase-index={s.key}
                 aria-current={i === current ? 'step' : undefined}
                 onClick={() => setCurrent(i)}
-                className={`w-full text-left flex items-center gap-3 rounded-xl px-2 py-2 transition-all cursor-pointer ${i === current ? 'bg-green-50' : 'hover:bg-slate-50'}`}
+                className={`w-full text-left flex items-center gap-3 rounded-xl px-2 py-2 transition-all cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1d4ed8] ${i === current ? 'bg-green-50' : 'hover:bg-slate-50'}`}
               >
                 <span className="w-6 h-6 rounded-full bg-green-100 border border-green-200 text-green-700 flex items-center justify-center text-xs font-black shrink-0">
                   {s.n}

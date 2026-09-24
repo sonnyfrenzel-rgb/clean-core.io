@@ -1239,7 +1239,9 @@ export default function TestingSandboxPage() {
                             <button
                               type="button"
                               onClick={() => setShowS4Password(!showS4Password)}
-                              className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-650 transition-colors"
+                              className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-650 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1d4ed8]"
+                              aria-label="Show password"
+                              aria-pressed={showS4Password}
                             >
                               {showS4Password ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                             </button>

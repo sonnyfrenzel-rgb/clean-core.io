@@ -44,9 +44,11 @@ export default function QuickAnswer({ question, answer }: QuickAnswerProps) {
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        aria-expanded={open ?? true}
+        // UX-058: before hydration the state is not known (collapsed on a phone,
+        // open on a desktop), so no state is claimed rather than "open".
+        aria-expanded={open === null ? undefined : open}
         aria-controls="quick-answer-body"
-        className="w-full flex items-center justify-between md:justify-center gap-3 text-left"
+        className="w-full flex items-center justify-between md:justify-center gap-3 text-left rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1d4ed8]"
       >
         <h3 className="text-sm sm:text-base font-bold text-gray-950 leading-tight md:text-center">
           {question}
@@ -60,6 +62,9 @@ export default function QuickAnswer({ question, answer }: QuickAnswerProps) {
       {/* Answer — always in the DOM for crawlers; visually collapsed via CSS height only. */}
       <div
         id="quick-answer-body"
+        // Collapsed means collapsed for a screen reader too; crawlers still get
+        // the text, because aria-hidden removes nothing from the DOM.
+        aria-hidden={open === false ? true : undefined}
         className={clsx('grid transition-[grid-template-rows] duration-300 ease-in-out mt-2', bodyRows)}
       >
         <div className="overflow-hidden">

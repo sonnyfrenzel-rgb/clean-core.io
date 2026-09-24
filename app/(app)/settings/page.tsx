@@ -905,16 +905,18 @@ export default function SettingsPage() {
               <form onSubmit={handleUpdateProfile} className="space-y-6">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-[10px] md:text-xs font-black text-gray-500 uppercase tracking-widest mb-2">First Name</label>
+                    <label htmlFor="settings-first-name" className="block text-[10px] md:text-xs font-black text-gray-500 uppercase tracking-widest mb-2">First Name</label>
                     <input 
+                      id="settings-first-name"
                       value={firstName}
                       onChange={(e) => setFirstName(e.target.value)}
                       className="w-full bg-gray-50 border border-gray-200 px-4 py-3 rounded-xl focus:ring-2 focus:ring-green-600 outline-none transition-all font-medium text-gray-900"
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] md:text-xs font-black text-gray-500 uppercase tracking-widest mb-2">Last Name</label>
+                    <label htmlFor="settings-last-name" className="block text-[10px] md:text-xs font-black text-gray-500 uppercase tracking-widest mb-2">Last Name</label>
                     <input 
+                      id="settings-last-name"
                       value={lastName}
                       onChange={(e) => setLastName(e.target.value)}
                       className="w-full bg-gray-50 border border-gray-200 px-4 py-3 rounded-xl focus:ring-2 focus:ring-green-600 outline-none transition-all font-medium text-gray-900"
@@ -987,10 +989,11 @@ export default function SettingsPage() {
               {/* Grid layout for other settings */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-[10px] md:text-xs font-black text-gray-500 uppercase tracking-widest mb-2.5">
+                  <label htmlFor="settings-default-view" className="block text-[10px] md:text-xs font-black text-gray-500 uppercase tracking-widest mb-2.5">
                     Default Landing View
                   </label>
                   <select
+                    id="settings-default-view"
                     value={defaultView}
                     onChange={(e: any) => setDefaultView(e.target.value)}
                     className="w-full bg-gray-50 border border-gray-200 px-4 py-3 rounded-xl focus:ring-2 focus:ring-green-600 outline-none transition-all font-medium text-gray-900 text-sm"
@@ -1002,20 +1005,23 @@ export default function SettingsPage() {
                 </div>
 
                 <div>
-                  <label className="block text-[10px] md:text-xs font-black text-gray-500 uppercase tracking-widest mb-2.5">
+                  <label id="settings-backup-label" className="block text-[10px] md:text-xs font-black text-gray-500 uppercase tracking-widest mb-2.5">
                     Automated Backup Sync
                   </label>
                   <div className="flex items-center justify-between h-[46px] bg-gray-50 border border-gray-200 px-4 rounded-xl">
-                    <span className="text-xs font-bold text-gray-700">Auto-save projects</span>
+                    <span id="settings-backup-desc" className="text-xs font-bold text-gray-700">Auto-save projects</span>
                     <button
                       type="button"
+                      role="switch"
+                      aria-checked={backupEnabled}
+                      aria-labelledby="settings-backup-label settings-backup-desc"
                       onClick={() => setBackupEnabled(!backupEnabled)}
-                      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out outline-none ${
+                      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out motion-reduce:transition-none outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1d4ed8] ${
                         backupEnabled ? 'bg-green-600' : 'bg-gray-200'
                       }`}
                     >
                       <span
-                        className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${
+                        className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out motion-reduce:transition-none ${
                           backupEnabled ? 'translate-x-5' : 'translate-x-0'
                         }`}
                       />
@@ -1024,7 +1030,7 @@ export default function SettingsPage() {
                 </div>
 
                 <div className="sm:col-span-2">
-                  <label className="block text-[10px] md:text-xs font-black text-gray-500 uppercase tracking-widest mb-2.5">
+                  <label id="settings-chatbot-label" className="block text-[10px] md:text-xs font-black text-gray-500 uppercase tracking-widest mb-2.5">
                     Floating assistant button
                   </label>
                   <div className="flex items-center justify-between h-[46px] bg-gray-50 border border-gray-200 px-4 rounded-xl">
@@ -1034,16 +1040,20 @@ export default function SettingsPage() {
                         stays, and so does the button in the header — saying
                         otherwise here would be the one lie a settings page
                         cannot afford. */}
-                    <span className="text-xs font-bold text-gray-700">Show the floating assistant button on desktop screens. The button in the header stays either way.</span>
+                    <span id="settings-chatbot-desc" className="text-xs font-bold text-gray-700">Show the floating assistant button on desktop screens. The button in the header stays either way.</span>
                     <button
                       type="button"
+                      role="switch"
+                      aria-checked={desktopChatbotEnabled}
+                      aria-labelledby="settings-chatbot-label"
+                      aria-describedby="settings-chatbot-desc"
                       onClick={() => setDesktopChatbotEnabled(!desktopChatbotEnabled)}
-                      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out outline-none ${
+                      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out motion-reduce:transition-none outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1d4ed8] ${
                         desktopChatbotEnabled ? 'bg-green-600' : 'bg-gray-200'
                       }`}
                     >
                       <span
-                        className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${
+                        className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out motion-reduce:transition-none ${
                           desktopChatbotEnabled ? 'translate-x-5' : 'translate-x-0'
                         }`}
                       />
@@ -1198,10 +1208,11 @@ export default function SettingsPage() {
                 ) : (
                   <form onSubmit={handleChangePassword} className="space-y-4">
                     <div>
-                      <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1.5">Current Password</label>
+                      <label htmlFor="settings-current-password" className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1.5">Current Password</label>
                       <div className="relative">
                         <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
                         <input
+                          id="settings-current-password"
                           type={showCurrentPw ? 'text' : 'password'}
                           required
                           value={currentPassword}
@@ -1212,7 +1223,9 @@ export default function SettingsPage() {
                         <button
                           type="button"
                           onClick={() => setShowCurrentPw(!showCurrentPw)}
-                          className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors p-1"
+                          className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors p-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1d4ed8]"
+                          aria-label="Show current password"
+                          aria-pressed={showCurrentPw}
                         >
                           {showCurrentPw ? <EyeOff size={16} /> : <Eye size={16} />}
                         </button>
@@ -1221,10 +1234,11 @@ export default function SettingsPage() {
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1.5">New Password</label>
+                        <label htmlFor="settings-new-password" className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1.5">New Password</label>
                         <div className="relative">
                           <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
                           <input
+                            id="settings-new-password"
                             type={showNewPw ? 'text' : 'password'}
                             required
                             value={newPassword}
@@ -1235,7 +1249,9 @@ export default function SettingsPage() {
                           <button
                             type="button"
                             onClick={() => setShowNewPw(!showNewPw)}
-                            className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors p-1"
+                            className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors p-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1d4ed8]"
+                            aria-label="Show new password"
+                            aria-pressed={showNewPw}
                           >
                             {showNewPw ? <EyeOff size={16} /> : <Eye size={16} />}
                           </button>
@@ -1269,10 +1285,11 @@ export default function SettingsPage() {
                       </div>
 
                       <div>
-                        <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1.5">Confirm New Password</label>
+                        <label htmlFor="settings-confirm-password" className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1.5">Confirm New Password</label>
                         <div className="relative">
                           <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
                           <input
+                            id="settings-confirm-password"
                             type={showNewPw ? 'text' : 'password'}
                             required
                             value={confirmNewPassword}
@@ -1356,7 +1373,7 @@ export default function SettingsPage() {
               <form onSubmit={handleSaveKey} className="space-y-6 text-gray-900">
                 <div className="space-y-2">
                   <div className="flex justify-between items-center">
-                    <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest">
+                    <label htmlFor="settings-gemini-key" className="block text-[10px] font-black text-gray-500 uppercase tracking-widest">
                       Gemini API Key
                     </label>
                     {profile?.byokConfigured && (
@@ -1368,6 +1385,7 @@ export default function SettingsPage() {
                   
                   <div className="relative">
                     <input 
+                      id="settings-gemini-key"
                       type={showKey ? "text" : "password"}
                       value={geminiKey}
                       onChange={(e) => {
@@ -1380,7 +1398,9 @@ export default function SettingsPage() {
                     <button
                       type="button"
                       onClick={() => setShowKey(!showKey)}
-                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors p-1"
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors p-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1d4ed8]"
+                      aria-label="Show API key"
+                      aria-pressed={showKey}
                       title={showKey ? "Hide API Key" : "Show API Key"}
                     >
                       {showKey ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -1564,10 +1584,11 @@ export default function SettingsPage() {
                 <form onSubmit={saveS4Config} className="space-y-6 text-gray-900">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
-                      <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest block">Tenant HTTPS URL</label>
+                      <label htmlFor="settings-s4-url" className="text-[10px] font-black text-gray-500 uppercase tracking-widest block">Tenant HTTPS URL</label>
                       <div className="relative">
                         <Globe className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                         <input
+                          id="settings-s4-url"
                           type="url"
                           required
                           value={s4Url}
@@ -1582,8 +1603,9 @@ export default function SettingsPage() {
                     </div>
 
                     <div className="space-y-2">
-                      <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest block">Authentication Type</label>
+                      <label htmlFor="settings-s4-auth-type" className="text-[10px] font-black text-gray-500 uppercase tracking-widest block">Authentication Type</label>
                       <select
+                        id="settings-s4-auth-type"
                         value={s4AuthType}
                         onChange={e => setS4AuthType(e.target.value as any)}
                         className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all text-[#0b1c30] h-11"
@@ -1597,10 +1619,11 @@ export default function SettingsPage() {
 
                     {s4AuthType === 'oauth2' && (
                       <div className="space-y-2 col-span-1 md:col-span-2">
-                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest block">OAuth 2.0 Token URL</label>
+                        <label htmlFor="settings-s4-token-url" className="text-[10px] font-black text-gray-500 uppercase tracking-widest block">OAuth 2.0 Token URL</label>
                         <div className="relative">
                           <Globe className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                           <input
+                            id="settings-s4-token-url"
                             type="url"
                             required
                             value={s4TokenUrl}
@@ -1617,8 +1640,9 @@ export default function SettingsPage() {
 
                     {s4AuthType === 'btp_destination' && (
                       <div className="space-y-2 col-span-1 md:col-span-2">
-                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest block">SAP BTP Destination JSON Configuration</label>
+                        <label htmlFor="settings-s4-destination-json" className="text-[10px] font-black text-gray-500 uppercase tracking-widest block">SAP BTP Destination JSON Configuration</label>
                         <textarea
+                          id="settings-s4-destination-json"
                           required
                           value={btpDestinationJson}
                           onChange={e => handleBtpJsonChange(e.target.value)}
@@ -1643,12 +1667,13 @@ export default function SettingsPage() {
                     {s4AuthType !== 'sap_hub' && s4AuthType !== 'btp_destination' && (
                       <>
                         <div className="space-y-2">
-                          <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest block">
+                          <label htmlFor="settings-s4-username" className="text-[10px] font-black text-gray-500 uppercase tracking-widest block">
                             {s4AuthType === 'oauth2' ? 'Client ID' : 'Username'}
                           </label>
                           <div className="relative">
                             <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                             <input
+                              id="settings-s4-username"
                               type="text"
                               required
                               value={s4Username}
@@ -1660,12 +1685,13 @@ export default function SettingsPage() {
                         </div>
 
                         <div className="space-y-2">
-                          <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest block">
+                          <label htmlFor="settings-s4-password" className="text-[10px] font-black text-gray-500 uppercase tracking-widest block">
                             {s4AuthType === 'oauth2' ? 'Client Secret' : 'Password'}
                           </label>
                           <div className="relative">
                             <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                             <input
+                              id="settings-s4-password"
                               type={showS4Password ? "text" : "password"}
                               required
                               value={s4Password}
@@ -1676,7 +1702,9 @@ export default function SettingsPage() {
                             <button
                               type="button"
                               onClick={() => setShowS4Password(!showS4Password)}
-                              className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                              className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1d4ed8]"
+                              aria-label="Show password"
+                              aria-pressed={showS4Password}
                             >
                               {showS4Password ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                             </button>
@@ -1759,10 +1787,11 @@ export default function SettingsPage() {
                   ) : (
                     <form onSubmit={handleRequestByot} className="space-y-4 pt-2">
                       <div className="space-y-2">
-                        <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest">
+                        <label htmlFor="settings-byot-motivation" className="block text-[10px] font-black text-gray-500 uppercase tracking-widest">
                           Description of your use case (Motivation)
                         </label>
                         <textarea 
+                          id="settings-byot-motivation"
                           value={byotMotivation}
                           onChange={(e) => setByotMotivation(e.target.value)}
                           placeholder="E.g., connecting our non-productive S/4HANA Public Cloud Sandbox to validate OData interfaces..."
@@ -1973,9 +2002,9 @@ export default function SettingsPage() {
             >
               {/* Close Button */}
               {mfaSetupStep !== 3 && (
-                <button
+                <button aria-label="Close" type="button"
                   onClick={() => setShowMfaSetup(false)}
-                  className="absolute top-6 right-6 text-gray-400 hover:text-gray-900 bg-gray-50 hover:bg-gray-100 p-2 rounded-full transition-colors z-10"
+                  className="absolute top-6 right-6 text-gray-400 hover:text-gray-900 bg-gray-50 hover:bg-gray-100 p-2 rounded-full transition-colors z-10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1d4ed8]"
                 >
                   <X size={16} strokeWidth={2.5} />
                 </button>
@@ -2098,6 +2127,9 @@ export default function SettingsPage() {
                           maxLength={6}
                           value={mfaVerifyCode}
                           onChange={(e) => setMfaVerifyCode(e.target.value.replace(/\s+/g, ''))}
+                          aria-label="6-digit code from your authenticator app"
+                          inputMode="numeric"
+                          autoComplete="one-time-code"
                           placeholder="e.g. 123456"
                           className="w-full bg-gray-50 border border-gray-200 pl-12 pr-4 py-4 rounded-2xl focus:ring-2 focus:ring-green-500 outline-none transition-all font-mono font-black text-lg text-gray-900 tracking-widest text-center"
                           autoFocus
@@ -2178,9 +2210,9 @@ export default function SettingsPage() {
               transition={{ type: 'spring', duration: 0.4 }}
               className="bg-white rounded-[2.5rem] w-full max-w-md shadow-2xl border border-gray-100 overflow-hidden relative p-8 sm:p-10"
             >
-              <button
+              <button aria-label="Close" type="button"
                 onClick={() => setShowMfaDisable(false)}
-                className="absolute top-6 right-6 text-gray-400 hover:text-gray-900 bg-gray-50 hover:bg-gray-100 p-2 rounded-full transition-colors"
+                className="absolute top-6 right-6 text-gray-400 hover:text-gray-900 bg-gray-50 hover:bg-gray-100 p-2 rounded-full transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1d4ed8]"
               >
                 <X size={16} strokeWidth={2.5} />
               </button>
@@ -2196,10 +2228,11 @@ export default function SettingsPage() {
               <div className="space-y-5">
                 {profile?.authMethod === 'password' && (
                   <div>
-                    <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1.5">Your Account Password</label>
+                    <label htmlFor="settings-delete-password" className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1.5">Your Account Password</label>
                     <div className="relative">
                       <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
                       <input
+                        id="settings-delete-password"
                         type="password"
                         required
                         value={disablePassword}
@@ -2212,10 +2245,11 @@ export default function SettingsPage() {
                 )}
 
                 <div>
-                  <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1.5">Code from your authenticator app</label>
+                  <label htmlFor="settings-delete-mfa-code" className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1.5">Code from your authenticator app</label>
                   <div className="relative">
                     <ShieldCheck className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
                     <input
+                      id="settings-delete-mfa-code"
                       type="text"
                       inputMode="numeric"
                       required

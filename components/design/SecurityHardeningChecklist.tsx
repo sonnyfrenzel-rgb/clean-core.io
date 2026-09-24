@@ -175,9 +175,9 @@ export default function SecurityHardeningChecklist({ securityHardening, findings
               {/* Decorative gradient blob */}
               <div className="absolute top-0 right-0 w-48 h-48 bg-emerald-500/10 rounded-full blur-2xl -mr-12 -mt-12 pointer-events-none"></div>
               
-              <button 
+              <button aria-label="Close" type="button" 
                 onClick={() => setActiveTerm(null)}
-                className="absolute top-5 right-5 text-slate-400 hover:text-white bg-slate-800/50 hover:bg-slate-800 p-1.5 rounded-full transition-colors"
+                className="absolute top-5 right-5 text-slate-400 hover:text-white bg-slate-800/50 hover:bg-slate-800 p-1.5 rounded-full transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1d4ed8]"
               >
                 <X size={16} />
               </button>

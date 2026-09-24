@@ -819,8 +819,9 @@ export default function Dashboard() {
             <button 
               type="button"
               onClick={() => setShowWorkspaceInfo(true)}
-              className="text-gray-400 hover:text-green-600 transition-colors p-1.5 rounded-full hover:bg-green-50 outline-none mr-2"
+              className="text-gray-400 hover:text-green-600 transition-colors p-1.5 rounded-full hover:bg-green-50 outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1d4ed8] mr-2"
               title="What is this workspace for?"
+              aria-label="What is this workspace for?"
             >
               <HelpCircle size={18} />
             </button>
@@ -1049,7 +1050,7 @@ export default function Dashboard() {
                 {viewContent.type === 'code' ? <FileCode2 className="w-5 h-5 text-green-600" /> : <FileText className="w-5 h-5 text-green-600" />}
                 {viewContent.title}
               </h2>
-              <button onClick={() => setViewContent(null)} className="p-2 text-gray-500 hover:bg-gray-200 rounded-lg transition-colors">
+              <button aria-label="Close" type="button" onClick={() => setViewContent(null)} className="p-2 text-gray-500 hover:bg-gray-200 rounded-lg transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1d4ed8]">
                 <X size={20} />
               </button>
             </div>
@@ -1108,10 +1109,10 @@ export default function Dashboard() {
               <h2 className="text-xl font-black text-gray-900 flex items-center gap-3">
                 <HelpCircle className="text-[#006b2c]" /> What is the Clean-Core Workspace?
               </h2>
-              <button 
+              <button aria-label="Close" 
                 type="button"
                 onClick={() => setShowWorkspaceInfo(false)} 
-                className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-500 transition-colors"
+                className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-500 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1d4ed8]"
               >
                 <X size={20} />
               </button>
@@ -1173,10 +1174,10 @@ export default function Dashboard() {
               <h2 className="text-xl font-black text-gray-900 flex items-center gap-3">
                 <HelpCircle className="text-blue-600" /> What are these examples for?
               </h2>
-              <button 
+              <button aria-label="Close" 
                 type="button"
                 onClick={() => setShowDatabaseInfo(false)} 
-                className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-500 transition-colors"
+                className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-500 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1d4ed8]"
               >
                 <X size={20} />
               </button>
@@ -1294,8 +1295,9 @@ export default function Dashboard() {
             <button 
               type="button"
               onClick={() => setShowDatabaseInfo(true)}
-              className="text-gray-400 hover:text-green-600 transition-colors p-1.5 rounded-full hover:bg-green-50 outline-none"
+              className="text-gray-400 hover:text-green-600 transition-colors p-1.5 rounded-full hover:bg-green-50 outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1d4ed8]"
               title="What are these examples for?"
+              aria-label="What are these examples for?"
             >
               <HelpCircle size={18} />
             </button>
@@ -1392,10 +1394,10 @@ export default function Dashboard() {
                       </svg>
                     </div>
                     {exampleSearch && (
-                      <button
+                      <button aria-label="Clear search"
                         type="button"
                         onClick={() => setExampleSearch('')}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1d4ed8]"
                       >
                         <X size={14} />
                       </button>
@@ -1462,6 +1464,7 @@ export default function Dashboard() {
                                 onClick={() => setViewContent({ title: example.name, content: example.code, type: 'code' })}
                                 className="p-2 text-slate-450 hover:text-blue-600 rounded-xl hover:bg-blue-50 transition-colors"
                                 title="View Full Code"
+                                aria-label={`View the full code of ${example.name}`}
                               >
                                 <Eye size={15} />
                               </button>
@@ -1471,6 +1474,7 @@ export default function Dashboard() {
                                   onClick={() => handleDeleteABAP(example.id)}
                                   className="p-2 text-slate-400 hover:text-red-600 rounded-xl hover:bg-red-50 transition-colors"
                                   title="Delete Custom File"
+                                  aria-label={`Delete ${example.name}`}
                                 >
                                   <Trash2 size={15} />
                                 </button>
@@ -1591,10 +1595,10 @@ export default function Dashboard() {
                       </svg>
                     </div>
                     {forumSearch && (
-                      <button
+                      <button aria-label="Clear search"
                         type="button"
                         onClick={() => setForumSearch('')}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1d4ed8]"
                       >
                         <X size={14} />
                       </button>
@@ -1775,9 +1779,9 @@ export default function Dashboard() {
                   <span className="text-[10px] text-slate-400 font-semibold block mt-0.5">{activePost.createdAt}</span>
                 </div>
               </div>
-              <button 
+              <button aria-label="Close" type="button" 
                 onClick={() => setActivePost(null)} 
-                className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-all outline-none"
+                className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-all outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1d4ed8]"
               >
                 <X size={20} />
               </button>
@@ -1909,8 +1913,17 @@ function ProjectTreeItem({ project, onDelete, onCopy, onExport, onProceed, isPro
         onClick={() => setExpanded(!expanded)}
       >
         <div className="md:col-span-4 flex items-center gap-4 w-full">
-          <button className="p-1 text-[#0b1c30]/40 hover:text-[#006b2c] rounded-md transition-colors shrink-0">
-            {expanded ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
+          {/* UX-060: the whole row toggles on a click, but only this button
+              is reachable by keyboard — so it carries the name and the state.
+              Its click bubbles to the row, which does the toggling. */}
+          <button
+            type="button"
+            aria-expanded={expanded}
+            aria-controls={`project-deliverables-${project.id}`}
+            aria-label={`Deliverables of ${project.name}`}
+            className="p-1 text-[#0b1c30]/40 hover:text-[#006b2c] rounded-md transition-colors shrink-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1d4ed8]"
+          >
+            {expanded ? <ChevronDown size={20} aria-hidden /> : <ChevronRight size={20} aria-hidden />}
           </button>
           <div className={`p-3 rounded-xl shrink-0 ${expanded ? 'bg-[#006b2c] text-white' : 'bg-[#eff4ff] text-[#0b1c30]/60'}`}>
             {expanded ? <FolderOpen size={18} /> : <Folder size={18} />}
@@ -1960,25 +1973,25 @@ function ProjectTreeItem({ project, onDelete, onCopy, onExport, onProceed, isPro
             because a row where one of five icons announces itself is worse than
             one where none do. `aria-label` and `title` are kept in step.
           */}
-          <button onClick={onProceed} disabled={isProceeding} className="p-3 bg-gradient-to-br from-[#006b2c] to-[#00873a] text-white rounded-xl hover:shadow-lg transition-all disabled:opacity-50" title="Continue Transformation" aria-label="Continue Transformation">
+          <button onClick={onProceed} disabled={isProceeding} className="p-3 bg-gradient-to-br from-[#006b2c] to-[#00873a] text-white rounded-xl hover:shadow-lg transition-all disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1d4ed8]" title="Continue Transformation" aria-label="Continue Transformation">
             {isProceeding ? <RefreshCw size={18} className="animate-spin" /> : <ArrowRight size={18} />}
           </button>
           <button
             data-invite-open
             onClick={() => setInviting(true)}
-            className="p-3 text-[#0b1c30]/60 hover:text-[#006b2c] hover:bg-[#eff4ff] rounded-xl transition-colors"
+            className="p-3 text-[#0b1c30]/60 hover:text-[#006b2c] hover:bg-[#eff4ff] rounded-xl transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1d4ed8]"
             title="Invite someone to read this project"
             aria-label="Invite someone to read this project"
           >
             <UserPlus size={18} />
           </button>
-          <button onClick={onCopy} className="p-3 text-[#0b1c30]/60 hover:text-[#006b2c] hover:bg-[#eff4ff] rounded-xl transition-colors" title="Duplicate Project" aria-label="Duplicate Project">
+          <button onClick={onCopy} className="p-3 text-[#0b1c30]/60 hover:text-[#006b2c] hover:bg-[#eff4ff] rounded-xl transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1d4ed8]" title="Duplicate Project" aria-label="Duplicate Project">
             <Copy size={18} />
           </button>
-          <button onClick={onExport} className="p-3 text-[#0b1c30]/60 hover:text-[#006b2c] hover:bg-[#eff4ff] rounded-xl transition-colors" title="Export JSON" aria-label="Export JSON">
+          <button onClick={onExport} className="p-3 text-[#0b1c30]/60 hover:text-[#006b2c] hover:bg-[#eff4ff] rounded-xl transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1d4ed8]" title="Export JSON" aria-label="Export JSON">
             <Download size={18} />
           </button>
-          <button onClick={onDelete} className="p-3 text-[#0b1c30]/40 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors" title="Delete Project" aria-label="Delete Project">
+          <button onClick={onDelete} className="p-3 text-[#0b1c30]/40 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1d4ed8]" title="Delete Project" aria-label="Delete Project">
             <Trash2 size={18} />
           </button>
         </div>
@@ -1986,7 +1999,7 @@ function ProjectTreeItem({ project, onDelete, onCopy, onExport, onProceed, isPro
 
       {/* Expanded Deliverables Tree */}
       {expanded && (
-        <div className="bg-[#eff4ff]/30 border-t border-[#eff4ff] pl-14 pr-4 py-2">
+        <div id={`project-deliverables-${project.id}`} className="bg-[#eff4ff]/30 border-t border-[#eff4ff] pl-14 pr-4 py-2">
           {allItems.length === 0 ? (
             <div className="py-4 text-sm text-[#0b1c30]/60 italic flex items-center gap-2">
               <Activity size={16} /> No deliverables generated yet. Click &apos;Continue&apos; to start the process.

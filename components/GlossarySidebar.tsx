@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { GLOSSARY_ITEMS } from '@/lib/glossary';
 import { BookOpen, X, Search, ChevronRight, HelpCircle, Layers } from 'lucide-react';
 import clsx from 'clsx';
+import { useDialogFocus } from '@/hooks/useDialogFocus';
 
 export default function GlossarySidebar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -32,6 +33,11 @@ export default function GlossarySidebar() {
 
   const categories = ['ERP Core', 'BTP Extension', 'Architecture', 'Integration'];
 
+  const close = useCallback(() => setIsOpen(false), []);
+  // UX-045: the drawer is a modal dialog — focus moves in, Tab stays inside,
+  // Escape closes, and focus returns to the trigger.
+  const dialogRef = useDialogFocus<HTMLDivElement>(isOpen, close);
+
   const toggleTerm = (term: string) => {
     setExpandedTerm((prev) => (prev === term ? null : term));
   };
@@ -42,10 +48,13 @@ export default function GlossarySidebar() {
       <button
         type="button"
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-24 sm:right-40 z-[80] bg-emerald-600 hover:bg-emerald-500 text-white p-4 rounded-full shadow-2xl transition-all duration-350 hover:scale-105 active:scale-95 group flex items-center gap-2 border border-emerald-500/30"
+        aria-haspopup="dialog"
+        aria-expanded={isOpen}
+        aria-label="Open the Clean Core glossary"
+        className="fixed bottom-6 right-24 sm:right-40 z-[80] bg-emerald-600 hover:bg-emerald-500 text-white p-4 rounded-full shadow-2xl transition-all duration-350 hover:scale-105 active:scale-95 group flex items-center gap-2 border border-emerald-500/30 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1d4ed8]"
         title="Open Clean Core Glossary Guide"
       >
-        <BookOpen size={20} className="group-hover:rotate-6 transition-transform" />
+        <BookOpen size={20} aria-hidden className="group-hover:rotate-6 transition-transform" />
         <span className="text-xs font-black uppercase tracking-wider hidden sm:inline-block pr-1">Glossary</span>
       </button>
 
@@ -54,29 +63,36 @@ export default function GlossarySidebar() {
         <>
           {/* Backdrop */}
           <div 
+            aria-hidden
             onClick={() => setIsOpen(false)}
             className="fixed inset-0 z-[100] bg-slate-950/40 backdrop-blur-sm animate-in fade-in duration-200"
           ></div>
 
           {/* Right Sliding Drawer */}
-          <div 
+          <div
+            ref={dialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="glossary-sidebar-title"
+            tabIndex={-1}
             className="fixed top-0 right-0 h-full w-[420px] max-w-full bg-white z-[105] shadow-2xl border-l border-slate-200 flex flex-col justify-between animate-in slide-in-from-right duration-350"
           >
             {/* Header */}
             <div className="p-6 border-b border-slate-100 flex items-center justify-between shrink-0">
               <div className="flex items-center gap-2">
-                <BookOpen className="text-emerald-600 w-5 h-5" />
+                <BookOpen aria-hidden className="text-emerald-600 w-5 h-5" />
                 <div>
-                  <h3 className="text-base font-extrabold text-slate-900 leading-none">Clean Core Glossary</h3>
+                  <h3 id="glossary-sidebar-title" className="text-base font-extrabold text-slate-900 leading-none">Clean Core Glossary</h3>
                   <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mt-1">S/4HANA Modernization Guide</span>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setIsOpen(false)}
-                className="p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all shrink-0"
+                aria-label="Close glossary"
+                className="p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all shrink-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1d4ed8]"
               >
-                <X size={18} />
+                <X size={18} aria-hidden />
               </button>
             </div>
 
@@ -84,10 +100,11 @@ export default function GlossarySidebar() {
             <div className="flex-1 overflow-y-auto p-6 space-y-6">
               {/* Search input */}
               <div className="relative">
-                <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-450" />
+                <Search size={16} aria-hidden className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-450" />
                 <input
                   type="text"
                   placeholder="Search glossary terms..."
+                  aria-label="Search glossary terms"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full bg-slate-50 border border-slate-200 rounded-2xl pl-11 pr-4 py-3 text-xs font-semibold focus:outline-none focus:border-emerald-500 focus:bg-white transition-colors"
@@ -101,6 +118,7 @@ export default function GlossarySidebar() {
                   <button
                     type="button"
                     onClick={() => setSelectedCategory(null)}
+                    aria-pressed={!selectedCategory}
                     className={clsx(
                       "text-[10px] px-3 py-1.5 rounded-full font-bold uppercase border transition-all shadow-sm",
                       !selectedCategory
@@ -115,6 +133,7 @@ export default function GlossarySidebar() {
                       key={cat}
                       type="button"
                       onClick={() => setSelectedCategory(cat)}
+                      aria-pressed={selectedCategory === cat}
                       className={clsx(
                         "text-[10px] px-3 py-1.5 rounded-full font-bold uppercase border transition-all shadow-sm",
                         selectedCategory === cat
@@ -146,7 +165,9 @@ export default function GlossarySidebar() {
                         <button
                           type="button"
                           onClick={() => toggleTerm(item.shortName)}
-                          className="w-full flex items-center justify-between p-4 text-left focus:outline-none"
+                          aria-expanded={isExpanded}
+                          aria-controls={`glossary-term-${item.shortName.replace(/[^A-Za-z0-9_-]/g, '-')}`}
+                          className="w-full flex items-center justify-between p-4 text-left focus:outline-none focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[#1d4ed8]"
                         >
                           <div className="space-y-0.5">
                             <div className="flex items-center gap-2">
@@ -159,10 +180,13 @@ export default function GlossarySidebar() {
                               {item.term}
                             </span>
                           </div>
-                          <ChevronRight size={14} className={clsx("text-slate-400 transition-transform shrink-0 ml-2", isExpanded && "transform rotate-90 text-emerald-600")} />
+                          <ChevronRight size={14} aria-hidden className={clsx("text-slate-400 transition-transform shrink-0 ml-2", isExpanded && "transform rotate-90 text-emerald-600")} />
                         </button>
 
-                        <div className={clsx(
+                        <div
+                          id={`glossary-term-${item.shortName.replace(/[^A-Za-z0-9_-]/g, '-')}`}
+                          hidden={!isExpanded}
+                          className={clsx(
                           "transition-all duration-300 ease-in-out overflow-hidden border-slate-100",
                           isExpanded ? "max-h-[500px] border-t p-4 bg-slate-50/50 space-y-4" : "max-h-0"
                         )}>

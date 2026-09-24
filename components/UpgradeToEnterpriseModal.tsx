@@ -15,7 +15,7 @@ export default function UpgradeModal({ isOpen, onClose }: { isOpen: boolean, onC
           exit={{ opacity: 0, scale: 0.95, y: 10 }}
           className="bg-white rounded-[2rem] shadow-2xl w-full max-w-sm overflow-hidden border border-gray-100 p-8 text-center"
         >
-          <button onClick={onClose} className="absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-500">
+          <button aria-label="Close" type="button" onClick={onClose} className="absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1d4ed8]">
              <X size={20} />
           </button>
           

@@ -79,8 +79,8 @@ export const PresentationViewer = ({ data }: { data: PresentationData }) => {
       {/* Slide Content Area */}
       <div className="relative aspect-auto min-h-[300px] sm:aspect-video bg-gradient-to-br from-gray-50 to-gray-100 p-6 sm:p-8 md:p-12 flex flex-col justify-center">
         {/* Slide Number */}
-        <div className="absolute top-4 right-4 sm:top-6 sm:right-8 text-xs sm:text-sm font-bold text-gray-400">
-          {currentSlide + 1} / {data.slides.length}
+        <div aria-live="polite" className="absolute top-4 right-4 sm:top-6 sm:right-8 text-xs sm:text-sm font-bold text-gray-400">
+          <span className="sr-only">Slide </span>{currentSlide + 1} / {data.slides.length}
         </div>
         
         {/* Company/Project Branding */}
@@ -285,27 +285,34 @@ export const PresentationViewer = ({ data }: { data: PresentationData }) => {
       {/* Controls & Speaker Notes */}
       <div className="bg-gray-900 text-white p-4 sm:p-6 flex flex-col gap-4">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-          <button 
+          <button
+            type="button"
             onClick={() => setShowNotes(!showNotes)}
-            className={`w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-colors ${showNotes ? 'bg-white text-gray-900' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'}`}
+            aria-pressed={showNotes}
+            className={`focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-colors ${showNotes ? 'bg-white text-gray-900' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'}`}
           >
-            <FileText size={16} /> Speaker Notes
+            <FileText size={16} aria-hidden /> Speaker Notes
           </button>
           
           <div className="flex items-center gap-4 w-full sm:w-auto justify-center">
-            <button 
+            {/* UX-033: the two slide switches had no name at all. */}
+            <button
+              type="button"
               onClick={prevSlide}
               disabled={currentSlide === 0}
-              className="p-3 rounded-full bg-gray-800 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              aria-label="Previous slide"
+              className="p-3 rounded-full bg-gray-800 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
             >
-              <ChevronLeft size={24} />
+              <ChevronLeft size={24} aria-hidden />
             </button>
-            <button 
+            <button
+              type="button"
               onClick={nextSlide}
               disabled={currentSlide === data.slides.length - 1}
-              className="p-3 rounded-full bg-gray-800 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              aria-label="Next slide"
+              className="p-3 rounded-full bg-gray-800 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
             >
-              <ChevronRight size={24} />
+              <ChevronRight size={24} aria-hidden />
             </button>
           </div>
         </div>

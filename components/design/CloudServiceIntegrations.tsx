@@ -422,9 +422,9 @@ export default function CloudServiceIntegrations({ cloudServices }: CloudService
                     <h3 className="text-xl font-extrabold text-white mt-0.5">{details.title}</h3>
                   </div>
                 </div>
-                <button 
+                <button aria-label="Close" type="button" 
                   onClick={() => setActiveService(null)}
-                  className="text-slate-400 hover:text-white bg-slate-800/50 hover:bg-slate-800 p-2 rounded-full transition-colors relative z-10"
+                  className="text-slate-400 hover:text-white bg-slate-800/50 hover:bg-slate-800 p-2 rounded-full transition-colors relative z-10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1d4ed8]"
                 >
                   <X size={18} />
                 </button>
