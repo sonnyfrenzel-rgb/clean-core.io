@@ -291,11 +291,147 @@
 }
 
 /* -------------------------------------------------------------
- * The focus ring, once — DESIGN.md §1.6
+ * Text roles — DESIGN.md §1.2, plus "Meta/Chip" (E-1, ADR-047)
+ *
+ * The scale of §1.2 as one class per role, so a page says *what* a piece of
+ * text is and the size, weight and tracking follow. Before this the same role
+ * was spelled `text-[11px] font-semibold tracking-[0.08em] uppercase` in one
+ * file, `text-[10px] font-black uppercase tracking-widest` in the next and
+ * `text-[9px] font-bold tracking-wider` in a third — three spellings, three
+ * results, no way to find them all.
+ *
+ * Type only: no colour. Ink is a separate decision (`text-cc-ink`,
+ * `text-cc-ink-muted`), because the same label sits on a card and on a chip.
+ * Line heights other than the body's 1.55 are not in §1.2; they are the values
+ * the workspace components already render (`leading-tight` for the title).
+ *
+ *   cc-text-title       22 / 800 / -0.02em   project title, stage title
+ *   cc-text-h2          15 / 700             section title
+ *   cc-text-h3          14 / 700             card title
+ *   cc-text-body        14 / 500 / 1.55      running text
+ *   cc-text-cell        13 / 500             table cell, secondary text
+ *   cc-text-identifier  13 / 600             object identifier
+ *   cc-text-meta        12 / 600             meta line, chip (E-1)
+ *   cc-text-label       11 / 600 / CAPS / 0.08em   micro label, column head
+ *
+ * Nothing is smaller than `--cc-text-min`, and nothing is 900 (§1.2).
+ * ------------------------------------------------------------- */
+@utility cc-text-title {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+}
+
+@utility cc-text-h2 {
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.375;
+}
+
+@utility cc-text-h3 {
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.375;
+}
+
+@utility cc-text-body {
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.55;
+}
+
+@utility cc-text-cell {
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+@utility cc-text-identifier {
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+@utility cc-text-meta {
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+@utility cc-text-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  line-height: 1.4;
+  text-transform: uppercase;
+}
+
+/* -------------------------------------------------------------
+ * The focus ring, everywhere — DESIGN.md §1.6 (Block D, D.3)
+ *
+ * Until D.3 the ring below existed only inside `.cc`, so everything outside
+ * the new namespace — stages, settings, admin, public pages — showed the
+ * browser's own ring or, where a class had removed it, none. This is the same
+ * ring for the whole app.
+ *
+ * In `@layer base` on purpose. A base rule is a default: a Tailwind utility on
+ * the element (`outline-none focus:ring-2`, `focus-visible:outline-*`) still
+ * wins, so an element that already draws its own indicator does not get a
+ * second one on top. An element that removes the outline *without* drawing a
+ * replacement is the other case, and a stylesheet cannot tell the two apart —
+ * that is what the source guard's R8 counts, file by file, until it is zero.
+ * ------------------------------------------------------------- */
+@layer base {
+  :focus-visible {
+    outline: 2px solid var(--cc-focus);
+    outline-offset: 2px;
+  }
+
+  @media (forced-colors: active) {
+    :focus-visible {
+      outline: 2px solid Highlight;
+      outline-offset: 2px;
+    }
+  }
+}
+
+/* -------------------------------------------------------------
+ * Reduced motion, for the whole app — DESIGN.md §1.7, §5.4 (D.3)
+ *
+ * A reader who asked the system for less motion gets it everywhere, not only
+ * in the three components that remembered to ask. `0.01ms` rather than
+ * `none`: code that waits for `animationend` or `transitionend` still gets
+ * its event, one frame later, instead of waiting forever. A spinner stops on
+ * its first frame and stays visible; the state it stands for is still said
+ * in words next to it (§2.8).
+ *
+ * The `motion` library animates from JavaScript and is not reached by a
+ * stylesheet; its components follow the same preference through their own
+ * `useReducedMotion`/`MotionConfig`.
+ * ------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* -------------------------------------------------------------
+ * The focus ring inside the new namespace — DESIGN.md §1.6
  *
  * 2px `--cc-focus`, 2px away, the element's own radius. Declared here rather
  * than repeated in eighteen components, because the one thing worse than an
  * inconsistent ring is a component that removes it and forgets the replacement.
+ *
+ * Unlayered, unlike the app-wide default above: inside `.cc` the ring is not a
+ * default a utility may override, it is the rule.
  * ------------------------------------------------------------- */
 .cc :focus-visible,
 .cc:focus-visible {
@@ -346,6 +482,53 @@
   html,
   body {
     background: #fff !important;
+  }
+
+  /* Block D, D.3: the ground rule of §7.1 for every page, not only `.cc` —
+     ink on white, no fills, no shadows, no gradients, no row torn in half.
+
+     Unlayered but written through `body :where(…)`, so it weighs one type
+     selector. That is enough to beat every Tailwind utility (they live in a
+     layer) and deliberately too little to beat a stylesheet written for paper:
+     `/clean-core-explained-print` brings its own print sheet with class
+     selectors, and the PDF generated from it must not change here.
+
+     Chips and chart segments keep their own rules above and below — a chip's
+     form and a bar's fill are what they mean. Text that was light because its
+     surface was dark turns to ink once the surface is gone, or it would print
+     white on white. */
+  body {
+    color: var(--cc-ink);
+  }
+
+  body :where(*:not([data-cc-form], [data-chart-segment], [data-chart-swatch])) {
+    background-color: transparent;
+    background-image: none;
+    box-shadow: none;
+    text-shadow: none;
+  }
+
+  body
+    :where(
+      .text-white,
+      .text-cc-on-dark,
+      .text-cc-code-ink,
+      .text-cc-code-muted,
+      .text-cc-code-keyword,
+      .text-cc-code-literal,
+      .text-cc-code-name,
+      [class*='text-gray-1'],
+      [class*='text-gray-2'],
+      [class*='text-gray-3'],
+      [class*='text-slate-1'],
+      [class*='text-slate-2'],
+      [class*='text-slate-3']
+    ) {
+    color: var(--cc-ink);
+  }
+
+  body :where(li, tr) {
+    break-inside: avoid;
   }
 
   .cc,
@@ -514,11 +697,14 @@
     content: attr(data-label);
     display: block;
     margin-bottom: 0.125rem;
-    font-size: 0.625rem;
-    font-weight: 900;
-    letter-spacing: 0.1em;
+    /* The micro label of §1.2 (`cc-text-label`): 11px, 600, 0.08em, in the
+       muted ink that clears 4.5:1 on white. It was 10px / 900 in `#9ca3af`,
+       2.5:1 — under the type floor and under the contrast floor at once. */
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: #9ca3af;
+    color: var(--cc-ink-muted);
   }
 
   /* The first cell is the row's subject; repeating the column header above it

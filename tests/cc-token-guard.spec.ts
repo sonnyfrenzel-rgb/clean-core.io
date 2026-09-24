@@ -162,6 +162,74 @@ test.describe('the new namespace uses tokens and nothing else', () => {
   });
 });
 
+/**
+ * Block D, D.3 — the foundations every later step migrates onto. Read from the
+ * stylesheet, because a page that uses `cc-text-label` and gets nothing is the
+ * same silent failure as an undeclared colour: Tailwind emits no CSS for a
+ * utility it does not know.
+ */
+test.describe('the app-wide foundations (D.3)', () => {
+  const css = read('app/globals.css');
+  const utility = (name: string) => {
+    const m = css.match(new RegExp(`@utility ${name} \\{([^}]*)\\}`));
+    if (!m) return null;
+    return Object.fromEntries(
+      [...m[1].matchAll(/([a-z-]+):\s*([^;]+);/g)].map((d) => [d[1], d[2].trim()]),
+    );
+  };
+
+  test('the text roles of §1.2, with Meta/Chip (E-1), are utilities with the scale values', () => {
+    const roles: Record<string, Record<string, string>> = {
+      'cc-text-title': { 'font-size': '22px', 'font-weight': '800', 'letter-spacing': '-0.02em' },
+      'cc-text-h2': { 'font-size': '15px', 'font-weight': '700' },
+      'cc-text-h3': { 'font-size': '14px', 'font-weight': '700' },
+      'cc-text-body': { 'font-size': '14px', 'font-weight': '500', 'line-height': '1.55' },
+      'cc-text-cell': { 'font-size': '13px', 'font-weight': '500' },
+      'cc-text-identifier': { 'font-size': '13px', 'font-weight': '600' },
+      'cc-text-meta': { 'font-size': '12px', 'font-weight': '600' },
+      'cc-text-label': {
+        'font-size': '11px',
+        'font-weight': '600',
+        'letter-spacing': '0.08em',
+        'text-transform': 'uppercase',
+      },
+    };
+    for (const [name, want] of Object.entries(roles)) {
+      const got = utility(name);
+      expect(got, `@utility ${name} is missing from app/globals.css`).not.toBeNull();
+      expect(got, name).toMatchObject(want);
+      // §1.2: nothing under the floor, nothing at 900, and no colour in a type role.
+      expect(parseFloat(got!['font-size']), name).toBeGreaterThanOrEqual(11);
+      expect(Number(got!['font-weight']), name).toBeLessThanOrEqual(800);
+      expect(got, `${name} sets a colour — ink is a separate decision`).not.toHaveProperty('color');
+    }
+  });
+
+  test('the focus ring is an app-wide default, not only inside .cc (§1.6)', () => {
+    const base = css.match(/@layer base \{([\s\S]*?)\n\}/);
+    expect(base, 'no @layer base block in app/globals.css').not.toBeNull();
+    expect(base![1]).toMatch(/(^|\n)\s*:focus-visible \{\s*outline: 2px solid var\(--cc-focus\);\s*outline-offset: 2px;/);
+    expect(base![1]).toMatch(/forced-colors: active[\s\S]*:focus-visible[\s\S]*outline: 2px solid Highlight/);
+  });
+
+  test('reduced motion is honoured app-wide (§1.7, §5.4)', () => {
+    const block = css.match(/@media \(prefers-reduced-motion: reduce\) \{([\s\S]*?)\n\}/);
+    expect(block, 'no global prefers-reduced-motion block').not.toBeNull();
+    expect(block![1]).toMatch(/\*,\s*\*::before,\s*\*::after\s*\{/);
+    expect(block![1]).toMatch(/animation-duration:\s*0\.01ms !important/);
+    expect(block![1]).toMatch(/animation-iteration-count:\s*1 !important/);
+    expect(block![1]).toMatch(/transition-duration:\s*0\.01ms !important/);
+  });
+
+  test('the document-table label on a phone clears the type and contrast floor', () => {
+    const rule = css.match(/\.doc-table td\[data-label\]::before \{([^}]*)\}/);
+    expect(rule).not.toBeNull();
+    expect(rule![1]).toMatch(/font-size:\s*11px/);
+    expect(rule![1]).toMatch(/color:\s*var\(--cc-ink-muted\)/);
+    expect(rule![1]).not.toMatch(/font-weight:\s*900/);
+  });
+});
+
 test.describe('the tokens as the browser sees them', () => {
   let admin: GalleryAdmin;
 
@@ -426,5 +494,113 @@ test.describe('the tokens as the browser sees them', () => {
       ringless,
       `no focus ring on keyboard focus (DESIGN.md §1.6 — never outline:none without a replacement):\n${ringless.join('\n')}`,
     ).toEqual([]);
+  });
+
+  /**
+   * Block D, D.3: the ring is app-wide, not a privilege of the new namespace.
+   *
+   * `/settings` is old product through and through — no `.cc` anywhere on it —
+   * so every ring measured here comes from the global default in `@layer base`
+   * or from the element's own utility. The test holds three things:
+   *
+   *   - an element that says nothing about focus (the "Back to Workspace"
+   *     button, for one) shows exactly the §1.6 ring: 2px solid `--cc-focus`,
+   *     2px away. Before D.3 it showed the browser's own `auto` ring.
+   *   - every outline that is drawn is at least 2px.
+   *   - an element that removes the outline draws something else instead — on
+   *     this page that is `focus:ring-2`, a box shadow. Which of those still
+   *     exist is the source guard's business (R8); that none is *bare* is this
+   *     test's.
+   */
+  test('the ring reaches a page outside the new namespace (/settings)', async ({ page }) => {
+    test.setTimeout(180 * 1000);
+    await page.setViewportSize({ width: 1440, height: 1200 });
+    await page.goto('/');
+    await page.click('a:has-text("Get Free Access"), button:has-text("Get Free Access")');
+    await page.waitForSelector('input[type="email"]');
+    await page.fill('input[type="email"]', admin.email);
+    await page.fill('input[type="password"]', admin.password);
+    await page.click('button[type="submit"]:has-text("Sign In")');
+    await page.waitForTimeout(4000);
+
+    await page.goto('/settings', { waitUntil: 'domcontentloaded' });
+    const heading = page.locator('h1', { hasText: 'Profile Settings' });
+    await expect(heading).toBeVisible({ timeout: 60000 });
+    expect(await page.locator('main .cc, main.cc').count(), '/settings is meant to be outside .cc').toBe(0);
+
+    const focusToken = await page.evaluate(() =>
+      getComputedStyle(document.documentElement).getPropertyValue('--cc-focus').trim(),
+    );
+    const expected = parseColor(focusToken);
+    expect(expected, `--cc-focus is not a colour: "${focusToken}"`).not.toBeNull();
+
+    await heading.click();
+
+    const bare: string[] = [];
+    const thin: string[] = [];
+    let seen = 0;
+    let exact = 0;
+    for (let i = 0; i < 30; i++) {
+      await page.keyboard.press('Tab');
+      const ring = await page.evaluate(() => {
+        const el = document.activeElement as HTMLElement | null;
+        if (!el || el === document.body || !el.closest('main')) return null;
+        if (el.closest('.cc')) return null;
+        const s = getComputedStyle(el);
+        return {
+          width: s.outlineWidth,
+          style: s.outlineStyle,
+          color: s.outlineColor,
+          offset: s.outlineOffset,
+          shadow: s.boxShadow,
+          tag: el.tagName.toLowerCase(),
+          cls: el.getAttribute('class') || '',
+          text: (el.textContent || el.getAttribute('aria-label') || '').trim().slice(0, 30),
+        };
+      });
+      if (!ring) continue;
+      seen += 1;
+      const what = `<${ring.tag} class="${ring.cls.slice(0, 60)}"> "${ring.text}"`;
+      if (ring.style === 'none') {
+        if (ring.shadow === 'none') bare.push(what);
+        continue;
+      }
+      if (parseFloat(ring.width) < 2) thin.push(`${what} outline ${ring.width}`);
+      const colour = parseColor(ring.color);
+      if (
+        !/\boutline/.test(ring.cls) &&
+        ring.style === 'solid' &&
+        parseFloat(ring.width) === 2 &&
+        parseFloat(ring.offset) === 2 &&
+        colour &&
+        expected &&
+        colour.every((c, k) => Math.abs(c - expected[k]) < 1)
+      ) {
+        exact += 1;
+      }
+    }
+
+    expect(seen, 'nothing in /settings took keyboard focus').toBeGreaterThan(3);
+    expect(
+      exact,
+      'no element without its own outline class showed the §1.6 ring — the global default did not reach /settings',
+    ).toBeGreaterThan(0);
+    expect(thin, `outlines thinner than 2px (DESIGN.md §1.6):\n${thin.join('\n')}`).toEqual([]);
+    // Known and scheduled, not tolerated: the two switches under "Preferences"
+    // (settings/page.tsx, `outline-none focus-visible:outline-2 …`). In
+    // Tailwind v4 `outline-none` sets `--tw-outline-style: none`, and
+    // `focus-visible:outline-2` draws with that variable — so the "replacement"
+    // is a 2px outline of style none. The page is Lane C's (D.20a replaces the
+    // switches); the number is a ratchet: fix one and this test fails until the
+    // count below comes down with it.
+    const KNOWN_BARE_SWITCHES = 2;
+    expect(
+      bare.every((b) => b.startsWith('<button class="relative inline-flex h-6 w-11')),
+      `focus with no indicator at all (DESIGN.md §1.6):\n${bare.join('\n')}`,
+    ).toBe(true);
+    expect(
+      bare.length,
+      `focus with no indicator at all (DESIGN.md §1.6) — lower KNOWN_BARE_SWITCHES when D.20a fixes them:\n${bare.join('\n')}`,
+    ).toBe(KNOWN_BARE_SWITCHES);
   });
 });
