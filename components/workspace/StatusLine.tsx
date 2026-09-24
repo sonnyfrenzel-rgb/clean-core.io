@@ -43,10 +43,18 @@ import type { WorkspaceStatus } from '@/lib/workspace-model';
 export default function WorkspaceStatusLine({
   statuses,
   projectId,
+  toolBase,
 }: {
   statuses: WorkspaceStatus[];
-  projectId: string;
+  projectId?: string;
+  /**
+   * Where the stage tools live. A project's are under `/project/{id}`; the
+   * demo's under `/demo` (roadmap 3.0.7), which has no project id to put in
+   * the path — a made-up one would link every "Why?" to a 404.
+   */
+  toolBase?: string;
 }) {
+  const base = toolBase ?? `/project/${projectId ?? ''}`;
   return (
     <ul
       data-workspace-status-line=""
@@ -89,7 +97,7 @@ export default function WorkspaceStatusLine({
                   {entry.restsOn.map((phase) => (
                     <Link
                       key={phase.key}
-                      href={`/project/${projectId}/${phase.path}`}
+                      href={`${base}/${phase.path}`}
                       data-workspace-status-tool={phase.key}
                       className="font-semibold text-cc-ink underline underline-offset-2"
                     >

@@ -333,7 +333,7 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
 
         {view !== 'business' ? (
           <div className="mt-4">
-            <WorkspaceStatusLine statuses={statuses} />
+            <WorkspaceStatusLine statuses={statuses} toolBase="/demo" />
           </div>
         ) : null}
 
