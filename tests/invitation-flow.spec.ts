@@ -333,6 +333,37 @@ test('an expired invitation does not open, not even for the right account', asyn
   expect(await readersOf()).not.toContain(accounts[READER_EMAIL].uid);
 });
 
+test('before accepting, the invited account sees who sent it and until when — nobody else sees anything (UX-148)', async ({ request }) => {
+  const created = await invite(request, { email: READER_EMAIL });
+  expect(created.status).toBe(201);
+  const id = created.invitation!.id;
+  const peek = async (email: string, invitationId: string) => {
+    const res = await request.get(`/api/projects/${PROJECT_ID}/invitations/${invitationId}/accept`, {
+      headers: headers(accounts[email].token),
+    });
+    return { status: res.status(), body: (await res.json().catch(() => ({}))) as Record<string, unknown> };
+  };
+
+  const own = await peek(READER_EMAIL, id);
+  expect(own.status, JSON.stringify(own.body)).toBe(200);
+  expect(own.body.expiresAt).toBe(created.invitation!.expiresAt);
+  expect(own.body.invitedBy).toBe(created.invitation!.invitedBy.name);
+  // Two facts and no more: the project's name stays behind acceptance.
+  expect(Object.keys(own.body).sort()).toEqual(['expiresAt', 'invitedBy']);
+
+  // A forwarded link, a link that never existed and an expired one answer alike.
+  const forwarded = await peek(STRANGER_EMAIL, id);
+  expect(forwarded.status).toBe(403);
+  expect(forwarded.body.code).toBe(INVITATION_CLOSED_CODE);
+  expect((await peek(STRANGER_EMAIL, NO_SUCH_ID)).body).toEqual(forwarded.body);
+  expect((await peek(STRANGER_EMAIL, EXPIRED_ID)).body).toEqual(forwarded.body);
+
+  // Looking is not accepting.
+  const stored = (await adminGetDoc(invitationCollectionPath(PROJECT_ID), id)) as Invitation;
+  expect(stored.status).toBe('pending');
+  expect(await readersOf()).not.toContain(accounts[READER_EMAIL].uid);
+});
+
 test('the invited, confirmed account opens it — once, and it lands on the project', async ({ request }) => {
   const created = await invite(request, { email: READER_EMAIL });
   expect(created.status).toBe(201);

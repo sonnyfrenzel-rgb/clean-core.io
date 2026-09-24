@@ -316,6 +316,17 @@ const CASES: RouteCase[] = [
     owner: 'refused',
     readerAdmitted: false,
   },
+  {
+    key: 'app/api/projects/[projectId]/invitations/[invitationId]/accept/route.ts#GET',
+    what: 'who sent an invitation and until when (UX-148) — the forwarded link again',
+    method: 'GET',
+    path: (p) => `/api/projects/${p}/invitations/${NO_SUCH_INVITATION}/accept`,
+    // The same one answer as the POST beside it: only the invited, confirmed
+    // account learns anything, and this invitation invites nobody.
+    refusal: 403,
+    owner: 'refused',
+    readerAdmitted: false,
+  },
 ];
 
 /** Every `export async function <METHOD>` under `app/api/projects`, read off disk. */

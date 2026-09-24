@@ -39,6 +39,32 @@ export default function InvitationPage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [accepted, setAccepted] = useState<{ projectName: string } | null>(null);
+  const [preview, setPreview] = useState<{ invitedBy: string; expiresAt: string } | null>(null);
+
+  // Signed in: ask who sent it and until when. Any refusal simply leaves the
+  // page as it was — the accept button gives the reason when it is pressed.
+  useEffect(() => {
+    if (!user || !projectId || !invitationId) return;
+    let live = true;
+    (async () => {
+      try {
+        const token = await user.getIdToken();
+        const res = await fetch(`/api/projects/${projectId}/invitations/${invitationId}/accept`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) return;
+        const body = await res.json().catch(() => null);
+        if (live && body && typeof body.expiresAt === 'string') {
+          setPreview({ invitedBy: String(body.invitedBy ?? ''), expiresAt: body.expiresAt });
+        }
+      } catch {
+        /* the preview is a courtesy; its absence is the old page */
+      }
+    })();
+    return () => {
+      live = false;
+    };
+  }, [user, projectId, invitationId]);
 
   useEffect(() => {
     const auth = getAuth();
@@ -105,6 +131,20 @@ export default function InvitationPage() {
             <p className="text-sm font-medium text-gray-600 leading-relaxed mb-6">
               {INVITATION_SCOPE_SENTENCE} {INVITATION_LIMITS_SENTENCE}
             </p>
+
+            {/* UX-148: whose invitation, and until when — the two facts the mail
+                already gave this address. Only the invited, confirmed account
+                receives them; the project name stays behind acceptance. */}
+            {preview && (
+              <dl data-invitation-preview className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm mb-6">
+                <dt className="font-bold text-gray-500">Invited by</dt>
+                <dd data-invitation-inviter className="font-medium text-gray-900">{preview.invitedBy || 'not recorded'}</dd>
+                <dt className="font-bold text-gray-500">Open until</dt>
+                <dd data-invitation-expires className="font-medium text-gray-900">
+                  {new Date(preview.expiresAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
+                </dd>
+              </dl>
+            )}
 
             <div className="bg-gray-50 border border-gray-200 rounded-2xl p-5 mb-8 flex gap-3">
               <ShieldCheck size={18} className="text-gray-500 shrink-0 mt-0.5" />

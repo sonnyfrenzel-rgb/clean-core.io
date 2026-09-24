@@ -83,6 +83,72 @@ function closed(): NextResponse {
   );
 }
 
+/**
+ * Who sent this invitation and until when it is open — before it is accepted
+ * (UX-148, Sonny 24.09.2026, option B).
+ *
+ * The page showed nothing before acceptance, so a reader who opened the link
+ * later, without the mail, could not tell whose invitation it was. The mail
+ * already names the inviter and the expiry to the invited address; this answer
+ * gives exactly those two facts, and only to the account that *is* that
+ * address, confirmed. Everyone else gets the one refusal `POST` gives, so a
+ * forwarded link still tells its holder nothing. The project name stays behind
+ * acceptance — it is the fact the mail withholds (`lib/invitation-email.ts`).
+ *
+ * A read in every sense: nothing is written, and unlike `POST` no confirmation
+ * mail is sent for an unconfirmed address — a GET that mails is a mailer.
+ */
+export async function GET(
+  req: NextRequest,
+  { params }: { params: Promise<{ projectId: string; invitationId: string }> },
+) {
+  try {
+    const decodedToken = await verifyRequestAuth(req);
+    if (!decodedToken) {
+      return NextResponse.json(
+        { error: 'Sign in with the address this invitation was sent to.', code: 'signin-required' },
+        { status: 401 },
+      );
+    }
+    try {
+      await assertRateLimit(`invitation-preview:${decodedToken.uid}:${getClientIp(req)}`, 60, 60 * 60 * 1000);
+    } catch (rateErr: unknown) {
+      const q = rateErr as { message?: string; status?: number };
+      return NextResponse.json({ error: q?.message || 'Too many requests.' }, { status: q?.status || 429 });
+    }
+    const accountEmail = normaliseInvitedEmail(decodedToken.email);
+    if (!accountEmail || decodedToken.email_verified !== true) return closed();
+
+    const { projectId, invitationId } = await params;
+    if (!projectId || !invitationId) return closed();
+
+    const { db } = await getAdminDb();
+    const snap = await db
+      .collection('projects')
+      .doc(projectId)
+      .collection(INVITATION_COLLECTION)
+      .doc(invitationId)
+      .get();
+    if (!snap.exists) return closed();
+    const invitation = (snap.data() || {}) as Partial<Invitation>;
+    if (invitation.projectId !== projectId) return closed();
+    if (normaliseInvitedEmail(invitation.email) !== accountEmail) return closed();
+    if (typeof invitation.expiresAt !== 'string' || typeof invitation.status !== 'string') return closed();
+    if (effectiveStatus(invitation as Invitation) !== 'pending') return closed();
+
+    return NextResponse.json({
+      invitedBy: String(invitation.invitedBy?.name ?? ''),
+      expiresAt: invitation.expiresAt,
+    });
+  } catch (err: unknown) {
+    logger.error('invitation preview failed', {
+      route: 'api/projects/invitations/accept',
+      error: errMessage(err),
+    });
+    return NextResponse.json({ error: 'Could not open this invitation.' }, { status: 500 });
+  }
+}
+
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ projectId: string; invitationId: string }> },
