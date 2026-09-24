@@ -119,6 +119,16 @@ export default function SteeringOnePager({
     };
   }, [open, projectId, project]);
 
+  // Every opening is a new read: what an earlier opening read is dropped
+  // first, so neither the page nor Print shows figures from before a run or a
+  // decision changed while it was closed.
+  const openFresh = () => {
+    setHistory(undefined);
+    setFindings(undefined);
+    setDecision(undefined);
+    setOpen(true);
+  };
+
   const ready = history !== undefined && findings !== undefined && decision !== undefined;
   const pager = useMemo(
     () =>
@@ -139,7 +149,7 @@ export default function SteeringOnePager({
   if (!open) {
     return (
       <div data-steering-one-pager="closed" className="cc-no-print">
-        <CcButton variant="ghost" density="compact" icon={<FileText size={14} />} onClick={() => setOpen(true)}>
+        <CcButton variant="ghost" density="compact" icon={<FileText size={14} />} onClick={openFresh}>
           {STEERING_TITLE}
         </CcButton>
       </div>

@@ -330,6 +330,17 @@ test.describe('8.6 one-pager — a view, not a record', () => {
     expect(component).not.toMatch(/setDoc|updateDoc|addDoc|runProjectCommand|method:\s*['"]POST/);
   });
 
+  test('every opening reads anew: an earlier read is dropped before the page or Print can show it', () => {
+    // QA review of 4b4586aff273: reopening kept the previous read, so the
+    // page (and Print) showed stale figures while the new reads were pending.
+    const component = read('components/workspace/SteeringOnePager.tsx');
+    expect(component).toMatch(
+      /const openFresh = \(\) => \{\s*setHistory\(undefined\);\s*setFindings\(undefined\);\s*setDecision\(undefined\);\s*setOpen\(true\);/,
+    );
+    expect(component).toContain('onClick={openFresh}');
+    expect(component).not.toContain('onClick={() => setOpen(true)}');
+  });
+
   test('it is not part of the signed audit pack', () => {
     for (const rel of ['lib/audit-pack.ts', 'lib/audit-pack-build.ts', 'lib/audit-pack-canonical.ts']) {
       expect(read(rel), `${rel} reaches the one-pager`).not.toContain('steering');
