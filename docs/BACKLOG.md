@@ -1919,8 +1919,10 @@ antworten — das ist bei dieser Reichweite der gesamte Verteilmechanismus.
 
 ## Alte Cloud-Run-Dienste und Buckets abräumen
 
-> Vollständige Bestandsaufnahme inklusive fertiger Befehle:
-> **[docs/SCREENING-GCP-ALTLASTEN.md](./SCREENING-GCP-ALTLASTEN.md)**.
+> Die vollständige Bestandsaufnahme mit fertigen Befehlen stand bis zum 24.09.2026 in
+> `docs/SCREENING-GCP-ALTLASTEN.md` und ist aus dem öffentlichen Repository genommen
+> (Entscheidung Sonny): eine Liste veralteter Ressourcen samt Löschbefehlen hilft
+> Dritten beim Erkunden. Sie liegt beim Betreiber.
 > Grösster Posten dort: 676 Container-Images in europe-west1, aufgelaufen aus
 > 252 nie aufgeräumten Cloud-Run-Revisionen.
 
