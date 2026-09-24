@@ -23,7 +23,8 @@
     "served[]": "oeffentlich ausgelieferte Texte, die keine eigene Textdatei sind (llms.txt, package.json, Metadaten, JSON-LD) und die Gestaltungsartefakte unter docs/roadmap/*.html — nur genannt, nicht von (c) erzwungen",
     "referenceCheck[]": "Dateien in docs/archiv/ und docs/korpus/, die eine Datei nennen, die archiviert oder geloescht wird — dort nur Verweise pruefen, nicht umschreiben",
     "baseline": "Zahl der Verstoesse gegen (a) und (b) am Stichtag, einmal ueber alle geprueften Dateien und einmal nur ueber die, die bleiben (update/keep)",
-    "decisions[]": "Entscheidungen zur Inventur mit Datum: {id, date, by, decision, status (vollzogen | vermerkt | spaeter), files}"
+    "decisions[]": "Entscheidungen zur Inventur mit Datum: {id, date, by, decision, status (vollzogen | vermerkt | spaeter), files}",
+    "files[].executed": "Datum, an dem eine Entscheidung delete oder archive vollzogen wurde"
   },
   "baseline": {
     "date": "2026-09-24",
@@ -729,7 +730,7 @@
         }
       ],
       "decision": "delete",
-      "reason": "CLAUDE.md fuehrt clean-core-video/ als zu ignorieren; der Spot ist veroeffentlicht und zeigt ein Produkt, das es mit 3.0 nicht mehr gibt. Mit dem ganzen Ordner loeschen (Geschichte bleibt in Git) — offene Frage an Sonny.",
+      "reason": "Entscheidung Sonny 24.09.2026: der ganze Ordner clean-core-video/ ist geloescht (Geschichte bleibt in Git). Der Spot zeigt ein Produkt, das es mit 3.0 nicht mehr gibt.",
       "effort": "XS",
       "guard": {
         "removed": "check",
@@ -737,7 +738,8 @@
       },
       "measured": {
         "lines": 96
-      }
+      },
+      "executed": "2026-09-24"
     },
     {
       "path": "clean-core-video/public/screens/README.txt",
@@ -752,7 +754,7 @@
         }
       ],
       "decision": "delete",
-      "reason": "Mit clean-core-video/ (siehe oben).",
+      "reason": "Entscheidung Sonny 24.09.2026: der ganze Ordner clean-core-video/ ist geloescht (Geschichte bleibt in Git). Der Spot zeigt ein Produkt, das es mit 3.0 nicht mehr gibt.",
       "effort": "XS",
       "guard": {
         "removed": "check",
@@ -760,7 +762,8 @@
       },
       "measured": {
         "lines": 5
-      }
+      },
+      "executed": "2026-09-24"
     },
     {
       "path": "docs/ARCHITECTURE.md",
@@ -3228,6 +3231,16 @@
       "status": "spaeter",
       "files": [
         "docs/BACKLOG.md"
+      ]
+    },
+    {
+      "id": "delete-clean-core-video",
+      "date": "2026-09-24",
+      "by": "Sonny",
+      "decision": "clean-core-video/ komplett loeschen; Verweise in CLAUDE.md, docs/ARCHITECTURE.md, tsconfig.json, eslint.config.mjs, scripts/qa/lib/config.mjs, scripts/security/lib/surface.mjs und tests/security-audit-guard.spec.ts entfernt bzw. angepasst.",
+      "status": "vollzogen",
+      "files": [
+        "clean-core-video/"
       ]
     }
   ]

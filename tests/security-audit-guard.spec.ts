@@ -393,9 +393,9 @@ test.describe('the attack-surface map', () => {
 
   test('leaves nothing out that runs, and names every group it leaves out', async () => {
     const { inventory, exclusions } = await lib('surface.mjs');
-    const paths = ['public/worker.js', 'public/page.html', 'public/logo.svg', 'public/photo.jpg', 'public/sample.abap', 'docs/ROADMAP.md', 'docs/tool.mjs', 'docs/check.sh', 'docs/check', 'docs/guide.mdx', 'docs/data.json', 'abap-test-files/check.jsx', 'abap-test-files/run-all', 'abap-test-files/Z_TEST.abap', 'README.md', 'clean-core-video/src/Video.tsx', 'clean-core-video/audio.mp3', 'lib/abap/generated/catalog.json', 'package-lock.json', 'scripts/linkedin-banner.html', 'app/page.tsx'];
+    const paths = ['public/worker.js', 'public/page.html', 'public/logo.svg', 'public/photo.jpg', 'public/sample.abap', 'docs/ROADMAP.md', 'docs/tool.mjs', 'docs/check.sh', 'docs/check', 'docs/guide.mdx', 'docs/data.json', 'abap-test-files/check.jsx', 'abap-test-files/run-all', 'abap-test-files/Z_TEST.abap', 'README.md', 'media/src/Video.tsx', 'media/audio.mp3', 'lib/abap/generated/catalog.json', 'package-lock.json', 'scripts/linkedin-banner.html', 'app/page.tsx'];
     // Whatever can run is in, whichever directory it sits in — and so is anything of a type no rule names.
-    expect(inventory(paths).map((f: { path: string }) => f.path)).toEqual(['public/worker.js', 'public/page.html', 'public/logo.svg', 'docs/tool.mjs', 'docs/check.sh', 'docs/check', 'docs/guide.mdx', 'abap-test-files/check.jsx', 'abap-test-files/run-all', 'clean-core-video/src/Video.tsx', 'scripts/linkedin-banner.html', 'app/page.tsx']);
+    expect(inventory(paths).map((f: { path: string }) => f.path)).toEqual(['public/worker.js', 'public/page.html', 'public/logo.svg', 'docs/tool.mjs', 'docs/check.sh', 'docs/check', 'docs/guide.mdx', 'abap-test-files/check.jsx', 'abap-test-files/run-all', 'media/src/Video.tsx', 'scripts/linkedin-banner.html', 'app/page.tsx']);
     const groups = exclusions(paths);
     expect(groups.reduce((n: number, g: { count: number }) => n + g.count, 0)).toBe(9);
     for (const g of groups) expect(g.reason.length).toBeGreaterThan(20);

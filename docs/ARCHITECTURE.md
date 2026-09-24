@@ -545,4 +545,4 @@ tail above ~60%.
 
 - Local Node is v20.x but the project requires ≥22.8 (CI/Cloud Run use 22). Bump local Node for parity.
 - Builds fail on any TS/ESLint error (`ignoreBuildErrors: false`).
-- Ignore for code work: `scratch/`, `tmp/`, `dist/` (stray gitignored build artifact — the project is web-only, no desktop/Electron app), `clean-core-video/`, committed `*-debug.log`.
+- Ignore for code work: `scratch/`, `tmp/`, `dist/` (stray gitignored build artifact — the project is web-only, no desktop/Electron app), committed `*-debug.log`.

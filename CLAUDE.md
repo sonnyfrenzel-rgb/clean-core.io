@@ -232,5 +232,5 @@ The `h1` overrides inside the markdown renderers (`{...props}`) are for generate
 - **Run `grep -rl <file> tests/` before pushing a moved or renamed module.** Source-level
   guards in unrelated specs assert on file paths and call counts; three CI reds in one
   day came from a module moving under a guard that named it.
-- Ignore for code work: `scratch/`, `tmp/`, `dist/` (stray build artifact — gitignored; the project is web-only, there is no desktop/Electron app), `clean-core-video/`, and committed `*-debug.log` files.
+- Ignore for code work: `scratch/`, `tmp/`, `dist/` (stray build artifact — gitignored; the project is web-only, there is no desktop/Electron app), and committed `*-debug.log` files.
 - Builds fail on any TS or ESLint error (`next.config.mjs` sets `ignoreBuildErrors: false`) — keep the tree clean before committing.

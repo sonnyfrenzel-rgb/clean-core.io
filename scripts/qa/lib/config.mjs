@@ -215,7 +215,6 @@ export const IGNORED_PATHS = [
   /^scratch\//,
   /^tmp\//,
   /^dist\//,
-  /^clean-core-video\//,
   /^abap-test-files\//,
   /\.(png|jpe?g|gif|svg|ico|webp|pdf|mp4|woff2?|ttf|zip)$/i,
   /-debug\.log$/,

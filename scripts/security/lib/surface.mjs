@@ -55,7 +55,6 @@ export const EXCLUSIONS = [
   { reason: 'binary media, fonts and archives — no executable content', test: (p) => /\.(png|jpe?g|gif|ico|webp|pdf|mp3|mp4|woff2?|ttf|zip)$/.test(p) },
   { reason: 'Markdown prose — not built, not served; the briefs an agent loads as a model prompt are in the map (AGENT_PROMPTS)', test: (p) => /\.md$/.test(p) },
   { reason: 'data files under docs/ (JSON, text, the public key) — not built, not served', test: (p) => /^docs\/.*\.(json|txt|pem|csv)$/.test(p) },
-  { reason: 'data files of the separate video project — not part of the app build or deployment', test: (p) => /^clean-core-video\/.*\.(json|txt)$/.test(p) },
   { reason: 'sample ABAP and static text assets — data, not code', test: (p) => /^abap-test-files\/.*\.(abap|txt)$/.test(p) || /^public\/.*\.(abap|txt|vtt|sha256)$/.test(p) },
   { reason: 'generated SAP catalog data (synced JSON) — excluded, not reviewed', test: (p) => /^lib\/abap\/generated\/.*\.json$/.test(p) },
   { reason: 'the npm lockfile — its advisories come from the dependency audit', test: (p) => /(^|\/)package-lock\.json$/.test(p) },
