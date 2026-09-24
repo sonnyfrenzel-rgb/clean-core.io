@@ -212,6 +212,12 @@ test.describe('the workspace without a mouse, without sight, on a phone and on p
     await expect(tools).toHaveAttribute('aria-expanded', 'true');
     await expect(page.locator('[data-workspace-tools-panel]')).toBeVisible();
     expect(await page.locator('[data-workspace-tools-panel][role="menu"]').count(), 'a menu role without menuitems').toBe(0);
+    // Into the panel first: pressed on "Tools" itself, Escape would leave the
+    // focus where it already was, and the return would go untested (QA review
+    // of 60b94e108964, 45543760e08e). From a tool link, the link goes with the
+    // panel, and only the handler can bring the focus back.
+    await page.keyboard.press('Tab');
+    await expect(page.locator('[data-workspace-tools-panel] a').first()).toBeFocused();
     await page.keyboard.press('Escape');
     await expect(page.locator('[data-workspace-tools-panel]')).toHaveCount(0);
     await expect(tools).toBeFocused();
