@@ -328,6 +328,23 @@ test.describe('8.4 card — source guards', () => {
     expect(card).not.toMatch(/headline="Nothing was written\."/);
   });
 
+  test('a command whose answer was lost is not reported as nothing written, and the decision is read again', () => {
+    // QA review of 8adfa0e6db63: the server can commit and the answer still be
+    // lost; fetch then rejects and the catch said "Nothing was written."
+    const client = fs.readFileSync(path.join(ROOT, 'lib/project-command-client.ts'), 'utf8');
+    expect(client).toMatch(/try \{\s*res = await fetch\([\s\S]*?\} catch \{\s*throw new CommandAnswerLostError\(/);
+    const catches = card.split('} catch (err: unknown) {').slice(1);
+    expect(catches.length).toBe(2);
+    for (const c of catches) {
+      const lost = c.indexOf('if (err instanceof CommandAnswerLostError)');
+      expect(lost).toBeGreaterThanOrEqual(0);
+      expect(lost).toBeLessThan(c.indexOf('Nothing was written.'));
+    }
+    const handler = card.slice(card.indexOf('const answerLost = useCallback('), card.indexOf('const confirm = useCallback('));
+    expect(handler).toContain('setReload((n) => n + 1);');
+    expect(handler).not.toContain('Nothing was written');
+  });
+
   test('no role is stored or sent: Management, Business and IT are views only', () => {
     expect(card).not.toMatch(/\b(role|view)\s*:\s*'(management|business|it)'/i);
   });

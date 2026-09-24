@@ -9,7 +9,7 @@ import CcMessageStrip from '@/components/cc/MessageStrip';
 import CcObjectStatus from '@/components/cc/ObjectStatus';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import { getAuth } from '@/lib/firebase';
-import { runProjectCommand } from '@/lib/project-command-client';
+import { CommandAnswerLostError, runProjectCommand } from '@/lib/project-command-client';
 import { CONDITION_STATUS_LABEL, decisionCardView, type CardBinding } from '@/lib/decision-card';
 import type { ProjectDecision, DecisionConfirmation, DecisionStatus } from '@/lib/project-decision';
 import type { ObjectStatusValue } from '@/lib/object-status';
@@ -120,6 +120,20 @@ export default function DecisionCard({
 
   const account = typeof window === 'undefined' ? null : (getAuth().currentUser?.email ?? null);
 
+  // The command may have been applied although its answer never arrived: the
+  // card neither claims it was nor that nothing was written, and reads the
+  // decision again so what it shows next is the server's.
+  const answerLost = useCallback(
+    (err: CommandAnswerLostError) => {
+      setRefusal({ headline: 'No answer came back. The decision was read again.', sentence: err.message });
+      // Not a success, so not the success path's `setReload` + `onChanged` pair
+      // (management-overview.spec.ts counts that pair), but the same two rereads.
+      onChanged?.();
+      setReload((n) => n + 1);
+    },
+    [onChanged],
+  );
+
   const confirm = useCallback(async () => {
     if (!answer) return;
     setAsking(null);
@@ -142,6 +156,10 @@ export default function DecisionCard({
       setReload((n) => n + 1);
       onChanged?.();
     } catch (err: unknown) {
+      if (err instanceof CommandAnswerLostError) {
+        answerLost(err);
+        return;
+      }
       setRefusal({
         headline: draftSaved ? 'Not confirmed. The draft was saved.' : 'Nothing was written.',
         sentence: err instanceof Error ? err.message : 'The server refused the confirmation.',
@@ -150,7 +168,7 @@ export default function DecisionCard({
     } finally {
       setBusy(false);
     }
-  }, [answer, beforeWrite, onChanged, projectId]);
+  }, [answer, answerLost, beforeWrite, onChanged, projectId]);
 
   const withdraw = useCallback(async () => {
     setAsking(null);
@@ -162,6 +180,10 @@ export default function DecisionCard({
       setReload((n) => n + 1);
       onChanged?.();
     } catch (err: unknown) {
+      if (err instanceof CommandAnswerLostError) {
+        answerLost(err);
+        return;
+      }
       setRefusal({
         headline: 'Nothing was written.',
         sentence: err instanceof Error ? err.message : 'The server refused the withdrawal.',
@@ -169,7 +191,7 @@ export default function DecisionCard({
     } finally {
       setBusy(false);
     }
-  }, [beforeWrite, onChanged, projectId]);
+  }, [answerLost, beforeWrite, onChanged, projectId]);
 
   const cancel = useCallback(() => setAsking(null), []);
 
