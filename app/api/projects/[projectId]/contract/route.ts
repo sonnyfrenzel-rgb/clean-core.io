@@ -7,6 +7,7 @@ import { contractOfProject } from '@/lib/contract-build';
 import { generationDirection, generationBinding, offTrackRefusal } from '@/lib/generation-direction';
 import type { InputManifest } from '@/lib/input-manifest';
 import { sha256Hex } from '@/lib/artefact-digest';
+import type { DocumentReference, Timestamp, Transaction } from 'firebase-admin/firestore';
 
 /**
  * The architecture contract of one project, and what may be generated against
@@ -63,7 +64,10 @@ async function loadProjectAndRun(projectId: string, uid: string) {
     const runSnap = await db.collection('projects').doc(projectId).collection('runs').doc(data.activeRunId).get();
     run = runSnap.exists ? (runSnap.data() as Record<string, unknown>) : null;
   }
-  return { db, data, run };
+  // When the project was last written, as this read saw it: the POST writes its
+  // binding only if the project is still at this point (compare-and-swap).
+  const readAt: Timestamp | undefined = snap.updateTime;
+  return { db, data, run, readAt };
 }
 
 type Authorised = { ok: true; uid: string } | { ok: false; response: NextResponse };
@@ -161,7 +165,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pro
 
     const loaded = await loadProjectAndRun(projectId, auth.uid);
     if (!loaded) return NextResponse.json({ error: 'No such project.' }, { status: 404 });
-    const { db, data, run } = loaded;
+    const { db, data, run, readAt } = loaded;
     // Reading is a share; recording what was generated is not.
     if (data.userId !== auth.uid) {
       // An invited reader gets the stranger's answer, word for word, as on every
@@ -225,7 +229,28 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pro
     }
 
     const binding = generationBinding(built.contract, { codeSha256: sha256Hex(code) });
-    await db.collection('projects').doc(projectId).set({ [GENERATION_BINDING_FIELD]: binding }, { merge: true });
+    // The comparison above was made on the project as it was loaded. Written
+    // only if the project has not been written since — otherwise another
+    // analysis could have moved the run or the source between the comparison and
+    // the write, and the binding of the old contract would land on the moved
+    // project (QA review of 8adfa0e6db63).
+    const projectRef: DocumentReference = db.collection('projects').doc(projectId);
+    const written = await db.runTransaction(async (tx: Transaction) => {
+      const fresh = await tx.get(projectRef);
+      if (!fresh.exists || !readAt || !fresh.updateTime || !fresh.updateTime.isEqual(readAt)) return false;
+      tx.set(projectRef, { [GENERATION_BINDING_FIELD]: binding }, { merge: true });
+      return true;
+    });
+    if (!written) {
+      return NextResponse.json(
+        {
+          error:
+            'The project changed while this package was being bound, so the contract it was checked against may no longer be the one on the project. Nothing was bound; generate again against the current contract.',
+          code: 'project-moved',
+        },
+        { status: 409 },
+      );
+    }
     return NextResponse.json({ binding });
   } catch (err: unknown) {
     logger.error('generation binding write failed', {

@@ -292,6 +292,25 @@ test('the binding names the contract the code was generated from, or nothing is 
   expect(compare, 'the comparison comes after the write').toBeLessThan(post.indexOf('GENERATION_BINDING_FIELD]: binding'));
 });
 
+test('the binding is written only if the project has not been written since the comparison', () => {
+  // QA review of 8adfa0e6db63: the fingerprint comparison and the write were two
+  // steps, so a run or source that moved between them got the old binding.
+  const route = readFileSync('app/api/projects/[projectId]/contract/route.ts', 'utf8');
+  expect(route).toContain('const readAt: Timestamp | undefined = snap.updateTime;');
+  const post = route.slice(route.indexOf('export async function POST'));
+  const compare = post.indexOf('built.contract.fingerprint !== expectedFingerprint');
+  const tx = post.indexOf('db.runTransaction(');
+  expect(tx, 'the binding is not written in a transaction').toBeGreaterThan(compare);
+  const body = post.slice(tx);
+  expect(body.indexOf('await tx.get(projectRef)')).toBeGreaterThan(-1);
+  expect(body.indexOf('fresh.updateTime.isEqual(readAt)')).toBeGreaterThan(body.indexOf('await tx.get(projectRef)'));
+  expect(body.indexOf('tx.set(projectRef, { [GENERATION_BINDING_FIELD]: binding }')).toBeGreaterThan(
+    body.indexOf('fresh.updateTime.isEqual(readAt)'),
+  );
+  expect(post, 'a write outside the transaction').not.toMatch(/await db\.collection\('projects'\)\.doc\(projectId\)\.set\(/);
+  expect(post).toContain("code: 'project-moved'");
+});
+
 test('the contract field the server writes is not client-writable', () => {
   const rules = readFileSync('firestore.rules', 'utf8');
   // The binding says which contract a stand followed. A browser that could
