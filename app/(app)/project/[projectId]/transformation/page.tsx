@@ -30,6 +30,11 @@ import VerificationRail from '@/components/VerificationRail';
 import StageHeader from '@/components/StageHeader';
 import { workflowSteps, generationBlockers } from '@/lib/workflow-steps';
 import { isAbapCloudTrack, trackCopy } from '@/lib/transformation-track';
+// Roadmap 8.3 — the generation follows the architecture contract, not a field
+// on the project document. See `lib/generation-direction.ts` for what it
+// replaced and why.
+import { fetchGenerationDecision, recordGenerationBinding } from '@/lib/generation-contract-client';
+import type { GenerationRefusal } from '@/lib/generation-direction';
 import StaleNotice from '@/components/StaleNotice';
 import NotGenerated from '@/components/NotGenerated';
 import { useModelAvailability } from '@/hooks/useModelAvailability';
@@ -84,6 +89,15 @@ export default function TransformationPage() {
   const [transformedCode, setTransformedCode] = useState('');
   const [transformationLog, setTransformationLog] = useState<string[]>([]);
   const [error, setError] = useState('');
+  /**
+   * Why nothing was generated, when the contract said so (roadmap 8.3). Its own
+   * state rather than `error`: a blocked contract is not a failure of this
+   * stage, and the reader needs the contract's sentence plus what ends it, not
+   * a red banner about a generation that never started.
+   */
+  const [contractRefusal, setContractRefusal] = useState<GenerationRefusal | null>(null);
+  /** The track the contract chose, once the server has answered. */
+  const [contractTrack, setContractTrack] = useState<{ isAbapCloud: boolean; sentence: string } | null>(null);
   const [progress, setProgress] = useState(0);
   const [isProceeding, setIsProceeding] = useState(false);
   const [showCopyDialog, setShowCopyDialog] = useState(false);
@@ -457,8 +471,15 @@ CMD ["node", "srv/service.js"]`
    * pane and the sign-off drawer are what this stage actually knows.
    */
 
-  /** What this project's track is called wherever the stage names it (UX-037). */
-  const isAbapCloud = isAbapCloudTrack(project?.extensibilityRoute);
+  /**
+   * What this project's track is called wherever the stage names it (UX-037).
+   *
+   * The contract answers it once the server has (roadmap 8.3). The route field
+   * is the fallback for a stand generated before this step, where nothing says
+   * which contract was followed — for the *words*, never for the generation:
+   * `generateTransformation` below does not read it at all.
+   */
+  const isAbapCloud = contractTrack ? contractTrack.isAbapCloud : isAbapCloudTrack(project?.extensibilityRoute);
   const track = trackCopy(isAbapCloud);
 
   const generateTransformation = useCallback(async (legacyCode: string, design: string, analysis: string) => {
@@ -469,13 +490,22 @@ CMD ["node", "srv/service.js"]`
     setError('');
     
     try {
-      const projData = await loadProjectAndHydrate(projectId as string);
-      const route = projData?.extensibilityRoute || 'Side-by-Side (SAP BTP)';
-      const isAbapCloud = isAbapCloudTrack(route);
+      // Roadmap 8.3. The direction is the contract's `route.chosen`, which is
+      // the recommendation unless a deviation was declared — and a deviation
+      // reaches it only with a reason (`lib/architecture-contract.ts` throws
+      // without one). A blocked contract generates nothing and says why.
+      const { decision } = await fetchGenerationDecision(projectId as string);
+      if (!decision.ok) {
+        setContractRefusal(decision);
+        return;
+      }
+      setContractRefusal(null);
+      setContractTrack({ isAbapCloud: decision.isAbapCloud, sentence: decision.sentence });
+      const isAbapCloud = decision.isAbapCloud;
 
       setTransformationLog([
         'Initializing transformation engine...',
-        `Selected track: ${isAbapCloud ? 'In-App ABAP Cloud (RAP)' : 'Side-by-Side SAP BTP (CAP)'}`,
+        decision.sentence,
         'Parsing legacy ABAP structures...',
         isAbapCloud ? 'Mapping to RAP Developer Extensibility patterns...' : 'Mapping to CAP modular structures...'
       ]);
@@ -669,9 +699,20 @@ CMD ["node", "srv/service.js"]`
       }
 
       setTransformationLog(prev => [...prev, 'Code generation complete.', 'Optimizing imports...', 'Finalizing transformation...']);
-      
+
+      // Which contract this stand was computed against, recorded before it is
+      // stored (roadmap 8.3). The server rebuilds the contract and writes its
+      // own fingerprint, so the binding cannot name a contract that was never
+      // derived. If it fails, nothing is saved: a generated stand whose
+      // contract nobody can name is the state this step removes.
+      const packaged = JSON.stringify(filesArray);
+      const bound = await recordGenerationBinding(projectId as string, packaged);
+      if (!bound.ok) {
+        throw new Error(`${bound.error} Nothing was saved — the previous version is untouched.`);
+      }
+
       await updateDoc(doc(getDb(), 'projects', projectId as string), {
-        generatedCode: JSON.stringify(filesArray),
+        generatedCode: packaged,
         testSuite: tests,
         status: 'transformed'
       });
@@ -681,7 +722,7 @@ CMD ["node", "srv/service.js"]`
       // (`lib/workflow-steps.ts`); without this they went on describing the
       // state before the generation until something else reloaded the page
       // (QA review of 33471220d6e9, ce37b706107d).
-      setProject((prev: any) => prev ? { ...prev, generatedCode: JSON.stringify(filesArray), testSuite: tests, status: 'transformed' } : prev);
+      setProject((prev: any) => prev ? { ...prev, generatedCode: packaged, testSuite: tests, status: 'transformed' } : prev);
       const mainPath = isAbapCloud ? 'src/zcl_demo_rap_behavior.clas.abap' : 'srv/service.ts';
       const hasMainFile = filesArray.some(f => f.path === mainPath);
       setSelectedFilePath(hasMainFile ? mainPath : (filesArray[0]?.path || ''));
@@ -709,6 +750,18 @@ CMD ["node", "srv/service.js"]`
         if (!enforceActiveRun(data, projectId as string)) return;
         if (data) {
           setProject(data);
+          // Roadmap 8.3 — the stand names its contract. A binding on the
+          // project (written only by the server, `POST
+          // /api/projects/{id}/contract`) says which track was generated and
+          // against which fingerprint, so the words over the code describe the
+          // code rather than whatever the route field says today.
+          const binding = (data as unknown as { generationBinding?: { route?: { chosen?: string }; contractId?: string; contractFingerprint?: string } }).generationBinding;
+          if (binding?.route?.chosen) {
+            setContractTrack({
+              isAbapCloud: binding.route.chosen === 'in-app-rap',
+              sentence: `Generated against contract ${binding.contractId || '—'} (${String(binding.contractFingerprint || '').slice(0, 12)}).`,
+            });
+          }
           if (data.generatedCode) {
             const parsedFiles = parseGeneratedCode(data.generatedCode);
             setFiles(parsedFiles);
@@ -819,6 +872,14 @@ CMD ["node", "srv/service.js"]`
                 track generates RAP artefacts, and the lead used to promise
                 Node.js over them anyway. */}
             <span data-track-lead>{track.lead}</span>
+            {/* Which contract this stand followed, roadmap 8.3. A declared
+                deviation is named here, not only applied: a deviation nobody is
+                shown is applied but not held. */}
+            {contractTrack && (
+              <span className="block mt-1 text-sm text-gray-600" data-contract-sentence>
+                {contractTrack.sentence}
+              </span>
+            )}
           </StageHeader>
         </div>
 
@@ -919,6 +980,26 @@ CMD ["node", "srv/service.js"]`
         <div className="fixed top-24 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-6 py-3 rounded-full shadow-2xl z-[100] flex items-center gap-3 animate-in slide-in-from-top-4">
           <CheckCircle2 className="text-green-400 w-5 h-5" />
           <span className="font-bold text-sm">Code copied to clipboard!</span>
+        </div>
+      )}
+
+      {/*
+        Roadmap 8.3 — a blocked contract generates nothing, and the reader is
+        told which sentence of the contract stopped it and what ends it. An
+        empty stage with no reason would meet the letter of "nothing is
+        generated" and none of the point.
+      */}
+      {contractRefusal && (
+        <div
+          data-contract-refusal={contractRefusal.code}
+          className="bg-amber-50 border-l-4 border-amber-500 p-4 mb-8 flex items-start gap-3"
+        >
+          <Lock className="w-5 h-5 text-amber-600 shrink-0" />
+          <div className="space-y-1">
+            <p className="text-sm font-bold text-amber-900">Nothing was generated against this contract.</p>
+            <p className="text-sm text-amber-800">{contractRefusal.sentence}</p>
+            <p className="text-sm text-amber-800">{contractRefusal.remedy}</p>
+          </div>
         </div>
       )}
 
