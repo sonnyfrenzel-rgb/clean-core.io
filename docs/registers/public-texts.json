@@ -976,7 +976,7 @@
       "kind": "concept",
       "purpose": "Konzept deutsche Fassung (Stand v2.0.0, 06.07.2026, Entwurf zur Entscheidung)",
       "audience": "intern, Sonny",
-      "saysToday": "Marktbegruendung und Umsetzung einer deutschen Oberflaeche fuer den Stufen-Workflow.",
+      "saysToday": "Konzept der deutschen Fassung fuer das Produkt ab 3.0: Arbeitsraum mit drei Sichten und sechs Ebenen, sieben Stufen als Werkzeuge, vorhandene Textschluessel (lib/cc-messages.ts, lib/provenance.ts), /de-Unterpfad ohne Umleitung der heutigen URLs, deutsche Modellausgabe mit Model-proposal-Chip, Terminologie der festen Listen; zeitlich nach 3.0 (ROADMAP §7, 3.1).",
       "wrongWith30": [
         {
           "lines": "16, 47, 116, 156",
@@ -1000,7 +1000,8 @@
       ],
       "measured": {
         "lines": 193
-      }
+      },
+      "executed": "2026-09-24"
     },
     {
       "path": "docs/CONCEPT-EINSICHT-PER-EINLADUNG.md",
