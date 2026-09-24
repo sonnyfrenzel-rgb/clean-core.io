@@ -188,8 +188,16 @@ test.describe('the repair aims at the file the compiler named', () => {
   });
 });
 
-test('nothing is written to the project until a run compiles', () => {
+test('nothing is written to the project until a run compiles — and the server writes it, not the hook', () => {
   const src = hookSource();
+
+  // Roadmap 8.7 (CR-10). The repair used to be held in this hook and written
+  // with `updateDoc` after a run "compiled" — but the runner executes only what
+  // the server holds, so the run that compiled was never the repair. The
+  // repair is now a server-side draft, the retry names it, and the server
+  // adopts it by compare-and-swap. The hook writes nothing to Firestore.
+  expect(src, 'the hook writes to Firestore again').not.toMatch(/\b(updateDoc|setDoc|addDoc)\s*\(/);
+  expect(src, 'the repair is held in memory again').not.toContain('pendingPatch');
 
   // The repair branch: from `if (result.buildError` to the catch that ends it.
   const start = src.indexOf('if (result.buildError && attempt < maxRetries)');
@@ -197,17 +205,20 @@ test('nothing is written to the project until a run compiles', () => {
   const end = src.indexOf('} catch (healError)', start);
   expect(end).toBeGreaterThan(start);
   const branch = src.slice(start, end);
+  expect(branch, 'a repair becomes a draft on the server').toContain("action: 'propose'");
+  expect(branch, 'and the draft names the base it repaired').toContain('expectedCodeDigest');
 
-  expect(branch, 'a repair must not reach Firestore before it has compiled').not.toContain('updateDoc(');
-  expect(branch, 'it is held, not written').toContain('pendingPatch');
+  // The retry runs the draft, and only a compiled draft is offered for adoption.
+  expect(src).toContain('draftId: draft.id');
+  const adopt = src.indexOf("action: 'adopt'");
+  expect(adopt, 'adoption is the server\'s').toBeGreaterThan(-1);
+  const beforeAdopt = src.slice(src.indexOf('if (!draft) return result;'), adopt);
+  expect(beforeAdopt, 'a draft that did not compile is never offered').toMatch(/if \(result\.buildError\) \{/);
 
-  // And the write that does happen is gated on the absence of a build error.
-  expect(src).toMatch(/if \(!result\.buildError\) \{\s*\r?\n\s*await persistRepairs\(\);/);
-
-  // The package path goes through the module above rather than through a raw
-  // overwrite of `generatedCode`.
-  expect(src).toContain('replaceFileContent(pkg, idx, repaired)');
+  // The model still only ever sees the one file it is asked to repair, and the
+  // draft names that file by index and path so the server can check it.
   expect(src, 'the model still only ever sees the one file it is asked to repair').toContain(
     'autoHealCode(errText, pkg[idx].content',
   );
+  expect(src).toContain("draftTarget = { kind: 'package', index: idx, path: pkg[idx].path }");
 });

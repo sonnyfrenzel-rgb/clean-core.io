@@ -1,6 +1,5 @@
 import { useState } from 'react';
-import { doc, updateDoc } from 'firebase/firestore';
-import { getDb, getAuth } from '@/lib/firebase';
+import { getAuth } from '@/lib/firebase';
 import { callGemini } from '@/lib/gemini';
 import { useUserProfile } from './useUserProfile';
 import type { Project, TestCase } from '@/lib/types';
@@ -8,6 +7,7 @@ import { LIVE_TEST_EXECUTION } from '@/lib/locked-paths';
 import { parseGeneratedPackage, replaceFileContent, repairTarget } from '@/lib/generated-package';
 import { applyRunnerVerdicts } from '@/lib/test-verdicts';
 import type { TestRunReceipt } from '@/lib/test-receipt';
+import { candidateDigests, storedSuiteSource, type RepairDraftTarget } from '@/lib/repair-draft';
 import { PRODUCT_GEMINI_MODEL } from '@/lib/constants';
 
 export const useTestExecution = (projectId: string, project: Project | null, setProject?: React.Dispatch<React.SetStateAction<Project | null>>) => {
@@ -123,39 +123,44 @@ Return ONLY the raw, corrected TypeScript source — no markdown fences, no comm
     }
   };
 
-  const executeWithHealing = async (payload: { tests: Project['testSuite']; projectId: string; code: string | undefined }, maxRetries = 2): Promise<{ exitCode: number; output: string; error?: string; testResults?: any[]; buildError?: boolean; stubbedPackages?: string[]; receipt?: TestRunReceipt | null }> => {
+  type RunResult = { exitCode: number; output: string; error?: string; testResults?: any[]; buildError?: boolean; stubbedPackages?: string[]; receipt?: TestRunReceipt | null; draftId?: string; draftReceipt?: TestRunReceipt | null };
+
+  /** POST to the repair-draft route (roadmap 8.7). Returns the parsed body and whether it was accepted. */
+  const repairDraftCall = async (body: Record<string, unknown>): Promise<{ ok: boolean; data: any }> => {
+    const auth = getAuth();
+    const idToken = auth.currentUser ? await auth.currentUser.getIdToken() : null;
+    const res = await fetch(`/api/projects/${projectId}/repair-drafts`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(idToken ? { 'Authorization': `Bearer ${idToken}` } : {}),
+      },
+      body: JSON.stringify(body),
+    });
+    const data = await res.json().catch(() => ({}));
+    return { ok: res.ok, data };
+  };
+
+  const executeWithHealing = async (payload: { tests: Project['testSuite']; projectId: string; code: string | undefined }, maxRetries = 2): Promise<RunResult> => {
     let currentPayload = { ...payload };
     /**
-     * A repair is held here until a run proves it compiles.
+     * Roadmap 8.7 (CR-10): a repair is a draft on the server, not a patch in
+     * this function's memory.
      *
-     * It used to be written to Firestore the moment the model answered, before
-     * the retry that would show whether the repair was any good — so a second
-     * failure left the project holding an unverified replacement for the artefact
-     * that at least was the one the reader had seen. Worse for a package: the
-     * model is asked for *one* module and its answer was written over the whole
-     * serialised `{path, content}` array, so every other generated file was gone
-     * (QA c1523df5fc4e). The repair now replaces one file inside a working copy,
-     * and nothing reaches the database until a run comes back without a build
-     * error.
+     * The runner executes only what the server holds (E07-F02), so a repair
+     * kept here was never run: every retry executed the stored, broken code and
+     * ended in "nothing was saved". Now the model's answer for the one file the
+     * compiler named goes to `/api/projects/{id}/repair-drafts`, which cuts an
+     * immutable draft from its own copy of the code; the retry names that draft
+     * and the runner executes exactly it; and only a draft whose run compiled
+     * is adopted — by the server, as a compare-and-swap against the revision it
+     * was cut from. This hook writes nothing to Firestore on this path.
+     *
+     * `currentPayload` still tracks the candidate locally, but only to aim the
+     * next repair at the right file and to name the base digests the server
+     * compares against; what runs is the draft.
      */
-    let pendingPatch: { generatedCode?: string; testSuite?: Project['testSuite'] } | null = null;
-
-    // Written key by key with literal field names: `tests/preservation-register.spec.ts`
-    // reads the keys of every client write out of this source, and a variable in
-    // place of the object literal makes the stage's declared writes unreadable.
-    const persistRepairs = async () => {
-      if (!pendingPatch || !setProject || !project) return;
-      const patch = pendingPatch;
-      pendingPatch = null;
-      const db = getDb();
-      if (patch.generatedCode !== undefined) {
-        await updateDoc(doc(db, 'projects', projectId), { generatedCode: patch.generatedCode });
-      }
-      if (patch.testSuite !== undefined) {
-        await updateDoc(doc(db, 'projects', projectId), { testSuite: patch.testSuite });
-      }
-      setProject((prev: Project | null) => (prev ? { ...prev, ...patch } : prev));
-    };
+    let draft: { id: string; digest: string } | null = null;
 
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
       let response;
@@ -170,7 +175,7 @@ Return ONLY the raw, corrected TypeScript source — no markdown fences, no comm
             'Content-Type': 'application/json',
             ...(idToken ? { 'Authorization': `Bearer ${idToken}` } : {}),
           },
-          body: JSON.stringify(currentPayload),
+          body: JSON.stringify(draft ? { ...currentPayload, draftId: draft.id } : currentPayload),
         });
       } catch (err) {
         // If it's a network error and we have retries left, wait and retry
@@ -181,8 +186,8 @@ Return ONLY the raw, corrected TypeScript source — no markdown fences, no comm
         }
         throw new Error('Network error. Test Sandbox might be restarting.');
       }
-      
-      let result: { exitCode: number; output: string; error?: string; testResults?: any[]; buildError?: boolean; stubbedPackages?: string[]; receipt?: TestRunReceipt | null };
+
+      let result: RunResult;
       try {
         const textResponse = await response.text();
         result = JSON.parse(textResponse);
@@ -192,12 +197,11 @@ Return ONLY the raw, corrected TypeScript source — no markdown fences, no comm
 
       // Compilation/syntax error in AI-generated code (returned as HTTP 200 + buildError).
       // Auto-heal the offending source — one file of the generated package, the
-      // flat legacy module, or the test suite — then retry. Which of the three is
-      // `repairTarget`'s decision and nothing else's: it used to be
-      // `/app\.ts/.test(errText)`, which misses every other path a generated
-      // package contains and sent the repair at the test suite instead
-      // (QA 1c8234b64f35). The repair is held until a run compiles; see
-      // `pendingPatch` above.
+      // flat legacy module, or the test suite — then retry against a server-side
+      // draft. Which of the three is `repairTarget`'s decision and nothing
+      // else's: it used to be `/app\.ts/.test(errText)`, which misses every other
+      // path a generated package contains and sent the repair at the test suite
+      // instead (QA 1c8234b64f35).
       if (result.buildError && attempt < maxRetries) {
         const errText = result.error || '';
         const target = repairTarget({ code: currentPayload.code, suite: currentPayload.tests?.code, errorText: errText });
@@ -206,27 +210,48 @@ Return ONLY the raw, corrected TypeScript source — no markdown fences, no comm
             setSandboxOutput(prev => prev + `\n[Auto-Healing] ${target.reason} — nothing is repaired and the generated package is left as it is.\n`);
             return result;
           }
+          // The base the model is shown, named by digest so the server can
+          // refuse a repair of something it no longer holds.
+          const base = candidateDigests(currentPayload.code || '', storedSuiteSource(currentPayload.tests));
+          let draftTarget: RepairDraftTarget;
+          let repaired: string;
+          let nextPayload: typeof currentPayload;
           if (target.kind === 'package') {
             // A package is repaired file by file. The model is asked for one
-            // module, so one module is what it is allowed to replace.
+            // module, so one module is what it is allowed to replace — and the
+            // server, not this hook, puts it into the stored package.
             const pkg = parseGeneratedPackage(currentPayload.code)!;
             const idx = target.index;
-            const repaired = await autoHealCode(errText, pkg[idx].content, 'module', pkg[idx].path);
-            const fixedCode = replaceFileContent(pkg, idx, repaired);
-            currentPayload = { ...currentPayload, code: fixedCode };
-            pendingPatch = { ...(pendingPatch || {}), generatedCode: fixedCode };
-            setSandboxOutput(prev => prev + `\n[Auto-Healing] ${pkg[idx].path} repaired. Retrying execution — nothing is saved until it compiles...\n`);
+            repaired = await autoHealCode(errText, pkg[idx].content, 'module', pkg[idx].path);
+            draftTarget = { kind: 'package', index: idx, path: pkg[idx].path };
+            nextPayload = { ...currentPayload, code: replaceFileContent(pkg, idx, repaired) };
           } else if (target.kind === 'module') {
-            const fixedCode = await autoHealCode(errText, currentPayload.code || '', 'module');
-            currentPayload = { ...currentPayload, code: fixedCode };
-            pendingPatch = { ...(pendingPatch || {}), generatedCode: fixedCode };
-            setSandboxOutput(prev => prev + `\n[Auto-Healing] Module repaired. Retrying execution — nothing is saved until it compiles...\n`);
+            repaired = await autoHealCode(errText, currentPayload.code || '', 'module');
+            draftTarget = { kind: 'module' };
+            nextPayload = { ...currentPayload, code: repaired };
           } else {
-            const fixed = await autoHealCode(errText, currentPayload.tests?.code || '', 'test');
-            currentPayload = { ...currentPayload, tests: { ...currentPayload.tests, code: fixed } };
-            pendingPatch = { ...(pendingPatch || {}), testSuite: { ...project?.testSuite, code: fixed } as Project['testSuite'] };
-            setSandboxOutput(prev => prev + `\n[Auto-Healing] Test code repaired. Retrying execution — nothing is saved until it compiles...\n`);
+            repaired = await autoHealCode(errText, currentPayload.tests?.code || '', 'test');
+            draftTarget = { kind: 'test' };
+            nextPayload = { ...currentPayload, tests: { ...currentPayload.tests, code: repaired } as Project['testSuite'] };
           }
+
+          const proposed = await repairDraftCall({
+            action: 'propose',
+            parentDraftId: draft ? draft.id : null,
+            expectedCodeDigest: base.codeDigest,
+            expectedSuiteDigest: base.suiteDigest,
+            target: draftTarget,
+            content: repaired,
+          });
+          if (!proposed.ok || typeof proposed.data?.draftId !== 'string') {
+            setSandboxOutput(prev => prev + `\n[Auto-Healing] The repair could not be drafted: ${proposed.data?.error || 'the server refused it.'} Nothing was changed.\n`);
+            return result;
+          }
+          const created = { id: proposed.data.draftId as string, digest: proposed.data.draftDigest as string };
+          draft = created;
+          currentPayload = nextPayload;
+          const label = draftTarget.kind === 'package' ? draftTarget.path : draftTarget.kind === 'module' ? 'Module' : 'Test code';
+          setSandboxOutput(prev => prev + `\n[Auto-Healing] ${label} repaired as draft ${created.id}. Running the draft — nothing is saved until it compiles...\n`);
           continue;
         } catch (healError) {
           console.error('Auto-healing failed', healError);
@@ -238,16 +263,31 @@ Return ONLY the raw, corrected TypeScript source — no markdown fences, no comm
         throw new Error(result.error || 'Test execution failed');
       }
 
-      // Only a run that got past the compiler earns the write. A build error on
-      // the last attempt returns here too, and the project keeps the artefact it
-      // had rather than an unverified replacement.
-      if (!result.buildError) {
-        await persistRepairs();
-      } else if (pendingPatch) {
-        setSandboxOutput(prev => prev + `\n[Auto-Healing] The repair still does not compile. Nothing was saved — the generated package is unchanged.\n`);
-      }
+      if (!draft) return result;
 
-      return result;
+      // A draft ran. Only one that got past the compiler is offered for
+      // adoption, and the server decides: it swaps the draft onto the project
+      // only if the project still stands where the draft was cut.
+      const ran = draft;
+      if (result.buildError) {
+        setSandboxOutput(prev => prev + `\n[Auto-Healing] The repair still does not compile. Nothing was saved — the generated package is unchanged.\n`);
+        return result;
+      }
+      if (!result.draftReceipt) {
+        setSandboxOutput(prev => prev + `\n[Auto-Healing] The run of draft ${ran.id} was not recorded, so it cannot be adopted. Nothing was saved.\n`);
+        return result;
+      }
+      const adopted = await repairDraftCall({ action: 'adopt', draftId: ran.id, expectedDraftDigest: ran.digest });
+      if (!adopted.ok) {
+        setSandboxOutput(prev => prev + `\n[Auto-Healing] The repair compiled but was not adopted: ${adopted.data?.error || 'the server refused it.'}\n`);
+        return result;
+      }
+      const fields = (adopted.data?.fields || {}) as Partial<Project>;
+      if (setProject) {
+        setProject((prev: Project | null) => (prev ? { ...prev, ...fields } : prev));
+      }
+      setSandboxOutput(prev => prev + `\n[Auto-Healing] Draft ${ran.id} compiled and was adopted. The project now holds the repaired code, and its receipt names the draft that ran.\n`);
+      return { ...result, receipt: (fields.testRunReceipt as TestRunReceipt | undefined) ?? null };
     }
     // TypeScript: should never reach here but satisfies return type
     throw new Error('Max retries exceeded');

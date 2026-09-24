@@ -1008,15 +1008,16 @@
           "testSuite",
           "coverageEstimate",
           "manualTestingRequirements",
-          "generatedCode",
           "status"
         ],
         "serverWrites": {
-          "via": "POST /api/s4-credentials, POST /api/run-tests",
+          "via": "POST /api/s4-credentials, POST /api/run-tests, POST /api/projects/{id}/repair-drafts",
           "creates": "s4_credentials/{uid} (AES-256-GCM, server-only collection)",
           "project": [
             "testCases",
-            "testRunReceipt"
+            "testRunReceipt",
+            "generatedCode",
+            "testSuite"
           ]
         },
         "otherCollections": [
@@ -1027,7 +1028,7 @@
           "coverageEstimate",
           "testRunReceipt"
         ],
-        "note": "The page does not store the verdicts it shows and no client path writes one. POST /api/run-tests writes the verdicts it observed together with testRunReceipt, in one Admin-SDK write — what the server saw, the server records — bound to the active run and to the digests of generatedCode, testSuite and testCases (the case digest ignores status and message, so storing a verdict cannot freshen or retire a receipt). testRunReceipt is outside the client allowlist of firestore.rules; testCases is inside it, which is why lib/workflow-steps.ts counts passes for `proven` from the receipt and reads client-written Passed strings as 'Self-reported'. generatedCode and testSuite are rewritten only by the auto-heal path in useTestExecution, which repairs the one file repairTarget() names."
+        "note": "The page does not store the verdicts it shows and no client path writes one. POST /api/run-tests writes the verdicts it observed together with testRunReceipt, in one Admin-SDK write — what the server saw, the server records — bound to the active run and to the digests of generatedCode, testSuite and testCases (the case digest ignores status and message, so storing a verdict cannot freshen or retire a receipt). testRunReceipt is outside the client allowlist of firestore.rules; testCases is inside it, which is why lib/workflow-steps.ts counts passes for `proven` from the receipt and reads client-written Passed strings as 'Self-reported'. Since roadmap 8.7 the auto-heal path writes nothing from the browser: the repair of the one file repairTarget() names becomes an immutable draft in projects/{id}/repairDrafts (Admin SDK, default deny), /api/run-tests with draftId executes exactly that draft and records its receipt on the draft, and POST /api/projects/{id}/repair-drafts adopts it by compare-and-swap - generatedCode or testSuite, the verdicts and a testRunReceipt naming the draft, in one transaction."
       },
       "preconditions": {
         "enforceActiveRun": true,
@@ -1100,10 +1101,6 @@
           {
             "field": "s4Environment",
             "why": "not printed: it decides which of the two environment tabs is selected"
-          },
-          {
-            "field": "generatedCode",
-            "why": "read only into the generation prompt; nothing of it is rendered on this stage"
           },
           {
             "field": "status",
