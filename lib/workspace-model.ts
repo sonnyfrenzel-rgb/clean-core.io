@@ -479,6 +479,30 @@ function shortId(hash: string | undefined | null): string | null {
   return typeof hash === 'string' && hash.length >= 8 ? hash.slice(0, 8) : null;
 }
 
+/** An entry of a stored list that is an object at all — records from every version are read. */
+function isRecord<T>(value: T): value is T & object {
+  return typeof value === 'object' && value !== null;
+}
+
+/** A stored name, or the sentence that says it was not recorded — never `undefined` on screen. */
+function nameOr(value: unknown, absent: string): string {
+  return typeof value === 'string' && value.trim().length > 0 ? value : absent;
+}
+
+/**
+ * Whose table it is — three answers, not two (`DataCouplingEntry.isStandard`).
+ *
+ * A reserved-namespace name is neither a customer's nor SAP's by its name, and
+ * an entry stored before 2.16 does not say which it is; reading `!isCustom` as
+ * "SAP table" is the misreading the field exists to stop.
+ */
+function ownershipOf(entry: { isCustom?: unknown; isStandard?: unknown }): string {
+  if (entry.isCustom === true) return 'custom table';
+  if (entry.isStandard === true) return 'SAP table';
+  if (entry.isStandard === false) return 'ownership not determined';
+  return 'ownership not recorded';
+}
+
 /**
  * Layers with content first; empty ones go under "More" and say what is missing
  * (§2.11). Every row below comes from a field that is actually on the project,
@@ -499,7 +523,11 @@ export function workspaceLayers(project: Project | null): WorkspaceLayer[] {
   const inventory = Array.isArray(project?.codeInventory) ? project.codeInventory : [];
   const coupling = Array.isArray(project?.dataCoupling) ? project.dataCoupling : [];
   const runId = typeof project?.activeRunId === 'string' ? project.activeRunId.trim() : '';
-  const hasRun = runId.length > 0;
+  // A run the loader could not read is not a signed run this screen can show
+  // (roadmap 3.0.2): the id is on the project, the signature is on the run, and
+  // the run is not here. Both layers that derive from it say so instead.
+  const runUnreadable = runId.length > 0 && project?._runLoadFailed === true;
+  const hasRun = runId.length > 0 && !runUnreadable;
   const fingerprint = project?.auditMetadata?.inputFingerprint ?? null;
 
   const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
@@ -507,9 +535,9 @@ export function workspaceLayers(project: Project | null): WorkspaceLayer[] {
   const FIRST = 5;
 
   /* ------------------------------------------------------------- need */
-  const needRows: LayerRow[] = usageRecords.map((record, i) => ({
+  const needRows: LayerRow[] = usageRecords.filter(isRecord).map((record, i) => ({
     key: `usage-${i}`,
-    label: record.objectName,
+    label: nameOr(record.objectName, 'object name not recorded'),
     // `null` is not zero (`lib/workspace-rows.ts`): an export with no call
     // column did not measure zero calls, it measured nothing at all — and the
     // difference decides whether an object is a retirement candidate.
@@ -522,10 +550,10 @@ export function workspaceLayers(project: Project | null): WorkspaceLayer[] {
 
   /* ----------------------------------------------------- architecture */
   const architectureRows: LayerRow[] = [
-    ...inventory.map((item, i) => ({
+    ...inventory.filter(isRecord).map((item, i) => ({
       key: `object-${i}`,
-      label: item.objectName,
-      value: item.type,
+      label: nameOr(item.objectName, 'object name not recorded'),
+      value: nameOr(item.type, 'type not recorded'),
       anchor:
         typeof item.lineStart === 'number' && typeof item.lineEnd === 'number'
           ? `L${item.lineStart}–L${item.lineEnd}`
@@ -533,10 +561,10 @@ export function workspaceLayers(project: Project | null): WorkspaceLayer[] {
             ? `L${item.lineStart}`
             : null,
     })),
-    ...coupling.map((entry, i) => ({
+    ...coupling.filter(isRecord).map((entry, i) => ({
       key: `table-${i}`,
-      label: entry.tableName,
-      value: `${entry.accessType} · ${entry.isCustom ? 'custom table' : 'SAP table'}`,
+      label: nameOr(entry.tableName, 'table name not recorded'),
+      value: `${nameOr(entry.accessType, 'access not recorded')} · ${ownershipOf(entry)}`,
       anchor:
         Array.isArray(entry.lineNumbers) && typeof entry.lineNumbers[0] === 'number'
           ? `L${entry.lineNumbers[0]}`
@@ -624,7 +652,9 @@ export function workspaceLayers(project: Project | null): WorkspaceLayer[] {
       label: 'Costs & assumptions',
       hash: '#costs',
       count: costsRows.length > 0 ? 'model estimate' : null,
-      missing: 'Economics models costs from a signed run; there is none.',
+      missing: runUnreadable
+        ? 'Economics models costs from a signed run, and the one on record could not be read.'
+        : 'Economics models costs from a signed run; there is none.',
       rows: costsRows,
       total: costsRows.length,
       provenance: costsRows.length > 0 ? 'simulation' : 'not-determined',
@@ -654,7 +684,9 @@ export function workspaceLayers(project: Project | null): WorkspaceLayer[] {
       label: 'Evidence & controls',
       hash: '#evidence',
       count: evidenceRows.length > 0 ? '1 signed run' : null,
-      missing: 'No signed run — every figure in this product derives from one.',
+      missing: runUnreadable
+        ? 'A signed run is on record and could not be read, so what it proves is not determined.'
+        : 'No signed run — every figure in this product derives from one.',
       rows: evidenceRows.slice(0, FIRST),
       total: evidenceRows.length,
       provenance: evidenceRows.length > 0 ? 'proven' : 'not-determined',

@@ -5,6 +5,7 @@ import CcCard from '@/components/cc/Card';
 import CcAnchor from '@/components/cc/Anchor';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import type { NotDetermined } from '@/lib/workspace-model';
+import type { RecordGap } from '@/lib/legacy-project';
 
 /**
  * What the engine could not work out — `DESIGN.md` §5.1, §5.5, roadmap 1.4.
@@ -28,8 +29,22 @@ import type { NotDetermined } from '@/lib/workspace-model';
  *
  * The chip is *Not determined* from the one provenance list — neutral, outline,
  * with a question mark. Never green, never red: nothing failed here.
+ *
+ * **What the record does not carry** (roadmap 3.0.2). A project stored by an
+ * earlier version of the product opens as it was stored, and some of what this
+ * screen would say about it was never recorded — a run signed before runs named
+ * their inputs, an analysis from before signed runs. `lib/legacy-project.ts`
+ * names each gap with its reason; they are listed here, under the engine's own
+ * list, because they are the same kind of statement: not determined, and why.
+ * They carry no line anchor, because they are about the record and not a line.
  */
-export default function NotDeterminedCard({ data }: { data: NotDetermined }) {
+export default function NotDeterminedCard({
+  data,
+  recorded = [],
+}: {
+  data: NotDetermined;
+  recorded?: readonly RecordGap[];
+}) {
   return (
     <CcCard
       title="Not determined"
@@ -71,6 +86,25 @@ export default function NotDeterminedCard({ data }: { data: NotDetermined }) {
           ))}
         </ul>
       )}
+      {recorded.length > 0 ? (
+        <div data-not-determined-record-list="" className="mt-3">
+          <p className="m-0 text-[11px] font-semibold tracking-[0.08em] text-cc-ink-muted uppercase">
+            Not in this project&apos;s record
+          </p>
+          <ul className="m-0 mt-1.5 list-none space-y-2.5 p-0">
+            {recorded.map((gap) => (
+              <li
+                key={gap.form}
+                data-not-determined-record={gap.form}
+                className="rounded-cc-row border border-cc-line bg-cc-surface-muted px-3 py-2"
+              >
+                <span className="text-[13px] font-semibold text-cc-ink">{gap.label}</span>
+                <p className="m-0 mt-1 text-[12px] leading-snug font-medium text-cc-ink-muted">{gap.why}</p>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
     </CcCard>
   );
 }

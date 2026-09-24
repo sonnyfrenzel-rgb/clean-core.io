@@ -375,7 +375,21 @@ export function workflowSteps(project: Project | null): RailStep[] {
 
   // Proven: `activeRunId` is written only by `/api/runs/create`, is not in the
   // client allowlist, and the run it points at is canonical-JSON signed.
-  const analyze = hasRun
+  //
+  // Not when the run could not be read (roadmap 3.0.2). `loadProjectAndHydrate`
+  // marks a project whose `activeRunId` names a run it could not load — gone,
+  // or refused by the rules — and the id alone proves nothing: the signature is
+  // on the run, and the run is not here. It is a run on record whose content is
+  // not determined, which is amber and says so, never the green of a signature
+  // nobody checked.
+  const runUnreadable = hasRun && project?._runLoadFailed === true;
+  const analyze = runUnreadable
+    ? phase('analyze', {
+        state: 'partial',
+        badge: 'Run unreadable',
+        detail: 'A signed run is on record and could not be read — its score and findings are not determined.',
+      })
+    : hasRun
     ? phase('analyze', {
         state: 'done',
         proven: true,
@@ -496,7 +510,13 @@ export function workflowSteps(project: Project | null): RailStep[] {
   // There is nothing in this release that could complete Economics: the model
   // runs on assumed effort coefficients, not on costs anybody observed (CR-23,
   // E12-F02). It is visible, and it says what it is.
-  const economics = hasRun
+  const economics = runUnreadable
+    ? phase('tco', {
+        state: 'empty',
+        badge: 'No baseline',
+        detail: 'The signed run could not be read — the cost model has no Clean Core score to start from.',
+      })
+    : hasRun
     ? phase('tco', {
         state: 'partial',
         badge: 'Model estimate',

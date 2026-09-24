@@ -109,10 +109,13 @@ function ruleResults(projectId: string, rules: readonly BusinessRule[]): SearchR
 }
 
 function findingResults(projectId: string, worklist: readonly WorklistItem[]): SearchResult[] {
-  return worklist.map((item) => ({
-    id: `finding:${item.id}`,
+  // A worklist is read in whatever shape a version of this product stored it
+  // (roadmap 3.0.2): an entry without a title is still a finding, and `rank`
+  // lower-cases every title, so an absent one must not reach it as `undefined`.
+  return worklist.filter((item) => typeof item === 'object' && item !== null).map((item, i) => ({
+    id: `finding:${item.id ?? i}`,
     kind: 'finding' as const,
-    title: item.title,
+    title: typeof item.title === 'string' && item.title ? item.title : 'Finding without a title',
     detail: [item.category, item.severity].filter(Boolean).join(' · '),
     anchor: item.targetAnchor ?? (item.location || null),
     href: `/project/${projectId}/analyze`,
@@ -146,7 +149,7 @@ function glossaryResults(): SearchResult[] {
 export function buildWorkspaceSearchIndex({ projectId, project, reading }: WorkspaceSearchIndexInput): SearchResult[] {
   const elements = reading ? elementResults(projectId, reading.skeleton.nodes) : [];
   const rules = reading ? ruleResults(projectId, reading.ruleSet.rules) : [];
-  const findings = project?.worklist ? findingResults(projectId, project.worklist) : [];
+  const findings = Array.isArray(project?.worklist) ? findingResults(projectId, project.worklist) : [];
   return [...elements, ...rules, ...findings, ...glossaryResults()];
 }
 

@@ -47,6 +47,7 @@ import {
   type LayerKey,
   type WorkspaceView,
 } from '@/lib/workspace-model';
+import { recordGaps } from '@/lib/legacy-project';
 import type { Project } from '@/lib/types';
 
 /**
@@ -178,6 +179,9 @@ export default function WorkspaceShell({
   const layers = useMemo(() => workspaceLayers(project), [project]);
   const tools = useMemo(() => workspaceTools(project), [project]);
   const open = useMemo(() => notDetermined(project), [project]);
+  // What a project stored by an earlier version does not carry (roadmap 3.0.2).
+  // Read, never repaired: opening a project writes nothing to it.
+  const recorded = useMemo(() => recordGaps(project), [project]);
 
   /**
    * The reading of the source, done once by the first look and handed up here.
@@ -220,7 +224,8 @@ export default function WorkspaceShell({
    * that appears and is swapped for another is worse than one that arrives
    * late.
    */
-  const marksReady = marks.ready && (answer !== null || !(project?.legacyCode ?? '').trim());
+  const marksReady =
+    marks.ready && (answer !== null || !(typeof project?.legacyCode === 'string' ? project.legacyCode : '').trim());
   const currentMark = marksReady ? marks.current : null;
 
   // The plain-language fold of ADR-026. Derived, not written: the row says how
@@ -452,7 +457,7 @@ export default function WorkspaceShell({
           onDismiss={marks.dismiss}
           onDismissAll={marks.dismissAll}
         />
-        <NotDeterminedCard data={open} />
+        <NotDeterminedCard data={open} recorded={recorded} />
       </div>
 
       {/* IT's own answer (ADR-029, `DESIGN.md` §5.6: *"die Kette gehört zu einem

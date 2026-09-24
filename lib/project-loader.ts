@@ -22,6 +22,42 @@ function hydrate(data: Project, runData: Record<string, unknown>): Project {
   } as Project;
 }
 
+/** How the read of the active run went. */
+export type RunRead =
+  | { kind: 'found'; data: Record<string, unknown> }
+  | { kind: 'missing' }
+  | { kind: 'failed'; error: string };
+
+/**
+ * The pure half of `loadProjectAndHydrate` — what a project document and the
+ * read of its active run become, without Firestore (roadmap 3.0.2).
+ *
+ * Exported so that every historical form of a project can be put through
+ * exactly the function the workspace opens it with, from a spec that has no
+ * browser (`tests/legacy-projects.spec.ts`); a copy of this logic in a test
+ * would prove the copy. Nothing here writes — the result is an object in
+ * memory, and `_runLoadFailed` / `_runLoadError` are never persisted.
+ *
+ * `run` is `null` when no read was attempted: no `activeRunId`, the form of
+ * every project stored before signed runs existed. It is returned as it is.
+ */
+export function hydrateProject(projectId: string, data: Project, run: RunRead | null): Project {
+  let out: Project = data;
+  if (run?.kind === 'found') {
+    out = hydrate(data, run.data);
+  } else if (run?.kind === 'missing') {
+    // activeRunId points to a missing run — evidence-bearing fields (analysis, etc.)
+    // live only in the run, so downstream pages must not silently render empty.
+    out = { ...data, _runLoadFailed: true, _runLoadError: 'The active analysis run could not be found.' };
+  } else if (run?.kind === 'failed') {
+    // Do NOT swallow: the analysis narrative lives only in the run, so a failed
+    // run read (e.g. Firestore rules gap, network) would otherwise show as an
+    // empty Solution Design with no explanation. Flag it so callers can surface it.
+    out = { ...data, _runLoadFailed: true, _runLoadError: run.error };
+  }
+  return { id: projectId, ...out } as Project;
+}
+
 /**
  * Roadmap 5.4 — the run, for somebody who was invited to read the project.
  *
@@ -48,10 +84,15 @@ export async function loadProjectAndHydrate(projectId: string): Promise<Project 
   const docSnap = await getDoc(docRef);
   if (!docSnap.exists()) return null;
 
-  let data = docSnap.data() as Project;
+  const data = docSnap.data() as Project;
   const viewerUid = getAuth().currentUser?.uid ?? null;
   const owner = isProjectOwner(data, viewerUid);
 
+  // Read only, in whatever form the document was stored (roadmap 3.0.2).
+  // Nothing below writes to the project or its runs: a project without
+  // `activeRunId` is returned as it is, and a run that cannot be read is
+  // flagged in memory, never repaired.
+  let run: RunRead | null = null;
   if (data.activeRunId) {
     try {
       // An invited reader never gets past the rules here, so they do not try:
@@ -64,23 +105,16 @@ export async function loadProjectAndHydrate(projectId: string): Promise<Project 
         ? (runSnap?.exists() ? (runSnap.data() as Record<string, unknown>) : null)
         : await readerRun(projectId);
       if (runData) {
-        data = hydrate(data, runData);
+        run = { kind: 'found', data: runData };
       } else {
-        // activeRunId points to a missing run — evidence-bearing fields (analysis, etc.)
-        // live only in the run, so downstream pages must not silently render empty.
         console.error(`Active run ${data.activeRunId} does not exist for project ${projectId}.`);
-        data._runLoadFailed = true;
-        data._runLoadError = 'The active analysis run could not be found.';
+        run = { kind: 'missing' };
       }
     } catch (err) {
-      // Do NOT swallow: the analysis narrative lives only in the run, so a failed
-      // run read (e.g. Firestore rules gap, network) would otherwise show as an
-      // empty Solution Design with no explanation. Flag it so callers can surface it.
       console.error('Failed to load active run:', err);
-      data._runLoadFailed = true;
-      data._runLoadError = err instanceof Error ? err.message : 'Failed to load the analysis run.';
+      run = { kind: 'failed', error: err instanceof Error ? err.message : 'Failed to load the analysis run.' };
     }
   }
 
-  return { id: docSnap.id, ...data } as Project;
+  return hydrateProject(docSnap.id, data, run);
 }
