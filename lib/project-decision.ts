@@ -535,6 +535,75 @@ export function decisionConfirmable(decision: ProjectDecision | null | undefined
  * is what makes a later change a new revision rather than an edit.
  */
 export function canonicalProjectDecision(decision: ProjectDecision): string {
+  // One JSON array per line. Every value the record carries verbatim — ids, an
+  // account, a timestamp, an evidence ref — is a JSON string, so no separator
+  // and no line break inside a value can move a boundary. The form this
+  // replaces joined raw values with `@`, `#` and `;`: an attestation by `a@b`
+  // at `c` and one by `a` at `b@c` had the same canonical line, and so the same
+  // fingerprint (QA review of 4b4586aff273).
+  const line = (tag: string, ...values: unknown[]) => `${tag}=${JSON.stringify(values)}`;
+  const lines: string[] = [
+    line('v', decision.decisionVersion),
+    line('decision', decision.decisionId),
+    line('revision', decision.revision),
+    line('summary', sha256Hex(decision.summary)),
+    line('run', decision.boundRunId),
+    line('evidence', sha256Hex(decision.boundEvidenceDigest)),
+    line(
+      'reversible',
+      decision.reversibility.answer,
+      sha256Hex(decision.reversibility.boundary ?? ''),
+      sha256Hex(decision.reversibility.reason),
+    ),
+  ];
+  for (const key of DECISION_BINDINGS) {
+    const binding = decision.bindings.find((b) => b.key === key);
+    if (!binding) {
+      lines.push(line('bind', key, 'absent'));
+      continue;
+    }
+    lines.push(
+      line(
+        'bind',
+        key,
+        binding.revision === null ? null : sha256Hex(binding.revision),
+        binding.revision === null ? sha256Hex(binding.notDeterminedReason ?? '') : null,
+        sha256Hex(binding.note ?? ''),
+        binding.provenance,
+      ),
+    );
+  }
+  for (const condition of decision.conditions) {
+    lines.push(
+      line(
+        'cond',
+        condition.id,
+        condition.source,
+        condition.status,
+        condition.statusBasis,
+        condition.evidence,
+        sha256Hex(condition.text),
+        condition.attestation
+          ? [condition.attestation.account, condition.attestation.at, sha256Hex(condition.attestation.note)]
+          : null,
+        condition.provenance,
+      ),
+    );
+  }
+  for (const entry of decision.timeline) {
+    lines.push(line('event', entry.at, entry.kind, entry.account, sha256Hex(entry.sentence)));
+  }
+  return lines.join('\n');
+}
+
+/**
+ * The canonical form before the QA review of 4b4586aff273, kept for one purpose
+ * only: a record stored under it still carries its old fingerprint, and
+ * `normaliseProjectDecision()` accepts that value as "the fingerprint of this
+ * record" so a decision on record does not become unreadable with the format
+ * change. What it returns is always the fingerprint of the current form.
+ */
+function legacyCanonicalProjectDecision(decision: ProjectDecision): string {
   const lines: string[] = [
     `v${decision.decisionVersion}`,
     `decision=${decision.decisionId}`,
@@ -679,6 +748,11 @@ export const DECISION_MAX_TEXT = 4000;
 const str = (v: unknown, max = DECISION_MAX_TEXT): string | null =>
   typeof v === 'string' && v.length > 0 && v.length <= max ? v : null;
 
+/** `2026-09-23T11:00:00.000Z` — UTC, as `Date.prototype.toISOString()` writes it, and a real date. */
+function isIsoInstant(value: string): boolean {
+  return /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,3})?Z$/.test(value) && !Number.isNaN(Date.parse(value));
+}
+
 function readBinding(value: unknown): DecisionBinding | null {
   if (!isPlainObject(value)) return null;
   const key = value.key;
@@ -721,6 +795,8 @@ function readCondition(value: unknown): DecisionCondition | null {
     const at = str(value.attestation.at, 40);
     const note = str(value.attestation.note);
     if (!account || !at || !note) return null;
+    // When the account said it is a point in time, not free text.
+    if (!isIsoInstant(at)) return null;
     attestation = { account, at, note };
   }
   // `statusBasis` and `attestation` say the same thing twice, so they have to
@@ -857,7 +933,11 @@ export function normaliseProjectDecision(
   };
   decision.fingerprint = decisionFingerprint(decision);
 
-  if (typeof value.fingerprint === 'string' && value.fingerprint !== decision.fingerprint) {
+  if (
+    typeof value.fingerprint === 'string' &&
+    value.fingerprint !== decision.fingerprint &&
+    value.fingerprint !== sha256Hex(legacyCanonicalProjectDecision(decision))
+  ) {
     return {
       ok: false,
       error:

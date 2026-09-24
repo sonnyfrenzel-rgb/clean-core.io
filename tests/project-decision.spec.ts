@@ -386,6 +386,55 @@ test.describe('8.4 — status is outside the fingerprint, everything else is ins
     for (const v of variants) expect(decisionFingerprint(v)).not.toBe(decisionFingerprint(d));
   });
 
+  // QA review of 4b4586aff273: values were joined raw with `@`, `#` and `;`, so
+  // a boundary could move between two fields and the fingerprint stayed.
+  test('no value can move a field boundary: shifted separators are a different fingerprint', () => {
+    const base = decisionFixture();
+    const withAttestation = (account: string, at: string): ProjectDecision => ({
+      ...base,
+      conditions: [
+        {
+          id: 'account:C-1',
+          text: 'We accept this for the pilot.',
+          source: 'account',
+          status: 'waived',
+          statusBasis: 'attested',
+          evidence: null,
+          provenance: 'confirmed',
+          attestation: { account, at, note: 'We accept this for the pilot.' },
+        },
+      ],
+    });
+    expect(decisionFingerprint(withAttestation('a@b', 'c'))).not.toBe(decisionFingerprint(withAttestation('a', 'b@c')));
+
+    const withEvent = (at: string, account: string): ProjectDecision => ({
+      ...base,
+      timeline: [{ at, kind: 'run-signed', sentence: 's', account }],
+    });
+    expect(decisionFingerprint(withEvent('t;x', 'y'))).not.toBe(decisionFingerprint(withEvent('t', 'x;y')));
+
+    // A line break inside a value cannot forge a second line either.
+    const oneEvent = withEvent('2026-09-23T11:00:00.000Z', 'owner@example.com');
+    expect(canonicalProjectDecision(oneEvent).split('\n').length).toBe(
+      canonicalProjectDecision({ ...oneEvent, timeline: [{ ...oneEvent.timeline[0], account: 'x\nevent=forged' }] }).split('\n').length,
+    );
+  });
+
+  test('an attestation carries a point in time, not free text', () => {
+    const d = decisionFixture();
+    const target = d.conditions.find((c) => c.statusBasis === 'derived')!;
+    const attested = decisionFixture({
+      attestations: [
+        { conditionId: target.id, status: 'waived', account: 'owner@example.com', at: '2026-09-23T11:00:00.000Z', note: 'For the pilot.' },
+      ],
+    });
+    expect(normaliseProjectDecision({ ...attested, fingerprint: undefined }).ok).toBe(true);
+    const record = JSON.parse(JSON.stringify(attested)) as ProjectDecision;
+    const own = record.conditions.find((c) => c.attestation)!;
+    own.attestation!.at = 'b@c';
+    expect(normaliseProjectDecision({ ...record, fingerprint: undefined }).ok).toBe(false);
+  });
+
   test('a fingerprint on the wire is recomputed, never believed', () => {
     const d = decisionFixture();
     const tampered = { ...d, summary: 'Something else entirely.' };
