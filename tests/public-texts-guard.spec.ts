@@ -40,6 +40,26 @@ import { execFileSync } from 'child_process';
 /** Mit 3.0.1 auf `true` — dann gelten (a), (b) und der Vollzug der Entscheidungen. */
 const PUBLIC_TEXTS_ARMED = false;
 
+/**
+ * Die Chronik — von (a) und (b) ausgenommen, ausdrücklich und hier, nicht nur in
+ * der Inventur (Entscheidung Sonny 24.09.2026). Diese Dateien sind Geschichte
+ * oder legen die Streichungen fest: ein datierter Eintrag, der den
+ * 7-Stufen-Workflow oder Dark Mode nennt, beschreibt richtig, was damals galt,
+ * und die Roadmap muss das Gestrichene nennen, um es zu streichen. Umschreiben
+ * hieße, die Geschichte zu fälschen. Die Liste ist geschlossen: eine weitere
+ * Ausnahme für Prosa verlangt einen Eintrag hier, mit Begründung.
+ */
+const CHRONICLE: Record<string, string> = {
+  'CHANGELOG.md': 'Versionshistorie — jeder Eintrag beschreibt das Produkt seines Datums.',
+  'docs/BACKLOG.md': 'Arbeitsprotokoll — datierte Abschnitte; die abgeschlossenen vor 3.0 werden mit 3.0 archiviert.',
+  'DESIGN.md': 'Legt 3.0 und die Streichungen fest — nennt das Entfernte, um es zu verbieten.',
+  'docs/ROADMAP.md': 'Die verbindliche Roadmap — Quelle der Streichliste und datierter Entscheidungen.',
+  'docs/design/decisions.md': 'ADR-Log — Einträge werden nie geändert, nur ersetzt.',
+};
+
+/** Ausnahmen, die keine Prosa über das Produkt sind: Rechtstexte und ABAP-Quelltext. */
+const NOT_PROSE_KINDS = ['legal', 'abap-sample'];
+
 const ROOT = path.resolve(__dirname, '..');
 const REGISTER = 'docs/registers/public-texts.json';
 const VOCABULARY = 'docs/registers/vocabulary.json';
@@ -116,7 +136,7 @@ function termHits(text: string, v: ReturnType<typeof vocabulary>) {
 
 /** Was (a) und (b) lesen: Dateien der Inventur, die es gibt und die nicht ausgenommen sind. */
 function checkedFiles(kind: 'removed' | 'terms') {
-  return register().files.filter((e) => e.guard[kind] === 'check' && fs.existsSync(path.resolve(ROOT, e.path)));
+  return register().files.filter((e) => !(e.path in CHRONICLE) && e.guard[kind] === 'check' && fs.existsSync(path.resolve(ROOT, e.path)));
 }
 
 const armed = PUBLIC_TEXTS_ARMED ? test : test.fixme;
@@ -157,6 +177,27 @@ test.describe('öffentliche Texte aus einem Guss (3.0.8)', () => {
       if (e.decision === 'update' && e.wrongWith30.length === 0) bad.push(`${e.path}: update ohne einen Punkt in wrongWith30`);
     }
     expect(bad).toEqual([]);
+  });
+
+  test('die Chronik ist von (a) und (b) ausgenommen, ausdrücklich und begründet — und nichts sonst ohne Grund', () => {
+    const entries = register().files;
+    const problems: string[] = [];
+    for (const [file, why] of Object.entries(CHRONICLE)) {
+      const e = entries.find((x) => x.path === file);
+      if (!e) { problems.push(`${file}: steht in CHRONICLE, aber nicht in der Inventur`); continue; }
+      if (!fs.existsSync(path.resolve(ROOT, file))) problems.push(`${file}: steht in CHRONICLE, gibt es aber nicht`);
+      if (e.guard.removed !== 'exempt' || e.guard.terms !== 'exempt') problems.push(`${file}: Chronik, in der Inventur aber nicht von (a) und (b) ausgenommen`);
+      if (!/Chronik/.test(e.guard.why ?? '')) problems.push(`${file}: guard.why nennt die Chronik nicht`);
+      if (!why.trim()) problems.push(`${file}: ohne Begründung in CHRONICLE`);
+    }
+    // Die Liste ist geschlossen: jede andere Ausnahme ist kein Prosatext über das Produkt.
+    for (const e of entries) {
+      const exempt = e.guard.removed === 'exempt' || e.guard.terms === 'exempt';
+      if (exempt && !(e.path in CHRONICLE) && !NOT_PROSE_KINDS.includes(e.kind)) {
+        problems.push(`${e.path}: von (a)/(b) ausgenommen, aber weder Chronik noch ${NOT_PROSE_KINDS.join('/')}`);
+      }
+    }
+    expect(problems).toEqual([]);
   });
 
   test('die ausgelieferten Texte der Inventur zeigen auf Quellen, die es gibt', () => {

@@ -22,7 +22,8 @@
     "files[].measured.lines": "Zeilenzahl am Stichtag",
     "served[]": "oeffentlich ausgelieferte Texte, die keine eigene Textdatei sind (llms.txt, package.json, Metadaten, JSON-LD) und die Gestaltungsartefakte unter docs/roadmap/*.html — nur genannt, nicht von (c) erzwungen",
     "referenceCheck[]": "Dateien in docs/archiv/ und docs/korpus/, die eine Datei nennen, die archiviert oder geloescht wird — dort nur Verweise pruefen, nicht umschreiben",
-    "baseline": "Zahl der Verstoesse gegen (a) und (b) am Stichtag, einmal ueber alle geprueften Dateien und einmal nur ueber die, die bleiben (update/keep)"
+    "baseline": "Zahl der Verstoesse gegen (a) und (b) am Stichtag, einmal ueber alle geprueften Dateien und einmal nur ueber die, die bleiben (update/keep)",
+    "decisions[]": "Entscheidungen zur Inventur mit Datum: {id, date, by, decision, status (vollzogen | vermerkt | spaeter), files}"
   },
   "baseline": {
     "date": "2026-09-24",
@@ -169,7 +170,7 @@
       "guard": {
         "removed": "exempt",
         "terms": "exempt",
-        "why": "Chronik: datierte Eintraege beschreiben, was damals galt, und werden nicht umgeschrieben."
+        "why": "Chronik (Entscheidung Sonny 24.09.2026): datierte Eintraege bzw. die Festlegung der Streichungen beschreiben, was damals galt oder was verboten wird, und werden nicht umgeschrieben. Ausdruecklich gefuehrt in CHRONICLE in tests/public-texts-guard.spec.ts."
       },
       "referencedBy": [
         "tests/qa-review-guard.spec.ts",
@@ -282,7 +283,7 @@
       "guard": {
         "removed": "exempt",
         "terms": "exempt",
-        "why": "Quelle der Streichungen und des Vokabulars: nennt das Entfernte, um es zu verbieten, und die alten Schreibweisen, um sie abzubilden."
+        "why": "Chronik (Entscheidung Sonny 24.09.2026): datierte Eintraege bzw. die Festlegung der Streichungen beschreiben, was damals galt oder was verboten wird, und werden nicht umgeschrieben. Ausdruecklich gefuehrt in CHRONICLE in tests/public-texts-guard.spec.ts."
       },
       "referencedBy": [
         "app/(app)/admin/design-system/page.tsx",
@@ -837,12 +838,12 @@
         }
       ],
       "decision": "update",
-      "reason": "Bleibt am Ort (deploy.yml, status.mjs, Specs lesen ihn); mit 3.0 die abgeschlossenen Abschnitte vor 3.0 nach docs/archiv/BACKLOG-bis-3.0.md auslagern und im Index fuehren.",
+      "reason": "Bleibt am Ort (deploy.yml, status.mjs, Specs lesen ihn). Entscheidung Sonny 24.09.2026: die abgeschlossenen Abschnitte vor 3.0 werden mit 3.0 nach docs/archiv/ ausgelagert (z. B. docs/archiv/BACKLOG-bis-3.0.md) und im Index gefuehrt - jetzt nur als Entscheidung vermerkt, nicht vollzogen.",
       "effort": "M",
       "guard": {
         "removed": "exempt",
         "terms": "exempt",
-        "why": "Chronik: datierte Eintraege beschreiben, was damals galt, und werden nicht umgeschrieben."
+        "why": "Chronik (Entscheidung Sonny 24.09.2026): datierte Eintraege bzw. die Festlegung der Streichungen beschreiben, was damals galt oder was verboten wird, und werden nicht umgeschrieben. Ausdruecklich gefuehrt in CHRONICLE in tests/public-texts-guard.spec.ts."
       },
       "referencedBy": [
         "app/api/send-approval-email/route.ts",
@@ -1234,7 +1235,7 @@
       "guard": {
         "removed": "exempt",
         "terms": "exempt",
-        "why": "Quelle der Streichungen und des Vokabulars: nennt das Entfernte, um es zu verbieten, und die alten Schreibweisen, um sie abzubilden."
+        "why": "Chronik (Entscheidung Sonny 24.09.2026): datierte Eintraege bzw. die Festlegung der Streichungen beschreiben, was damals galt oder was verboten wird, und werden nicht umgeschrieben. Ausdruecklich gefuehrt in CHRONICLE in tests/public-texts-guard.spec.ts."
       },
       "referencedBy": [
         "app/(app)/admin/design-system/page.tsx",
@@ -1564,7 +1565,7 @@
       "guard": {
         "removed": "exempt",
         "terms": "exempt",
-        "why": "Quelle der Streichungen und des Vokabulars: nennt das Entfernte, um es zu verbieten, und die alten Schreibweisen, um sie abzubilden."
+        "why": "Chronik (Entscheidung Sonny 24.09.2026): datierte Eintraege bzw. die Festlegung der Streichungen beschreiben, was damals galt oder was verboten wird, und werden nicht umgeschrieben. Ausdruecklich gefuehrt in CHRONICLE in tests/public-texts-guard.spec.ts."
       },
       "referencedBy": [
         "lib/cost-assumptions.ts"
@@ -3201,6 +3202,32 @@
         "docs/archiv/README.md",
         "docs/archiv/roadmap-2.7/clean-core-roadmap-v2_7-delta.md",
         "docs/archiv/roadmap-2.7/ROADMAP-2.7.md"
+      ]
+    }
+  ],
+  "decisions": [
+    {
+      "id": "chronicle-exempt",
+      "date": "2026-09-24",
+      "by": "Sonny",
+      "decision": "CHANGELOG.md, docs/BACKLOG.md, DESIGN.md, docs/ROADMAP.md und das ADR-Log docs/design/decisions.md sind von den Pruefungen (a) und (b) ausgenommen: sie sind Geschichte bzw. legen die Streichungen fest. Der Guard fuehrt die Ausnahme ausdruecklich (CHRONICLE).",
+      "status": "vollzogen",
+      "files": [
+        "CHANGELOG.md",
+        "docs/BACKLOG.md",
+        "DESIGN.md",
+        "docs/ROADMAP.md",
+        "docs/design/decisions.md"
+      ]
+    },
+    {
+      "id": "backlog-archive-with-3.0",
+      "date": "2026-09-24",
+      "by": "Sonny",
+      "decision": "Die abgeschlossenen BACKLOG-Abschnitte vor 3.0 werden mit 3.0 archiviert.",
+      "status": "spaeter",
+      "files": [
+        "docs/BACKLOG.md"
       ]
     }
   ]
