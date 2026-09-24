@@ -115,15 +115,24 @@ test.describe('the owner sees who has Einsicht, and since when', () => {
 });
 
 test.describe('the rules keep the shape the emulator test depends on', () => {
-  test('one carrier, and no get() anywhere in the file', () => {
+  test('one carrier, and the only second document is the caller’s own profile, behind exists()', () => {
     const text = rules();
     expect(text, 'the read grant reads the document it is already fetching')
       .toContain("request.auth.uid in data.get('readers', [])");
     expect(text, 'a missing field defaults to the empty list').toContain("data.get('readers', []) is list");
     // A get() costs a document read per evaluation and has produced evaluation
-    // errors in this emulator twice before; the file says so itself.
-    expect(text, 'no rule reads a second document').not.toContain('get(/databases/');
+    // errors in this emulator twice before; the file says so itself. Roadmap
+    // 3.0.12 admits exactly one: the caller's own profile, read by
+    // accountActive() so that a suspended account loses its data before its
+    // ID token expires. It is guarded by exists() — a get() on a missing
+    // document is the evaluation error — and it names no other path.
+    expect(text, 'no rule spells out a second document inline').not.toContain('get(/databases/');
     expect(text).not.toContain('exists(/databases/');
+    const paths = [...text.matchAll(/\/databases\/\$\(database\)\/documents\/[^;\n]*/g)].map((m) => m[0].trim());
+    expect(paths, 'one document path in the whole file').toEqual(['/databases/$(database)/documents/users/$(request.auth.uid)']);
+    const gets = [...text.matchAll(/\b(get|exists)\((\w+)\(\)\)/g)].map((m) => `${m[1]}(${m[2]})`);
+    expect(new Set(gets), 'every get()/exists() reads that one path').toEqual(new Set(['exists(callerProfilePath)', 'get(callerProfilePath)']));
+    expect(text, 'the exists() guard comes first').toContain('!exists(callerProfilePath()) ||');
   });
 
   test('`readers` is in neither client allowlist — not to write, not to create', () => {
@@ -137,7 +146,7 @@ test.describe('the rules keep the shape the emulator test depends on', () => {
   test('the run subcollection did not move with it, and the invitations are shut', () => {
     const text = rules();
     expect(text).toMatch(
-      /match \/projects\/\{projectId\}\/runs\/\{runId\}[\s\S]*?allow read: if isAuthenticated\(\) && resource != null && resource\.data\.userId == request\.auth\.uid;/,
+      /match \/projects\/\{projectId\}\/runs\/\{runId\}[\s\S]*?allow read: if isAuthenticated\(\) && resource != null && resource\.data\.userId == request\.auth\.uid &&\s*accountActive\(\);/,
     );
     expect(text).toMatch(
       /match \/projects\/\{projectId\}\/invitations\/\{invitationId\} \{\s*allow read, write: if false;/,
@@ -162,9 +171,15 @@ test.describe('a widened READ rule is recorded before it is shipped', () => {
   const OLD_READ = 'allow read: if isAuthenticated() && resource != null && resource.data.userId == request.auth.uid;';
   const NEW_READ =
     'allow read: if isAuthenticated() && resource != null && (resource.data.userId == request.auth.uid || invitedReader(resource.data));';
+  // Roadmap 3.0.12 narrows the owner half: a suspended account loses the read
+  // before its ID token expires. The reader half narrows inside invitedReader(),
+  // which the collapsed rule does not show. Narrowing only — nothing in the app
+  // depends on it, so it may sit pending until Sonny deploys it.
+  const ACCOUNT_ACTIVE_READ =
+    'allow read: if isAuthenticated() && resource != null && ((resource.data.userId == request.auth.uid && accountActive()) || invitedReader(resource.data));';
 
   test('the read rule is read out of the file, comments and line breaks and all', () => {
-    expect(parseProjectReadRule(rules()), 'the working copy widened it').toBe(NEW_READ);
+    expect(parseProjectReadRule(rules()), 'the working copy: 5.4 widened it, 3.0.12 narrowed the owner half').toBe(ACCOUNT_ACTIVE_READ);
     // Not the run subcollection's read, which sits below it in the same file.
     expect(parseProjectReadRule(rules())).not.toContain('runs');
   });
@@ -189,10 +204,12 @@ test.describe('a widened READ rule is recorded before it is shipped', () => {
    */
   test('the deployment record says the widened read rule is what production serves', () => {
     const record = JSON.parse(read(RULES_DEPLOYMENT_RECORD)) as RulesDeploymentRecord;
-    expect(record.deployed.projectDocumentReadRule, 'what production serves').toBe(NEW_READ);
-    expect(record.deployed.projectDocumentReadRule, 'and it is the working copy, not a third text').toBe(
-      parseProjectReadRule(rules()),
-    );
+    // Until the 3.0.12 deploy the working copy's read rule is the pending one;
+    // afterwards `deployed` carries it and this line reads ACCOUNT_ACTIVE_READ.
+    const liveOrPending = record.pending?.projectDocumentReadRule ?? record.deployed.projectDocumentReadRule;
+    expect(liveOrPending, 'and it is the working copy, not a third text').toBe(parseProjectReadRule(rules()));
+    expect([NEW_READ, ACCOUNT_ACTIVE_READ], 'production serves 5.4 or its 3.0.12 narrowing')
+      .toContain(record.deployed.projectDocumentReadRule);
 
     // Turned over once more on 18.09.2026, in the evening. The version above
     // this also demanded `record.pending` be absent and the deployed hash be
@@ -213,11 +230,15 @@ test.describe('a widened READ rule is recorded before it is shipped', () => {
     const current = sha256(rules());
     const accountedFor = record.pending?.sha256OfLfNormalisedText ?? record.deployed.sha256OfLfNormalisedText;
     expect(current, 'the file is neither the deployed text nor the recorded pending one').toBe(accountedFor);
+    // 3.0.12 is the one pending change that does touch the read rule, and only
+    // to narrow it; the pending block must say so in the same breath.
     if (record.pending) {
-      expect(record.pending.projectDocumentReadRule, 'a pending change must not touch the read rule').toBe(NEW_READ);
+      expect(record.pending.projectDocumentReadRule, 'the pending read rule is the 3.0.12 narrowing').toBe(ACCOUNT_ACTIVE_READ);
     }
     const verdict = checkRulesDeployment(rules(), record, sha256);
-    expect(verdict.readRuleChanged, 'the read rule production serves is not the one in the file').toBe(false);
+    expect(verdict.readRuleChanged, 'a changed read rule is only allowed while it is recorded as pending').toBe(
+      record.pending !== undefined && record.deployed.projectDocumentReadRule !== ACCOUNT_ACTIVE_READ,
+    );
     expect(verdict.problems, verdict.problems.join('\n')).toEqual([]);
     expect(verdict.ok).toBe(true);
   });

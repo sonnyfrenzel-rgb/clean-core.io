@@ -1171,7 +1171,10 @@ export async function adminRevokeUser(adminUid: string, targetUid: string) {
   // `resource.data.userId == request.auth.uid` and nothing else. So these two
   // lines turn an unbounded hole into an hour-long one; closing it needs a rule
   // that reads the account's state, and therefore a manual rules deploy (QA
-  // review of 4d6f35c59546, 2a9864f3b52e — scheduled, not done here).
+  // review of 4d6f35c59546, 2a9864f3b52e). Roadmap 3.0.12 adds that rule —
+  // `accountActive()` in firestore.rules, tested by
+  // tests/firestore-rules-suspended.spec.ts — and the hour-long hole closes only
+  // once it is deployed (`docs/registers/rules-deployment.json` says whether).
   const auth = await getAdminAuth();
   await auth.revokeRefreshTokens(targetUid);
   await auth.updateUser(targetUid, { disabled: true });

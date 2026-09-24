@@ -39,5 +39,14 @@
       "worklist"
     ],
     "projectDocumentReadRule": "allow read: if isAuthenticated() && resource != null && (resource.data.userId == request.auth.uid || invitedReader(resource.data));"
+  },
+  "pending": {
+    "sha256OfLfNormalisedText": "32e1970bb02e983d3859b1becd4bccf96dc3ada795228d5ee2846855836ba07b",
+    "recordedAt": "2026-09-24",
+    "recordedFor": "Roadmap 3.0.12 (QA 2a9864f3b52e, f71a57e2d326): accountActive() liest das eigene Profil; ein gesperrtes, geloeschtes oder deaktiviertes Konto verliert Projekt-, Run- und eigene Schreibzugriffe sofort, auch mit noch gueltigem ID-Token. Verengt nur - die App haengt nicht davon ab; Deploy durch Sonny vor dem App-Release.",
+    "addsToClient": [],
+    "removesFromClient": [],
+    "projectDocumentReadRule": "allow read: if isAuthenticated() && resource != null && ((resource.data.userId == request.auth.uid && accountActive()) || invitedReader(resource.data));",
+    "note": "Bis zum Deploy sind die alten Regeln live. `npm run deploy:rules` rollt aus und loescht diesen Block."
   }
 }

@@ -59,7 +59,50 @@ service cloud.firestore {
     function invitedReader(data) {
       return isAuthenticated() &&
              data.get('readers', []) is list &&
-             request.auth.uid in data.get('readers', []);
+             request.auth.uid in data.get('readers', []) &&
+             accountActive();
+    }
+
+    // Roadmap 3.0.12 — a suspended account loses its data at the rules, at once
+    // (QA findings 2a9864f3b52e, f71a57e2d326).
+    //
+    // `adminRevokeUser` (lib/firebase-admin.ts) writes `status: 'suspended'`,
+    // revokes the refresh tokens and disables the sign-in. That stops the *next*
+    // token; the one already in the browser stays valid for up to an hour, and
+    // until this helper every owner grant below asked only for the uid. So the
+    // account's own profile is consulted — the same three signals
+    // `assertAccountActive` refuses on the server: `status` 'suspended' or
+    // 'deleted', or `disabled == true`.
+    //
+    // Cost: one document, the caller's own profile. `exists()` and `get()` on the
+    // same path are one access for the request (the rules engine caches it), so
+    // this adds one of the ten permitted document accesses, however often the
+    // helper is called in one rule. The path does not depend on `resource`, so a
+    // list query pays it once, not once per document.
+    //
+    // `!exists(...)` first, deliberately. `get()` on a missing document is an
+    // evaluation error, which is what made this file drop getUserData() and the
+    // admin fallback (see above), and a profile legitimately does not exist yet
+    // while a new account is being created. A missing profile is therefore not
+    // treated as suspended here — suspension always writes the profile, so the
+    // state this helper exists for is never a missing document. The server gate
+    // (`assertAccountActive`) still refuses a missing profile outright.
+    //
+    // It is applied to the caller's own grants only — owner and invited reader.
+    // The admin branches are left to the custom claim, which is revoked on its
+    // own path (`setAdminClaim`).
+    function callerProfilePath() {
+      return /databases/$(database)/documents/users/$(request.auth.uid);
+    }
+
+    function accountActive() {
+      return isAuthenticated() && (
+        !exists(callerProfilePath()) ||
+        (
+          !(get(callerProfilePath()).data.get('status', '') in ['suspended', 'deleted']) &&
+          get(callerProfilePath()).data.get('disabled', false) != true
+        )
+      );
     }
 
     function userClientCreateKeys() {
@@ -101,6 +144,11 @@ service cloud.firestore {
     }
 
     match /users/{userId} {
+      // Roadmap 3.0.12: the own-profile *read* deliberately stays open to a
+      // suspended account. The profile is the only thing that tells the browser
+      // it is suspended — the dashboard shows "This account is suspended" off
+      // `status` (app/(app)/dashboard/page.tsx) — and it holds nothing the
+      // account does not already know about itself. Writing it is closed below.
       allow read: if isAuthenticated() && (userId == request.auth.uid || isAdmin());
       allow create: if isAuthenticated() && (userId == request.auth.uid || isAdmin()) &&
                     (
@@ -124,6 +172,7 @@ service cloud.firestore {
                       isAdmin() ||
                       (
                         userId == request.auth.uid &&
+                        accountActive() &&
                         request.resource.data.diff(resource.data).changedKeys().hasOnly(userClientUpdateKeys()) &&
                         request.resource.data.diff(resource.data).addedKeys().hasOnly(userClientUpdateKeys()) &&
                         request.resource.data.diff(resource.data).removedKeys().hasOnly([])
@@ -186,12 +235,13 @@ service cloud.firestore {
       // away, and the later decision wins. An operator who wants to read a
       // project has the same route as anyone else: be invited.
       allow read: if isAuthenticated() && resource != null &&
-                  (resource.data.userId == request.auth.uid || invitedReader(resource.data));
+                  ((resource.data.userId == request.auth.uid && accountActive()) || invitedReader(resource.data));
       // Quota enforcement and field validation are server-side
       allow create: if isAuthenticated() && 
                     request.resource.data.keys().hasAll(['name', 'status', 'userId', 'createdAt']) &&
                     request.resource.data.keys().hasOnly(['name', 'status', 'userId', 'createdAt', 'legacyCode', 'fromExample']) &&
                     request.resource.data.userId == request.auth.uid &&
+                    accountActive() &&
                     request.resource.data.status in ['uploaded', 'created'] &&
                     request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() < 255;
       // F-01: Owner may update their project, but userId and createdAt are immutable.
@@ -202,6 +252,7 @@ service cloud.firestore {
       allow update: if isAuthenticated() && (
                     (
                       resource.data.userId == request.auth.uid &&
+                      accountActive() &&
                       // Strict allowlist of client-writable draft & interactive fields (Finding P1)
                       //
                       // Roadmap 0.7: six fields left this list and are written
@@ -263,7 +314,8 @@ service cloud.firestore {
       // which re-reads `readers` off the project document on every request —
       // same single source of truth, and it stops answering the moment the
       // owner revokes.
-      allow read: if isAuthenticated() && resource != null && resource.data.userId == request.auth.uid;
+      allow read: if isAuthenticated() && resource != null && resource.data.userId == request.auth.uid &&
+                  accountActive();
       allow write: if false;
     }
 
@@ -295,9 +347,9 @@ service cloud.firestore {
     match /support_tickets/{ticketId} {
       allow read: if isAuthenticated() && (
         isAdmin() ||
-        (resource != null && resource.data.userId == request.auth.uid)
+        (resource != null && resource.data.userId == request.auth.uid && accountActive())
       );
-      allow create: if isAuthenticated() &&
+      allow create: if isAuthenticated() && accountActive() &&
                     isValidSupportTicket(request.resource.data);
       allow update: if isAdmin();
       allow delete: if isAdmin();
@@ -314,17 +366,18 @@ service cloud.firestore {
     match /files/{fileId} {
       allow read: if isAuthenticated() && (
         isAdmin() ||
-        (resource != null && resource.data.userId == request.auth.uid)
+        (resource != null && resource.data.userId == request.auth.uid && accountActive())
       );
       allow create: if isAuthenticated() && 
+                    accountActive() &&
                     request.resource.data.keys().hasAll(['name', 'content', 'userId', 'createdAt']) &&
                     isValidFileEntry(request.resource.data, false);
       allow update: if isAuthenticated() &&
-                    (('userId' in resource.data && resource.data.userId == request.auth.uid) || isAdmin()) &&
+                    (('userId' in resource.data && resource.data.userId == request.auth.uid && accountActive()) || isAdmin()) &&
                     isValidFileEntry(request.resource.data, true) &&
                     (!('userId' in request.resource.data) || request.resource.data.userId == resource.data.userId) &&
                     (!('createdAt' in request.resource.data) || request.resource.data.createdAt == resource.data.createdAt);
-      allow delete: if isAuthenticated() && (('userId' in resource.data && resource.data.userId == request.auth.uid) || isAdmin());
+      allow delete: if isAuthenticated() && (('userId' in resource.data && resource.data.userId == request.auth.uid && accountActive()) || isAdmin());
     }
 
     // Validate ABAPExample entity
@@ -338,13 +391,14 @@ service cloud.firestore {
     match /abap_examples/{exampleId} {
       allow read: if isAuthenticated() && (
         isAdmin() ||
-        (resource != null && resource.data.userId == request.auth.uid)
+        (resource != null && resource.data.userId == request.auth.uid && accountActive())
       );
       allow create: if isAuthenticated() && 
+                    accountActive() &&
                     request.resource.data.keys().hasAll(['name', 'code', 'userId', 'createdAt']) &&
                     isValidABAPExample(request.resource.data, false);
       allow update: if isAuthenticated() &&
-                    (('userId' in resource.data && resource.data.userId == request.auth.uid) || isAdmin()) &&
+                    (('userId' in resource.data && resource.data.userId == request.auth.uid && accountActive()) || isAdmin()) &&
                     isValidABAPExample(request.resource.data, true) &&
                     (!('userId' in request.resource.data) || request.resource.data.userId == resource.data.userId) &&
                     (!('createdAt' in request.resource.data) || request.resource.data.createdAt == resource.data.createdAt);
@@ -355,19 +409,19 @@ service cloud.firestore {
       // the line on 21.09.2026). Owner or admin, the same condition the update
       // rule uses and the same one /files carries.
       allow delete: if isAuthenticated() &&
-                    (('userId' in resource.data && resource.data.userId == request.auth.uid) || isAdmin());
+                    (('userId' in resource.data && resource.data.userId == request.auth.uid && accountActive()) || isAdmin());
     }
 
     match /registration_requests/{requestId} {
-      allow read: if isAuthenticated() && (requestId == request.auth.uid || isAdmin());
-      allow create: if isAuthenticated() && requestId == request.auth.uid;
+      allow read: if isAuthenticated() && ((requestId == request.auth.uid && accountActive()) || isAdmin());
+      allow create: if isAuthenticated() && requestId == request.auth.uid && accountActive();
       allow update: if isAdmin();
       allow delete: if isAdmin();
     }
 
     match /tenant_access_requests/{requestId} {
-      allow read: if isAuthenticated() && (requestId == request.auth.uid || isAdmin());
-      allow create: if (isAuthenticated() && requestId == request.auth.uid) || isAdmin();
+      allow read: if isAuthenticated() && ((requestId == request.auth.uid && accountActive()) || isAdmin());
+      allow create: if (isAuthenticated() && requestId == request.auth.uid && accountActive()) || isAdmin();
       allow update: if isAdmin();
       allow delete: if isAdmin();
     }
