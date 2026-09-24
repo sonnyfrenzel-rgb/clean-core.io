@@ -277,11 +277,23 @@ preservation register (roadmap step 1.1) inherits this entry.
 
 ### 7.2 Authorized negative test of the deployed runner
 
-Not yet written. Roadmap 8.9 requires an authorized negative test against the deployed runner profile
-(`tests/runner-isolation.spec.ts`), and it is one of the reopening conditions in §7.1. It is still open:
-it has to be written and run by the owner against the deployed services, from a machine that can reach
-internal-ingress services of the project (`--ingress=internal` refuses traffic from outside the VPC), with
-an ID token of an account holding `run.invoker`. Until it has passed, the isolation is configured but not
+Roadmap 8.9 requires an authorized negative test against the deployed runner profile, and it is one of the
+reopening conditions in §7.1. The runners accept traffic only from the app, so the test travels the way
+generated code travels: `POST /api/admin/runner-selftest` (administrators, fresh step-up) makes the app send
+a fixed probe suite (`lib/runner-selftest.ts`) to the mock runner's sandbox and ask both runners for a fixed
+network probe from their server process. Every probe passes only when the access fails: no secret-named
+environment variable, no file outside the sandbox directory, no public host, no private address.
+
+How the owner runs it, after the runners are deployed and `RUNNER_URL` is set:
+
+1. Sign in to the deployed app as an administrator and complete the step-up.
+2. Copy the ID token of that session (browser developer tools, `Authorization` header of any API call).
+3. `RUNNER_SELFTEST_APP_URL=<app origin> RUNNER_SELFTEST_ADMIN_TOKEN=<token> npx playwright test tests/runner-isolation.spec.ts`
+
+Checked separately with gcloud, because a probe cannot see it: the runner service account holds no role in
+the project (`gcloud projects get-iam-policy … --filter=bindings.members:clean-core-runner@…` returns
+nothing). Every Cloud Run container reaches its own metadata server; that account having no roles is what
+makes the token it hands out worthless. Until both checks have passed, the isolation is configured but not
 proven on the deployed profile.
 
 ---
