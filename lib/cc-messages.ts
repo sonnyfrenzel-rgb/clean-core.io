@@ -51,6 +51,13 @@ export const CC_MESSAGES = {
   'checks.none': 'No open checks.',
   'checks.goTo': 'Go to',
 
+  // Loading, folding and table limits — block D, step D.5c (DESIGN.md §2.8, §2.11).
+  'disclosure.show': 'Show',
+  'disclosure.hide': 'Hide',
+  'table.showAll': 'Show all',
+  'table.showFirst': 'Show the first',
+  'date.none': 'no date recorded',
+
   // A state said in words, for a mark that is only colour and shape (§1.1).
   'state.error': 'Error',
   'state.warning': 'Warning',
@@ -112,4 +119,17 @@ export function countLabel(shown: number, total: number, noun: string): string {
   return shown === total
     ? `${total} ${noun}`
     : `${shown} ${CC_MESSAGES['filter.of']} ${total} ${noun}`;
+}
+
+/**
+ * "Show all 42" and "Show the first 5" — the button under a limited `CcTable`
+ * (§2.11). A function for the same reason as `countLabel`: the number goes
+ * into the sentence, and where it goes is the catalogue's business.
+ */
+export function showAllLabel(total: number): string {
+  return `${CC_MESSAGES['table.showAll']} ${total}`;
+}
+
+export function showFirstLabel(limit: number): string {
+  return `${CC_MESSAGES['table.showFirst']} ${limit}`;
 }

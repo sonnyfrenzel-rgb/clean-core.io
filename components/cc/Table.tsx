@@ -1,7 +1,9 @@
 'use client';
 
-import React from 'react';
+import React, { useId, useState } from 'react';
 import { cn } from '@/lib/utils';
+import { showAllLabel, showFirstLabel } from '@/lib/cc-messages';
+import CcButton from './Button';
 
 /**
  * The table of `DESIGN.md` §2.4 — and §2.9's "cards instead of columns" on S.
@@ -27,6 +29,16 @@ import { cn } from '@/lib/utils';
  * a clickable `<tr>` cannot be reached from a keyboard and is invisible to a
  * screen reader. The caller puts a real link in a cell and may pass `onOpen` as
  * well, for the mouse.
+ *
+ * `limit` is §2.11's "Tables show the first five rows and 'Show all 42'"
+ * (block D, step D.5c) — built here once, because it had been built by hand
+ * twice (`ItAnswers`, `ManagementOverview`) with two different behaviours.
+ * The rows after the limit stay in the document and are only not displayed:
+ * nothing is lost, and a printed table is always the whole table (§7). The
+ * button says how many there are, is `aria-expanded` and controls the body,
+ * and turns into "Show the first 5" once everything is shown. Below the
+ * limit plus one it is not there at all — "Show all 6" to reveal one row is a
+ * click that costs more than the row.
  */
 export interface CcTableColumn {
   key: string;
@@ -58,15 +70,21 @@ export interface CcTableProps {
   caption: string;
   columns: readonly CcTableColumn[];
   rows: readonly CcTableRowSpec[];
+  /** Show only the first `limit` rows and a "Show all N" button (§2.11). */
+  limit?: number;
 }
 
 const CELL = 'block px-3 py-2 align-top text-[13px] font-medium text-cc-ink sm:table-cell';
 
-export default function CcTable({ caption, columns, rows }: CcTableProps) {
+export default function CcTable({ caption, columns, rows, limit }: CcTableProps) {
   const [first, ...rest] = columns;
+  const bodyId = useId();
+  const [showAll, setShowAll] = useState(false);
+  const limited = limit !== undefined && limit > 0 && rows.length > limit;
+  const beyond = (index: number) => limited && !showAll && index >= limit;
 
   return (
-    <div className="w-full overflow-x-auto">
+    <div className="w-full overflow-x-auto" data-cc-table-limit={limited ? (showAll ? 'all' : limit) : undefined}>
       <table data-cc-table="" className="w-full border-collapse text-left">
         <caption className="sr-only">{caption}</caption>
         <thead className="hidden sm:table-header-group">
@@ -77,7 +95,7 @@ export default function CcTable({ caption, columns, rows }: CcTableProps) {
                 scope="col"
                 style={column.width ? { width: column.width } : undefined}
                 className={cn(
-                  'px-3 pb-1.5 text-[11px] font-semibold tracking-[0.08em] text-cc-ink-muted uppercase',
+                  'px-3 pb-2 text-[11px] font-semibold tracking-[0.08em] text-cc-ink-muted uppercase',
                   column.numeric || column.action ? 'text-right' : 'text-left',
                 )}
               >
@@ -86,14 +104,15 @@ export default function CcTable({ caption, columns, rows }: CcTableProps) {
             ))}
           </tr>
         </thead>
-        <tbody>
-          {rows.map((row) => (
+        <tbody id={bodyId}>
+          {rows.map((row, index) => (
             <React.Fragment key={row.key}>
               <tr
                 data-cc-table-row={row.key}
                 onClick={row.onOpen}
                 className={cn(
-                  'block border-b border-cc-line sm:table-row',
+                  'border-b border-cc-line',
+                  beyond(index) ? 'hidden print:table-row' : 'block sm:table-row',
                   row.selected ? 'bg-cc-surface-muted' : 'bg-cc-surface',
                   row.onOpen ? 'cursor-pointer hover:bg-cc-surface-muted' : null,
                 )}
@@ -131,8 +150,11 @@ export default function CcTable({ caption, columns, rows }: CcTableProps) {
                 )}
               </tr>
               {row.note ? (
-                <tr data-cc-table-note={row.key} className="block border-b border-cc-line sm:table-row">
-                  <td className="block px-3 pt-0 pb-2.5 sm:table-cell" colSpan={columns.length}>
+                <tr
+                  data-cc-table-note={row.key}
+                  className={cn('border-b border-cc-line', beyond(index) ? 'hidden print:table-row' : 'block sm:table-row')}
+                >
+                  <td className="block px-3 pt-0 pb-3 sm:table-cell" colSpan={columns.length}>
                     {row.note}
                   </td>
                 </tr>
@@ -141,6 +163,19 @@ export default function CcTable({ caption, columns, rows }: CcTableProps) {
           ))}
         </tbody>
       </table>
+      {limited ? (
+        <div data-cc-table-show-all="" className="cc-no-print pt-2">
+          <CcButton
+            variant="ghost"
+            density="compact"
+            aria-expanded={showAll}
+            aria-controls={bodyId}
+            onClick={() => setShowAll((v) => !v)}
+          >
+            {showAll ? showFirstLabel(limit ?? rows.length) : showAllLabel(rows.length)}
+          </CcButton>
+        </div>
+      ) : null}
     </div>
   );
 }

@@ -34,6 +34,7 @@ import { CcRulePropertyTag, CcTag } from '@/components/cc/Tag';
 import CcToast from '@/components/cc/Toast';
 import CcWhyPopover from '@/components/cc/WhyPopover';
 import FormControlsGallery from './FormControlsGallery';
+import LoadingDisclosureGallery from './LoadingDisclosureGallery';
 
 /**
  * Every component of `DESIGN.md`, on one page, behind the admin gate.
@@ -638,6 +639,11 @@ export default function DesignSystemGallery() {
             ]}
           />
         </CcCard>
+      </Section>
+
+      {/* Block D, step D.5c — skeleton, busy button, disclosure, tabs, table limit. */}
+      <Section id="ds-loading" title="Loading, folding, tabs and the table limit">
+        <LoadingDisclosureGallery />
       </Section>
 
       <Section id="ds-code" title="Code surface">

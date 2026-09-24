@@ -61,7 +61,7 @@ export interface CcFieldProps {
 }
 
 const CONTROL_BASE =
-  'w-full rounded-cc-row border bg-cc-surface px-2.5 py-1.5 text-[13px] font-medium text-cc-ink placeholder:text-cc-ink-muted min-h-[32px]';
+  'w-full rounded-cc-row border bg-cc-surface px-3 py-1 text-[13px] font-medium text-cc-ink placeholder:text-cc-ink-muted min-h-[32px]';
 
 export default function CcField({
   label,
@@ -113,7 +113,7 @@ export const CC_CONTROL_HEIGHT: Record<CcDensity, string> = {
  */
 export function CcRequiredMark() {
   return (
-    <span className="ml-0.5 text-cc-error" aria-hidden={true}>
+    <span className="ml-1 text-cc-error" aria-hidden={true}>
       *
     </span>
   );
@@ -154,7 +154,7 @@ export function CcFieldMessage({
     <span
       id={id}
       data-cc-value-state={valueState}
-      className={cn('flex items-start gap-1.5 text-[12px] font-medium leading-snug', state.text)}
+      className={cn('flex items-start gap-1 text-[12px] font-medium leading-snug', state.text)}
     >
       <Icon size={14} aria-hidden={true} />
       <span>{message}</span>

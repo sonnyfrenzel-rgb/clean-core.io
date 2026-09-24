@@ -10,10 +10,6 @@
       "step": "D.5a",
       "R18": 5
     },
-    "components/cc/Button.tsx": {
-      "step": "D.5a",
-      "R18": 1
-    },
     "components/cc/Card.tsx": {
       "step": "D.5a",
       "R18": 2
@@ -23,10 +19,6 @@
       "R18": 2
     },
     "components/cc/EmptyState.tsx": {
-      "step": "D.5a",
-      "R18": 4
-    },
-    "components/cc/Field.tsx": {
       "step": "D.5a",
       "R18": 4
     },
@@ -65,8 +57,7 @@
     },
     "components/cc/Table.tsx": {
       "step": "D.5a",
-      "R9": 1,
-      "R18": 2
+      "R9": 1
     },
     "components/cc/Tag.tsx": {
       "step": "D.5a",

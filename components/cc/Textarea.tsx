@@ -73,7 +73,7 @@ export default function CcTextarea({
           onBlur={onBlur}
           className={cn(
             control.className,
-            'resize-y leading-normal disabled:cursor-not-allowed disabled:bg-cc-surface-muted disabled:text-cc-ink-muted read-only:bg-cc-surface-muted',
+            'resize-y py-2 leading-normal disabled:cursor-not-allowed disabled:bg-cc-surface-muted disabled:text-cc-ink-muted read-only:bg-cc-surface-muted',
           )}
         />
       )}
