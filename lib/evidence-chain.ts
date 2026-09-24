@@ -33,7 +33,7 @@
  * | Requirement | *not determined* | No business requirement is recorded in a signed run at all. The rules `lib/it-findings.ts` shows are derived when the IT view is opened, and roadmap 8.1 measured 0 of 42 findings whose line a derived rule covers. What the run *does* bind is the source artefact, by digest — which is the thing the requirement would be about, not the requirement. |
  * | Decision | *attested* | The chosen target architecture and the sign-off are written by the account holder and live in `07-user-attested.md`. The signed files carry the engine's recommendation, which is not a decision. |
  * | Receipt | *signed*, when the run's `modelParticipation` is `narrative-attested` | The model receipt is issued by the server's proxy over the account, the response digest and the time — something outside the account checked it, so `proven`. Its scope is the narrative's origin and nothing else, and the link says so rather than letting one receipt stand in for the delivery. |
- * | Delivery artefact | *not determined* | The generated code sits on the project document and is writable from the browser (`firestore.rules`), so it is not in the signed half of any pack and this pack carries no copy of it. Roadmap 8.7 makes a repair draft server-side and immutable; until then there is nothing to bind. |
+ * | Delivery artefact | *not determined* | The generated code sits on the project document and is writable from the browser (`firestore.rules`), so it is not in the signed half of any pack and this pack carries no copy of it. Roadmap 8.7 (24.09.2026) made repair drafts server-side and immutable, but the adopted code still lands on the project document and the pack binds no draft — so still nothing to bind. |
  *
  * So a pack sealed today says, in the string its signature covers, that one of
  * four links is carried by the signature, one by a self-declaration and two by
@@ -226,8 +226,9 @@ function deliveryStep(): ChainStep {
     reason:
       'This pack carries no delivery artefact. The generated code and the transformation output live on the project ' +
       'document, which the owner writes from the browser, so they are not in the signed half of any pack and are not ' +
-      'copied into one. Roadmap 8.7 records a repair draft server-side with a parent revision and a code hash; a ' +
-      'delivery artefact can be bound to this chain once it exists.',
+      'copied into one. Since roadmap 8.7 a repair draft is recorded server-side, immutable, with its parent revision ' +
+      'and a code hash, and the test receipt names the draft that ran; but the adopted code still lands on the ' +
+      'browser-writable project document, and this pack binds neither the draft nor the adopted stand.',
     scope:
       'Nothing here says an artefact was produced, ran, or matches the decision. The link is open, and naming it open ' +
       'is the only claim being made.',
