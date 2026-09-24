@@ -43,7 +43,7 @@ export const runtime = 'nodejs';
 const MAX_SOURCE_BYTES = 400_000;
 
 /** The field the binding is written to. Server-only: never in the rules allowlist. */
-export const GENERATION_BINDING_FIELD = 'generationBinding';
+const GENERATION_BINDING_FIELD = 'generationBinding';
 
 function manifestOfRun(run: Record<string, unknown> | null): InputManifest | null {
   const manifest = run?.inputManifest;
