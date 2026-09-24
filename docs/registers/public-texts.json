@@ -1613,17 +1613,17 @@
           "what": "\"sign-in, analysis, all seven stages, exports\" — Stufen als Produkt."
         }
       ],
-      "decision": "archive",
-      "archiveTarget": "docs/archiv/emails/",
-      "reason": "Versandte Mail; zusammen mit der .html-Schwester archivieren und die Kampagne in scripts/send-community-mail.ts austragen (liest docs/emails/<template>.md/.html).",
-      "effort": "S",
+      "decision": "delete",
+      "reason": "Entscheidung Sonny 24.09.2026: versandte Mail geloescht, zusammen mit der .html-Schwester (Geschichte bleibt in Git). scripts/send-community-mail.ts war eine feste Kampagnen-Registry fuer genau diese zwei Mails und ist mit ihnen entfernt.",
+      "effort": "XS",
       "guard": {
         "removed": "check",
         "terms": "check"
       },
       "measured": {
         "lines": 152
-      }
+      },
+      "executed": "2026-09-24"
     },
     {
       "path": "docs/emails/community-update-v2.3.md",
@@ -1641,17 +1641,17 @@
           "what": "Guard (a) seven-stages-as-product: nennt, was 3.0 entfernt"
         }
       ],
-      "decision": "archive",
-      "archiveTarget": "docs/archiv/emails/",
-      "reason": "Versandte Mail; wie oben.",
-      "effort": "S",
+      "decision": "delete",
+      "reason": "Entscheidung Sonny 24.09.2026: versandte Mail geloescht, zusammen mit der .html-Schwester (Geschichte bleibt in Git). scripts/send-community-mail.ts war eine feste Kampagnen-Registry fuer genau diese zwei Mails und ist mit ihnen entfernt.",
+      "effort": "XS",
       "guard": {
         "removed": "check",
         "terms": "check"
       },
       "measured": {
         "lines": 138
-      }
+      },
+      "executed": "2026-09-24"
     },
     {
       "path": "docs/qa/reviewer-brief.md",
@@ -3260,6 +3260,17 @@
       "status": "vollzogen",
       "files": [
         "abap-test-files/"
+      ]
+    },
+    {
+      "id": "delete-sent-mails",
+      "date": "2026-09-24",
+      "by": "Sonny",
+      "decision": "docs/emails/* (md und html) loeschen. scripts/send-community-mail.ts hatte ohne diese Mails keinen Zweck (feste Kampagnen-Registry, liest nur docs/emails/<template>.md/.html) und ist entfernt, samt seiner zwei Tests in tests/email-delivery-guard.spec.ts und des Viewport-Tests der Mail in tests/email-responsive.spec.ts.",
+      "status": "vollzogen",
+      "files": [
+        "docs/emails/",
+        "scripts/send-community-mail.ts"
       ]
     }
   ]

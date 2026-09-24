@@ -1,8 +1,8 @@
 /**
  * Sends the activation survey invitation.
  *
- * Built on the same rails as `send-community-mail.ts`, and for the same reason:
- * a bulk send is the one operation here with no undo. Suppressions win, CI
+ * Built on the send outbox in `lib/survey/outbox.ts`, because a bulk send is
+ * the one operation here with no undo. Suppressions win, CI
  * accounts never receive anything, and a recipient who already has a send record
  * for this campaign is skipped — so a re-run after a crash resumes rather than
  * mails everyone twice.

@@ -327,7 +327,10 @@ test.describe('a retry of a bulk send cannot become a second copy', () => {
     expect(a).not.toContain('example.com');
   });
 
-  test('both bulk senders send the key with every attempt', () => {
+  test('the bulk sender sends the key with every attempt', () => {
+    // scripts/send-community-mail.ts, the second bulk sender, was removed with
+    // its two sent mails on 24.09.2026 (decision Sonny); the survey sender is
+    // the one left.
     const survey = read('scripts/send-survey.ts');
     // The header sits inside sendWithRetry, so it is on the retry as well as the
     // first attempt — not at the call site, which runs once.
@@ -335,25 +338,6 @@ test.describe('a retry of a bulk send cannot become a second copy', () => {
     expect(retry).toContain("'Idempotency-Key': idempotencyKey");
     expect(retry).toMatch(/for \(let attempt = 1; attempt <= ATTEMPTS; attempt\+\+\)/);
     expect(survey).toContain('sendIdempotencyKey(SURVEY_CAMPAIGN, r.email)');
-
-    const community = read('scripts/send-community-mail.ts');
-    expect(community).toContain("'Idempotency-Key': sendIdempotencyKey(CAMPAIGN, r.email)");
-  });
-
-  test('the community send claims through the outbox before the provider and settles through it after', () => {
-    const src = read('scripts/send-community-mail.ts');
-    const loop = src.slice(src.indexOf('for (const r of batch)'), src.indexOf("console.log(`Done."));
-    const claim = loop.indexOf('await claimSend(db, CAMPAIGN, r)');
-    const provider = loop.indexOf('await fetch(');
-    const done = loop.indexOf('await completeSend(db, CAMPAIGN, r.uid, id)');
-    const failed = loop.indexOf('await failSend(db, CAMPAIGN, r.uid, detail)');
-    for (const [name, at] of Object.entries({ claim, provider, done, failed })) expect(at, `${name} is not wired`).toBeGreaterThan(-1);
-    expect(claim, 'the provider is asked before the claim').toBeLessThan(provider);
-    expect(provider).toBeLessThan(done);
-    expect(loop).toMatch(/if \(!\(await claimSend\(db, CAMPAIGN, r\)\)\) \{[\s\S]*?continue;/);
-    // No write to email_sends behind the outbox's back, and no post-send record.
-    expect(src, 'a direct write to email_sends is back').not.toMatch(/collection\('email_sends'\)\s*\n?\s*\.doc\(/);
-    expect(src).not.toMatch(/sentAt: FieldValue\.serverTimestamp\(\)/);
   });
 });
 

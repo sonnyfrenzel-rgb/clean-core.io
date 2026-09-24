@@ -73,20 +73,3 @@ for (const route of ROUTES) {
     }
   }
 }
-
-test('the community mailer itself carries the viewport meta', async ({ page }) => {
-  const html = fs
-    .readFileSync('docs/emails/community-update-v2.3.html', 'utf8')
-    .replace(/{{\w+}}/g, 'sample');
-  await page.setViewportSize({ width: 320, height: 900 });
-  await page.setContent(html, { waitUntil: 'load' });
-
-  await expect(page.locator('meta[name="viewport"]')).toHaveAttribute(
-    'content',
-    /width=device-width/,
-  );
-  const overflow = await page.evaluate(
-    () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
-  );
-  expect(overflow).toBeLessThanOrEqual(0);
-});
