@@ -610,8 +610,18 @@ function readSelect(text: string, at: Anchor, sink: Sink): void {
   const fromMatch = /\b(FROM\s+)([\s\S]+?)(?:\b(?:INTO|WHERE|ORDER|GROUP|UP|HAVING|UNION|FOR)\b|$)/i.exec(code);
   if (!fromMatch) return;
   const areaStart = fromMatch.index + fromMatch[1].length;
-  const tableArea = text.slice(areaStart, areaStart + fromMatch[2].length).trim();
-  const parts = tableArea.split(/\b(?:INNER\s+|LEFT\s+(?:OUTER\s+)?|RIGHT\s+(?:OUTER\s+)?|FULL\s+(?:OUTER\s+)?|CROSS\s+)?JOIN\b/i);
+  const areaEnd = areaStart + fromMatch[2].length;
+  // The JOINs are found on the code as well, and the parts cut from the text
+  // at the same offsets: `ON … = 'A JOIN KNA1 B'` is a literal, not a join
+  // (QA full review of 81810c8, ff8dcda705e4).
+  const join = /\b(?:INNER\s+|LEFT\s+(?:OUTER\s+)?|RIGHT\s+(?:OUTER\s+)?|FULL\s+(?:OUTER\s+)?|CROSS\s+)?JOIN\b/gi;
+  const parts: string[] = [];
+  let cut = areaStart;
+  for (const m of code.slice(areaStart, areaEnd).matchAll(join)) {
+    parts.push(text.slice(cut, areaStart + m.index));
+    cut = areaStart + m.index + m[0].length;
+  }
+  parts.push(text.slice(cut, areaEnd));
   for (const part of parts) {
     const trimmed = part.trim();
     if (trimmed.startsWith('(')) {

@@ -322,6 +322,25 @@ test.describe('the readers that still kept half the rule (b88c77b4b5d1)', () => 
       .toEqual(['VBAK']);
   });
 
+  test('a JOIN inside a literal of the ON condition names no table (ff8dcda705e4)', () => {
+    // The source list was found on the code, but split into its joins on the
+    // text, so the literal below came out as a third table.
+    const code = [
+      'REPORT zp.',
+      'START-OF-SELECTION.',
+      '  SELECT vbak~vbeln FROM vbak INNER JOIN vbap ON vbap~vbeln = vbak~vbeln',
+      "    AND vbap~arktx = 'A JOIN KNA1 B' INTO TABLE @DATA(rows).",
+    ].join('\n');
+    expect(readTableDependencies(code).dependencies.map((d) => d.table).sort()).toEqual(['VBAK', 'VBAP']);
+    // A table named in a literal on purpose is still read.
+    const dynamic = [
+      'REPORT zp.',
+      'START-OF-SELECTION.',
+      "  SELECT * FROM ('KNA1') INTO TABLE @DATA(rows).",
+    ].join('\n');
+    expect(readTableDependencies(dynamic).dependencies.map((d) => d.table)).toEqual(['KNA1']);
+  });
+
   test('a FROM inside the SQL literal of an ADBC call names no table (85107975930e)', () => {
     // One literal rule stops at the template's bars; the SQL inside has
     // literals of its own, and `'FROM KNA1'` is text there too.
