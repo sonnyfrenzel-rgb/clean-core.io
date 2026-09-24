@@ -14,6 +14,7 @@ import CcArtefactRow from '@/components/cc/ArtefactRow';
 import CcButton from '@/components/cc/Button';
 import CcCard from '@/components/cc/Card';
 import CcCodeSurface from '@/components/cc/CodeSurface';
+import CcDialog from '@/components/cc/Dialog';
 import { CcEmptyState, CcNoMatches } from '@/components/cc/EmptyState';
 import CcField, { CcRequiredNote } from '@/components/cc/Field';
 import CcFilterBar from '@/components/cc/FilterBar';
@@ -21,6 +22,7 @@ import CcIconButton from '@/components/cc/IconButton';
 import CcLinkButton from '@/components/cc/LinkButton';
 import { CcCleanCoreLevel, CcEvidenceLevel } from '@/components/cc/Identifier';
 import CcMessageBox from '@/components/cc/MessageBox';
+import CcMessagePopover, { type CcCheckMessage } from '@/components/cc/MessagePopover';
 import CcMessageStrip from '@/components/cc/MessageStrip';
 import CcObjectIdentifier from '@/components/cc/ObjectIdentifier';
 import CcObjectStatus from '@/components/cc/ObjectStatus';
@@ -99,6 +101,30 @@ const FINDINGS = [
   { id: 'CC-019', name: 'Z_MM_TOLERANCE', level: 'C' as const, line: 'L231' },
 ];
 
+const CHECKS: CcCheckMessage[] = [
+  {
+    id: 'br-002',
+    state: 'warning',
+    text: 'Gateway “Price deviation > 5 %?” deviates from the code without a target condition (BR-002).',
+    targetId: 'ds-check-gateway',
+    targetLabel: 'Gateway Price deviation',
+  },
+  {
+    id: 'br-003',
+    state: 'warning',
+    text: 'BR-003 is dropped, but the path “Plant 1000?” still exists in the model.',
+    targetId: 'ds-check-plant',
+    targetLabel: 'Path Plant 1000',
+  },
+  {
+    id: 'lane-approver',
+    state: 'information',
+    text: 'Lane “Approver” is only reconstructed — no AUTHORITY-CHECK found.',
+    targetId: 'ds-check-lane',
+    targetLabel: 'Lane Approver',
+  },
+];
+
 function Section({ id, title, children }: { id: string; title: string; children: React.ReactNode }) {
   return (
     <section className="mt-8" aria-labelledby={id}>
@@ -121,6 +147,8 @@ export default function DesignSystemGallery() {
   const [level, setLevel] = useState('any');
   const [boxOpen, setBoxOpen] = useState(false);
   const [toastOpen, setToastOpen] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [invitee, setInvitee] = useState('');
 
   const filtered = useMemo(
     () =>
@@ -351,6 +379,58 @@ export default function DesignSystemGallery() {
               Show toast
             </CcButton>
           </div>
+        </div>
+      </Section>
+
+      {/* D.5a: the modal for a form or an explanation, and the collected
+          checks of an edit with the jump to their element (§2.6). */}
+      <Section id="ds-dialog" title="Dialog and message popover">
+        <div className="grid gap-3 md:grid-cols-2">
+          <CcCard title="Dialog">
+            <p className="text-[13px] leading-relaxed font-medium text-cc-ink">
+              For a form or an explanation. Confirmation before something irreversible stays with
+              the message box.
+            </p>
+            <div className="mt-3">
+              <CcButton variant="ghost" onClick={() => setDialogOpen(true)}>
+                Open dialog
+              </CcButton>
+            </div>
+          </CcCard>
+          <CcCard title="Edit mode" count={CHECKS.length}>
+            <div className="flex flex-col gap-1.5">
+              <div
+                id="ds-check-gateway"
+                className="rounded-cc-row border border-cc-line bg-cc-surface px-3 py-2 text-[13px] font-medium text-cc-ink"
+              >
+                Gateway “Price deviation &gt; 5 %?”
+              </div>
+              <div
+                id="ds-check-plant"
+                className="rounded-cc-row border border-cc-line bg-cc-surface px-3 py-2 text-[13px] font-medium text-cc-ink"
+              >
+                Path “Plant 1000?”
+              </div>
+              <div
+                id="ds-check-lane"
+                className="rounded-cc-row border border-cc-line bg-cc-surface px-3 py-2 text-[13px] font-medium text-cc-ink"
+              >
+                Lane “Approver”
+              </div>
+            </div>
+            <div
+              role="group"
+              aria-label="Edit mode"
+              className="mt-3 flex flex-wrap items-center gap-2 border-t border-cc-line pt-3"
+            >
+              <span className="text-[13px] font-semibold text-cc-warning">Unsaved changes · 5 rules</span>
+              <span className="ml-auto flex flex-wrap items-center gap-2">
+                <CcMessagePopover messages={CHECKS} />
+                <CcButton variant="ghost">Discard</CcButton>
+                <CcButton variant="primary">Save as revision 2</CcButton>
+              </span>
+            </div>
+          </CcCard>
         </div>
       </Section>
 
@@ -606,6 +686,38 @@ export default function DesignSystemGallery() {
         The source, every run and the signed audit packs go with it. Readers you invited lose access
         immediately. This cannot be undone.
       </CcMessageBox>
+
+      <CcDialog
+        open={dialogOpen}
+        title="Invite a reader"
+        lead="Read access to this project, bound to one confirmed e-mail address, including the source code."
+        onClose={() => setDialogOpen(false)}
+        onSubmit={() => setDialogOpen(false)}
+        actions={
+          <>
+            <CcButton variant="ghost" onClick={() => setDialogOpen(false)}>
+              Cancel
+            </CcButton>
+            <CcButton variant="primary" type="submit">
+              Send invitation
+            </CcButton>
+          </>
+        }
+      >
+        <CcField label="E-mail address" required help="The link works only for this address.">
+          {(control) => (
+            <input
+              id={control.id}
+              type="email"
+              aria-describedby={control.describedBy}
+              required={control.required}
+              value={invitee}
+              onChange={(event) => setInvitee(event.target.value)}
+              className={control.className}
+            />
+          )}
+        </CcField>
+      </CcDialog>
 
       <CcToast open={toastOpen} onDismiss={() => setToastOpen(false)}>
         Export downloaded

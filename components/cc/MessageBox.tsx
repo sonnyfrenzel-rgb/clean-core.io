@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useEffect, useId, useRef } from 'react';
+import React, { useId } from 'react';
 import { createPortal } from 'react-dom';
 import { t } from '@/lib/cc-messages';
 import CcButton from './Button';
+import { useCcModal } from './modal';
 
 /**
  * Confirmation before something that cannot be taken back — `DESIGN.md` §2.6.
@@ -46,70 +47,19 @@ export default function CcMessageBox({
   onConfirm,
   onCancel,
 }: CcMessageBoxProps) {
-  const boxRef = useRef<HTMLDivElement>(null);
-  const openerRef = useRef<HTMLElement | null>(null);
+  // Inert page, focus held, Escape, focus returned: `./modal.ts`, shared with
+  // `CcDialog`. The box itself takes the first focus, not the confirm button,
+  // so a stray Enter cannot delete anything.
+  const boxRef = useCcModal<HTMLDivElement>({ open, onClose: onCancel, initialFocus: 'container' });
   const titleId = useId();
-
-  useEffect(() => {
-    if (!open) return undefined;
-
-    openerRef.current = document.activeElement as HTMLElement | null;
-
-    // Everything that is not the dialog goes inert. `inert` is inherited, so
-    // this only works if the dialog is a *child of body* rather than buried in
-    // the tree that is being switched off — which is why the box is portalled.
-    // Without the portal, the ancestor holding the dialog has to be left
-    // reachable, and then so is the whole page inside it: the guard found
-    // exactly that, as a focus that never entered the box.
-    const container = boxRef.current?.parentElement;
-    const siblings: HTMLElement[] = [];
-    if (container) {
-      for (const node of Array.from(document.body.children)) {
-        if (node === container || !(node instanceof HTMLElement)) continue;
-        if (node.hasAttribute('inert')) continue;
-        node.setAttribute('inert', '');
-        siblings.push(node);
-      }
-    }
-
-    boxRef.current?.focus();
-
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        event.preventDefault();
-        onCancel();
-        return;
-      }
-      if (event.key !== 'Tab') return;
-      const focusable = boxRef.current?.querySelectorAll<HTMLElement>(
-        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
-      );
-      if (!focusable || focusable.length === 0) return;
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
-      if (event.shiftKey && document.activeElement === first) {
-        event.preventDefault();
-        last.focus();
-      } else if (!event.shiftKey && document.activeElement === last) {
-        event.preventDefault();
-        first.focus();
-      }
-    };
-
-    document.addEventListener('keydown', onKey);
-    return () => {
-      document.removeEventListener('keydown', onKey);
-      for (const node of siblings) node.removeAttribute('inert');
-      openerRef.current?.focus();
-    };
-  }, [open, onCancel]);
 
   if (!open || typeof document === 'undefined') return null;
 
   return createPortal(
-    <div data-cc-message-box-layer="" className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div data-cc-message-box-layer="" className="cc fixed inset-0 z-50 flex items-center justify-center p-4">
       <div
         data-cc-scrim=""
+        data-backdrop=""
         aria-hidden={true}
         onClick={onCancel}
         className="absolute inset-0 bg-cc-overlay/45"

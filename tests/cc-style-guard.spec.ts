@@ -75,6 +75,22 @@ test.describe('the components cannot be overridden from outside', () => {
     ]);
   });
 
+  test('there is one meaning of modal, and both modal components use it', () => {
+    // D.5a: `CcMessageBox` and `CcDialog` are modal through `./modal.ts`, not
+    // through two copies of it. Two copies are two answers to "is the page
+    // behind inert?" the day one of them is fixed and the other is not.
+    for (const rel of ['components/cc/MessageBox.tsx', 'components/cc/Dialog.tsx']) {
+      const src = read(rel);
+      expect(src, `${rel} does not use the shared modal hook`).toMatch(/useCcModal(<\w+>)?\(/);
+      expect(src, `${rel} switches the page inert by itself`).not.toMatch(/setAttribute\('inert'/);
+      expect(src, `${rel} is not announced as modal`).toContain('aria-modal="true"');
+      expect(src, `${rel} is not named by its title`).toContain('aria-labelledby={titleId}');
+      expect(src, `${rel} is not portalled to body, so inert would switch it off too`).toMatch(
+        /createPortal\([\s\S]*document\.body/,
+      );
+    }
+  });
+
   test('the toast cannot be asked for an error', () => {
     // §2.6: a toast is never for an error, because it removes itself before the
     // reader has decided what to do. Enforced by there being no way to ask.
@@ -263,6 +279,136 @@ test.describe('and paint themselves consistently', () => {
       () => Array.from(document.body.children).filter((n) => n.hasAttribute('inert')).length,
     );
     expect(stillInert, 'the page stayed inert after the box closed').toBe(0);
+  });
+
+  test('the dialog is modal, keeps the focus, and gives it back', async ({ page }) => {
+    test.setTimeout(180 * 1000);
+    await openGallery(page, admin);
+
+    const opener = page.getByRole('button', { name: 'Open dialog' });
+    await opener.click();
+
+    // Named by its title, described by its lead — what a screen reader says
+    // first when the focus lands inside.
+    const dialog = page.getByRole('dialog', { name: 'Invite a reader' });
+    await expect(dialog).toBeVisible();
+    await expect(dialog).toHaveAttribute('aria-modal', 'true');
+    await expect(dialog).toHaveAccessibleDescription(/bound to one confirmed e-mail address/);
+    await expect(dialog.getByRole('button', { name: 'Close' })).toBeVisible();
+
+    const state = await page.evaluate(() => {
+      const layer = document.querySelector('[data-cc-dialog-layer]');
+      const box = document.querySelector('[data-cc-dialog]');
+      const siblings = Array.from(document.body.children).filter((n) => !n.contains(layer as Node));
+      return {
+        focusTag: document.activeElement?.tagName ?? '',
+        focusInside: !!box && box.contains(document.activeElement),
+        siblingCount: siblings.length,
+        inertSiblings: siblings.filter((n) => n.hasAttribute('inert')).length,
+        layerInert: !!layer?.closest('[inert]'),
+      };
+    });
+    expect(state.focusInside, 'the focus is still behind the dialog').toBe(true);
+    expect(state.focusTag, 'a form dialog starts on its first field').toBe('INPUT');
+    expect(state.siblingCount, 'nothing behind the dialog — the check would be vacuous').toBeGreaterThan(0);
+    expect(state.inertSiblings, 'the page behind the dialog is still reachable (DESIGN.md §2.6)').toBe(
+      state.siblingCount,
+    );
+    expect(state.layerInert, 'the dialog switched itself off').toBe(false);
+
+    // Typing re-renders the page that owns the dialog. The focus stays where
+    // the person is typing instead of jumping back to the start.
+    const email = dialog.getByRole('textbox', { name: /E-mail address/ });
+    await page.keyboard.type('reader@example.com');
+    await expect(email).toBeFocused();
+    await expect(email).toHaveValue('reader@example.com');
+
+    // The focus trap, both directions: however often Tab is pressed, the focus
+    // never leaves the dialog.
+    for (const key of ['Tab', 'Shift+Tab']) {
+      for (let i = 0; i < 8; i++) {
+        await page.keyboard.press(key);
+        const inside = await page.evaluate(
+          () => !!document.querySelector('[data-cc-dialog]')?.contains(document.activeElement),
+        );
+        expect(inside, `${key} #${i + 1} left the dialog`).toBe(true);
+      }
+    }
+
+    // The dimmed page is not a way out: a stray click must not take typed text.
+    await page.mouse.click(5, 5);
+    await expect(dialog).toBeVisible();
+
+    await page.keyboard.press('Escape');
+    await expect(dialog).toBeHidden();
+    await expect(opener, 'Escape left the focus nowhere').toBeFocused();
+    const stillInert = await page.evaluate(
+      () => Array.from(document.body.children).filter((n) => n.hasAttribute('inert')).length,
+    );
+    expect(stillInert, 'the page stayed inert after the dialog closed').toBe(0);
+
+    // The close button is the other way out, and Enter in a field submits.
+    await opener.click();
+    await expect(dialog).toBeVisible();
+    await dialog.getByRole('button', { name: 'Close' }).click();
+    await expect(dialog).toBeHidden();
+    await expect(opener).toBeFocused();
+
+    await opener.click();
+    await expect(email).toBeFocused();
+    await page.keyboard.press('Enter');
+    await expect(dialog, 'Enter in the field did not submit the form').toBeHidden();
+    await expect(opener).toBeFocused();
+  });
+
+  test('the message popover lists the checks and jumps to their element', async ({ page }) => {
+    test.setTimeout(180 * 1000);
+    await openGallery(page, admin);
+
+    // One name that says what and how many; the badge is not read twice.
+    const trigger = page.getByRole('button', { name: 'Checks, 3 open' });
+    await expect(trigger).toHaveAttribute('aria-expanded', 'false');
+    await trigger.focus();
+    await page.keyboard.press('Enter');
+    await expect(trigger).toHaveAttribute('aria-expanded', 'true');
+
+    const panel = page.getByRole('dialog', { name: 'Checks' });
+    await expect(panel).toBeVisible();
+    // Not modal: the page stays usable while the list is open.
+    await expect(panel).not.toHaveAttribute('aria-modal', 'true');
+    expect(
+      await page.evaluate(() => Array.from(document.body.children).some((n) => n.hasAttribute('inert'))),
+      'the popover made the page inert',
+    ).toBe(false);
+    expect(
+      await page.evaluate(
+        () => !!document.querySelector('[data-cc-message-popover-panel]')?.contains(document.activeElement),
+      ),
+      'the focus did not move into the list',
+    ).toBe(true);
+
+    // The state is said in words, not only shown as an icon colour (§1.1).
+    const items = panel.locator('[data-cc-check]');
+    await expect(items).toHaveCount(3);
+    await expect(items.first()).toContainText('Warning:');
+    await expect(items.nth(2)).toContainText('Information:');
+
+    // Three "Go to" buttons, three different names.
+    const names = await panel
+      .getByRole('button')
+      .evaluateAll((els) => els.map((el) => el.getAttribute('aria-label') ?? ''));
+    expect(names).toEqual(['Go to Gateway Price deviation', 'Go to Path Plant 1000', 'Go to Lane Approver']);
+
+    await page.keyboard.press('Escape');
+    await expect(panel).toBeHidden();
+    await expect(trigger, 'Escape left the focus nowhere').toBeFocused();
+
+    // The jump: the popover closes and the element the hint is about has the focus.
+    await trigger.click();
+    await panel.getByRole('button', { name: 'Go to Lane Approver' }).click();
+    await expect(panel).toBeHidden();
+    const focused = await page.evaluate(() => document.activeElement?.id ?? '');
+    expect(focused, 'Go to did not take the reader to the element').toBe('ds-check-lane');
   });
 
   test('the filter bar announces its count, and no-match is not the empty state', async ({ page }) => {

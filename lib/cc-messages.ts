@@ -44,6 +44,19 @@ export const CC_MESSAGES = {
   'why.evidence': 'Evidence',
   'why.recorded': 'Recorded',
 
+  // The Message Popover of the edit footer — DESIGN.md §2.6, §2.3 item 6.
+  'checks.title': 'Checks',
+  'checks.open': 'open',
+  'checks.hintsNotBlocks': 'hints, not blocks',
+  'checks.none': 'No open checks.',
+  'checks.goTo': 'Go to',
+
+  // A state said in words, for a mark that is only colour and shape (§1.1).
+  'state.error': 'Error',
+  'state.warning': 'Warning',
+  'state.information': 'Information',
+  'state.success': 'Success',
+
   // "My workspace" as a List Report — roadmap 1.8, DESIGN.md §2.2, mockup s7.
   'workspace.title': 'My workspace',
   'workspace.lead': 'Every project is one case. The demo is the same for every account.',
