@@ -17,8 +17,10 @@ import { CONTACT_EMAIL } from '@/lib/constants';
  * So this is what a user mail is: a greeting, paragraphs, **exactly one link**
  * at the end shown as its own visible URL (nothing behind a label), a
  * signature and a small-print footer. No table scaffolding, no button, no
- * image, no badge, no emoji. The only inline styles are font family, size,
- * colour, line-height and paragraph margin.
+ * image, no badge, no emoji. The inline styles are font family, size,
+ * colour, line-height and paragraph margin, plus the wrapper's layout
+ * (max-width, margin, padding) and `word-break` on the one visible link, so a
+ * long URL stays inside a 320px screen.
  *
  * The survey is the one mail allowed a second link: its unsubscribe URL, in
  * the footer, because a bulk mail owes the reader a way out in the body and
