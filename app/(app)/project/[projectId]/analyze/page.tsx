@@ -94,7 +94,6 @@ import { PRODUCT_GEMINI_MODEL } from '@/lib/constants';
 export default function AnalyzePage() {
   const { projectId } = useParams();
   const searchParams = useSearchParams();
-  const autoAnalyze = searchParams.get('autoAnalyze');
   const [project, setProject] = useState<Project | null>(null);
   const [legacyCode, setLegacyCode] = useState('');
   const [loading, setLoading] = useState(true);
@@ -222,7 +221,6 @@ export default function AnalyzePage() {
   const [loadingMessage, setLoadingMessage] = useState('');
   const [error, setError] = useState('');
   const [isNavigating, setIsNavigating] = useState(false);
-  const hasAutoAnalyzed = useRef(false);
   const [sweepActive, setSweepActive] = useState(false);
   const [sweepFindings, setSweepFindings] = useState<import('@/lib/abap/evidence-model').EvidenceFinding[]>([]);
   const [sweepCode, setSweepCode] = useState('');
@@ -322,7 +320,7 @@ export default function AnalyzePage() {
     // browser. The upload path scanned the file, and the screen scanned what
     // was staged — but the textarea can be edited after both, and this is the
     // only place that sees the final string (QA review of 33471220d6e9,
-    // 2ea4b0048642). Auto-analysis comes through here too.
+    // 2ea4b0048642).
     const scanBlock = scanCodeContent(codeToAnalyze);
     if (scanBlock) {
         setError(`Security Block: ${scanBlock} Remove the flagged content before analysing.`);
@@ -330,6 +328,16 @@ export default function AnalyzePage() {
     }
     if (!isLegacyCode(codeToAnalyze)) {
         setError('That does not look like ABAP. Paste or upload ABAP source — a report, class, method, form, function module or include.');
+        return;
+    }
+    // The same preconditions the start button and the dialog ask for, held
+    // here as well so that no caller of this function starts a run without
+    // them: a target deployment, accepted Terms, and — for anything but the
+    // example — the tick on the lines the hint panel shows for exactly this
+    // text (QA full review of 81810c8, 7d0d04a45324).
+    const hintKeyForThisText = isFromExample ? '' : personalDataHintKey(scanForPersonalDataHints(codeToAnalyze));
+    if (!deployment || !acceptedTerms || (hintKeyForThisText !== '' && hintKeyForThisText !== personalDataAckFor)) {
+        setError('Select a target deployment, accept the Terms & Conditions and tick the box under any highlighted lines before starting the analysis.');
         return;
     }
     setLoading(true);
@@ -543,13 +551,6 @@ export default function AnalyzePage() {
       setLoadingMessage('');
     }
   };
-
-  useEffect(() => {
-    if (autoAnalyze === 'true' && legacyCode && !project?.analysis && !hasAutoAnalyzed.current) {
-      hasAutoAnalyzed.current = true;
-      handleAnalyze(legacyCode);
-    }
-  }, [autoAnalyze, legacyCode, project?.analysis]);
 
   /**
    * The export below is an HTML document a reviewer opens or pastes into
