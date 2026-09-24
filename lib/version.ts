@@ -1,5 +1,5 @@
-export const APP_VERSION = 'v2.15.0';
-export const APP_RELEASE_DATE = 'September 22, 2026';
+export const APP_VERSION = 'v2.18.0';
+export const APP_RELEASE_DATE = 'September 24, 2026';
 
 /**
  * Same date as APP_RELEASE_DATE, in ISO 8601 (YYYY-MM-DD), for schema.org

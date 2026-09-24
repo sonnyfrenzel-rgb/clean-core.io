@@ -10,6 +10,84 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+## [v2.18.0] — 2026-09-24
+
+Phase 8 der Roadmap, „Entscheiden und Übergeben", bis auf den isolierten Test-Runner
+(8.9). Dazu die ersten Teile von 3.0 hinter dem Admin-Schalter und die Modellmessungen
+aus §17. v2.16 und v2.17 sind nie als eigene Versionen erschienen; ihre Schritte stecken
+in v2.15.0 und in dieser.
+
+### Was alle bemerken
+
+- **Die Dokumentationsstufe liest das ganze Programm.** Bisher bekam das Modell je die
+  ersten 1.000 Zeichen von Code, Design und Analyse und schrieb daraus einen Blueprint
+  mit Rollen, KPIs und Dauern, die nirgends im Code stehen. Jetzt entsteht die
+  Dokumentation ohne Modellaufruf aus der Engine: Prozessschritte mit Zeilenanker,
+  Fachsätze, Wirkungsstatus der Verbuchung und die Lanes, die der Code belegt. Was der
+  Code nicht sagt — Prozess-Owner, Rollen, KPIs, Dauer —, steht als „not determined"
+  mit Grund da. Beim Bestellfreigabe-Beispiel kommt so das Notlimit aus Zeile 422 im
+  Dokument an; mit 1.000 Zeichen kam es nie hin. Ältere Blueprints bleiben lesbar und
+  sind als frühere Form markiert. Die Business-Ebene (RACI, SOP) schreibt weiter das
+  Modell.
+- **Die Transformation folgt der Architekturentscheidung.** Sie nahm ihr Ziel bisher aus
+  einem Umschalter der Analyse, den jeder Klick ohne Begründung umstellte, und las die
+  begründete Freigabe gar nicht. Jetzt generiert sie gegen den Architekturvertrag;
+  eine Abweichung von der Empfehlung wird festgehalten und angewendet.
+- **Eine Freigabe ist an den Lauf gebunden, den man gelesen hat.** Hat sich die Analyse
+  seitdem geändert, lehnt der Server ab und nennt, was sich geändert hat, statt die
+  Freigabe still auf den neuen Stand zu hängen. Eine Ablehnung sah bisher aus wie
+  Erfolg.
+- **Auto-Healing in der Teststufe wirkt.** Der Server legt einen unveränderlichen
+  Reparaturentwurf an, der Runner führt genau diesen aus, und übernommen wird er nur,
+  wenn sich der Stand inzwischen nicht geändert hat. Vorher lief die Wiederholung gegen
+  den alten Code.
+- **Eine Fachlücke, die das Modell als Einzelobjekt statt als Liste liefert, geht nicht
+  mehr verloren.** Gemessen trat das beim 1.000-Zeilen-Beispiel in zwei von drei
+  Läufen auf; die Lücke fiel still aus der Arbeitsliste, und die signierende Route wäre
+  daran gescheitert. Jede andere unlesbare Form wird jetzt gesagt statt geleert.
+- **Die Einladungsseite nennt vor der Annahme, wer einlädt und bis wann** — nur dem
+  angemeldeten Konto mit der eingeladenen, bestätigten Adresse. Der Projektname bleibt
+  hinter der Annahme.
+- **Freigabelinks für den S/4-Tenant-Zugang handeln nicht mehr beim Öffnen und gelten
+  genau einmal.** Beide Links einer Anfrage verfallen, sobald einer benutzt wurde, und
+  mit jeder neuen Anfrage. Links aus Mails vor dieser Version funktionieren nicht mehr;
+  wer betroffen ist, stellt die Anfrage neu.
+- **Die Namensstufe ist schneller.** Sie läuft auf `gemini-3.5-flash-lite` und verlangt
+  Start, Ende und Verzweigungen ausdrücklich beim Namen: Median 2,0 statt 4,6 Sekunden,
+  96 % der tragenden Knoten benannt.
+- Kleinere Korrekturen aus der UX-Review: der Admin-Tab „Not active" heißt, was er
+  enthält; das schreibgeschützte Board lädt nicht mehr zum Diskutieren ein; Fehlerseiten
+  zeigen die technische Meldung eingeklappt.
+
+### Die Nachweiskette im Audit-Pack
+
+Das Signaturmanifest nennt ab Format 4.0 (HMAC) bzw. 4.1 (Ed25519) die
+Übergabekette — Anforderung, Entscheidung, Receipt, Lieferartefakt — als `covers[]`
+im signierten String, und `09-evidence-chain.json` sagt je Glied, ob die Signatur es
+trägt, ob es eine Selbstauskunft ist oder ob es nicht bestimmt ist, mit Grund. Heute
+trägt die Signatur höchstens ein Glied (das Receipt, wenn der Lauf eine
+Modellquittung hat), eine Selbstauskunft ein zweites, und zwei sind offen; das Paket
+sagt das, statt eine kürzere Kette zu zeigen. Web-Verifier und
+`scripts/verify-pack.mjs` prüfen es; ältere Pakete verifizieren wie bisher.
+
+### Hinter dem Admin-Schalter (Vorbereitung für 3.0)
+
+Der neue Arbeitsraum bekommt die IT-Sicht (Befunde mit beiden Katalogsichten und der
+ehrlichen Kette Anforderung → Anker → Befund → Zielentwurf), die Entscheidungskarte
+(Bedarf, Option, Kostenrevision, Vertrag; Bestätigung als Selbstauskunft, Rücknahme mit
+Spur), den Steering-Einseiter zum Drucken, eine Management-Übersicht mit Diagrammen, in
+denen „not determined" eine eigene Fläche ist, und den Nachweis, dass jeder Referenzfall
+des Erhaltungsregisters dort besteht. Bestandsprojekte öffnen in jeder gespeicherten
+Form, ohne dass etwas geschrieben wird; ein nicht lesbarer Lauf heißt jetzt so, statt
+grün als vorhanden zu gelten.
+
+### Messungen (§17)
+
+Drei Durchgänge je Modell auf allen acht Startbeispielen: dasselbe Modell schwankt
+zwischen Durchgängen im Mittel um 33 Prozentpunkte Ankerquote — mehr als jeder
+Modellunterschied. Die Produktvorgabe bleibt. Fachsätze vom Modell (Weg B) treffen 7
+bis 9 von 173 Sollsätzen gegen 69 der Engine; die Engine bleibt allein.
+
 ## [v2.15.0] — 2026-09-23
 
 ### Die eigene Adresse stand in einem öffentlichen Log — und im Quellcode
