@@ -11,6 +11,7 @@ import { clsx } from 'clsx';
 import { APP_VERSION } from '@/lib/version';
 import UsageQuotaPanel from '@/components/admin/UsageQuotaPanel';
 import WorkspaceShellSwitch from '@/components/workspace/ShellSwitch';
+import RunnerSelftestPanel from '@/components/admin/RunnerSelftestPanel';
 
 export default function AdminConsole() {
   const { profile, loading: profileLoading } = useUserProfile();
@@ -347,6 +348,10 @@ export default function AdminConsole() {
           this is where the gate it shares already is, and because it only ever
           acts on the signed-in administrator's own account. */}
       <WorkspaceShellSwitch />
+
+      {/* The negative test of the isolated runners (roadmap 8.9), one click.
+          Same gate as every action here: admin claim plus a fresh step-up. */}
+      <RunnerSelftestPanel />
 
       {/* Console sections */}
       <div className="flex gap-1.5 p-1 bg-gray-100 rounded-2xl w-full sm:w-auto sm:inline-flex">
