@@ -7,8 +7,8 @@
   "purpose": "Which text of firestore.rules is live. CI never deploys the rules; a human does, by hand, and the same command records the result here. The offline check (npm run rules:check, tests/rules-deploy-order.spec.ts) compares this record with the working copy and refuses the one order that breaks production: an app that depends on rules which have not been deployed. The online check (npm run rules:verify) asks production what it is actually serving, which is the only way to catch a record that was updated without a deploy.",
   "whyThisExists": "Am 16.09.2026 wurde zum ersten Mal nachgesehen, was cleancore-491216 wirklich ausliefert: das Ruleset vom 20.08.2026 — drei Verschaerfungen hinter dem Repository, ohne dass es jemand wusste. In Produktion waren `termsVersionAccepted`/`termsAcceptedAt` noch client-schreibbar (Befund V14, im Repo laengst geschlossen), `email_events` noch nicht gesperrt, und der Admin-Lesezugriff auf Projekte noch offen. Sonny hat danach ausgerollt und das Ergebnis wurde gegen die Rules-API geprueft: identisch. Genau diese Drift soll dieser Datensatz kuenftig sichtbar machen.",
   "deployed": {
-    "sha256OfLfNormalisedText": "77160e1e6d0d8ed19c931243a8a5ae8783c746e440bc32594f48085f50a6d352",
-    "deployedAt": "2026-09-22",
+    "sha256OfLfNormalisedText": "32e1970bb02e983d3859b1becd4bccf96dc3ada795228d5ee2846855836ba07b",
+    "deployedAt": "2026-09-24",
     "deployedBy": "Claude (Opus 5), auf Sonnys ausdrueckliches Okay am 22.09.2026 — npm run deploy:rules von Sonnys angemeldeter CLI",
     "project": "cleancore-491216",
     "rulesetName": "projects/cleancore-491216/rulesets/6866185e-a6fa-4cd8-962d-10b68abf7874",
@@ -38,15 +38,6 @@
       "updatedAt",
       "worklist"
     ],
-    "projectDocumentReadRule": "allow read: if isAuthenticated() && resource != null && (resource.data.userId == request.auth.uid || invitedReader(resource.data));"
-  },
-  "pending": {
-    "sha256OfLfNormalisedText": "32e1970bb02e983d3859b1becd4bccf96dc3ada795228d5ee2846855836ba07b",
-    "recordedAt": "2026-09-24",
-    "recordedFor": "Roadmap 3.0.12 (QA 2a9864f3b52e, f71a57e2d326): accountActive() liest das eigene Profil; ein gesperrtes, geloeschtes oder deaktiviertes Konto verliert Projekt-, Run- und eigene Schreibzugriffe sofort, auch mit noch gueltigem ID-Token. Verengt nur - die App haengt nicht davon ab; Deploy durch Sonny vor dem App-Release.",
-    "addsToClient": [],
-    "removesFromClient": [],
-    "projectDocumentReadRule": "allow read: if isAuthenticated() && resource != null && ((resource.data.userId == request.auth.uid && accountActive()) || invitedReader(resource.data));",
-    "note": "Bis zum Deploy sind die alten Regeln live. `npm run deploy:rules` rollt aus und loescht diesen Block."
+    "projectDocumentReadRule": "allow read: if isAuthenticated() && resource != null && ((resource.data.userId == request.auth.uid && accountActive()) || invitedReader(resource.data));"
   }
 }

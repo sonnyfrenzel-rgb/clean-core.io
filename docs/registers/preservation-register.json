@@ -881,16 +881,20 @@
         ]
       },
       "outputs": {
-        "clientWrites": [
-          "generatedCode",
-          "testSuite",
-          "status"
-        ],
+        "clientWrites": [],
         "serverWrites": null,
         "consumedByNextStage": [
           "generatedCode",
           "testSuite"
-        ]
+        ],
+        "routeWrites": {
+          "via": "POST /api/projects/{projectId}/contract (roadmap 3.0.11: one transaction against the token read before the model call)",
+          "project": [
+            "generatedCode",
+            "testSuite",
+            "status"
+          ]
+        }
       },
       "preconditions": {
         "enforceActiveRun": true,

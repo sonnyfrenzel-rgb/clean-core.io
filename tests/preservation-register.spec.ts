@@ -113,6 +113,13 @@ interface StageEntry {
      * client-writable allowlist of `firestore.rules` any more.
      */
     commandWrites?: { via: string; project: string[] };
+    /**
+     * Written by a server route of the stage itself (roadmap 3.0.11: the
+     * transformation stores code, suite and status in one transaction). Unlike
+     * `commandWrites` the fields may stay client-writable, because another stage
+     * still writes them from the browser — so no allowlist mirror check.
+     */
+    routeWrites?: { via: string; project: string[] };
   };
   /** Fields a stage puts on screen although it writes none of them (tco, delivery). */
   alsoDisplays?: string[];
@@ -427,6 +434,7 @@ const runIdOf = (rc: ReferenceCase) => `${rc.id}-run`;
 const accountedFields = (stage: StageEntry) => [
   ...stage.outputs.clientWrites,
   ...(stage.outputs.commandWrites?.project ?? []),
+  ...(stage.outputs.routeWrites?.project ?? []),
   ...(stage.alsoDisplays ?? []),
 ];
 
@@ -545,7 +553,7 @@ test.describe('the register and the phase contract agree', () => {
     // command route. Where the write is issued is a different question from
     // whether the artefact can go stale, which is what this test is about.
     const written = sorted(
-      new Set(register.stages.flatMap((s) => [...s.outputs.clientWrites, ...(s.outputs.commandWrites?.project ?? [])])),
+      new Set(register.stages.flatMap((s) => [...s.outputs.clientWrites, ...(s.outputs.commandWrites?.project ?? []), ...(s.outputs.routeWrites?.project ?? [])])),
     );
     for (const artefact of register.trustChain.stalenessUntrackedArtefacts) {
       expect(written, `${artefact} is not written by any stage`).toContain(artefact);
