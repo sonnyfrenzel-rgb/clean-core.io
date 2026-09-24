@@ -24,7 +24,7 @@ import { buildClassModel } from '@/lib/abap/class-model-resolver';
 import type { ClassModel, SupportFinding } from '@/lib/abap/class-model';
 // The required-artefact table and its matcher live in lib/ so a spec can run the
 // real gate instead of a copy of it (QA review of 9e408888bfec, 3c05340dc39b).
-import { missingArtefacts, type ProjectFile } from '@/lib/transformation-artefacts';
+import { missingArtefacts, usableTestSuite, type ProjectFile } from '@/lib/transformation-artefacts';
 import { matchCdsView } from '@/lib/abap/cds-catalog';
 import { extractSelects, parseSelect } from '@/lib/abap/select-parser';
 import VerificationRail from '@/components/VerificationRail';
@@ -647,7 +647,6 @@ CMD ["node", "srv/service.js"]`
       const responseText = await callGemini(prompt, PRODUCT_GEMINI_MODEL, true, 'transformation');
       
       let filesArray: ProjectFile[] = [];
-      let tests = { config: '', spec: '' };
       
       // An answer that is not the agreed JSON is a failed *generation*, not a
       // file. This used to end in a catch that wrapped the raw text as
@@ -675,9 +674,8 @@ CMD ["node", "srv/service.js"]`
         throw new Error('The model answered with text instead of the JSON this stage asked for. Nothing was saved — the previous version is untouched. Try the generation again.');
       }
 
-      const parsed = result as { files?: unknown; tests?: { config: string; spec: string }; code?: unknown };
+      const parsed = result as { files?: unknown; tests?: unknown; code?: unknown };
       filesArray = (Array.isArray(parsed.files) ? parsed.files : []).filter(isUsableFile);
-      tests = parsed.tests || { config: '', spec: '' };
 
       // The single-blob answer goes through the same gate as the list: it
       // used to be pushed unchecked, so `{"files":[],"code":"   "}` reached
@@ -707,6 +705,14 @@ CMD ["node", "srv/service.js"]`
       const missing = missingArtefacts(filesArray, isAbapCloud);
       if (missing.length > 0) {
         throw new Error(`The model returned an incomplete package. Missing: ${missing.join('; ')}. Nothing was saved — the previous version is untouched. Try the generation again.`);
+      }
+
+      // The test suite is part of the package the prompt asked for. It used to
+      // default to two empty strings and the project was marked transformed
+      // without one (QA full review of 81810c8, 183ed4edf700).
+      const tests = usableTestSuite(parsed.tests, isAbapCloud);
+      if (!tests) {
+        throw new Error('The model returned the code without its test suite. Nothing was saved — the previous version is untouched. Try the generation again.');
       }
 
       setTransformationLog(prev => [...prev, 'Code generation complete.', 'Optimizing imports...', 'Finalizing transformation...']);

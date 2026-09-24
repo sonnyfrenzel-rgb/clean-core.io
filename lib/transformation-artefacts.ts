@@ -89,3 +89,31 @@ export const missingArtefacts = (generated: ProjectFile[], isAbapCloud: boolean)
   REQUIRED_ARTEFACTS[isAbapCloud ? 'abapCloud' : 'btp']
     .filter((required) => !generated.some((f) => satisfies(required, f.path)))
     .map((required) => required.label);
+
+export interface GeneratedTestSuite {
+  config: string;
+  spec: string;
+}
+
+const hasText = (v: unknown): v is string => typeof v === 'string' && v.trim().length > 0;
+
+/**
+ * The test suite the prompt asked for, or `null` when the answer did not carry
+ * one. Both tracks ask for `tests.spec`, the test class or spec file. The BTP
+ * track also asks for `tests.config` — a Playwright spec without its
+ * `playwright.config.ts` does not run; the ABAP Unit "configuration metadata"
+ * the abapCloud prompt names is optional for ABAP Unit, so only the spec is
+ * required there.
+ *
+ * The page used to write `parsed.tests || { config: '', spec: '' }` and mark
+ * the project transformed: an answer without tests, or with `tests: "none"`,
+ * became a finished stage with no test suite (QA full review of 81810c8,
+ * 183ed4edf700).
+ */
+export const usableTestSuite = (tests: unknown, isAbapCloud: boolean): GeneratedTestSuite | null => {
+  if (!tests || typeof tests !== 'object' || Array.isArray(tests)) return null;
+  const { config, spec } = tests as { config?: unknown; spec?: unknown };
+  if (!hasText(spec)) return null;
+  if (!isAbapCloud && !hasText(config)) return null;
+  return { config: typeof config === 'string' ? config : '', spec };
+};
