@@ -25,7 +25,7 @@ Befunde in die Roadmap ein. Der Agent selbst ändert nichts.
                    ├─ capture  (keine Secrets)   npm ci · Emulator · Build mit Wegwerf-Schlüsseln ·
                    │                             Demo-Projekt seeden · tests/capture-screens.spec.ts:
                    │                             16 Screens × Desktop/Telefon × bis 3 Bildschirmhöhen,
-                   │                             3 Screens im Dark Mode, 6 Ansichten der Mockups 2.7
+                   │                             3 Screens im Dark Mode, 7 Schlüsselansichten der Mockups 2.8
                    │
                    └─ review   (Modell- + Siegelschlüssel, kein npm ci, kein Fremdcode)
                         1. Design-Scan: Farben, Schriftgrade, Radien, Schatten, Button-Stile,
@@ -115,6 +115,27 @@ genannt. Die harte Obergrenze ist das Kreditlimit des OpenRouter-Schlüssels.
 Richtwerte: ein Release mit ein, zwei geänderten Screens 0,10–0,40 $; die erste
 Vollreview mit ≈ 2 MB Code und ≈ 120 gesendeten Bildern 1,50–3 $ (Schätzobergrenze 6 $). Dazu
 ≈ 15 Minuten Actions-Zeit für den Capture-Job.
+
+**Zielbild: sieben Schlüsselansichten der Mockups 2.8** (Entscheidung Sonny 24.09.2026,
+Option B). Verbindlich ist `docs/roadmap/clean-core-mockups-v2_8.html` mit 16 Ansichten;
+fotografiert werden nur die, an denen das Produkt gemessen wird — `MOCKUP_VIEWS` in
+`scripts/ux/lib/config.mjs`, die einzige Liste, aus der auch der Capture liest:
+
+| Ansicht | Datei | Inhalt |
+|---|---|---|
+| `s0` | `m0-mockup-desktop.jpg` | Erster Blick |
+| `s1` | `m1-mockup-desktop.jpg` | Business · Prozess (BPMN) & Regeln |
+| `s4` | `m4-mockup-desktop.jpg` | IT · Findings & Kette |
+| `s5` | `m5-mockup-desktop.jpg` | Management · Entscheiden |
+| `s6` | `m6-mockup-desktop.jpg` | Übergabe & Nachweiskette |
+| `s7` | `m7-mockup-desktop.jpg` | Mein Arbeitsbereich |
+| `s12` | `m12-mockup-desktop.jpg` | Großer Prozess · Übersicht |
+
+Der Bereich *system* sieht alle sieben (mit den vier Referenzscreens 11 von 16 Bildern je
+Aufruf), die Synthese drei davon (`s0`, `s1`, `s5`, per Ansicht gewählt, nicht per Position) —
+gegenüber den sechs Ansichten der Mockups 2.7 ein Bild mehr, ≈ 0,002 $. Die Budgets bleiben.
+Eine Ansicht mehr oder weniger: nur `MOCKUP_VIEWS` ändern; `tests/ux-review-guard.spec.ts`
+hält 6–8 Ansichten, die Knöpfe in der Mockup-Datei und die Namen im Gleichschritt.
 
 ---
 

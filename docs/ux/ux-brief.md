@@ -71,10 +71,15 @@ Product rules that are UX requirements, not just engineering rules:
 
 ## Where the design is heading
 
-Version 3.0 is a large UX rebuild along the **mockups 2.7** — screenshots named
-`m1`…`m6` when included: one workspace per project with header, status chips,
-layer bar, process model, evidence side panel and discussion; the seven stages stay
-as tools. They are a concept, not implemented.
+Version 3.0 is a large UX rebuild along the binding **mockups 2.8**
+(`docs/roadmap/clean-core-mockups-v2_8.html`, built to `DESIGN.md`). You see their
+key views, named after the mockup's view number `sN`: `m0-mockup` the first look,
+`m1-mockup` the Business view with the process as BPMN and its rules,
+`m4-mockup` the IT view with findings and the evidence chain, `m5-mockup` the
+Management view where the decision is taken, `m6-mockup` handover and evidence
+chain, `m7-mockup` the workspace, `m12-mockup` a large process as an overview.
+Management, Business and IT are views of one project, not roles. They are a
+concept; new UI grows behind an admin-only switch until 3.0.
 
 Use them as the target picture: say whether new work moves toward it or away from
 it, and which existing patterns would not survive the rebuild. Do not report

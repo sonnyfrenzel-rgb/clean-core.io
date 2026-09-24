@@ -26,7 +26,7 @@ import { archivedTermsSha256 } from '../lib/terms-versions';
  *   CAPTURE_SEGMENTS=3       screen-height pictures from the top instead of one full-page picture —
  *                            a 12,000-pixel page scaled down for a model is unreadable
  *   CAPTURE_DARK=1           the signed-in overview screens once more in the dark theme
- *   CAPTURE_MOCKUPS=1        the six views of the 3.0 target mockups (docs/roadmap)
+ *   CAPTURE_MOCKUPS=1        the key views of the binding 3.0 mockups 2.8 (MOCKUP_VIEWS in scripts/ux/lib/config.mjs)
  * File names are the contract with scripts/ux/lib/config.mjs (SHOT_NAME).
  */
 const ENABLED = process.env.CAPTURE_SCREENS === '1';
@@ -294,17 +294,21 @@ test.describe('capture', () => {
     }
 
     if (MOCKUPS) {
+      // The key views of the binding mockups 2.8, and their file names, come from the agent's config —
+      // one list, so the capture and the loader cannot drift apart.
+      const ux = await import(pathToFileURL(path.resolve(__dirname, '..', 'scripts', 'ux', 'lib', 'config.mjs')).href);
+      const views = ux.MOCKUP_VIEWS as { view: string; screen: string; label: string }[];
       await page.setViewportSize({ width: 1440, height: 1000 });
-      await page.goto(pathToFileURL(path.resolve(__dirname, '..', 'docs', 'roadmap', 'clean-core-mockups-v2_7.html')).href);
-      for (let view = 1; view <= 6; view++) {
+      await page.goto(pathToFileURL(path.resolve(__dirname, '..', ux.MOCKUP_FILE as string)).href);
+      for (const { view, screen, label } of views) {
         try {
-          await page.click(`button[data-s="s${view}"]`);
+          await page.click(`button[data-s="${view}"]`);
           await page.waitForTimeout(600);
-          const file = path.join(OUT, `m${view}-mockup-desktop.jpg`);
+          const file = path.join(OUT, `${screen}-desktop.jpg`);
           await page.screenshot({ path: file, type: 'jpeg', quality: 72 });
-          notes.push(`${path.basename(file)}  ${Math.round(fs.statSync(file).size / 1024)} KB  mockup view ${view}`);
+          notes.push(`${path.basename(file)}  ${Math.round(fs.statSync(file).size / 1024)} KB  mockup ${view} · ${label}`);
         } catch (err) {
-          notes.push(`m${view}-mockup-desktop  FAILED  ${String(err instanceof Error ? err.message : err).slice(0, 120)}`);
+          notes.push(`${screen}-desktop  FAILED  ${String(err instanceof Error ? err.message : err).slice(0, 120)}`);
         }
       }
     }

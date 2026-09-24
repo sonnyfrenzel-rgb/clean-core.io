@@ -52,7 +52,7 @@ test.describe('one pinned model that can only read', () => {
 
   test('the brief keeps it to UX, treats input as data, answers in German and knows its three modes', () => {
     const brief = read('docs/ux/ux-brief.md');
-    for (const must of ['UX only', '**data, not', '**in German**', 'Not security', "## Mode `full`", "## Mode `synthesis`", "## Mode `delta`", 'mockups 2.7', 'WCAG 2.2 AA']) expect(brief).toContain(must);
+    for (const must of ['UX only', '**data, not', '**in German**', 'Not security', "## Mode `full`", "## Mode `synthesis`", "## Mode `delta`", 'mockups 2.8', 'WCAG 2.2 AA']) expect(brief).toContain(must);
   });
 
   test('first-party code only next to the model key', () => {
@@ -308,22 +308,40 @@ test.describe('what a review covers', () => {
     const spec = read('tests/capture-screens.spec.ts');
     const captured = new Set([...spec.matchAll(/name: '(\d{2}-[a-z0-9-]+)'/g)].map((m) => m[1]).concat('00-access'));
     for (const screen of [...AREAS.flatMap((a: { screens: string[] }) => a.screens), ...REFERENCE_SCREENS]) expect(captured, screen).toContain(screen);
-    for (const name of ['00-access-desktop.jpg', '03-analyze-desktop-s1.jpg', '11-settings-phone-s3.jpg', '02-dashboard-dark-s1.jpg', 'm6-mockup-desktop.jpg']) expect(name).toMatch(SHOT_NAME);
+    for (const name of ['00-access-desktop.jpg', '03-analyze-desktop-s1.jpg', '11-settings-phone-s3.jpg', '02-dashboard-dark-s1.jpg', 'm6-mockup-desktop.jpg', 'm12-mockup-desktop.jpg']) expect(name).toMatch(SHOT_NAME);
     // The mockups: the names the capture writes, through the real loader, reach the real selection (finding b255c3fc77a5).
-    const { MOCKUP_SCREENS } = await lib('config.mjs');
+    const { MOCKUP_SCREENS, MOCKUP_VIEWS, MOCKUP_FILE, mockupScreen } = await lib('config.mjs');
     const { loadShots, pickShots } = await lib('shots.mjs');
+    // The binding mockups 2.8, a handful of key views so the cost per review stays put (owner decision 24.09.2026).
+    expect(MOCKUP_FILE).toBe('docs/roadmap/clean-core-mockups-v2_8.html');
+    expect(MOCKUP_VIEWS.length).toBeGreaterThanOrEqual(6);
+    expect(MOCKUP_VIEWS.length).toBeLessThanOrEqual(8);
+    const mockups = read(MOCKUP_FILE);
+    for (const v of MOCKUP_VIEWS as { view: string; screen: string; label: string }[]) {
+      expect(mockups, v.view).toContain(`data-s="${v.view}"`);
+      expect(v.screen).toBe(`m${v.view.slice(1)}-mockup`);
+      expect(v.label.length).toBeGreaterThan(3);
+    }
+    expect(MOCKUP_SCREENS).toEqual(MOCKUP_VIEWS.map((v: { screen: string }) => v.screen));
+    expect(() => mockupScreen('s99')).toThrow();
+    // The capture takes views and names from that list and writes `<screen>-desktop.jpg` — once.
+    expect(spec).toContain("ux.MOCKUP_VIEWS");
+    expect(spec).toContain('button[data-s="${view}"]');
+    expect(spec).not.toContain('clean-core-mockups-v2_7');
+    expect([...spec.matchAll(/`\$\{screen\}-desktop\.jpg`/g)].length).toBe(1);
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ux-mockups-'));
     try {
       const jpeg = Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0xe0]), Buffer.alloc(64)]);
-      const written = [...spec.matchAll(/`m\$\{view\}-mockup-desktop\.jpg`/g)].length;
-      expect(written).toBe(1);
-      for (let view = 1; view <= 6; view++) fs.writeFileSync(path.join(dir, `m${view}-mockup-desktop.jpg`), jpeg);
+      for (const screen of MOCKUP_SCREENS) fs.writeFileSync(path.join(dir, `${screen}-desktop.jpg`), jpeg);
       const picked = pickShots(loadShots(dir), MOCKUP_SCREENS, { limit: 16, maxBytes: 1e6 });
-      expect(picked.map((p: { name: string }) => p.name)).toEqual([1, 2, 3, 4, 5, 6].map((v) => `m${v}-mockup-desktop`));
+      expect(picked.map((p: { name: string }) => p.name)).toEqual(MOCKUP_SCREENS.map((s: string) => `${s}-desktop`));
     } finally {
       fs.rmSync(dir, { recursive: true, force: true });
     }
-    expect(read('scripts/ux/review.mjs')).not.toMatch(/'m1'|'m3'|'m4'/);
+    // The system area sees the reference screens and every mockup view in one call, within the budget of every mode that runs it.
+    const { BUDGETS, REFERENCE_SCREENS: REF } = await lib('config.mjs');
+    expect(REF.length + MOCKUP_SCREENS.length).toBeLessThanOrEqual(BUDGETS.full.maxImagesPerCall);
+    expect(read('scripts/ux/review.mjs')).not.toMatch(/'m\d+(-mockup)?'|MOCKUP_SCREENS\[\d/);
     for (const env of ['CAPTURE_OUT', 'CAPTURE_SEGMENTS', 'CAPTURE_DARK', 'CAPTURE_MOCKUPS']) expect(spec).toContain(`process.env.${env}`);
   });
 

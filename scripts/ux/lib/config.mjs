@@ -138,11 +138,32 @@ export const AREAS = [
 export const REFERENCE_SCREENS = ['01-landing', '02-dashboard', '03-analyze', '08-delivery'];
 
 /**
- * The six views of the 3.0 mockups, as the capture names them (`m3-mockup-desktop.jpg`
- * parses to screen `m3-mockup`). The target picture: wanted, but its absence does
- * not make a review of the product incomplete.
+ * The key views of the binding 3.0 mockups (docs/roadmap/clean-core-mockups-v2_8.html,
+ * 16 views, buttons `button[data-s="s0"]` … `s15`). Only these are captured, so the
+ * cost of a review stays where it was with the six views of 2.7 (owner decision
+ * 24.09.2026). The capture (tests/capture-screens.spec.ts) reads this list and
+ * writes `<screen>-desktop.jpg`, so `m5-mockup-desktop.jpg` is view `s5` and parses
+ * to screen `m5-mockup`. The target picture: wanted, but its absence does not make
+ * a review of the product incomplete.
  */
-export const MOCKUP_SCREENS = ['m1-mockup', 'm2-mockup', 'm3-mockup', 'm4-mockup', 'm5-mockup', 'm6-mockup'];
+export const MOCKUP_FILE = 'docs/roadmap/clean-core-mockups-v2_8.html';
+export const MOCKUP_VIEWS = [
+  { view: 's0', screen: 'm0-mockup', label: 'Erster Blick' },
+  { view: 's1', screen: 'm1-mockup', label: 'Business · Prozess & Regeln (BPMN)' },
+  { view: 's4', screen: 'm4-mockup', label: 'IT · Findings & Kette' },
+  { view: 's5', screen: 'm5-mockup', label: 'Management · Entscheiden' },
+  { view: 's6', screen: 'm6-mockup', label: 'Übergabe & Nachweiskette' },
+  { view: 's7', screen: 'm7-mockup', label: 'Mein Arbeitsbereich' },
+  { view: 's12', screen: 'm12-mockup', label: 'Großer Prozess · Übersicht' },
+];
+export const MOCKUP_SCREENS = MOCKUP_VIEWS.map((v) => v.screen);
+
+/** The screen of one configured mockup view, by its `sN` — never by position in the list. */
+export function mockupScreen(view) {
+  const hit = MOCKUP_VIEWS.find((v) => v.view === view);
+  if (!hit) throw new Error(`mockup view ${view} is not configured in MOCKUP_VIEWS`);
+  return hit.screen;
+}
 
 /**
  * Which mode an automatic run becomes. Until a complete full review exists, every
@@ -173,8 +194,8 @@ export function baselineOf(reports) {
   return null;
 }
 
-/** Capture file names: `03-analyze-desktop-s1.jpg`, `m2-mockup-desktop.jpg`. Anything else in the artifact is ignored. */
-export const SHOT_NAME = /^((?:\d{2}|m\d)-[a-z0-9-]+?)-(desktop|phone|dark)(?:-s(\d))?\.jpg$/;
+/** Capture file names: `03-analyze-desktop-s1.jpg`, `m12-mockup-desktop.jpg`. Anything else in the artifact is ignored. */
+export const SHOT_NAME = /^((?:\d{2}|m\d{1,2})-[a-z0-9-]+?)-(desktop|phone|dark)(?:-s(\d))?\.jpg$/;
 
 export const SEVERITIES = ['critical', 'high', 'medium', 'low'];
 
