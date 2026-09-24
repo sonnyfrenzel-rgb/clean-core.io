@@ -78,8 +78,15 @@ async function fetchOAuth2Token(
 
     if (!response.ok) {
       const errorBody = await readBoundedBody(response, TOKEN_BODY_LIMITS).catch(() => '');
+      // The body stays in the server log; the caller gets the status only
+      // (SEC-2026-525).
+      logger.warn('oauth token exchange rejected', {
+        route: 'api/fetch-s4-metadata',
+        status: response.status,
+        body: errorBody.substring(0, 200),
+      });
       throw new Error(
-        `Token endpoint returned HTTP ${response.status}. ${errorBody ? `Response: ${errorBody.substring(0, 200)}` : ''}`
+        `Token endpoint returned HTTP ${response.status}. Verify Client ID and Client Secret.`
       );
     }
 
@@ -370,13 +377,20 @@ export async function POST(req: NextRequest) {
 
     if (!response.ok) {
       const errorBody = await readBoundedBody(response, ODATA_BODY_LIMITS).catch(() => '');
+      // The tenant's body stays in the server log; the caller gets our own
+      // wording for the status (SEC-2026-525).
+      logger.warn('s4 metadata endpoint rejected', {
+        route: 'api/fetch-s4-metadata',
+        status: response.status,
+        body: errorBody.substring(0, 300),
+      });
       return NextResponse.json({
         status: 'failed',
         message: `Metadata endpoint returned HTTP ${response.status}. ${
           response.status === 401 ? 'Authentication rejected — verify credentials.' :
           response.status === 403 ? 'Access forbidden — check authorization roles.' :
           response.status === 404 ? `Service path not found: ${servicePath}. Try a different OData service path.` :
-          errorBody ? errorBody.substring(0, 300) : 'Unexpected server response.'
+          'Unexpected server response.'
         }`,
         httpStatus: response.status,
       });

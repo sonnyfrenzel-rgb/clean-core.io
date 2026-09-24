@@ -9,6 +9,7 @@ import {
   readBoundedJson,
   TOKEN_BODY_LIMITS,
 } from '@/lib/url-validation';
+import { logger } from '@/lib/logger';
 
 /**
  * POST /api/test-s4-connection
@@ -67,8 +68,15 @@ async function fetchOAuth2Token(
 
     if (!response.ok) {
       const errorBody = await readBoundedBody(response, TOKEN_BODY_LIMITS).catch(() => '');
+      // The body stays in the server log; the caller gets the status only
+      // (SEC-2026-525).
+      logger.warn('oauth token exchange rejected', {
+        route: 'api/test-s4-connection',
+        status: response.status,
+        body: errorBody.substring(0, 200),
+      });
       throw new Error(
-        `Token endpoint returned HTTP ${response.status}. ${errorBody ? `Response: ${errorBody.substring(0, 200)}` : 'Verify Client ID and Client Secret.'}`
+        `Token endpoint returned HTTP ${response.status}. Verify Client ID and Client Secret.`
       );
     }
 
