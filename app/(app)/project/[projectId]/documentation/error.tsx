@@ -63,11 +63,14 @@ export default function DocumentationStageError({
         <h2 className="text-2xl font-black text-[#0b1c30] mb-4">This stage could not be displayed</h2>
         <p className="text-gray-500 mb-8 font-medium">
           The documentation stage stopped while drawing. Nothing was changed, and nothing was deleted —
-          the stored blueprint is as it was. What caused it is not recorded beyond the message below.
+          the stored blueprint is as it was. What caused it is not recorded beyond the technical details below.
         </p>
-        <div className="bg-red-50 p-4 rounded-2xl text-left mb-8 overflow-auto max-h-32">
-          <p className="text-xs font-mono text-red-800">{error.message || 'Unknown error'}</p>
-        </div>
+        {/* Folded, not open: the sentence above is what a reader acts on; the raw
+            message is for whoever reports it (UX review of ac27aed, UX-149). */}
+        <details data-documentation-error-details className="bg-red-50 p-4 rounded-2xl text-left mb-8">
+          <summary className="text-xs font-bold text-red-800 cursor-pointer">Technical details</summary>
+          <p className="mt-2 text-xs font-mono text-red-800 overflow-auto max-h-32">{error.message || 'Unknown error'}</p>
+        </details>
         <button
           onClick={() => reset()}
           data-documentation-error-retry

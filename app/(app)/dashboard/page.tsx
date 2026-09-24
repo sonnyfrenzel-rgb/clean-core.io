@@ -1603,18 +1603,18 @@ export default function Dashboard() {
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                  {/* Left/Middle Column: Discussions List */}
+                  {/* Left/Middle Column: Announcements list (read-only, UX-147) */}
                   <div className="lg:col-span-2 space-y-5">
                     <div className="mb-2">
-                      <h3 className="text-xs font-black text-gray-400 uppercase tracking-wider">Active Discussions</h3>
-                      <p className="text-[11px] text-gray-400 font-medium mt-0.5">Tap any thread to read it in full and join the conversation.</p>
+                      <h3 className="text-xs font-black text-gray-400 uppercase tracking-wider">Announcements</h3>
+                      <p className="text-[11px] text-gray-400 font-medium mt-0.5">Tap any entry to read it in full.</p>
                     </div>
                     
                     {filteredForumPosts.length === 0 ? (
                       <div className="bg-white border border-dashed border-gray-300 rounded-[2rem] p-10 flex flex-col items-center justify-center text-center shadow-sm">
                         <MessageSquare className="w-10 h-10 text-gray-450 mb-3" />
-                        <h4 className="font-bold text-gray-900 mb-1">No discussions found</h4>
-                        <p className="text-gray-500 text-xs">Try adjusting your filters or search keywords, or start a new thread!</p>
+                        <h4 className="font-bold text-gray-900 mb-1">No announcements found</h4>
+                        <p className="text-gray-500 text-xs">Try adjusting your filters or search keywords.</p>
                       </div>
                     ) : (
                       filteredForumPosts.map((post) => {
