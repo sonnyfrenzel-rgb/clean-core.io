@@ -12,6 +12,7 @@ import {
 } from '@/lib/abap/code-assessment';
 import { absenceFromError, type ModelAbsence, type ModelParticipation } from '@/lib/model-stages';
 import { PRODUCT_GEMINI_MODEL } from '@/lib/constants';
+import { readModelGaps, gapsUnreadableSentence } from '@/lib/model-gaps';
 
 /**
  * One analysis run, startable from more than one screen.
@@ -233,10 +234,12 @@ export async function runAnalysis(input: AnalysisRunInput): Promise<AnalysisRunR
       for (const owned of MODEL_MUST_NOT_OWN) delete obj[owned];
       narrative = responseText;
       modelReceipt = generated.receipt;
-      const gaps = Array.isArray(obj.gaps) ? obj.gaps : [];
+      // A single object is one gap; any other shape is said, not dropped
+      // (`lib/model-gaps.ts`).
+      const { gaps, unreadable } = readModelGaps(obj.gaps);
       worklist = [
         ...worklist,
-        ...gaps.map((g: Record<string, unknown>, idx: number) => ({
+        ...gaps.map((g, idx) => ({
           id: `gap-${idx}`,
           title: g.title,
           category: 'Functional Gap',
@@ -248,7 +251,7 @@ export async function runAnalysis(input: AnalysisRunInput): Promise<AnalysisRunR
           effort: g.complexity,
         })),
       ];
-      move('narrative', 'done', 'written');
+      move('narrative', 'done', unreadable ? `written. ${gapsUnreadableSentence(unreadable)}` : 'written');
     } catch (err) {
       if (err instanceof AnalysisRunCancelled || aborted(signal)) throw new AnalysisRunCancelled();
       // A narrative that did not arrive is a stage that failed, not a run that

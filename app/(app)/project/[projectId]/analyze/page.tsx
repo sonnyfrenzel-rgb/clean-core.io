@@ -23,6 +23,7 @@ import { callGeminiWithReceipt } from '@/lib/gemini';
 import type { ModelReceipt } from '@/lib/model-receipt';
 import { loadProjectAndHydrate } from '@/lib/project-loader';
 import type { Project, AnalysisData, CodeInventoryItem, DataCouplingEntry } from '@/lib/types';
+import { readModelGaps, gapsUnreadableSentence } from '@/lib/model-gaps';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useModelAvailability } from '@/hooks/useModelAvailability';
 import { absenceFromError, modelAbsenceReason, type ModelAbsence } from '@/lib/model-stages';
@@ -408,11 +409,13 @@ export default function AnalyzePage() {
           for (const owned of MODEL_MUST_NOT_OWN) delete obj[owned];
           normalizedAnalysis = JSON.stringify(obj);
           
-          const gapsList = obj.gaps || [];
+          // A single object is one gap; any other shape is said on the Gaps
+          // Backlog tab, not dropped in silence (`lib/model-gaps.ts`).
+          const gapsList = readModelGaps(obj.gaps).gaps;
 
           initialWorklist = [
             ...findingsWorklist(evidenceReport.findings, uploadedFileName || 'main.abap'),
-            ...gapsList.map((g: any, idx: number) => ({
+            ...gapsList.map((g, idx) => ({
               id: `gap-${idx}`,
               title: g.title,
               category: 'Functional Gap',
@@ -609,8 +612,17 @@ export default function AnalyzePage() {
         ]
       };
 
-      // Build visual table for gaps
-      const gapsRows = data.gaps?.map(g => {
+      // Build visual table for gaps. A single object is one gap; any other
+      // shape is said in the table instead of leaving it silently empty.
+      const gapsReading = readModelGaps(data.gaps);
+      const gapsUnreadableRow = gapsReading.unreadable
+        ? `
+        <tr>
+          <td colspan="5" style="padding: 12px; border-bottom: 1px solid #ebecf0; font-size: 13px; color: #974f0c;">${esc(gapsUnreadableSentence(gapsReading.unreadable))}</td>
+        </tr>
+      `
+        : '';
+      const gapsRows = (gapsReading.gaps as AnalysisData['gaps']).map(g => {
         const sevBg = g.severity === 'High' ? '#ffebe6' : g.severity === 'Medium' ? '#fffae6' : '#e6fcff';
         const sevFg = g.severity === 'High' ? '#de350b' : g.severity === 'Medium' ? '#974f0c' : '#007a87';
         return `
@@ -622,7 +634,7 @@ export default function AnalyzePage() {
           <td style="padding: 12px; border-bottom: 1px solid #ebecf0; font-weight: bold;">${esc(g.complexity)}</td>
         </tr>
       `;
-      }).join('') || '';
+      }).join('') + gapsUnreadableRow;
 
       const stepsList = data.strategicNextSteps?.map(step => `
         <li style="margin-bottom: 10px; font-size: 14px;"><strong>${esc(step)}</strong></li>
@@ -1297,6 +1309,8 @@ export default function AnalyzePage() {
     // The one reader of a stored analysis: every stored shape, amounts of money masked (lib/money-honesty.ts).
     // Not JSON → null, and the markdown fallback below masks its text the same way.
     const analysisData = readStoredAnalysis<AnalysisData>(project.analysis);
+    // The narrative's gaps, one reading for the Gaps Backlog tab (`lib/model-gaps.ts`).
+    const analysisGapsReading = readModelGaps(analysisData?.gaps);
 
     /**
      * The stored route differs from the one that was recommended — an architect
@@ -1789,7 +1803,8 @@ const isBtp = (project.extensibilityRoute || analysisData.extensibilityRouting?.
                 projectId={projectId as string}
                 project={project}
                 findings={findings}
-                analysisGaps={analysisData.gaps || []}
+                analysisGaps={analysisGapsReading.gaps as AnalysisData['gaps']}
+                gapsUnreadable={analysisGapsReading.unreadable}
                 showHelpMode={false}
                 onUpdateWorklist={handleUpdateWorklist}
               />

@@ -1,0 +1,109 @@
+{
+  "projectTitle": "Modernization Assessment for ZLEGACY_ORDER_FULFILLMENT_AUDIT",
+  "cleanCoreScore": 29,
+  "summary": "The custom program ZLEGACY_ORDER_FULFILLMENT_AUDIT serves as an audit and remediation engine for sales order processing, combining custom risk scoring with transactional updates [CC-001]. The asset exhibits extensive architectural coupling, including legacy BDC call transactions to VA02, synchronous RFC dependencies, and direct modifications to standard SAP structures [CC-010, CC-012, CC-013]. Upgradeability is significantly impaired by native SQL constructs, Dynpro screens, and manual update task commits [CC-014, CC-022, CC-023, CC-026]. To align with clean core principles in SAP S/4HANA Cloud Private Edition, the process should be modernized by adopting standard FSCM credit checks and re-platforming custom logic to side-by-side CAP microservices or RAP-based services [CC-011].",
+  "asIsContext": "The legacy report extracts sales order and item records directly from VBAK and VBAP tables based on user selection criteria [CC-004, CC-005]. It enriches this dataset by querying customer master data from KNA1/KNB1 and inventory details from MARD [CC-007, CC-008, CC-009]. Synchronous RFC calls to function module Z_CREDIT_EXPOSURE_READ retrieve remote credit valuations [CC-010]. When orders exceed defined risk thresholds, the report executes a BDC session against transaction VA02 to set delivery blocks [CC-012]. In parallel, operational logs and risk records are written to custom database tables ZSD_ORD_RISK and ZSD_LEGACY_LOG via update task routines and explicit commits [CC-013, CC-014, CC-016, CC-017]. Finally, the program outputs findings using GUI_DOWNLOAD, classic ALV grids, and deprecated SAPOffice mail function modules [CC-018, CC-020, CC-021].",
+  "standardFit": {
+    "potential": "Medium",
+    "targetStandardProcess": "Order-to-Cash with SAP S/4HANA Advanced Credit Management (BD6 / F1007)",
+    "rationale": "The custom credit assessment and automatic delivery blocking logic duplicates native capabilities provided by SAP Financial Supply Chain Management (FSCM) and standard SD blocking mechanisms [CC-011, CC-012]. Standard sales order management APIs fully support automated order blocking without fragile screen automation [CC-012]."
+  },
+  "gaps": {
+    "title": "Custom Multi-Factor Risk Calculation and Audit Trail",
+    "severity": "Medium",
+    "strategy": "Implement custom scoring via Side-by-Side CAP or RAP Developer Extensibility (Tier 1)",
+    "rationale": "The bespoke formula evaluating custom risk scores based on line-item attributes and suspicious references is not standard out-of-the-box logic [CC-013, L435-L460]. Logging to custom audit tables requires modern CDS-based persistence rather than legacy update tasks [CC-014, CC-016].",
+    "complexity": "Medium"
+  },
+  "recommendations": {
+    "keepCoreClean": "Use released OData service API_SALES_ORDER_SRV (Catalog Match) instead of direct queries on VBAK and VBAP [CC-004, CC-005]. Replace direct reads on KNA1 with API_BUSINESS_PARTNER (Catalog Match) and KNB1 with released CDS view I_CustomerCompany (Catalog Match) [CC-007, CC-008]. Replace MARD table access with released CDS view I_MaterialStockInStorageLocation (Catalog Match) [CC-009]. Utilize SAP FSCM Credit Management (Candidate) to eliminate the custom RFC Z_CREDIT_EXPOSURE_READ [CC-010, CC-011]. Replace VA02 screen scraping with the official Sales Order A2X API (Catalog Match) [CC-012].",
+    "decommissioning": "Retire after replacement validation, data migration assessment, and business sign-off: custom report ZLEGACY_ORDER_FULFILLMENT_AUDIT, custom tables ZSD_ORD_RISK and ZSD_LEGACY_LOG, custom update-task function module Z_SD_LEGACY_LOG_WRITE, and screen 9000 [CC-013, CC-014, CC-016, CC-026].",
+    "cloudReadiness": "Adopt a hybrid modernization model: migrate standard credit checking directly to SAP FSCM core processes [CC-011]. Expose required sales and stock data using Developer Extensibility (Tier 1 RAP CDS views) or standard released APIs [CC-004, CC-009]. If custom risk calculation rules must persist outside standard S/4HANA workflows, deploy a Side-by-Side CAP application on SAP BTP communicating via Integration Suite, persisting audit history decoupled from the core database [CC-010, CC-013, CC-016]. Replace classic Dynpro and ALV UIs with a Fiori Elements List Report [CC-021, CC-026]."
+  },
+  "strategicNextSteps": [
+    "Run an end-to-end fit-gap workshop comparing custom risk rules against standard SAP Credit Management (FSCM) capabilities.",
+    "Formulate an API migration plan replacing table SELECT statements and BDC routines with API_SALES_ORDER_SRV and released CDS views [CC-004, CC-012].",
+    "Define a destination service pattern in SAP Integration Suite to obsolete hardcoded RFC destination PRD_CREDIT_RFC [CC-001, CC-010].",
+    "Prototype a SAP Fiori Elements List Report on BTP to replace classic ALV and Dynpro screens [CC-021, CC-026]."
+  ],
+  "extensibilityRouting": {
+    "recommendedRoute": "Side-by-Side (SAP BTP)",
+    "confidenceScore": 70,
+    "rationale": "RFC integrations are present. These should be externalized via SAP Integration Suite destination service.",
+    "targetArtifact": "CAP Node.js / Java Application",
+    "decisionTreeCheckpoints": [
+      {
+        "checkpointName": "Standard Process Fit",
+        "question": "Can this requirement be covered by standard SAP Fiori / S/4HANA features?",
+        "evaluation": "Not determined here. What this step can see is the code, and the code performs 2 write(s) to custom persistence. Whether SAP standard already covers the requirement is a question about the business capability — the standard-coverage analysis answers it against scope items, with its own evidence.",
+        "resultState": "Neutral",
+        "cleanCoreImpact": "Zero modification where standard covers the process — whether it does is not established by this step."
+      },
+      {
+        "checkpointName": "Key User Extensibility (Tier 3)",
+        "question": "Can the extension be implemented using low-code/no-code Key User tools?",
+        "evaluation": "Infeasible. Custom logic, DB writes, or complex calculations exceed Key User capabilities.",
+        "resultState": "Neutral",
+        "cleanCoreImpact": "Safe upgrades guaranteed. Completely isolated from the SAP core."
+      },
+      {
+        "checkpointName": "In-App Developer Extensibility (Tier 1)",
+        "question": "Is the logic compatible with strict ABAP Cloud (RAP) on the S/4HANA stack?",
+        "evaluation": "Partial compatibility. What was found — BDC screen automation, RFC calls, native SQL, frontend file services — cannot run unchanged on the strict ABAP Cloud stack and has to be replaced or decoupled.",
+        "resultState": "Side-by-Side Preferred",
+        "cleanCoreImpact": "Clean core compliant. Custom objects are clearly separated via Tier-1 API release gates."
+      },
+      {
+        "checkpointName": "Side-by-Side Extensibility (SAP BTP CAP)",
+        "question": "Does the extension require external persistency, non-ABAP runtime, or decoupling?",
+        "evaluation": "Required by the evidence that chose this route: BDC screen automation, RFC calls, native SQL, frontend file services.",
+        "resultState": "Side-by-Side Preferred",
+        "cleanCoreImpact": "Maximum upgrade safety. Code is completely decoupled from S/4HANA."
+      }
+    ],
+    "comparativeAnalysis": {
+      "inAppABAPCloud": {
+        "technicalFeasibility": "Partially Compatible",
+        "fitDetails": "Requires refactoring: BDC screen automation, RFC calls, native SQL, frontend file services must be replaced with released APIs or decoupled.",
+        "pros": [
+          "High-performance database access (local reads)",
+          "Direct integration with SAP GUI / Fiori Launchpad",
+          "No latency or external networking overhead"
+        ],
+        "cons": [
+          "Increases memory load on S/4HANA application server",
+          "Requires Tier-2 wrapping if unreleased APIs are needed"
+        ]
+      },
+      "sideBySideBTP": {
+        "technicalFeasibility": "Highly Compatible",
+        "fitDetails": "Perfect fit. SAP BTP CAP decoupled persistence safely isolates custom code and legacy APIs from S/4HANA core.",
+        "pros": [
+          "Maximizes upgrade readiness and isolates extensions",
+          "Supports modern web runtimes (Node.js, Java, Python)",
+          "Decoupled scaling and independent lifecycle management"
+        ],
+        "cons": [
+          "Network latency for database queries (OData overhead)",
+          "Requires separate licensing for SAP BTP runtimes"
+        ]
+      }
+    }
+  },
+  "businessValueAnalysis": {
+    "legacyAssetScore": 32,
+    "technicalDebtLevel": "High",
+    "valueDrivers": [
+      "Mitigates delivery failure risks by streamlining automated credit evaluations.",
+      "Eliminates upgrade blockers through removal of BDC call transactions and native SQL.",
+      "Improves system resilience by eliminating synchronous point-to-point RFC locks.",
+      "Modernizes user experience by transitioning from Dynpro/ALV to SAP Fiori."
+    ],
+    "plainEnglishActionPlan": [
+      "Decommission direct database modifications to standard tables and obsolete Dynpro screen 9000 [CC-024, CC-026].",
+      "Adopt SAP S/4HANA Advanced Credit Management to absorb custom risk scoring logic [CC-011].",
+      "Replace VA02 BDC execution with standard Sales Order APIs in a managed RAP or BTP extension [CC-012].",
+      "Establish a modern Fiori-based interface for order review tasks, deprecating GUI downloads and legacy ALV displays [CC-018, CC-021]."
+    ]
+  }
+}

@@ -20,6 +20,7 @@ import clsx from 'clsx';
 import type { Project, WorklistItem } from '@/lib/types';
 import type { SupportFinding } from '@/lib/abap/class-model';
 import GapsPrioritization from './GapsPrioritization';
+import { gapsUnreadableSentence } from '@/lib/model-gaps';
 
 interface GapsWorklistProps {
   projectId: string;
@@ -32,6 +33,8 @@ interface GapsWorklistProps {
     rationale: string;
     complexity: 'High' | 'Medium' | 'Low';
   }>;
+  /** Why the narrative's gaps could not be read, from `readModelGaps`; null or absent when they could. */
+  gapsUnreadable?: string | null;
   showHelpMode: boolean;
   onUpdateWorklist: (updatedWorklist: WorklistItem[]) => Promise<void>;
 }
@@ -41,6 +44,7 @@ export default function GapsWorklist({
   project,
   findings,
   analysisGaps,
+  gapsUnreadable = null,
   showHelpMode,
   onUpdateWorklist
 }: GapsWorklistProps) {
@@ -188,6 +192,18 @@ export default function GapsWorklist({
 
   return (
     <div className="space-y-10">
+      {gapsUnreadable ? (
+        // The model sent gaps in a shape `lib/model-gaps.ts` could not read.
+        // Said here, where the gaps would be, rather than left out in silence.
+        <p
+          role="status"
+          data-gaps-unreadable
+          className="flex items-start gap-2 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-100"
+        >
+          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+          <span>{gapsUnreadableSentence(gapsUnreadable)}</span>
+        </p>
+      ) : null}
       {/* Burndown Rollup Header */}
       <div className="bg-gradient-to-br from-slate-900 to-slate-950 text-white rounded-3xl p-6 md:p-8 border border-slate-800 shadow-xl relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-6">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,#10b98115,transparent_50%)]"></div>

@@ -5,6 +5,7 @@ import {
   processDocumentationToMarkdown,
   readStoredDocumentation,
 } from './process-documentation';
+import { readModelGaps, gapsUnreadableSentence } from './model-gaps';
 
 /**
  * Professional Markdown Formatting Engine
@@ -35,15 +36,22 @@ export function formatAnalysisToMarkdown(rawJson: string): string {
       md += `- **Technical Rationale:** ${data.standardFit.rationale || 'N/A'}\n\n`;
     }
     
-    if (Array.isArray(data.gaps) && data.gaps.length > 0) {
+    // A single object is one gap; any other shape is said, not left out (lib/model-gaps.ts).
+    const gapsReading = readModelGaps(data.gaps);
+    if (gapsReading.gaps.length > 0 || gapsReading.unreadable) {
       md += `## ⚠️ Functional Gaps & Extensibility Strategies\n`;
-      md += `The following customization gaps have been identified compared to the standard S/4HANA core:\n\n`;
-      md += `| Gap / Capability | Severity | Complexity | Recommended Extensibility Strategy | Technical Rationale |\n`;
-      md += `| :--- | :---: | :---: | :--- | :--- |\n`;
-      data.gaps.forEach((g: any) => {
-        md += `| **${g.title || 'Untitled Gap'}** | \`${g.severity || 'Medium'}\` | \`${g.complexity || 'Medium'}\` | **${g.strategy || 'Side-by-Side'}** | ${g.rationale || ''} |\n`;
-      });
-      md += `\n`;
+      if (gapsReading.gaps.length > 0) {
+        md += `The following customization gaps have been identified compared to the standard S/4HANA core:\n\n`;
+        md += `| Gap / Capability | Severity | Complexity | Recommended Extensibility Strategy | Technical Rationale |\n`;
+        md += `| :--- | :---: | :---: | :--- | :--- |\n`;
+        gapsReading.gaps.forEach((g) => {
+          md += `| **${g.title || 'Untitled Gap'}** | \`${g.severity || 'Medium'}\` | \`${g.complexity || 'Medium'}\` | **${g.strategy || 'Side-by-Side'}** | ${g.rationale || ''} |\n`;
+        });
+        md += `\n`;
+      }
+      if (gapsReading.unreadable) {
+        md += `> ${gapsUnreadableSentence(gapsReading.unreadable)}\n\n`;
+      }
     }
     
     if (data.recommendations) {

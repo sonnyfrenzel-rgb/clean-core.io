@@ -16,6 +16,7 @@ import type { ModelParticipation } from '@/lib/model-stages';
 import { verifyModelReceipt } from '@/lib/model-receipt';
 import { looksLikeAbap } from '@/lib/abap-input-check';
 import { assertRateLimit } from '@/lib/rate-limit';
+import { readModelGaps, type ModelGap } from '@/lib/model-gaps';
 
 /**
  * The most ABAP one request may be asked to analyse.
@@ -262,7 +263,7 @@ export async function POST(req: NextRequest) {
     // must not own — are therefore performed here instead, where the run is
     // signed. The page still normalises its *own* copy for the screen.
     let finalAnalysisText = analysis || '';
-    let gapsList: any[] = [];
+    let gapsList: ModelGap[] = [];
     try {
       let analysisObj: any = null;
       if (typeof analysis === 'string') {
@@ -295,7 +296,12 @@ export async function POST(req: NextRequest) {
         analysisObj.extensibilityRouting.decisionTreeCheckpoints = extensibilityReport.checkpoints;
         analysisObj.extensibilityRouting.comparativeAnalysis = extensibilityReport.comparativeAnalysis;
         
-        gapsList = analysisObj.gaps || [];
+        // Read, not rewritten: a single object is one gap for the project's
+        // worklist, and `analysisObj.gaps` stays exactly as the model sent it,
+        // so the stored narrative and its `responseHash` are the same bytes as
+        // before. Any shape that cannot be read is reported by the screens that
+        // show the narrative (`lib/model-gaps.ts`), not guessed at here.
+        gapsList = readModelGaps(analysisObj.gaps).gaps;
         finalAnalysisText = JSON.stringify(analysisObj);
       }
     } catch (err) {
@@ -341,7 +347,7 @@ export async function POST(req: NextRequest) {
       })),
     ];
     // Narrative, not evidence: project worklist only, never the signed run.
-    const narrativeGapItems = gapsList.map((g: any, idx: number) => ({
+    const narrativeGapItems = gapsList.map((g, idx) => ({
       id: `gap-${idx}`,
       title: g.title,
       category: 'Functional Gap',
