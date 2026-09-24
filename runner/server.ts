@@ -143,9 +143,60 @@ async function handleRun(req: http.IncomingMessage, res: http.ServerResponse) {
   }
 }
 
+/**
+ * The network half of the authorized negative test (roadmap 8.9).
+ *
+ * The sandbox child is fenced twice — by the in-process guards and by the VPC.
+ * A probe from inside the child therefore proves the pair, not the VPC alone.
+ * This one runs from the server process, without the sandbox's guards, so what
+ * it measures is the infrastructure: from here, a public host and a private
+ * address must be unreachable in both modes. The targets are fixed; the caller
+ * sends nothing but the request.
+ *
+ * Deliberately not probed: the metadata address. Every Cloud Run container
+ * reaches its own metadata server — that is how the platform hands out identity
+ * — so the protection there is the runner's service account having no roles, an
+ * IAM fact the operator runbook (SECURITY.md §7) checks with gcloud.
+ */
+const NETWORK_PROBES: Array<{ label: string; host: string; port: number }> = [
+  { label: 'public host 8.8.8.8:53', host: '8.8.8.8', port: 53 },
+  { label: 'public host www.google.com:443', host: 'www.google.com', port: 443 },
+  { label: 'private address 10.10.0.1:443', host: '10.10.0.1', port: 443 },
+];
+
+async function reachable(host: string, port: number): Promise<boolean> {
+  const net = await import('node:net');
+  return new Promise((resolve) => {
+    const socket = net.connect({ host, port });
+    const timer = setTimeout(() => {
+      socket.destroy();
+      resolve(false);
+    }, 4000);
+    socket.once('connect', () => {
+      clearTimeout(timer);
+      socket.destroy();
+      resolve(true);
+    });
+    socket.once('error', () => {
+      clearTimeout(timer);
+      resolve(false);
+    });
+  });
+}
+
+async function handleNetworkSelftest(res: http.ServerResponse) {
+  const probes = [];
+  for (const p of NETWORK_PROBES) probes.push({ target: p.label, reached: await reachable(p.host, p.port) });
+  return send(res, 200, { mode: MODE, revision: REVISION, probes });
+}
+
 const server = http.createServer((req, res) => {
   if (req.method === 'POST' && req.url === '/run') {
     void handleRun(req, res);
+    return;
+  }
+  if (req.method === 'POST' && req.url === '/selftest-network') {
+    void handleNetworkSelftest(res);
     return;
   }
   send(res, 404, { error: 'Not found.' });
