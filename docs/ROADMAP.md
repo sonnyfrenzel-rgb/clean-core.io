@@ -566,6 +566,7 @@ QA24-A17 (ein Fingerprint ohne Bestätigung ist kein grüner Status).
 
 | # | Schritt | Größe |
 |---|---|---|
+| D | **Block D — die ganze App aus einem Guss nach `DESIGN.md`** (Entscheidung Sonny, 24.09.2026, vor 3.0): Lückenliste gegen DESIGN.md (193 von 230 UI-Dateien ohne cc-Komponente; 7.450 Palettenklassen, 729 Texte < 11 px, 977× `font-black`, 141 Button-Stile, 26 native Dialoge), Abbau in D.1–D.30 in drei Lanes (A Bibliothek/Guards, B die sieben Werkzeuge, C Rahmen/Konto/Öffentliches). D.1 setzt einen app-weiten Guard mit Ratsche (je Datei und Regel nur sinkend), D.30 setzt alle Ausnahmen auf null. Entscheidungen E-1–E-7 nach Empfehlung angenommen (12 px Meta/Chip; 2 px nur in Chips; Stufenkopf 22/800; `lib/severity.ts`; Tokens auch öffentlich; altes Dashboard und alte Demo werden entfernt statt umgebaut; deutsche Datenschutzerklärung als Rechtstext-Ausnahme) | L |
 | 3.0.1 | **Schalter für alle:** jedes Projekt öffnet im Arbeitsraum; die sieben Stufen bleiben als Werkzeuge | S |
 | 3.0.2 | **Bestandsprojekte** öffnen ohne Verlust von IDs, Runs und Signaturen (C23-A02) | M |
 | 3.0.3 | **Erhaltungsregister im neuen Arbeitsraum:** jeder Referenzfall aus 1.1 besteht | S |
