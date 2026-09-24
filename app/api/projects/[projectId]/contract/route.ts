@@ -152,7 +152,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pro
     const { db, data, run } = loaded;
     // Reading is a share; recording what was generated is not.
     if (data.userId !== auth.uid) {
-      return NextResponse.json({ error: 'Only the owner of this project records a generation.' }, { status: 403 });
+      // An invited reader gets the stranger's answer, word for word, as on every
+      // other write under app/api/projects (tests/project-access-matrix.spec.ts):
+      // a reader reads, and a distinct 403 would be a second way to say so.
+      return NextResponse.json({ error: 'No such project.' }, { status: 404 });
     }
 
     const body = (await req.json().catch(() => ({}))) as { generatedCode?: unknown };

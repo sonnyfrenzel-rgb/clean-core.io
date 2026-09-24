@@ -539,6 +539,21 @@ test.describe('8.4 — the confirmation is the account\'s, and it is bound to th
       expect(written.confirmation).toBeNull();
     }
   });
+
+  test('a confirmed decision is not redrafted in place — withdraw first, then a new revision', () => {
+    const d = decisionFixture();
+    const confirmation = { account: 'owner@example.com', at: '2026-09-24T08:00:00.000Z', selfDeclaration: SELF_DECLARATION };
+    const confirmedState = { decision: { ...d, status: 'confirmed', confirmation } };
+    const r = validateProjectCommand({ command: 'record-decision-draft', decision: { ...d, fingerprint: undefined } }, confirmedState, actor);
+    expect(r.ok).toBe(false);
+    if (!r.ok) {
+      expect(r.status).toBe(409);
+      expect(r.code).toBe('decision-confirmed');
+    }
+    // After a withdrawal the same draft is accepted again.
+    const withdrawn = { decision: { ...d, status: 'withdrawn', confirmation } };
+    expect(validateProjectCommand({ command: 'record-decision-draft', decision: { ...d, fingerprint: undefined } }, withdrawn, actor).ok).toBe(true);
+  });
 });
 
 /* ========================================== the sentence, and where it lives */

@@ -100,6 +100,13 @@ export const GATED_ROUTES: GatedRoute[] = [
   // second factor reaches neither.
   { file: 'app/api/projects/[projectId]/process-states/route.ts', method: 'GET', path: (p) => `/api/projects/${p}/process-states` },
   { file: 'app/api/projects/[projectId]/process-states/route.ts', method: 'POST', path: (p) => `/api/projects/${p}/process-states`, body: { baseRevision: 0, choices: [] } },
+  // Roadmap 8.1 — the IT view's findings, derived on the server from the
+  // project's source. A read of the customer's code by another name.
+  { file: 'app/api/projects/[projectId]/findings/route.ts', method: 'GET', path: (p) => `/api/projects/${p}/findings` },
+  // Roadmap 8.3 — the architecture contract the generation follows (GET), and
+  // the record of which contract a generated stand was computed against (POST).
+  { file: 'app/api/projects/[projectId]/contract/route.ts', method: 'GET', path: (p) => `/api/projects/${p}/contract` },
+  { file: 'app/api/projects/[projectId]/contract/route.ts', method: 'POST', path: (p) => `/api/projects/${p}/contract`, body: {} },
   // Roadmap 8.4 — the decision draft, derived from the project's code, its
   // contract and its need. A read of the customer's source by another name.
   { file: 'app/api/projects/[projectId]/decision/route.ts', method: 'GET', path: (p) => `/api/projects/${p}/decision` },

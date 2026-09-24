@@ -217,6 +217,52 @@ const CASES: RouteCase[] = [
     readerAdmitted: false,
   },
   {
+    key: 'app/api/projects/[projectId]/findings/route.ts#GET',
+    what: 'the IT view\'s findings — derived from the customer\'s source',
+    method: 'GET',
+    path: (p) => `/api/projects/${p}/findings`,
+    refusal: 404,
+    // The fixture stages source, so the findings are derived; owner and reader
+    // read the same list.
+    owner: [200],
+    readerAdmitted: true,
+  },
+  {
+    key: 'app/api/projects/[projectId]/contract/route.ts#GET',
+    what: 'the architecture contract the generation follows',
+    method: 'GET',
+    path: (p) => `/api/projects/${p}/contract`,
+    refusal: 404,
+    // Source and no run: the contract is derived or refused in its own words,
+    // either way an answer with 200. Owner and reader read the same one.
+    owner: [200],
+    readerAdmitted: true,
+  },
+  {
+    key: 'app/api/projects/[projectId]/contract/route.ts#POST',
+    what: 'recording which contract a generated stand was computed against',
+    method: 'POST',
+    path: (p) => `/api/projects/${p}/contract`,
+    body: {},
+    refusal: 404,
+    // No generated package in the body: the owner is told there is nothing to
+    // bind, and nothing is written.
+    owner: [400],
+    readerAdmitted: false,
+  },
+  {
+    key: 'app/api/projects/[projectId]/repair-drafts/route.ts#POST',
+    what: 'proposing or adopting a repair draft (roadmap 8.7)',
+    method: 'POST',
+    path: (p) => `/api/projects/${p}/repair-drafts`,
+    body: { action: 'adopt', draftId: 'none', expectedDraftDigest: 'none' },
+    refusal: 404,
+    // The owner reaches the project and is told the draft does not exist —
+    // the same status as a stranger's refusal, with its own sentence.
+    owner: [404],
+    readerAdmitted: false,
+  },
+  {
     key: 'app/api/projects/[projectId]/decision/route.ts#GET',
     what: 'the decision draft — what a confirmation would bind',
     method: 'GET',
@@ -568,6 +614,11 @@ test('403-vs-404: what a refusal tells a stranger about a project they cannot se
       'app/api/projects/[projectId]/process-revisions/route.ts#POST → 404 vs 404',
       'app/api/projects/[projectId]/process-states/route.ts#GET → 404 vs 404',
       'app/api/projects/[projectId]/process-states/route.ts#POST → 404 vs 404',
+      'app/api/projects/[projectId]/findings/route.ts#GET → 404 vs 404',
+      'app/api/projects/[projectId]/contract/route.ts#GET → 404 vs 404',
+      'app/api/projects/[projectId]/contract/route.ts#POST → 404 vs 404',
+      'app/api/projects/[projectId]/repair-drafts/route.ts#POST → 404 vs 404',
+      'app/api/projects/[projectId]/decision/route.ts#GET → 404 vs 404',
     ].sort(),
   );
   expect(oracle.sort(), 'a route told a stranger whether the project exists').toEqual([]);

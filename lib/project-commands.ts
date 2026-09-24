@@ -644,6 +644,20 @@ export function validateProjectCommand(
     // needs, a fingerprint recomputed rather than believed.
     const draft = normaliseProjectDecision(body.decision);
     if (!draft.ok) return refuse(400, 'malformed-decision', draft.error);
+    // A confirmed decision is not redrafted in place. Overwriting it would drop
+    // the confirmation — who confirmed and when — without a withdrawal on the
+    // record, and "a later change is a new revision, not an edit" (mockup
+    // screen 5) would be a sentence the server does not keep. Withdraw first;
+    // the next draft is then a new revision. Found by the agent that built the
+    // card (roadmap 8.4): the card never sends this, but the server allowed it.
+    const storedStatus = isPlainObject(state.decision) ? state.decision.status : undefined;
+    if (storedStatus === 'confirmed') {
+      return refuse(
+        409,
+        'decision-confirmed',
+        'This project carries a confirmed decision. Withdraw it before drafting a new one; the new draft is then a new revision. Nothing was written.',
+      );
+    }
     return {
       ok: true,
       action: 'PROJECT_DECISION_DRAFTED',
