@@ -2057,6 +2057,53 @@ hat kein Modell getroffen.**
 | 17.3 | **`naming` auf `gemini-3.5-flash-lite`** — aus Latenz, nicht aus Güte: ADR-025 verlangt Tempo, lite ist das einzige gemessene Modell ohne Denk-Token, der naming-Prompt ist mit 2.658 statt 19.477 Token der billigste, die Stufe hat die strengste Validierung und **keinen Signaturkontakt**. Ehrliche Grenze: **die Namensstufe selbst wurde nicht gemessen**, der Schluss steht auf Mechanismus und Promptgröße. Abnahme: ein Messlauf der Stufe, drei Durchgänge, gegen die heutige Vorgabe. | M |
 | 17.4 | **Sauberer Messlauf vor jeder weiteren Modellentscheidung.** Drei Durchgänge je Modell auf **echten** Startbeispielen statt 21-Zeilen-Schnipseln. Ohne ihn trägt keine Aussage über `analyze`. | M |
 
+**Ergebnis 17.4 (gemessen, 24.09.2026, freigegeben von Sonny).** Drei Durchgänge je
+Modell auf allen acht Startbeispielen (`public/starter-examples`, 87 bis 1.000 Zeilen,
+Prompt bis rund 30.000 Token), fünf Modelle, 120 von 120 Aufrufen, **1,95 $**. Prompt
+und Bewertung aus dem Produktcode (`buildAnalysisPrompt`, `anchorNarrative`,
+`containsAmount`); Skript `scratch/modellvergleich/run-174.ts`, nicht eingecheckt.
+
+| Modell | Sätze mit Anker | Schema eingehalten | Median-Latenz | Kosten 24 Aufrufe |
+|---|---|---|---|---|
+| `gemini-3.8-flash` (Vorgabe) | 134/216 (62 %) | 20/24 | 14,6 s | 0,51 $ |
+| `gemini-3.5-flash` | 167/206 (81 %) | 24/24 | 21,7 s | 0,53 $ |
+| `gemini-3-flash-preview` | 92/178 (52 %) | 24/24 | 14,3 s | 0,33 $ |
+| `gemini-3.5-flash-lite` | 83/143 (58 %) | 22/24 | 5,3 s | 0,11 $ |
+| `gemini-2.5-flash` | 140/305 (46 %) | 20/24 | 25,9 s | 0,48 $ |
+
+Kein Modell erfand einen Geldbetrag, alle 120 übernahmen Score und Route unverändert,
+ein einziger Anker zeigte ins Leere (`lite`). **Das Rauschen ist die eigentliche
+Zahl:** dasselbe Modell auf demselben Beispiel schwankt zwischen drei Durchgängen im
+Mittel um **33 Prozentpunkte** Ankerquote. Gepaart je Beispiel gegen die Vorgabe liegt
+`3.5-flash` bei +18 Pp, das 95-%-Intervall (−2 … +39) schließt die Null knapp ein —
+ein Kandidat für einen größeren Lauf, kein belegter Sieger; die übrigen liegen gleich
+oder darunter. Die Einzeldurchgänge vom 23.09. tragen damit rückwirkend noch weniger,
+als dort schon stand.
+
+**Nebenbefund, ein Produktfehler:** auf dem 1.000-Zeilen-Beispiel liefert die Vorgabe
+`gaps` in 2 von 3 Durchgängen als **einzelnes Objekt statt als Liste** (ebenso `lite`
+und `2.5-flash`). `lib/analysis-run.ts:236` liest `Array.isArray(obj.gaps) ? obj.gaps
+: []` — die Fachlücke fällt still aus der Arbeitsliste.
+
+**Ergebnis 17.3 (gemessen, 24.09.2026).** Die Namensstufe selbst, drei Durchgänge auf
+den acht Startbeispielen, Vorgabe gegen `gemini-3.5-flash-lite`, bewertet mit
+`validateNamingAnswer` — derselben Prüfung, die die Route vor dem Speichern anwendet.
+48 von 48 Aufrufen, unter 0,30 $.
+
+| | `3.8-flash` (Vorgabe) | `3.5-flash-lite` |
+|---|---|---|
+| Latenz Median / p90 | 5,0 s / 21,5 s | 1,3 s / 6,4 s |
+| innerhalb 3 s (ADR-025) | 4/24 | 19/24 |
+| Knoten mit angenommenem Namen | 644/921 (70 %) | 532/921 (58 %) |
+| verworfen von der Prüfung | 1 | 2 |
+
+Der Unterschied liegt nicht in der Güte der Namen, sondern darin, **welche** Knoten
+benannt werden: `lite` übergeht Start, Ende und Verzweigungen (Rechnungsexport 8 von
+17 statt 17 von 17) — gerade die Verzweigungen tragen ein BPMN fachlich. Unbenannte
+Knoten behalten ihr technisches Token, das ist kein Fehler, aber sichtbar. Der
+17.4-Lauf lief parallel und belastet die absoluten Latenzen beider Modelle gleich.
+**Offen für Sonny:** Tempo (lite) gegen Vollständigkeit an den Verzweigungen (Vorgabe).
+
 **Zwei Hebel sind größer als die Modellwahl, beide unabhängig einplanbar:** das
 Evidenz-JSON macht **49–56 %** des Analyse-Prompts aus und wird eingerückt
 serialisiert; und `testing` macht **bis zu vier Modellaufrufe je Klick**. Beides
