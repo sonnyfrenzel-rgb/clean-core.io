@@ -48,6 +48,18 @@ const S4_ROUTES = [
   'app/api/test-s4-odata-read/route.ts',
 ];
 
+/**
+ * Roadmap 8.9: the credential proxy of live test runs reaches a tenant with
+ * stored credentials too, but no person calls it — the isolated live runner
+ * does, with an ID token of its service account and a capability minted by
+ * `/api/run-tests`. There is no user token on the request whose factor could be
+ * checked; the factor was checked on the user's token when the run was
+ * started (run-tests is in the list above), and the tenant gate — approval,
+ * suspension, enrolled factor — is asked again here on every request. So this
+ * route has its own list and its own two checks instead of an exemption.
+ */
+const S4_MACHINE_ROUTES = ['app/api/s4-proxy/[capability]/[...path]/route.ts'];
+
 test.describe('the decision, without the emulator', () => {
   test('an account without an enrolled factor is refused, and told what to do', () => {
     const refusal = s4AccessRequiresEnrolment(false);
@@ -129,6 +141,26 @@ test.describe('the wiring, on the source', () => {
     expect(read('app/api/runs/create/route.ts')).not.toContain('requireEnrolment');
   });
 
+  test('the credential proxy asks the S/4 gate on every request, behind the runner identity and the capability', () => {
+    for (const rel of S4_MACHINE_ROUTES) {
+      const src = read(rel);
+      expect(src, `${rel} does not ask the S/4 gate`).toMatch(/assertS4TenantAccess\(uid\)/);
+      expect(src, `${rel} does not verify the caller's Google identity`).toContain('verifyGoogleIdToken(');
+      expect(src, `${rel} does not admit against the capability store`).toContain('admitProxyRequest(');
+      expect(src, `${rel} does not delegate to the proxy decision`).toContain('handleS4ProxyRequest(');
+    }
+    // And the decision asks the three in this order: who calls, what for, whether the account still may.
+    const lib = read('lib/s4-proxy.ts');
+    const identity = lib.indexOf('await deps.verifyIdToken(');
+    const admit = lib.indexOf('await deps.admit(');
+    const access = lib.indexOf('await deps.assertTenantAccess(');
+    const load = lib.indexOf('await deps.loadConnection(');
+    expect(identity).toBeGreaterThan(-1);
+    expect(identity).toBeLessThan(admit);
+    expect(admit).toBeLessThan(access);
+    expect(access).toBeLessThan(load);
+  });
+
   test('the list above is the list of routes that use the gate - nothing reaches a tenant unlisted', () => {
     const apiDir = path.resolve(ROOT, 'app/api');
     const found: string[] = [];
@@ -142,6 +174,6 @@ test.describe('the wiring, on the source', () => {
       }
     };
     walk(apiDir);
-    expect(found.sort(), 'a route started using the S/4 gate without being added to this guard').toEqual([...S4_ROUTES].sort());
+    expect(found.sort(), 'a route started using the S/4 gate without being added to this guard').toEqual([...S4_ROUTES, ...S4_MACHINE_ROUTES].sort());
   });
 });
