@@ -320,7 +320,7 @@ export default function DesignSystemGallery() {
             </p>
           </CcCard>
           <CcCard title="Artefacts" count={3}>
-            <div className="flex flex-col gap-1.5">
+            <div className="flex flex-col gap-2">
               <CcArtefactRow
                 icon={<FileText size={16} aria-hidden={true} />}
                 title="Audit pack"
@@ -398,7 +398,7 @@ export default function DesignSystemGallery() {
             </div>
           </CcCard>
           <CcCard title="Edit mode" count={CHECKS.length}>
-            <div className="flex flex-col gap-1.5">
+            <div className="flex flex-col gap-2">
               <div
                 id="ds-check-gateway"
                 className="rounded-cc-row border border-cc-line bg-cc-surface px-3 py-2 text-[13px] font-medium text-cc-ink"
@@ -543,7 +543,7 @@ export default function DesignSystemGallery() {
                   onClear={clearFilters}
                 />
               ) : (
-                <div className="flex flex-col gap-1.5">
+                <div className="flex flex-col gap-2">
                   {filtered.map((finding) => (
                     <CcArtefactRow
                       key={finding.id}

@@ -161,7 +161,7 @@ export default function CcMessagePopover({
         <span
           aria-hidden={true}
           data-cc-message-count=""
-          className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-cc-ink px-1.5 text-[11px] font-semibold text-cc-on-dark"
+          className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-cc-ink px-2 text-[11px] font-semibold text-cc-on-dark"
         >
           {count}
         </span>
@@ -201,7 +201,7 @@ export default function CcMessagePopover({
                     data-cc-check={message.state}
                     className="grid grid-cols-[18px_minmax(0,1fr)_auto] items-start gap-2 border-t border-cc-line p-2 text-[13px] leading-snug font-medium text-cc-ink first:border-t-0"
                   >
-                    <span className={cn('mt-0.5', STATE_CLASSES[message.state].text)}>
+                    <span className={cn('mt-0.5 shrink-0', STATE_CLASSES[message.state].text)}>
                       <Icon size={16} aria-hidden={true} />
                     </span>
                     <span className="min-w-0">

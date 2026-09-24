@@ -110,7 +110,7 @@ export default function CcDialog({
       >
         <div className="flex items-start gap-3 border-b border-cc-line px-5 py-4">
           <div className="min-w-0 flex-1">
-            <h2 id={titleId} className="m-0 text-[16px] font-bold text-cc-ink">
+            <h2 id={titleId} className="m-0 text-[15px] font-bold text-cc-ink">
               {title}
             </h2>
             {lead ? (

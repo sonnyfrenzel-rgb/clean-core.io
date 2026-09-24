@@ -73,7 +73,7 @@ export default function CcMessageBox({
         data-cc-message-box=""
         className="relative w-full max-w-lg rounded-cc-card border border-cc-line bg-cc-surface p-5 shadow-cc-dialog"
       >
-        <h3 id={titleId} className="m-0 text-[16px] font-bold text-cc-ink">
+        <h3 id={titleId} className="m-0 text-[15px] font-bold text-cc-ink">
           {title}
         </h3>
         <div className="mt-2 text-[13px] font-medium leading-relaxed text-cc-ink">{children}</div>
