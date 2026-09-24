@@ -49,13 +49,13 @@ export const LIVE_TEST_EXECUTION: LockedPath = {
       'Running generated tests against mocks in the isolated test runner (its own Cloud Run service; a deployed app without it runs no tests); checking a tenant connection, reading its OData metadata and one read-only OData call (/api/test-s4-connection, /api/fetch-s4-metadata, /api/test-s4-odata-read) — none of these executes generated code.',
   },
   reason:
-    'Generated test code is untrusted. Since roadmap 8.9 it runs in a separate runner service without roles, secrets or open network egress, and a live run reaches the tenant only through a proxy that holds the credentials itself; the guards inside the runner process (Node permission model, preloaded module and network guards) remain defense in depth, not an isolation boundary. What is not done yet is the proof on the deployed profile and an external review of the runner (review findings CR-09, CR-15).',
+    'Generated test code is untrusted. Since roadmap 8.9 it runs in a separate runner service without roles, secrets or open network egress, and a live run reaches the tenant only through a proxy that holds the credentials itself; the guards inside the runner process (Node permission model, preloaded module and network guards) remain defense in depth, not an isolation boundary. What is not done yet is the proof on the deployed profile and the documented review of the runner (review findings CR-09, CR-15).',
   reopenWhen: [
     'The isolated live runner and the credential proxy are deployed and configured (RUNNER_LIVE_URL, RUNNER_SERVICE_ACCOUNT, S4_PROXY_BASE_URL); without them the route refuses a live run even with this lock lifted.',
     'Required, not yet met: a run of the authorized negative test (tests/runner-isolation.spec.ts) against the deployed runners, with both runners configured, in which every probe holds — no secret-named variable, no file outside the sandbox directory, none of the fixed destinations it probes reachable (SECURITY.md §7.2) — plus a gcloud check that the runner service account holds no role, since the metadata server stays reachable by design.',
-    'An external review of that runner is done and its findings are closed.',
+    'Required, not yet met: a documented review of the runner, the credential proxy and their routes — the full QA review and the security audit of a release on main read these files completely (not INCOMPLETE for them), and every finding on them is fixed or refuted with evidence (decision Sonny, 24.09.2026: no external review).',
     'Sonny decides to reopen, and this entry, SECURITY.md §7.1 and the guard spec change in the same release.',
   ],
   userNotice:
-    'Running generated tests against a connected tenant is locked until the isolated live runner has passed its external review. The tenant connection check, the metadata read and the read-only OData call still work; tests run against mocks in the isolated test runner.',
+    'Running generated tests against a connected tenant is locked until the isolated live runner has passed its review. The tenant connection check, the metadata read and the read-only OData call still work; tests run against mocks in the isolated test runner.',
 };

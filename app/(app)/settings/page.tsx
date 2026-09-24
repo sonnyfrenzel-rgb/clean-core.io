@@ -1533,7 +1533,7 @@ export default function SettingsPage() {
               </div>
               
               <p className="text-gray-650 font-medium mb-4 text-sm md:text-base leading-relaxed">
-                Connect your custom, non-productive S/4HANA Cloud or On-Premise systems (BYOT) to the Stage 5 testing environment for connection checks and OData metadata reads. Running the generated tests against the tenant is locked until the isolated live runner has passed its external review.
+                Connect your custom, non-productive S/4HANA Cloud or On-Premise systems (BYOT) to the Stage 5 testing environment for connection checks and OData metadata reads. Running the generated tests against the tenant is locked until the isolated live runner has passed its review.
               </p>
 
               <div className="bg-sky-50/60 border border-sky-200 p-4 rounded-2xl mb-8 flex items-start gap-3">
@@ -1751,7 +1751,7 @@ export default function SettingsPage() {
                       <li><strong>Request access:</strong> Use the form below to request access for your organization.</li>
                       <li><strong>Provide HTTPS endpoint:</strong> Set up a secure HTTPS connection to your S/4HANA sandbox or test system.</li>
                       <li><strong>Configure credentials:</strong> Once approved, you can configure your credentials (Basic Auth or OAuth 2.0).</li>
-                      <li><strong>Check the connection:</strong> Test the handshake, read OData metadata and make one read-only call from the Stage 5 testing environment. Running the generated tests against the tenant is locked until the isolated live runner has passed its external review.</li>
+                      <li><strong>Check the connection:</strong> Test the handshake, read OData metadata and make one read-only call from the Stage 5 testing environment. Running the generated tests against the tenant is locked until the isolated live runner has passed its review.</li>
                     </ol>
                   </div>
 

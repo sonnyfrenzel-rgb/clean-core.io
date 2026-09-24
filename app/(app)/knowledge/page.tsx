@@ -37,7 +37,7 @@ const faqs = [
   },
   {
     question: "What is the BYOT (Bring Your Own Tenant) connectivity model?",
-    answer: "BYOT lets a developer connect their own non-production S/4HANA sandbox to check the connection, read OData metadata and make one read-only call against a real service. Running the generated tests against the tenant is locked until the isolated live runner has passed its external review; tests run against mocks in the isolated test runner. It is read-only, credentials are encrypted at rest (AES-256-GCM) in a server-only store, production endpoints are blocked, and every connection is admin-gated (manually reviewed and approved) before activation. Clean-Core.io does not host or persist your ERP data — SAP transaction data is processed statelessly in memory. The feature is free; access is granted by an administrator, not by paying for a tier."
+    answer: "BYOT lets a developer connect their own non-production S/4HANA sandbox to check the connection, read OData metadata and make one read-only call against a real service. Running the generated tests against the tenant is locked until the isolated live runner has passed its review; tests run against mocks in the isolated test runner. It is read-only, credentials are encrypted at rest (AES-256-GCM) in a server-only store, production endpoints are blocked, and every connection is admin-gated (manually reviewed and approved) before activation. Clean-Core.io does not host or persist your ERP data — SAP transaction data is processed statelessly in memory. The feature is free; access is granted by an administrator, not by paying for a tier."
   },
   {
     question: "How does Clean-Core.io help modernize legacy ABAP?",

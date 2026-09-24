@@ -19,7 +19,7 @@ This document describes the security architecture and hardening measures impleme
 | ID | Finding | Severity | Status | Remediation |
 |----|---------|----------|--------|-------------|
 | F-01 | Live API keys in repository | **P0** | ✅ Resolved | Keys rotated; `.env.example` contains only placeholders. `.gitignore` enforces exclusion of `.env*` files. |
-| F-02 | Remote Code Execution via `/api/run-tests` | **P0** | ⚠️ Mitigated (not closed) | Since roadmap 8.9 generated code executes only in the **isolated runner service** (`runner/`, §7): its own Cloud Run service with a service account without roles, no app secrets, `--ingress=internal`, invocable only by the app (`run.invoker`), and all egress through a VPC without NAT. A deployed app without `RUNNER_URL` refuses to run tests; the in-app child process exists only in an emulator build (local, CI) and is named `local-emulator` in the response and the receipt. Inside the runner the old layers stay as defense in depth: esbuild bundling with a single resolver, Node Permission Model, `--no-experimental-sqlite`, the module guard and the network guard (`__netguard.mjs`). What is not closed: the proof on the deployed profile (§7.2, authorized negative test) and an external review. Live test execution against a tenant is **locked** (§7.1, `G0:R0`); the old switch `S4_TEST_RUNNER_EGRESS_ENFORCED` and its egress probe are removed. |
+| F-02 | Remote Code Execution via `/api/run-tests` | **P0** | ⚠️ Mitigated (not closed) | Since roadmap 8.9 generated code executes only in the **isolated runner service** (`runner/`, §7): its own Cloud Run service with a service account without roles, no app secrets, `--ingress=internal`, invocable only by the app (`run.invoker`), and all egress through a VPC without NAT. A deployed app without `RUNNER_URL` refuses to run tests; the in-app child process exists only in an emulator build (local, CI) and is named `local-emulator` in the response and the receipt. Inside the runner the old layers stay as defense in depth: esbuild bundling with a single resolver, Node Permission Model, `--no-experimental-sqlite`, the module guard and the network guard (`__netguard.mjs`). What is not closed: the proof on the deployed profile (§7.2, authorized negative test) and the documented review. Live test execution against a tenant is **locked** (§7.1, `G0:R0`); the old switch `S4_TEST_RUNNER_EGRESS_ENFORCED` and its egress probe are removed. |
 | F-03 | SAP credentials stored in cleartext | **P0** | ✅ Resolved | AES-256-GCM encryption via `S4_ENCRYPTION_KEY`. Credentials in server-only `s4_credentials` collection. |
 | F-04 | Missing admin check on email routes | **P1** | ✅ Resolved | `verifyAdminRequest()` + email format validation on all 3 mail routes. |
 | F-05 | SSRF filter bypass | **P1** | ✅ Resolved | Async DNS resolution, full IPv4/v6 CIDR blocking, `safeFetch()` with IP pinning and redirect re-validation. |
@@ -248,7 +248,7 @@ that definition say different things.
 
 **Open.** Running generated tests against mocks in the isolated test runner (its own Cloud Run service; a deployed app without it runs no tests); checking a tenant connection, reading its OData metadata and one read-only OData call (/api/test-s4-connection, /api/fetch-s4-metadata, /api/test-s4-odata-read) — none of these executes generated code.
 
-**Why.** Generated test code is untrusted. Since roadmap 8.9 it runs in a separate runner service without roles, secrets or open network egress, and a live run reaches the tenant only through a proxy that holds the credentials itself; the guards inside the runner process (Node permission model, preloaded module and network guards) remain defense in depth, not an isolation boundary. What is not done yet is the proof on the deployed profile and an external review of the runner (review findings CR-09, CR-15).
+**Why.** Generated test code is untrusted. Since roadmap 8.9 it runs in a separate runner service without roles, secrets or open network egress, and a live run reaches the tenant only through a proxy that holds the credentials itself; the guards inside the runner process (Node permission model, preloaded module and network guards) remain defense in depth, not an isolation boundary. What is not done yet is the proof on the deployed profile and the documented review of the runner (review findings CR-09, CR-15).
 
 **What changed with 8.9.** The path behind the lock is built: a live run executes in the isolated live
 runner, which never receives a credential; the app's credential proxy adds the credentials per request, for
@@ -260,7 +260,7 @@ lifted, the route refuses a live run unless the live runner and the proxy are co
 **Reopens only when all of these hold:**
 - The isolated live runner and the credential proxy are deployed and configured (RUNNER_LIVE_URL, RUNNER_SERVICE_ACCOUNT, S4_PROXY_BASE_URL); without them the route refuses a live run even with this lock lifted.
 - Required, not yet met: a run of the authorized negative test (tests/runner-isolation.spec.ts) against the deployed runners, with both runners configured, in which every probe holds — no secret-named variable, no file outside the sandbox directory, none of the fixed destinations it probes reachable (SECURITY.md §7.2) — plus a gcloud check that the runner service account holds no role, since the metadata server stays reachable by design.
-- An external review of that runner is done and its findings are closed.
+- Required, not yet met: a documented review of the runner, the credential proxy and their routes — the full QA review and the security audit of a release on main read these files completely (not INCOMPLETE for them), and every finding on them is fixed or refuted with evidence (decision Sonny, 24.09.2026: no external review).
 - Sonny decides to reopen, and this entry, SECURITY.md §7.1 and the guard spec change in the same release.
 
 **How it shows.** The route answers a live run with HTTP 403 and the user notice. The testing page marks the
@@ -269,10 +269,10 @@ tenant and does not send the request; the chatbot, the landing page, the knowled
 the whitepaper, the capability guide and the tenant-approval mail describe the connection check and name the
 lock. User notice, verbatim:
 
-> Running generated tests against a connected tenant is locked until the isolated live runner has passed its external review. The tenant connection check, the metadata read and the read-only OData call still work; tests run against mocks in the isolated test runner.
+> Running generated tests against a connected tenant is locked until the isolated live runner has passed its review. The tenant connection check, the metadata read and the read-only OData call still work; tests run against mocks in the isolated test runner.
 
 **Tracked.** Roadmap 8.9 (`docs/ROADMAP.md`, CR-09, decision §9 no. 16) built the isolated runner; the
-proof on the deployed profile, the external review and the decision to reopen are what is left. The
+proof on the deployed profile, the documented review and the decision to reopen are what is left. The
 preservation register (roadmap step 1.1) inherits this entry.
 
 ### 7.2 Authorized negative test of the deployed runner

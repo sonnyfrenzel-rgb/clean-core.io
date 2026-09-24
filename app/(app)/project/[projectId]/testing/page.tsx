@@ -919,10 +919,10 @@ export default function TestingSandboxPage() {
                   <p>{LIVE_TEST_EXECUTION.userNotice}</p>
                   <p className="mt-1.5">
                     {profile?.s4TenantAccessAllowed || profile?.isAdmin
-                      ? 'Bring your own tenant (BYOT) is granted for this account, so the connection check, the OData metadata read and the read-only call below are open to you. That approval does not lift this lock: it is lifted when the runner has its own isolated service and its review is closed, not by a permission.'
+                      ? 'Bring your own tenant (BYOT) is granted for this account, so the connection check, the OData metadata read and the read-only call below are open to you. That approval does not lift this lock: it is lifted when the isolated live runner has passed its proof on the deployed service and its review, not by a permission.'
                       : profile?.s4TenantAccessRequested
-                        ? 'Bring your own tenant (BYOT) is what opens the connection check, the OData metadata read and the read-only call — your request for it is with an administrator. That approval does not lift this lock: it is lifted when the runner has its own isolated service and its review is closed, not by a permission.'
-                        : 'Bring your own tenant (BYOT) is what opens the connection check, the OData metadata read and the read-only call: ask for it with the form below and an administrator reviews it by hand. That approval does not lift this lock: it is lifted when the runner has its own isolated service and its review is closed, not by a permission.'}
+                        ? 'Bring your own tenant (BYOT) is what opens the connection check, the OData metadata read and the read-only call — your request for it is with an administrator. That approval does not lift this lock: it is lifted when the isolated live runner has passed its proof on the deployed service and its review, not by a permission.'
+                        : 'Bring your own tenant (BYOT) is what opens the connection check, the OData metadata read and the read-only call: ask for it with the form below and an administrator reviews it by hand. That approval does not lift this lock: it is lifted when the isolated live runner has passed its proof on the deployed service and its review, not by a permission.'}
                   </p>
                 </div>
               </div>
