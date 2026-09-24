@@ -1325,6 +1325,8 @@ einer Einladung) braucht Sonnys Abwägung gegen weitergeleitete Links.
 | UX-122 | high | ToS-Hinweis verdrängt auf allen Routen den Inhalt | sofort | behoben |
 | UX-138 | high | Integrity-Grün bedeutet mal Existenz, mal Prüfung | sofort | behoben |
 | UX-145 | high | Tab „suspended“ zeigt auch Pending und Deleted | sofort | eingeplant |
+| UX-165 | high | Blockierter Start nur per Tooltip erklärt, für Tastatur unsichtbar | D.10b | eingeplant |
+| UX-166 | high | Dokumentation zeigt gespeicherten und fehlenden Stand zugleich | D.16a | eingeplant |
 | UX-005 | medium | Routenwechsel ohne Bestätigung und Undo | 0.7 | eingeplant |
 | UX-006 | medium | Von Befund kein Weg in den Code | 1.5 | eingeplant |
 | UX-012 | medium | Sticky-Header und Tabs verdecken Inhalt auf Phone | 1.4 | eingeplant |
@@ -1389,6 +1391,10 @@ einer Einladung) braucht Sonnys Abwägung gegen weitergeleitete Links.
 | UX-160 | medium | Importfehler ohne Rückmeldung an Nutzer | 1.4 | eingeplant |
 | UX-161 | medium | Export ohne sichtbare Bestätigung | 1.4 | eingeplant |
 | UX-162 | medium | Vor-Analyse überfrachtet den Start | — | zurückgestellt |
+| UX-167 | medium | Gegenentscheidung-Hinweis klein und kontrastarm | D.21 | eingeplant |
+| UX-168 | medium | Technik-Ankündigung lädt zum Fragen ein ohne Antwortweg | D.22a | eingeplant |
+| UX-169 | medium | Dokumentation heißt anders als die Stufe selbst | D.9 | eingeplant |
+| UX-170 | medium | Bestätigungsseite ohne Ausweg bei ungültigem Link | D.26 | eingeplant |
 | UX-008 | low | Slideshow-Steuerung ohne Namen, Pfeiltasten gekapert | 3.0.4 | behoben |
 | UX-011 | low | Wirre Befund-Begriffe und Sprachmix | 1.5 | eingeplant |
 | UX-013 | low | Vorschau widerspricht Editierbarkeit, Start irreführend | 1.5 | eingeplant |

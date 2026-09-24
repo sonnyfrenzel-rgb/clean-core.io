@@ -2057,6 +2057,90 @@
       "status": "eingeplant",
       "step": "1.5",
       "updatedAt": "2026-09-24T12:35:04.218Z"
+    },
+    {
+      "id": "UX-165",
+      "fingerprint": "66f595214b27",
+      "title": "Blockierter Start nur per Tooltip erklärt, für Tastatur unsichtbar",
+      "severity": "high",
+      "area": "release",
+      "firstSeenHead": "a12774cd2b7f4108d30d2fa4cf5b221e8c9b92e2",
+      "createdAt": "2026-09-24T18:18:11.544Z",
+      "status": "eingeplant",
+      "step": "D.10b",
+      "updatedAt": "2026-09-24T18:18:11.544Z"
+    },
+    {
+      "id": "UX-166",
+      "fingerprint": "c77eb1940438",
+      "title": "Dokumentation zeigt gespeicherten und fehlenden Stand zugleich",
+      "severity": "high",
+      "area": "release",
+      "firstSeenHead": "a12774cd2b7f4108d30d2fa4cf5b221e8c9b92e2",
+      "createdAt": "2026-09-24T18:18:11.773Z",
+      "status": "eingeplant",
+      "step": "D.16a",
+      "updatedAt": "2026-09-24T18:18:11.773Z"
+    },
+    {
+      "id": "UX-167",
+      "fingerprint": "81c5b0d50197",
+      "title": "Gegenentscheidung-Hinweis klein und kontrastarm",
+      "severity": "medium",
+      "area": "release",
+      "firstSeenHead": "a12774cd2b7f4108d30d2fa4cf5b221e8c9b92e2",
+      "createdAt": "2026-09-24T18:18:11.985Z",
+      "status": "eingeplant",
+      "step": "D.21",
+      "updatedAt": "2026-09-24T18:18:11.985Z"
+    },
+    {
+      "id": "UX-168",
+      "fingerprint": "d59ba6981893",
+      "title": "Technik-Ankündigung lädt zum Fragen ein ohne Antwortweg",
+      "severity": "medium",
+      "area": "release",
+      "firstSeenHead": "a12774cd2b7f4108d30d2fa4cf5b221e8c9b92e2",
+      "createdAt": "2026-09-24T18:18:12.199Z",
+      "status": "eingeplant",
+      "step": "D.22a",
+      "updatedAt": "2026-09-24T18:18:12.199Z"
+    },
+    {
+      "id": "UX-169",
+      "fingerprint": "f616f38320f0",
+      "title": "Dokumentation heißt anders als die Stufe selbst",
+      "severity": "medium",
+      "area": "release",
+      "firstSeenHead": "a12774cd2b7f4108d30d2fa4cf5b221e8c9b92e2",
+      "createdAt": "2026-09-24T18:18:12.437Z",
+      "status": "eingeplant",
+      "step": "D.9",
+      "updatedAt": "2026-09-24T18:18:12.437Z"
+    },
+    {
+      "id": "UX-170",
+      "fingerprint": "0b960df7d37e",
+      "title": "Bestätigungsseite ohne Ausweg bei ungültigem Link",
+      "severity": "medium",
+      "area": "release",
+      "firstSeenHead": "a12774cd2b7f4108d30d2fa4cf5b221e8c9b92e2",
+      "createdAt": "2026-09-24T18:18:12.649Z",
+      "status": "eingeplant",
+      "step": "D.26",
+      "updatedAt": "2026-09-24T18:18:12.649Z"
+    },
+    {
+      "id": "UX-171",
+      "fingerprint": "376a24af33df",
+      "title": "Rechtstext im Overlay vermutlich kontrastarm",
+      "severity": "low",
+      "area": "release",
+      "firstSeenHead": "a12774cd2b7f4108d30d2fa4cf5b221e8c9b92e2",
+      "createdAt": "2026-09-24T18:18:12.862Z",
+      "status": "widerlegt",
+      "reason": "Gemessen statt geschaetzt: #003D7C mit 70 % Deckkraft auf Weiss mischt zu etwa rgb(77,119,163), relative Luminanz 0,174, Kontrast (1,05/0,224) = 4,69:1 >= 4,5:1 fuer Fliesstext (app/components/LegalOverlay.tsx:43).",
+      "updatedAt": "2026-09-24T18:18:12.862Z"
     }
   ]
 }
