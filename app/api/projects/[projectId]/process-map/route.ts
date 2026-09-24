@@ -8,6 +8,7 @@ import {
   QuotaError,
 } from '@/lib/firebase-admin';
 import { mayReadProject } from '@/lib/project-readers';
+import { refuseInactiveAccount } from '@/lib/account-read-gate';
 import { assertRateLimit } from '@/lib/rate-limit';
 import { sha256Hex } from '@/lib/artefact-digest';
 import { buildBpmnExportFromSource } from '@/lib/bpmn/export';
@@ -127,6 +128,13 @@ async function openProject(
       }
       throw gateErr;
     }
+  }
+
+  if (!mutating) {
+    // The read keeps no Terms or approval gate (CR-13), but a suspended account
+    // reads nothing, as in Firestore (accountActive()).
+    const inactive = await refuseInactiveAccount(decodedToken.uid);
+    if (inactive) return { ok: false, response: inactive };
   }
 
   const { projectId } = await params;

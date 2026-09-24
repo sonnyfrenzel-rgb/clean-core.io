@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { logger, errMessage } from '@/lib/logger';
 import { verifyRequestAuth, getAdminDb, assertMfaSatisfied } from '@/lib/firebase-admin';
 import { mayReadProject } from '@/lib/project-readers';
+import { refuseInactiveAccount } from '@/lib/account-read-gate';
 import { assertRateLimit } from '@/lib/rate-limit';
 import { contractOfProject } from '@/lib/contract-build';
 import { generationDirection, generationBinding, offTrackRefusal } from '@/lib/generation-direction';
@@ -112,6 +113,9 @@ async function authorise(req: NextRequest): Promise<Authorised> {
       response: NextResponse.json({ error: q?.message || 'Too many requests.' }, { status: q?.status || 429 }),
     };
   }
+  // A suspended account neither reads nor records a contract, as in Firestore.
+  const inactive = await refuseInactiveAccount(decodedToken.uid);
+  if (inactive) return { ok: false, response: inactive };
   return { ok: true, uid: decodedToken.uid };
 }
 

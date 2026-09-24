@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyRequestAuth, getAdminDb, assertAccountActive, QuotaError, assertMfaSatisfied } from '@/lib/firebase-admin';
 import { isProjectOwner, mayReadProject } from '@/lib/project-readers';
+import { refuseInactiveAccount } from '@/lib/account-read-gate';
 import { logger, errMessage } from '@/lib/logger';
 import { isFirestoreId } from '@/lib/firestore-id';
 
@@ -54,6 +55,10 @@ export async function GET(
     if (!isFirestoreId(projectId)) {
       return NextResponse.json({ error: 'Invalid project id.' }, { status: 400 });
     }
+
+    // A suspended account reads nothing here, as in Firestore (accountActive()).
+    const inactive = await refuseInactiveAccount(decoded.uid);
+    if (inactive) return inactive;
 
     const { db } = await getAdminDb();
     const ref = db.collection('projects').doc(projectId);
