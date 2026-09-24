@@ -20,11 +20,12 @@ const ROUTES: { file: string; label: string; vars: string[] }[] = [
   // properly instead: rendered three ways, including with the <style> block
   // stripped, which is what a mail client is free to do.
   //
-  // The three below still use the original div-and-media-query design. They are
-  // the next candidates for the same rebuild.
-  { file: 'app/api/send-tenant-approval-email/route.ts', label: 'send-tenant-approval-email', vars: ['emailHtml'] },
-  { file: 'app/api/send-tenant-revoke-email/route.ts', label: 'send-tenant-revoke-email', vars: ['emailHtml'] },
-  { file: 'app/api/request-tenant-access/route.ts', label: 'request-tenant-access', vars: ['emailHtml', 'pendingHtml'] },
+  // The three tenant mails to users are not in it either: they moved to
+  // `lib/tenant-email.ts` and the plain user-mail layout in 3.0.9, which has no
+  // card for this check to measure; `tests/user-mail-layout.spec.ts` renders
+  // them at phone width instead. What is left is the operator's copy of a
+  // tenant request, still the original div-and-media-query design.
+  { file: 'app/api/request-tenant-access/route.ts', label: 'request-tenant-access', vars: ['emailHtml'] },
 ];
 
 /** Pulls a template literal out of the route source and neutralises its ${…} holes. */

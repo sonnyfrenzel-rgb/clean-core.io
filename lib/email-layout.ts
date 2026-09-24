@@ -78,6 +78,24 @@ const RESPONSIVE_STYLES = `
  * @param title     shown by clients that surface a document title; not the subject
  */
 export function wrapEmailDocument(innerHtml: string, title = 'Clean-Core.io'): string {
+  // The plain user-mail layout (`lib/user-mail.ts`, roadmap 3.0.9) has no card,
+  // no header table and no button for these rules to act on, and "no heavy
+  // styling" is half of what put it in the inbox. It gets the bare document.
+  // The marker is matched literally rather than imported: `lib/user-mail.ts`
+  // imports the version and constants, and this module stays import-free.
+  if (innerHtml.includes('data-mail-layout="plain"')) {
+    return `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>${title}</title>
+</head>
+<body style="margin:0; padding:0; background-color:#ffffff;">
+${innerHtml}
+</body>
+</html>`;
+  }
   return `<!doctype html>
 <html lang="en">
 <head>

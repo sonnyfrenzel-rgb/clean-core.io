@@ -91,8 +91,12 @@ export function htmlToText(html: string): string {
     .replace(/<style[\s\S]*?<\/style>/gi, '')
     // Line breaks in the markup are indentation, not content — as in a browser.
     .replace(/\s+/g, ' ')
-    .replace(/<a[^>]*href="([^"]*)"[^>]*>([\s\S]*?)<\/a>/gi, (_m, href, label) =>
-      `${String(label).replace(/<[^>]+>/g, '').trim()} (${href})`)
+    .replace(/<a[^>]*href="([^"]*)"[^>]*>([\s\S]*?)<\/a>/gi, (_m, href, label) => {
+      const shown = String(label).replace(/<[^>]+>/g, '').trim();
+      // A link shown as its own URL (the user-mail layout) is written once, not
+      // as "https://x (https://x)".
+      return shown === href ? href : `${shown} (${href})`;
+    })
     .replace(/<\/(p|h[1-6])\s*>/gi, '\n\n')
     .replace(/<(br|\/div|\/tr|\/li|\/ul|\/ol|\/table)[^>]*>/gi, '\n')
     .replace(/<li[^>]*>/gi, '- ')

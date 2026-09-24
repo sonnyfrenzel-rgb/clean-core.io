@@ -11,6 +11,7 @@ import {
 import { renderSurveyInviteEmail, renderSurveyInviteText } from '../lib/survey/invite-email';
 import { renderSurveyDigestEmail, renderSurveyDigestText } from '../lib/survey/digest-email';
 import { wrapEmailDocument } from '../lib/email-layout';
+import { APP_BASE_URL } from '../lib/constants';
 
 /**
  * The survey, and the four ways it could quietly produce a wrong answer.
@@ -70,46 +71,35 @@ test.describe('a survey link cannot be forged', () => {
 });
 
 test.describe('the questions do not answer themselves', () => {
-  test('every option in the mail is styled identically', () => {
-    const html = renderSurveyInviteEmail({
-      name: 'Test',
-      recipient: 't@example.com',
-      token: createSurveyToken(SURVEY_CAMPAIGN, 'uid-1', Date.now() + HOUR),
-      closesOn: '9 September 2026',
-    });
-
-    // Strip the label out of each answer row and compare what is left. One option
-    // rendered as the product's dark primary button would be a way of asking the
-    // question while suggesting the answer.
-    const rows = [...html.matchAll(/<td align="center" style="([^"]*border-radius: 10px[^"]*)">/g)].map(
-      (m) => m[1],
-    );
-    expect(rows.length, 'answer rows not found').toBe(MAIL_QUESTION.options.length);
-    expect(new Set(rows).size, `answer rows differ in style:\n${rows.join('\n')}`).toBe(1);
-  });
-
-  test('every option is reachable and carries its own answer id', () => {
+  test('the mail suggests no answer: one link, nothing preselected', () => {
+    // It used to carry the first question as three answer buttons. Since 3.0.9
+    // the mail is plain (`lib/user-mail.ts`) and carries one link, to the page,
+    // which asks every question — so no option can be styled, or linked, as the
+    // expected one.
     const token = createSurveyToken(SURVEY_CAMPAIGN, 'uid-1', Date.now() + HOUR);
     const html = renderSurveyInviteEmail({
-      name: '',
+      name: 'Test',
       recipient: 't@example.com',
       token,
       closesOn: '9 September 2026',
     });
-    for (const o of MAIL_QUESTION.options) {
-      expect(html, `no link for option ${o.id}`).toContain(`a=${o.id}`);
-    }
-    // The plain-text part has to work on its own — a client that shows only text
-    // must still be able to answer.
+    const hrefs = [...html.matchAll(/<a\s[^>]*href="([^"]*)"/g)].map((m) => m[1]);
+    expect(hrefs).toEqual([`${APP_BASE_URL}/survey/${encodeURIComponent(token)}`]);
+    expect(html).not.toMatch(/[?&](?:q|a)=/);
+    expect(html).toContain(MAIL_QUESTION.prompt);
+  });
+
+  test('the text part works on its own', () => {
+    // A client that shows only text must still reach the survey.
+    const token = createSurveyToken(SURVEY_CAMPAIGN, 'uid-1', Date.now() + HOUR);
     const text = renderSurveyInviteText({
       name: '',
       recipient: 't@example.com',
       token,
       closesOn: '9 September 2026',
     });
-    for (const o of MAIL_QUESTION.options) {
-      expect(text, `text part has no link for ${o.id}`).toContain(`a=${o.id}`);
-    }
+    expect(text).toContain(`${APP_BASE_URL}/survey/${encodeURIComponent(token)}`);
+    expect(text).toContain('9 September 2026');
   });
 
   test('the mail asks one question and the page asks the rest', () => {

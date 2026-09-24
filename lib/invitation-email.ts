@@ -1,5 +1,5 @@
-import { APP_VERSION } from '@/lib/version';
-import { APP_BASE_URL, CONTACT_EMAIL } from '@/lib/constants';
+import { CONTACT_EMAIL } from '@/lib/constants';
+import { buildUserMail } from '@/lib/user-mail';
 import {
   INVITATION_SCOPE_SENTENCE_RECIPIENT,
   INVITATION_LIMITS_SENTENCE_RECIPIENT,
@@ -10,12 +10,9 @@ import {
 /**
  * The two mails phase 5 sends.
  *
- * Both are built as fluid tables, like the registration mails and for the same
- * reason recorded in `lib/welcome-email.ts`: a nested-`div` layout sized for
- * 600px with a media query is a coin flip in a mail client, several of which
- * strip `<style>` outright. Every padding sits on a `<td>`, the outer table is
- * `width="100%"`, and nothing depends on the media query in
- * `lib/email-layout.ts`.
+ * Both are built with the plain user-mail layout, `lib/user-mail.ts`
+ * (roadmap 3.0.9): paragraphs, one link at the end shown as its URL, no
+ * button — what reached the inbox in the seed run of 24.09.2026.
  *
  * Every interpolated value must be HTML-escaped by the caller — this module
  * puts them into markup unchanged.
@@ -57,88 +54,38 @@ export const INVITATION_EMAIL_SUBJECT = 'You have been invited to read a project
  * answered by the privacy policy they accepted.
  *
  * The notice sits last and small on purpose. What the reader came for is the
- * invitation; a legal panel above the button would bury it.
+ * invitation; a legal panel above the link would bury it.
  */
 export function buildInvitationEmail({ inviterName, recipient, link, expires }: InvitationEmailInput): string {
-  const trustUrl = `${APP_BASE_URL}/trust`;
-  // Section 8 of the privacy policy, "Who Can Open Your Projects" — the anchor
-  // exists in `app/datenschutz/page.tsx`, so the reader lands on the paragraph
-  // this mail is about rather than at the top of a long page.
-  const privacyUrl = `${APP_BASE_URL}/datenschutz#project-access`;
-  return `
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f8fafc; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;">
-        <tr>
-          <td align="center" style="padding: 20px 10px;">
-            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width: 600px; width: 100%;">
-              <tr>
-                <td style="background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 18px; padding: 24px;">
-
-                  <div style="border-bottom: 1px solid #f1f5f9; padding-bottom: 18px; margin-bottom: 22px;">
-                    <div style="font-size: 21px; font-weight: 800; color: #0f172a; letter-spacing: -0.02em; line-height: 1.2;">
-                      Clean-Core<span style="color: #10b981;">.io</span>
-                    </div>
-                    <div style="font-size: 10px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.12em; margin-top: 4px;">
-                      Free Community SAP Modernization Platform
-                    </div>
-                  </div>
-
-                  <h1 style="font-size: 23px; font-weight: 800; color: #0f172a; margin: 0; letter-spacing: -0.02em; line-height: 1.2;">${inviterName} invited you to read a project</h1>
-
-                  <p style="font-size: 15px; line-height: 1.6; color: #334155; margin: 18px 0 0 0;">
-                    ${INVITATION_SCOPE_SENTENCE_RECIPIENT}
-                  </p>
-                  <p style="font-size: 15px; line-height: 1.6; color: #334155; margin: 12px 0 0 0;">
-                    ${INVITATION_LIMITS_SENTENCE_RECIPIENT}
-                  </p>
-
-                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 22px 0;">
-                    <tr>
-                      <td align="center" style="background: #0f172a; border-radius: 10px;">
-                        <a href="${link}" style="display: block; padding: 14px 20px; color: #ffffff; text-decoration: none; font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em;">Open the invitation</a>
-                      </td>
-                    </tr>
-                  </table>
-
-                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; margin-bottom: 16px;">
-                    <tr>
-                      <td style="padding: 18px; font-size: 13px; line-height: 1.6; color: #475569;">
-                        <strong style="display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: #475569; margin-bottom: 8px;">The link only opens for you</strong>
-                        It opens for a Clean-Core.io account signed in with <strong>${recipient}</strong> and no other. Forwarding it gives nobody anything: the address on the account has to be this one, and it has to be confirmed. If you have no account yet, create one with this address &mdash; the link brings you back here afterwards.
-                        <br /><br />
-                        <strong>This invitation expires on ${expires}.</strong>
-                      </td>
-                    </tr>
-                  </table>
-
-                  <p style="font-size: 13px; line-height: 1.6; color: #475569; margin: 0 0 20px 0;">
-                    Did you not expect this? Then ignore the mail &mdash; nothing happens until you open the link and sign in. Questions go to <a href="mailto:${CONTACT_EMAIL}" style="color: #047857; font-weight: 700;">${CONTACT_EMAIL}</a>, and <a href="${trustUrl}" style="color: #0284c7; font-weight: 700;">${trustUrl}</a> explains how the platform handles code.
-                  </p>
-
-                  <div style="border-top: 1px solid #f1f5f9; padding-top: 16px; font-size: 14px; color: #64748b; line-height: 1.5;">
-                    Warm regards,<br /><strong>The Clean-Core.io Team</strong>
-                  </div>
-
-                  <div style="border-top: 1px solid #f1f5f9; margin-top: 20px; padding-top: 14px; font-size: 12px; line-height: 1.6; color: #64748b;">
-                    <strong style="display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b; margin-bottom: 8px;">How we got your address &mdash; Art. 14 GDPR</strong>
-                    The person who invited you typed your address; you never gave it to us. We store it to send this one mail and to open that one project for this address and no other, and if you accept, we also store your account&rsquo;s id and the address on that account. Nobody sees any of it but the owner who invited you: our security rules let no browser read an invitation at all. Two processors handle it on our behalf: Resend, which delivers this mail, and Google Firebase, which hosts the database the invitation is stored in (Belgium, europe-west1). Both are US companies certified under the EU-U.S. Data Privacy Framework, so a transfer to them rests on the European Commission&rsquo;s adequacy decision of 10 July 2023 (Art. 45 GDPR); where that does not cover it, the EU Standard Contractual Clauses (Art. 46 GDPR) and the providers&rsquo; data-processing terms apply.
-                    <br /><br />
-                    The basis is our legitimate interest in running an invitation feature a user asked for (Art. 6(1)(f) GDPR). An invitation expires on its own after ${INVITATION_DEFAULT_DAYS} days by default and ${INVITATION_MAX_DAYS} at the most; it is deleted with the project, and it is deleted if you delete a Clean-Core.io account carrying this address. You can ask us for access, rectification, erasure or restriction, you can object at any time (Art. 21 GDPR), and you can complain to a supervisory authority &mdash; ours is the Bayerisches Landesamt f&uuml;r Datenschutzaufsicht (BayLDA), Promenade 18, 91522 Ansbach, Germany. Controller: Felix Frenzel, Hellerstra&szlig;e 9, 96047 Bamberg, Germany, <a href="mailto:${CONTACT_EMAIL}" style="color: #047857; font-weight: 700;">${CONTACT_EMAIL}</a>. The full privacy policy is at <a href="${privacyUrl}" style="color: #0284c7; font-weight: 700;">${privacyUrl}</a>, section 8.
-                  </div>
-
-                </td>
-              </tr>
-              <tr>
-                <td style="padding: 18px 6px 0 6px; color: #94a3b8; font-size: 11px; line-height: 1.6; text-align: center;">
-                  <p style="margin: 0 0 8px 0;">Sent to ${recipient} because a Clean-Core.io user invited that address to read one of their projects. You do not have an account with us because of this mail, and we added none.</p>
-                  <p style="margin: 0; font-weight: 600;">Imprint: Felix Frenzel &bull; Hellerstra&szlig;e 9 &bull; 96047 Bamberg &bull; Germany &bull; ${CONTACT_EMAIL}<br />System version ${APP_VERSION}</p>
-                </td>
-              </tr>
-            </table>
-          </td>
-        </tr>
-      </table>
-    `;
+  return buildUserMail({
+    greeting: 'Hello,',
+    paragraphs: [
+      `<strong>${inviterName} invited you to read a project on Clean-Core.io.</strong>`,
+      INVITATION_SCOPE_SENTENCE_RECIPIENT,
+      INVITATION_LIMITS_SENTENCE_RECIPIENT,
+      `<strong>The link only opens for you.</strong> It opens for a Clean-Core.io account signed in with <strong>${recipient}</strong> and no other. Forwarding it gives nobody anything: the address on the account has to be this one, and it has to be confirmed. If you have no account yet, create one with this address &mdash; the link brings you back here afterwards.`,
+      `This invitation expires on ${expires}.`,
+    ],
+    link: { lead: 'Open the invitation:', url: link },
+    after: [
+      `Did you not expect this? Then ignore the mail &mdash; nothing happens until you open the link and sign in. Questions go to ${CONTACT_EMAIL}; the page Trust &amp; Transparency on clean-core.io explains how the platform handles code.`,
+    ],
+    footer: [
+      `<strong>How we got your address &mdash; Art. 14 GDPR.</strong> ${ART14_NOTICE}`,
+      `Sent to ${recipient} because a Clean-Core.io user invited that address to read one of their projects. You do not have an account with us because of this mail, and we added none.`,
+    ],
+  });
 }
+
+/**
+ * The Art. 14 notice itself. No caller value is interpolated into it — the
+ * guard in `tests/invitation-email-guard.spec.ts` builds the mail with hostile
+ * input and compares this part byte for byte. The privacy policy is named, not
+ * linked: the one link of a user mail is the invitation (`lib/user-mail.ts`).
+ */
+const ART14_NOTICE =
+  'The person who invited you typed your address; you never gave it to us. We store it to send this one mail and to open that one project for this address and no other, and if you accept, we also store your account&rsquo;s id and the address on that account. Nobody sees any of it but the owner who invited you: our security rules let no browser read an invitation at all. Two processors handle it on our behalf: Resend, which delivers this mail, and Google Firebase, which hosts the database the invitation is stored in (Belgium, europe-west1). Both are US companies certified under the EU-U.S. Data Privacy Framework, so a transfer to them rests on the European Commission&rsquo;s adequacy decision of 10 July 2023 (Art. 45 GDPR); where that does not cover it, the EU Standard Contractual Clauses (Art. 46 GDPR) and the providers&rsquo; data-processing terms apply. ' +
+  `The basis is our legitimate interest in running an invitation feature a user asked for (Art. 6(1)(f) GDPR). An invitation expires on its own after ${INVITATION_DEFAULT_DAYS} days by default and ${INVITATION_MAX_DAYS} at the most; it is deleted with the project, and it is deleted if you delete a Clean-Core.io account carrying this address. You can ask us for access, rectification, erasure or restriction, you can object at any time (Art. 21 GDPR), and you can complain to a supervisory authority &mdash; ours is the Bayerisches Landesamt f&uuml;r Datenschutzaufsicht (BayLDA), Promenade 18, 91522 Ansbach, Germany. Controller: Felix Frenzel, Hellerstra&szlig;e 9, 96047 Bamberg, Germany, ${CONTACT_EMAIL}. The full privacy policy is the page Privacy Policy on clean-core.io, section 8.`;
 
 /* ----------------------------------------------------- the confirmation mail */
 
@@ -168,55 +115,18 @@ export const ADDRESS_CONFIRMATION_SUBJECT = 'Confirm your email address for Clea
  * why it counts as confirmed and gets no mail.
  */
 export function buildAddressConfirmationEmail({ recipient, link }: AddressConfirmationEmailInput): string {
-  return `
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f8fafc; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;">
-        <tr>
-          <td align="center" style="padding: 20px 10px;">
-            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width: 600px; width: 100%;">
-              <tr>
-                <td style="background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 18px; padding: 24px;">
-
-                  <div style="border-bottom: 1px solid #f1f5f9; padding-bottom: 18px; margin-bottom: 22px;">
-                    <div style="font-size: 21px; font-weight: 800; color: #0f172a; letter-spacing: -0.02em; line-height: 1.2;">
-                      Clean-Core<span style="color: #10b981;">.io</span>
-                    </div>
-                  </div>
-
-                  <h1 style="font-size: 23px; font-weight: 800; color: #0f172a; margin: 0; letter-spacing: -0.02em; line-height: 1.2;">Confirm your email address</h1>
-
-                  <p style="font-size: 15px; line-height: 1.6; color: #334155; margin: 18px 0 0 0;">
-                    Somebody invited <strong>${recipient}</strong> to read a project on Clean-Core.io, and that project contains source code. Before it opens, we need to see that this mailbox is yours.
-                  </p>
-
-                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 22px 0;">
-                    <tr>
-                      <td align="center" style="background: #0f172a; border-radius: 10px;">
-                        <a href="${link}" style="display: block; padding: 14px 20px; color: #ffffff; text-decoration: none; font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em;">Confirm this address</a>
-                      </td>
-                    </tr>
-                  </table>
-
-                  <p style="font-size: 13px; line-height: 1.6; color: #475569; margin: 0 0 20px 0;">
-                    Afterwards, sign in again and open the invitation link once more. Nothing else about your account changes, and nothing is shared with anyone until you open that link.
-                    <br /><br />
-                    Did you not sign up for Clean-Core.io? Then ignore this mail. Without this confirmation the address stays unusable for invitations, and you can write to <a href="mailto:${CONTACT_EMAIL}" style="color: #047857; font-weight: 700;">${CONTACT_EMAIL}</a>.
-                  </p>
-
-                  <div style="border-top: 1px solid #f1f5f9; padding-top: 16px; font-size: 14px; color: #64748b; line-height: 1.5;">
-                    Warm regards,<br /><strong>The Clean-Core.io Team</strong>
-                  </div>
-
-                </td>
-              </tr>
-              <tr>
-                <td style="padding: 18px 6px 0 6px; color: #94a3b8; font-size: 11px; line-height: 1.6; text-align: center;">
-                  <p style="margin: 0 0 8px 0;">Sent to ${recipient} because an account with that address tried to open an invitation on Clean-Core.io.</p>
-                  <p style="margin: 0; font-weight: 600;">Imprint: Felix Frenzel &bull; Hellerstra&szlig;e 9 &bull; 96047 Bamberg &bull; Germany &bull; ${CONTACT_EMAIL}<br />System version ${APP_VERSION}</p>
-                </td>
-              </tr>
-            </table>
-          </td>
-        </tr>
-      </table>
-    `;
+  return buildUserMail({
+    greeting: 'Hello,',
+    paragraphs: [
+      `This mail asks you to confirm that ${recipient} is your address. An account with this address was used to open an invitation to a project on Clean-Core.io. The project contains source code, so it opens only for a confirmed address.`,
+    ],
+    link: { lead: 'To confirm the address, open this link:', url: link },
+    after: [
+      'Then sign in again and open the invitation link once more. Nothing else about your account changes, and nothing is shared with anyone until you open that link.',
+      `If you did not try to open an invitation, you can ignore this mail; the address then stays unconfirmed. Questions go to ${CONTACT_EMAIL}.`,
+    ],
+    footer: [
+      `Sent to ${recipient} because an account with that address tried to open an invitation on Clean-Core.io.`,
+    ],
+  });
 }

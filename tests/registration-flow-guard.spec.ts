@@ -159,7 +159,8 @@ test.describe('the one welcome mail does the whole job', () => {
     expect(s).toContain('Your first run');
     expect(s).toContain('Try it with an example');
     expect(s).toContain('Z_MATERIAL_STOCK_CALC');
-    expect(s).toContain('/first-run');
+    // Named, not linked: the one link of a user mail is the dashboard (3.0.9).
+    expect(s).toContain('Your First Run');
     expect(s).toContain('/dashboard');
   });
 
@@ -174,7 +175,7 @@ test.describe('the one welcome mail does the whole job', () => {
     ]) {
       expect(s, `the security block lost "${claim}"`).toContain(claim);
     }
-    expect(s).toContain('/trust');
+    expect(s).toContain('Trust &amp; Transparency');
   });
 
   test('it states the quota honestly', () => {

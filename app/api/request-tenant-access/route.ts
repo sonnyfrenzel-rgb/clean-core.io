@@ -7,6 +7,7 @@ import { htmlToText } from '@/lib/mail-text';
 import { escapeHtml } from '@/lib/utils';
 import { assertRateLimit, getClientIp } from '@/lib/rate-limit';
 import { wrapEmailDocument } from '@/lib/email-layout';
+import { buildTenantPendingEmail, TENANT_PENDING_SUBJECT } from '@/lib/tenant-email';
 
 export async function POST(request: NextRequest) {
   // Whether the administrator actually received the approval token. The route
@@ -81,7 +82,6 @@ export async function POST(request: NextRequest) {
     // Plain subjects, no emoji and no exclamation mark (roadmap 3.0.9): both
     // are classic bulk-mail markers, and these are transactional mails.
     const emailSubject = `S/4HANA tenant access request: ${name}`;
-    const pendingSubject = `Clean-Core.io: your S/4HANA tenant access request is under review`;
     const emailHtml = `
       <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 24px; background-color: #f8fafc; color: #0f172a;">
         <!-- Card Container -->
@@ -109,7 +109,7 @@ export async function POST(request: NextRequest) {
           <!-- Main Heading -->
           <div style="margin-bottom: 28px;">
             <span style="font-size: 10px; font-weight: 800; color: #0369a1; text-transform: uppercase; letter-spacing: 0.10em; background-color: #f0f9ff; padding: 6px 12px; border-radius: 9999px; border: 1px solid #bae6fd;">
-              🛡️ Live S/4HANA Connection Request
+              Live S/4HANA Connection Request
             </span>
             <h1 style="font-size: 26px; font-weight: 800; color: #0f172a; margin: 18px 0 0 0; letter-spacing: -0.03em; line-height: 1.15;">Review Live Integration Request</h1>
           </div>
@@ -155,13 +155,13 @@ export async function POST(request: NextRequest) {
             
             <div style="margin-bottom: 16px;">
               <a href="${approveUrl}" style="display: inline-block; background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); color: #ffffff; text-decoration: none; padding: 16px 32px; border-radius: 12px; font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; box-shadow: 0 4px 12px rgba(2, 132, 199, 0.15);">
-                ⚡ Approve & Unlock Tenant Connection
+                Approve &amp; Unlock Tenant Connection
               </a>
             </div>
             
             <div>
               <a href="${rejectUrl}" style="display: inline-block; font-size: 13px; font-weight: 700; color: #dc2626; text-decoration: none;">
-                ❌ Reject & Decline Request
+                Reject &amp; Decline Request
               </a>
             </div>
           </div>
@@ -218,84 +218,10 @@ export async function POST(request: NextRequest) {
 
       // ALSO send a pending confirmation email to the applicant (professional S/4HANA integration pending email)
       try {
-        console.log(`[Email] Sending S/4HANA Integration Pending notification email to applicant ${email}...`);
-        const pendingHtml = `
-          <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 24px; background-color: #f8fafc; color: #0f172a;">
-            <div style="background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 24px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.06); overflow: hidden; padding: 40px;">
-              
-              <!-- Logo & Branding -->
-              <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 32px; border-bottom: 1px solid #f1f5f9; padding-bottom: 24px;">
-                <tr>
-                  <td align="left" valign="middle">
-                    <div style="font-size: 24px; font-weight: 800; color: #0f172a; letter-spacing: -0.02em; margin: 0; line-height: 1.2;">
-                      Clean-Core<span style="color: #10b981;">.io</span>
-                    </div>
-                    <div style="font-size: 10px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.15em; margin-top: 4px; line-height: 1.2;">
-                      Free Community SAP Modernization Platform
-                    </div>
-                  </td>
-                  <td align="right" valign="middle" style="text-align: right;">
-                    <span style="display: inline-block; font-size: 11px; font-weight: 700; color: #b45309; background-color: #fffbeb; padding: 6px 12px; border-radius: 8px; border: 1px solid #fef3c7; line-height: 1.2; text-align: center; white-space: nowrap;">
-                      Review Pending
-                    </span>
-                  </td>
-                </tr>
-              </table>
-
-              <div style="margin-bottom: 28px;">
-                <span style="font-size: 10px; font-weight: 800; color: #0284c7; text-transform: uppercase; letter-spacing: 0.10em; background-color: #f0f9ff; padding: 6px 12px; border-radius: 9999px; border: 1px solid #bae6fd;">
-                  ⏳ Integration Pending
-                </span>
-                <h1 style="font-size: 26px; font-weight: 800; color: #0f172a; margin: 18px 0 0 0; letter-spacing: -0.03em; line-height: 1.15;">Custom S/4HANA Connection Request</h1>
-              </div>
-
-              <p style="font-size: 15px; line-height: 1.6; color: #334155; margin: 0 0 20px 0;">
-                Hello ${name},
-              </p>
-              
-              <p style="font-size: 15px; line-height: 1.6; color: #334155; margin: 0 0 20px 0;">
-                Thank you for submitting a connection request to connect a **Custom S/4HANA Tenant** (BYOT) inside your Stage 5 Testing Sandbox.
-              </p>
-
-              <p style="font-size: 15px; line-height: 1.6; color: #334155; margin: 0 0 24px 0;">
-                Our systems engineering and compliance team has successfully received your proposal. To guarantee absolute compliance with your target ERP's access controls and secure network paths, we manually audit all custom sandbox endpoints.
-              </p>
-
-              <!-- Connection Sandbox Guide -->
-              <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; padding: 20px; margin-bottom: 30px;">
-                <span style="font-weight: 800; color: #334155; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 12px;">🔒 Next Steps for Safe Sandbox Connection:</span>
-                <ul style="margin: 0; padding-left: 20px; font-size: 13px; color: #475569; line-height: 1.6;">
-                  <li style="margin-bottom: 8px;">
-                    <strong>Verification Window:</strong> Manual verification is typically completed within 24 hours. You will receive an immediate welcome email once access is active.
-                  </li>
-                  <li style="margin-bottom: 8px;">
-                    <strong>Prepare Credentials:</strong> Standard basic authentication or OAuth 2.0 Client credentials can be securely saved. Ensure you utilize non-productive development tenants only.
-                  </li>
-                  <li>
-                    <strong>Sovereign Transit Proxy:</strong> Clean-Core.io routes all queries statelessly. No business, transactional, or master data is stored, cached, or persisted on our servers.
-                  </li>
-                </ul>
-              </div>
-
-              <div style="border-top: 1px solid #f1f5f9; padding-top: 24px; font-size: 14px; color: #64748b; line-height: 1.5;">
-                Warm regards,<br />
-                <strong>The Clean-Core.io Team</strong><br />
-                <span style="font-size: 12px; color: #94a3b8;">Free Community Edition Program</span>
-              </div>
-
-            </div>
-
-            <div style="text-align: center; margin-top: 32px; padding: 0 20px; color: #94a3b8; font-size: 11px; line-height: 1.6;">
-              <p style="margin: 0 0 8px 0;">
-                This transactional email was sent to ${email} confirming your integration request on Clean-Core.io.
-              </p>
-              <p style="margin: 0 0 12px 0; font-weight: 600;">
-                Imprint: Felix Frenzel • Hellerstraße 9 • 96047 Bamberg • Germany • E-Mail: info@clean-core.io <br />
-                Clean-Core.io System-Version: ${APP_VERSION} • Free Community SAP Modernization Platform
-              </p>
-            </div>
-          </div>
-        `;
+        console.log('[Email] Sending the tenant request confirmation to the applicant...');
+        // The applicant's copy is a user mail: plain layout, one link
+        // (`lib/tenant-email.ts`, roadmap 3.0.9).
+        const pendingHtml = wrapEmailDocument(buildTenantPendingEmail({ name, recipient: email }));
 
         await fetch('https://api.resend.com/emails', {
           method: 'POST',
@@ -305,12 +231,15 @@ export async function POST(request: NextRequest) {
           },
           body: JSON.stringify({
             from: USER_MAIL_FROM,
-            to: email,
-            subject: pendingSubject,
+            // The raw address. `email` is the HTML-escaped copy for the markup;
+            // an address with an `&` or `'` in it used to be mailed as
+            // `&amp;`/`&#39;` — a different mailbox, or none (roadmap 3.0.9).
+            to: rawEmail,
+            subject: TENANT_PENDING_SUBJECT,
             reply_to: CONTACT_EMAIL,
-            html: wrapEmailDocument(pendingHtml),
+            html: pendingHtml,
             // HTML-only was a spam signal (roadmap 3.0.9, seed run 20260924-a).
-            text: htmlToText(wrapEmailDocument(pendingHtml)),
+            text: htmlToText(pendingHtml),
           }),
         });
         console.log('[Email] Success sending pending tenant connection welcome email to applicant.');
@@ -349,7 +278,7 @@ export async function POST(request: NextRequest) {
 
         console.log('\n======================================================');
         console.log(`📬   [MOCK PENDING EMAIL SENT TO APPLICANT: ${email}]   📬`);
-        console.log(`Subject: ${pendingSubject}`);
+        console.log(`Subject: ${TENANT_PENDING_SUBJECT}`);
         console.log(`System Version: ${APP_VERSION}`);
         console.log('======================================================\n');
       } else {

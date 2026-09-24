@@ -19,10 +19,11 @@
  * outside https://clean-core.io/ and a user mail under any sender but the one.
  * The dry run prints the list; `tests/mail-seed-test.spec.ts` fails on it.
  *
- * Three of the templates are not modules but template literals inside route
- * handlers (`request-tenant-access`, `send-tenant-approval-email`,
- * `send-tenant-revoke-email`). They are read out of the route source here, the
- * way `tests/email-responsive.spec.ts` already does, and every `${…}` hole is
+ * One template is not a module but a template literal inside a route handler:
+ * the operator's copy of a tenant request (`request-tenant-access`, `emailHtml`;
+ * the three tenant mails to users moved to `lib/tenant-email.ts` in 3.0.9). It
+ * is read out of the route source here, the way `tests/email-responsive.spec.ts`
+ * already does, and every `${…}` hole is
  * filled from an explicit table. An unknown hole is an error, not a blank: a
  * template that grew a new variable must stop the seed test, not ship a mail
  * with a gap in it. Every text part comes from the one converter every call
@@ -74,6 +75,14 @@ import {
   renderUsageReportText,
 } from '../../lib/usage-report-email';
 import { renderSecurityAlert } from '../../lib/security-alert-email';
+import {
+  buildTenantPendingEmail,
+  TENANT_PENDING_SUBJECT,
+  buildTenantApprovalEmail,
+  TENANT_APPROVAL_SUBJECT,
+  buildTenantRevokeEmail,
+  TENANT_REVOKE_SUBJECT,
+} from '../../lib/tenant-email';
 
 const ROOT = path.resolve(__dirname, '..', '..');
 
@@ -282,11 +291,6 @@ function sampleSurveyResponses(now: Date): SurveyResponse[] {
   ];
 }
 
-/** `https://clean-core.io`, the value both tenant routes fall back to. */
-function tenantRouteBaseUrl(): string {
-  return process.env.NEXT_PUBLIC_APP_URL || 'https://clean-core.io';
-}
-
 /* --------------------------------------------------------- the catalogue */
 
 const REGISTER = 'app/api/account/register/route.ts';
@@ -370,60 +374,30 @@ export const SEED_MAIL_TYPES: SeedMailType[] = [
     type: 'tenant-pending',
     audience: 'nutzer',
     source: TENANT_REQ,
-    template: `${TENANT_REQ} (pendingHtml)`,
+    template: 'lib/tenant-email.ts (buildTenantPendingEmail)',
     build: ({ recipient }) => {
-      const src = routeSource(TENANT_REQ);
-      const scope = { name: escapeHtml(SEED_NAME), email: escapeHtml(recipient.address), APP_VERSION };
-      const html = wrapEmailDocument(renderSourceTemplate(src, 'pendingHtml', scope));
-      return {
-        from: USER_MAIL_FROM,
-        replyTo: CONTACT_EMAIL,
-        subject: renderSourceTemplate(src, 'pendingSubject', scope),
-        html,
-        text: htmlToText(html),
-      };
+      const html = wrapEmailDocument(buildTenantPendingEmail({ name: escapeHtml(SEED_NAME), recipient: escapeHtml(recipient.address) }));
+      return { from: USER_MAIL_FROM, replyTo: CONTACT_EMAIL, subject: TENANT_PENDING_SUBJECT, html, text: htmlToText(html) };
     },
   },
   {
     type: 'tenant-approval',
     audience: 'nutzer',
     source: TENANT_OK,
-    template: `${TENANT_OK} (emailHtml)`,
+    template: 'lib/tenant-email.ts (buildTenantApprovalEmail)',
     build: ({ recipient }) => {
-      const src = routeSource(TENANT_OK);
-      const scope = {
-        name: escapeHtml(SEED_NAME), email: escapeHtml(recipient.address), APP_VERSION,
-        BASE_URL: tenantRouteBaseUrl(), dashboardUrl: `${tenantRouteBaseUrl()}/dashboard`,
-      };
-      const html = wrapEmailDocument(renderSourceTemplate(src, 'emailHtml', scope));
-      return {
-        from: USER_MAIL_FROM,
-        replyTo: CONTACT_EMAIL,
-        subject: renderSourceTemplate(src, 'emailSubject', scope),
-        html,
-        text: htmlToText(html),
-      };
+      const html = wrapEmailDocument(buildTenantApprovalEmail({ name: escapeHtml(SEED_NAME), recipient: escapeHtml(recipient.address) }));
+      return { from: USER_MAIL_FROM, replyTo: CONTACT_EMAIL, subject: TENANT_APPROVAL_SUBJECT, html, text: htmlToText(html) };
     },
   },
   {
     type: 'tenant-revoke',
     audience: 'nutzer',
     source: TENANT_REVOKE,
-    template: `${TENANT_REVOKE} (emailHtml)`,
+    template: 'lib/tenant-email.ts (buildTenantRevokeEmail)',
     build: ({ recipient }) => {
-      const src = routeSource(TENANT_REVOKE);
-      const scope = {
-        name: escapeHtml(SEED_NAME), email: escapeHtml(recipient.address), APP_VERSION,
-        BASE_URL: tenantRouteBaseUrl(), dashboardUrl: `${tenantRouteBaseUrl()}/dashboard`,
-      };
-      const html = wrapEmailDocument(renderSourceTemplate(src, 'emailHtml', scope));
-      return {
-        from: USER_MAIL_FROM,
-        replyTo: CONTACT_EMAIL,
-        subject: renderSourceTemplate(src, 'emailSubject', scope),
-        html,
-        text: htmlToText(html),
-      };
+      const html = wrapEmailDocument(buildTenantRevokeEmail({ name: escapeHtml(SEED_NAME), recipient: escapeHtml(recipient.address) }));
+      return { from: USER_MAIL_FROM, replyTo: CONTACT_EMAIL, subject: TENANT_REVOKE_SUBJECT, html, text: htmlToText(html) };
     },
   },
   {
@@ -598,7 +572,10 @@ const EMOJI = /[\p{Extended_Pictographic}\u{FE0F}\u{20E3}\u{1F1E6}-\u{1F1FF}]/u;
  * keep. An empty list is a pass; each entry is one sentence naming the rule.
  *
  * - a `text/plain` part (M365: the same mail without one went to spam);
- * - a plain subject: no emoji, no exclamation mark;
+ * - a plain subject: no emoji, no exclamation mark; no emoji in the body either;
+ * - user mails in the plain layout (roadmap 3.0.9, round 2): exactly one link,
+ *   shown as its URL (the survey may add its unsubscribe link), no button,
+ *   table or image markup;
  * - every link on https://clean-core.io/ (mailto: is not a link to a site),
  *   apart from the documented `LINK_EXCEPTIONS`;
  * - user mails under the one sender, `USER_MAIL_FROM` with replies to
@@ -617,7 +594,22 @@ export function mailPolicyWarnings(
   const allowed = new Set([...(LINK_EXCEPTIONS[t.type]?.hosts ?? []), ...alsoOwn]);
   const foreign = linkHosts(mail).filter((h) => h !== 'https://clean-core.io' && !h.startsWith('mailto:') && !allowed.has(h));
   if (foreign.length) out.push(`links outside https://clean-core.io/: ${foreign.join(' ')}`);
+  // Emoji anywhere in the message, not only in the subject: a badge like
+  // "⚡ Approve" is as much a bulk-mail marker in the body.
+  if (EMOJI.test(mail.html) || EMOJI.test(mail.text ?? '')) out.push('emoji in the body');
   if (t.audience === 'nutzer') {
+    // The plain layout (lib/user-mail.ts): one link, shown as its URL, and no
+    // button, table scaffolding or image. The survey's unsubscribe link is the
+    // one allowed extra, and only in a mail that declares List-Unsubscribe.
+    const allowedLinks = 1 + (mail.headers?.['List-Unsubscribe'] ? 1 : 0);
+    const links = htmlLinkCount(mail.html);
+    if (links !== allowedLinks) out.push(`user mail has ${links} link(s), not ${allowedLinks}`);
+    for (const m of mail.html.matchAll(/<a\s[^>]*href="([^"]*)"[^>]*>([\s\S]*?)<\/a>/gi)) {
+      if (m[2].trim() !== m[1]) out.push(`user mail link not shown as its URL: "${m[2].trim().slice(0, 40)}"`);
+    }
+    if (/<table\b|<img\b|<button\b/i.test(mail.html)) out.push('user mail has table, image or button markup');
+    if (/<a\s[^>]*style="[^"]*(?:background|padding|display)/i.test(mail.html)) out.push('user mail has a link styled as a button');
+    if (!mail.html.includes('data-mail-layout="plain"')) out.push('user mail not built with lib/user-mail.ts');
     if (mail.from !== USER_MAIL_FROM) out.push(`user mail not from "${USER_MAIL_FROM}": "${mail.from}"`);
     if (mail.replyTo !== USER_MAIL_REPLY_TO) out.push(`user mail reply-to is not ${USER_MAIL_REPLY_TO}: ${mail.replyTo ?? '(none)'}`);
   }

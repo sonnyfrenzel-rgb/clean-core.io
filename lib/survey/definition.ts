@@ -162,13 +162,13 @@ export function getOption(questionId: string, optionId: string): SurveyOption | 
   return getQuestion(questionId)?.options.find((o) => o.id === optionId);
 }
 
-/** The one question carried in the email body. */
+/** The question the email names; since 3.0.9 it is answered on the page like the rest. */
 export const MAIL_QUESTION = SURVEY_QUESTIONS.find((q) => q.where === 'mail')!;
 
 /** Everything asked on the landing page, in order. */
 export const PAGE_QUESTIONS = SURVEY_QUESTIONS.filter((q) => q.where === 'page');
 
-export const SURVEY_SUBJECT = 'On the way to v3.0 — your vote, and a two-minute first run';
+export const SURVEY_SUBJECT = 'Clean-Core.io version 3.0: a one-minute survey';
 
 /**
  * Free-text prompt on the landing page. Optional, and never required to submit.

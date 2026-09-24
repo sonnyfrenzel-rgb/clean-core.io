@@ -47,7 +47,7 @@ test.describe('Art. 14 GDPR notice in the invitation mail', () => {
     // The controller, in full. The imprint line in the footer is the same
     // identity, but Art. 14 owes it inside the notice itself.
     expect(html).toContain('Controller: Felix Frenzel, Hellerstra&szlig;e 9, 96047 Bamberg, Germany');
-    expect(html).toContain(`mailto:${CONTACT_EMAIL}`);
+    expect(html).toContain(`Germany, ${CONTACT_EMAIL}.`);
 
     // What is held: the address now, the account uid and account address after
     // an acceptance. `lib/invitations.ts` stores nothing else about the invited
@@ -96,15 +96,16 @@ test.describe('Art. 14 GDPR notice in the invitation mail', () => {
       'Promenade 18, 91522 Ansbach, Germany',
     );
 
-    // The privacy policy, as a link and not as prose.
-    const privacyUrl = `${APP_BASE_URL}/datenschutz#project-access`;
-    expect(html, 'the privacy policy link is gone').toContain(`href="${privacyUrl}"`);
-    expect(html).toContain(privacyUrl);
+    // The privacy policy, named with its section. Not as a link since 3.0.9:
+    // the one link of a user mail is the invitation (`lib/user-mail.ts`), and
+    // every inline URL was part of what put the old mails in spam.
+    expect(html).toContain('The full privacy policy is the page Privacy Policy on clean-core.io, section 8.');
+    expect(html).not.toContain('/datenschutz');
   });
 
   test('the notice stays behind the invitation, not in front of it', () => {
     const html = invitation();
-    // The button is what the reader came for. Position is the whole of "keep it
+    // The link is what the reader came for. Position is the whole of "keep it
     // visually secondary" that a string test can check, and it is the half that
     // gets lost when somebody moves a block while editing something else.
     const cta = html.indexOf('Open the invitation');

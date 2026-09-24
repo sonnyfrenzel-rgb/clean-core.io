@@ -161,7 +161,7 @@ test.describe('every mail renders from its real template, with the prefix and no
         seen++;
       }
     }
-    // survey (4 options + unsubscribe), tenant-request (2), address-confirmation (1) per recipient
+    // survey (link + unsubscribe), tenant-request (2), address-confirmation (1) per recipient
     expect(seen, 'the token scan found nothing to check').toBeGreaterThanOrEqual(3 * RECIPIENTS.length);
   });
 
@@ -237,8 +237,8 @@ test.describe('every product mail keeps the rules of run 20260924-a', () => {
       from: USER_MAIL_FROM,
       replyTo: USER_MAIL_REPLY_TO,
       subject: 'Your workspace is live',
-      html: '<p><a href="https://clean-core.io/dashboard">Open</a></p>',
-      text: 'Open (https://clean-core.io/dashboard)',
+      html: '<div data-mail-layout="plain"><p><a href="https://clean-core.io/dashboard">https://clean-core.io/dashboard</a></p></div>',
+      text: 'https://clean-core.io/dashboard',
     };
     const user = { type: 'x', audience: 'nutzer' as const };
     const operator = { type: 'x', audience: 'betrieb' as const };
@@ -255,6 +255,15 @@ test.describe('every product mail keeps the rules of run 20260924-a', () => {
       [{ from: 'Felix from Clean-Core.io <info@clean-core.io>' }, /user mail not from/],
       [{ from: 'Clean-Core.io Team <team@clean-core.io>' }, /user mail not from/],
       [{ replyTo: undefined }, /reply-to/],
+      // Round 2 of 3.0.9: the body, and the plain layout of user mails.
+      [{ html: good.html.replace('</p>', ' \u{1F512}</p>') }, /emoji in the body/],
+      [{ text: 'Done ✅ https://clean-core.io/dashboard' }, /emoji in the body/],
+      [{ html: good.html.replace('</div>', '<p><a href="https://clean-core.io/trust">https://clean-core.io/trust</a></p></div>') }, /2 link\(s\), not 1/],
+      [{ html: '<div data-mail-layout="plain"><p>no link</p></div>' }, /0 link\(s\), not 1/],
+      [{ html: '<div data-mail-layout="plain"><a href="https://clean-core.io/dashboard">Open your workspace</a></div>' }, /not shown as its URL/],
+      [{ html: good.html.replace('<p>', '<table><tr><td>').replace('</p>', '</td></tr></table>') }, /table, image or button/],
+      [{ html: good.html.replace('<a href', '<a style="display: block; background: #0f172a;" href') }, /styled as a button/],
+      [{ html: '<p><a href="https://clean-core.io/dashboard">https://clean-core.io/dashboard</a></p>' }, /not built with lib\/user-mail\.ts/],
     ];
     for (const [change, rule] of cases) {
       const warnings = mailPolicyWarnings(user, { ...good, ...change });
@@ -263,6 +272,14 @@ test.describe('every product mail keeps the rules of run 20260924-a', () => {
     // The operator's mails keep their senders — only the sender rule is theirs to skip.
     expect(mailPolicyWarnings(operator, { ...good, from: 'Clean-Core <system@clean-core.io>' })).toEqual([]);
     expect(mailPolicyWarnings(operator, { ...good, text: undefined })).toEqual(['no text/plain part']);
+    // An operator mail may keep its layout and its links, but not an emoji.
+    const card = '<table><tr><td><a style="display: block; background: #0f172a;" href="https://clean-core.io/a">Approve</a> <a href="https://clean-core.io/b">Reject</a></td></tr></table>';
+    expect(mailPolicyWarnings(operator, { ...good, html: card })).toEqual([]);
+    expect(mailPolicyWarnings(operator, { ...good, html: card.replace('Approve', '⚡ Approve') })).toEqual(['emoji in the body']);
+    // The survey's unsubscribe link is the one extra, and only with the header.
+    const unsub = good.html.replace('</div>', '<p><a href="https://clean-core.io/api/unsubscribe?t=x">https://clean-core.io/api/unsubscribe?t=x</a></p></div>');
+    expect(mailPolicyWarnings(user, { ...good, html: unsub, headers: { 'List-Unsubscribe': '<https://clean-core.io/api/unsubscribe?t=x>' } })).toEqual([]);
+    expect(mailPolicyWarnings(user, { ...good, html: unsub }).join(' ')).toMatch(/2 link\(s\), not 1/);
     // A documented exception is per type, not a free pass for every mail.
     expect(LINK_EXCEPTIONS['security-alert'].hosts).toEqual(['https://github.com']);
     expect(mailPolicyWarnings(user, { ...good, html: '<a href="https://github.com/x">x</a>' }).join(' ')).toMatch(/links outside/);

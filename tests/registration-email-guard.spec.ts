@@ -85,7 +85,9 @@ for (const mail of MAILS) {
 }
 
 test.describe('structure, so the next edit cannot reintroduce the problem', () => {
-  for (const mail of MAILS) {
+  // The welcome mail left the table layout for the plain user-mail layout in
+  // 3.0.9 (`lib/user-mail.ts`); its structure is `tests/user-mail-layout.spec.ts`.
+  for (const mail of MAILS.filter((m) => m.name !== 'welcome')) {
     test(`${mail.name} is built from tables, not padded divs`, () => {
       const html = mail.build();
       // The outer container must be fluid. A fixed width is what gets scaled
@@ -119,7 +121,7 @@ test.describe('structure, so the next edit cannot reintroduce the problem', () =
     const html = buildWelcomeEmail({ name: 'X', recipient: 'x@y.z' });
     expect(WELCOME_EMAIL_SUBJECT.toLowerCase()).toContain('welcome');
     // Shorter is not allowed to mean "dropped the reason it exists".
-    for (const required of ['/dashboard', '/first-run', '/trust', 'europe-west1', 'AES-256-GCM', 'HMAC-signed', 'TOTP', 'GDPR']) {
+    for (const required of ['/dashboard', 'Your First Run', 'Trust &amp; Transparency', 'europe-west1', 'AES-256-GCM', 'HMAC-signed', 'TOTP', 'GDPR']) {
       expect(html, `the welcome mail lost ${required}`).toContain(required);
     }
     expect(html).not.toMatch(/under review|being reviewed|approval|approved/i);
