@@ -209,6 +209,12 @@ export function sqliteSwitchSupported(): boolean {
   return major > 22 || (major === 22 && minor >= 5);
 }
 
+/** `run({ isolation: 'none' })` exists from Node 22.8; before it run() spawns per file. */
+export function inProcessIsolationSupported(): boolean {
+  const [major, minor] = process.versions.node.split('.').map((n) => parseInt(n, 10));
+  return major > 22 || (major === 22 && minor >= 8);
+}
+
 /**
  * Node-version dependent permission flag. isolation:'none' needs Node >= 22.8.0;
  * the flag was renamed from --experimental-permission to --permission in 23.5.0.
@@ -381,6 +387,16 @@ process.exitCode = failed ? 1 : 0;
     await fs.writeFile(modHooksPath, modHooksSource());
     await fs.writeFile(modGuardPath, modGuardSource(pathToFileURL(modHooksPath).href));
     args.push(`--import=${pathToFileURL(modGuardPath).href}`);
+    // The name filter, as a flag of the child as well as an option of run().
+    // Measured 2026-09-24: Node 22.23 ignores `testNamePatterns` of
+    // `run({ isolation: 'none' })` and runs every case (CI's red on 60b94e1),
+    // while the process flag filters in-process; Node 24 honours both. Where
+    // isolation:'none' does not exist (Node < 22.8, the named fallback), run()
+    // spawns one child per file and the option filters there — the flag would
+    // match the parent's file-level test instead and skip the whole suite.
+    if (input.patterns.length > 0 && inProcessIsolationSupported()) {
+      args.push(`--test-name-pattern=${input.patterns.join('|')}`);
+    }
     args.push(runnerPath);
 
     const childEnv: Record<string, string> = {
