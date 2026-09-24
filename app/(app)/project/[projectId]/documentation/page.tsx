@@ -462,8 +462,6 @@ Structure the JSON exactly like this:
         throw new Error('The documentation could not be put together from this source, so nothing was saved.');
       }
 
-      setDocumentation(stored);
-
       // Both generations rewrite the same `generatedCode` field. Reading it
       // back first was not enough — two tabs can both read before either
       // writes, and the later write still drops the earlier file (QA reviews of
@@ -471,13 +469,24 @@ Structure the JSON exactly like this:
       // read and the write are one transaction; disabling the buttons is a
       // courtesy on top, not the mechanism.
       const projectDoc = doc(getDb(), 'projects', idStr);
+      const builtFromRun = project.activeRunId;
       const updatedCode = await runTransaction(getDb(), async (tx) => {
         const snap = await tx.get(projectDoc);
-        const merged = addOrUpdateFileInWorkspace(snap.data()?.generatedCode ?? project.generatedCode, 'docs/process-blueprint.md', processDocumentationToMarkdown(built));
+        // The document was built from the source of the run this page loaded.
+        // A second tab can re-analyse in between; then it describes an earlier
+        // run and is not written as the current one (QA review of 4b4586aff273).
+        const current = snap.data() ?? {};
+        if (current.activeRunId !== builtFromRun || current.legacyCode !== signedSource.source) {
+          throw new Error('The analysis of this project changed while the documentation was being put together, so nothing was saved. Reload the stage and generate it again.');
+        }
+        const merged = addOrUpdateFileInWorkspace(current.generatedCode ?? project.generatedCode, 'docs/process-blueprint.md', processDocumentationToMarkdown(built));
         tx.update(projectDoc, { documentation: stored, generatedCode: merged, status: 'documented' });
         return merged;
       });
 
+      // Shown only once it is stored: a document the transaction refused is
+      // not this project's documentation.
+      setDocumentation(stored);
       setProject(prev => prev ? { ...prev, documentation: stored, generatedCode: updatedCode, status: 'documented' } : null);
     } catch (err: unknown) {
       console.error('Documentation generation error:', err);

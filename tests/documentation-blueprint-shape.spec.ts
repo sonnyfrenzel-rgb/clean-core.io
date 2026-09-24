@@ -310,6 +310,21 @@ test.describe('the documentation is read from the code, and a legacy blueprint s
   });
 });
 
+// QA review of 4b4586aff273: the transaction wrote the document and
+// `status: 'documented'` without asking whether the project still stood on the
+// run the document was built from.
+test('the documentation is written only onto the run and source it was built from', () => {
+  const page = fs.readFileSync(path.join(ROOT, 'app', '(app)', 'project', '[projectId]', 'documentation', 'page.tsx'), 'utf8');
+  const start = page.indexOf('const generateDocumentation = useCallback(');
+  const body = page.slice(start, page.indexOf('}, [projectId, project, signedSource', start));
+  const tx = body.slice(body.indexOf('runTransaction('), body.indexOf("status: 'documented' });"));
+  expect(tx, 'the transaction does not compare the run').toContain('current.activeRunId !== builtFromRun');
+  expect(tx, 'the transaction does not compare the source').toContain('current.legacyCode !== signedSource.source');
+  expect(tx.indexOf('throw new Error('), 'a moved run is written anyway').toBeLessThan(tx.indexOf('tx.update('));
+  // And the page shows the document only after it is stored.
+  expect(body.indexOf('setDocumentation(stored)')).toBeGreaterThan(body.indexOf('runTransaction('));
+});
+
 test.describe('the documentation segment has an error boundary of its own', () => {
   test('error.tsx sits in the segment, not only at the root', () => {
     const boundary = path.join(SEGMENT, 'error.tsx');
