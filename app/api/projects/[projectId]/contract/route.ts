@@ -7,17 +7,23 @@ import { contractOfProject } from '@/lib/contract-build';
 import { generationDirection, generationBinding, offTrackRefusal } from '@/lib/generation-direction';
 import type { InputManifest } from '@/lib/input-manifest';
 import { sha256Hex } from '@/lib/artefact-digest';
+import { checkGeneratedPackage, generationInputsOf, generationRevision } from '@/lib/generation-revision';
 import type { DocumentReference, Timestamp, Transaction } from 'firebase-admin/firestore';
 
 /**
  * The architecture contract of one project, and what may be generated against
  * it — roadmap 8.3.
  *
- * `GET`  → `{ contract, decision }`. The Transformation stage asks this before
- *          it writes a prompt: `decision.track` is `contract.route.chosen`, so
- *          a declared deviation is *applied*, and a blocked contract comes back
- *          as a refusal with the contract's own sentence.
- * `POST` → records which contract a generated stand was computed against.
+ * `GET`  → `{ contract, decision, generation }`. The Transformation stage asks
+ *          this before it writes a prompt: `decision.track` is
+ *          `contract.route.chosen`, so a declared deviation is *applied*, and a
+ *          blocked contract comes back as a refusal with the contract's own
+ *          sentence. `generation` (roadmap 3.0.11) is the pre-generation token
+ *          and the very inputs it covers — the prompt is built from these, not
+ *          from what the page loaded earlier.
+ * `POST` → stores a generated stand: code, test suite, status and the binding
+ *          to the contract it was computed against, in one transaction, only if
+ *          the project is still where the token says it was.
  *
  * **Why a route rather than a call in the browser.** `buildAbapEvidence`
  * reaches the merged SAP catalog, 4.3 MB of generated JSON — the rule
@@ -43,6 +49,9 @@ export const runtime = 'nodejs';
 
 /** The same bound `/api/projects/{id}/findings` sets, for the same reason. */
 const MAX_SOURCE_BYTES = 400_000;
+
+/** The bound `firestore.rules` sets on a browser-written `generatedCode`, kept for the server's write. */
+const MAX_PACKAGE_CHARS = 1_000_000;
 
 /** The field the binding is written to. Server-only: never in the rules allowlist. */
 const GENERATION_BINDING_FIELD = 'generationBinding';
@@ -140,7 +149,15 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ proj
     if (!built.ok) {
       return NextResponse.json({ contract: null, decision: offTrackRefusal(built.decided || 'that decision') });
     }
-    return NextResponse.json({ contract: built.contract, decision: generationDirection(built.contract) });
+    const decision = generationDirection(built.contract);
+    return NextResponse.json({
+      contract: built.contract,
+      decision,
+      // Roadmap 3.0.11: only a generation that may run gets a token.
+      generation: decision.ok
+        ? { token: generationRevision(data, built.contract.fingerprint), inputs: generationInputsOf(data) }
+        : null,
+    });
   } catch (err: unknown) {
     logger.error('project contract read failed', {
       route: 'api/projects/contract',
@@ -151,10 +168,20 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ proj
 }
 
 /**
- * Record which contract a generated stand was computed against.
+ * Store a generated stand — roadmap 8.3, made server-authoritative by 3.0.11.
  *
- * Body: `{ generatedCode: string }` — the stored package, whose digest is what
- * the binding names. Nothing else is read from the caller.
+ * Body: `{ generatedCode, testSuite, expectedContractFingerprint, generationToken }`.
+ * `generatedCode` is the stored package (a JSON file list); the binding names
+ * its digest. The contract, the binding and the check of the package are the
+ * server's; the caller names only what it generated and the state it generated
+ * from.
+ *
+ * Before 3.0.11 this wrote the binding alone and the page wrote code, suite and
+ * status afterwards, unconditionally. Two tabs interleaving stored one tab's code
+ * under the other's binding, and code built from a design that had since been
+ * replaced overwrote the newer design's stand (QA full review of 81810c8026e0,
+ * `e649177b3894`, `c42de15e9c75`). Now all four fields land in one transaction,
+ * or none does.
  */
 export async function POST(req: NextRequest, { params }: { params: Promise<{ projectId: string }> }) {
   try {
@@ -174,12 +201,26 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pro
       return NextResponse.json({ error: 'No such project.' }, { status: 404 });
     }
 
-    const body = (await req.json().catch(() => ({}))) as { generatedCode?: unknown; expectedContractFingerprint?: unknown };
+    const body = (await req.json().catch(() => ({}))) as {
+      generatedCode?: unknown;
+      testSuite?: unknown;
+      expectedContractFingerprint?: unknown;
+      generationToken?: unknown;
+    };
     const code = typeof body.generatedCode === 'string' ? body.generatedCode : '';
     if (!code.trim()) {
       return NextResponse.json(
-        { error: 'No generated package was named, so there is nothing to bind.', code: 'no-code' },
+        { error: 'No generated package was named, so there is nothing to store.', code: 'no-code' },
         { status: 400 },
+      );
+    }
+    if (code.length >= MAX_PACKAGE_CHARS) {
+      return NextResponse.json(
+        {
+          error: `The generated package is larger than the ${MAX_PACKAGE_CHARS} characters a project stores.`,
+          code: 'too-large',
+        },
+        { status: 413 },
       );
     }
     // The contract the stand was generated from, as the page read it before the
@@ -192,8 +233,19 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pro
     if (!expectedFingerprint) {
       return NextResponse.json(
         {
-          error: 'The contract this package was generated against was not named, so it cannot be bound. Nothing was written.',
+          error: 'The contract this package was generated against was not named, so it cannot be stored.',
           code: 'no-contract-named',
+        },
+        { status: 400 },
+      );
+    }
+    // And the state of the project the prompt was built from (3.0.11).
+    const generationToken = typeof body.generationToken === 'string' ? body.generationToken : '';
+    if (!generationToken) {
+      return NextResponse.json(
+        {
+          error: 'The state this package was generated from was not named, so it cannot be stored.',
+          code: 'no-generation-token',
         },
         { status: 400 },
       );
@@ -221,42 +273,66 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pro
     if (built.contract.fingerprint !== expectedFingerprint) {
       return NextResponse.json(
         {
-          error: `This package was generated against contract ${expectedFingerprint.slice(0, 12)}, and the contract of this project is now ${built.contract.fingerprint.slice(0, 12)}. Nothing was bound; generate again against the current contract.`,
+          error: `This package was generated against contract ${expectedFingerprint.slice(0, 12)}, and the contract of this project is now ${built.contract.fingerprint.slice(0, 12)}. Generate again against the current contract.`,
           code: 'contract-moved',
         },
         { status: 409 },
       );
     }
+    // The contract can stand still while the design, the analysis or the stored
+    // stand moves: the design is not part of it, and a second tab that stored
+    // first changes only the stand. The token covers all of them.
+    if (generationRevision(data, built.contract.fingerprint) !== generationToken) {
+      return NextResponse.json(
+        {
+          error:
+            'The project changed after this generation started: the source, the analysis, the solution design or the stored code is no longer what the model was given. Generate again from the current state.',
+          code: 'generation-stale',
+        },
+        { status: 409 },
+      );
+    }
+
+    const checked = checkGeneratedPackage(code, body.testSuite, decision.isAbapCloud);
+    if (!checked.ok) {
+      return NextResponse.json({ error: checked.error, code: 'package-incomplete' }, { status: 400 });
+    }
 
     const binding = generationBinding(built.contract, { codeSha256: sha256Hex(code) });
-    // The comparison above was made on the project as it was loaded. Written
-    // only if the project has not been written since — otherwise another
-    // analysis could have moved the run or the source between the comparison and
-    // the write, and the binding of the old contract would land on the moved
-    // project (QA review of 8adfa0e6db63).
+    const fields = {
+      generatedCode: code,
+      testSuite: checked.testSuite,
+      status: 'transformed',
+      [GENERATION_BINDING_FIELD]: binding,
+    };
+    // Every comparison above was made on the project as it was loaded. The four
+    // fields are written only if the project has not been written since —
+    // otherwise another analysis could have moved it between the comparison and
+    // the write (QA review of 8adfa0e6db63), and of two interleaved generations
+    // that both passed the token check the later would silently win.
     const projectRef: DocumentReference = db.collection('projects').doc(projectId);
     const written = await db.runTransaction(async (tx: Transaction) => {
       const fresh = await tx.get(projectRef);
       if (!fresh.exists || !readAt || !fresh.updateTime || !fresh.updateTime.isEqual(readAt)) return false;
-      tx.set(projectRef, { [GENERATION_BINDING_FIELD]: binding }, { merge: true });
+      tx.set(projectRef, fields, { merge: true });
       return true;
     });
     if (!written) {
       return NextResponse.json(
         {
           error:
-            'The project changed while this package was being bound, so the contract it was checked against may no longer be the one on the project. Nothing was bound; generate again against the current contract.',
+            'The project changed while this package was being stored, so the state it was checked against may no longer be the one on the project. Generate again from the current state.',
           code: 'project-moved',
         },
         { status: 409 },
       );
     }
-    return NextResponse.json({ binding });
+    return NextResponse.json({ binding, fields });
   } catch (err: unknown) {
-    logger.error('generation binding write failed', {
+    logger.error('generation store failed', {
       route: 'api/projects/contract',
       error: errMessage(err),
     });
-    return NextResponse.json({ error: 'Could not record the contract this generation followed.' }, { status: 500 });
+    return NextResponse.json({ error: 'Could not store this generation.' }, { status: 500 });
   }
 }

@@ -4,8 +4,6 @@ export const dynamic = 'force-dynamic';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { doc, updateDoc } from 'firebase/firestore';
-import { getDb } from '@/lib/firebase';
 import { loadProjectAndHydrate } from '@/lib/project-loader';
 import { enforceActiveRun } from '@/lib/run-guard';
 import Stepper from '@/components/Stepper';
@@ -34,7 +32,8 @@ import { isAbapCloudTrack, trackCopy } from '@/lib/transformation-track';
 // Roadmap 8.3 — the generation follows the architecture contract, not a field
 // on the project document. See `lib/generation-direction.ts` for what it
 // replaced and why.
-import { fetchGenerationDecision, recordGenerationBinding } from '@/lib/generation-contract-client';
+import { fetchGenerationDecision, storeGeneration } from '@/lib/generation-contract-client';
+import { CommandAnswerLostError } from '@/lib/project-command-client';
 import type { GenerationRefusal } from '@/lib/generation-direction';
 import StaleNotice from '@/components/StaleNotice';
 import NotGenerated from '@/components/NotGenerated';
@@ -79,7 +78,13 @@ export default function TransformationPage() {
   const modelAvailability = useModelAvailability();
   const [project, setProject] = useState<Project | null>(null);
   const projectRef = useRef<any>(null);
-  /** One generation at a time — see the dependency note on the callback below. */
+  /**
+   * One generation at a time *in this tab* — see the dependency note on the
+   * callback below. It is a convenience, not the guard: a second tab has its
+   * own ref, and what keeps two generations from overwriting each other is the
+   * server's compare-and-swap against the token read before the model call
+   * (roadmap 3.0.11, `storeGeneration`).
+   */
   const generationInFlight = useRef(false);
   const [loading, setLoading] = useState(true);
 
@@ -487,7 +492,7 @@ CMD ["node", "srv/service.js"]`
   const isAbapCloud = contractTrack ? contractTrack.isAbapCloud : isAbapCloudTrack(project?.extensibilityRoute);
   const track = trackCopy(isAbapCloud);
 
-  const generateTransformation = useCallback(async (legacyCode: string, design: string, analysis: string) => {
+  const generateTransformation = useCallback(async () => {
     if (generationInFlight.current) return;
     generationInFlight.current = true;
     setLoading(true);
@@ -499,17 +504,27 @@ CMD ["node", "srv/service.js"]`
       // the recommendation unless a deviation was declared — and a deviation
       // reaches it only with a reason (`lib/architecture-contract.ts` throws
       // without one). A blocked contract generates nothing and says why.
-      const { contract, decision } = await fetchGenerationDecision(projectId as string);
+      const { contract, decision, generation } = await fetchGenerationDecision(projectId as string);
       if (!decision.ok) {
         setContractRefusal(decision);
         return;
       }
-      if (!contract) {
+      if (!contract || !generation) {
         throw new Error('The contract endpoint allowed a generation but named no contract, so nothing could be bound to it. Nothing was generated.');
       }
-      // The contract this stand is generated from. The binding below is written
+      // The contract this stand is generated from. The stand below is stored
       // only if the server's contract is still this one when the model is done.
       const generatedAgainst = contract.fingerprint;
+      // Roadmap 3.0.11: the state the prompt is built from, read now rather
+      // than when the page loaded — and the token that names it. The server
+      // stores the answer only if the project is still at this token, so a
+      // design replaced in another tab, or a generation another tab stored
+      // first, turns this one into a refusal instead of an overwrite.
+      const generationToken = generation.token;
+      const { legacyCode, solutionDesign: design, analysis } = generation.inputs;
+      if (!legacyCode.trim() || !design.trim() || !analysis.trim()) {
+        throw new Error('The source, the analysis or the solution design is no longer on this project, so there is nothing to generate from. Nothing was generated.');
+      }
       setContractRefusal(null);
       setContractTrack({ isAbapCloud: decision.isAbapCloud, sentence: decision.sentence });
       const isAbapCloud = decision.isAbapCloud;
@@ -717,29 +732,43 @@ CMD ["node", "srv/service.js"]`
 
       setTransformationLog(prev => [...prev, 'Code generation complete.', 'Optimizing imports...', 'Finalizing transformation...']);
 
-      // Which contract this stand was computed against, recorded before it is
-      // stored (roadmap 8.3). The server rebuilds the contract and writes its
-      // own fingerprint, so the binding cannot name a contract that was never
-      // derived. If it fails, nothing is saved: a generated stand whose
-      // contract nobody can name is the state this step removes.
+      // The server stores the stand — code, suite, status and the binding to
+      // the contract it was computed against — in one transaction (roadmap
+      // 8.3, 3.0.11). It rebuilds the contract and writes its own fingerprint,
+      // so the binding cannot name a contract that was never derived; and it
+      // writes only if the project is still at the token read before the model
+      // call. A refusal means nothing was saved.
       const packaged = JSON.stringify(filesArray);
-      const bound = await recordGenerationBinding(projectId as string, packaged, generatedAgainst);
-      if (!bound.ok) {
-        throw new Error(`${bound.error} Nothing was saved — the previous version is untouched.`);
+      let stored: { generatedCode: string; testSuite: unknown; status: string; generationBinding?: unknown };
+      try {
+        const answer = await storeGeneration(projectId as string, {
+          generatedCode: packaged,
+          testSuite: tests,
+          expectedContractFingerprint: generatedAgainst,
+          generationToken,
+        });
+        if (!answer.ok) {
+          throw new Error(`${answer.error} Nothing was saved — the previous version is untouched.`);
+        }
+        stored = answer.fields;
+      } catch (err) {
+        if (!(err instanceof CommandAnswerLostError)) throw err;
+        // The transaction may have committed without the answer reaching us.
+        // Read the project again instead of claiming either outcome.
+        const reread = await loadProjectAndHydrate(projectId as string).catch(() => null);
+        if (reread?.generatedCode !== packaged) {
+          throw new Error(`${err.message} The project does not hold this package now — reload the stage to see which version is stored before generating again.`);
+        }
+        stored = { generatedCode: packaged, testSuite: reread.testSuite, status: String(reread.status ?? '') };
       }
 
-      await updateDoc(doc(getDb(), 'projects', projectId as string), {
-        generatedCode: packaged,
-        testSuite: tests,
-        status: 'transformed'
-      });
-      
       setFiles(filesArray);
       // The stepper, the blockers and the verification rail all read `project`
       // (`lib/workflow-steps.ts`); without this they went on describing the
       // state before the generation until something else reloaded the page
-      // (QA review of 33471220d6e9, ce37b706107d).
-      setProject((prev: any) => prev ? { ...prev, generatedCode: packaged, testSuite: tests, status: 'transformed' } : prev);
+      // (QA review of 33471220d6e9, ce37b706107d). From what the server
+      // stored, not from what this tab hoped it wrote.
+      setProject((prev: any) => prev ? { ...prev, ...stored } : prev);
       const mainPath = isAbapCloud ? 'src/zcl_demo_rap_behavior.clas.abap' : 'srv/service.ts';
       const hasMainFile = filesArray.some(f => f.path === mainPath);
       setSelectedFilePath(hasMainFile ? mainPath : (filesArray[0]?.path || ''));
@@ -788,7 +817,9 @@ CMD ["node", "srv/service.js"]`
           } else if (data.legacyCode && data.solutionDesign && data.analysis && generationBlockers(data, 'transformation').length === 0) {
             // Not from a design written for a previous source (E01-F01-US02).
             // The page used to generate from whatever design was there.
-            generateTransformation(data.legacyCode, data.solutionDesign, data.analysis);
+            // The inputs are read again by the generation itself, together
+            // with the token they are stored against (roadmap 3.0.11).
+            generateTransformation();
           } else {
             setLoading(false);
           }
@@ -979,7 +1010,7 @@ CMD ["node", "srv/service.js"]`
           <button
             onClick={() => {
               if (blockers.length === 0 && project?.legacyCode && project?.solutionDesign && project?.analysis) {
-                generateTransformation(project.legacyCode, project.solutionDesign, project.analysis);
+                generateTransformation();
               }
             }}
             disabled={blockers.length > 0}

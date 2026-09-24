@@ -248,7 +248,7 @@ test('the generation does not take its direction from the project document', () 
   // It asks the contract instead, and it records what it followed.
   expect(body).toContain('fetchGenerationDecision');
   expect(body).toContain('decision.isAbapCloud');
-  expect(body).toContain('recordGenerationBinding');
+  expect(body).toContain('storeGeneration(');
 });
 
 test('a refused contract stops the generation before the model is called', () => {
@@ -262,26 +262,28 @@ test('a refused contract stops the generation before the model is called', () =>
   expect(readFileSync(PAGE, 'utf8')).toContain('data-contract-refusal');
 });
 
-test('the binding is written before the generated code is stored', () => {
+test('the page never writes the stand itself — binding and code are one server write', () => {
+  // Roadmap 3.0.11 (e649177b3894): the binding used to be written first and the
+  // code afterwards from the browser, so two tabs could interleave between the
+  // two writes. No Firestore write is left in the page at all.
+  const src = readFileSync(PAGE, 'utf8');
+  expect(src).not.toMatch(/\bupdateDoc\(/);
+  expect(src).not.toMatch(/\bsetDoc\(/);
+  expect(src).not.toContain("from 'firebase/firestore'");
   const body = generationBody();
-  const bind = body.indexOf('recordGenerationBinding');
-  const save = body.indexOf('generatedCode: packaged');
-  expect(bind).toBeGreaterThan(-1);
-  expect(save).toBeGreaterThan(bind);
+  expect(body).toContain('generatedCode: packaged');
+  expect(body.indexOf('generatedCode: packaged')).toBeGreaterThan(body.indexOf('storeGeneration('));
 });
 
 // QA review of 4b4586aff273: the binding named whatever contract the server
 // rebuilt when the model was done, not the one the code was generated from.
 test('the binding names the contract the code was generated from, or nothing is bound', () => {
   const body = generationBody();
-  expect(body).toContain('const { contract, decision } = await fetchGenerationDecision(');
+  expect(body).toContain('const { contract, decision, generation } = await fetchGenerationDecision(');
   expect(body).toContain('const generatedAgainst = contract.fingerprint;');
-  expect(body).toContain('recordGenerationBinding(projectId as string, packaged, generatedAgainst)');
+  expect(body).toContain('expectedContractFingerprint: generatedAgainst,');
   // Read before the model is asked, not after.
   expect(body.indexOf('const generatedAgainst')).toBeLessThan(body.indexOf('callGemini('));
-
-  const client = readFileSync('lib/generation-contract-client.ts', 'utf8');
-  expect(client).toContain('JSON.stringify({ generatedCode, expectedContractFingerprint })');
 
   const route = readFileSync('app/api/projects/[projectId]/contract/route.ts', 'utf8');
   const post = route.slice(route.indexOf('export async function POST'));
@@ -289,7 +291,7 @@ test('the binding names the contract the code was generated from, or nothing is 
   expect(compare, 'the POST binds whatever contract it rebuilds').toBeGreaterThan(-1);
   expect(post).toContain("code: 'contract-moved'");
   expect(post).toContain("code: 'no-contract-named'");
-  expect(compare, 'the comparison comes after the write').toBeLessThan(post.indexOf('GENERATION_BINDING_FIELD]: binding'));
+  expect(compare, 'the comparison comes after the write').toBeLessThan(post.indexOf('[GENERATION_BINDING_FIELD]: binding'));
 });
 
 test('the binding is written only if the project has not been written since the comparison', () => {
@@ -304,7 +306,7 @@ test('the binding is written only if the project has not been written since the 
   const body = post.slice(tx);
   expect(body.indexOf('await tx.get(projectRef)')).toBeGreaterThan(-1);
   expect(body.indexOf('fresh.updateTime.isEqual(readAt)')).toBeGreaterThan(body.indexOf('await tx.get(projectRef)'));
-  expect(body.indexOf('tx.set(projectRef, { [GENERATION_BINDING_FIELD]: binding }')).toBeGreaterThan(
+  expect(body.indexOf('tx.set(projectRef, fields, { merge: true })')).toBeGreaterThan(
     body.indexOf('fresh.updateTime.isEqual(readAt)'),
   );
   expect(post, 'a write outside the transaction').not.toMatch(/await db\.collection\('projects'\)\.doc\(projectId\)\.set\(/);
@@ -316,4 +318,47 @@ test('the contract field the server writes is not client-writable', () => {
   // The binding says which contract a stand followed. A browser that could
   // write it could claim any contract for any code.
   expect(rules).not.toContain('generationBinding');
+});
+
+/* ---------- roadmap 3.0.11: the token read before the model call ---------- */
+
+test('the prompt is built from the inputs the token covers, not from what the page loaded', () => {
+  // c42de15e9c75: the prompt used to take legacyCode, design and analysis from
+  // load-time state, so a design replaced since then was invisible to any check.
+  const body = generationBody();
+  expect(body).toContain('const generateTransformation = useCallback(async () => {');
+  expect(body).toContain('const generationToken = generation.token;');
+  expect(body).toContain('const { legacyCode, solutionDesign: design, analysis } = generation.inputs;');
+  expect(body.indexOf('generation.inputs')).toBeLessThan(body.indexOf('callGemini('));
+  expect(body).toContain('generationToken,');
+  const src = readFileSync(PAGE, 'utf8');
+  expect(src).not.toMatch(/generateTransformation\([^)]/);
+});
+
+test('the store compares the token, then writes all four fields in the transaction', () => {
+  const route = readFileSync('app/api/projects/[projectId]/contract/route.ts', 'utf8');
+  const get = route.slice(route.indexOf('export async function GET'), route.indexOf('export async function POST'));
+  expect(get).toContain('generationRevision(data, built.contract.fingerprint)');
+  expect(get).toContain('generationInputsOf(data)');
+  const post = route.slice(route.indexOf('export async function POST'));
+  const token = post.indexOf('generationRevision(data, built.contract.fingerprint) !== generationToken');
+  expect(token, 'the POST does not compare the token').toBeGreaterThan(-1);
+  expect(post).toContain("code: 'generation-stale'");
+  expect(post).toContain("code: 'no-generation-token'");
+  expect(token).toBeLessThan(post.indexOf('db.runTransaction('));
+  const fields = post.slice(post.indexOf('const fields = {'), post.indexOf('db.runTransaction('));
+  for (const f of ['generatedCode: code', 'testSuite: checked.testSuite', "status: 'transformed'", '[GENERATION_BINDING_FIELD]: binding']) {
+    expect(fields).toContain(f);
+  }
+});
+
+test('the design is compared beside the contract fingerprint, not inside it', () => {
+  // Deliberate (roadmap 3.0.11): the fingerprint is bound by stored generation
+  // bindings and by the project decision's manifest; moving the design into it
+  // would turn every one of them into "moved". The token carries it instead.
+  const contract = readFileSync('lib/architecture-contract.ts', 'utf8');
+  const canonical = contract.slice(contract.indexOf('export function canonicalArchitectureContract'));
+  expect(canonical.slice(0, canonical.indexOf('\n}\n'))).not.toContain('solutionDesign');
+  const revision = readFileSync('lib/generation-revision.ts', 'utf8');
+  expect(revision).toContain('`design=${digestOf(state.solutionDesign)}`');
 });

@@ -90,7 +90,9 @@ test.describe('55cf6c0ed62a · a refusal is not a transformation', () => {
   test('and no write can be reached before that throw', () => {
     const src = code(TRANSFORMATION);
     const throwAt = src.indexOf('answered with text instead of the JSON');
-    const writeAt = src.indexOf("status: 'transformed'");
+    // Since 3.0.11 the server writes `status: 'transformed'`; the page's write
+    // is the call that asks it to.
+    const writeAt = src.indexOf('storeGeneration(projectId');
     expect(throwAt, 'the parse failure no longer throws').toBeGreaterThan(-1);
     expect(writeAt).toBeGreaterThan(-1);
     expect(throwAt, 'the project is written before the answer has been checked').toBeLessThan(
@@ -195,7 +197,7 @@ test.describe('7976bced4c28 · one file is not a package', () => {
   test('the gate runs before the project is written, and reports a failed generation', () => {
     const s = code(TRANSFORMATION);
     const gateAt = s.indexOf('const missing = missingArtefacts(');
-    const writeAt = s.indexOf("status: 'transformed'");
+    const writeAt = s.indexOf('storeGeneration(projectId');
     expect(gateAt, 'no completeness gate beyond "at least one file"').toBeGreaterThan(-1);
     expect(gateAt, 'an incomplete package is written before it is checked').toBeLessThan(writeAt);
     // A half-generation is a failed generation, not a half-saved artefact.

@@ -45,11 +45,11 @@ test.describe('183ed4edf700 · no transformation without its test suite', () => 
     const src = code(TRANSFORMATION);
     expect(src).not.toMatch(/parsed\.tests\s*\|\|/);
     const gate = src.indexOf('usableTestSuite(parsed.tests, isAbapCloud)');
-    const binding = src.indexOf('recordGenerationBinding(projectId');
-    const write = src.indexOf("status: 'transformed'");
+    // Since 3.0.11 binding and write are one server call, which stores the
+    // suite it checked itself (`checkGeneratedPackage`).
+    const binding = src.indexOf('storeGeneration(projectId');
     expect(gate).toBeGreaterThan(0);
     expect(binding).toBeGreaterThan(gate);
-    expect(write).toBeGreaterThan(gate);
     const between = src.slice(gate, binding);
     expect(between).toMatch(/if \(!tests\)\s*\{\s*throw new Error\('[^']*Nothing was saved/);
   });

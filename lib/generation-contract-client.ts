@@ -1,10 +1,13 @@
 import { getAuth } from 'firebase/auth';
 import type { ArchitectureContract } from './architecture-contract';
 import type { GenerationBinding, GenerationDecision } from './generation-direction';
+import type { GenerationInputs } from './generation-revision';
+import type { GeneratedTestSuite } from './transformation-artefacts';
+import { CommandAnswerLostError } from './project-command-client';
 
 /**
  * The browser's half of roadmap 8.3: ask the server which contract governs this
- * project, and record which contract a generated stand followed.
+ * project, and store a generated stand through the server (3.0.11).
  *
  * Two functions rather than two `fetch` calls in the page, so that the stage
  * has one place where the direction comes from and a spec can name it. The
@@ -20,6 +23,12 @@ async function authHeader(): Promise<Record<string, string>> {
 export interface ContractAnswer {
   contract: ArchitectureContract | null;
   decision: GenerationDecision;
+  /**
+   * Roadmap 3.0.11: the state the generation is computed from — a token the
+   * store call hands back, and the prompt inputs that token covers. `null`
+   * whenever nothing may be generated.
+   */
+  generation: { token: string; inputs: GenerationInputs } | null;
 }
 
 /**
@@ -34,6 +43,7 @@ export async function fetchGenerationDecision(projectId: string): Promise<Contra
   const refusal = (sentence: string, remedy: string): ContractAnswer => ({
     contract: null,
     decision: { ok: false, code: 'no-contract', sentence, remedy },
+    generation: null,
   });
   let res: Response;
   try {
@@ -60,39 +70,69 @@ export async function fetchGenerationDecision(projectId: string): Promise<Contra
       'Try the generation again.',
     );
   }
-  return { contract: json.contract ?? null, decision: json.decision };
+  const g = json.generation;
+  const generation =
+    g && typeof g.token === 'string' && g.inputs && typeof g.inputs === 'object'
+      ? {
+          token: g.token,
+          inputs: {
+            legacyCode: typeof g.inputs.legacyCode === 'string' ? g.inputs.legacyCode : '',
+            solutionDesign: typeof g.inputs.solutionDesign === 'string' ? g.inputs.solutionDesign : '',
+            analysis: typeof g.inputs.analysis === 'string' ? g.inputs.analysis : '',
+          },
+        }
+      : null;
+  return { contract: json.contract ?? null, decision: json.decision, generation };
+}
+
+/** What the server stored, as it stored it. */
+export interface StoredGeneration {
+  generatedCode: string;
+  testSuite: GeneratedTestSuite;
+  status: string;
+  generationBinding: GenerationBinding;
 }
 
 /**
- * Record the contract a generated stand was computed against.
+ * Store a generated stand — code, test suite, status and the binding to its
+ * contract — through the server (roadmap 3.0.11).
  *
- * The server rebuilds the contract and writes its own fingerprint; this sends
- * the package and nothing else. It returns the binding or an error sentence —
- * the caller stores neither the code nor a green stage when it failed, so a
- * stand cannot exist without the contract it followed.
+ * The server writes all four in one transaction, and only if the project is
+ * still at `generationToken`, the state `fetchGenerationDecision()` read before
+ * the model was asked. A refusal (4xx) comes back as `{ ok: false, error }` and
+ * means nothing was written. No answer, or a 5xx, throws
+ * `CommandAnswerLostError`: the transaction may have committed, so the caller
+ * reads the project again instead of saying "nothing was saved".
  */
-export async function recordGenerationBinding(
+export async function storeGeneration(
   projectId: string,
-  generatedCode: string,
-  /** The fingerprint of the contract the stand was generated from — `fetchGenerationDecision().contract`. */
-  expectedContractFingerprint: string,
-): Promise<{ ok: true; binding: GenerationBinding } | { ok: false; error: string }> {
+  stand: {
+    generatedCode: string;
+    testSuite: GeneratedTestSuite;
+    /** `fetchGenerationDecision().contract.fingerprint`. */
+    expectedContractFingerprint: string;
+    /** `fetchGenerationDecision().generation.token`. */
+    generationToken: string;
+  },
+): Promise<{ ok: true; fields: StoredGeneration } | { ok: false; error: string }> {
   let res: Response;
   try {
     res = await fetch(`/api/projects/${encodeURIComponent(projectId)}/contract`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...(await authHeader()) },
-      body: JSON.stringify({ generatedCode, expectedContractFingerprint }),
+      body: JSON.stringify(stand),
     });
   } catch {
-    return { ok: false, error: 'The contract this generation followed could not be recorded.' };
+    throw new CommandAnswerLostError('No answer came back from the server, so it is not known whether this generation was stored.');
   }
-  const body = (await res.json().catch(() => null)) as { binding?: GenerationBinding; error?: string } | null;
-  if (!res.ok || !body?.binding) {
-    return {
-      ok: false,
-      error: body?.error || 'The contract this generation followed could not be recorded.',
-    };
+  const body = (await res.json().catch(() => null)) as { fields?: StoredGeneration; error?: string } | null;
+  if (res.status >= 500) {
+    throw new CommandAnswerLostError(
+      `The server did not finish answering (${res.status}), so it is not known whether this generation was stored.`,
+    );
   }
-  return { ok: true, binding: body.binding };
+  if (!res.ok || !body?.fields) {
+    return { ok: false, error: body?.error || 'This generation could not be stored.' };
+  }
+  return { ok: true, fields: body.fields };
 }
