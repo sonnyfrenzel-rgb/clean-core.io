@@ -36,9 +36,6 @@ import LandingModals from '@/components/LandingModals';
 import LandingProcess from '@/components/LandingProcess';
 import SectionHeader from '@/components/SectionHeader';
 import SiteFooter from '@/components/SiteFooter';
-import TransformationShowroom from '@/components/TransformationShowroom';
-import TransformationReplay from '@/components/TransformationReplay';
-import SamplePackageDownload from '@/components/SamplePackageDownload';
 import AuthLink from '@/components/landing/AuthLink';
 import ViewsStage, { type StageView } from '@/components/landing/ViewsStage';
 import { publicButton } from '@/components/landing/public-button';
@@ -76,9 +73,10 @@ import type { CloudReadinessGrade } from '@/lib/abap/abcd-classification';
  *     (`tests/landing-style-guard.spec.ts`).
  *
  * The pilot banner is gone: "Powered by Generative AI" is the kind of line
- * `DESIGN.md` §3.1 forbids. Whether the transformation showroom stays here or
- * moves to /how-it-works is an open decision; until it is made the showroom
- * keeps its place and its structure (section `#showroom`).
+ * `DESIGN.md` §3.1 forbids. The transformation showroom is gone as well, and
+ * did not move to /how-it-works (Sonny, 24.09.2026): drawn examples cannot be
+ * the real workspace, so the page points into the demo with its tour instead
+ * (section `#workspace-tools`).
  */
 export const revalidate = 300;
 
@@ -1105,34 +1103,25 @@ export default function Home() {
         </section>
 
         {/*
-          The transformation showroom. Whether it moves to /how-it-works is open
-          (roadmap 3.0.6); until the owner decides, it keeps its place and its
-          structure — the replay, the three worked examples, the sample package,
-          and the seven stages, which in 3.0 are the tools of the workspace.
+          The seven stages, as the tools of the workspace, and the way into them.
+          The transformation showroom that stood here — three drawn examples, a
+          timed replay and a sample package — was removed on 24.09.2026 (Sonny):
+          what the tools produce is shown by the demo project and its tour, in the
+          real workspace, not by markup drawn for this page.
         */}
-        <section id="showroom" aria-labelledby="showroom-title" className="relative scroll-mt-20 overflow-hidden py-20 md:py-24">
+        <section id="workspace-tools" aria-labelledby="workspace-tools-title" className="scroll-mt-20 py-20 md:py-24">
           <div className="mx-auto max-w-7xl px-4 sm:px-6">
-            <SectionHeader eyebrow="Three worked examples" title="See a real ABAP program transformed" titleId="showroom-title">
-              Three example programs, end to end: what each one is, what it does as a process, and what the engine turns
-              it into. The outputs below are fixed examples generated with Clean-Core Engine {APP_VERSION}; nothing on
-              this page was compiled or run.
+            <SectionHeader eyebrow="The seven stages" title="The tools in your workspace" titleId="workspace-tools-title">
+              Behind the three views sit seven stages, each a tool you open from the workspace. Each one produces
+              something you can read and check before the next — and a person signs the result, not the tool. The
+              demo project walks through all of them with a guided tour.
             </SectionHeader>
-            <Suspense fallback={null}>
-              <TransformationReplay />
-            </Suspense>
-            <TransformationShowroom />
-            <Suspense fallback={null}>
-              <SamplePackageDownload />
-            </Suspense>
           </div>
-          <div className="mt-16">
-            <div className="mx-auto max-w-7xl px-4 sm:px-6">
-              <SectionHeader eyebrow="The seven stages" title="The tools in your workspace">
-                Behind the three views sit seven stages, each a tool you open from the workspace. Each one produces
-                something you can read and check before the next — and a person signs the result, not the tool.
-              </SectionHeader>
-            </div>
-            <LandingProcess />
+          <LandingProcess />
+          <div className="mx-auto mt-10 max-w-7xl px-4 text-center sm:px-6">
+            <AuthLink to={DEMO_ROUTE} testId="tools-demo">
+              Take the tour in the demo <ArrowRight size={18} aria-hidden="true" />
+            </AuthLink>
           </div>
         </section>
 

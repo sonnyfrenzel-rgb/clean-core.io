@@ -91,7 +91,9 @@ test.describe('the object count is read, not typed', () => {
 
 test.describe('stamped dates follow the release', () => {
   test('nothing carries a frozen month next to a live version', () => {
-    for (const rel of ['components/TransformationShowroom.tsx', 'components/SamplePackageDownload.tsx']) {
+    // The showroom and its sample package carried this stamp until 3.0.6 removed
+    // them (Sonny, 24.09.2026); the version line in the landing footer still does.
+    for (const rel of ['app/page.tsx']) {
       const s = read(rel);
       const jsx = s.replace(/\{\/\*[\s\S]*?\*\/\}/g, '');
       // `{APP_VERSION} · July 2026` moved further from the truth with every

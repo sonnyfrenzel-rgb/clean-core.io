@@ -42,7 +42,6 @@ const withoutComments = (s: string) =>
     .replace(/^\s*\/\/.*$/gm, '');
 
 const TRANSFORMATION = 'app/(app)/project/[projectId]/transformation/page.tsx';
-const SAMPLE = 'components/SamplePackageDownload.tsx';
 
 /**
  * The file with its comments removed, which is what the order-of-execution
@@ -207,136 +206,9 @@ test.describe('7976bced4c28 · one file is not a package', () => {
   });
 });
 
-test.describe('5198d59e7ea5 · the sample package reads what it selects', () => {
-  /**
-   * `INTO CORRESPONDING FIELDS OF TABLE` matches component names literally:
-   * case is irrelevant, an underscore is not. The CDS view entity publishes
-   * `SalesOrderNumber`; the target structure declared `sales_order_number`; all
-   * eight fields came back initial, in the package the landing page calls a
-   * "Real abapGit Package".
-   */
-  const src = () => read(SAMPLE);
-
-  /**
-   * The columns the reader class asks the view for. Read out of the method
-   * body: the view's own `as select from I_SalesOrder` would otherwise be the
-   * first thing a SELECT pattern finds.
-   */
-  const selected = () => {
-    const body = src().match(/METHOD get_open_orders\.([\s\S]*?)ENDMETHOD/);
-    expect(body, 'the reader method moved or was renamed').not.toBeNull();
-    const m = body![1].match(/SELECT\s+([\s\S]*?)\s+FROM\s+ZI_SalesOrderCustom/i);
-    expect(m, 'the reader class no longer selects from the view').not.toBeNull();
-    return m![1]
-      .split(',')
-      .map((c) => c.trim())
-      .filter((c) => c.length > 0);
-  };
-
-  /** The components of the structure the rows are read into. */
-  const components = () => {
-    const m = src().match(/BEGIN OF ty_order,([\s\S]*?)END OF ty_order/);
-    expect(m, 'the target structure moved or was renamed').not.toBeNull();
-    return m![1]
-      .split('\n')
-      .map((l) => l.trim())
-      .filter((l) => l.length > 0)
-      .map((l) => l.split(/\s+/)[0].replace(/,$/, ''));
-  };
-
-  /** The names the view entity actually exposes. */
-  const viewFields = () => {
-    const m = src().match(/define view entity[\s\S]*?\{([\s\S]*?)\n\}/);
-    expect(m, 'the CDS view entity moved or was renamed').not.toBeNull();
-    return m![1]
-      .split('\n')
-      .map((l) => l.match(/\bas\s+([A-Za-z_]\w*)/))
-      .filter((hit): hit is RegExpMatchArray => hit !== null)
-      .map((hit) => hit[1]);
-  };
-
-  test('every selected column has an identically named component to land in', () => {
-    const lower = (xs: string[]) => xs.map((x) => x.toLowerCase()).sort();
-    const cols = selected();
-    expect(cols.length, 'the SELECT list is empty').toBeGreaterThanOrEqual(8);
-    expect(
-      lower(components()),
-      'CORRESPONDING FIELDS matches by name — these two lists must be the same names',
-    ).toEqual(lower(cols));
-  });
-
-  test('and every selected column is a column the view publishes', () => {
-    const fields = viewFields().map((f) => f.toLowerCase());
-    for (const col of selected()) {
-      expect(fields, `the class selects ${col}, which the view does not expose`).toContain(
-        col.toLowerCase(),
-      );
-    }
-  });
-
-  test('the reader still relies on the name match, so the guard still means something', () => {
-    expect(src()).toContain('INTO CORRESPONDING FIELDS OF TABLE');
-  });
-});
-
-test.describe('9028321e9795 · the replay says it is an illustration', () => {
-  test('on the public page, in text, before anything is claimed', async ({ page }) => {
-    test.setTimeout(120_000);
-    await page.goto('/', { waitUntil: 'domcontentloaded' });
-
-    const replay = page.getByTestId('transformation-replay');
-    await expect(replay).toBeVisible({ timeout: 60_000 });
-
-    const caveat = replay.locator('[data-replay-caveat]');
-    await expect(caveat, 'nothing on the page says the replay is scripted').toBeVisible();
-    // Visible without a pointer and without opening anything: the finding is
-    // that the qualification lived nowhere a reader would meet it, and a title
-    // attribute is nowhere on a phone (the reasoning of UX-029).
-    const opacity = await caveat.evaluate((el) => getComputedStyle(el).opacity);
-    expect(Number(opacity)).toBeGreaterThan(0.5);
-    await expect(caveat).toHaveText(/illustration/i);
-    await expect(caveat).toHaveText(/nothing here is compiled, tested or run/i);
-  });
-
-  test('and it is still there once the claims are on screen', async ({ page }) => {
-    test.setTimeout(120_000);
-    // `load`, not `domcontentloaded`: the click has to reach a hydrated React
-    // tree. On `domcontentloaded` it lands on server-rendered HTML with no
-    // handler attached — nothing happens, nothing errors, and the wait after it
-    // times out against a frame that was never opened.
-    await page.goto('/', { waitUntil: 'load' });
-    const replay = page.getByTestId('transformation-replay');
-    await expect(replay).toBeVisible({ timeout: 60_000 });
-
-    // The click is retried until the frame is open, and the retry is the whole
-    // assertion rather than a condition around one: a test that asks whether
-    // its subject is there before asserting on it asserts nothing when it is
-    // not. The first version of this line guarded the click on the button's
-    // visibility, and `tests/no-vacuous-tests.spec.ts` caught it — correctly,
-    // and then caught this comment as well when it quoted the offending line
-    // verbatim. That guard is line-based and knows nothing of comments, which
-    // its own docstring calls deliberate; describing the mistake is therefore
-    // the way to record it, not reproducing it.
-    //
-    // The inner allowance is deliberately long. The pipeline log appears on a
-    // synchronous state update, so fifteen seconds cannot be reached by a click
-    // that worked — which matters, because a second click after the animation
-    // has started would find the button gone and fail for the wrong reason.
-    //
-    // A second thing made the first version useless: `text=Pipeline Log`
-    // matches a substring case-insensitively, and the caveat this very finding
-    // added contains "The pipeline log and the lines that type themselves". The
-    // wait was satisfied before the animation started. Hence the exact heading.
-    const play = replay.getByRole('button', { name: /Watch Transformation Live/i });
-    const pipelineLog = replay.getByText('Pipeline Log', { exact: true });
-    await expect(async () => {
-      await play.click();
-      await expect(pipelineLog).toBeVisible({ timeout: 15_000 });
-    }, 'the animation never started').toPass({ timeout: 60_000 });
-    await expect(replay.locator('[data-replay-caveat]')).toBeVisible();
-    await expect(
-      replay.locator('[data-replay-illustration]'),
-      'the running animation carries no label of its own',
-    ).toBeVisible();
-  });
-});
+/*
+ * 5198d59e7ea5 (the sample package) and 9028321e9795 (the transformation replay)
+ * were guarded here until 3.0.6. Both components left the landing page with the
+ * showroom (Sonny, 24.09.2026) and were deleted; `tests/claims-honesty-guard.spec.ts`
+ * checks that none of them comes back.
+ */

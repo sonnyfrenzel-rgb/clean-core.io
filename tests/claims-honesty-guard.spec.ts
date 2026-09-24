@@ -429,60 +429,35 @@ test.describe('UX-107 — a button does what it says', () => {
  * Four more sentences and one mapping that said more than the product does.
  * Where a claim had no mechanism behind it the claim went, rather than its
  * wording: `/how-to` deleted its July screenshots for that reason, and the
- * showroom's green ticks follow them.
+ * showroom's green ticks followed them (the showroom itself is gone since 3.0.6).
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
 test.describe('the public pages claim only what the product does', () => {
-  test('fa9e39148077 · the showroom does not call its examples compiled, tested or verified', async ({ page }) => {
+  /*
+   * fa9e39148077, 789f1985a410, 1012acfcd241, 666a399f4dd2 — the showroom, its
+   * timed replay and its sample package kept presenting drawn examples as work
+   * the product had done. Until 3.0.6 this test held their wording; on
+   * 24.09.2026 Sonny removed all three instead of moving them to /how-it-works.
+   * What holds now is that they stay gone: no section, no test id, no source.
+   */
+  test('fa9e39148077 · the showroom, its replay and its sample package stay gone', async ({ page }) => {
     test.setTimeout(120_000);
-    await page.goto('/', { waitUntil: 'domcontentloaded' });
-    const showroom = page.locator('#showroom');
-    await expect(showroom).toBeVisible({ timeout: 60_000 });
-    const text = await showroom.innerText();
-
-    for (const gone of [
-      'verified, compiled and tested',
-      'CDS test environment created',
-      '1 of 1 unit tests passed',
-      'Service definition compiled',
-      'Schema validated',
-      'Verified against Clean-Core Engine',
+    for (const rel of [
+      'components/TransformationShowroom.tsx',
+      'components/TransformationReplay.tsx',
+      'components/SamplePackageDownload.tsx',
+      'components/ProcessStrip.tsx',
     ]) {
-      expect(text, `"${gone}" came back`).not.toContain(gone);
+      expect(fs.existsSync(path.join(ROOT, rel)), `${rel} is back`).toBe(false);
     }
-
-    // And it says what these examples are instead.
-    expect(text).toContain('nothing on this page was compiled or run');
-
-    /*
-     * The mechanism, not the six strings: no green success mark may stand beside
-     * a word about compiling, testing or validating. That is what UX-027 took off
-     * the delivery stage, and the same badge pattern had three copies here.
-     * Computed colour, resolved to sRGB by the browser — Tailwind v4 reports
-     * `oklch(...)`.
-     */
-    const greenClaims = await showroom.evaluate((root) => {
-      const ctx = document.createElement('canvas').getContext('2d')!;
-      const green = (colour: string) => {
-        ctx.fillStyle = colour;
-        ctx.fillRect(0, 0, 1, 1);
-        const [r, g, b, a] = Array.from(ctx.getImageData(0, 0, 1, 1).data);
-        return a > 0 && g > r + 24 && g > b + 24;
-      };
-      const claim = /\bcompiled\b|\bvalidated\b|\btests? passed\b|\bverified against\b/i;
-      const negated = /\bnot\b[^.]{0,40}(compiled|run|tested|verified)|\bunverified\b/i;
-      const out: string[] = [];
-      for (const el of Array.from(root.querySelectorAll('*'))) {
-        if (el.children.length > 0) continue;
-        const t = (el.textContent || '').trim();
-        if (!t || !claim.test(t) || negated.test(t)) continue;
-        const style = getComputedStyle(el);
-        if (green(style.color) || green(style.backgroundColor)) out.push(t.slice(0, 80));
-      }
-      return out;
-    });
-    expect(greenClaims, 'a green mark stands beside work the product never did').toEqual([]);
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('#workspace-tools')).toBeVisible({ timeout: 60_000 });
+    await expect(page.locator('#showroom')).toHaveCount(0);
+    await expect(page.getByTestId('transformation-replay')).toHaveCount(0);
+    await expect(page.getByTestId('sample-package-download')).toHaveCount(0);
+    // No link on the page may point at the anchor that no longer exists.
+    await expect(page.locator('a[href$="#showroom"]')).toHaveCount(0);
   });
 
   test('ce41dce9ccd5 · the whitepaper does not promise a compiled package', async ({ page }) => {
