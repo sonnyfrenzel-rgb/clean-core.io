@@ -273,7 +273,9 @@ lock. User notice, verbatim:
 
 **Tracked.** Roadmap 8.9 (`docs/ROADMAP.md`, CR-09, decision §9 no. 16) built the isolated runner; the
 proof on the deployed profile, the documented review and the decision to reopen are what is left. The
-preservation register (roadmap step 1.1) inherits this entry.
+external review that an earlier version of this entry required is **waived as a policy decision** (Sonny,
+24.09.2026) — it is not replaced by anything already done: the documented review and the proof on the
+deployed profile are both still open gates. The preservation register (roadmap step 1.1) inherits this entry.
 
 ### 7.2 Authorized negative test of the deployed runner
 
