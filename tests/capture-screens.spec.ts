@@ -6,6 +6,8 @@ import { initializeApp, getApps } from 'firebase/app';
 import { getAuth, connectAuthEmulator, createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
 import { adminMergeDoc, adminSetDoc } from './helpers/admin-seed';
 import firebaseConfig from '../firebase-config.json';
+import { TERMS_VERSION } from '../lib/constants';
+import { archivedTermsSha256 } from '../lib/terms-versions';
 
 /**
  * Not a test — a capture run for design work.
@@ -98,11 +100,31 @@ const SCREENS: { name: string; url: string; wait?: string }[] = [
 ];
 
 /**
+ * The Terms re-accept card must not be in the picture.
+ *
+ * In the review of v2.18.0, ten of twelve screenshots showed nothing in the
+ * first viewport but "The Terms of Service have changed": the seeded account
+ * had never accepted the current version, so every signed-in screen carried the
+ * card and the reviewer could not see the screen behind it. The account now
+ * accepts `TERMS_VERSION` when it is seeded (below); this check makes the next
+ * way of getting that wrong stop the run instead of shipping blind pictures.
+ */
+class TermsGateInPicture extends Error {}
+async function assertNoTermsGate(page: Page, where: string) {
+  if (await page.locator('[data-terms-gate]').count()) {
+    throw new TermsGateInPicture(
+      `${where}: the Terms re-accept card is on screen — the capture account has not accepted TERMS_VERSION ${TERMS_VERSION}`,
+    );
+  }
+}
+
+/**
  * One full-page picture, or up to SEGMENTS screen-height pictures from the top.
  * App pages scroll inside a container rather than the document, so the largest
  * scrollable element is what gets scrolled.
  */
 async function shoot(page: Page, base: string): Promise<string[]> {
+  await assertNoTermsGate(page, path.basename(base));
   if (!SEGMENTS) {
     await page.screenshot({ path: `${base}.jpg`, fullPage: true, type: 'jpeg', quality: 72 });
     return [`${base}.jpg`];
@@ -151,7 +173,25 @@ test.describe('capture', () => {
     const cred = await createUserWithEmailAndPassword(auth, EMAIL, PASSWORD);
     const uid = cred.user.uid;
 
+    // Consent exactly as `recordConsent` (lib/consent.ts) stores it for a real
+    // user who accepted: the append-only event and the version mirrored onto the
+    // profile. The version is the product constant, so a Terms bump moves the
+    // capture account along with it instead of putting the card over every screen.
+    const acceptedAt = new Date();
+    await adminSetDoc('consent_events', `capture-consent-${uid}`, {
+      uid,
+      userId: uid,
+      email: EMAIL,
+      termsVersion: TERMS_VERSION,
+      privacyVersion: TERMS_VERSION,
+      contentSha256: archivedTermsSha256(TERMS_VERSION),
+      locale: null,
+      source: 'api/consent',
+      createdAt: acceptedAt,
+    });
     await adminSetDoc('users', uid, {
+      termsVersionAccepted: TERMS_VERSION,
+      termsAcceptedAt: acceptedAt,
       firstName: 'Design',
       lastName: 'Capture',
       email: EMAIL,
@@ -213,6 +253,7 @@ test.describe('capture', () => {
     await page.waitForTimeout(800);
     // One picture only: scrolling would move the page behind the dialog, not the dialog.
     const access = path.join(OUT, '00-access-desktop.jpg');
+    await assertNoTermsGate(page, '00-access-desktop');
     await page.screenshot({ path: access, type: 'jpeg', quality: 72 });
     notes.push(`00-access-desktop.jpg  ${Math.round(fs.statSync(access).size / 1024)} KB  access dialog`);
     await page.fill('input[type="email"]', EMAIL);
@@ -231,6 +272,8 @@ test.describe('capture', () => {
             notes.push(`${path.basename(file)}  ${Math.round(fs.statSync(file).size / 1024)} KB  ${page.url()}`);
           }
         } catch (err) {
+          // A card over the screen is not one failed picture; it is every picture.
+          if (err instanceof TermsGateInPicture) throw err;
           notes.push(`${screen.name}-${label}  FAILED  ${String(err instanceof Error ? err.message : err).slice(0, 120)}`);
         }
       }
