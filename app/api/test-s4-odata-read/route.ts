@@ -12,6 +12,7 @@ import {
 import { verifyRequestAuth, assertS4TenantAccess, QuotaError, assertMfaSatisfied } from '@/lib/firebase-admin';
 import { loadS4ConfigForUser, resolveS4Connection } from '@/lib/s4-credentials';
 import { logger } from '@/lib/logger';
+import { upstreamBodyShape } from '@/lib/upstream-body-shape';
 
 /**
  * POST /api/test-s4-odata-read
@@ -83,12 +84,12 @@ async function fetchOAuth2Token(
     // skipped.
     if (!response.ok) {
       const errorBody = await readBoundedBody(response, TOKEN_BODY_LIMITS).catch(() => '');
-      // The body stays in the server log; the caller gets the status only
-      // (SEC-2026-525).
+      // Neither the caller nor the log gets the body: the caller the status,
+      // the log the status and a shape word (SEC-2026-525; QA review of 46a7d64baad3).
       logger.warn('oauth token exchange rejected', {
         route: 'api/test-s4-odata-read',
         status: response.status,
-        body: errorBody.substring(0, 200),
+        bodyShape: upstreamBodyShape(errorBody),
       });
       throw new Error(
         `Token endpoint returned HTTP ${response.status}. Verify Client ID and Client Secret.`,

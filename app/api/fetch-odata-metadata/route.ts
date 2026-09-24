@@ -11,6 +11,7 @@ import {
 import { verifyRequestAuth, assertS4TenantAccess, QuotaError, assertMfaSatisfied } from '@/lib/firebase-admin';
 import { assertRateLimit } from '@/lib/rate-limit';
 import { logger, errMessage } from '@/lib/logger';
+import { upstreamBodyShape } from '@/lib/upstream-body-shape';
 import { loadS4ConfigForUser, resolveS4Connection } from '@/lib/s4-credentials';
 
 /**
@@ -87,7 +88,7 @@ async function fetchOAuth2Token(
 
     if (!response.ok) {
       const errorBody = await readBoundedBody(response, TOKEN_BODY_LIMITS).catch(() => '');
-      // The body stays in the log. This message is handed straight to the
+      // The body stays out of the answer and the log. This message is handed straight to the
       // caller by `buildAuthHeaders`' catch below ("Authentication failed:
       // …"), so quoting the token endpoint verbatim passed 200 characters from
       // a host the caller merely *named* back out through our answer — an error
@@ -97,7 +98,7 @@ async function fetchOAuth2Token(
       logger.warn('oauth token exchange rejected', {
         route: 'api/fetch-odata-metadata',
         status: response.status,
-        body: errorBody.substring(0, 200),
+        bodyShape: upstreamBodyShape(errorBody),
       });
       throw new Error(
         `Token endpoint returned HTTP ${response.status}. Verify Client ID and Client Secret.`

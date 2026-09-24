@@ -10,6 +10,7 @@
 import { test, expect } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
+import { upstreamBodyShape } from '../lib/upstream-body-shape';
 
 const ROOT = path.resolve(__dirname, '..');
 
@@ -88,4 +89,45 @@ test('SEC-2026-497: the $metadata 404 names no caught error text', () => {
   expect(src).not.toMatch(/lastError = err\??\.message/);
   expect(src).not.toMatch(/lastError = errMessage\(/);
   expect(src).toContain("logger.warn('odata metadata candidate failed'");
+});
+
+/**
+ * Nor into the log (QA review of 46a7d64baad3). The first round kept the
+ * upstream body out of the answer by moving the first 200/300 characters into
+ * Cloud Logging, where an echoed client id or an SAP error page's user name is
+ * no better placed. The log now gets a word from a closed list.
+ */
+test('an upstream error body reaches the log only as a shape word', () => {
+  const SENTINEL = 'SENTINEL-client-id-4711';
+  const shapes = [
+    '',
+    JSON.stringify({ error: 'invalid_client', error_description: SENTINEL }),
+    JSON.stringify({ error: SENTINEL }),
+    `<!DOCTYPE html><html><body>${SENTINEL}</body></html>`,
+    `<error><message>${SENTINEL}</message></error>`,
+    `plain ${SENTINEL}`,
+    `{ not json ${SENTINEL}`,
+  ].map(upstreamBodyShape);
+  expect(shapes).toEqual(['empty', 'invalid_client', 'json', 'html', 'xml', 'text', 'text']);
+
+  for (const file of [
+    'app/api/fetch-s4-metadata/route.ts',
+    'app/api/fetch-odata-metadata/route.ts',
+    'app/api/test-s4-connection/route.ts',
+    'app/api/test-s4-odata-read/route.ts',
+  ]) {
+    const src = code(file);
+    for (const m of src.matchAll(/logger\.(?:info|warn|error|critical)\(/g)) {
+      const start = (m.index ?? 0) + m[0].length;
+      let depth = 1;
+      let i = start;
+      for (; i < src.length && depth > 0; i++) {
+        if (src[i] === '(') depth++;
+        else if (src[i] === ')') depth--;
+      }
+      const args = src.slice(start, i - 1);
+      expect(args, `${file} logs an upstream body`).not.toMatch(/\berrorBody\b(?!\))/);
+      expect(args.replace(/upstreamBodyShape\(errorBody\)/g, ''), `${file} logs an upstream body`).not.toMatch(/errorBody/);
+    }
+  }
 });
