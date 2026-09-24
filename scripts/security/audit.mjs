@@ -13,16 +13,17 @@
  * a report but not open one, and it never sees the mail key.
  */
 import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { isPublicByDesign, publicByDesignValues } from '../qa/lib/config.mjs';
-import { callReviewer } from '../qa/lib/openrouter.mjs';
+import { callReviewer as openRouterReviewer } from '../qa/lib/openrouter.mjs';
 import { redactSecrets } from '../qa/lib/redact.mjs';
 import { AUDIT_PUBLIC_PEM, sealFor } from './lib/envelope.mjs';
 import { askAgainIfTruncated, coerceConsultant, coerceFindings, coerceNarrative, consultantMessage, dedupeCandidates, deepReadCoverage, failureReason, narrativeMessage, notVerifiedEntry, numbered, planBatches, planVerification, reportWithoutNarrative, runConsultants, runVerification, verificationLimitation, verificationMessage, withCountedCoverage } from './lib/pipeline.mjs';
 import { surfaceMap } from './lib/surface.mjs';
 import { AUDIT, CONSULTANTS, CONSULTANT_SCHEMA, FINDINGS_SCHEMA, NARRATIVE_SCHEMA } from './lib/team.mjs';
 
-const SELF_TEST = process.env.SECURITY_AUDIT_MODE === 'self-test';
+const SELF_TEST_MODE = process.env.SECURITY_AUDIT_MODE === 'self-test';
 const WORK = join(AUDIT.workDir, 'work');
 const OUT = join(AUDIT.workDir, 'out');
 const CHARS_PER_TOKEN = 3.5;
@@ -52,15 +53,22 @@ export const CISO_NARRATIVE_TASK = [
 
 const estimate = (chars, maxOutputTokens) => (chars / CHARS_PER_TOKEN / 1e6) * AUDIT.price.input + (maxOutputTokens / 1e6) * AUDIT.price.output;
 
-async function main() {
-  mkdirSync(WORK, { recursive: true });
-  mkdirSync(OUT, { recursive: true });
-  const apiKey = process.env.OPENROUTER_API_KEY;
-  if (!apiKey) throw new Error('OPENROUTER_API_KEY is not set — the audit cannot run.');
-
+/**
+ * The audit from surface map to sealed payload, with the model call injected.
+ *
+ * main() runs it with OpenRouter; tests/security-audit-guard.spec.ts runs it
+ * with a fake reviewer, so the payload and the mail are checked end to end —
+ * verified counts, the not-verified list, the headline — and not only through
+ * the helpers and the source text (QA review of 839c5dfdb6c4, 02dc1b69df11).
+ * It writes nothing and logs only warnings; the caller writes the artifact.
+ *
+ * @param callReviewer  the model call — `callReviewer` of scripts/qa/lib/openrouter.mjs in CI
+ * @param publicKeyPem  the key the payload is sealed for
+ * @returns {{ payload, sealed, line }}
+ */
+export async function runAudit({ apiKey, callReviewer = openRouterReviewer, surface = surfaceMap(), selfTest = SELF_TEST_MODE, publicKeyPem = readFileSync(AUDIT_PUBLIC_PEM, 'utf8') }) {
+  const SELF_TEST = selfTest;
   const started = Date.now();
-  const surface = surfaceMap();
-  writeFileSync(join(WORK, 'surface.json'), JSON.stringify(surface, null, 2));
 
   // Nothing leaves the runner unredacted. A hit is reported as a finding — without its value.
   const secretHits = [];
@@ -290,6 +298,11 @@ async function main() {
     // Which half of the report a model wrote, and which one is missing.
     synthesis,
     failedCalls: run.failedCalls + check.failedCalls,
+    // The total above, split: a failed consultant call leaves files unread, a
+    // failed verification call (verification.failedCalls) leaves candidates
+    // unverified — the mail names each for what it lost (QA review of
+    // 839c5dfdb6c4, 4b3bfd34f4b6).
+    consultantFailedCalls: run.failedCalls,
     // How many candidates were verified, and every one that was not — by name,
     // with its reason. The mail's headline is built from this, not from the rating.
     verification,
@@ -300,15 +313,30 @@ async function main() {
     report,
   };
 
-  writeFileSync(join(OUT, 'security-audit.enc.json'), JSON.stringify(sealFor(payload, readFileSync(AUDIT_PUBLIC_PEM, 'utf8'))));
+  const sealed = sealFor(payload, publicKeyPem);
 
   // Only metadata reaches the public log: counts and cost, never a finding.
   const line = `Security audit ${surface.head.slice(0, 12)}: completed, sealed · calls=${payload.calls} failed=${payload.failedCalls} candidates=${candidateCount} verified=${verifiedCount} notVerified=${notVerified.length} cost=$${costUsd ?? 'unknown'}`;
+  return { payload, sealed, line };
+}
+
+async function main() {
+  mkdirSync(WORK, { recursive: true });
+  mkdirSync(OUT, { recursive: true });
+  const apiKey = process.env.OPENROUTER_API_KEY;
+  if (!apiKey) throw new Error('OPENROUTER_API_KEY is not set — the audit cannot run.');
+  const surface = surfaceMap();
+  writeFileSync(join(WORK, 'surface.json'), JSON.stringify(surface, null, 2));
+  const { sealed, line } = await runAudit({ apiKey, surface });
+  writeFileSync(join(OUT, 'security-audit.enc.json'), JSON.stringify(sealed));
   console.log(line);
   if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, `### Security audit\n\n${line}\n\nThe report is sealed and goes to the owner by mail.\n`);
 }
 
-main().catch((err) => {
-  console.error(`Security audit failed: ${String(err?.message || err).split('\n')[0]}`);
-  process.exit(1);
-});
+// An entry point when run, a module when imported — the test imports runAudit and must not start an audit.
+if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
+  main().catch((err) => {
+    console.error(`Security audit failed: ${String(err?.message || err).split('\n')[0]}`);
+    process.exit(1);
+  });
+}

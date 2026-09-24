@@ -371,11 +371,34 @@ export function issueClass(finding) {
   return words(c) || `title:${words(finding?.title)}`;
 }
 
+/** A class from a taxonomy — CWE, OWASP Top 10, OWASP API or LLM Top 10 — rather than the category's own words. */
+export const isSpecificClass = (cls) => /^(cwe|llm|api|owasp-a)-?\d/.test(String(cls));
+
+const titleWords = (s) => new Set(String(s || '').toLowerCase().replace(/[^a-z0-9äöüß]+/g, ' ').trim().split(' ').filter((w) => w.length > 2));
+
+/** Share of the title words two findings have in common (Jaccard); 1 for identical wording. */
+export function titleSimilarity(a, b) {
+  const x = titleWords(a);
+  const y = titleWords(b);
+  if (!x.size || !y.size) return 0;
+  let common = 0;
+  for (const w of x) if (y.has(w)) common++;
+  return common / (x.size + y.size - common);
+}
+
+/** How alike two titles must be to merge findings whose class is only a generic category. */
+export const TITLE_SIMILARITY_TO_MERGE = 0.6;
+
 /**
  * Every consultant finding as one candidate for verification, duplicates merged.
  *
  * Two findings are duplicates when they share an issue class and cite the same
- * file at lines at most `distance` apart; merging is transitive. The merged
+ * file at lines at most `distance` apart; merging is transitive. A class that is
+ * only a category's own words ("security", "Input validation") says nothing
+ * about the defect, so there the titles must also agree
+ * (`TITLE_SIMILARITY_TO_MERGE`): two different defects filed under one generic
+ * category in the same ten lines were merged, and one of them was verified
+ * under the other's text (QA review of 839c5dfdb6c4, 5493e14ba8cd). The merged
  * candidate keeps the text of its most severe, most confident report, the
  * highest severity, every location, and every source — which consultant said
  * what — so nothing a consultant reported disappears in the merge.
@@ -392,7 +415,7 @@ export function dedupeCandidates(results, { distance = AUDIT.dedupeLineDistance 
   const near = (x, y) => (x.locations || []).some((a) => (y.locations || []).some((b) => a.file === b.file && Math.abs((Number(a.line) || 0) - (Number(b.line) || 0)) <= distance));
   for (let i = 0; i < all.length; i++)
     for (let j = i + 1; j < all.length; j++)
-      if (classes[i] === classes[j] && near(all[i], all[j])) parent[find(j)] = find(i);
+      if (classes[i] === classes[j] && near(all[i], all[j]) && (isSpecificClass(classes[i]) || titleSimilarity(all[i].title, all[j].title) >= TITLE_SIMILARITY_TO_MERGE)) parent[find(j)] = find(i);
   const groups = new Map();
   all.forEach((f, i) => {
     const root = find(i);
@@ -423,8 +446,9 @@ export function dedupeCandidates(results, { distance = AUDIT.dedupeLineDistance 
       verification: primary.verification,
       confidence: Math.max(...group.map((f) => Number(f.confidence) || 0)),
       verified: group.some((f) => f.verified === true),
-      // The primary report first, so the entry can say what else was merged into it.
-      sources: [primary, ...group.filter((f) => f !== primary)].map((f) => ({ consultant: f.consultant, title: f.title, severity: f.severity })),
+      // The primary report first, so the entry can say what else was merged into it — with each merged report's
+      // own evidence and recommendation, which the CISO is shown beside the primary's (candidateEntry).
+      sources: [primary, ...group.filter((f) => f !== primary)].map((f) => ({ consultant: f.consultant, title: f.title, severity: f.severity, evidence: f.evidence, recommendation: f.recommendation })),
     };
   });
 }
@@ -481,7 +505,16 @@ export function candidateEntry(candidate, readLines, { maxChars, contextLines = 
       `Evidence quoted: ${clip(candidate.evidence, step.field)}`,
       `Recommendation: ${clip(candidate.recommendation, step.field)}`,
       `How to verify: ${clip(candidate.verification, step.field)}`,
-      ...(others.length ? [`Also reported as: ${others.map((s) => `"${clip(s.title, 120)}" (${s.consultant}, ${s.severity})`).join('; ')}`] : []),
+      ...(others.length
+        ? [
+            'Also reported as:',
+            ...others.map((s) => [
+              `- "${clip(s.title, 120)}" (${s.consultant}, ${s.severity})`,
+              ...(s.evidence ? [`  Evidence quoted: ${clip(s.evidence, Math.floor(step.field / 2))}`] : []),
+              ...(s.recommendation ? [`  Recommendation: ${clip(s.recommendation, Math.floor(step.field / 2))}`] : []),
+            ].join('\n')),
+          ]
+        : []),
       'Code at the cited locations:',
       codeContext(candidate, lines, step.context, step.locations),
     ].join('\n');

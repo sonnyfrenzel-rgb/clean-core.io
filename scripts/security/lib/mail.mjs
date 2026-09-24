@@ -75,6 +75,26 @@ export function reasonDe(reason) {
   return text;
 }
 
+/**
+ * What the failed model calls cost the report, each kind named for what it lost.
+ *
+ * A failed consultant call leaves files unread; a failed verification call
+ * leaves candidates unverified. The sealed total used to be described as the
+ * first alone — "ihre Dateien stehen oben als nicht gründlich gelesen" — also
+ * for a verification call, which read no file (QA review of 839c5dfdb6c4,
+ * 4b3bfd34f4b6). A payload from before the split carries only the total and is
+ * shown without an attribution it cannot support.
+ */
+export function failedCallParts(payload) {
+  const consultant = payload?.consultantFailedCalls;
+  if (typeof consultant !== 'number') return payload?.failedCalls ? [`${payload.failedCalls} fehlgeschlagen`] : [];
+  const verification = Number(payload?.verification?.failedCalls) || 0;
+  return [
+    ...(consultant ? [`${consultant} Berater-Aufruf(e) fehlgeschlagen — ihre Dateien stehen oben als nicht gründlich gelesen`] : []),
+    ...(verification ? [`${verification} Prüfaufruf(e) fehlgeschlagen — ihre Kandidaten stehen unter „Nicht verifiziert"`] : []),
+  ];
+}
+
 export function renderAuditMail(payload, { version, runUrl, sealedSha256 }) {
   const r = payload.report;
   const findings = numbered(payload);
@@ -90,6 +110,7 @@ export function renderAuditMail(payload, { version, runUrl, sealedSha256 }) {
   const open = v?.notVerified || [];
   const cost = typeof payload.costUsd === 'number' ? `${payload.costUsd.toFixed(2)} $` : 'unbekannt';
   const minutes = Math.round((payload.durationMs || 0) / 60_000);
+  const failed = failedCallParts(payload);
 
   const text = [
     subject,
@@ -142,7 +163,7 @@ export function renderAuditMail(payload, { version, runUrl, sealedSha256 }) {
     `  ${r.coverage.files_in_scope} Dateien im Umfang · ${r.coverage.deep_read} gründlich gelesen · ${r.coverage.pattern_scanned_only} nur über Muster geprüft`,
     `  ${r.coverage.notes}`,
     ...(r.limitations || []).map((l) => `  – ${l}`),
-    `  Modellaufrufe: ${payload.calls ?? '—'}${payload.failedCalls ? `, davon ${payload.failedCalls} fehlgeschlagen — ihre Dateien stehen oben als nicht gründlich gelesen` : ''}. Der Agent hat keine Werkzeuge: Er sieht nur, was die Pipeline ihm gibt.`,
+    `  Modellaufrufe: ${payload.calls ?? '—'}${failed.length ? `, davon ${failed.join('; ')}` : ''}. Der Agent hat keine Werkzeuge: Er sieht nur, was die Pipeline ihm gibt.`,
     '',
     'NACHWEIS',
     `  Version ${version} · Commit ${payload.head}`,
@@ -152,7 +173,7 @@ export function renderAuditMail(payload, { version, runUrl, sealedSha256 }) {
     `  Nachprüfen: node scripts/security/inbox.mjs ${payload.head.slice(0, 12)} — öffnet dasselbe Artefakt mit dem privaten Schlüssel.`,
   ].join('\n');
 
-  const html = wrapEmailDocument(renderHtmlBody({ payload, r, findings, c, v, version, runUrl, sealedSha256, cost, minutes }), `Security-Audit ${version}`);
+  const html = wrapEmailDocument(renderHtmlBody({ payload, r, findings, c, v, version, runUrl, sealedSha256, cost, minutes, failed }), `Security-Audit ${version}`);
   return { subject, text, html, findings };
 }
 
@@ -176,7 +197,7 @@ const block = (title, body) => `<div style="margin-top: 12px;"><div style="font-
  * Gmail app at 320px is where this gets read, and a table of file paths is what
  * forces a sideways scroll there (the same reasoning as lib/usage-report-email.ts).
  */
-function renderHtmlBody({ payload, r, findings, c, v, version, runUrl, sealedSha256, cost, minutes }) {
+function renderHtmlBody({ payload, r, findings, c, v, version, runUrl, sealedSha256, cost, minutes, failed }) {
   const incomplete = Boolean(v && !v.complete);
   const open = v?.notVerified || [];
   const risk = incomplete ? SEVERITY_STYLE.hoch : SEVERITY_STYLE[r.risk_rating] || SEVERITY_STYLE.mittel;
@@ -274,7 +295,7 @@ function renderHtmlBody({ payload, r, findings, c, v, version, runUrl, sealedSha
       <div style="font-size: 14px; color: #0f172a; line-height: 1.6;"><strong>${esc(r.coverage.files_in_scope)}</strong> Dateien im Umfang &middot; <strong>${esc(r.coverage.deep_read)}</strong> gründlich gelesen &middot; <strong>${esc(r.coverage.pattern_scanned_only)}</strong> nur über Muster geprüft</div>
       <div style="font-size: 13px; color: #475569; line-height: 1.5; margin-top: 6px;">${esc(r.coverage.notes)}</div>
       ${(r.limitations || []).map((l) => `<div style="font-size: 13px; color: #475569; line-height: 1.5; padding-top: 4px;">&ndash;&nbsp;${esc(l)}</div>`).join('')}
-      <div style="font-size: 13px; color: #475569; line-height: 1.5; padding-top: 6px;">Modellaufrufe: ${esc(payload.calls ?? '—')}${payload.failedCalls ? `, davon ${esc(payload.failedCalls)} fehlgeschlagen` : ''} &mdash; der Agent hat keine Werkzeuge und sieht nur, was die Pipeline ihm gibt.</div>
+      <div style="font-size: 13px; color: #475569; line-height: 1.5; padding-top: 6px;">Modellaufrufe: ${esc(payload.calls ?? '—')}${failed.length ? `, davon ${esc(failed.join('; '))}` : ''} &mdash; der Agent hat keine Werkzeuge und sieht nur, was die Pipeline ihm gibt.</div>
     </div>
 
     <div class="cta-wrap" style="text-align: center; margin: 26px 0;">

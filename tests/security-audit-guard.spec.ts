@@ -1165,4 +1165,173 @@ test.describe('the CISO verifies in batches, and says what it did not verify', (
     expect(src.indexOf('const cisoReserve')).toBeLessThan(src.indexOf('const run = await runConsultants'));
     expect(src).toContain('const check = await runVerification({');
   });
+
+  test('a generic category alone merges nothing: two defects in the same ten lines stay two, and a merged report keeps its own evidence', async () => {
+    // QA review of 839c5dfdb6c4 (5493e14ba8cd): "security" is a category, not a defect.
+    const { dedupeCandidates, candidateEntry, isSpecificClass } = await lib('pipeline.mjs');
+    expect(isSpecificClass('cwe-79')).toBe(true);
+    expect(isSpecificClass('owasp-a1')).toBe(true);
+    expect(isSpecificClass('security')).toBe(false);
+    expect(isSpecificClass('title:open redirect')).toBe(false);
+    const at = (line: number) => [{ file: 'app/api/a/route.ts', line }];
+    const distinct = dedupeCandidates([
+      { consultant: 'appsec-api', review: { findings: [finding({ title: 'Missing rate limit on login', category: 'Security', locations: at(20) })] } },
+      { consultant: 'identity-crypto', review: { findings: [finding({ title: 'Stored XSS in the preview field', category: 'security', locations: at(25) })] } },
+    ], { distance: 10 });
+    expect(distinct, 'two defects under one generic category are two candidates').toHaveLength(2);
+
+    // The same defect reworded under the same generic category is still one.
+    const same = dedupeCandidates([
+      { consultant: 'appsec-api', review: { findings: [finding({ title: 'Missing rate limit on the login route', category: 'Security', locations: at(20), evidence: 'primary quote', recommendation: 'primary fix' })] } },
+      { consultant: 'identity-crypto', review: { findings: [finding({ title: 'Login route missing rate limit', category: 'security', severity: 'mittel', locations: at(24), evidence: 'SECONDARY-QUOTE line 24', recommendation: 'SECONDARY-FIX add a limiter' })] } },
+    ], { distance: 10 });
+    expect(same).toHaveLength(1);
+    // The secondary report's evidence and recommendation reach the CISO beside the primary's.
+    const entry = candidateEntry({ ...same[0], id: 'K-001' }, () => Array.from({ length: 40 }, (_, i) => `line ${i + 1}`), { maxChars: 20_000 });
+    expect(entry).toContain('primary quote');
+    expect(entry).toContain('SECONDARY-QUOTE line 24');
+    expect(entry).toContain('SECONDARY-FIX add a limiter');
+    // A specific class still merges on location alone, whatever the titles say.
+    const cwe = dedupeCandidates([
+      { consultant: 'appsec-api', review: { findings: [finding({ title: 'A', locations: at(20) })] } },
+      { consultant: 'data-rules', review: { findings: [finding({ title: 'Completely different words', locations: at(22) })] } },
+    ], { distance: 10 });
+    expect(cwe).toHaveLength(1);
+  });
+
+  test('the mail names a failed verification call as unverified candidates, not unread files — and an old payload still renders', async () => {
+    // QA review of 839c5dfdb6c4 (4b3bfd34f4b6).
+    const { renderAuditMail } = await lib('mail.mjs');
+    const base = {
+      head: '81810c8aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', model: 'm', calls: 5, durationMs: 0, costUsd: null, selfTest: false,
+      report: { executive_summary: 'S', risk_rating: 'mittel', findings: [], hardening: [], positive_observations: [], coverage: { files_in_scope: 1, deep_read: 1, pattern_scanned_only: 0, notes: '' }, limitations: [] },
+    };
+    const open = [{ id: 'K-001', title: 't', severity: 'hoch', category: 'c', locations: [], consultants: ['appsec-api'], reason: 'verification call failed (timeout)' }];
+    const verifyOnly = renderAuditMail({ ...base, failedCalls: 1, consultantFailedCalls: 0, verification: { reports: 1, candidates: 1, verified: 0, calls: 0, failedCalls: 1, notVerified: open } }, { version: 'v', runUrl: 'u', sealedSha256: 's' });
+    expect(verifyOnly.text).toContain('Modellaufrufe: 5, davon 1 Prüfaufruf(e) fehlgeschlagen — ihre Kandidaten stehen unter „Nicht verifiziert".');
+    expect(verifyOnly.text).not.toContain('nicht gründlich gelesen');
+    expect(verifyOnly.html).not.toContain('nicht gründlich gelesen');
+
+    const both = renderAuditMail({ ...base, failedCalls: 3, consultantFailedCalls: 2, verification: { reports: 1, candidates: 1, verified: 0, calls: 0, failedCalls: 1, notVerified: open } }, { version: 'v', runUrl: 'u', sealedSha256: 's' });
+    expect(both.text).toContain('davon 2 Berater-Aufruf(e) fehlgeschlagen — ihre Dateien stehen oben als nicht gründlich gelesen; 1 Prüfaufruf(e) fehlgeschlagen');
+    expect(both.html).toContain('2 Berater-Aufruf(e) fehlgeschlagen');
+    expect(both.html).toContain('1 Prüfaufruf(e) fehlgeschlagen');
+
+    // A payload from before the split: the total, without an attribution it cannot support.
+    const old = renderAuditMail({ ...base, failedCalls: 4 }, { version: 'v', runUrl: 'u', sealedSha256: 's' });
+    expect(old.text).toContain('Modellaufrufe: 5, davon 4 fehlgeschlagen.');
+    expect(old.html).toContain('davon 4 fehlgeschlagen');
+    const clean = renderAuditMail({ ...base, failedCalls: 0, consultantFailedCalls: 0 }, { version: 'v', runUrl: 'u', sealedSha256: 's' });
+    expect(clean.text).toContain('Modellaufrufe: 5. Der Agent');
+  });
+
+  /**
+   * The audit entry point end to end, with a fake reviewer in place of
+   * OpenRouter: consultant → merge → verification batches → narrative → sealed
+   * payload → mail (QA review of 839c5dfdb6c4, 02dc1b69df11). 45 candidates in
+   * distinct classes make three verification batches of 20, 20 and 5.
+   */
+  test.describe('the audit entry point, run with a fake reviewer', () => {
+    const FILES = ['app/api/health/route.ts', 'middleware.ts'];
+    const surface = {
+      head: 'abcdef0123456789abcdef0123456789abcdef01',
+      files: { total: FILES.length, byDomain: { 'appsec-api': FILES.length }, list: FILES.map((p) => ({ path: p, domain: 'appsec-api' })) },
+      apiRoutes: [], sinks: [], workflows: [], firestoreRules: {}, middleware: {}, dependencies: {},
+    };
+    const consultantFindings = Array.from({ length: 45 }, (_, i) => ({
+      title: `Defect ${i + 1}`, severity: 'hoch', category: `CWE-${100 + i}`, locations: [{ file: 'middleware.ts', line: 1 }],
+      preconditions: 'p', impact: 'i', evidence: 'e', recommendation: 'r', verification: 'v', confidence: 0.8, verified: true,
+    }));
+    type Call = { user: string; schema: { properties?: Record<string, unknown> }; name?: string; coerce?: (a: unknown) => unknown };
+    const keys = () => crypto.generateKeyPairSync('rsa', { modulusLength: 2048, publicKeyEncoding: { type: 'spki', format: 'pem' }, privateKeyEncoding: { type: 'pkcs8', format: 'pem' } });
+    const reviewer = ({ consultantCost = 0.1, verifyCost = 0.02, failWhen }: { consultantCost?: number; verifyCost?: number; failWhen?: (user: string) => boolean } = {}) => {
+      const seen = { consultant: 0, verification: 0, narrative: 0 };
+      const call = async ({ user, schema, name, coerce }: Call) => {
+        const wrap = (answer: unknown, cost: number) => ({ review: coerce ? coerce(answer) : answer, usage: { cost } });
+        if (name === 'security_consultant') {
+          seen.consultant++;
+          return wrap({ findings: consultantFindings, checked_sound: [], notes: '' }, consultantCost);
+        }
+        if (schema.properties?.executive_summary) {
+          seen.narrative++;
+          return wrap({ executive_summary: 'Zusammenfassung', risk_rating: 'mittel', hardening: [], positive_observations: [], coverage: { files_in_scope: 0, deep_read: 0, pattern_scanned_only: 0, notes: '' }, limitations: [] }, 0.01);
+        }
+        seen.verification++;
+        if (failWhen?.(user)) throw new Error('OpenRouter did not answer within 600 s.');
+        const ids = [...user.matchAll(/^### (K-\d+)/gm)].map((m) => m[1]);
+        return wrap({ findings: ids.map((id) => ({ title: `Bestätigt ${id}`, severity: 'hoch', category: 'CWE-1', locations: [{ file: 'middleware.ts', line: 1 }], description: 'd', preconditions: 'p', impact: 'i', evidence: 'e', recommendation: 'r', verification: 'v', confidence: 0.8 })), notes: '' }, verifyCost);
+      };
+      return { call, seen };
+    };
+    const run = async (fake: ReturnType<typeof reviewer>) => {
+      const { runAudit } = await import(path.resolve(ROOT, 'scripts/security/audit.mjs'));
+      const { openWith, privateKeyFrom } = await lib('envelope.mjs');
+      const { renderAuditMail } = await lib('mail.mjs');
+      const { publicKey, privateKey } = keys();
+      const out = await runAudit({ apiKey: 'fake', callReviewer: fake.call, surface, selfTest: false, publicKeyPem: publicKey });
+      expect(JSON.stringify(out.sealed)).not.toContain('Bestätigt');
+      const payload = openWith(out.sealed, privateKeyFrom(privateKey));
+      return { payload, line: out.line, mail: renderAuditMail(payload, { version: 'v9.9.9', runUrl: 'u', sealedSha256: 's' }) };
+    };
+
+    test('every batch verified: the rating is the headline, and nothing is listed as not verified', async () => {
+      const fake = reviewer();
+      const { payload, line, mail } = await run(fake);
+      expect(fake.seen).toEqual({ consultant: 1, verification: 3, narrative: 1 });
+      expect(payload.verification).toMatchObject({ reports: 45, candidates: 45, verified: 45, calls: 3, failedCalls: 0, notVerified: [] });
+      expect(payload.synthesis).toEqual({ findings: 'ciso', narrative: 'ciso' });
+      expect(payload.failedCalls).toBe(0);
+      expect(payload.consultantFailedCalls).toBe(0);
+      expect(payload.report.findings).toHaveLength(45);
+      expect(payload.calls).toBe(5);
+      expect(line).toContain('calls=5 failed=0 candidates=45 verified=45 notVerified=0');
+      expect(mail.subject).toBe('Security-Audit v9.9.9 (abcdef0) — Risiko mittel: 0 kritisch · 45 hoch · 0 mittel · 0 niedrig');
+      expect(mail.text).toContain('Alle 45 Kandidaten am Code verifiziert.');
+      expect(mail.text).not.toContain('NICHT VERIFIZIERT');
+      expect(mail.text).toContain('Modellaufrufe: 5. Der Agent');
+    });
+
+    test('one failed verification batch: its twenty candidates are named, and the mail blames a verification call, not unread files', async () => {
+      const fake = reviewer({ failWhen: (user) => /^### K-021 /m.test(user) });
+      const { payload, line, mail } = await run(fake);
+      expect(payload.verification).toMatchObject({ candidates: 45, verified: 25, calls: 2, failedCalls: 1 });
+      expect(payload.verification.notVerified.map((n: { id: string }) => n.id)).toEqual(Array.from({ length: 20 }, (_, i) => `K-${String(21 + i).padStart(3, '0')}`));
+      for (const n of payload.verification.notVerified) expect(n.reason).toBe('verification call failed (timeout)');
+      expect(payload.synthesis.findings).toBe('ciso-partial');
+      expect(payload.failedCalls).toBe(1);
+      expect(payload.consultantFailedCalls).toBe(0);
+      expect(payload.costUsd).toBeNull();
+      expect(payload.report.coverage.deep_read, 'no file went unread').toBe(2);
+      expect(line).toContain('failed=1 candidates=45 verified=25 notVerified=20');
+      expect(mail.subject).toBe('Security-Audit v9.9.9 (abcdef0) — nicht vollständig geprüft: 25 von 45 Kandidaten verifiziert, 20 nicht · 0 kritisch · 25 hoch · 0 mittel · 0 niedrig');
+      expect(mail.text).toContain('NICHT VERIFIZIERT (20)');
+      expect(mail.text).toContain('Prüfaufruf fehlgeschlagen (timeout)');
+      expect(mail.text).toContain('davon 1 Prüfaufruf(e) fehlgeschlagen — ihre Kandidaten stehen unter „Nicht verifiziert"');
+      expect(mail.text).not.toContain('nicht gründlich gelesen');
+      expect(payload.report.limitations[0]).toContain('25 von 45 Kandidaten wurden am Code verifiziert, 20 nicht');
+    });
+
+    test('the budget runs out after one verification batch: the other twenty-five are named as outside the budget', async () => {
+      const { AUDIT } = await lib('team.mjs');
+      const { CISO_FINDINGS_TASK, CISO_NARRATIVE_TASK } = await import(path.resolve(ROOT, 'scripts/security/audit.mjs'));
+      const est = (chars: number, out: number) => (chars / 3.5 / 1e6) * AUDIT.price.input + (out / 1e6) * AUDIT.price.output;
+      const brief = read(AUDIT.briefPath).length;
+      const narrativeReserve = est(brief + CISO_NARRATIVE_TASK.length + 2 + AUDIT.narrativeInputChars, AUDIT.narrativeOutputTokens);
+      const verificationWorst = est(brief + CISO_FINDINGS_TASK.length + 2 + AUDIT.verificationInputChars, AUDIT.cisoOutputTokens);
+      // The consultants leave room for exactly one verification call at its reserved worst case beside the narrative.
+      const fake = reviewer({ consultantCost: AUDIT.maxCostUsd - narrativeReserve - verificationWorst });
+      const { payload, mail } = await run(fake);
+      expect(fake.seen.verification).toBe(1);
+      expect(fake.seen.narrative, 'the narrative was reserved and still runs').toBe(1);
+      expect(payload.verification).toMatchObject({ candidates: 45, verified: 20, calls: 1, failedCalls: 0 });
+      expect(payload.verification.notVerified).toHaveLength(25);
+      for (const n of payload.verification.notVerified) expect(n.reason).toBe('outside the $5 cost cap');
+      expect(payload.verification.notVerified[0].id).toBe('K-021');
+      expect(payload.failedCalls).toBe(0);
+      expect(mail.subject).toContain('nicht vollständig geprüft: 20 von 45 Kandidaten verifiziert, 25 nicht');
+      expect(mail.subject).not.toMatch(/Risiko/);
+      expect(mail.text).toContain('außerhalb des Budgets');
+      expect(mail.text).toContain('Modellaufrufe: 3. Der Agent');
+    });
+  });
 });
