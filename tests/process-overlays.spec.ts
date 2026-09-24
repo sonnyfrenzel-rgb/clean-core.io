@@ -307,6 +307,36 @@ test.describe('the level overlay', () => {
     const overlay = buildLevelOverlay(placed, { 'VBAK@read': graded('C') }, nav);
     expect(overlay?.marks.get('e1')).toBe('C · VBAK (read)');
   });
+
+  test('an object graded Unknown is counted as not determined, not folded into the rest (bfbbcc22a9f2)', () => {
+    const nav = { order: ['e1', 'e2'] } as unknown as ProcessNavigation;
+    const placed = new Map<string, ObjectSite[]>([
+      ['e1', [
+        { name: 'VBAK', kind: 'table', use: 'read', line: 10 },
+        { name: 'VBAP', kind: 'table', use: 'read', line: 11 },
+        { name: 'ZSD_ODD', kind: 'table', use: 'read', line: 12 },
+        { name: 'ZSD_ODDER', kind: 'table', use: 'write', line: 13 },
+      ]],
+      ['e2', [
+        { name: 'ZX_ONE', kind: 'table', use: 'read', line: 20 },
+        { name: 'ZX_TWO', kind: 'table', use: 'read', line: 21 },
+      ]],
+    ]);
+    const overlay = buildLevelOverlay(placed, {
+      'VBAK@read': graded('A'),
+      'VBAP@read': graded('B'),
+      'ZSD_ODD@read': graded('Unknown'),
+      'ZSD_ODDER@write': graded('Unknown'),
+      'ZX_ONE@read': graded('Unknown'),
+      'ZX_TWO@read': graded('Unknown'),
+    }, nav);
+    // The letter keeps SAP's rollup (Unknown does not make the step worse);
+    // VBAK is the one other graded object; the two ungraded ones are said,
+    // not counted with it.
+    expect(overlay?.marks.get('e1')).toBe('B · VBAP (read) +1 · 2 not determined');
+    // Nothing determined: the letter already says so.
+    expect(overlay?.marks.get('e2')).toBe('Unknown · ZX_ONE (read) +1');
+  });
 });
 
 /* ------------------------------------------------------------------ *
