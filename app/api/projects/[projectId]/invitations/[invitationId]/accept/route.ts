@@ -11,6 +11,7 @@ import { assertRateLimit, getClientIp } from '@/lib/rate-limit';
 import { escapeHtml } from '@/lib/utils';
 import { wrapEmailDocument } from '@/lib/email-layout';
 import { sendTransactionalMail } from '@/lib/transactional-mail';
+import { ownDomainVerifyEmailLink } from '@/lib/auth-action-link';
 import { buildAddressConfirmationEmail, ADDRESS_CONFIRMATION_SUBJECT } from '@/lib/invitation-email';
 import {
   INVITATION_CLOSED_CODE,
@@ -224,7 +225,12 @@ export async function POST(
       let sent = false;
       try {
         await assertRateLimit(`invitation-confirm-mail:${uid}`, 3, 60 * 60 * 1000);
-        const link = await (await getAdminAuth()).generateEmailVerificationLink(accountEmail);
+        // Firebase issues the one-time code; the link itself points at our own
+        // domain (`/auth/action`), not at <project>.firebaseapp.com — roadmap
+        // 3.0.9, see lib/auth-action-link.ts.
+        const link = ownDomainVerifyEmailLink(
+          await (await getAdminAuth()).generateEmailVerificationLink(accountEmail),
+        );
         const outcome = await sendTransactionalMail({
           to: accountEmail,
           subject: ADDRESS_CONFIRMATION_SUBJECT,
