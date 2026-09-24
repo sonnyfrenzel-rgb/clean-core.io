@@ -15,9 +15,10 @@ import type { EvidenceChange } from '@/lib/run-evidence-digest';
 /**
  * POST /api/projects/{projectId}/commands  — roadmap 0.7
  *
- * The only writer of the six project fields a browser may no longer touch:
+ * The only writer of the project fields a browser may no longer touch:
  * `targetArchitecture`, `approvedByArchitect`, `architectJustifiedOverride`,
- * `architectSignOffAt`, `approvedBy` and `usageReport`.
+ * `architectSignOffAt`, `approvedBy`, `usageReport`, `atcReport` and — since
+ * roadmap 8.4 — `decision`.
  *
  * *„Eine Freigabe entsteht auf dem Server oder gar nicht."*
  * (`docs/roadmap/SCHNITT-0-UMFANG.md` §8.) Until this route existed, the design
@@ -149,8 +150,13 @@ export async function POST(
         // refuses on it rather than treating an unreadable run as an
         // unchanged one.
         let activeRunEvidence: string | null = null;
-        const wantsBinding =
-          typeof body === 'object' && body !== null && (body as { command?: unknown }).command === 'approve-architecture';
+        // Roadmap 8.4 adds the second command that is bound to the run it was
+        // read from. Both are named here rather than "any command that sends an
+        // expectedRunId": the set of commands that must be bound is a decision
+        // of this product, not of whoever writes the request body.
+        const commandName =
+          typeof body === 'object' && body !== null ? (body as { command?: unknown }).command : undefined;
+        const wantsBinding = commandName === 'approve-architecture' || commandName === 'confirm-decision';
         if (wantsBinding && typeof project.activeRunId === 'string' && project.activeRunId.length > 0) {
           const runSnap = await tx.get(ref.collection('runs').doc(project.activeRunId));
           activeRunEvidence = runSnap.exists ? evidenceDigest(runSnap.data()) : null;
@@ -162,6 +168,11 @@ export async function POST(
           originalRecommendation: project.originalRecommendation,
           extensibilityRoute: project.extensibilityRoute,
           activeRunEvidence,
+          // Roadmap 8.4 — the decision record as it sits on the project. Read
+          // inside the transaction for the same reason the run is: a
+          // confirmation compared against a draft that has been redrafted since
+          // is a confirmation of something else.
+          decision: project.decision,
         };
         const decision = validateProjectCommand(body, state, { email, now: new Date().toISOString() });
         if (!decision.ok) {

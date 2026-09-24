@@ -167,7 +167,7 @@
       "contract": "lib/project-commands.ts",
       "guard": "tests/project-command-boundary.spec.ts",
       "journal": "audit_events — geschrieben vom Admin-SDK (logAuditEvent), fuer keinen Client les- oder schreibbar",
-      "roadmapStep": "0.7",
+      "roadmapStep": "0.7 (8.4 fuer `decision`)",
       "fields": [
         "approvedBy",
         "approvedByArchitect",
@@ -175,9 +175,10 @@
         "architectSignOffAt",
         "targetArchitecture",
         "usageReport",
-        "atcReport"
+        "atcReport",
+        "decision"
       ],
-      "reason": "Die fuenf Freigabefelder und der Nutzungsimport. Eine Freigabe entsteht auf dem Server oder gar nicht: der Browser schrieb bis Roadmap 0.7 auch `approvedBy`, also die Adresse, die auf der Freigabe steht. Sie kommt jetzt vom verifizierten ID-Token, der Zeitstempel von der Serveruhr. `usageReport` war in den Regeln nur als `is map` geprueft (Security-Audit v2.11.0); die Route haelt ihn auf den Schluesselsatz von lib/abap/usage-model.ts und eine Zeilenobergrenze. `atcReport` (Roadmap 7.1, ATC-Import) kam nie client-schreibbar in die Regeln hinein: gleiche Bauform, gleicher Schluesselsatz-und-Obergrenze-Schutz in lib/project-commands.ts von Anfang an, damit ein importierter ATC-Befund serverseitig auf sein eigenes Modell gehalten wird statt auf `is map`.",
+      "reason": "Die fuenf Freigabefelder und der Nutzungsimport. Eine Freigabe entsteht auf dem Server oder gar nicht: der Browser schrieb bis Roadmap 0.7 auch `approvedBy`, also die Adresse, die auf der Freigabe steht. Sie kommt jetzt vom verifizierten ID-Token, der Zeitstempel von der Serveruhr. `usageReport` war in den Regeln nur als `is map` geprueft (Security-Audit v2.11.0); die Route haelt ihn auf den Schluesselsatz von lib/abap/usage-model.ts und eine Zeilenobergrenze. `atcReport` (Roadmap 7.1, ATC-Import) kam nie client-schreibbar in die Regeln hinein: gleiche Bauform, gleicher Schluesselsatz-und-Obergrenze-Schutz in lib/project-commands.ts von Anfang an, damit ein importierter ATC-Befund serverseitig auf sein eigenes Modell gehalten wird statt auf `is map`. `decision` (Roadmap 8.4) ebenso: der Entwurf wird von lib/project-decision.ts normalisiert und sein Fingerabdruck neu berechnet statt geglaubt, Status und Bestaetigung setzt ausschliesslich die Route, und die Bestaetigung ist an den gelesenen Run gebunden (8.8, CR-11).",
       "stillAttestedNotSigned": "Der Audit-Pack fuehrt diese Felder weiterhin in 07-user-attested.md: sie bleiben eine Selbsterklaerung des angemeldeten Kontos. Servervalidiert heisst wahrheitsgemaess aufgezeichnet, nicht amtlich."
     },
     "clientWritableFieldsNoStageWrites": {

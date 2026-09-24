@@ -43,6 +43,12 @@ import {
   parseEvidenceDigest,
   type EvidenceChange,
 } from '@/lib/run-evidence-digest';
+import {
+  SELF_DECLARATION,
+  decisionCoverage,
+  emptyProjectDecision,
+  normaliseProjectDecision,
+} from '@/lib/project-decision';
 
 /* ------------------------------------------------------------------ fields */
 
@@ -62,7 +68,7 @@ export const RELEASE_FIELDS = [
  * write it. None of these may appear in the `affectedKeys().hasOnly([…])`
  * allowlist of `firestore.rules`.
  */
-export const SERVER_ONLY_PROJECT_FIELDS = [...RELEASE_FIELDS, 'usageReport', 'atcReport'] as const;
+export const SERVER_ONLY_PROJECT_FIELDS = [...RELEASE_FIELDS, 'usageReport', 'atcReport', 'decision'] as const;
 
 export type ServerOnlyProjectField = (typeof SERVER_ONLY_PROJECT_FIELDS)[number];
 
@@ -319,6 +325,9 @@ export const PROJECT_COMMANDS = [
   'revoke-architecture',
   'record-usage-report',
   'record-atc-report',
+  'record-decision-draft',
+  'confirm-decision',
+  'withdraw-decision',
 ] as const;
 export type ProjectCommandName = (typeof PROJECT_COMMANDS)[number];
 
@@ -335,7 +344,18 @@ export type ProjectCommandBody =
     }
   | { command: 'revoke-architecture' }
   | { command: 'record-usage-report'; usageReport: unknown }
-  | { command: 'record-atc-report'; atcReport: unknown };
+  | { command: 'record-atc-report'; atcReport: unknown }
+  /** Roadmap 8.4 — the derived draft, normalised and re-fingerprinted by the server. */
+  | { command: 'record-decision-draft'; decision: unknown }
+  | {
+      command: 'confirm-decision';
+      /** The fingerprint of the draft the reader confirmed, as their screen showed it. */
+      expectedDecisionFingerprint: string;
+      /** Roadmap 8.8, unchanged and not negotiable: the run the decision was read from. */
+      expectedRunId: string;
+      expectedEvidenceDigest: string;
+    }
+  | { command: 'withdraw-decision' };
 
 /** The part of the project document a command is allowed to look at. */
 export interface ProjectCommandState {
@@ -356,6 +376,14 @@ export interface ProjectCommandState {
    * a caller that cannot say what the evidence is cannot approve it.
    */
   activeRunEvidence?: string | null;
+  /**
+   * Roadmap 8.4 — the decision record stored on the project, exactly as it
+   * sits there. Read raw and normalised again here rather than trusted: the
+   * document was written by a previous command, but the fingerprint on it is
+   * still only a claim until this file recomputes it, and a confirmation
+   * compared against a claimed fingerprint would bind nothing.
+   */
+  decision?: unknown;
 }
 
 /** Facts only the server knows. Never taken from the request body. */
@@ -408,6 +436,101 @@ const refuse = (
 });
 
 /**
+ * Roadmap 8.8 · CR-11, once — for the sign-off and for the decision.
+ *
+ * The caller says which run it was read from and what that run said, and both
+ * are compared here: inside the caller's transaction, against the project's
+ * `activeRunId` and against the digest the caller computed from the **run
+ * document**. A check before the transaction would be a window; this is the
+ * same place 0.6 put its own comparison (`app/api/runs/create`, the re-read of
+ * `legacyCode` at commit time, acceptance W22-A06), and it ends the same way:
+ * 409, nothing written, and a refusal that says what to do.
+ *
+ * Required rather than optional. An optional binding is not one — a caller that
+ * omits it gets the behaviour CR-11 describes, which is the behaviour 8.8
+ * exists to remove.
+ *
+ * One function rather than two copies because roadmap 8.4 adds the second
+ * caller: a decision bound to a run the decider never saw is CR-11 again under
+ * a different name, and a second copy of this comparison is a second place for
+ * it to come back.
+ *
+ * Returns `null` when the binding holds.
+ */
+function refuseUnlessBoundToReadRun(
+  body: Record<string, unknown>,
+  state: ProjectCommandState,
+  what: 'sign-off' | 'decision',
+): ProjectCommandRefusal | null {
+  // `state.activeRunId` is `unknown` by declaration — the state is whatever the
+  // project document happened to hold. Narrowed once, here, so that every
+  // sentence below names a string and not the word `undefined`.
+  const activeRunId = typeof state.activeRunId === 'string' && state.activeRunId.length > 0 ? state.activeRunId : '';
+  const expectedRunId = body.expectedRunId;
+  if (typeof expectedRunId !== 'string' || expectedRunId.length === 0) {
+    return refuse(
+      400,
+      'missing-expected-run',
+      `A ${what} names the run it was read from. Send expectedRunId and expectedEvidenceDigest.`,
+    );
+  }
+  const expectedEvidence = body.expectedEvidenceDigest;
+  if (typeof expectedEvidence !== 'string' || expectedEvidence.length === 0) {
+    return refuse(
+      400,
+      'missing-evidence-digest',
+      `A ${what} names the evidence it was read from. Send expectedEvidenceDigest alongside expectedRunId.`,
+    );
+  }
+  if (expectedEvidence.length > EVIDENCE_DIGEST_MAX_CHARS || parseEvidenceDigest(expectedEvidence) === null) {
+    return refuse(
+      400,
+      'malformed-evidence-digest',
+      'expectedEvidenceDigest is not a digest this server can read. Reload the analysis and try again.',
+    );
+  }
+  // `null` (the run could not be read) and `undefined` (the caller did not
+  // look) end here together. Conservative on purpose, like 0.6: an evidence
+  // digest that cannot be established is not an unchanged one.
+  const actualEvidence = state.activeRunEvidence;
+  if (typeof actualEvidence !== 'string' || actualEvidence.length === 0) {
+    return refuse(
+      409,
+      'run-unreadable',
+      `The signed analysis run ${activeRunId} of this project could not be read, so there is nothing to bind this ${what} to. Nothing was written.`,
+      { activeRunId: activeRunId || undefined },
+    );
+  }
+  if (expectedRunId !== activeRunId) {
+    const changes = evidenceDiff(expectedEvidence, actualEvidence);
+    const detail = describeEvidenceDiff(changes);
+    return refuse(
+      409,
+      'run-moved',
+      `This ${what} was prepared on analysis run ${expectedRunId}, and run ${activeRunId} has been this project's analysis since. Nothing was written and nothing was moved to the newer run. ` +
+        (detail
+          ? `What changed: ${detail}. `
+          : 'The two runs agree on every fact this comparison names, but they are not the same run. ') +
+        `Open the current analysis, read it, and ${what === 'sign-off' ? 'sign off on' : 'decide on'} that.`,
+      { details: changes, activeRunId: typeof state.activeRunId === 'string' ? state.activeRunId : undefined },
+    );
+  }
+  if (expectedEvidence !== actualEvidence) {
+    const changes = evidenceDiff(expectedEvidence, actualEvidence);
+    const detail = describeEvidenceDiff(changes);
+    return refuse(
+      409,
+      'evidence-moved',
+      `This ${what} names analysis run ${activeRunId}, and the evidence that run carries is not the evidence this ${what} was read from. Nothing was written. ` +
+        (detail ? `What changed: ${detail}. ` : '') +
+        `Reload the analysis and ${what === 'sign-off' ? 'sign off on' : 'decide on'} what it says now.`,
+      { details: changes, activeRunId: typeof state.activeRunId === 'string' ? state.activeRunId : undefined },
+    );
+  }
+  return null;
+}
+
+/**
  * Who may do it, from which state to which state, and what is recorded.
  *
  * "Who" is not decided here — the route has already established that the caller
@@ -450,67 +573,8 @@ export function validateProjectCommand(
     // Required rather than optional. An optional binding is not one — a caller
     // that omits it gets the behaviour CR-11 describes, which is the behaviour
     // this step exists to remove.
-    const expectedRunId = body.expectedRunId;
-    if (typeof expectedRunId !== 'string' || expectedRunId.length === 0) {
-      return refuse(
-        400,
-        'missing-expected-run',
-        'A sign-off names the run it was read from. Send expectedRunId and expectedEvidenceDigest.',
-      );
-    }
-    const expectedEvidence = body.expectedEvidenceDigest;
-    if (typeof expectedEvidence !== 'string' || expectedEvidence.length === 0) {
-      return refuse(
-        400,
-        'missing-evidence-digest',
-        'A sign-off names the evidence it was read from. Send expectedEvidenceDigest alongside expectedRunId.',
-      );
-    }
-    if (expectedEvidence.length > EVIDENCE_DIGEST_MAX_CHARS || parseEvidenceDigest(expectedEvidence) === null) {
-      return refuse(
-        400,
-        'malformed-evidence-digest',
-        'expectedEvidenceDigest is not a digest this server can read. Reload the analysis and sign off again.',
-      );
-    }
-    // `null` (the run could not be read) and `undefined` (the caller did not
-    // look) end here together. Conservative on purpose, like 0.6: an evidence
-    // digest that cannot be established is not an unchanged one.
-    const actualEvidence = state.activeRunEvidence;
-    if (typeof actualEvidence !== 'string' || actualEvidence.length === 0) {
-      return refuse(
-        409,
-        'run-unreadable',
-        `The signed analysis run ${state.activeRunId} of this project could not be read, so there is nothing to bind this sign-off to. Nothing was written.`,
-        { activeRunId: state.activeRunId },
-      );
-    }
-    if (expectedRunId !== state.activeRunId) {
-      const changes = evidenceDiff(expectedEvidence, actualEvidence);
-      const what = describeEvidenceDiff(changes);
-      return refuse(
-        409,
-        'run-moved',
-        `This sign-off was prepared on analysis run ${expectedRunId}, and run ${state.activeRunId} has been this project's analysis since. Nothing was written and nothing was moved to the newer run. ` +
-          (what
-            ? `What changed: ${what}. `
-            : 'The two runs agree on every fact this comparison names, but they are not the same run. ') +
-          'Open the current analysis, read it, and sign off on that.',
-        { details: changes, activeRunId: state.activeRunId },
-      );
-    }
-    if (expectedEvidence !== actualEvidence) {
-      const changes = evidenceDiff(expectedEvidence, actualEvidence);
-      const what = describeEvidenceDiff(changes);
-      return refuse(
-        409,
-        'evidence-moved',
-        `This sign-off names analysis run ${state.activeRunId}, and the evidence that run carries is not the evidence this sign-off was read from. Nothing was written. ` +
-          (what ? `What changed: ${what}. ` : '') +
-          'Reload the analysis and sign off on what it says now.',
-        { details: changes, activeRunId: state.activeRunId },
-      );
-    }
+    const unbound = refuseUnlessBoundToReadRun(body, state, 'sign-off');
+    if (unbound) return unbound;
 
     const justification = typeof body.justification === 'string' ? body.justification.trim() : '';
     if (justification.length > 4000) {
@@ -565,13 +629,145 @@ export function validateProjectCommand(
     return { ok: true, action: 'PROJECT_USAGE_REPORT_RECORDED', fields: { usageReport: usage.report } };
   }
 
-  // The only command left after the switch above: `record-atc-report`. An
-  // `if` rather than a bare fallthrough, the same way `record-usage-report`
-  // just became one — a third command added here later must say which one it
-  // is rather than silently inheriting whatever sits last in the function.
-  const atc = normaliseAtcReport(body.atcReport);
-  if (!atc.ok) return refuse(400, 'malformed-atc-report', atc.error);
-  return { ok: true, action: 'PROJECT_ATC_REPORT_RECORDED', fields: { atcReport: atc.report } };
+  if (command === 'record-atc-report') {
+    const atc = normaliseAtcReport(body.atcReport);
+    if (!atc.ok) return refuse(400, 'malformed-atc-report', atc.error);
+    return { ok: true, action: 'PROJECT_ATC_REPORT_RECORDED', fields: { atcReport: atc.report } };
+  }
+
+  /* ------------------------------------------------------- roadmap 8.4 */
+
+  if (command === 'record-decision-draft') {
+    // The draft is derived (`lib/project-decision-build.ts`), but it arrives
+    // over the wire, so it is read the way `atcReport` is read: a closed key
+    // set, closed vocabularies, ceilings — and, the part only this record
+    // needs, a fingerprint recomputed rather than believed.
+    const draft = normaliseProjectDecision(body.decision);
+    if (!draft.ok) return refuse(400, 'malformed-decision', draft.error);
+    return {
+      ok: true,
+      action: 'PROJECT_DECISION_DRAFTED',
+      // `status` and `confirmation` come from here and from nowhere else. A
+      // draft that could arrive already confirmed would make the confirmation
+      // command decorative, which is the shape `approvedBy` had before 0.7.
+      fields: { decision: { ...draft.decision, status: 'draft', confirmation: null } },
+    };
+  }
+
+  if (command === 'confirm-decision') {
+    if (typeof state.activeRunId !== 'string' || state.activeRunId.length === 0) {
+      return refuse(409, 'no-run', 'The project has no signed analysis run to decide on.');
+    }
+    // Same binding as the sign-off, same function, same refusals. 8.8's CR-11
+    // is about a confirmation bound to a run nobody read, and a decision is a
+    // confirmation.
+    const unbound = refuseUnlessBoundToReadRun(body, state, 'decision');
+    if (unbound) return unbound;
+
+    const expectedFingerprint = body.expectedDecisionFingerprint;
+    if (typeof expectedFingerprint !== 'string' || expectedFingerprint.length === 0) {
+      return refuse(
+        400,
+        'missing-decision-fingerprint',
+        'A confirmation names the decision it confirms. Send expectedDecisionFingerprint.',
+      );
+    }
+    if (state.decision === undefined || state.decision === null) {
+      return refuse(409, 'no-decision', 'There is no decision draft on this project to confirm.');
+    }
+    const stored = normaliseProjectDecision(state.decision);
+    if (!stored.ok) {
+      return refuse(
+        409,
+        'decision-unreadable',
+        `The decision stored on this project cannot be read back: ${stored.error} Nothing was written; draft it again.`,
+      );
+    }
+    const storedStatus = isPlainObject(state.decision) ? state.decision.status : undefined;
+    if (storedStatus === 'confirmed') {
+      return refuse(409, 'already-confirmed', 'This decision is already confirmed. A change is a new revision.');
+    }
+    // The fingerprint the reader saw against the fingerprint of the record as
+    // it is now — recomputed by `normaliseProjectDecision`, never taken off
+    // the document. Same shape as the evidence comparison above, for the same
+    // reason: a confirmation of a decision that has moved since it was read is
+    // a confirmation of something else.
+    if (expectedFingerprint !== stored.decision.fingerprint) {
+      return refuse(
+        409,
+        'decision-moved',
+        `This confirmation was prepared on decision ${expectedFingerprint.slice(0, 12)}, and the decision on this project is ${stored.decision.fingerprint.slice(0, 12)} (revision ${stored.decision.revision}). Nothing was written. Open the decision, read it, and confirm that.`,
+      );
+    }
+    // The decision's own binding has to agree with the project's run as well.
+    // The comparison above establishes that the *caller* read the current run;
+    // this one establishes that the *decision* was derived from it. Two tabs
+    // are enough to separate them: read decision A, re-analyse, reload the
+    // page, confirm — the caller's digest is current and the decision's is not.
+    if (stored.decision.boundRunId !== state.activeRunId) {
+      return refuse(
+        409,
+        'decision-run-mismatch',
+        `This decision was derived from analysis run ${stored.decision.boundRunId}, and run ${state.activeRunId} has been this project's analysis since. Nothing was written. Draft the decision again on the current analysis.`,
+        { activeRunId: state.activeRunId },
+      );
+    }
+    if (stored.decision.boundEvidenceDigest !== state.activeRunEvidence) {
+      return refuse(
+        409,
+        'decision-evidence-mismatch',
+        'This decision names evidence that is not the evidence its run carries. Nothing was written. Draft the decision again on the current analysis.',
+        { activeRunId: state.activeRunId },
+      );
+    }
+    const coverage = decisionCoverage(stored.decision);
+    if (coverage.state === 'blocked') {
+      return refuse(409, 'decision-blocked', `This decision cannot be confirmed. ${coverage.sentence}`);
+    }
+    return {
+      ok: true,
+      action: 'PROJECT_DECISION_CONFIRMED',
+      fields: {
+        decision: {
+          ...stored.decision,
+          status: 'confirmed',
+          confirmation: {
+            // The server's answer to "who", off the verified ID token — and the
+            // sentence that says what that means, from `lib/provenance.ts` so
+            // that the product carries one spelling of it.
+            account: actor.email,
+            at: actor.now,
+            selfDeclaration: SELF_DECLARATION,
+          },
+        },
+      },
+    };
+  }
+
+  // The only command left: `withdraw-decision`. An `if` rather than a bare
+  // fallthrough — a command added here later must say which one it is rather
+  // than silently inheriting whatever sits last in the function.
+  if (command === 'withdraw-decision') {
+    const stored = normaliseProjectDecision(state.decision);
+    const storedStatus = isPlainObject(state.decision) ? state.decision.status : undefined;
+    if (!stored.ok || storedStatus !== 'confirmed') {
+      return refuse(409, 'not-confirmed', 'There is no confirmed decision to withdraw.');
+    }
+    const confirmation = isPlainObject(state.decision) ? state.decision.confirmation : null;
+    return {
+      ok: true,
+      action: 'PROJECT_DECISION_WITHDRAWN',
+      fields: {
+        // The confirmation stays on the record. Who confirmed it and when is
+        // what happened, and a withdrawal that erased it would leave a decision
+        // nobody ever made — the audit pack would then be missing the half that
+        // explains why anything downstream exists.
+        decision: { ...stored.decision, status: 'withdrawn', confirmation },
+      },
+    };
+  }
+
+  return refuse(400, 'unknown-command', `command must be one of ${PROJECT_COMMANDS.join(', ')}.`);
 }
 
 /**
@@ -603,6 +799,11 @@ export function fieldsWrittenByCommands(): string[] {
     { command: 'revoke-architecture' },
     { command: 'record-usage-report', usageReport: { records: [], source: 'manual', importedAt: 'x', warnings: [] } },
     { command: 'record-atc-report', atcReport: { findings: [], source: 'atc', importedAt: 'x', warnings: [] } },
+    // Roadmap 8.4. The draft is built rather than typed out, for the reason the
+    // digest above is computed: a literal decision record here would go stale
+    // the day the model gains a binding, and this function would then report a
+    // field set for a command that no longer validates.
+    { command: 'record-decision-draft', decision: emptyProjectDecision() },
   ];
   const written = new Set<string>();
   for (const body of bodies) {
