@@ -865,6 +865,7 @@ if (ALLOWED_SUFFIXES.length === 0) {
     // green. Adoption (`/api/projects/{id}/repair-drafts`, compare-and-swap)
     // carries this receipt onto the project together with the code it names.
     if (draft) {
+      let recordFailed = false;
       try {
         const { db } = await getAdminDb();
         recorded = await recordDraftExecution(db, {
@@ -873,11 +874,35 @@ if (ALLOWED_SUFFIXES.length === 0) {
           execution: { receipt, testResults },
         });
       } catch (draftErr) {
+        recordFailed = true;
         logger.error('run-tests: the draft execution could not be recorded', {
           route: 'api/run-tests',
           projectId: sanitizedProjectId,
           error: errMessage(draftErr),
         });
+      }
+      if (!recorded) {
+        // A draft run nobody recorded cannot be adopted, and its verdicts are
+        // about code the project does not hold. Returned as a 200 with the
+        // runner's exit code, a page painted them green anyway (QA review of
+        // 4b4586aff273). The output stays as diagnostic text; the result is a
+        // refusal, not a pass.
+        return NextResponse.json(
+          {
+            output: stdout,
+            error:
+              `The run of draft ${draft.draftId} could not be recorded` +
+              (recordFailed ? '' : ' — the draft was adopted or removed while it ran') +
+              ', so it is not a result of this project and cannot be adopted. Nothing was saved.',
+            code: 'draft-run-not-recorded',
+            exitCode: 1,
+            testResults: [],
+            draftId: draft.draftId,
+            draftReceipt: null,
+            receipt: null,
+          },
+          { status: recordFailed ? 503 : 409 },
+        );
       }
       return NextResponse.json({
         output: stdout,
@@ -886,7 +911,7 @@ if (ALLOWED_SUFFIXES.length === 0) {
         testResults,
         stubbedPackages: [...stubbedPackages].sort(),
         draftId: draft.draftId,
-        draftReceipt: recorded ? receipt : null,
+        draftReceipt: receipt,
         receipt: null,
       });
     }

@@ -83,6 +83,22 @@ test.describe('a verdict is only reported when there is one', () => {
         'say which it means.',
     ).toContain('const verdicts = passed + failed');
   });
+
+  test('a draft run nobody recorded is refused, not returned as its runner exit code', () => {
+    // QA review of 4b4586aff273: when `recordDraftExecution` returned false or
+    // threw, the route still answered 200 with the runner's exitCode and
+    // testResults and only `draftReceipt: null` — and the hook painted the
+    // draft's verdicts green over code the project does not hold.
+    const src = read('app/api/run-tests/route.ts');
+    const branch = src.slice(src.indexOf('recordDraftExecution(db'), src.indexOf('return NextResponse.json({', src.indexOf('recordDraftExecution(db')) + 1);
+    const refusal = branch.slice(branch.indexOf('if (!recorded)'));
+    expect(branch.indexOf('if (!recorded)'), 'the draft branch answers before it knows the run was recorded').toBeGreaterThan(-1);
+    expect(refusal).toMatch(/status:\s*recordFailed \? 503 : 409/);
+    expect(refusal).toContain('testResults: []');
+    expect(refusal).toContain('exitCode: 1');
+    // And the success answer can then only carry a recorded receipt.
+    expect(src).not.toContain('draftReceipt: recorded ? receipt : null');
+  });
 });
 
 test.describe('a figure that does not exist is not printed as one', () => {
