@@ -47,6 +47,34 @@ function extractTemplate(source: string, varName: string): string {
 
 const WIDTHS = [320, 375, 414];
 
+/**
+ * The document shell carries the viewport meta in both of its layouts.
+ *
+ * The check used to be made on the community mailer's own file, and went with
+ * it (c9a2ecb). Every mail now goes through `wrapEmailDocument` — the plain
+ * user-mail layout without a `<style>` block, the operator mails with it — so
+ * the meta is asserted there, once per branch (QA review of 60b94e108964,
+ * 26526264421b). Without it a phone renders the mail at desktop width and
+ * zooms out, which the overflow checks here and in
+ * `tests/user-mail-layout.spec.ts` cannot see: Playwright's desktop viewport
+ * ignores the meta.
+ */
+test('the document shell carries the viewport meta, plain and styled', async ({ page }) => {
+  const plain = wrapEmailDocument('<div data-mail-layout="plain"><p>Hello,</p></div>');
+  const styled = wrapEmailDocument('<div style="border-radius: 24px; padding: 40px;">card</div>');
+  expect(plain, 'the plain branch was not taken').not.toContain('<style');
+  expect(styled, 'the styled branch was not taken').toContain('<style');
+  for (const html of [plain, styled]) {
+    await page.setViewportSize({ width: 320, height: 900 });
+    await page.setContent(html, { waitUntil: 'load' });
+    await expect(page.locator('meta[name="viewport"]')).toHaveAttribute('content', /width=device-width/);
+    const overflow = await page.evaluate(
+      () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    );
+    expect(overflow).toBeLessThanOrEqual(0);
+  }
+});
+
 for (const route of ROUTES) {
   for (const varName of route.vars) {
     for (const width of WIDTHS) {
