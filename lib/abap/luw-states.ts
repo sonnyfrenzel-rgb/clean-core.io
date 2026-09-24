@@ -482,8 +482,17 @@ class LuwReader {
       const around = structure.enclosing[index] ?? [];
       return [...around].reverse().find((b) => NOT_FLOW.has(b.kind))?.openIndex ?? -1;
     };
+    // A SET inside an IF, a CASE arm, a loop or a TRY of the same routine runs on
+    // some paths only; the routine being the same does not make it precede the
+    // registration on every path. Only a SET standing directly in the routine —
+    // no flow block between it and the routine — is proven to have run.
+    const unconditional = (index: number) => {
+      const around = structure.enclosing[index] ?? [];
+      return (around[around.length - 1]?.openIndex ?? -1) === container(index);
+    };
     const before = sets
       .filter((s) => s.index < registration.index && container(s.index) === container(registration.index))
+      .filter((s) => unconditional(s.index))
       .filter((s) => !statements.some((x) => x.index > s.index && x.index < registration.index && luwKind(x)))
       .pop();
     if (before) {

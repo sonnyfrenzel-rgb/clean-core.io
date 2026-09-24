@@ -124,6 +124,47 @@ test('SET UPDATE TASK LOCAL is local only when it precedes the registration in t
   expect(reset.registrations[0].updateMode.value).toBe('not-determined');
 });
 
+// QA review of 4b4586aff273: a SET inside an IF was read as preceding a
+// registration after the ENDIF, because both stand in the same routine.
+test('a SET UPDATE TASK LOCAL on some paths only does not make the registration local', () => {
+  const conditional = luw([
+    'REPORT zt.',
+    'START-OF-SELECTION.',
+    '  IF p_local = abap_true.',
+    '    SET UPDATE TASK LOCAL.',
+    '  ENDIF.',
+    "  CALL FUNCTION 'Z_UPD' IN UPDATE TASK.",
+    '  COMMIT WORK.',
+  ].join('\n'));
+  expect(conditional.registrations[0].updateMode.value).toBe('not-determined');
+  expect(conditional.registrations[0].updateMode.setAt).toBeNull();
+
+  const inLoop = luw([
+    'REPORT zt.',
+    'START-OF-SELECTION.',
+    '  LOOP AT lt_items INTO ls_item.',
+    '    SET UPDATE TASK LOCAL.',
+    '  ENDLOOP.',
+    "  CALL FUNCTION 'Z_UPD' IN UPDATE TASK.",
+    '  COMMIT WORK.',
+  ].join('\n'));
+  // A loop over an empty table runs its body no time at all.
+  expect(inLoop.registrations[0].updateMode.value).toBe('not-determined');
+
+  // Set before the IF, registered inside it: the switch ran on every path there.
+  const beforeBranch = luw([
+    'REPORT zt.',
+    'START-OF-SELECTION.',
+    '  SET UPDATE TASK LOCAL.',
+    '  IF p_post = abap_true.',
+    "    CALL FUNCTION 'Z_UPD' IN UPDATE TASK.",
+    '  ENDIF.',
+    '  COMMIT WORK.',
+  ].join('\n'));
+  expect(beforeBranch.registrations[0].updateMode.value).toBe('local');
+  expect(beforeBranch.registrations[0].updateMode.setAt?.lineStart).toBe(3);
+});
+
 test('AND WAIT is read off the statement, and COMMIT CONNECTION is not an LUW event', () => {
   const model = luw([
     'REPORT zt.',
