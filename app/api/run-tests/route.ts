@@ -1,241 +1,73 @@
 import { NextResponse } from 'next/server';
-import { spawn } from 'child_process';
-import fs from 'fs/promises';
-import fssync from 'fs';
-import os from 'os';
-import path from 'path';
-import { isBuiltin } from 'module';
-import { pathToFileURL } from 'url';
+import { randomBytes } from 'crypto';
 import { verifyRequestAuth, assertS4TenantAccess, assertMfaSatisfied, assertAccountActive, getAdminDb } from '@/lib/firebase-admin';
-import { modGuardSource, modHooksSource, sandboxDenied } from '@/lib/sandbox-module-guard';
 import { loadS4ConfigForUser } from '@/lib/s4-credentials';
+import { isUrlSafe } from '@/lib/url-validation';
 import { assertRateLimit } from '@/lib/rate-limit';
-import { liveRunnerPermitted } from '@/lib/runner-egress-attestation';
 import { LIVE_TEST_EXECUTION } from '@/lib/locked-paths';
-import { parseTapOutput, packageNameOf, applyRunnerVerdicts } from '@/lib/test-verdicts';
+import { parseTapOutput, applyRunnerVerdicts } from '@/lib/test-verdicts';
 import { testRunSubject, TEST_RUN_RECEIPT_VERSION, type TestRunReceipt } from '@/lib/test-receipt';
 import { loadDraftForRun, recordDraftExecution } from '@/lib/repair-draft-store';
 import type { RepairDraft } from '@/lib/repair-draft';
+import { executeSandboxRun } from '@/lib/test-sandbox/core';
+import { sandboxFilesFromStoredCode, sandboxPatterns } from '@/lib/test-sandbox/files';
+import { hashRunInputs, MAX_RUN_INPUT_BYTES, type RunnerProxy } from '@/lib/test-sandbox/protocol';
+import { readRunnerConfig, resolveRunnerTarget, callIsolatedRunner, proxyBaseFor } from '@/lib/test-runner-client';
+import { fetchMetadataIdToken } from '@/lib/google-id-token';
+import { capabilityKeyFromEnv, mintCapability } from '@/lib/s4-proxy-capability';
+import { registerCapability, revokeCapability } from '@/lib/s4-proxy-capability-store';
+import { credentialHeaders } from '@/lib/s4-proxy';
 import { logger, errMessage } from '@/lib/logger';
 
 /**
  * POST /api/run-tests
  *
- * Runs the generated node:test suite against the generated app code and returns
- * TAP results. Request/response contract is unchanged:
- *   IN : { tests, projectId, code, selectedTestIds, s4Environment }
- *   OUT: { output, error, exitCode, testResults, stubbedPackages }
+ * Runs the project's stored node:test suite against its stored generated code
+ * and returns TAP results.
+ *   IN : { projectId, selectedTestIds, s4Environment, draftId? }
+ *   OUT: { output, error, exitCode, testResults, stubbedPackages, runner, receipt }
  *
- * SECURITY MODEL (F-02 — replaces the previous tsx + child_process.exec execution):
- *   Untrusted code is no longer executed inside the app's trust boundary.
- *     (1) esbuild bundles test + relative app files (in the parent) into one
- *         self-contained CJS file; bare npm packages stay external (runtime parity).
- *     (2) A child process runs the suite under Node's Permission Model:
- *           node --permission --allow-fs-read=<dir> --allow-fs-read=<node_modules>
- *                --allow-fs-write=<dir> runner.mjs
- *         => child_process, worker_threads, native addons and any filesystem access
- *            OUTSIDE the sandbox dir are denied by default. This closes RCE / host
- *            pivot / secret exfiltration.
- *     (3) Minimal env: NO ...process.env, no platform secrets reach the child.
- *     (4) run({ isolation: 'none' }) keeps execution in-process => no
- *         --allow-child-process needed (which would itself be an escape vector).
+ * WHERE IT RUNS (roadmap 8.9, CR-09 — "dort oder gar nicht"):
+ *   Generated code is untrusted and does not execute in this service. It runs
+ *   in the isolated runner (`runner/`, a Cloud Run service with a service
+ *   account without roles, no secrets, ingress internal, egress through a VPC
+ *   without NAT), reached with the app's own ID token. The runner reports the
+ *   SHA-256 of every file it ran and its revision; the report is checked
+ *   against what was sent before anything is recorded
+ *   (`lib/test-runner-client.ts`).
+ *
+ *   Without `RUNNER_URL` a deployed build refuses to run tests at all. Only an
+ *   emulator build (local development, CI) runs the same execution core
+ *   (`lib/test-sandbox/core.ts`) in a child process of its own, and says so:
+ *   `runner.kind` is `local-emulator` in the response and in the receipt.
+ *
+ * LIVE RUNS: locked (lib/locked-paths.ts, G0:R0). Behind the lock, a live run
+ *   needs the live runner and its credential proxy configured. The runner never
+ *   receives a credential: it gets a short-lived capability for this one run,
+ *   and the app's proxy (`/api/s4-proxy`) puts the decrypted credentials on each
+ *   request to the one tenant host the capability names. The capability is
+ *   deleted when the run returns.
  *
  * F-03: S/4HANA credentials are loaded SERVER-SIDE (encrypted store) by the
- *   authenticated UID — never taken from the request body.
- *
- * RESIDUAL RISK (must be closed at infra level): the Permission Model does NOT gate
- *   network egress. Configure the runner service with egress deny-by-default +
- *   allowlist (Cloud Run egress / VPC firewall).
+ *   authenticated UID — never taken from the request body, never sent anywhere
+ *   but the tenant.
  */
 
-const EXEC_TIMEOUT_MS = 15_000;
-const MAX_OUTPUT_BYTES = 10 * 1024 * 1024; // 10 MB combined stdout+stderr cap
-const MAX_INPUT_BYTES = 2 * 1024 * 1024;   // 2 MB combined code/test payload
-const CHILD_HEAP_MB = 256;                 // caps child V8 heap → contains heap-bomb DoS
 const MAX_CONCURRENT_RUNS = 4;             // per-instance cap on simultaneous heavy runs
 
-// Per-instance counter of in-flight sandbox runs (bundle + child process). Bounds how
-// many heavy executions one Cloud Run instance does at once, so a single approved user
-// cannot exhaust CPU/memory by firing many runs in parallel (Audit F-01 sub-finding).
+// Per-instance counter of in-flight runs. Bounds how many executions one app
+// instance drives at once, so a single approved user cannot exhaust it by
+// firing many runs in parallel (Audit F-01 sub-finding).
 let activeRuns = 0;
 
-/**
- * Universal stub for an npm package that the AI-generated code imports but that
- * is NOT installed in this environment (e.g. express, pino, pino-pretty, typeorm,
- * @sap-cloud-sdk/http-client, @sap/xssec, passport). Without this, `require('express')`
- * inside the sandbox throws "Cannot find module" and every unit test fails before the
- * business logic can even load. The stub resolves every property access / call / `new`
- * to a harmless universal mock, so the module under test loads and its pure functions
- * (validation, defaulting, mapping, …) can be genuinely unit-tested. Server bootstrap
- * (`app.listen`) is separately neutralized, so nothing actually binds a port.
- */
-const UNIVERSAL_STUB = `
-const handler = {
-  get(_t, prop) {
-    // Report as CommonJS (not an ES module) so esbuild's interop maps a default
-    // import ('import express from ...') straight to this callable proxy.
-    if (prop === '__esModule') return false;
-    if (prop === 'then') return undefined;
-    if (prop === 'default') return universal;
-    if (prop === 'toString') return () => '';
-    if (prop === 'valueOf') return () => 0;
-    if (prop === 'toJSON') return () => null;
-    if (typeof prop === 'symbol') return undefined;
-    return universal;
-  },
-  apply() { return universal; },
-  construct() { return universal; },
-};
-const universal = new Proxy(function () {}, handler);
-module.exports = universal;
-`;
-
-/**
- * esbuild's CJS↔ESM interop only copies a required module's OWN enumerable keys, so
- * a bare Proxy exposes a callable default but every NAMED import (`import { DataSource }
- * from 'typeorm'`) resolves to undefined → `new DataSource()` throws. We therefore scan
- * the generated sources for named-import bindings and attach each one to the stub as a
- * real own property (all pointing at the universal mock), so named imports work too.
- */
-function collectNamedImports(sources: string[]): string[] {
-  const names = new Set<string>();
-  const re = /import[^{};]*\{([^}]*)\}/g;
-  for (const src of sources) {
-    let m: RegExpExecArray | null;
-    while ((m = re.exec(src)) !== null) {
-      for (const raw of m[1].split(',')) {
-        // Use the exported name (before `as`), strip a leading `type` modifier.
-        const name = raw.trim().split(/\s+as\s+/)[0].trim().replace(/^type\s+/, '');
-        if (/^[A-Za-z_$][\w$]*$/.test(name)) names.add(name);
-      }
-    }
-  }
-  return [...names];
-}
-
-function buildStubModule(namedExports: string[]): string {
-  const assigns = namedExports
-    .map((n) => `try{module.exports[${JSON.stringify(n)}]=universal;}catch(e){}`)
-    .join('\n');
-  return `${UNIVERSAL_STUB}\n${assigns}`;
-}
-
-/**
- * The single esbuild resolver plugin for the sandbox bundle. It owns the whole
- * import surface of the untrusted test/app code so no specifier can slip past
- * the sandbox boundary between two plugins. Every resolution is one of four
- * cases, decided in this order:
- *
- *   1. entry point            → left to esbuild.
- *   2. Node built-in          → external (node:test/node:assert stay real).
- *   3. bare npm import        → the hermetic universal stub, inlined.
- *   4. relative OR absolute   → resolved against the importer and required to
- *      land INSIDE `testDir`; anything that resolves outside is rejected with a
- *      fixed message. Only after the boundary holds is the tsx-style
- *      `./x.js → ./x.ts` rewrite applied; everything else falls through to the
- *      default resolver, which now only ever sees paths inside the sandbox.
- *
- * The boundary must be enforced HERE, before the default resolver ever runs,
- * because the default resolver reads whatever path it is handed straight from
- * the server filesystem and inlines it into the bundle that is returned to the
- * caller. Case 4 therefore covers every extension and both relative and
- * absolute forms — not just `.js`.
- */
-function createSandboxResolvePlugin(opts: {
-  testDir: string;
-  stubModuleSource: string;
-  stubbedPackages: Set<string>;
-}) {
-  const { testDir, stubModuleSource, stubbedPackages } = opts;
-  const insideSandbox = (abs: string) =>
-    abs === testDir || abs.startsWith(testDir + path.sep);
-
-  return {
-    name: 'cc-sandbox-resolve',
-    setup(build: any) {
-      build.onResolve({ filter: /.*/ }, (args: any) => {
-        const p: string = args.path;
-        if (args.kind === 'entry-point') return undefined;
-
-        // A built-in the sandbox never hands out is refused here, at bundle
-        // time, before it could become external (lib/sandbox-module-guard.ts).
-        if ((p.startsWith('node:') || isBuiltin(p)) && sandboxDenied(p)) {
-          return { errors: [{ text: `${p} is not available in the Clean-Core.io test sandbox.` }] };
-        }
-        // Node built-ins stay external (real node:test / node:assert).
-        if (p.startsWith('node:') || isBuiltin(p)) return { external: true };
-
-        // Bare npm import (neither relative nor absolute) → universal stub.
-        if (!p.startsWith('.') && !path.isAbsolute(p)) {
-          stubbedPackages.add(packageNameOf(p));
-          return { path: p, namespace: 'cc-stub' };
-        }
-
-        // Relative or absolute → must resolve INSIDE testDir, any extension.
-        // A fixed error text is returned on rejection so the checked path is
-        // never echoed back to the caller.
-        const base = path.resolve(args.resolveDir || testDir, p);
-        if (!insideSandbox(base)) {
-          return { errors: [{ text: 'Path outside sandbox rejected.' }] };
-        }
-
-        // Inside the sandbox: mirror tsx/Node resolution "./x.js → ./x.ts".
-        const tsCandidate = base.replace(/\.js$/, '.ts');
-        if (tsCandidate !== base && fssync.existsSync(tsCandidate)) {
-          return { path: tsCandidate };
-        }
-        return undefined; // inside sandbox → default resolver
-      });
-
-      build.onLoad({ filter: /.*/, namespace: 'cc-stub' }, () => ({
-        contents: stubModuleSource,
-        loader: 'js',
-      }));
-    },
-  };
-}
-
-// The TAP parser lives in lib/test-verdicts.ts (E07-F01): SKIP and TODO are
-// their own states there, and the tests call it directly.
-
-// Node-version dependent permission flag. isolation:'none' needs Node >= 22.8.0;
-// the flag was renamed from --experimental-permission to --permission in 23.5.0.
-/**
- * `--no-experimental-sqlite` exists from the Node that has `node:sqlite` (22.5).
- * The module reaches the file system past the permission model's fence — Node
- * documents it, the counter-review of c5085bb reproduced it (CR-09) — and this
- * switch removes the module altogether. Measured on 22.22 under
- * `--experimental-permission`: every form of the import — static, dynamic,
- * computed, `require` — answers ERR_UNKNOWN_BUILTIN_MODULE, while the resolve
- * hook of `lib/sandbox-module-guard.ts` cannot even register there (it needs a
- * worker thread the model refuses). Node 20 has neither the module nor the flag.
- */
-function sqliteSwitchSupported(): boolean {
-  const [major, minor] = process.versions.node.split('.').map((n) => parseInt(n, 10));
-  return major > 22 || (major === 22 && minor >= 5);
-}
-
-function resolvePermissionFlag(): { flag: string | null; reason?: string } {
-  const [major, minor] = process.versions.node.split('.').map((n) => parseInt(n, 10));
-  if (major >= 24) return { flag: '--permission' };
-  if (major === 23) return { flag: minor >= 5 ? '--permission' : '--experimental-permission' };
-  if (major === 22 && minor >= 8) return { flag: '--experimental-permission' };
-  if (process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === 'true') {
-    return { flag: 'none' };
-  }
-  return { flag: null, reason: 'Node 22.8.0+ is required for sandboxed test isolation.' };
-}
-
-async function loadEsbuild(): Promise<any | null> {
-  try {
-    return await import('esbuild');
-  } catch {
-    return null;
-  }
-}
-
-function neutralize(content: string): string {
-  return content.replace(/app\.listen/g, '((...args: any[]) => ({ close: () => {} }))');
+/** What an execution produced, whichever executor produced it. */
+interface Execution {
+  buildError: string | null;
+  stdout: string;
+  stderr: string;
+  exitCode: number;
+  stubbedPackages: string[];
+  runner: NonNullable<TestRunReceipt['runner']>;
 }
 
 export async function POST(req: Request) {
@@ -403,29 +235,27 @@ export async function POST(req: Request) {
   }
 
   const totalInputBytes = Buffer.byteLength(testCode, 'utf8') + (code ? Buffer.byteLength(code, 'utf8') : 0);
-  if (totalInputBytes > MAX_INPUT_BYTES) {
+  if (totalInputBytes > MAX_RUN_INPUT_BYTES) {
     return NextResponse.json(
       { output: '', error: 'Test/code payload exceeds the allowed size limit.', exitCode: 1 },
       { status: 413 },
     );
   }
 
-  // ── Toolchain / runtime checks (fail-closed) ─────────────────────────────
-  const { flag: permissionFlag, reason } = resolvePermissionFlag();
-  if (!permissionFlag) {
+  // ── Where it runs: the isolated runner, or — in an emulator build only — the
+  //    named local path; anything else is refused here, before any work ──────
+  const mode = s4Environment === 'live' ? 'live' : 'mock';
+  const runnerConfig = readRunnerConfig();
+  const target = resolveRunnerTarget(mode, runnerConfig);
+  if (target.kind === 'unavailable') {
     return NextResponse.json(
-      { output: '', error: `Sandbox unavailable: ${reason}`, exitCode: 1 },
-      { status: 500 },
+      { output: '', error: target.reason, exitCode: 1, testResults: [] },
+      { status: target.status },
     );
   }
 
-  const esbuild = await loadEsbuild();
-  if (!esbuild) {
-    return NextResponse.json(
-      { output: '', error: 'Sandbox unavailable: esbuild not installed. Add "esbuild" to devDependencies.', exitCode: 1 },
-      { status: 500 },
-    );
-  }
+  const files = sandboxFilesFromStoredCode(code);
+  const patterns = sandboxPatterns(selectedTestIds);
 
   // Concurrency cap (per instance): refuse new heavy runs at capacity so one user
   // cannot exhaust the instance with many parallel executions. Check + increment run
@@ -439,317 +269,108 @@ export async function POST(req: Request) {
   }
   activeRuns++;
 
-  const projectNodeModules = path.join(process.cwd(), 'node_modules');
-  let testDir = '';
+  // The capability of a live run, deleted in `finally` whatever happened.
+  let capabilityId = '';
 
   try {
-    // Sandbox dir outside the project tree (never write into cwd).
-    testDir = await fs.mkdtemp(path.join(os.tmpdir(), `cc-tests-${sanitizedProjectId}-`));
-    // ── 1) Materialise sources (modular vs legacy flat) ────────────────────
-    const testEntry = path.join(testDir, 'test.ts');
-    let filesParsed = false;
-    // Raw source of every materialised file — scanned for named imports so the
-    // hermetic stub can expose exactly the bindings the generated code imports.
-    const sourceTexts: string[] = [testCode];
-
-    if (code) {
-      try {
-        const parsed = JSON.parse(code);
-        if (Array.isArray(parsed) && parsed.every((f) => typeof f.path === 'string' && typeof f.content === 'string')) {
-          for (const file of parsed) {
-            const safeRel = String(file.path).replace(/\.\./g, '').replace(/^[\/\\]+/, '');
-            const filePath = path.resolve(testDir, safeRel);
-            if (!filePath.startsWith(testDir + path.sep) && filePath !== testDir) continue;
-
-            await fs.mkdir(path.dirname(filePath), { recursive: true });
-            let safeContent = file.content;
-            if (file.path.endsWith('.ts') || file.path.endsWith('.js')) {
-              safeContent = neutralize(safeContent);
-            }
-            await fs.writeFile(filePath, safeContent);
-            sourceTexts.push(safeContent);
-          }
-          filesParsed = true;
-        }
-      } catch {
-        /* not a JSON array → legacy flat below */
-      }
-    }
-
-    if (!filesParsed && code) {
-      const flat = neutralize(code);
-      await fs.writeFile(path.join(testDir, 'app.ts'), flat);
-      sourceTexts.push(flat);
-    }
-
-    await fs.writeFile(testEntry, testCode);
-
-    const stubModuleSource = buildStubModule(collectNamedImports(sourceTexts));
-
-    // ── 2) Bundle in the parent: relative/absolute inlined ONLY from inside the
-    //       sandbox dir, bare npm packages stubbed, Node built-ins external ─────
-    // One resolver plugin owns the whole import surface so no specifier can slip
-    // past the sandbox boundary between two plugins: every relative OR absolute
-    // import, of every extension, must resolve inside `testDir` or it is rejected
-    // with a fixed message before the default resolver — which reads straight
-    // from the server filesystem — ever sees it. Bare imports (express, pino,
-    // typeorm, @sap-cloud-sdk/*, @sap/xssec, passport, …) are replaced by the
-    // universal stub and inlined, so business-logic unit tests load identically
-    // in dev and in the pruned production image instead of crashing with
-    // "Cannot find module 'express'"; each stubbed package is named in the
-    // response (CR-14). See createSandboxResolvePlugin above.
-    const stubbedPackages = new Set<string>();
-    const resolvePlugin = createSandboxResolvePlugin({ testDir, stubModuleSource, stubbedPackages });
-
-    const bundlePath = path.join(testDir, '__sandbox_bundle.cjs');
-    try {
-      await esbuild.build({
-        entryPoints: [testEntry],
-        bundle: true,
-        platform: 'node',
-        format: 'cjs',
-        target: 'node22',
-        outfile: bundlePath,
-        sourcemap: 'inline',
-        logLevel: 'silent',
-        resolveExtensions: ['.ts', '.tsx', '.js', '.mjs', '.cjs', '.json'],
-        // Enable TS decorators so typeorm-style entities (@Entity/@Column/…) compile.
-        tsconfigRaw: { compilerOptions: { experimentalDecorators: true } },
-        plugins: [resolvePlugin],
-        loader: { '.ts': 'ts', '.tsx': 'tsx' },
-      });
-    } catch (buildErr: any) {
-      const msg = (buildErr?.message || String(buildErr)).slice(0, 4000);
-      // `buildError` lets the client auto-heal (ask the AI to repair the offending
-      // generated module/test code) and retry, rather than surfacing a dead end.
-      return NextResponse.json(
-        { output: '', error: `Compilation failed:\n${msg}`, exitCode: 1, testResults: [], buildError: true, ...(draft ? { draftId: draft.draftId } : {}) },
-        { status: 200 },
-      );
-    }
-
-    // ── 3) Write the in-process runner (TAP, optional name filtering) ───────
-    const patternEnv = Array.isArray(selectedTestIds)
-      ? selectedTestIds.map((id: string) => String(id).replace(/[^A-Za-z0-9_]/g, '')).filter(Boolean).join('|')
-      : '';
-
-    const runnerPath = path.join(testDir, '__runner.mjs');
-    const runnerSrc = `
-import { run } from 'node:test';
-import { tap } from 'node:test/reporters';
-
-const bundle = ${JSON.stringify(bundlePath)};
-const raw = process.env.SANDBOX_TEST_PATTERNS || '';
-const testNamePatterns = raw ? [raw] : undefined;
-
-let failed = false;
-const stream = run({ files: [bundle], isolation: 'none', testNamePatterns });
-stream.on('test:fail', () => { failed = true; });
-
-for await (const chunk of stream.compose(tap)) {
-  process.stdout.write(chunk);
-}
-process.exitCode = failed ? 1 : 0;
-`;
-    await fs.writeFile(runnerPath, runnerSrc);
-
-    // ── F-01: hard network-egress block for the untrusted sandbox ───────────
-    // Unit tests need no network. This preload neutralises every outbound path
-    // (GCP metadata endpoint 169.254.169.254, internal services, the internet)
-    // BEFORE the test bundle loads — closing the runtime-identity token
-    // exfiltration path. The child already runs under Node's permission model
-    // (no child-process / worker / native-addon escape), and Node built-ins are
-    // process singletons, so pure-JS test code cannot obtain an un-patched socket.
-    // Every http/https/tls/http2/fetch(undici) egress funnels through
-    // net.Socket.prototype.connect, so neutralising it covers TCP comprehensively.
-    // The guard is never removed. It used to be skipped whenever
-    // S4_TEST_RUNNER_EGRESS_ENFORCED was 'true', which meant one variable both
-    // unlocked live tenant credentials and deleted the only defence standing
-    // between generated test code and the metadata endpoint — two effects that
-    // cannot see each other at the call site. A live run that has passed the
-    // egress attestation now narrows the guard to the S/4 host allowlist
-    // instead of dropping it: the tenant call it needs is permitted, everything
-    // else still throws. Defense-in-depth, not a formal microVM boundary — see
-    // docs for the isolated-runner roadmap item.
-    // The live decision is made here, before the guard is written, because the
-    // guard's shape depends on it. Asking for a live run that is not permitted
-    // fails the request outright rather than quietly falling back to the mock —
-    // a caller who asked to talk to a tenant must not be told a sandbox result
-    // is the same thing.
-    //
-    // Before any measurement: the documented lock (lib/locked-paths.ts, G0:R0).
-    // The attestation below can only ever say "not restricted"; reopening is a
-    // decision with conditions, and a probe passing is not one of them.
-    const live =
-      s4Environment !== 'live'
-        ? { permitted: false, reason: 'sandbox run', attestation: null }
-        : LIVE_TEST_EXECUTION.locked
-          ? { permitted: false, reason: LIVE_TEST_EXECUTION.userNotice, attestation: null }
-          : await liveRunnerPermitted();
-
-    if (s4Environment === 'live' && !live.permitted) {
-      return NextResponse.json(
-        { output: '', error: live.reason, exitCode: 1, testResults: [] },
-        { status: 403 },
-      );
-    }
-
-    const netGuardPath = path.join(testDir, '__netguard.mjs');
-    {
-      // In an attested live run the tenant host has to be reachable or the
-      // feature is pointless, so TCP is narrowed to the S/4 allowlist rather
-      // than closed. The metadata endpoint is an IP literal and matches no host
-      // suffix, so it stays blocked on this path too — which is the property
-      // that actually matters.
-      const allowedSuffixes = live.permitted
-        ? (process.env.S4_HOST_ALLOWLIST || '')
-            .split(',')
-            .map((s) => s.trim().toLowerCase())
-            .filter(Boolean)
-        : [];
-
-      await fs.writeFile(netGuardPath, `import net from 'node:net';
-import dgram from 'node:dgram';
-import dns from 'node:dns';
-const BLOCK = () => { throw new Error('Network access is disabled in the Clean-Core.io test sandbox.'); };
-const ALLOWED_SUFFIXES = ${JSON.stringify(allowedSuffixes)};
-const realConnect = net.Socket.prototype.connect;
-const realNetConnect = net.connect;
-const realCreateConnection = net.createConnection;
-// Reads the destination out of either connect() shape: connect(options) and
-// connect(port, host). An address we cannot read is not an address we allow.
-function targetHost(args) {
-  const first = args[0];
-  if (first && typeof first === 'object') return String(first.host || first.hostname || '');
-  if (typeof args[1] === 'string') return args[1];
-  return '';
-}
-// A suffix is a *domain*, so it matches at a label boundary and nowhere else.
-// Plain endsWith let 'evil-sap.com' through an allowlist of 'sap.com' — a host
-// an attacker can register, reached by the one process that holds decrypted
-// tenant credentials (security audit of v2.13.0).
-function allowed(host) {
-  const h = String(host || '').toLowerCase();
-  if (!h) return false;
-  return ALLOWED_SUFFIXES.some((s) => h === s || h.endsWith('.' + s));
-}
-function gate(real) {
-  return function (...args) {
-    if (!allowed(targetHost(args))) BLOCK();
-    return real.apply(this, args);
-  };
-}
-if (ALLOWED_SUFFIXES.length > 0) {
-  try { net.Socket.prototype.connect = gate(realConnect); } catch {}
-  try { net.connect = gate(realNetConnect); net.createConnection = gate(realCreateConnection); } catch {}
-} else {
-  try { net.Socket.prototype.connect = BLOCK; } catch {}
-  try { net.connect = BLOCK; net.createConnection = BLOCK; } catch {}
-}
-try { dgram.createSocket = BLOCK; } catch {}
-// The factory is not the only UDP path — the exported Socket constructor and its
-// prototype methods can build and send datagrams directly, so neutralise them too.
-try {
-  if (dgram.Socket && dgram.Socket.prototype) {
-    dgram.Socket.prototype.send = BLOCK;
-    dgram.Socket.prototype.bind = BLOCK;
-    dgram.Socket.prototype.connect = BLOCK;
-  }
-} catch {}
-try { dgram.Socket = BLOCK; } catch {}
-try { process.binding = BLOCK; } catch {}
-// fetch/undici reaches the network through net.Socket.prototype.connect, so on
-// the allowlisted path it is left in place and the socket gate decides. With no
-// allowlist there is nothing it could legitimately reach, so it is closed here
-// too rather than relying on a single choke point.
-if (ALLOWED_SUFFIXES.length === 0) {
-  try { globalThis.fetch = BLOCK; } catch {}
-}
-// DNS uses the native c-ares/getaddrinfo resolver, which bypasses net.Socket — block
-// every JS entry point so DNS queries (incl. DNS-tunnelling exfil) cannot leave either.
-// An allowlisted live run must be able to resolve the tenant host, so DNS stays
-// available there; the socket gate is what decides where a connection may go.
-// This is the one place the narrowed guard is genuinely weaker than the closed
-// one — DNS tunnelling is possible again — and it is why live mode needs the
-// infrastructure policy underneath it, not just this file.
-if (ALLOWED_SUFFIXES.length === 0) {
-  for (const o of [dns, dns.promises, dns.Resolver && dns.Resolver.prototype]) {
-    if (!o) continue;
-    for (const k of Object.getOwnPropertyNames(o)) {
-      try { if (typeof o[k] === 'function') o[k] = BLOCK; } catch {}
-    }
-  }
-}
-`);
-    }
-
-    // ── 4) Resolve S/4 credentials server-side (F-03), never from the body ──
-    let s4Env: Record<string, string> = {};
-    if (s4Environment === 'live') {
-      // The egress gate already ran above, before the guard was written; getting
-      // here means it passed.
-
+    // ── Live only: tenant access, then a capability — never a credential ─────
+    let proxy: RunnerProxy | undefined;
+    if (mode === 'live') {
       // Audit P1: re-verify tenant access here too. A user whose S/4 access was
-      // revoked must not be able to use stored live credentials via the test runner.
+      // revoked must not be able to reach the tenant through the test runner.
       try {
         await assertS4TenantAccess(decodedToken.uid);
-      } catch (e: any) {
+      } catch (e) {
         return NextResponse.json(
-          { output: '', error: e?.message || 'S/4HANA live access is not permitted.', exitCode: 1 },
+          { output: '', error: (e as Error)?.message || 'S/4HANA live access is not permitted.', exitCode: 1, testResults: [] },
           { status: 403 },
         );
       }
-      const c = await loadS4ConfigForUser(decodedToken.uid);
-      if (c) {
-        s4Env = {
-          S4_TENANT_URL: c.url || '',
-          S4_USERNAME: c.username || '',
-          S4_PASSWORD: c.password || '',
-          S4_AUTH_TYPE: c.authType || 'basic',
-        };
+      // The credentials are read here only to learn the tenant host and that
+      // the proxy can carry the scheme. They stay in this function; what leaves
+      // it is a capability naming the host.
+      const connection = await loadS4ConfigForUser(decodedToken.uid);
+      if (!connection) {
+        return NextResponse.json(
+          { output: '', error: 'No tenant connection is stored for this account.', exitCode: 1, testResults: [] },
+          { status: 400 },
+        );
       }
+      if (!credentialHeaders(connection)) {
+        return NextResponse.json(
+          { output: '', error: 'This authentication type is not available to test runs.', exitCode: 1, testResults: [] },
+          { status: 501 },
+        );
+      }
+      const urlCheck = await isUrlSafe(connection.url);
+      if (!urlCheck.safe || !urlCheck.host) {
+        return NextResponse.json(
+          { output: '', error: 'The stored tenant URL is not permitted.', exitCode: 1, testResults: [] },
+          { status: 403 },
+        );
+      }
+      const { token, claims } = mintCapability(
+        { pid: sanitizedProjectId, uid: decodedToken.uid, host: urlCheck.host, run: randomBytes(12).toString('hex') },
+        capabilityKeyFromEnv(),
+      );
+      const { db } = await getAdminDb();
+      await registerCapability(db, claims);
+      capabilityId = claims.cid;
+      proxy = { baseUrl: proxyBaseFor(runnerConfig), capability: token };
     }
 
-    // ── 5) Start the sandboxed child (no shell, no exec string) ─────────────
-    // --max-old-space-size caps the child V8 heap so a heap-bomb test OOMs the
-    // child instead of the whole instance.
-    const args: string[] = [`--max-old-space-size=${CHILD_HEAP_MB}`];
-    if (permissionFlag && permissionFlag !== 'none') {
-      args.push(
-        permissionFlag,
-        `--allow-fs-read=${testDir}`,
-        `--allow-fs-read=${projectNodeModules}`,
-        `--allow-fs-write=${testDir}`
+    // ── Execute ────────────────────────────────────────────────────────────
+    let execution: Execution;
+    if (target.kind === 'isolated') {
+      const call = await callIsolatedRunner(
+        target.url,
+        { files, suiteCode: testCode, patterns, mode, ...(proxy ? { proxy } : {}) },
+        { idToken: (audience) => fetchMetadataIdToken(audience) },
+      );
+      if (!call.ok) {
+        logger.error('run-tests: the isolated runner did not deliver a usable report', { projectId: sanitizedProjectId, reason: call.reason });
+        return NextResponse.json(
+          { output: '', error: call.reason, exitCode: 1, testResults: [] },
+          { status: call.status },
+        );
+      }
+      execution = {
+        buildError: call.report.outcome === 'build-error' ? call.report.buildError || 'Compilation failed.' : null,
+        stdout: call.report.stdout,
+        stderr: call.report.stderr,
+        exitCode: call.report.exitCode,
+        stubbedPackages: [...call.report.stubbedPackages].sort(),
+        runner: { kind: 'isolated', revision: call.report.revision, filesDigest: call.filesDigest },
+      };
+    } else {
+      // Emulator build only (resolveRunnerTarget). Named in the response and
+      // the receipt as `local-emulator`, never presented as the isolated runner.
+      const outcome = await executeSandboxRun({ files, suiteCode: testCode, patterns, allowUnsandboxed: true });
+      if (outcome.kind === 'unavailable') {
+        return NextResponse.json({ output: '', error: outcome.reason, exitCode: 1 }, { status: 500 });
+      }
+      execution = {
+        buildError: outcome.kind === 'build-error' ? outcome.message : null,
+        stdout: outcome.kind === 'ran' ? outcome.stdout : '',
+        stderr: outcome.kind === 'ran' ? outcome.stderr : '',
+        exitCode: outcome.kind === 'ran' ? outcome.exitCode : 1,
+        stubbedPackages: outcome.stubbedPackages,
+        runner: { kind: 'local-emulator', revision: 'local-emulator', filesDigest: hashRunInputs(files, testCode).digest },
+      };
+    }
+
+    const runnerInfo = { kind: execution.runner.kind, revision: execution.runner.revision };
+    const stubbedPackages = execution.stubbedPackages;
+    if (execution.buildError !== null) {
+      // `buildError` lets the client auto-heal (ask the AI to repair the offending
+      // generated module/test code) and retry, rather than surfacing a dead end.
+      return NextResponse.json(
+        { output: '', error: `Compilation failed:
+${execution.buildError}`, exitCode: 1, testResults: [], buildError: true, runner: runnerInfo, ...(draft ? { draftId: draft.draftId } : {}) },
+        { status: 200 },
       );
     }
-    // F-01: preload the network-egress block before the test runner. This is
-    // unconditional. It used to be skipped on the same env var that unlocked
-    // live mode, so the one run holding real tenant credentials was also the
-    // one run with no guard loaded at all.
-    // The layer that holds against node:sqlite on the Node that has it —
-    // see sqliteSwitchSupported. Not conditional on anything else.
-    if (sqliteSwitchSupported()) args.push('--no-experimental-sqlite');
-    args.push(`--import=${pathToFileURL(netGuardPath).href}`);
-    // The built-ins the sandbox refuses at runtime, whichever way they are
-    // asked for: require() through the CommonJS loader, import() through the
-    // ESM resolve hook. The bundler already refused the static form. What this
-    // is and is not stands in lib/sandbox-module-guard.ts.
-    const modHooksPath = path.join(testDir, '__modhooks.mjs');
-    const modGuardPath = path.join(testDir, '__modguard.mjs');
-    await fs.writeFile(modHooksPath, modHooksSource());
-    await fs.writeFile(modGuardPath, modGuardSource(pathToFileURL(modHooksPath).href));
-    args.push(`--import=${pathToFileURL(modGuardPath).href}`);
-    args.push(runnerPath);
-
-    const childEnv: Record<string, string> = {
-      PATH: process.env.PATH || '',
-      SYSTEMROOT: process.env.SYSTEMROOT || '',
-      NODE_ENV: 'test',
-      SANDBOX_TEST_PATTERNS: patternEnv,
-      ...s4Env,
-    };
-
-    const { stdout, stderr, exitCode } = await runSandboxed(args, testDir, childEnv);
+    const { stdout, stderr, exitCode } = execution;
 
     const testResults = parseTapOutput(stdout);
 
@@ -817,27 +438,28 @@ if (ALLOWED_SUFFIXES.length === 0) {
     // it only covers this one, and the two have to describe the same run.
     const executedCases = applyRunnerVerdicts(storedCases, testResults, exitCode);
     // `environment: 'mock'` below is a constant, and a constant is only honest
-    // while nothing else can reach this line. Today nothing can: a live run is
-    // refused at the lock long before here. But the lock is a decision someone
-    // will one day reverse, and a receipt that then says "mock" about a run
-    // against a real tenant is worse than no receipt — it is a signed sentence
-    // that is false (security audit of b88c77b, SEC-b88c77b-18). So the
-    // assumption is checked where it is used rather than trusted from a
-    // hundred lines above: if this was not a sandbox run, no receipt is written
-    // at all, and the caller is told why.
+    // while nothing else can reach this line. A live run can reach it once the
+    // lock is lifted, and a receipt that then says "mock" about a run against a
+    // real tenant is worse than no receipt — it is a signed sentence that is
+    // false (security audit of b88c77b, SEC-b88c77b-18). So the assumption is
+    // checked where it is used rather than trusted from a hundred lines above:
+    // a live run returns what it saw, and no receipt is written for it — the
+    // receipt format describes sandbox runs, and naming a tenant run in it is a
+    // decision of its own, not a side effect of reopening the path.
     if (s4Environment === 'live') {
-      logger.error('run-tests: a live run reached the receipt, which only describes sandbox runs', { projectId: sanitizedProjectId });
-      return NextResponse.json(
-        {
-          output: '',
-          error:
-            'This run executed against a live tenant, and the receipt format only describes sandbox runs. ' +
-            'No receipt was written. Reopening live execution needs a receipt that names the environment it ran in.',
-          exitCode: 1,
-          testResults: [],
-        },
-        { status: 501 },
-      );
+      logger.info('run-tests: a live run finished; it is reported without a receipt', { projectId: sanitizedProjectId });
+      return NextResponse.json({
+        output: stdout,
+        error: stderr,
+        exitCode,
+        testResults,
+        stubbedPackages: [...stubbedPackages].sort(),
+        runner: runnerInfo,
+        receipt: null,
+        receiptNotice:
+          'This run executed against a live tenant, and the receipt format only describes sandbox runs. ' +
+          'No receipt was written; the verdicts above are not recorded on the project.',
+      });
     }
     // Roadmap 8.7: a draft run names the draft's digests — what actually ran —
     // and the draft itself. The run and the case list are the project's, as
@@ -858,6 +480,7 @@ if (ALLOWED_SUFFIXES.length === 0) {
         .filter((r) => known.has(r.id))
         .map((r) => ({ id: r.id, status: r.status as TestRunReceipt['verdicts'][number]['status'] })),
       ...(draft ? { draft: { id: draft.draftId, digest: draft.draftDigest } } : {}),
+      runner: execution.runner,
     };
     let recorded = false;
     // A draft run is recorded on the draft and nowhere else: no verdicts and no
@@ -910,6 +533,7 @@ if (ALLOWED_SUFFIXES.length === 0) {
         exitCode,
         testResults,
         stubbedPackages: [...stubbedPackages].sort(),
+        runner: runnerInfo,
         draftId: draft.draftId,
         draftReceipt: receipt,
         receipt: null,
@@ -949,6 +573,7 @@ if (ALLOWED_SUFFIXES.length === 0) {
       exitCode,
       testResults,
       stubbedPackages: [...stubbedPackages].sort(),
+      runner: runnerInfo,
       receipt: recorded ? receipt : null,
     });
   } catch {
@@ -960,71 +585,19 @@ if (ALLOWED_SUFFIXES.length === 0) {
     );
   } finally {
     activeRuns--;
-    try {
-      if (testDir) await fs.rm(testDir, { recursive: true, force: true });
-    } catch {
-      /* ignore cleanup errors */
+    // Single-run: the capability dies with its run, whatever the run did.
+    if (capabilityId) {
+      try {
+        const { db } = await getAdminDb();
+        await revokeCapability(db, capabilityId);
+      } catch (revokeErr) {
+        // It still expires on its own within ten minutes; say so loudly.
+        logger.error('run-tests: a proxy capability could not be revoked', {
+          route: 'api/run-tests',
+          projectId: sanitizedProjectId,
+          error: errMessage(revokeErr),
+        });
+      }
     }
   }
-}
-
-// Child-process execution with timeout & output cap.
-function runSandboxed(
-  args: string[],
-  cwd: string,
-  env: Record<string, string>,
-): Promise<{ stdout: string; stderr: string; exitCode: number }> {
-  return new Promise((resolve) => {
-    const child = spawn(process.execPath, args, {
-      cwd,
-      env: env as NodeJS.ProcessEnv,
-      stdio: ['ignore', 'pipe', 'pipe'],
-    });
-
-    let stdout = '';
-    let stderr = '';
-    let outBytes = 0;
-    let killedForLimit = false;
-
-    const timer = setTimeout(() => {
-      child.kill('SIGKILL');
-    }, EXEC_TIMEOUT_MS);
-
-    child.stdout.on('data', (d: Buffer) => {
-      outBytes += d.length;
-      if (outBytes > MAX_OUTPUT_BYTES) {
-        if (!killedForLimit) {
-          killedForLimit = true;
-          child.kill('SIGKILL');
-        }
-        return;
-      }
-      stdout += d.toString();
-    });
-
-    child.stderr.on('data', (d: Buffer) => {
-      // stderr shares the combined output cap so an stderr-only flood cannot bypass it.
-      outBytes += d.length;
-      if (outBytes > MAX_OUTPUT_BYTES) {
-        if (!killedForLimit) {
-          killedForLimit = true;
-          child.kill('SIGKILL');
-        }
-        return;
-      }
-      stderr += d.toString();
-    });
-
-    child.on('error', (e) => {
-      clearTimeout(timer);
-      resolve({ stdout, stderr: stderr || String(e), exitCode: 1 });
-    });
-
-    child.on('close', (codeNum, signal) => {
-      clearTimeout(timer);
-      if (killedForLimit) stderr += '\n[Sandbox] Output limit exceeded; process terminated.';
-      else if (signal === 'SIGKILL') stderr += `\n[Sandbox] Timed out after ${EXEC_TIMEOUT_MS} ms.`;
-      resolve({ stdout, stderr, exitCode: typeof codeNum === 'number' ? codeNum : 1 });
-    });
-  });
 }

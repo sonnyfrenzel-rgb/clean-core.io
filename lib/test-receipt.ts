@@ -131,6 +131,25 @@ export interface TestRunReceipt {
    * changes the meaning of no other claim. Absent means "the stored artefacts ran".
    */
   draft?: { id: string; digest: string };
+  /**
+   * Roadmap 8.9 — where the suite executed, as the executor reported it.
+   *
+   *   - `kind: 'isolated'` — the isolated runner service; `revision` is its
+   *     `K_REVISION`, the Cloud Run revision that executed the run.
+   *   - `kind: 'local-emulator'` — the app's own child process, which exists
+   *     only in an emulator build (local development and CI). Named, so it is
+   *     never mistaken for the isolated runner.
+   *
+   * `filesDigest` is the SHA-256 over the per-file hashes the runner reported
+   * and the suite hash (`hashRunInputs`, `lib/test-sandbox/protocol.ts`). The
+   * route writes the receipt only after checking that those hashes are the
+   * hashes of what it sent, so the digest names what actually ran.
+   *
+   * Optional and additive like `draft`: it adds provenance and changes the
+   * meaning of no other claim, so the version stays 2. Absent means a receipt
+   * from before 8.9.
+   */
+  runner?: { kind: 'isolated' | 'local-emulator'; revision: string; filesDigest: string };
 }
 
 const VERDICTS: readonly string[] = ['Passed', 'Failed', 'Not run', 'Skipped', 'Todo', 'Error'];
@@ -161,6 +180,18 @@ function isTestRunScope(value: unknown): value is TestRunScope {
   return selectedOk && typeof scope.cases === 'number';
 }
 
+function isRunnerProvenance(value: unknown): boolean {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+  const r = value as Record<string, unknown>;
+  return (
+    (r.kind === 'isolated' || r.kind === 'local-emulator') &&
+    typeof r.revision === 'string' &&
+    r.revision.length > 0 &&
+    typeof r.filesDigest === 'string' &&
+    /^[0-9a-f]{64}$/.test(r.filesDigest)
+  );
+}
+
 /** Shape check only — it says nothing about whether the receipt still fits the project. */
 export function isTestRunReceipt(value: unknown): value is TestRunReceipt {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
@@ -183,6 +214,7 @@ export function isTestRunReceipt(value: unknown): value is TestRunReceipt {
         typeof r.draft === 'object' &&
         typeof (r.draft as { id?: unknown }).id === 'string' &&
         typeof (r.draft as { digest?: unknown }).digest === 'string')) &&
+    (r.runner === undefined || isRunnerProvenance(r.runner)) &&
     Array.isArray(r.verdicts) &&
     r.verdicts.every(
       (entry) =>

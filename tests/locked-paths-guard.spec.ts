@@ -48,10 +48,11 @@ test.describe('the lock holds in code', () => {
     const body = src.indexOf('await req.json()');
     const lock = src.indexOf("s4Environment === 'live' && LIVE_TEST_EXECUTION.locked");
     const refusal = src.indexOf('{ status: 403 }', lock);
-    // Refused straight after the body is read: before the project lookup, the temp dir, the probe and the credentials.
+    // Refused straight after the body is read: before the project lookup, the runner choice, the credentials,
+    // the capability and the call to the runner. (Before 8.9 the list named the egress probe, which is gone.)
     expect(body).toBeGreaterThan(0);
     expect(lock).toBeGreaterThan(body);
-    for (const later of ["collection('projects')", 'await liveRunnerPermitted()', 'loadS4ConfigForUser(']) {
+    for (const later of ["collection('projects')", 'resolveRunnerTarget(', 'loadS4ConfigForUser(', 'mintCapability(', 'callIsolatedRunner(', 'executeSandboxRun(']) {
       expect(src.indexOf(later, body), later).toBeGreaterThan(refusal);
     }
   });

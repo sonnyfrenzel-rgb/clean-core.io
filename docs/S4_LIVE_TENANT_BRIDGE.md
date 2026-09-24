@@ -4,7 +4,7 @@
 > **Last Updated:** 2026-06-10  
 > **Status:** Production-Ready (Pilot)
 
-> **Locked since 2026-09-15 (gate `G0:R0`):** running generated tests against a connected tenant is locked until the test runner has its own isolated service — see [`SECURITY.md`](../SECURITY.md) §7.1 and `lib/locked-paths.ts`. The connection check, the metadata read and the read-only OData call described here still work. Where this document describes test execution against a tenant (sections 5 and 9), it describes the locked path, not current behaviour.
+> **Locked since 2026-09-15 (gate `G0:R0`):** running generated tests against a connected tenant is locked until the isolated live runner has passed its external review — see [`SECURITY.md`](../SECURITY.md) §7.1 and `lib/locked-paths.ts`. The connection check, the metadata read and the read-only OData call described here still work. Where this document describes test execution against a tenant (sections 5 and 9), it describes the locked path, not current behaviour.
 
 ---
 

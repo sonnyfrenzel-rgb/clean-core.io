@@ -57,7 +57,7 @@ export default function TenantSecurityPage() {
 
         <div className="bg-slate-50 border border-gray-200 rounded-[2rem] p-6 sm:p-8 space-y-5">
           <p className="text-gray-700 leading-relaxed font-medium">
-            Every tenant connection is strictly limited to a <strong>connection check, read-only OData metadata requests</strong> and one read-only OData call. Running generated tests against the tenant is locked until the test runner has its own isolated service. Clean-Core.io never writes, modifies, or deletes any data on your S/4HANA system.
+            Every tenant connection is strictly limited to a <strong>connection check, read-only OData metadata requests</strong> and one read-only OData call. Running generated tests against the tenant is locked until the isolated live runner has passed its external review. Clean-Core.io never writes, modifies, or deletes any data on your S/4HANA system.
           </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

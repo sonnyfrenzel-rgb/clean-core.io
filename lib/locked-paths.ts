@@ -27,24 +27,35 @@ export interface LockedPath {
   userNotice: string;
 }
 
+/**
+ * Roadmap 8.9 (Sonny, 24.09.2026: "der Live-Pfad kommt vor 3.0 zurück") built the
+ * path behind this lock: the isolated live runner, which never holds a tenant
+ * credential, and the app's credential proxy, which adds the credentials per
+ * request for one run and one host. The old switch — `S4_TEST_RUNNER_EGRESS_ENFORCED`
+ * plus an egress probe, putting decrypted credentials into a child process of
+ * the API service — is gone. The lock itself stays until its conditions hold,
+ * and even with `locked: false` the route refuses a live run unless the live
+ * runner and the proxy are configured (`resolveRunnerTarget`,
+ * `lib/test-runner-client.ts`).
+ */
 export const LIVE_TEST_EXECUTION: LockedPath = {
   id: 'G0:R0',
   locked: true,
   since: '2026-09-15',
   boundary: {
     closed:
-      'Executing generated tests against a connected S/4HANA tenant: POST /api/run-tests with s4Environment "live", which would put decrypted tenant credentials into the test child process.',
+      'Executing generated tests against a connected S/4HANA tenant: POST /api/run-tests with s4Environment "live", which would let generated code send requests to the tenant through the application credential proxy.',
     open:
-      'Running generated tests against mocks in the restricted test runner (a Node.js child process with guards, not an isolation boundary); checking a tenant connection, reading its OData metadata and one read-only OData call (/api/test-s4-connection, /api/fetch-s4-metadata, /api/test-s4-odata-read) — none of these executes generated code.',
+      'Running generated tests against mocks in the isolated test runner (its own Cloud Run service; a deployed app without it runs no tests); checking a tenant connection, reading its OData metadata and one read-only OData call (/api/test-s4-connection, /api/fetch-s4-metadata, /api/test-s4-odata-read) — none of these executes generated code.',
   },
   reason:
-    'Generated test code is untrusted and runs as a child process inside the API service. The guards around it (Node permission model, a preloaded network guard, an egress probe) are defense in depth, not an isolation boundary, and the service itself has open network egress. With tenant credentials inside that process, a generated test could send them anywhere the guard misses (review finding CR-15, story E08-F01-US01).',
+    'Generated test code is untrusted. Since roadmap 8.9 it runs in a separate runner service without roles, secrets or open network egress, and a live run reaches the tenant only through a proxy that holds the credentials itself; the guards inside the runner process (Node permission model, preloaded module and network guards) remain defense in depth, not an isolation boundary. What is not done yet is the proof on the deployed profile and an external review of the runner (review findings CR-09, CR-15).',
   reopenWhen: [
-    'The test runner runs as its own short-lived service, separate from the API service, with a service account that holds nothing but what one run needs.',
-    'Its network egress is deny-by-default at the infrastructure level, with the tenant host as the only destination — and a CI check proves it on every deploy, not a probe of two addresses.',
+    'The isolated live runner and the credential proxy are deployed and configured (RUNNER_LIVE_URL, RUNNER_SERVICE_ACCOUNT, S4_PROXY_BASE_URL); without them the route refuses a live run even with this lock lifted.',
+    'The authorized negative test (tests/runner-isolation.spec.ts) has passed against the deployed runners: no foreign files, no secrets, no network beyond the app.',
     'An external review of that runner is done and its findings are closed.',
     'Sonny decides to reopen, and this entry, SECURITY.md §7.1 and the guard spec change in the same release.',
   ],
   userNotice:
-    'Running generated tests against a connected tenant is locked until the test runner has its own isolated service. The tenant connection check, the metadata read and the read-only OData call still work; tests run against mocks in the restricted test runner.',
+    'Running generated tests against a connected tenant is locked until the isolated live runner has passed its external review. The tenant connection check, the metadata read and the read-only OData call still work; tests run against mocks in the isolated test runner.',
 };

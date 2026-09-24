@@ -8,211 +8,195 @@
  *    Ausführungen serverseitig ab. Ein Frontend-Flag oder das bloße Setzen
  *    einer Egress-Umgebungsvariable aktiviert ihn nicht."
  *
- * Before this, `S4_TEST_RUNNER_EGRESS_ENFORCED=true` was the whole gate, and it
- * did two things at once: unlocked live tenant credentials into the child
- * process, and deleted `__netguard.mjs` — the only thing stopping generated
- * test code from reading the cloud metadata endpoint. Nothing verified that the
- * egress policy the variable asserted was actually in force.
+ * History: `S4_TEST_RUNNER_EGRESS_ENFORCED=true` was once the whole gate — it
+ * put decrypted tenant credentials into a child process of the API service and
+ * deleted `__netguard.mjs`. A probe of two addresses (`runner-egress-attestation`)
+ * then stood between the variable and the credentials. Roadmap 8.9 removed both:
+ * a live run executes in the isolated live runner, which never receives a
+ * credential, and the variable is read by nothing. This spec holds that, and
+ * runs the network guard every sandbox child still gets.
  */
 import { test, expect } from '@playwright/test';
+import { spawn } from 'child_process';
 import fs from 'fs';
+import http from 'http';
+import os from 'os';
 import path from 'path';
-import { attestEgressRestricted, resetEgressAttestation, liveRunnerPermitted } from '../lib/runner-egress-attestation';
+import type { AddressInfo } from 'net';
+import { pathToFileURL } from 'url';
+import { netGuardSource } from '../lib/test-sandbox/net-guard';
+import { resolveRunnerTarget, type RunnerConfig } from '../lib/test-runner-client';
 
 const ROOT = path.resolve(__dirname, '..');
-const ROUTE = path.resolve(ROOT, 'app/api/run-tests/route.ts');
-const ATTESTATION = path.resolve(ROOT, 'lib/runner-egress-attestation.ts');
+const read = (rel: string) => fs.readFileSync(path.resolve(ROOT, rel), 'utf8');
 
-function routeSource(): string {
-  return fs.readFileSync(ROUTE, 'utf8');
+function walk(dir: string, out: string[] = []): string[] {
+  for (const e of fs.readdirSync(path.resolve(ROOT, dir), { withFileTypes: true })) {
+    const rel = `${dir}/${e.name}`;
+    if (e.isDirectory()) {
+      if (!['node_modules', '.next', 'generated'].includes(e.name)) walk(rel, out);
+    } else if (/\.(ts|tsx|mjs|js)$/.test(e.name)) out.push(rel);
+  }
+  return out;
 }
 
-test.describe('the runner cannot be enabled by a variable alone', () => {
-  test('the live gate consults the attestation, not just the env var', () => {
-    const src = routeSource();
+const FULL: RunnerConfig = {
+  runnerUrl: 'https://runner.example.run.app',
+  runnerLiveUrl: 'https://runner-live.example.run.app',
+  runnerServiceAccount: 'runner@example.iam.gserviceaccount.com',
+  proxyBaseUrl: 'https://app.example.run.app',
+  proxyKeyPresent: true,
+  emulator: false,
+};
 
-    expect(
-      src.includes('liveRunnerPermitted'),
-      'the live path must go through liveRunnerPermitted(), which measures egress rather than trusting the flag',
-    ).toBe(true);
-
-    // The route must not make its own decision straight off the variable —
-    // that was the bug. Reading it is fine inside the attestation module.
-    const decidesOnEnvDirectly = /if\s*\(\s*process\.env\.S4_TEST_RUNNER_EGRESS_ENFORCED\s*!==\s*'true'\s*\)/.test(src);
-    expect(
-      decidesOnEnvDirectly,
-      'run-tests/route.ts must not gate live execution on the env var directly; that check belongs behind the attestation',
-    ).toBe(false);
+test.describe('no variable opens the live path', () => {
+  test('nothing in the product reads the old switch, and the probe that stood behind it is gone', () => {
+    const readers = [...walk('app'), ...walk('lib'), ...walk('runner'), ...walk('hooks'), ...walk('components')].filter((f) =>
+      read(f).includes('S4_TEST_RUNNER_EGRESS_ENFORCED'),
+    );
+    // lib/locked-paths.ts names the switch in a comment that says it is gone.
+    expect(readers.filter((f) => f !== 'lib/locked-paths.ts'), 'a file reads the retired switch again').toEqual([]);
+    expect(fs.existsSync(path.resolve(ROOT, 'lib/runner-egress-attestation.ts')), 'the two-address probe came back').toBe(false);
   });
 
-  test('the attestation probes the metadata endpoint and the public internet', () => {
-    const src = fs.readFileSync(ATTESTATION, 'utf8');
-    expect(src).toContain('169.254.169.254');
-    expect(
-      /PUBLIC_HOST\s*=\s*'[\d.]+'/.test(src),
-      'the public probe must use an IP literal — a hostname tests DNS as much as egress',
-    ).toBe(true);
+  test('a live run needs the live runner and the proxy — each one missing refuses, the emulator never runs it locally', () => {
+    expect(resolveRunnerTarget('live', FULL)).toEqual({ kind: 'isolated', url: 'https://runner-live.example.run.app' });
+    for (const missing of ['runnerLiveUrl', 'runnerServiceAccount', 'proxyBaseUrl'] as const) {
+      const t = resolveRunnerTarget('live', { ...FULL, [missing]: '' });
+      expect(t.kind, `${missing} missing`).toBe('unavailable');
+    }
+    expect(resolveRunnerTarget('live', { ...FULL, proxyKeyPresent: false }).kind).toBe('unavailable');
+    // Under the emulator too: there is no local live path at all.
+    expect(resolveRunnerTarget('live', { ...FULL, runnerLiveUrl: '', emulator: true }).kind).toBe('unavailable');
+    // An http URL is not a runner.
+    expect(resolveRunnerTarget('live', { ...FULL, runnerLiveUrl: 'http://runner-live.example' }).kind).toBe('unavailable');
   });
 
-  test('a refused connection does not count as restricted', () => {
-    const src = fs.readFileSync(ATTESTATION, 'utf8');
-    // ECONNREFUSED means an RST came back, so the packet reached something and
-    // only that port was shut. Treating it as "blocked" would pass a container
-    // whose egress is open on every other port.
-    expect(src).not.toMatch(/UNREACHABLE_CODES[\s\S]{0,300}'ECONNREFUSED'/);
-  });
-
-  test('an unknown probe error fails closed', () => {
-    const src = fs.readFileSync(ATTESTATION, 'utf8');
-    expect(
-      src.includes('!UNREACHABLE_CODES.has(code)'),
-      'anything not on the unreachable list must count as reachable, so a surprise error cannot unlock live credentials',
-    ).toBe(true);
+  test('no decrypted credential goes into any child environment', () => {
+    const route = read('app/api/run-tests/route.ts');
+    for (const name of ['S4_PASSWORD', 'S4_USERNAME', '...s4Env', 'childEnv']) {
+      expect(route, `the route builds a child environment with ${name} again`).not.toContain(name);
+    }
+    // The runner hands the child the relay address and empty credential slots.
+    const server = read('runner/server.ts');
+    expect(server).toContain("S4_PASSWORD: ''");
+    expect(server).toContain("S4_USERNAME: ''");
+    expect(server).not.toMatch(/process\.env\.(S4_|GEMINI|AUDIT|RESEND|MFA|PILOT|RATE)/);
   });
 });
 
 test.describe('the network guard is never removed', () => {
-  test('no code path skips writing __netguard.mjs', () => {
-    const src = routeSource();
-
-    // The old shape: `const applyNetGuard = ... !== 'true'` followed by
-    // `if (applyNetGuard)`. If either returns, the guard is optional again.
-    expect(src).not.toContain('applyNetGuard');
-
-    const guardWrite = src.indexOf('__netguard.mjs');
-    expect(guardWrite, '__netguard.mjs must still be written').toBeGreaterThan(-1);
+  test('the core writes and preloads it on every run', () => {
+    const core = read('lib/test-sandbox/core.ts');
+    expect(core).not.toContain('applyNetGuard');
+    expect(core).toContain("path.join(testDir, '__netguard.mjs')");
+    expect(core).toContain('netGuardSource(input.loopback ?? null)');
+    // Pushed without a condition around it.
+    const line = core.split(/\r?\n/).find((l) => l.includes('args.push(`--import=${pathToFileURL(netGuardPath).href}`)'));
+    expect(line, 'the guard is no longer preloaded').toBeDefined();
+    expect(line!.trim().startsWith('args.push'), 'the preload became conditional').toBe(true);
   });
 
-  test('the guard always blocks the metadata endpoint, on both paths', () => {
-    const src = routeSource();
-
-    // On the closed path everything is blocked outright. On the allowlisted
-    // live path, connections are gated by host suffix — and 169.254.169.254 is
-    // an IP literal that matches no suffix, so it cannot be reached either way.
-    expect(src).toContain('ALLOWED_SUFFIXES');
-    expect(src).toContain('function allowed(host)');
-    expect(
-      src.includes("h.endsWith('.' + s)"),
-      'the allowlist must match host suffixes at a label boundary, so a bare IP address never qualifies',
-    ).toBe(true);
-  });
-
-  /**
-   * The suffix match, executed rather than read.
-   *
-   * `h.endsWith(s)` is a *string* suffix, and the allowlist holds domains. With
-   * `sap.com` on the list, `evil-sap.com` — a name anyone can register — ended
-   * in those five characters and the gate opened. The one process that reaches
-   * this gate is the one holding decrypted tenant credentials, so the
-   * difference between a string suffix and a domain suffix is the difference
-   * between a closed door and an exfiltration target.
-   *
-   * The function is lifted out of the guard the route actually writes, so this
-   * measures the shipped text and not a copy of it.
-   */
-  test('the allowlist matches whole labels, not string suffixes', () => {
-    const src = routeSource();
-    const body = src.match(/function allowed\(host\) \{[\s\S]*?\n\}/);
-    expect(body, 'the allowed() gate was not found in the guard the route writes').not.toBeNull();
-
-    // Built from the shipped text on purpose: a copy of the gate here could
-    // drift from the one the route writes, which is the only one that matters.
-    const allowed = new Function('ALLOWED_SUFFIXES', `${body![0]}\nreturn allowed;`)(['sap.com', 'my-tenant.s4hana.ondemand.com']);
-
-    for (const host of ['sap.com', 'x.sap.com', 'a.b.sap.com', 'my-tenant.s4hana.ondemand.com', 'SAP.COM']) {
-      expect(allowed(host), `${host} is on the allowlist and was refused`).toBe(true);
+  test('the loopback shape opens one IP literal and one port, nothing else', () => {
+    expect(() => netGuardSource({ host: '127.0.0.1', port: 0 })).toThrow();
+    expect(() => netGuardSource({ host: 'localhost' as '127.0.0.1', port: 8080 })).toThrow();
+    const src = netGuardSource({ host: '127.0.0.1', port: 4321 });
+    const body = src.match(/function allowed\(t\) \{[\s\S]*?\n\}/);
+    expect(body, 'the allowed() gate was not found in the guard').not.toBeNull();
+    // Lifted from the shipped text, so this measures what the child gets.
+    const allowed = new Function('ALLOW', `${body![0]}\nreturn allowed;`)({ host: '127.0.0.1', port: 4321 });
+    expect(allowed({ host: '127.0.0.1', port: 4321 })).toBe(true);
+    for (const t of [
+      { host: '127.0.0.1', port: 4322 },
+      { host: 'localhost', port: 4321 },
+      { host: '169.254.169.254', port: 80 },
+      { host: 'metadata.google.internal', port: 80 },
+      { host: '127.0.0.1.evil.example', port: 4321 },
+      { host: '', port: 4321 },
+    ]) {
+      expect(allowed(t), JSON.stringify(t)).toBe(false);
     }
-    for (const host of ['evil-sap.com', 'notsap.com', 'sap.com.attacker.net', '169.254.169.254', 'ondemand.com', '']) {
-      expect(allowed(host), `${host} is not on the allowlist and was let through`).toBe(false);
-    }
-  });
-
-  test('the allowlist is empty unless the live run was actually attested', () => {
-    const src = routeSource();
-    expect(
-      /const allowedSuffixes\s*=\s*live\.permitted/.test(src),
-      'the allowlist must hang off live.permitted, not off the env var or the request body',
-    ).toBe(true);
-  });
-
-  test('a sandbox run blocks DNS and fetch outright', () => {
-    const src = routeSource();
-    // Both are conditional on there being no allowlist — i.e. every non-live run.
-    expect(src).toContain('if (ALLOWED_SUFFIXES.length === 0) {');
-    expect(src).toContain('globalThis.fetch = BLOCK');
   });
 });
 
 /**
- * The checks above read source, which a future refactor could satisfy while
- * changing the behaviour. These run the gate.
- *
- * Both a dev machine and a CI runner have open egress, so the measurement here
- * is the dangerous case the variable used to be trusted to rule out — which
- * makes this the exact scenario worth pinning.
+ * The guard, executed in a child Node the way the core preloads it. The probe
+ * reports what each path did; the parent serves the one loopback port.
  */
-test.describe('the gate, executed', () => {
-  test('an unrestricted runtime is measured as unrestricted', async () => {
-    resetEgressAttestation();
+const PROBE = `
+import net from 'node:net';
+import dns from 'node:dns';
+import dgram from 'node:dgram';
+const out = {};
+const port = Number(process.env.ALLOWED_PORT);
+const tryIt = async (name, fn) => { try { const v = await fn(); out[name] = v === undefined ? 'ok' : String(v); } catch (e) { out[name] = 'blocked: ' + String(e && e.message || e).slice(0, 80); } };
+await tryIt('metadataTcp', () => new Promise((res, rej) => { const s = net.connect(80, '169.254.169.254'); s.on('connect', () => { s.destroy(); res('connected'); }); s.on('error', rej); }));
+await tryIt('otherLoopbackPort', () => new Promise((res, rej) => { const s = net.connect(port + 1, '127.0.0.1'); s.on('connect', () => { s.destroy(); res('connected'); }); s.on('error', rej); }));
+await tryIt('localhostName', () => new Promise((res, rej) => { const s = net.connect({ host: 'localhost', port }); s.on('connect', () => { s.destroy(); res('connected'); }); s.on('error', rej); }));
+await tryIt('dnsLookup', () => new Promise((res, rej) => dns.lookup('example.com', (e, a) => e ? rej(e) : res(a))));
+await tryIt('dnsPromises', () => dns.promises.resolve4('example.com'));
+await tryIt('udp', () => dgram.createSocket('udp4'));
+await tryIt('fetchMetadata', async () => (await fetch('http://169.254.169.254/computeMetadata/v1/')).status);
+await tryIt('fetchAllowed', async () => port ? (await (await fetch('http://127.0.0.1:' + port + '/x')).text()) : 'no port');
+process.stdout.write(JSON.stringify(out));
+`;
 
-    const attestation = await attestEgressRestricted();
-    test.skip(attestation.restricted, 'this runtime already blocks egress; the open-egress case cannot be exercised here');
-
-    expect(attestation.restricted).toBe(false);
-    expect(attestation.probes.some((p) => p.reachable)).toBe(true);
+function runGuarded(allowPort: number | null): Promise<Record<string, string>> {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cc-netguard-'));
+  const guard = path.join(dir, '__netguard.mjs');
+  const probe = path.join(dir, 'probe.mjs');
+  fs.writeFileSync(guard, netGuardSource(allowPort ? { host: '127.0.0.1', port: allowPort } : null));
+  fs.writeFileSync(probe, PROBE);
+  return new Promise((resolve, reject) => {
+    const child = spawn(process.execPath, [`--import=${pathToFileURL(guard).href}`, probe], {
+      env: { PATH: process.env.PATH || '', SYSTEMROOT: process.env.SYSTEMROOT || '', ALLOWED_PORT: String(allowPort ?? 0) } as unknown as NodeJS.ProcessEnv,
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+    let stdout = '';
+    let stderr = '';
+    child.stdout.on('data', (d: Buffer) => (stdout += d));
+    child.stderr.on('data', (d: Buffer) => (stderr += d));
+    const timer = setTimeout(() => child.kill('SIGKILL'), 20_000);
+    child.on('close', () => {
+      clearTimeout(timer);
+      fs.rmSync(dir, { recursive: true, force: true });
+      try {
+        resolve(JSON.parse(stdout));
+      } catch {
+        reject(new Error(`probe wrote no JSON: ${stderr.slice(0, 400)}`));
+      }
+    });
   });
+}
 
-  test('setting the env var on an unrestricted runtime does not permit live execution', async () => {
-    resetEgressAttestation();
-
-    const attestation = await attestEgressRestricted();
-    test.skip(attestation.restricted, 'this runtime already blocks egress; the open-egress case cannot be exercised here');
-
-    const before = process.env.S4_TEST_RUNNER_EGRESS_ENFORCED;
-    process.env.S4_TEST_RUNNER_EGRESS_ENFORCED = 'true';
-    try {
-      const decision = await liveRunnerPermitted();
-      // This is the acceptance criterion, executed: the variable is set, and
-      // live execution is still refused, because the claim behind it is false.
-      expect(decision.permitted).toBe(false);
-      expect(decision.reason).toContain('can still reach');
-    } finally {
-      if (before === undefined) delete process.env.S4_TEST_RUNNER_EGRESS_ENFORCED;
-      else process.env.S4_TEST_RUNNER_EGRESS_ENFORCED = before;
-      resetEgressAttestation();
+test.describe('the guard, executed', () => {
+  test('closed: no TCP, no DNS, no UDP, no fetch', async () => {
+    const out = await runGuarded(null);
+    for (const key of ['metadataTcp', 'otherLoopbackPort', 'localhostName', 'dnsLookup', 'dnsPromises', 'udp', 'fetchMetadata']) {
+      expect(out[key], `${key}: ${out[key]}`).toMatch(/^blocked/);
     }
   });
 
-  test('without the env var it is refused regardless of the measurement', async () => {
-    resetEgressAttestation();
-
-    const before = process.env.S4_TEST_RUNNER_EGRESS_ENFORCED;
-    delete process.env.S4_TEST_RUNNER_EGRESS_ENFORCED;
+  test('loopback: the relay port answers, every other destination is still refused', async () => {
+    const server = http.createServer((_req, res) => res.end('relay-ok'));
+    await new Promise<void>((r) => server.listen(0, '127.0.0.1', () => r()));
+    const port = (server.address() as AddressInfo).port;
     try {
-      const decision = await liveRunnerPermitted();
-      expect(decision.permitted).toBe(false);
-      expect(decision.attestation, 'no probe should run when intent is absent').toBeNull();
+      const out = await runGuarded(port);
+      expect(out.fetchAllowed, JSON.stringify(out)).toBe('relay-ok');
+      for (const key of ['metadataTcp', 'otherLoopbackPort', 'localhostName', 'dnsLookup', 'dnsPromises', 'udp', 'fetchMetadata']) {
+        expect(out[key], `${key}: ${out[key]}`).toMatch(/^blocked/);
+      }
     } finally {
-      if (before !== undefined) process.env.S4_TEST_RUNNER_EGRESS_ENFORCED = before;
-      resetEgressAttestation();
+      server.close();
     }
   });
 });
 
 test.describe('the honest limits are written down, not implied', () => {
-  test('the attestation says it is evidence and not proof', () => {
-    const src = fs.readFileSync(ATTESTATION, 'utf8');
-    expect(
-      /not\s+proof|NOT: proof/i.test(src),
-      'a two-endpoint probe is a sample; the module must say so rather than read as a guarantee',
-    ).toBe(true);
-  });
-
-  test('the weaker half of the narrowed guard is named in the code', () => {
-    const src = routeSource();
-    expect(
-      /DNS tunnelling is possible again/i.test(src),
-      'allowing DNS on the live path is a real reduction in the guard and must be stated where it happens',
-    ).toBe(true);
+  test('the guard says it is not the boundary, and names what is', () => {
+    const src = read('lib/test-sandbox/net-guard.ts');
+    expect(src).toMatch(/not: an isolation boundary|not an isolation boundary/i);
+    expect(src).toMatch(/VPC without NAT/);
   });
 });

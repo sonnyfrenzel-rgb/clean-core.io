@@ -99,7 +99,7 @@ export async function POST(request: NextRequest) {
           </p>
           
           <p style="font-size: 15px; line-height: 1.6; color: #334155; margin: 0 0 24px 0;">
-            Great news! Your request to integrate a <strong>Live S/4HANA Public Cloud Custom Tenant</strong> has been reviewed and approved by our engineering team. You can now connect your non-productive SAP environment in Stage 5 to check the connection and read OData metadata. Running the generated tests against the tenant is locked until the test runner has its own isolated service — they run against mocks.
+            Great news! Your request to integrate a <strong>Live S/4HANA Public Cloud Custom Tenant</strong> has been reviewed and approved by our engineering team. You can now connect your non-productive SAP environment in Stage 5 to check the connection and read OData metadata. Running the generated tests against the tenant is locked until the isolated live runner has passed its external review — they run against mocks.
           </p>
 
           <p style="font-size: 15px; line-height: 1.6; color: #334155; margin: 0 0 24px 0;">

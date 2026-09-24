@@ -91,8 +91,17 @@ test('the same holds under the permission model, the way the route runs it', () 
   expect(out.allowed).toBe('loaded');
 });
 
-test('the route switches node:sqlite off on every Node that has it', () => {
-  const src = fs.readFileSync(path.join(__dirname, '..', 'app', 'api', 'run-tests', 'route.ts'), 'utf8');
+/**
+ * Since roadmap 8.9 the execution core lives in `lib/test-sandbox/core.ts`,
+ * shared by the isolated runner (`runner/server.ts`) and the app's emulator-only
+ * path. The guards below read the core, and then hold that both callers use it
+ * rather than a copy of their own.
+ */
+const CORE = 'lib/test-sandbox/core.ts';
+const readRel = (rel: string) => fs.readFileSync(path.join(__dirname, '..', rel), 'utf8');
+
+test('the core switches node:sqlite off on every Node that has it', () => {
+  const src = readRel(CORE);
   expect(src).toMatch(/function sqliteSwitchSupported\(\): boolean/);
   expect(src).toMatch(/major > 22 \|\| \(major === 22 && minor >= 5\)/);
   expect(src).toContain("if (sqliteSwitchSupported()) args.push('--no-experimental-sqlite');");
@@ -103,9 +112,9 @@ test('the route switches node:sqlite off on every Node that has it', () => {
   expect(push).toBeLessThan(runner);
 });
 
-test('the route refuses a denied built-in at bundle time and preloads the guard', () => {
-  const src = fs.readFileSync(path.join(__dirname, '..', 'app', 'api', 'run-tests', 'route.ts'), 'utf8');
-  expect(src).toContain("from '@/lib/sandbox-module-guard'");
+test('the core refuses a denied built-in at bundle time and preloads the guard', () => {
+  const src = readRel(CORE);
+  expect(src).toContain("from '../sandbox-module-guard'");
   const refuse = src.indexOf('sandboxDenied(p)');
   const external = src.indexOf('return { external: true }');
   expect(refuse, 'the bundler does not consult the denied list').toBeGreaterThan(-1);
@@ -113,4 +122,18 @@ test('the route refuses a denied built-in at bundle time and preloads the guard'
   expect(src).toContain('modGuardSource(');
   expect(src).toContain('modHooksSource(');
   expect(src).toMatch(/args\.push\(`--import=\$\{pathToFileURL\(modGuardPath\)\.href\}`\)/);
+});
+
+test('both places that execute a suite do it through the core, and neither keeps a copy', () => {
+  for (const rel of ['app/api/run-tests/route.ts', 'runner/server.ts']) {
+    const src = readRel(rel);
+    expect(src, `${rel} does not execute through the shared core`).toMatch(/executeSandboxRun\(/);
+    // A second spawn, bundler or guard writer in either file would be a copy
+    // that the guards above do not read.
+    expect(src, `${rel} spawns a process of its own`).not.toMatch(/from ['"](node:)?child_process['"]/);
+    expect(src, `${rel} bundles on its own`).not.toMatch(/import\(['"]esbuild['"]\)/);
+    expect(src, `${rel} writes a module guard of its own`).not.toContain('modGuardSource(');
+  }
+  // The runner never takes the unsandboxed fallback; only the app's emulator path may.
+  expect(readRel('runner/server.ts')).toContain('allowUnsandboxed: false');
 });

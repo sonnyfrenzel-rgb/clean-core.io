@@ -10,7 +10,7 @@
 
 ## 1. Executive Summary
 
-This document describes the security architecture and hardening measures implemented in the Clean-Core.io platform following a comprehensive security audit (Code Review 2026-06). Most critical and high-severity findings (P0/P1) have been remediated; the ones that remain **mitigated rather than closed** are called out below and in the code. Most importantly, the `/api/run-tests` runner is **defense-in-depth, not a complete isolation boundary** (see F-02), and the audit-pack signature still covers some client-editable fields. **Live test execution against a connected S/4HANA tenant is locked** (§7.1, gate `G0:R0`): the route refuses it before any measurement, and the interface says so wherever the path would otherwise be offered. It reopens only under the conditions listed there — a measurement passing is not one of them.
+This document describes the security architecture and hardening measures implemented in the Clean-Core.io platform following a comprehensive security audit (Code Review 2026-06). Most critical and high-severity findings (P0/P1) have been remediated; the ones that remain **mitigated rather than closed** are called out below and in the code. Since roadmap 8.9 generated tests no longer execute inside the API service: they run in an **isolated runner service** (own Cloud Run service, service account without roles, no secrets, internal ingress, egress through a VPC without NAT — §7), and a deployed app without that runner runs no tests at all. The Node-level guards inside the runner remain defense in depth, not a boundary of their own (see F-02), and the audit-pack signature still covers some client-editable fields. **Live test execution against a connected S/4HANA tenant is locked** (§7.1, gate `G0:R0`): the route refuses it before any measurement, and the interface says so wherever the path would otherwise be offered. It reopens only under the conditions listed there — a measurement passing is not one of them.
 
 ---
 
@@ -19,7 +19,7 @@ This document describes the security architecture and hardening measures impleme
 | ID | Finding | Severity | Status | Remediation |
 |----|---------|----------|--------|-------------|
 | F-01 | Live API keys in repository | **P0** | ✅ Resolved | Keys rotated; `.env.example` contains only placeholders. `.gitignore` enforces exclusion of `.env*` files. |
-| F-02 | Remote Code Execution via `/api/run-tests` | **P0** | ⚠️ Mitigated (not closed) | esbuild in-process bundling + Node Permission Model (`--permission`; no child-process/worker/native-addon escape) + a **network-egress guard** preloaded into the child (`__netguard.mjs`) that blocks the common JS egress paths (TCP, the `dgram` factory + `dgram.Socket` constructor, DNS, `fetch`, `process.binding`). This is **defense-in-depth, not a complete isolation boundary** — a code-level monkey-patch is not a kernel/infra guarantee, and Node's permission model does not restrict the network on the current runtime. Live test execution against a tenant is **locked** (§7.1, `G0:R0`). Underneath the lock, `S4_TEST_RUNNER_EGRESS_ENFORCED` declares an intent but does not grant it: the runtime probes the metadata endpoint and a public address first and refuses the run if either answers. The guard is preloaded on **every** run — it previously was not, because the same variable that unlocked live credentials also removed it. A fully isolated runner service is the roadmap gold standard (E08-F01-US01). |
+| F-02 | Remote Code Execution via `/api/run-tests` | **P0** | ⚠️ Mitigated (not closed) | Since roadmap 8.9 generated code executes only in the **isolated runner service** (`runner/`, §7): its own Cloud Run service with a service account without roles, no app secrets, `--ingress=internal`, invocable only by the app (`run.invoker`), and all egress through a VPC without NAT. A deployed app without `RUNNER_URL` refuses to run tests; the in-app child process exists only in an emulator build (local, CI) and is named `local-emulator` in the response and the receipt. Inside the runner the old layers stay as defense in depth: esbuild bundling with a single resolver, Node Permission Model, `--no-experimental-sqlite`, the module guard and the network guard (`__netguard.mjs`). What is not closed: the proof on the deployed profile (§7.2, authorized negative test) and an external review. Live test execution against a tenant is **locked** (§7.1, `G0:R0`); the old switch `S4_TEST_RUNNER_EGRESS_ENFORCED` and its egress probe are removed. |
 | F-03 | SAP credentials stored in cleartext | **P0** | ✅ Resolved | AES-256-GCM encryption via `S4_ENCRYPTION_KEY`. Credentials in server-only `s4_credentials` collection. |
 | F-04 | Missing admin check on email routes | **P1** | ✅ Resolved | `verifyAdminRequest()` + email format validation on all 3 mail routes. |
 | F-05 | SSRF filter bypass | **P1** | ✅ Resolved | Async DNS resolution, full IPv4/v6 CIDR blocking, `safeFetch()` with IP pinning and redirect re-validation. |
@@ -188,44 +188,54 @@ Firestore
 
 ---
 
-## 7. Test Runner Sandbox (F-02)
+## 7. Test Runner Sandbox (F-02) — the isolated runner (roadmap 8.9)
 
 ### Architecture
 ```
 Client (Testing Page)
   │
-  ▼  POST /api/run-tests { code, tests, s4Environment }
+  ▼  POST /api/run-tests { projectId, selectedTestIds, s4Environment, draftId? }
   │
-Server (API Route)
-  │  1. verifyRequestAuth(req)
-  │  2. Load esbuild (fail-closed if unavailable)
-  │  3. Resolve Node Permission Model flag (fail-closed if Node < 22.8)
-  │  4. Bundle user code via esbuild (in-process, no shell)
-  │  4a. s4Environment = "live"?  → LIVE_TEST_EXECUTION.locked → HTTP 403   ← §7.1, before any probe
-  │  5. (live only, never while locked) egress attestation, then S4 credentials via loadS4ConfigForUser(uid)
-  │  6. Spawn child process with --permission flag:
-  │     --allow-fs-read={sandboxDir,node_modules}
-  │     --allow-fs-write={sandboxDir}
-  │     → child_process, worker_threads, native addons: BLOCKED
-  │     --import __netguard.mjs
-  │     → outbound network (net/dgram/dns/fetch/process.binding): BLOCKED  ← F-01 egress guard
-  │  7. Parse TAP output, return results
+App (API route, public service)
+  │  1. verifyRequestAuth · assertMfaSatisfied · assertAccountActive · rate limit
+  │  2. s4Environment = "live" && LIVE_TEST_EXECUTION.locked → HTTP 403   ← §7.1, before any work
+  │  3. owner check; code and suite are the project's (or the caller's repair draft) — never the body
+  │  4. resolveRunnerTarget (lib/test-runner-client.ts):
+  │       mock: RUNNER_URL → isolated runner · emulator build → local-emulator · else HTTP 503
+  │       live: RUNNER_LIVE_URL + RUNNER_SERVICE_ACCOUNT + S4_PROXY_BASE_URL + key → live runner · else 403
+  │  5. (live) assertS4TenantAccess → capability {project, account, tenant host, run, ≤10 min},
+  │     registered in s4_proxy_capabilities, deleted when the run returns
+  │  6. POST <runner>/run with the app's Google ID token (audience = runner URL)
+  │  7. check the report: SHA-256 of every file and of the suite = what was sent, mode = asked for
+  │  8. verdicts + receipt (runner kind, K_REVISION, files digest) — mock runs only
   ▼
-  Ephemeral sandbox directory (cleaned up in finally block)
+Runner service (clean-core-runner / clean-core-runner-live, one image)
+     SA without roles · no secrets · ingress internal · run.invoker: the app only
+     egress: VPC runner-net without NAT (mock: nothing; live: the app via Private Google Access)
+     concurrency 1 · fresh temp dir per run, removed afterwards
+     child: node --permission --allow-fs-read/write=<run dir> --no-experimental-sqlite
+            --import __netguard.mjs --import __modguard.mjs   (defense in depth)
+     live only: loopback relay on 127.0.0.1 → the app's /api/s4-proxy/{capability}/…
+                (the relay adds the runner's ID token; the child holds no credential)
+
+App credential proxy (GET|HEAD /api/s4-proxy/{capability}/sap/…)
+     runner ID token (aud = app, email = RUNNER_SERVICE_ACCOUNT) · capability HMAC + expiry
+     · run still active and within 200 requests · tenant access re-checked
+     · stored connection still on the capability's host · paths below /sap/ only
+     · safeFetch, no redirects, 15 s, 8 MB · credentials added here, scrubbed from the answer
 ```
 
 ### Security Properties
-- **No shell execution**: `spawn()` with explicit args array, never `exec()` or shell strings.
-- **Common network-egress paths blocked**: a preloaded guard (`__netguard.mjs`, via `--import`) neutralises `net.Socket.prototype.connect`, `net.connect`/`createConnection`, the `dgram` factory and the `dgram.Socket` constructor (incl. `prototype.send`/`bind`/`connect`), global `fetch`, `process.binding`, and every `dns` entry point (c-ares `resolve*` + getaddrinfo `lookup` + `dns.promises` + `Resolver`, which bypass `net.Socket`) before the test bundle loads. This blocks the usual JS egress routes to the GCP metadata endpoint (`169.254.169.254`) and the network, but it is a **code-level guard, not a kernel/infra boundary** — Node's permission model is explicitly not a security guarantee against malicious code, so treat the runner as defense-in-depth, not a sandbox for untrusted code. The guard is loaded on every run. On a live run that has passed the egress attestation it narrows to the `S4_HOST_ALLOWLIST` host suffixes instead of being removed — the tenant call is permitted, everything else still throws, and the metadata endpoint stays unreachable because an IP literal matches no host suffix. DNS is available on that narrowed path (the tenant host has to resolve), which is a real reduction and is why live mode requires the infrastructure policy underneath it. A fully isolated runner service remains the roadmap gold standard.
-- **Fail-closed**: Without esbuild or Node >= 22.8, route returns HTTP 500 (no silent unsafe fallback).
-- **Minimal environment**: Child process receives only `PATH`, `SYSTEMROOT` and `NODE_ENV=test`. S4 env vars would be added only on a permitted live run, which the lock (§7.1) rules out.
-- **S4 credentials**: Never from request body — always loaded server-side from encrypted store (F-03 closure).
-- **Output cap**: Stdout/stderr limited to prevent memory exhaustion.
-- **Timeout**: Child process killed after timeout.
+- **The boundary is the service, not the process.** The runner's service account has no roles; the image contains Node, the bundled runner and esbuild — no app code, no `.env`, no secrets (`runner/Dockerfile`, `runner/Dockerfile.dockerignore`). A generated test that got past every Node-level guard would find no credential in its environment or file system and no network path out of the mock runner. The metadata server stays reachable from any Cloud Run instance; the token it hands out belongs to an account that may do nothing.
+- **"Dort oder gar nicht".** Without `RUNNER_URL` a deployed app refuses to run tests (HTTP 503). The local path exists only when the build itself was made for the Firebase emulator, and is named `local-emulator` wherever its result appears.
+- **What ran is what was sent.** The runner reports the SHA-256 of every file and of the suite plus its `K_REVISION`; the app refuses a report that does not match and writes the digest and the revision into the receipt (`lib/test-receipt.ts`, `runner`).
+- **No credential ever reaches a runner.** A live run carries a capability; the credential proxy adds the credentials per request, for one host, one run, ten minutes at most, read-only methods.
+- **Node-level layers, kept as defense in depth.** Bundler with one resolver (imports must stay inside the run directory, bare packages become a stub), Permission Model (file system scoped to the run directory; no child processes, workers or addons), `--no-experimental-sqlite`, the module guard (`lib/sandbox-module-guard.ts`) and the network guard (`lib/test-sandbox/net-guard.ts`: closed on mock runs; on live runs exactly one loopback port, DNS closed on both). None of these is claimed as a boundary.
+- **No shell execution, minimal environment, output cap, 15 s timeout, 256 MB child heap.**
 
 ### Requirements
-- Node.js >= 22.8 (for `--experimental-permission` / `--permission` flag)
-- `esbuild` in devDependencies
+- Node.js >= 22.8 in the runner image (`node:22-slim`); the runner refuses to execute without the Permission Model.
+- `esbuild` in the runner image (`runner/package.json`, pinned to the app's version).
 
 ### 7.1 Locked path: live test execution (`G0:R0`)
 
@@ -234,20 +244,22 @@ either fixed or locked with its reason named. This one is locked. The definition
 `lib/locked-paths.ts` (`LIVE_TEST_EXECUTION`); `tests/locked-paths-guard.spec.ts` fails when this section and
 that definition say different things.
 
-**Closed.** Executing generated tests against a connected S/4HANA tenant: POST /api/run-tests with s4Environment "live", which would put decrypted tenant credentials into the test child process.
+**Closed.** Executing generated tests against a connected S/4HANA tenant: POST /api/run-tests with s4Environment "live", which would let generated code send requests to the tenant through the application credential proxy.
 
-**Open.** Running generated tests against mocks in the restricted test runner (a Node.js child process with guards, not an isolation boundary); checking a tenant connection, reading its OData metadata and one read-only OData call (/api/test-s4-connection, /api/fetch-s4-metadata, /api/test-s4-odata-read) — none of these executes generated code.
+**Open.** Running generated tests against mocks in the isolated test runner (its own Cloud Run service; a deployed app without it runs no tests); checking a tenant connection, reading its OData metadata and one read-only OData call (/api/test-s4-connection, /api/fetch-s4-metadata, /api/test-s4-odata-read) — none of these executes generated code.
 
-**Why.** Generated test code is untrusted and runs as a child process inside the API service. The guards around it (Node permission model, a preloaded network guard, an egress probe) are defense in depth, not an isolation boundary, and the service itself has open network egress. With tenant credentials inside that process, a generated test could send them anywhere the guard misses (review finding CR-15, story E08-F01-US01).
+**Why.** Generated test code is untrusted. Since roadmap 8.9 it runs in a separate runner service without roles, secrets or open network egress, and a live run reaches the tenant only through a proxy that holds the credentials itself; the guards inside the runner process (Node permission model, preloaded module and network guards) remain defense in depth, not an isolation boundary. What is not done yet is the proof on the deployed profile and an external review of the runner (review findings CR-09, CR-15).
 
-**What the attestation is.** `lib/runner-egress-attestation.ts` probes the cloud metadata endpoint and a
-public address from the running container. It is a measurement that keeps a function closed, not a
-substitute for isolation: two endpoints are a sample, not a boundary. That is why a passing probe does not
-reopen the path, and why the route checks the lock before it measures anything.
+**What changed with 8.9.** The path behind the lock is built: a live run executes in the isolated live
+runner, which never receives a credential; the app's credential proxy adds the credentials per request, for
+the one tenant host and the one run a capability names. The old switch — `S4_TEST_RUNNER_EGRESS_ENFORCED`
+together with an egress probe of two addresses (`lib/runner-egress-attestation.ts`), which put decrypted
+credentials into a child process of the API service — is removed, not merely unused. Even with this lock
+lifted, the route refuses a live run unless the live runner and the proxy are configured.
 
 **Reopens only when all of these hold:**
-- The test runner runs as its own short-lived service, separate from the API service, with a service account that holds nothing but what one run needs.
-- Its network egress is deny-by-default at the infrastructure level, with the tenant host as the only destination — and a CI check proves it on every deploy, not a probe of two addresses.
+- The isolated live runner and the credential proxy are deployed and configured (RUNNER_LIVE_URL, RUNNER_SERVICE_ACCOUNT, S4_PROXY_BASE_URL); without them the route refuses a live run even with this lock lifted.
+- The authorized negative test (tests/runner-isolation.spec.ts) has passed against the deployed runners: no foreign files, no secrets, no network beyond the app.
 - An external review of that runner is done and its findings are closed.
 - Sonny decides to reopen, and this entry, SECURITY.md §7.1 and the guard spec change in the same release.
 
@@ -257,10 +269,20 @@ tenant and does not send the request; the chatbot, the landing page, the knowled
 the whitepaper, the capability guide and the tenant-approval mail describe the connection check and name the
 lock. User notice, verbatim:
 
-> Running generated tests against a connected tenant is locked until the test runner has its own isolated service. The tenant connection check, the metadata read and the read-only OData call still work; tests run against mocks in the restricted test runner.
+> Running generated tests against a connected tenant is locked until the isolated live runner has passed its external review. The tenant connection check, the metadata read and the read-only OData call still work; tests run against mocks in the isolated test runner.
 
-**Tracked.** The isolation that would reopen it is its own roadmap item after 2.10 (`docs/ROADMAP.md`,
-`E08-F01-US01`). The preservation register (roadmap step 1.1) inherits this entry.
+**Tracked.** Roadmap 8.9 (`docs/ROADMAP.md`, CR-09, decision §9 no. 16) built the isolated runner; the
+proof on the deployed profile, the external review and the decision to reopen are what is left. The
+preservation register (roadmap step 1.1) inherits this entry.
+
+### 7.2 Authorized negative test of the deployed runner
+
+Not yet written. Roadmap 8.9 requires an authorized negative test against the deployed runner profile
+(`tests/runner-isolation.spec.ts`), and it is one of the reopening conditions in §7.1. It is still open:
+it has to be written and run by the owner against the deployed services, from a machine that can reach
+internal-ingress services of the project (`--ingress=internal` refuses traffic from outside the VPC), with
+an ID token of an account holding `run.invoker`. Until it has passed, the isolation is configured but not
+proven on the deployed profile.
 
 ---
 
@@ -273,7 +295,10 @@ lock. User notice, verbatim:
 | `NEXT_PUBLIC_APP_URL` | Yes | Self-referential URLs (prevents Host header injection) |
 | `S4_ENCRYPTION_KEY` | Yes (if S4 features used) | AES-256-GCM key for credential encryption |
 | `S4_HOST_ALLOWLIST` | Recommended | Comma-separated SAP host suffixes for SSRF allowlist |
-| `S4_TEST_RUNNER_EGRESS_ENFORCED` | No — not set in any deployment | States that runner egress is restricted by infrastructure. Grants nothing on its own, and while live test execution is locked (§7.1) it is not consulted at all |
+| `RUNNER_URL` | Yes, for test execution | URL of the isolated mock runner (`clean-core-runner`). Unset = a deployed app runs no tests (fail closed) |
+| `RUNNER_LIVE_URL` | No (live path locked) | URL of the isolated live runner (`clean-core-runner-live`). Unset = no live runs, even with the lock lifted |
+| `RUNNER_SERVICE_ACCOUNT` | With the live runner | The runners' service account; the credential proxy admits ID tokens of this account only |
+| `S4_PROXY_BASE_URL` | With the live runner | The app's own `run.app` URL — where the live runner reaches the credential proxy, and the proxy's token audience |
 | `FIREBASE_SERVICE_ACCOUNT_KEY` | For Admin SDK | JSON service account key |
 | `NEXT_PUBLIC_FIRESTORE_DB_ID` | Yes | Named Firestore database ID |
 
@@ -285,7 +310,7 @@ lock. User notice, verbatim:
 
 | Requirement | Value | Reason |
 |-------------|-------|--------|
-| Node.js | >= 22.8 | Permission Model for test runner sandbox (F-02) |
+| Node.js | >= 22.8 | Permission Model inside the isolated runner (F-02) |
 | CI Runner | Node 22 | `deploy.yml` uses `node-version: 22` |
 | Cloud Run SA | `Cloud Datastore User` | Firestore writes for quota enforcement (F-06) |
 
