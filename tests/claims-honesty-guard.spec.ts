@@ -566,3 +566,15 @@ test.describe('62c08912d745 · a service guide names the client that service spe
     }
   });
 });
+
+test.describe('64a43c210f49 · the read-only board does not promise a discussion', () => {
+  test('no topic of the board is called Q&A, and the lead says the posts are read-only', () => {
+    // QA review of 4b4586aff273: the list is headed "Announcements" on a
+    // read-only board, yet a "Technical Q&A" topic still filtered and badged a
+    // post there — an offer of questions and answers nobody can join.
+    const src = read('app/(app)/dashboard/page.tsx');
+    expect(src).not.toMatch(/label: 'Technical Q&A'/);
+    expect(src).not.toMatch(/⚙️ Technical Q&A/);
+    expect(src).toContain('Read-only posts from the Clean-Core team, filed by topic.');
+  });
+});

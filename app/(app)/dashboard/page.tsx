@@ -583,7 +583,7 @@ export default function Dashboard() {
       case 'technical':
         return (
           <span className="bg-blue-50 text-blue-700 border border-blue-100 px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider flex items-center gap-0.5 select-none font-mono">
-            ⚙️ Technical Q&A
+            ⚙️ Technical
           </span>
         );
       case 'general':
@@ -1559,7 +1559,7 @@ export default function Dashboard() {
                     {[
                       { id: 'all', label: 'All', count: forumPosts.length },
                       { id: 'announcements', label: 'Announcements', count: forumPosts.filter(p => p.pinned || p.category === 'announcements').length },
-                      { id: 'technical', label: 'Technical Q&A', count: forumPosts.filter(p => p.category === 'technical').length },
+                      { id: 'technical', label: 'Technical', count: forumPosts.filter(p => p.category === 'technical').length },
                       { id: 'general', label: 'General', count: forumPosts.filter(p => p.category === 'general').length },
                     ].filter(tab => tab.id === 'all' || tab.count > 0).map(tab => (
                       <button
@@ -1607,7 +1607,12 @@ export default function Dashboard() {
                   <div className="lg:col-span-2 space-y-5">
                     <div className="mb-2">
                       <h3 className="text-xs font-black text-gray-400 uppercase tracking-wider">Announcements</h3>
-                      <p className="text-[11px] text-gray-400 font-medium mt-0.5">Tap any entry to read it in full.</p>
+                      {/* The board is read-only posts by the Clean-Core team, each
+                          with a topic — not every topic is an announcement, and
+                          none of them is a discussion. The lead says so, and the
+                          "Technical" topic no longer promises a Q&A nobody can
+                          join (QA review of 4b4586aff273). */}
+                      <p className="text-[11px] text-gray-400 font-medium mt-0.5">Read-only posts from the Clean-Core team, filed by topic. Tap any entry to read it in full.</p>
                     </div>
                     
                     {filteredForumPosts.length === 0 ? (
