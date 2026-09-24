@@ -10,6 +10,57 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 
+## [v2.19.0] — 2026-09-24
+
+Der isolierte Test-Runner (8.9) ist gebaut und läuft, die Mails kommen bei Microsoft an,
+und die Vollprüfung von v2.18.0 ist abgearbeitet. Die neue Startseite und der Arbeitsraum
+für alle bleiben für 3.0 zurückgehalten.
+
+### Was alle bemerken
+
+- **Mails landen im Posteingang statt im Spam — bei Microsoft und Gmail.** Alle Mails an
+  Nutzer haben ein schlichtes Layout: Absätze, ein einziger sichtbarer Link am Ende, kein
+  großer Button, keine Emojis, immer mit Textteil. Die Adressbestätigung verlinkt auf
+  clean-core.io statt auf eine Firebase-Adresse. Im Seed-Test stieg Office 365 von 4 auf
+  7 von 8 Mails im Posteingang, Outlook.com von 1 auf 8 von 8; Gmail blieb bei 8 von 8.
+  GMX und web.de filtern weiter — dort zählt der Ruf des Absenders, nicht der Inhalt.
+- **Eine Überlast bei Gemini bricht die Analyse nicht mehr beim ersten Nein ab.** Meldet
+  das Modell „high demand“ (503), fragt der Server bis zu dreimal nach, wie bisher schon
+  bei einem Kontingent-Limit.
+- **Zwei offene Tabs überschreiben sich die Transformation nicht mehr.** Der Server
+  speichert Code, Testsuite und Status in einer Transaktion, geprüft gegen den Stand, auf
+  dem die Generierung begann; ein zwischenzeitlich geändertes Design führt zu einer
+  verständlichen Ablehnung statt zu stillem Überschreiben.
+- **Gesperrte Konten verlieren den Zugriff sofort,** nicht erst, wenn ihr Anmelde-Token
+  abläuft. Die Firestore-Regeln lesen den Kontostatus; ausgerollt am 24.09.2026.
+- **Die Routenkarte zeigt die signierte Konfidenz,** nie mehr eine Zahl aus dem
+  Modelltext.
+- **„Nicht bestimmt“ verschwindet nicht mehr** in der A–D-Anzeige der Prozesskarte.
+- **Der BPMN-Editor speichert, was auf dem Canvas steht,** auch wenn man direkt nach
+  einer Änderung speichert.
+
+### Test-Runner (8.9)
+
+- Generierte Tests laufen in einem eigenen Cloud-Run-Dienst ohne Rollen, ohne Secrets und
+  ohne offenes Netz; ein Live-Lauf erreicht den Tenant nur über einen Proxy der App, der die
+  Zugangsdaten selbst einsetzt. Der Live-Pfad bleibt gesperrt, bis der Negativtest auf dem
+  deployten Profil, die IAM-Prüfung und eine belegte eigene Prüfung vorliegen (Entscheidung
+  24.09.2026: keine externe Prüfung).
+- Der Selbsttest der Runner läuft aus der Admin-Konsole mit einem Klick; „unvollständig“
+  sieht nie wie „bestanden“ aus.
+
+### Hinter den Kulissen
+
+- Der Security-Agent prüft seine Kandidaten entdoppelt und in Stapeln mit dem Code an den
+  zitierten Zeilen; was er nicht prüfen konnte, nennt er beim Namen, und der Bericht sagt
+  dann nicht mehr „Risiko niedrig“. Budget 5 USD je Release.
+- Der UX-Agent misst am verbindlichen Zielbild, den Mockups 2.8.
+- Tests mit dem Firebase-Client laufen nur noch gegen den Emulator und mit Wegwerfkonten.
+- Die automatische Analyse per URL-Parameter ist entfernt; das Senden an das Modell prüft
+  immer dieselben Voraussetzungen wie der Button.
+- Eine Transformation ohne gültige Testsuite wird nicht gespeichert.
+- Ein `JOIN` in einem SQL-String erzeugt keine erfundene Tabellenabhängigkeit mehr.
+
 ## [v2.18.0] — 2026-09-24
 
 Phase 8 der Roadmap, „Entscheiden und Übergeben", bis auf den isolierten Test-Runner

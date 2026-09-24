@@ -3,6 +3,15 @@
 Offene Punkte, jüngster Stand zuerst. Kurz gehalten: was, warum, und wie dringend.
 Ältere Abschnitte bleiben stehen, solange etwas darin offen ist.
 
+## Am 24.09.2026 — v2.19.0 vorbereitet, offen danach
+
+- **Ausgeliefert mit v2.19.0:** Integration von 3.0 (hinter dem Admin-Schalter) und 8.9, Mail-Layout (3.0.9), 3.0.11, 3.0.12 (Regeln live seit 24.09., `32e1970bb02e…`), Vollprüfung von v2.18.0 abgearbeitet, Gemini-Retry bei 503, Security-Pipeline mit Stapelprüfung, UX-Agent auf Mockups 2.8.
+- **Nach dem Release:** Produktions-Runner deployen, `run.invoker` für `clean-core-runner` und `clean-core-runner-live` (Sonny), `RUNNER_URL_MAIN`/`RUNNER_LIVE_URL_MAIN`/`S4_PROXY_BASE_URL_MAIN` setzen, Selbsttest auf dev und main (Sonny klickt), Ergebnis in SECURITY.md §7.2.
+- **Zurückgehalten für 3.0:** Landingpage mit Zeitstrahl, Showroom und Banner gestrichen, öffentliche Texte (Branch `feat/3.0.6-landing`).
+- **Block D vor 3.0:** Lückenliste gegen DESIGN.md (193 von 230 UI-Dateien ohne cc-Komponente); wartet auf die Entscheidungen E-1 bis E-7.
+- **Klein, danach:** `runs/create` prüft den Typ von `uploadedFileName` nicht (nur eigenes Projekt betroffen); die Refund-Tests in `starter-example-quota.spec.ts` brauchen dann einen anderen Fehlerpunkt. Mail-Nachmessung GMX/web.de in etwa einer Woche, höchstens 20 Mails.
+- **Übertragen, ungesichtet:** 2 kritische QA-Befunde zu `usage-report.yml` (OIDC im Job mit Laufzeit-Abhängigkeiten), 16 hohe und rund 1.500 mittlere aus den Vollprüfungen.
+
 ## Am 18.09.2026 entschieden und abgearbeitet
 
 Die sieben Entscheidungen unten sind getroffen (`docs/ROADMAP.md` §9, „Am 18.09.2026
