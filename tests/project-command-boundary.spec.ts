@@ -646,6 +646,28 @@ test.describe('the live emulator rules refuse every one of the six', () => {
     });
   }
 
+  // QA review of 4b4586aff273 (aed46da8edaf): `generationBinding` — which
+  // contract a generated stand followed — is written only by the contract
+  // route with the Admin SDK. The source check in
+  // `tests/generation-follows-contract.spec.ts` shows the rules do not name
+  // it; this is the rules actually refusing it.
+  test(`the owner's own browser cannot write generationBinding`, async () => {
+    const ref = doc(db, 'projects', PROJECT_ID);
+    const code = await refused(
+      updateDoc(ref, {
+        generationBinding: {
+          contractFingerprint: 'f'.repeat(64),
+          codeSha256: 'b'.repeat(64),
+          runId: 'run-cmd-1',
+          boundAt: '2026-09-24T08:00:00.000Z',
+        },
+      }),
+    );
+    expect(code, 'generationBinding was written from the browser').toBe('permission-denied');
+    const snap = await getDoc(ref);
+    expect(snap.data()?.generationBinding, 'nothing slipped through').toBeUndefined();
+  });
+
   test('and the refusal is the rule, not a broken document or a lost session', async () => {
     const ref = doc(db, 'projects', PROJECT_ID);
     expect(auth.currentUser?.uid, 'the owner is still the signed-in user').toBe(ownerUid);
