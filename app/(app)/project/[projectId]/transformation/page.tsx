@@ -756,7 +756,15 @@ CMD ["node", "srv/service.js"]`
         // The transaction may have committed without the answer reaching us.
         // Read the project again instead of claiming either outcome.
         const reread = await loadProjectAndHydrate(projectId as string).catch(() => null);
-        if (reread?.generatedCode !== packaged) {
+        // All of it, not the code alone: an earlier run can have left the same
+        // code with another suite (QA review of 35f67702209b, 546d27f6f092).
+        const rereadSuite = reread?.testSuite as { spec?: unknown; config?: unknown } | undefined;
+        const holdsThisPackage =
+          reread?.generatedCode === packaged &&
+          reread?.status === 'transformed' &&
+          rereadSuite?.spec === tests.spec &&
+          (rereadSuite?.config ?? '') === (tests.config ?? '');
+        if (!reread || !holdsThisPackage) {
           throw new Error(`${err.message} The project does not hold this package now — reload the stage to see which version is stored before generating again.`);
         }
         stored = { generatedCode: packaged, testSuite: reread.testSuite, status: String(reread.status ?? '') };

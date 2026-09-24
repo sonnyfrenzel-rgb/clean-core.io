@@ -362,3 +362,14 @@ test('the design is compared beside the contract fingerprint, not inside it', ()
   const revision = readFileSync('lib/generation-revision.ts', 'utf8');
   expect(revision).toContain('`design=${digestOf(state.solutionDesign)}`');
 });
+
+test('a lost answer counts as stored only when code, suite and status all match what was sent (546d27f6f092)', () => {
+  const page = readFileSync('app/(app)/project/[projectId]/transformation/page.tsx', 'utf8');
+  const recovery = page.slice(page.indexOf('if (!(err instanceof CommandAnswerLostError)) throw err;'));
+  const check = recovery.slice(0, recovery.indexOf('stored = {'));
+  expect(check).toContain('reread?.generatedCode === packaged');
+  expect(check).toContain("reread?.status === 'transformed'");
+  expect(check).toContain('rereadSuite?.spec === tests.spec');
+  expect(check).toContain("(rereadSuite?.config ?? '') === (tests.config ?? '')");
+  expect(check).toMatch(/if \(!reread \|\| !holdsThisPackage\)/);
+});
