@@ -17,6 +17,17 @@ dazu Schritt A aus dem Security-Audit von v2.19.0 und die Befunde der Vollprüfu
 
 ### Was alle bemerken
 
+- **Der Prozess aus objektorientiertem Code und aus Modulpools ist vollständig.**
+  Ein Methodenaufruf war bisher kein Schritt: Rief ein Report `go_x->run( )` auf eine
+  Klasse im selben Quelltext, fehlte der ganze Methodenrumpf im Prozess. Jetzt öffnet er
+  einen Teilprozess wie ein `PERFORM`, und ein Aufruf auf eine fremde Methode steht als
+  Aufruf da. Dynpro-Module und Funktionsbausteine sind Einstiege, auch wenn die Quelle
+  zusätzlich ein Ereignis wie `LOAD-OF-PROGRAM` schreibt. Eine per `PERFORM` gerufene
+  FORM erscheint nicht mehr zusätzlich als eigener Start, und ein Popup
+  (`MESSAGE … TYPE 'I'`) ist ein Schritt, den der Benutzer bestätigt. Gemessen an einem
+  neuen Benchmark aus 200 konstruierten ABAP-Fällen (`tests/prozess-benchmark/`):
+  Knoten-Treffer über eingefügte Programme mit Includes von 61,3 % auf 69,4 %, auf der
+  Prüfhälfte, die bei der Entwicklung verdeckt blieb, von 61,9 % auf 69,1 %.
 - **Die sieben Stufen haben einen Kopf.** Jede Stufe trägt ihren Namen aus derselben
   Liste wie der Stepper, in 22 px / 800, mit neutralem Icon statt grüner Blase und
   „Back to workspace" darüber — der Link führt in die Sicht und Ebene zurück, aus der
