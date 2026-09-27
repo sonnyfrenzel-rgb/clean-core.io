@@ -809,3 +809,24 @@ test('Wortwahl — SAP-Standardtabellen und -felder heißen fachlich, mit dem ri
   expect(satzAn(code, 5).join(' ')).toContain('der angegebenen Bestellung');
   expect(satzAn(code, 6).join(' ')).toContain('Lieferantennummer der Bestellung');
 });
+
+test('F11/F4 — Kettenausgabe im Zweig ohne zweiten Satz; ein Dialogaufruf ist keine Datenbankoperation', () => {
+  const code = quelle(
+    'REPORT z_nachtrag.',
+    'START-OF-SELECTION.',
+    '  LOOP AT gt_pos INTO gs_pos.',
+    "    IF p_test = 'X'.",
+    "      WRITE: / gs_pos-matnr, gs_pos-werks, 'TEST'.",
+    '      CONTINUE.',
+    '    ENDIF.',
+    '  ENDLOOP.',
+    '  READ TABLE gt_pos INTO gs_pos INDEX 1.',
+    '  IF sy-subrc <> 0.',
+    "    MESSAGE s001(zz).",
+    '    RETURN.',
+    '  ENDIF.',
+    "  CALL TRANSACTION 'ZANZEIGE' AND SKIP FIRST SCREEN.",
+  );
+  expect(satzAn(code, 5).filter((s) => /werden ausgegeben/.test(s))).toEqual([]);
+  expect(satzAn(code, 10).join(' ')).not.toContain('Datenbankoperation');
+});

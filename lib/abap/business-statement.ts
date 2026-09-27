@@ -819,7 +819,7 @@ function selectSentence(statement: AbapStatement, statements: readonly AbapState
       // „das Feld …", und die Tabelle steht mit Namen da statt „des Satzes".
       const owner = entity ? genitivePhrase(entity) : `aus ${rawFrom ?? 'der Tabelle'}`;
       const core = known && entity
-        ? `${enumerate(named)} ${genitivePhrase(entity)}${restriction} ${named.length > 1 ? 'werden' : 'wird'} gelesen.`
+        ? `${named.length === 1 ? capitalize(nounPhrase(fields[0])) : enumerate(named)} ${genitivePhrase(entity)}${restriction} ${named.length > 1 ? 'werden' : 'wird'} gelesen.`
         : known && named.length === 1
           ? `${capitalize(nounPhrase(fields[0]))} ${owner}${restriction} wird gelesen.`
           : named.length > 1
@@ -950,6 +950,9 @@ function isDbWrite(statement: AbapStatement, tables: ReadonlySet<string>): boole
   if (/^(?:UPDATE|MODIFY|INSERT|DELETE)\b/i.test(statement.text) && !/^MODIFY\s+ENTITIES\b/i.test(statement.text)) {
     return !writesInternally(statement, tables);
   }
+  // Ein CALL TRANSACTION ohne Bilddaten ist ein Dialogaufruf — ob dort
+  // geschrieben wird, entscheidet der Benutzer, nicht dieser Code (F4).
+  if (/^CALL\s+TRANSACTION\b/i.test(statement.text)) return /\bUSING\b/i.test(statement.text);
   return true;
 }
 
@@ -2712,8 +2715,10 @@ export function buildBusinessStatements(source: string): BusinessStatement[] {
     for (const draft of branches) {
       out.push(build(draft));
       for (const anchor of draft.anchors.slice(1)) {
-        const covered = statements.find((statement) => statement.lineStart === anchor.lineStart);
-        if (covered) inBranch.add(covered.index);
+        // Eine Kette `WRITE: / a, b.` sind mehrere Anweisungen auf derselben Zeile.
+        for (const covered of statements) {
+          if (covered.lineStart === anchor.lineStart && covered.lineEnd === anchor.lineEnd) inBranch.add(covered.index);
+        }
       }
     }
   }
