@@ -31,7 +31,10 @@ const OUT = outArg > 0 ? process.argv[outArg + 1] : join(KORPUS_ROOT, 'results.j
 // Der Benchmark bekommt sein Manifest bei jedem Lauf aus seinen Ordnern; der
 // Referenzkorpus behält sein eigenes (dort sind keine BM-Ordner).
 const manifestPath = join(KORPUS_ROOT, 'manifest.json');
-const benchmarkIds = readdirSync(join(KORPUS_ROOT, 'cases')).filter((name) => /^BM-\d{3}$/.test(name)).sort();
+// Ein Ordner ohne expected.json ist ein Fall, der noch geschrieben wird — nicht messen.
+const benchmarkIds = readdirSync(join(KORPUS_ROOT, 'cases'))
+  .filter((name) => /^BM-\d{3}$/.test(name) && existsSync(join(KORPUS_ROOT, 'cases', name, 'expected.json')))
+  .sort();
 const ONLY = process.env.BM_RANGE?.split('-').map(Number);
 const ids = ONLY ? benchmarkIds.filter((id) => Number(id.slice(3)) >= ONLY[0] && Number(id.slice(3)) <= ONLY[1]) : benchmarkIds;
 if (ids.length > 0) {
