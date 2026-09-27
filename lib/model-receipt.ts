@@ -115,6 +115,16 @@ export interface ModelReceiptClaims {
   byok: boolean;
   /** Issued at, milliseconds since the epoch. */
   iat: number;
+  /**
+   * The model stage the call was made under (`lib/model-stages.ts`), when the
+   * caller named one. Roadmap 17.10, QA review of 8f9ea35a000e (33a42c475f1a):
+   * a store that belongs to one stage must be able to refuse a receipt minted
+   * under another, or a switched-off stage is reachable with a receipt from a
+   * stage that is on. Absent — not `null` — when no stage was named, so every
+   * receipt issued before this field existed still verifies byte for byte:
+   * the canonical form of a claim set without the key is unchanged.
+   */
+  stage?: string;
 }
 
 export interface ModelReceipt extends ModelReceiptClaims {
@@ -144,6 +154,8 @@ export function issueModelReceipt(
     byok: boolean;
     /** Only for tests that need a fixed clock. */
     issuedAt?: number;
+    /** The model stage the call was made under, when there is one. */
+    stage?: string;
   },
   key: string,
 ): ModelReceipt {
@@ -155,6 +167,7 @@ export function issueModelReceipt(
     modelId: args.modelId,
     byok: args.byok,
     iat: args.issuedAt ?? Date.now(),
+    ...(typeof args.stage === 'string' ? { stage: args.stage } : {}),
   };
   return { ...claims, mac: macOf(claims, key) };
 }
@@ -172,7 +185,9 @@ export type ModelReceiptRefusal =
   /** Issued over different text than the narrative in this request. */
   | 'text-mismatch'
   | 'expired'
-  | 'issued-in-the-future';
+  | 'issued-in-the-future'
+  /** Issued under another model stage than the store asking requires — or under none. */
+  | 'wrong-stage';
 
 export type ModelReceiptVerdict =
   | { ok: true; receipt: ModelReceipt }
@@ -191,7 +206,18 @@ export type ModelReceiptVerdict =
  */
 export function verifyModelReceipt(
   candidate: unknown,
-  opts: { uid: string; text: string; key: string; now?: number },
+  opts: {
+    uid: string;
+    text: string;
+    key: string;
+    now?: number;
+    /**
+     * The model stage the receipt must have been issued under. Omitted, any
+     * receipt verifies as before — `/api/runs/create` and the naming route do
+     * not ask. Given, a receipt without a stage or with another one is refused.
+     */
+    stage?: string;
+  },
 ): ModelReceiptVerdict {
   if (candidate === null || candidate === undefined) return { ok: false, refusal: 'absent' };
   if (typeof candidate !== 'object' || Array.isArray(candidate)) return { ok: false, refusal: 'malformed' };
@@ -205,14 +231,16 @@ export function verifyModelReceipt(
     typeof r.byok !== 'boolean' ||
     typeof r.iat !== 'number' ||
     !Number.isFinite(r.iat) ||
-    typeof r.mac !== 'string'
+    typeof r.mac !== 'string' ||
+    (r.stage !== undefined && typeof r.stage !== 'string')
   ) {
     return { ok: false, refusal: 'malformed' };
   }
   if (r.v !== MODEL_RECEIPT_VERSION) return { ok: false, refusal: 'unsupported-version' };
 
   // Rebuilt rather than spread: a receipt carrying extra keys cannot smuggle
-  // them past the MAC, because the MAC is taken over exactly these seven.
+  // them past the MAC, because the MAC is taken over exactly these seven —
+  // and the stage, when the receipt carries one.
   const claims: ModelReceiptClaims = {
     v: MODEL_RECEIPT_VERSION,
     uid: r.uid,
@@ -221,6 +249,7 @@ export function verifyModelReceipt(
     modelId: r.modelId,
     byok: r.byok,
     iat: r.iat,
+    ...(typeof r.stage === 'string' ? { stage: r.stage } : {}),
   };
 
   if (!timingSafeEqualHex(macOf(claims, opts.key), r.mac)) return { ok: false, refusal: 'forged' };
@@ -232,6 +261,7 @@ export function verifyModelReceipt(
   const now = opts.now ?? Date.now();
   if (claims.iat - now > MODEL_RECEIPT_MAX_SKEW_MS) return { ok: false, refusal: 'issued-in-the-future' };
   if (now - claims.iat > MODEL_RECEIPT_MAX_AGE_MS) return { ok: false, refusal: 'expired' };
+  if (opts.stage !== undefined && claims.stage !== opts.stage) return { ok: false, refusal: 'wrong-stage' };
 
   return { ok: true, receipt: { ...claims, mac: r.mac } };
 }

@@ -8,9 +8,11 @@ import {
   modelAbsenceReason,
   offeredModelStages,
 } from '../lib/model-stages';
+import { issueModelReceipt, verifyModelReceipt } from '../lib/model-receipt';
 import {
   EVIDENCE_KEPT,
   STATEMENT_COST_LINE,
+  STATEMENT_COST_LINE_BYOK,
   STATEMENT_SOURCE_NAME,
   STATEMENT_STAGE,
   applyStatementProposal,
@@ -246,5 +248,42 @@ test.describe('outside every signature', () => {
     const src = read('lib/statement-proposal-client.ts');
     expect(src).toMatch(/callGeminiWithReceipt\(prompt, PRODUCT_GEMINI_MODEL, true, STATEMENT_STAGE, signal\)/);
     expect(src).not.toMatch(/@google\/genai|GEMINI_API_KEY/);
+  });
+});
+
+test.describe('QA review of 8f9ea35a000e', () => {
+  const KEY = 'test-key-for-the-stage-binding-of-model-receipts';
+  const uid = 'u-1';
+  const text = '{"statements":[]}';
+
+  test('33a42c475f1a: a receipt is bound to its model stage, and the statements store asks for its own', () => {
+    const fromNaming = issueModelReceipt({ uid, text, modelId: 'gemini-3.8-flash', byok: false, stage: 'naming' }, KEY);
+    const fromStatements = issueModelReceipt({ uid, text, modelId: 'gemini-3.8-flash', byok: false, stage: 'statements' }, KEY);
+    const withoutStage = issueModelReceipt({ uid, text, modelId: 'gemini-3.8-flash', byok: false }, KEY);
+
+    expect(verifyModelReceipt(fromNaming, { uid, text, key: KEY, stage: 'statements' })).toEqual({ ok: false, refusal: 'wrong-stage' });
+    expect(verifyModelReceipt(withoutStage, { uid, text, key: KEY, stage: 'statements' })).toEqual({ ok: false, refusal: 'wrong-stage' });
+    expect(verifyModelReceipt(fromStatements, { uid, text, key: KEY, stage: 'statements' }).ok).toBe(true);
+    // The stage is signed: rewriting it breaks the MAC.
+    expect(verifyModelReceipt({ ...fromNaming, stage: 'statements' }, { uid, text, key: KEY, stage: 'statements' }))
+      .toEqual({ ok: false, refusal: 'forged' });
+  });
+
+  test('33a42c475f1a: callers that do not ask for a stage verify as before — runs/create and naming keep their behaviour', () => {
+    const withoutStage = issueModelReceipt({ uid, text, modelId: 'gemini-3.8-flash', byok: false, issuedAt: 1_000 }, KEY);
+    expect(Object.keys(withoutStage)).not.toContain('stage');
+    expect(verifyModelReceipt(withoutStage, { uid, text, key: KEY, now: 2_000 }).ok).toBe(true);
+    const analyze = issueModelReceipt({ uid, text, modelId: 'gemini-3.8-flash', byok: false, stage: 'analyze' }, KEY);
+    expect(verifyModelReceipt(analyze, { uid, text, key: KEY }).ok).toBe(true);
+  });
+
+  test('33a42c475f1a: the route asks for the statements stage, and the proxy signs the stage it was called under', () => {
+    expect(read('app/api/projects/[projectId]/statement-proposal/route.ts')).toMatch(/stage: STATEMENT_STAGE,/);
+    expect(read('app/api/gemini/route.ts')).toMatch(/\.\.\.\(stage !== undefined \? \{ stage \} : \{\}\)/);
+  });
+
+  test('bf2518569d73: the line for an account with its own key names the hourly limit as well', () => {
+    expect(STATEMENT_COST_LINE_BYOK).toMatch(/own Gemini key/);
+    expect(STATEMENT_COST_LINE_BYOK).toMatch(/hourly limit on model calls/);
   });
 });

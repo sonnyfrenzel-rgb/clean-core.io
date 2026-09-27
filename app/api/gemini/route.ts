@@ -338,7 +338,10 @@ export async function POST(request: NextRequest) {
     }
 
     const receipt = issueModelReceipt(
-      { uid: decodedToken.uid, text, modelId: model, byok: !!byokKey },
+      // The stage goes into the receipt when the caller named one — it was
+      // validated above — so a store of one stage can refuse a receipt of
+      // another (QA review of 8f9ea35a000e, 33a42c475f1a).
+      { uid: decodedToken.uid, text, modelId: model, byok: !!byokKey, ...(stage !== undefined ? { stage } : {}) },
       signingKey,
     );
 

@@ -15,6 +15,7 @@ import { verifyModelReceipt } from '@/lib/model-receipt';
 import { MAX_ANSWER_LENGTH, validateStatementAnswer } from '@/lib/business-statement-prompt';
 import {
   STATEMENT_PROPOSAL_FORMAT_VERSION,
+  STATEMENT_STAGE,
   isStatementProposalRecord,
   statementProposalContextOf,
   type StatementProposalRecord,
@@ -240,7 +241,16 @@ export async function POST(
         { status: 503 },
       );
     }
-    const verdict = verifyModelReceipt(body.receipt, { uid: gate.uid, text: body.text, key });
+    const verdict = verifyModelReceipt(body.receipt, {
+      uid: gate.uid,
+      text: body.text,
+      key,
+      // Only a call made under the statements stage may be stored as its
+      // proposal: the stage switch is enforced by `/api/gemini`, and a receipt
+      // from another stage would walk around it (QA review of 8f9ea35a000e,
+      // 33a42c475f1a).
+      stage: STATEMENT_STAGE,
+    });
     if (!verdict.ok) {
       return NextResponse.json(
         {
