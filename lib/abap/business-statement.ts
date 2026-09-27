@@ -1173,18 +1173,66 @@ function outcomeOf(setter: AbapStatement | null, statements: readonly AbapStatem
 function subrcOutcome(statements: readonly AbapStatement[], index: number, variable = 'sy-subrc', value = '0'): SubrcOutcome {
   let from = index;
   if (!/^sy-subrc$/i.test(variable)) {
-    const needle = variable.toLowerCase();
-    from = -1;
-    for (let i = index - 1; i >= 0; i -= 1) {
-      const copy = /^(?:DATA\()?([A-Za-z0-9_]+)\)?\s*=\s*sy-subrc\s*$/i.exec(statements[i].text);
-      if (copy && copy[1].toLowerCase() === needle) {
-        from = i;
-        break;
-      }
-    }
-    if (from < 0) return neutralOutcome(value);
+    const copy = subrcCopyBefore(statements, index, variable);
+    if (copy === null) return neutralOutcome(value);
+    from = copy;
   }
   return outcomeOf(subrcSetter(statements, from), statements, value);
+}
+
+/**
+ * Die Kopie `variable = sy-subrc`, deren Wert an der Stelle `index` noch in
+ * `variable` steht — ihr Index, oder `null`.
+ *
+ * Rückwärts bis zur letzten Anweisung, die `variable` schreibt. Ist das die
+ * Kopie, trägt die Variable das `sy-subrc` ihrer setzenden Anweisung. Ist es
+ * etwas anderes — `lv_rc = 4`, `CLEAR lv_rc`, `… INTO lv_rc`, ein
+ * `IMPORTING … = lv_rc` —, hält sie etwas anderes, und „Ohne Berechtigung"
+ * wäre geraten (QA 23c5c0362148). Eine Kopie in einem inneren Block (`IF …
+ * lv_rc = sy-subrc. ENDIF.`) ist vielleicht nie gelaufen und zählt ebenso
+ * wenig; der Anfang der Routine beendet die Suche.
+ */
+function subrcCopyBefore(statements: readonly AbapStatement[], index: number, variable: string): number | null {
+  const name = escapeForRegExp(variable);
+  const copy = new RegExp(`^(?:DATA\\()?${name}\\)?\\s*=\\s*sy-subrc\\s*$`, 'i');
+  const writes = [
+    new RegExp(`^(?:DATA\\()?${name}\\)?\\s*(?:[-+*/]|&&)?=(?!=)`, 'i'),
+    new RegExp(`^(?:CLEAR|FREE|REFRESH)\\b[^.]*\\b${name}\\b`, 'i'),
+    new RegExp(`\\b(?:TO|INTO)\\s+(?:@?DATA\\()?@?${name}\\b`, 'i'),
+    new RegExp(`\\b(?:IMPORTING|CHANGING|RECEIVING)\\b[\\s\\S]*=\\s*(?:DATA\\()?${name}\\b`, 'i'),
+  ];
+  let depth = 0;
+  for (let i = index - 1; i >= 0; i -= 1) {
+    const statement = statements[i];
+    const keyword = statement.keyword.toUpperCase();
+    if (/^(?:FORM|METHOD|FUNCTION|MODULE)$/.test(keyword) || isEvent(statement)) return null;
+    // Ein Nachbarzweig (`ELSE`, `WHEN` …) läuft nicht vor diesem, sondern
+    // statt seiner: weiter vor dem Kopf des ganzen Blocks.
+    // Ein `CATCH` kommt aus einem Versuch, der irgendwo abgebrochen ist: was
+    // davor in der Variablen steht, sagt der Code nicht.
+    if (depth === 0 && /^(?:CATCH|CLEANUP)$/.test(keyword)) return null;
+    if (depth === 0 && /^(?:ELSE|ELSEIF|WHEN)$/.test(keyword)) {
+      let nested = 0;
+      let j = i - 1;
+      for (; j >= 0; j -= 1) {
+        const k = statements[j].keyword.toUpperCase();
+        if (/^(?:ENDIF|ENDCASE)$/.test(k)) nested += 1;
+        else if (/^(?:IF|CASE)$/.test(k)) {
+          if (nested === 0) break;
+          nested -= 1;
+        }
+      }
+      if (j < 0) return null;
+      i = j;
+      continue;
+    }
+    const loopSelect = keyword === 'SELECT' && !/\bSINGLE\b|\bTABLE\b/i.test(statement.text);
+    if (CLOSERS.has(keyword)) depth += 1;
+    else if (depth > 0 && (OPENERS[keyword] !== undefined || loopSelect)) depth -= 1;
+    if (copy.test(statement.text)) return depth === 0 ? i : null;
+    if (writes.some((pattern) => pattern.test(statement.text))) return null;
+  }
+  return null;
 }
 
 /** Der Nebensatz zu `sy-subrc = value` an dieser Stelle — für `conditionClause`. */
@@ -1234,13 +1282,13 @@ function guardSentence(
   const initial = /^IF\s+(\S+)\s+IS\s+INITIAL\s*$/i.exec(head.text);
   // Ein `DATA(lv_auth_result) = sy-subrc.` ist eine Kopie, kein anderer Wert —
   // der Wächter dahinter prüft dieselbe Sache und wird auch so gelesen.
-  const subrcNames = new Set(['sy-subrc']);
-  for (const other of statements.slice(0, index)) {
-    const copy = /^(?:DATA\()?([A-Za-z0-9_]+)\)?\s*=\s*sy-subrc\s*$/i.exec(other.text);
-    if (copy) subrcNames.add(copy[1].toLowerCase());
-  }
+  // Nur, solange die Kopie noch in der Variablen steht (QA 23c5c0362148).
   const compared = /^IF\s+(\S+)\s*(<>|=)\s*0\s*$/i.exec(head.text);
-  const subrc = compared && subrcNames.has(compared[1].toLowerCase()) ? [compared[0], compared[2]] : null;
+  const isSubrc =
+    compared !== null &&
+    (/^sy-subrc$/i.test(compared[1]) ||
+      (/^[A-Za-z0-9_]+$/.test(compared[1]) && subrcCopyBefore(statements, index, compared[1]) !== null));
+  const subrc = isSubrc ? [compared![0], compared![2]] : null;
   const compare = /^IF\s+(\S+)\s*(<>|=)\s*('[^']*'|\S+)\s*$/i.exec(head.text);
 
   // Der Rumpf des Wächters, nur seine eigene Ebene: ein RETURN in einer

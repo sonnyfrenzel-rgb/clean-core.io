@@ -963,3 +963,36 @@ test('QA 594357222bd7 — ein Kennzeichen ohne erratenes Geschlecht, im Zweig un
   expect(satzAn(code, 10).join(' ')).toContain('Wenn die Löschvormerkung gesetzt ist');
 });
 
+test('QA 23c5c0362148 — eine Kopie von sy-subrc trägt die Bedeutung ihrer setzenden Anweisung, solange sie gilt', () => {
+  const pruefung = (...zeilen: string[]) =>
+    satzAn(quelle('FORM probe.', ...zeilen, '  IF lv_rc <> 0.', '    RETURN.', '  ENDIF.', 'ENDFORM.'), zeilen.length + 2).join(' ');
+  const auth = "  AUTHORITY-CHECK OBJECT 'Z_BELEG' ID 'ACTVT' FIELD '02'.";
+  const lesen = '  SELECT SINGLE name1 FROM zkunde INTO @DATA(lv_name) WHERE id = @gv_id.';
+
+  // Die Kopie nach einer Berechtigungsprüfung: keine „Treffer".
+  const kopie = pruefung(auth, '  lv_rc = sy-subrc.');
+  expect(kopie).toContain('Ohne Berechtigung auf Z_BELEG wird der Block verlassen');
+  expect(kopie).not.toContain('Treffer');
+  expect(pruefung(auth, '  DATA(lv_rc) = sy-subrc.')).toContain('Ohne Berechtigung auf Z_BELEG');
+
+  // Ein Lesen **nach** der Kopie ändert sy-subrc, nicht die Kopie.
+  const danachGelesen = pruefung(auth, '  lv_rc = sy-subrc.', lesen);
+  expect(danachGelesen).toContain('Ohne Berechtigung auf Z_BELEG');
+  expect(danachGelesen).not.toContain('Treffer');
+
+  // Kopiert nach dem Lesen: dann sind es Treffer.
+  expect(pruefung(auth, lesen, '  lv_rc = sy-subrc.')).toContain('Ohne Treffer');
+
+  // Überschrieben, geleert oder nur in einem Zweig kopiert: die Variable hält
+  // nicht mehr (sicher) das sy-subrc — der Satz bleibt neutral.
+  for (const [label, ...zeilen] of [
+    ['überschrieben', auth, '  lv_rc = sy-subrc.', '  lv_rc = gv_anderes.'],
+    ['geleert', auth, '  lv_rc = sy-subrc.', '  CLEAR lv_rc.'],
+    ['im Zweig', auth, '  IF gv_modus = 1.', '    lv_rc = sy-subrc.', '  ENDIF.'],
+    ['aus einem Aufruf', auth, '  lv_rc = sy-subrc.', "  CALL FUNCTION 'Z_PRUEFEN' IMPORTING ev_rc = lv_rc."],
+  ]) {
+    const text = pruefung(...zeilen);
+    expect(text, label).toContain('Wenn das Feld lv_rc ungleich 0 ist');
+    expect(text, label).not.toMatch(/Berechtigung auf Z_BELEG wird der Block|Treffer/);
+  }
+});
