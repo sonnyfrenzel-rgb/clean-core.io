@@ -1,0 +1,20 @@
+{
+  "id": "BM-003",
+  "title": "Preisformel 901: Mindermengenzuschlag je Warengruppe",
+  "domain": "SD / Order-to-Cash",
+  "band": "einfach",
+  "loc": 21,
+  "constructs": [
+    "VOFM-Wertformel FRM_KONDI_WERT_9xx",
+    "Preisfindungsstrukturen KOMK/KOMP",
+    "XKWERT",
+    "SELECT SINGLE auf Z-Tabelle",
+    "CHECK sy-subrc"
+  ],
+  "scenario": "Kundeneigene Konditionswertformel in der Preisfindung, die einen festen Mindermengenzuschlag aus einer Z-Pflegetabelle zieht; typischer Kandidat bei der Preisfindungsanalyse vor S/4.",
+  "s4_issues": [
+    "Preisfindungsstrukturen KOMK/KOMP sind nicht freigegeben",
+    "Konditionen liegen in S/4 in PRCD_ELEMENTS statt KONV (für die Formel selbst transparent)",
+    "VOFM-Routinen sind in der Public Cloud nicht verfügbar"
+  ]
+}

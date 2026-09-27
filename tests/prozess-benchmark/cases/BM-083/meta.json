@@ -1,0 +1,19 @@
+{
+  "id": "BM-083",
+  "title": "Organisationseinheit und Kostenstelle eines Mitarbeiters zum Stichtag",
+  "domain": "Querschnitt — Schnittstellen, Stammdaten, HR, Workflow, technische Jobs",
+  "band": "einfach",
+  "loc": 38,
+  "constructs": [
+    "FUNCTION",
+    "HR_READ_INFOTYPE",
+    "Infotyp 0001",
+    "RAISE",
+    "auskommentierter Rest"
+  ],
+  "scenario": "Hilfsbaustein, den Reisekosten-, Workflow- und Schnittstellenprogramme nutzen, um die organisatorische Zuordnung eines Mitarbeiters zu einem Datum zu bestimmen.",
+  "s4_issues": [
+    "HR_READ_INFOTYPE ist klassische, nicht für Cloud freigegebene API",
+    "In S/4HANA Private Edition mit H4S4 bleibt PA0001 erhalten; im SuccessFactors-Szenario liegt der Stammdatenmaster woanders"
+  ]
+}

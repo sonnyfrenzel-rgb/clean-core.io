@@ -1,0 +1,21 @@
+{
+  "id": "BM-007",
+  "title": "Verfügbarkeitsprüfung je Auftrag: Fehlmengen offener Positionen per BAPI ermitteln",
+  "domain": "SD / Order-to-Cash",
+  "band": "mittel",
+  "loc": 80,
+  "constructs": [
+    "globale Klasse",
+    "Open SQL neue Syntax mit INNER JOIN",
+    "RAISE EXCEPTION TYPE",
+    "BAPI_MATERIAL_AVAILABILITY",
+    "LOOP … WHERE mit Summierung",
+    "VALUE #( )"
+  ],
+  "scenario": "Hilfsklasse eines Innendienst-Cockpits, die für einen Kundenauftrag prüft, welche noch offenen Positionen heute nicht vollständig bestätigt werden können.",
+  "s4_issues": [
+    "VBUP entfällt für SD-Belege: Lieferstatus LFSTA steht in S/4 in VBAP, der JOIN liefert dann keine Positionen",
+    "BAPI_MATERIAL_AVAILABILITY: Parameter MATERIAL ist 18-stellig, in S/4 MATERIAL_LONG (40 Zeichen) verwenden",
+    "direkter VBAP-Zugriff statt I_SalesDocumentItem"
+  ]
+}

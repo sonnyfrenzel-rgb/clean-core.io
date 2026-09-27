@@ -1,0 +1,23 @@
+{
+  "id": "BM-067",
+  "title": "Instandhaltungsaufträge zu offenen Störmeldungen per Batch-Input IW31",
+  "domain": "PP / PM / QM — Produktion, Instandhaltung, Qualität",
+  "band": "mittel",
+  "loc": 102,
+  "constructs": [
+    "SELECT INNER JOIN QMEL/QMIH",
+    "DEFINE-Makros für BDC",
+    "FORM",
+    "CALL TRANSACTION 'IW31' USING … MESSAGES INTO",
+    "READ TABLE auf BDC-Meldungen",
+    "MESSAGE … INTO",
+    "CONTINUE",
+    "WRITE"
+  ],
+  "scenario": "Uralter Batch-Input-Report der Instandhaltungsplanung, der täglich zu neuen Störmeldungen die zugehörigen Aufträge erzeugt; bei der S/4-Transformation fällt er wegen der geänderten IW31-Dynpros regelmäßig auf.",
+  "s4_issues": [
+    "Batch-Input auf IW31: Dynpro-Folge und Feldnamen in S/4 nicht stabil, Ersatz durch BAPI_ALM_ORDER_MAINTAIN",
+    "Direktzugriff QMEL/QMIH statt CDS I_MaintenanceNotification",
+    "Erfolg wird nur aus der Abwesenheit einer E-Meldung geschlossen"
+  ]
+}

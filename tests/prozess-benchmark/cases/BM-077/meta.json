@@ -1,0 +1,31 @@
+{
+  "id": "BM-077",
+  "title": "Werkerrückmelde-Terminal: Dynpro-Anwendung mit retrograder Entnahme, Wareneingang und Etikettendruck",
+  "domain": "PP / PM / QM — Produktion, Instandhaltung, Qualität",
+  "band": "sehr komplex",
+  "loc": 418,
+  "constructs": [
+    "Modulpool mit TOP/PBO/PAI/F01-Includes",
+    "PBO: SET PF-STATUS, LOOP AT SCREEN/MODIFY SCREEN, Table Control",
+    "PAI: AT EXIT-COMMAND, CHAIN-Prüfmodule, MESSAGE E/W",
+    "CASE ok_code",
+    "LEAVE TO SCREEN / LEAVE PROGRAM",
+    "SELECT SINGLE mit 3-fach-JOIN AFKO/AFPO/AUFK",
+    "STATUS_CHECK",
+    "SELECT MAX",
+    "xsdbool",
+    "BAPI_PRODORDCONF_CREATE_TT mit GOODSMOVEMENTS und LINK_CONF_GOODSMOV",
+    "Bewegungsarten 261/101",
+    "MODIFY auf interne Tabelle",
+    "fremder Z-Druckbaustein (nicht geliefert)",
+    "HR-Tabelle PA0001"
+  ],
+  "scenario": "Selbstgebaute Rückmeldetransaktion für Werker-Terminals an der Montagelinie: Barcode scannen, Mengen erfassen, Komponenten retrograd mitbuchen, im letzten Vorgang Wareneingang und Palettenetikett; der typische Dynpro-Fall, der in S/4 durch eine Fiori-Rückmelde-App ersetzt werden soll.",
+  "s4_issues": [
+    "Dynpro-Anwendung nicht Fiori-fähig",
+    "Direktzugriffe AFKO/AFPO/AUFK/AFVC/AFVV/RESB/CRHD/MCHA statt CDS",
+    "HR-Direktzugriff PA0001 (in S/4 ggf. HCM-Kompatibilität bzw. SuccessFactors)",
+    "Komponentenmengen selbst anteilig berechnet statt Standard-Retrograde-Entnahme",
+    "Wareneingang 101 nur über Programmlogik 'höchste Vorgangsnummer'"
+  ]
+}

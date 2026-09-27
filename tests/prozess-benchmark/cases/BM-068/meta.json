@@ -1,0 +1,23 @@
+{
+  "id": "BM-068",
+  "title": "Chargenbewertung über Klassifizierungsmerkmale Reinheit und Verfallsdatum",
+  "domain": "PP / PM / QM — Produktion, Instandhaltung, Qualität",
+  "band": "mittel",
+  "loc": 75,
+  "constructs": [
+    "FUNCTION",
+    "Offset-Zugriff +18 auf Objektschlüssel",
+    "SELECT SINGLE INOB/CABN",
+    "SELECT INTO TABLE AUSP",
+    "READ TABLE WITH KEY",
+    "IF/ELSEIF/ELSE",
+    "RAISE",
+    "RETURN"
+  ],
+  "scenario": "Hilfsbaustein der Qualitätssicherung, den Freigabe- und Versandprogramme aufrufen, um Chargen anhand ihrer Klassifizierung zu bewerten; ein Klassiker für Materialnummernlängen-Probleme bei der Umstellung.",
+  "s4_issues": [
+    "Objektschlüssel mit festem Offset +18 – bricht mit 40-stelliger Materialnummer",
+    "Direktzugriff INOB/AUSP/CABN statt Klassifizierungs-API bzw. CDS",
+    "Merkmalsname hart codiert (Z_REINHEIT, LOBM_VFDAT)"
+  ]
+}

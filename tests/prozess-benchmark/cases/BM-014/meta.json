@@ -1,0 +1,26 @@
+{
+  "id": "BM-014",
+  "title": "Faktura-Sammellauf je Verkaufsorganisation: SUBMIT RV60SBAT, Nachkontrolle über VBFA, Anwendungsprotokoll und Mail",
+  "domain": "SD / Order-to-Cash",
+  "band": "komplex",
+  "loc": 214,
+  "constructs": [
+    "REPORT als Nachtjob mit F01-Include",
+    "SELECT mit INNER JOIN LIKP/VBUK",
+    "VALUE #( FOR … )",
+    "kundeneigenes Sperrobjekt ENQUEUE_EZSD_BILLRUN",
+    "SUBMIT … WITH SELECTION-TABLE … AND RETURN",
+    "FOR ALL ENTRIES auf VBFA",
+    "SORTED TABLE / READ TABLE WITH TABLE KEY",
+    "BAL_LOG_CREATE/BAL_LOG_MSG_ADD/BAL_DB_SAVE",
+    "CL_BCS mit TRY/CATCH",
+    "COMMIT WORK"
+  ],
+  "scenario": "Nächtlicher Job der Fakturierung, der den Standard-Sammellauf je Verkaufsorganisation anstößt und danach prüft, welche Lieferungen ohne Rechnung geblieben sind.",
+  "s4_issues": [
+    "VBUK entfällt für SD-Belege: WBSTK/FKSTK stehen in S/4 in LIKP, der JOIN liefert keine Lieferungen mehr",
+    "VBFA in S/4 mit geänderter Struktur (Feld VBTYP_N weiterhin, aber Belegfluss teils nicht mehr vollständig fortgeschrieben)",
+    "Selektionsnamen des gerufenen Standardreports sind keine stabile Schnittstelle",
+    "Fakturierung in S/4 über Billing Due List / Application Jobs (F0798) statt Eigenbau-Jobkette"
+  ]
+}

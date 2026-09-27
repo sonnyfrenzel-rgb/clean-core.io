@@ -1,0 +1,29 @@
+{
+  "id": "BM-097",
+  "title": "Export Personalstammdaten an Payroll-Provider (Datei) und Zeiterfassung (RFC), Delta seit letztem Lauf",
+  "domain": "Querschnitt — Schnittstellen, Stammdaten, HR, Workflow, technische Jobs",
+  "band": "sehr komplex",
+  "loc": 442,
+  "constructs": [
+    "Report mit TOP/F01/F02/F03",
+    "INITIALIZATION",
+    "ENQUEUE/DEQUEUE Laufsperre",
+    "SELECT MAX",
+    "FOR ALL ENTRIES mit table_line",
+    "SELECT APPENDING",
+    "HR_CHECK_AUTHORITY_INFTY",
+    "HR_READ_INFOTYPE (5 Infotypen)",
+    "OPEN/TRANSFER/CLOSE DATASET",
+    "WRITE TO (Formatierung)",
+    "CALL FUNCTION DESTINATION",
+    "SO_NEW_DOCUMENT_SEND_API1",
+    "CL_SALV_TABLE",
+    "COMMIT WORK"
+  ],
+  "scenario": "Nächtlicher HR-Schnittstellenjob in einem Konzern mit ausgelagerter Entgeltabrechnung: geänderte Mitarbeiter werden als CSV an den Payroll-Provider und per RFC an das Zeiterfassungssystem übergeben.",
+  "s4_issues": [
+    "Direkte Lesezugriffe auf PA0000/PA0001/PA0002/PA0006 und Dateischnittstelle auf dem Applikationsserver",
+    "HR-Stammdaten ggf. in SuccessFactors Employee Central; Replikation statt Eigenbau",
+    "Personenbezogene Daten (Geburtsdatum, Privatanschrift, E-Mail) im Klartext in Datei"
+  ]
+}

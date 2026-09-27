@@ -1,0 +1,267 @@
+{
+  "id": "BM-023",
+  "title": "Verschrottung über Wertgrenze nur mit Grund und Kostenstelle (MB_DOCUMENT_BADI)",
+  "classes": [
+    "K05"
+  ],
+  "classic_level": "B",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "MB_DOCUMENT_BADI",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 3,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:3"
+      },
+      "identity": {
+        "objectType": "BADI"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-023-B01",
+      "text": "Vor dem Verbuchen eines Materialbelegs werden alle Positionen geprüft, aber nur Verschrottungen und deren Stornos (Bewegungsart 551/552) werden betrachtet.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 3,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:3"
+        },
+        {
+          "file": "source.abap",
+          "line": 9,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:9"
+        },
+        {
+          "file": "source.abap",
+          "line": 10,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:10"
+        }
+      ]
+    },
+    {
+      "id": "BM-023-B02",
+      "text": "Liegt der Buchungswert einer Verschrottungsposition über 5.000 in Hauswährung, müssen Bewegungsgrund und Kostenstelle gefüllt sein.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 11,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:11"
+        },
+        {
+          "file": "source.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:12"
+        }
+      ]
+    },
+    {
+      "id": "BM-023-B03",
+      "text": "Fehlt eines davon, wird mit Material und Wert eine Fehlermeldung ausgegeben und die Buchung damit abgebrochen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 13,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:13"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 3,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:3"
+        },
+        "meaning": "BAdI vor Verbuchung des Materialbelegs"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "source.abap",
+          "line": 9,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:9"
+        },
+        "meaning": "Belegpositionen durchlaufen"
+      },
+      {
+        "id": "c",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 10,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:10"
+        },
+        "meaning": "Verschrottung 551/552?"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 11,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:11"
+        },
+        "meaning": "Wert über 5.000?"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:12"
+        },
+        "meaning": "Grund oder Kostenstelle fehlt?"
+      },
+      {
+        "id": "m",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 13,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:13"
+        },
+        "meaning": "Fehlermeldung, Buchung abgebrochen"
+      },
+      {
+        "id": "xm",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 13,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:13"
+        },
+        "meaning": "Buchung mit Fehlermeldung abgebrochen"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:18"
+        },
+        "meaning": "Prüfung bestanden"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "l",
+        "condition": "always"
+      },
+      {
+        "from": "l",
+        "to": "c",
+        "condition": "next row"
+      },
+      {
+        "from": "c",
+        "to": "g1",
+        "condition": "ls_mseg-bwart = '551' OR ls_mseg-bwart = '552'"
+      },
+      {
+        "from": "c",
+        "to": "l",
+        "condition": "else"
+      },
+      {
+        "from": "g1",
+        "to": "g2",
+        "condition": "ls_mseg-dmbtr > lv_limit"
+      },
+      {
+        "from": "g1",
+        "to": "l",
+        "condition": "else"
+      },
+      {
+        "from": "g2",
+        "to": "m",
+        "condition": "ls_mseg-grund IS INITIAL OR ls_mseg-kostl IS INITIAL"
+      },
+      {
+        "from": "g2",
+        "to": "l",
+        "condition": "else"
+      },
+      {
+        "from": "l",
+        "to": "e",
+        "condition": "no more rows"
+      },
+      {
+        "from": "m",
+        "to": "xm",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "source.abap:13 — kein Fachsatz „Die Verschrottung wird zur Genehmigung weitergeleitet“ (es gibt keinen Workflow, nur einen Abbruch)",
+    "source.abap:11 — kein Fachsatz „Die Wertgrenze ist je Werk einstellbar“ (die Grenze ist fest im Code)",
+    "source.abap:10 — kein Fachsatz „Alle Warenausgänge werden geprüft“ (nur 551 und 552)"
+  ],
+  "processDescription": "Beim Buchen eines Materialbelegs ruft die Bestandsführung vor der Verbuchung die BAdI-Implementierung. Sie durchläuft alle Belegpositionen und betrachtet nur Verschrottungen (551) und deren Storno (552). Liegt der Buchungswert einer solchen Position über der fest codierten Grenze von 5.000 in Hauswährung, müssen Bewegungsgrund und Kostenstelle gepflegt sein. Fehlt eines davon, gibt die Implementierung eine Fehlermeldung mit Material und Wert aus, was die Buchung abbricht. Alle anderen Positionen und Verschrottungen unterhalb der Grenze passieren ohne Wirkung."
+}

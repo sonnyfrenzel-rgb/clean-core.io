@@ -1,0 +1,1210 @@
+{
+  "id": "BM-015",
+  "title": "Retoure mit Fakturabezug: Berechtigung, Rückgabefrist, Mengenprüfung gegen VBFA, Anlage per BAPI",
+  "classes": [
+    "K03",
+    "K15",
+    "K01",
+    "K12"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "VBRK",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "lzsd_retf01.abap",
+        "line": 19,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzsd_retf01.abap:19"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "VBRP",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "lzsd_retf01.abap",
+        "line": 37,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzsd_retf01.abap:37"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "VBFA",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "lzsd_retf01.abap",
+        "line": 56,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzsd_retf01.abap:56"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_CUSTOMERRETURN_CREATE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "lzsd_retf01.abap",
+        "line": 106,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzsd_retf01.abap:106"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_ROLLBACK",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "lzsd_retf01.abap",
+        "line": 119,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzsd_retf01.abap:119"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZSD_RET_LOG",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "lzsd_retf01.abap",
+        "line": 127,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzsd_retf01.abap:127"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_COMMIT",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "lzsd_retf01.abap",
+        "line": 129,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzsd_retf01.abap:129"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-015-B01",
+      "text": "Ohne Berechtigung zum Anlegen der Retourenauftragsart ZRE wird mit Fehler 500 abgebrochen.",
+      "anchors": [
+        {
+          "file": "z_sd_return_create.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_return_create.abap:19"
+        },
+        {
+          "file": "z_sd_return_create.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_return_create.abap:22"
+        },
+        {
+          "file": "z_sd_return_create.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_return_create.abap:23"
+        },
+        {
+          "file": "z_sd_return_create.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_return_create.abap:24"
+        }
+      ]
+    },
+    {
+      "id": "BM-015-B02",
+      "text": "Existiert die angegebene Faktura nicht, wird mit Fehler 501 abgebrochen.",
+      "anchors": [
+        {
+          "file": "lzsd_retf01.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_retf01.abap:19"
+        },
+        {
+          "file": "lzsd_retf01.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_retf01.abap:20"
+        },
+        {
+          "file": "lzsd_retf01.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_retf01.abap:21"
+        }
+      ]
+    },
+    {
+      "id": "BM-015-B03",
+      "text": "Stornierte Fakturen und Stornobelege sind nicht retournierbar (Fehler 502).",
+      "anchors": [
+        {
+          "file": "lzsd_retf01.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_retf01.abap:26"
+        },
+        {
+          "file": "lzsd_retf01.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_retf01.abap:27"
+        }
+      ]
+    },
+    {
+      "id": "BM-015-B04",
+      "text": "Liegt das Fakturadatum mehr als 365 Tage zurück, wird mit Fehler 503 abgebrochen, außer bei Auftragsgrund Kulanz (Z05).",
+      "anchors": [
+        {
+          "file": "lzsd_retf01.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_retf01.abap:31"
+        },
+        {
+          "file": "lzsd_retf01.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_retf01.abap:33"
+        }
+      ]
+    },
+    {
+      "id": "BM-015-B05",
+      "text": "Jede Rückgabeposition muss eine Position der Faktura sein, sonst Fehler 504.",
+      "anchors": [
+        {
+          "file": "lzsd_retf01.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_retf01.abap:49"
+        },
+        {
+          "file": "lzsd_retf01.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_retf01.abap:50"
+        },
+        {
+          "file": "lzsd_retf01.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_retf01.abap:51"
+        }
+      ]
+    },
+    {
+      "id": "BM-015-B06",
+      "text": "Die Rückgabemenge plus der bereits retournierten Menge darf die fakturierte Menge nicht übersteigen, sonst Fehler 505.",
+      "anchors": [
+        {
+          "file": "lzsd_retf01.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_retf01.abap:56"
+        },
+        {
+          "file": "lzsd_retf01.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_retf01.abap:61"
+        },
+        {
+          "file": "lzsd_retf01.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_retf01.abap:62"
+        }
+      ]
+    },
+    {
+      "id": "BM-015-B07",
+      "text": "Alle Rückgabepositionen werden geprüft; bei mindestens einem Fehler wird keine Retoure angelegt.",
+      "anchors": [
+        {
+          "file": "lzsd_retf01.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_retf01.abap:48"
+        },
+        {
+          "file": "z_sd_return_create.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_return_create.abap:33"
+        }
+      ]
+    },
+    {
+      "id": "BM-015-B08",
+      "text": "Andernfalls wird ein Retourenauftrag ZRE mit Bezug zur Faktura, dem Auftraggeber der Faktura und dem angegebenen Auftragsgrund angelegt.",
+      "anchors": [
+        {
+          "file": "lzsd_retf01.abap",
+          "line": 106,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_retf01.abap:106"
+        }
+      ]
+    },
+    {
+      "id": "BM-015-B09",
+      "text": "Wurde keine Retoure angelegt oder ist Simulation gesetzt, wird verworfen und keine Retourennummer zurückgegeben.",
+      "anchors": [
+        {
+          "file": "lzsd_retf01.abap",
+          "line": 118,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_retf01.abap:118"
+        },
+        {
+          "file": "lzsd_retf01.abap",
+          "line": 119,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_retf01.abap:119"
+        }
+      ]
+    },
+    {
+      "id": "BM-015-B10",
+      "text": "Sonst wird die Retoure mit Faktura, Kunde, Auftragsgrund, Datum und Benutzer im Retourenprotokoll erfasst und alles festgeschrieben.",
+      "anchors": [
+        {
+          "file": "lzsd_retf01.abap",
+          "line": 127,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_retf01.abap:127"
+        },
+        {
+          "file": "lzsd_retf01.abap",
+          "line": 129,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_retf01.abap:129"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "z_sd_return_create.abap",
+          "line": 1,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_return_create.abap:1"
+        },
+        "meaning": "Retourenanlage angefordert"
+      },
+      {
+        "id": "auth",
+        "type": "action",
+        "anchor": {
+          "file": "z_sd_return_create.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_return_create.abap:19"
+        },
+        "meaning": "Berechtigung zum Anlegen der Retourenauftragsart prüfen"
+      },
+      {
+        "id": "g_auth",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_sd_return_create.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_return_create.abap:22"
+        },
+        "meaning": "Berechtigung fehlt?"
+      },
+      {
+        "id": "c500",
+        "type": "call",
+        "anchor": {
+          "file": "z_sd_return_create.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_return_create.abap:23"
+        },
+        "meaning": "Fehler 500 melden"
+      },
+      {
+        "id": "e_auth",
+        "type": "end",
+        "anchor": {
+          "file": "z_sd_return_create.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_return_create.abap:24"
+        },
+        "meaning": "Abbruch ohne Berechtigung"
+      },
+      {
+        "id": "c_fak",
+        "type": "call",
+        "anchor": {
+          "file": "z_sd_return_create.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_return_create.abap:27"
+        },
+        "meaning": "Faktura prüfen"
+      },
+      {
+        "id": "g_fak",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_sd_return_create.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_return_create.abap:28"
+        },
+        "meaning": "Faktura abgelehnt?"
+      },
+      {
+        "id": "e_fak",
+        "type": "end",
+        "anchor": {
+          "file": "z_sd_return_create.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_return_create.abap:29"
+        },
+        "meaning": "Abbruch nach Fakturaprüfung"
+      },
+      {
+        "id": "c_men",
+        "type": "call",
+        "anchor": {
+          "file": "z_sd_return_create.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_return_create.abap:32"
+        },
+        "meaning": "Rückgabemengen prüfen"
+      },
+      {
+        "id": "g_men",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_sd_return_create.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_return_create.abap:33"
+        },
+        "meaning": "Mengenfehler?"
+      },
+      {
+        "id": "e_men",
+        "type": "end",
+        "anchor": {
+          "file": "z_sd_return_create.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_return_create.abap:34"
+        },
+        "meaning": "Abbruch nach Mengenprüfung"
+      },
+      {
+        "id": "c_ret",
+        "type": "call",
+        "anchor": {
+          "file": "z_sd_return_create.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_return_create.abap:37"
+        },
+        "meaning": "Retourenauftrag anlegen"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "z_sd_return_create.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_return_create.abap:39"
+        },
+        "meaning": "Retourennummer und Meldungen zurück"
+      },
+      {
+        "id": "fs",
+        "type": "start",
+        "anchor": {
+          "file": "lzsd_retf01.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_retf01.abap:15"
+        },
+        "meaning": "Fakturaprüfung"
+      },
+      {
+        "id": "q_vbrk",
+        "type": "read",
+        "anchor": {
+          "file": "lzsd_retf01.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_retf01.abap:19"
+        },
+        "meaning": "Fakturakopf lesen"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzsd_retf01.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_retf01.abap:20"
+        },
+        "meaning": "Faktura vorhanden?"
+      },
+      {
+        "id": "c501",
+        "type": "call",
+        "anchor": {
+          "file": "lzsd_retf01.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_retf01.abap:21"
+        },
+        "meaning": "Fehler 501 melden"
+      },
+      {
+        "id": "e1",
+        "type": "end",
+        "anchor": {
+          "file": "lzsd_retf01.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_retf01.abap:22"
+        },
+        "meaning": "Prüfung beendet: Faktura unbekannt"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzsd_retf01.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_retf01.abap:26"
+        },
+        "meaning": "Faktura storniert oder selbst Storno?"
+      },
+      {
+        "id": "c502",
+        "type": "call",
+        "anchor": {
+          "file": "lzsd_retf01.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_retf01.abap:27"
+        },
+        "meaning": "Fehler 502 melden"
+      },
+      {
+        "id": "e2",
+        "type": "end",
+        "anchor": {
+          "file": "lzsd_retf01.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_retf01.abap:28"
+        },
+        "meaning": "Prüfung beendet: nicht retournierbar"
+      },
+      {
+        "id": "g3",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzsd_retf01.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_retf01.abap:31"
+        },
+        "meaning": "Rückgabefrist überschritten und keine Kulanz?"
+      },
+      {
+        "id": "c503",
+        "type": "call",
+        "anchor": {
+          "file": "lzsd_retf01.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_retf01.abap:33"
+        },
+        "meaning": "Fehler 503 melden"
+      },
+      {
+        "id": "e3",
+        "type": "end",
+        "anchor": {
+          "file": "lzsd_retf01.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_retf01.abap:34"
+        },
+        "meaning": "Prüfung beendet: Frist abgelaufen"
+      },
+      {
+        "id": "q_vbrp",
+        "type": "read",
+        "anchor": {
+          "file": "lzsd_retf01.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_retf01.abap:37"
+        },
+        "meaning": "Fakturapositionen lesen"
+      },
+      {
+        "id": "fe",
+        "type": "end",
+        "anchor": {
+          "file": "lzsd_retf01.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_retf01.abap:38"
+        },
+        "meaning": "Faktura geprüft"
+      },
+      {
+        "id": "ms",
+        "type": "start",
+        "anchor": {
+          "file": "lzsd_retf01.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_retf01.abap:43"
+        },
+        "meaning": "Mengenprüfung"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "lzsd_retf01.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_retf01.abap:48"
+        },
+        "meaning": "Je Rückgabeposition"
+      },
+      {
+        "id": "rd",
+        "type": "read",
+        "anchor": {
+          "file": "lzsd_retf01.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_retf01.abap:49"
+        },
+        "meaning": "Zugehörige Fakturaposition nachschlagen"
+      },
+      {
+        "id": "g_rd",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzsd_retf01.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_retf01.abap:50"
+        },
+        "meaning": "Position in der Faktura?"
+      },
+      {
+        "id": "c504",
+        "type": "call",
+        "anchor": {
+          "file": "lzsd_retf01.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_retf01.abap:51"
+        },
+        "meaning": "Fehler 504 melden"
+      },
+      {
+        "id": "q_vbfa",
+        "type": "read",
+        "anchor": {
+          "file": "lzsd_retf01.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_retf01.abap:56"
+        },
+        "meaning": "Bereits retournierte Menge der Position summieren"
+      },
+      {
+        "id": "g_q",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzsd_retf01.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_retf01.abap:61"
+        },
+        "meaning": "Rückgabe plus bereits retourniert über fakturierter Menge?"
+      },
+      {
+        "id": "c505",
+        "type": "call",
+        "anchor": {
+          "file": "lzsd_retf01.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_retf01.abap:62"
+        },
+        "meaning": "Fehler 505 melden"
+      },
+      {
+        "id": "me",
+        "type": "end",
+        "anchor": {
+          "file": "lzsd_retf01.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_retf01.abap:66"
+        },
+        "meaning": "Mengen geprüft"
+      },
+      {
+        "id": "rs",
+        "type": "start",
+        "anchor": {
+          "file": "lzsd_retf01.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_retf01.abap:71"
+        },
+        "meaning": "Retourenanlage"
+      },
+      {
+        "id": "bapi",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "lzsd_retf01.abap",
+          "line": 106,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_retf01.abap:106"
+        },
+        "meaning": "Retourenauftrag ZRE mit Bezug zur Faktura anlegen"
+      },
+      {
+        "id": "g_ok",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzsd_retf01.abap",
+          "line": 118,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_retf01.abap:118"
+        },
+        "meaning": "Anlage gescheitert oder Simulation?"
+      },
+      {
+        "id": "rb",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "lzsd_retf01.abap",
+          "line": 119,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_retf01.abap:119"
+        },
+        "meaning": "Anlage verwerfen"
+      },
+      {
+        "id": "e_rb",
+        "type": "end",
+        "anchor": {
+          "file": "lzsd_retf01.abap",
+          "line": 121,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_retf01.abap:121"
+        },
+        "meaning": "Ohne Retourennummer zurück"
+      },
+      {
+        "id": "ins",
+        "type": "write",
+        "anchor": {
+          "file": "lzsd_retf01.abap",
+          "line": 127,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_retf01.abap:127"
+        },
+        "meaning": "Retoure im Retourenprotokoll erfassen"
+      },
+      {
+        "id": "cm",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "lzsd_retf01.abap",
+          "line": 129,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_retf01.abap:129"
+        },
+        "meaning": "Retoure und Protokoll festschreiben"
+      },
+      {
+        "id": "re",
+        "type": "end",
+        "anchor": {
+          "file": "lzsd_retf01.abap",
+          "line": 132,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_retf01.abap:132"
+        },
+        "meaning": "Retoure angelegt"
+      },
+      {
+        "id": "xs",
+        "type": "start",
+        "anchor": {
+          "file": "lzsd_retf01.abap",
+          "line": 137,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_retf01.abap:137"
+        },
+        "meaning": "Fehlermeldung anhängen"
+      },
+      {
+        "id": "xe",
+        "type": "end",
+        "anchor": {
+          "file": "lzsd_retf01.abap",
+          "line": 143,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_retf01.abap:143"
+        },
+        "meaning": "Meldung angehängt"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "auth",
+        "condition": "always"
+      },
+      {
+        "from": "auth",
+        "to": "g_auth",
+        "condition": "always"
+      },
+      {
+        "from": "g_auth",
+        "to": "c500",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "c500",
+        "to": "xs",
+        "condition": "always"
+      },
+      {
+        "from": "g_auth",
+        "to": "c_fak",
+        "condition": "else"
+      },
+      {
+        "from": "c_fak",
+        "to": "fs",
+        "condition": "always"
+      },
+      {
+        "from": "g_fak",
+        "to": "e_fak",
+        "condition": "et_return IS NOT INITIAL"
+      },
+      {
+        "from": "g_fak",
+        "to": "c_men",
+        "condition": "else"
+      },
+      {
+        "from": "c_men",
+        "to": "ms",
+        "condition": "always"
+      },
+      {
+        "from": "g_men",
+        "to": "e_men",
+        "condition": "et_return IS NOT INITIAL"
+      },
+      {
+        "from": "g_men",
+        "to": "c_ret",
+        "condition": "else"
+      },
+      {
+        "from": "c_ret",
+        "to": "rs",
+        "condition": "always"
+      },
+      {
+        "from": "fs",
+        "to": "q_vbrk",
+        "condition": "always"
+      },
+      {
+        "from": "q_vbrk",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "c501",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "c501",
+        "to": "xs",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "g2",
+        "condition": "else"
+      },
+      {
+        "from": "g2",
+        "to": "c502",
+        "condition": "gs_vbrk-fksto = abap_true OR gs_vbrk-sfakn IS NOT INITIAL"
+      },
+      {
+        "from": "c502",
+        "to": "xs",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "g3",
+        "condition": "else"
+      },
+      {
+        "from": "g3",
+        "to": "c503",
+        "condition": "sy-datum - gs_vbrk-fkdat > gc_frist_tage AND iv_augru <> gc_augru_kulanz"
+      },
+      {
+        "from": "c503",
+        "to": "xs",
+        "condition": "always"
+      },
+      {
+        "from": "g3",
+        "to": "q_vbrp",
+        "condition": "else"
+      },
+      {
+        "from": "q_vbrp",
+        "to": "fe",
+        "condition": "always"
+      },
+      {
+        "from": "ms",
+        "to": "l",
+        "condition": "always"
+      },
+      {
+        "from": "l",
+        "to": "rd",
+        "condition": "next row"
+      },
+      {
+        "from": "rd",
+        "to": "g_rd",
+        "condition": "always"
+      },
+      {
+        "from": "g_rd",
+        "to": "c504",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "c504",
+        "to": "xs",
+        "condition": "always"
+      },
+      {
+        "from": "g_rd",
+        "to": "q_vbfa",
+        "condition": "else"
+      },
+      {
+        "from": "q_vbfa",
+        "to": "g_q",
+        "condition": "always"
+      },
+      {
+        "from": "g_q",
+        "to": "c505",
+        "condition": "ls_item-menge + lv_bereits > ls_vbrp-fkimg"
+      },
+      {
+        "from": "c505",
+        "to": "xs",
+        "condition": "always"
+      },
+      {
+        "from": "g_q",
+        "to": "l",
+        "condition": "else"
+      },
+      {
+        "from": "l",
+        "to": "me",
+        "condition": "no more rows"
+      },
+      {
+        "from": "rs",
+        "to": "bapi",
+        "condition": "always"
+      },
+      {
+        "from": "bapi",
+        "to": "g_ok",
+        "condition": "always"
+      },
+      {
+        "from": "g_ok",
+        "to": "rb",
+        "condition": "cv_retoure IS INITIAL OR iv_simulate = abap_true"
+      },
+      {
+        "from": "rb",
+        "to": "e_rb",
+        "condition": "always"
+      },
+      {
+        "from": "g_ok",
+        "to": "ins",
+        "condition": "else"
+      },
+      {
+        "from": "ins",
+        "to": "cm",
+        "condition": "always"
+      },
+      {
+        "from": "cm",
+        "to": "re",
+        "condition": "always"
+      },
+      {
+        "from": "xs",
+        "to": "xe",
+        "condition": "always"
+      },
+      {
+        "from": "xe",
+        "to": "e_auth",
+        "condition": "always"
+      },
+      {
+        "from": "e1",
+        "to": "g_fak",
+        "condition": "always"
+      },
+      {
+        "from": "e2",
+        "to": "g_fak",
+        "condition": "always"
+      },
+      {
+        "from": "e3",
+        "to": "g_fak",
+        "condition": "always"
+      },
+      {
+        "from": "fe",
+        "to": "g_fak",
+        "condition": "always"
+      },
+      {
+        "from": "me",
+        "to": "g_men",
+        "condition": "always"
+      },
+      {
+        "from": "e_rb",
+        "to": "e",
+        "condition": "always"
+      },
+      {
+        "from": "re",
+        "to": "e",
+        "condition": "always"
+      },
+      {
+        "from": "xe",
+        "to": "e1",
+        "condition": "always"
+      },
+      {
+        "from": "xe",
+        "to": "e2",
+        "condition": "always"
+      },
+      {
+        "from": "xe",
+        "to": "e3",
+        "condition": "always"
+      },
+      {
+        "from": "xe",
+        "to": "l",
+        "condition": "next iteration"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "lzsd_retf01.abap:61 — kein Fachsatz „Mengen werden in derselben Einheit verglichen“: RFMNG aus dem Belegfluss und die Fakturamenge FKIMG können in verschiedenen Einheiten stehen",
+    "lzsd_retf01.abap:106 — kein Fachsatz „eine Gutschrift wird erstellt“: angelegt wird nur der Retourenauftrag",
+    "lzsd_retf01.abap:127 — kein Fachsatz „ohne Protokolleintrag wird die Retoure verworfen“: sy-subrc des INSERT wird nicht ausgewertet",
+    "lzsd_retf01.abap:56 — kein Fachsatz „Gutschriften ohne Retoure werden berücksichtigt“: gezählt wird nur Folgebelegtyp H"
+  ],
+  "processDescription": "Der Funktionsbaustein wird vom Retourenportal mit Faktura, Auftragsgrund, Rückgabepositionen und Simulationskennzeichen aufgerufen. Zuerst prüft er die Berechtigung zum Anlegen der Retourenauftragsart ZRE. Dann prüft er die Faktura: Sie muss existieren, darf weder storniert noch selbst ein Storno sein, und ihr Datum darf höchstens 365 Tage zurückliegen, es sei denn, der Auftragsgrund ist Kulanz. Danach prüft er jede Rückgabeposition gegen die Fakturapositionen und die bisher retournierte Menge aus dem Belegfluss; alle Fehler werden gesammelt. Jeder Fehler beendet die Verarbeitung vor der Anlage mit der Meldungsliste. Sind alle Prüfungen bestanden, legt er per BAPI einen Retourenauftrag mit Bezug zur Faktura an. Ist die Anlage gescheitert oder Simulation gesetzt, rollt er zurück. Sonst schreibt er einen Eintrag ins Retourenprotokoll und schreibt Retoure und Protokoll gemeinsam fest."
+}

@@ -1,0 +1,65 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten Rp9 (neu)",
+      "before": "—",
+      "after": "end zcl_mm_po_rules.abap:73 „VENDOR_PAYMENT_TERMS beendet, Zahlungsbedingung zurück“; umgeleitet: Rp1->hzg [always] jetzt Rp1->Rp9; neu Rp9->hzg [always]",
+      "why": "Vereinheitlichung (wie im Gegencheck FI/CO): jeder auslaufende FORM/METHOD/MODULE/FUNCTION-Block endet mit eigenem end-Knoten auf ENDFORM/ENDMETHOD/ENDMODULE/ENDFUNCTION (Brieftabelle: end auch bei implizitem Blockende); die Rückkante führt von dort zum Knoten nach dem Aufruf.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten Rd9 (neu)",
+      "before": "—",
+      "after": "end zcl_mm_po_rules.abap:99 „PRICE_DEVIATION beendet, Abweichung zurück“; umgeleitet: Rd4->i3 [always] jetzt Rd4->Rd9; neu Rd9->i3 [always]",
+      "why": "Vereinheitlichung (wie im Gegencheck FI/CO): jeder auslaufende FORM/METHOD/MODULE/FUNCTION-Block endet mit eigenem end-Knoten auf ENDFORM/ENDMETHOD/ENDMODULE/ENDFUNCTION (Brieftabelle: end auch bei implizitem Blockende); die Rückkante führt von dort zum Knoten nach dem Aufruf.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten Rh1, Rh2 (neu)",
+      "before": "Rh0->Rh3 [always]",
+      "after": "gateway zcl_mm_po_rules.abap:103 „Gefahrgutkennzeichen schon ermittelt?“, end zcl_mm_po_rules.abap:105 RETURN; Rh0->Rh1, Rh1->Rh2 [sy-subrc = 0], Rh1->Rh3 [else], Rh2->ihg [always]",
+      "why": "Die Verzweigung IF sy-subrc = 0 / RETURN nach dem Pufferzugriff fehlte; mit ihr endet die Methode früh, ohne MARA zu lesen (ein Pfadende mit RETURN, das die Brieftabelle als end-Knoten verlangt).",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten Rh9 (neu)",
+      "before": "—",
+      "after": "end zcl_mm_po_rules.abap:111 „IS_HAZARDOUS beendet, Kennzeichen gepuffert“; umgeleitet: Rh3->ihg [always] jetzt Rh3->Rh9; neu Rh9->ihg [always]",
+      "why": "Vereinheitlichung (wie im Gegencheck FI/CO): jeder auslaufende FORM/METHOD/MODULE/FUNCTION-Block endet mit eigenem end-Knoten auf ENDFORM/ENDMETHOD/ENDMODULE/ENDFUNCTION (Brieftabelle: end auch bei implizitem Blockende); die Rückkante führt von dort zum Knoten nach dem Aufruf.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten Rc9 (neu)",
+      "before": "—",
+      "after": "end zcl_mm_po_rules.abap:126 „COST_CENTER_VALID beendet“; umgeleitet: Rc2->acg [sy-subrc <> 0] jetzt Rc2->Rc9; Rc2->acg [lv_bkzkp = 'X'] jetzt Rc2->Rc9; Rc2->acg [else] jetzt Rc2->Rc9; neu Rc9->acg [always]",
+      "why": "Vereinheitlichung (wie im Gegencheck FI/CO): jeder auslaufende FORM/METHOD/MODULE/FUNCTION-Block endet mit eigenem end-Knoten auf ENDFORM/ENDMETHOD/ENDMODULE/ENDFUNCTION (Brieftabelle: end auch bei implizitem Blockende); die Rückkante führt von dort zum Knoten nach dem Aufruf.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten Ro9 (neu)",
+      "before": "—",
+      "after": "end zcl_mm_po_rules.abap:160 „BUDGET_OF beendet, Budgetsatz zurück“; umgeleitet: Ro1->c2 [always] jetzt Ro1->Ro9; neu Ro9->c2 [always]",
+      "why": "Vereinheitlichung (wie im Gegencheck FI/CO): jeder auslaufende FORM/METHOD/MODULE/FUNCTION-Block endet mit eigenem end-Knoten auf ENDFORM/ENDMETHOD/ENDMODULE/ENDFUNCTION (Brieftabelle: end auch bei implizitem Blockende); die Rückkante führt von dort zum Knoten nach dem Aufruf.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten U7x (neu)",
+      "before": "—",
+      "after": "end z_mm_po_budget_update.abap:30 „Verbuchung abgebrochen“; neu U7->U7x [always]",
+      "why": "MESSAGE vom Typ E/A beendet den Pfad; wie im übrigen Benchmark (z. B. BM-048, BM-051, BM-058) folgt dem output-Knoten ein end-Knoten auf derselben Anweisung. Validator-Warnung „keine ausgehende Kante“.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kante p2->U0",
+      "before": "p2->U0 [always]",
+      "after": "entfernt (p2->p3 [always] bleibt)",
+      "why": "Vereinheitlichte Konvention (Brief, Nachtrag): Aufrufe IN UPDATE TASK behalten die Direktkante zum nächsten Schritt, weil der Aufrufer nicht wartet; beim Verbucher gibt es keine Kante in den Zielbaustein (er läuft erst beim COMMIT WORK im Verbuchungsprozess).",
+      "category": "Kante"
+    }
+  ],
+  "doubts": [
+    "zcl_im_me_process_po_cust.abap:26–30: Die BAdI-Methode OPEN (Anlage von mo_rules) ist nicht im Skelett; rein technische Initialisierung ohne fachliche Verzweigung, daher vertretbar. Nicht geändert."
+  ]
+}

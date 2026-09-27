@@ -1,0 +1,507 @@
+{
+  "id": "BM-050",
+  "title": "Freigegebene Innenaufträge einzeln per Batch-Input über KO88 abrechnen",
+  "classes": [
+    "K01",
+    "K03",
+    "K14",
+    "K17"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "AUFK",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 36,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:36"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "STATUS_CHECK",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 48,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:48"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "KO88",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 69,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:69"
+      },
+      "identity": {
+        "objectType": "TRAN"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-050-B01",
+      "text": "Es werden die Innenaufträge (Auftragstyp 01) der gewählten Auftragsarten und Auftragsnummern im Buchungskreis gelesen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:36"
+        }
+      ]
+    },
+    {
+      "id": "BM-050-B02",
+      "text": "Werden keine Aufträge gefunden, wird das gemeldet und der Report endet.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:41"
+        },
+        {
+          "file": "source.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:42"
+        },
+        {
+          "file": "source.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:43"
+        }
+      ]
+    },
+    {
+      "id": "BM-050-B03",
+      "text": "Nur Aufträge mit dem Systemstatus „freigegeben“ werden abgerechnet; alle anderen werden als übersprungen gemeldet.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:48"
+        },
+        {
+          "file": "source.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:56"
+        },
+        {
+          "file": "source.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:57"
+        }
+      ]
+    },
+    {
+      "id": "BM-050-B04",
+      "text": "Jeder freigegebene Auftrag wird für Periode und Geschäftsjahr über die Einzelabrechnung KO88 abgerechnet; der Testlauf-Schalter wird an die Transaktion durchgereicht.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:69"
+        }
+      ]
+    },
+    {
+      "id": "BM-050-B05",
+      "text": "Enthält die Rückmeldung der Transaktion eine Fehlermeldung, wird der Auftrag mit der Meldung als Fehler protokolliert, sonst als abgerechnet.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:74"
+        },
+        {
+          "file": "source.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:75"
+        },
+        {
+          "file": "source.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:77"
+        },
+        {
+          "file": "source.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:80"
+        }
+      ]
+    },
+    {
+      "id": "BM-050-B06",
+      "text": "Zum Schluss werden die Anzahl abgerechneter und fehlerhafter Aufträge sowie das Testlauf-Kennzeichen ausgegeben.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:85"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:35"
+        },
+        "meaning": "Reportstart"
+      },
+      {
+        "id": "q",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:36"
+        },
+        "meaning": "Innenaufträge der Auftragsarten im Buchungskreis lesen"
+      },
+      {
+        "id": "g0",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:41"
+        },
+        "meaning": "Aufträge gefunden?"
+      },
+      {
+        "id": "m0",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:42"
+        },
+        "meaning": "Hinweis: keine Aufträge"
+      },
+      {
+        "id": "x0",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:43"
+        },
+        "meaning": "Verarbeitung beenden"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "source.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:46"
+        },
+        "meaning": "Aufträge durchlaufen"
+      },
+      {
+        "id": "cs",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:48"
+        },
+        "meaning": "Systemstatus 'freigegeben' prüfen"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:56"
+        },
+        "meaning": "Auftrag nicht freigegeben?"
+      },
+      {
+        "id": "o1",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:57"
+        },
+        "meaning": "Auftrag als übersprungen melden"
+      },
+      {
+        "id": "ct",
+        "type": "transaction",
+        "anchor": {
+          "file": "source.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:69"
+        },
+        "meaning": "Abrechnung KO88 per Batch-Input im Hintergrund ausführen"
+      },
+      {
+        "id": "r",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:74"
+        },
+        "meaning": "Fehlermeldung der Abrechnung suchen"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:75"
+        },
+        "meaning": "Fehler bei der Abrechnung?"
+      },
+      {
+        "id": "oe",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:77"
+        },
+        "meaning": "Fehler mit Meldung protokollieren"
+      },
+      {
+        "id": "ok",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:80"
+        },
+        "meaning": "Auftrag als abgerechnet protokollieren"
+      },
+      {
+        "id": "os",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:85"
+        },
+        "meaning": "Zähler abgerechnet/Fehler ausgeben"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:85"
+        },
+        "meaning": "Report fertig"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "q",
+        "condition": "always"
+      },
+      {
+        "from": "q",
+        "to": "g0",
+        "condition": "always"
+      },
+      {
+        "from": "g0",
+        "to": "m0",
+        "condition": "lt_aufk IS INITIAL"
+      },
+      {
+        "from": "m0",
+        "to": "x0",
+        "condition": "always"
+      },
+      {
+        "from": "g0",
+        "to": "l",
+        "condition": "else"
+      },
+      {
+        "from": "l",
+        "to": "cs",
+        "condition": "next row"
+      },
+      {
+        "from": "cs",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "o1",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "o1",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "g1",
+        "to": "ct",
+        "condition": "else"
+      },
+      {
+        "from": "ct",
+        "to": "r",
+        "condition": "always"
+      },
+      {
+        "from": "r",
+        "to": "g2",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "oe",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "oe",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "g2",
+        "to": "ok",
+        "condition": "else"
+      },
+      {
+        "from": "ok",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l",
+        "to": "os",
+        "condition": "no more rows"
+      },
+      {
+        "from": "os",
+        "to": "e",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "source.abap:69 — kein Fachsatz „der Report bucht die Abrechnung selbst“ (die Buchung erfolgt, wenn überhaupt, in KO88; im Testlauf gar nicht)",
+    "source.abap:80 — kein Fachsatz „Auftrag wird technisch abgeschlossen“ (Status wird nur geprüft, nicht gesetzt)",
+    "source.abap:75 — kein Fachsatz „Warnungen führen zum Fehler“ (nur Meldungstyp E wird gesucht)"
+  ],
+  "processDescription": "Das Controlling startet den Report im Monatsabschluss mit Auftragsarten, Buchungskreis, Periode, Geschäftsjahr und Testlauf-Schalter. Gelesen werden die Innenaufträge der Auswahl; ohne Treffer endet der Report mit einem Hinweis. Je Auftrag wird geprüft, ob er freigegeben ist; nicht freigegebene werden übersprungen und gemeldet. Freigegebene Aufträge werden einzeln über die Transaktion KO88 per Batch-Input ohne Bildschirmanzeige und mit synchroner Verbuchung abgerechnet. Enthält die Rückmeldung eine Fehlermeldung, wird der Auftrag als Fehler protokolliert, sonst als abgerechnet. Am Ende stehen die Zähler und das Testlauf-Kennzeichen in der Liste."
+}

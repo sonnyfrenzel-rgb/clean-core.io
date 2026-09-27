@@ -1,0 +1,544 @@
+{
+  "id": "BM-049",
+  "title": "BTE 00001025: Eingangsrechnungen von EU-Lieferanten auf USt-IdNr. und EU-Steuerkennzeichen prüfen",
+  "classes": [
+    "K16",
+    "K01"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "LFA1",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 36,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:36"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "T005",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 38,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:38"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "T001",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 40,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:40"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZFI_EU_MWSKZ",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 53,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:53"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-049-B01",
+      "text": "Beim Buchen werden nur Kreditorenrechnungen der Belegarten KR und RE geprüft.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:28"
+        }
+      ]
+    },
+    {
+      "id": "BM-049-B02",
+      "text": "Belege ohne Kreditorenzeile im Buchungskreis werden nicht weiter geprüft.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:29"
+        },
+        {
+          "file": "source.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:32"
+        }
+      ]
+    },
+    {
+      "id": "BM-049-B03",
+      "text": "Zum Lieferanten werden Land und Umsatzsteuer-Identifikationsnummer gelesen, dazu, ob sein Land EU-Mitglied ist, und das Land des Buchungskreises.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:36"
+        },
+        {
+          "file": "source.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:38"
+        },
+        {
+          "file": "source.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:40"
+        }
+      ]
+    },
+    {
+      "id": "BM-049-B04",
+      "text": "Nur wenn der Lieferant aus einem anderen EU-Land als der Buchungskreis stammt, greift die innergemeinschaftliche Prüfung.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:44"
+        }
+      ]
+    },
+    {
+      "id": "BM-049-B05",
+      "text": "Fehlt dem EU-Lieferanten die USt-IdNr., wird die Buchung mit einer Fehlermeldung abgebrochen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:45"
+        },
+        {
+          "file": "source.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:46"
+        }
+      ]
+    },
+    {
+      "id": "BM-049-B06",
+      "text": "Jedes Steuerkennzeichen auf Sachkontenzeilen muss in der kundeneigenen Liste der EU-Steuerkennzeichen des Buchungskreises stehen, sonst wird die Buchung mit Angabe von Kennzeichen und Zeile abgebrochen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:49"
+        },
+        {
+          "file": "source.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:53"
+        },
+        {
+          "file": "source.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:56"
+        },
+        {
+          "file": "source.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:58"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 1,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:1"
+        },
+        "meaning": "BTE 1025: Endprüfung des Belegs vor dem Buchen"
+      },
+      {
+        "id": "l1",
+        "type": "loop",
+        "anchor": {
+          "file": "source.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:28"
+        },
+        "meaning": "Belegköpfe der Kreditorenrechnungen durchlaufen"
+      },
+      {
+        "id": "r",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:29"
+        },
+        "meaning": "Kreditorenzeile des Belegs nachschlagen"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:32"
+        },
+        "meaning": "Keine Kreditorenzeile?"
+      },
+      {
+        "id": "q1",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:36"
+        },
+        "meaning": "Land und USt-IdNr. des Lieferanten lesen"
+      },
+      {
+        "id": "q2",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:38"
+        },
+        "meaning": "EU-Kennzeichen des Lieferantenlands lesen"
+      },
+      {
+        "id": "q3",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:40"
+        },
+        "meaning": "Land des Buchungskreises lesen"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:44"
+        },
+        "meaning": "Lieferant aus anderem EU-Land?"
+      },
+      {
+        "id": "g3",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:45"
+        },
+        "meaning": "USt-IdNr. fehlt?"
+      },
+      {
+        "id": "m1",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:46"
+        },
+        "meaning": "Fehler: Lieferant ohne USt-IdNr."
+      },
+      {
+        "id": "x1",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:46"
+        },
+        "meaning": "Buchung abgebrochen"
+      },
+      {
+        "id": "l2",
+        "type": "loop",
+        "anchor": {
+          "file": "source.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:49"
+        },
+        "meaning": "Sachkontenzeilen mit Steuerkennzeichen durchlaufen"
+      },
+      {
+        "id": "q4",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:53"
+        },
+        "meaning": "Steuerkennzeichen in EU-Liste des Buchungskreises suchen"
+      },
+      {
+        "id": "g4",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:56"
+        },
+        "meaning": "Steuerkennzeichen nicht als EU-Kennzeichen erlaubt?"
+      },
+      {
+        "id": "m2",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:58"
+        },
+        "meaning": "Fehler: falsches Steuerkennzeichen"
+      },
+      {
+        "id": "x2",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:58"
+        },
+        "meaning": "Buchung abgebrochen"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:63"
+        },
+        "meaning": "Prüfung bestanden, Buchung läuft weiter"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "l1",
+        "condition": "always"
+      },
+      {
+        "from": "l1",
+        "to": "r",
+        "condition": "next row"
+      },
+      {
+        "from": "r",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "l1",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g1",
+        "to": "q1",
+        "condition": "else"
+      },
+      {
+        "from": "q1",
+        "to": "q2",
+        "condition": "always"
+      },
+      {
+        "from": "q2",
+        "to": "q3",
+        "condition": "always"
+      },
+      {
+        "from": "q3",
+        "to": "g2",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "g3",
+        "condition": "lv_xeg = 'X' AND lv_land <> lv_land_bukrs"
+      },
+      {
+        "from": "g2",
+        "to": "l1",
+        "condition": "else"
+      },
+      {
+        "from": "g3",
+        "to": "m1",
+        "condition": "lv_stceg IS INITIAL"
+      },
+      {
+        "from": "m1",
+        "to": "x1",
+        "condition": "always"
+      },
+      {
+        "from": "g3",
+        "to": "l2",
+        "condition": "else"
+      },
+      {
+        "from": "l2",
+        "to": "q4",
+        "condition": "next row"
+      },
+      {
+        "from": "q4",
+        "to": "g4",
+        "condition": "always"
+      },
+      {
+        "from": "g4",
+        "to": "m2",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "m2",
+        "to": "x2",
+        "condition": "always"
+      },
+      {
+        "from": "g4",
+        "to": "l2",
+        "condition": "else"
+      },
+      {
+        "from": "l2",
+        "to": "l1",
+        "condition": "no more rows"
+      },
+      {
+        "from": "l1",
+        "to": "e",
+        "condition": "no more rows"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "source.abap:56 — kein Fachsatz „das Steuerkennzeichen wird korrigiert“ (der Baustein ändert keine Belegzeile, er bricht nur ab)",
+    "source.abap:44 — kein Fachsatz „Inlandsrechnungen werden abgelehnt“ (Nicht-EU- und Inlandslieferanten laufen ohne Prüfung durch)",
+    "source.abap:58 — kein Fachsatz „es wird nur gewarnt“ (die Warnung ist auskommentiert; aktiv ist Meldungstyp E)"
+  ],
+  "processDescription": "Der Baustein ist als Publish-&-Subscribe-Ereignis 00001025 registriert und läuft beim Buchen jedes FI-Belegs vor dem Sichern. Er betrachtet nur Kreditorenrechnungen (Belegarten KR und RE) mit Kreditorenzeile. Zum Lieferanten werden Land und USt-IdNr. gelesen und geprüft, ob er aus einem anderen EU-Land als der Buchungskreis stammt. Ist das so und fehlt die USt-IdNr., wird die Buchung mit Fehlermeldung abgebrochen. Andernfalls muss jedes Steuerkennzeichen auf den Sachkontenzeilen in der kundeneigenen EU-Kennzeichenliste stehen, sonst wird ebenfalls abgebrochen. Inlands- und Drittlandsrechnungen sowie alle anderen Belegarten passieren unverändert."
+}

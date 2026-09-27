@@ -1,0 +1,294 @@
+{
+  "id": "BM-065",
+  "title": "Eingabeprüfung Gutmenge in der Werkerrückmeldung (PAI-Modul)",
+  "classes": [
+    "K07",
+    "K04",
+    "K11"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "AFVC",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 14,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:14"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "AFVV",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 14,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:14"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-065-B01",
+      "text": "Zum eingegebenen Vorgang des aktuellen Auftrags werden die geplante Vorgangsmenge und die bereits rückgemeldete Gutmenge gelesen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:14"
+        }
+      ]
+    },
+    {
+      "id": "BM-065-B02",
+      "text": "Gibt es den Vorgang nicht, wird die Eingabe mit einer Fehlermeldung zurückgewiesen und das Dynpro bleibt zur Korrektur stehen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:20"
+        },
+        {
+          "file": "source.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:21"
+        }
+      ]
+    },
+    {
+      "id": "BM-065-B03",
+      "text": "Die offene Menge ergibt sich aus Vorgangsmenge minus bereits rückgemeldeter Gutmenge.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:24"
+        }
+      ]
+    },
+    {
+      "id": "BM-065-B04",
+      "text": "Übersteigt die eingegebene Gutmenge die offene Menge, wird die Eingabe mit einer Fehlermeldung unter Angabe der offenen Menge zurückgewiesen; sonst wird sie akzeptiert.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:25"
+        },
+        {
+          "file": "source.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:26"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 8,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:8"
+        },
+        "meaning": "PAI-Prüfung der eingegebenen Gutmenge"
+      },
+      {
+        "id": "q",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:14"
+        },
+        "meaning": "Vorgangsmenge und bereits rückgemeldete Gutmenge des Vorgangs lesen"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:20"
+        },
+        "meaning": "Vorgang im Auftrag vorhanden?"
+      },
+      {
+        "id": "m1",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:21"
+        },
+        "meaning": "Fehlermeldung: Vorgang unbekannt – Dialogschritt abgebrochen, Eingabe erneut"
+      },
+      {
+        "id": "e1",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:21"
+        },
+        "meaning": "Dialogschritt abgebrochen – Eingabe muss korrigiert werden"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:25"
+        },
+        "meaning": "Gutmenge größer als offene Menge?"
+      },
+      {
+        "id": "m2",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:26"
+        },
+        "meaning": "Fehlermeldung mit offener Menge – Eingabe erneut"
+      },
+      {
+        "id": "e2",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:26"
+        },
+        "meaning": "Dialogschritt abgebrochen – Gutmenge muss korrigiert werden"
+      },
+      {
+        "id": "done",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:28"
+        },
+        "meaning": "Eingabe akzeptiert"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "q",
+        "condition": "always"
+      },
+      {
+        "from": "q",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "m1",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g1",
+        "to": "g2",
+        "condition": "else"
+      },
+      {
+        "from": "g2",
+        "to": "m2",
+        "condition": "zpp_s_rm-gutmenge > lv_offen"
+      },
+      {
+        "from": "g2",
+        "to": "done",
+        "condition": "else"
+      },
+      {
+        "from": "m1",
+        "to": "e1",
+        "condition": "always"
+      },
+      {
+        "from": "m2",
+        "to": "e2",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "gesamte Scheibe — kein Fachsatz „Die Rückmeldung wird gebucht“ (das Modul prüft nur die Eingabe, es bucht nichts)",
+    "source.abap:24 — kein Fachsatz „Ausschuss wird bei der offenen Menge abgezogen“ (nur Gutmenge LMNGA geht ein)",
+    "source.abap:25 — kein Fachsatz „Eine Überlieferung wird als Warnung zugelassen“ (die Meldung ist vom Typ E und blockiert)"
+  ],
+  "processDescription": "Im Rückmeldedynpro des Werker-Terminals prüft dieses PAI-Modul die eingegebene Gutmenge, sobald Vorgang oder Menge geändert werden. Es liest zum Vorgang des aktuellen Auftrags die geplante Vorgangsmenge und die bereits rückgemeldete Gutmenge. Existiert der Vorgang nicht, bricht eine Fehlermeldung den Dialogschritt ab und der Werker muss korrigieren. Aus Vorgangsmenge minus rückgemeldeter Gutmenge ergibt sich die offene Menge; ist die eingegebene Gutmenge größer, wird sie mit einer Fehlermeldung samt offener Menge zurückgewiesen. Sonst ist die Eingabe akzeptiert; gebucht wird hier nichts."
+}

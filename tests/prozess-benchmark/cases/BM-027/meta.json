@@ -1,0 +1,21 @@
+{
+  "id": "BM-027",
+  "title": "Sammelfreigabe von Bestellungen für den nächsten Freigabecode (BAPI_PO_RELEASE)",
+  "domain": "MM / Procure-to-Pay, Bestandsführung, Lager (WM/EWM)",
+  "band": "mittel",
+  "loc": 85,
+  "constructs": [
+    "REPORT",
+    "AUTHORITY-CHECK",
+    "SELECT SINGLE",
+    "DO … TIMES mit ASSIGN COMPONENT",
+    "CHECK/CONTINUE im LOOP",
+    "BAPI_PO_RELEASE mit klassischen Ausnahmen"
+  ],
+  "scenario": "Sammelfreigabe im Einkauf als Ersatz für ME28 mit eigener Reihenfolgeprüfung; wird bei der Umstellung auf den flexiblen Workflow in S/4 in Frage gestellt.",
+  "s4_issues": [
+    "Klassische Freigabestrategie (T16FS) vs. flexibler Workflow für Bestellungen in S/4HANA",
+    "Komponentenzugriff per Position (ASSIGN COMPONENT sy-index + 3) bricht bei Strukturänderung",
+    "EKKO-Lesen, Nachfolger I_PurchaseOrderAPI01"
+  ]
+}

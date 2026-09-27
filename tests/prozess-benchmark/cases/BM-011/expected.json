@@ -1,0 +1,1320 @@
+{
+  "id": "BM-011",
+  "title": "Rückstandsbearbeitung: Werksbestand nach Lieferpriorität zuteilen und Aufträge per BAPI neu einplanen",
+  "classes": [
+    "K01",
+    "K03",
+    "K04",
+    "K12",
+    "K17",
+    "K18"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "VBAP",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zsd_backorder_f01.abap",
+        "line": 14,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_backorder_f01.abap:14"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "VBAK",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zsd_backorder_f01.abap",
+        "line": 14,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_backorder_f01.abap:14"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "VBUP",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zsd_backorder_f01.abap",
+        "line": 14,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_backorder_f01.abap:14"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "VBEP",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zsd_backorder_f01.abap",
+        "line": 29,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_backorder_f01.abap:29"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "MARD",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zsd_backorder_f01.abap",
+        "line": 65,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_backorder_f01.abap:65"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ENQUEUE_EVVBAKE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zsd_backorder_f01.abap",
+        "line": 104,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_backorder_f01.abap:104"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_SALESORDER_CHANGE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zsd_backorder_f01.abap",
+        "line": 128,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_backorder_f01.abap:128"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_ROLLBACK",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zsd_backorder_f01.abap",
+        "line": 141,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_backorder_f01.abap:141"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_COMMIT",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zsd_backorder_f01.abap",
+        "line": 146,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_backorder_f01.abap:146"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "DEQUEUE_EVVBAKE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zsd_backorder_f01.abap",
+        "line": 154,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_backorder_f01.abap:154"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "REUSE_ALV_GRID_DISPLAY",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zsd_backorder_f01.abap",
+        "line": 171,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_backorder_f01.abap:171"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-011-B01",
+      "text": "Es werden alle nicht abgesagten Positionen von Kundenaufträgen der gewählten Verkaufsorganisationen, Werke und Materialien gelesen, die noch nicht voll beliefert sind.",
+      "anchors": [
+        {
+          "file": "zsd_backorder_f01.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_backorder_f01.abap:14"
+        }
+      ]
+    },
+    {
+      "id": "BM-011-B02",
+      "text": "Zu diesen Positionen werden alle Einteilungen gelesen und die bestätigte Menge je Position summiert.",
+      "anchors": [
+        {
+          "file": "zsd_backorder_f01.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_backorder_f01.abap:29"
+        },
+        {
+          "file": "zsd_backorder_f01.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_backorder_f01.abap:36"
+        },
+        {
+          "file": "zsd_backorder_f01.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_backorder_f01.abap:38"
+        }
+      ]
+    },
+    {
+      "id": "BM-011-B03",
+      "text": "Die unbestätigte Restmenge ist Auftragsmenge minus bestätigter Menge.",
+      "anchors": [
+        {
+          "file": "zsd_backorder_f01.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_backorder_f01.abap:40"
+        }
+      ]
+    },
+    {
+      "id": "BM-011-B04",
+      "text": "Als Rückstand bleiben nur Positionen mit unbestätigter Restmenge, deren Wunschlieferdatum aus dem Auftragskopf spätestens am Stichtag liegt.",
+      "anchors": [
+        {
+          "file": "zsd_backorder_f01.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_backorder_f01.abap:42"
+        }
+      ]
+    },
+    {
+      "id": "BM-011-B05",
+      "text": "Die Rückstände werden je Material und Werk nach Lieferpriorität, dann nach Wunschtermin geordnet.",
+      "anchors": [
+        {
+          "file": "zsd_backorder_f01.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_backorder_f01.abap:50"
+        }
+      ]
+    },
+    {
+      "id": "BM-011-B06",
+      "text": "Gibt es keine Rückstände, erscheint ein Hinweis; das Protokoll wird trotzdem angezeigt, dann leer.",
+      "anchors": [
+        {
+          "file": "zsd_backorder.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_backorder.abap:19"
+        },
+        {
+          "file": "zsd_backorder.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_backorder.abap:20"
+        },
+        {
+          "file": "zsd_backorder.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_backorder.abap:21"
+        },
+        {
+          "file": "zsd_backorder.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_backorder.abap:25"
+        }
+      ]
+    },
+    {
+      "id": "BM-011-B07",
+      "text": "Für jede neue Kombination aus Material und Werk wird der frei verwendbare Bestand über alle Lagerorte des Werks ermittelt.",
+      "anchors": [
+        {
+          "file": "zsd_backorder_f01.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_backorder_f01.abap:63"
+        },
+        {
+          "file": "zsd_backorder_f01.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_backorder_f01.abap:65"
+        }
+      ]
+    },
+    {
+      "id": "BM-011-B08",
+      "text": "Ist der Bestand erschöpft, wird die Position mit „Kein freier Bestand“ protokolliert und nicht bearbeitet.",
+      "anchors": [
+        {
+          "file": "zsd_backorder_f01.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_backorder_f01.abap:70"
+        }
+      ]
+    },
+    {
+      "id": "BM-011-B09",
+      "text": "Jede Position erhält als Zuteilung das Minimum aus ihrer Restmenge und dem verbleibenden freien Bestand; der freie Bestand sinkt um diese Zuteilung.",
+      "anchors": [
+        {
+          "file": "zsd_backorder_f01.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_backorder_f01.abap:77"
+        },
+        {
+          "file": "zsd_backorder_f01.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_backorder_f01.abap:78"
+        }
+      ]
+    },
+    {
+      "id": "BM-011-B10",
+      "text": "Im Testlauf wird die geplante Zuteilung nur protokolliert.",
+      "anchors": [
+        {
+          "file": "zsd_backorder_f01.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_backorder_f01.abap:80"
+        }
+      ]
+    },
+    {
+      "id": "BM-011-B11",
+      "text": "Im Echtlauf wird der Kundenauftrag gesperrt; ist er in Bearbeitung, wird die Position mit Fehler protokolliert und übersprungen.",
+      "anchors": [
+        {
+          "file": "zsd_backorder_f01.abap",
+          "line": 104,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_backorder_f01.abap:104"
+        },
+        {
+          "file": "zsd_backorder_f01.abap",
+          "line": 111,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_backorder_f01.abap:111"
+        },
+        {
+          "file": "zsd_backorder_f01.abap",
+          "line": 115,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_backorder_f01.abap:115"
+        }
+      ]
+    },
+    {
+      "id": "BM-011-B12",
+      "text": "Die erste Einteilung der Position wird auf den Stichtag und die volle Auftragsmenge geändert, sodass die Standard-Verfügbarkeitsprüfung neu bestätigt.",
+      "anchors": [
+        {
+          "file": "zsd_backorder_f01.abap",
+          "line": 128,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_backorder_f01.abap:128"
+        }
+      ]
+    },
+    {
+      "id": "BM-011-B13",
+      "text": "Lehnt der Auftrag die Änderung mit einem Fehler ab, wird sie verworfen und „Änderung abgelehnt“ protokolliert.",
+      "anchors": [
+        {
+          "file": "zsd_backorder_f01.abap",
+          "line": 139,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_backorder_f01.abap:139"
+        },
+        {
+          "file": "zsd_backorder_f01.abap",
+          "line": 140,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_backorder_f01.abap:140"
+        },
+        {
+          "file": "zsd_backorder_f01.abap",
+          "line": 141,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_backorder_f01.abap:141"
+        }
+      ]
+    },
+    {
+      "id": "BM-011-B14",
+      "text": "Sonst wird die Änderung synchron festgeschrieben und „Neu eingeplant“ mit der Zuteilungsmenge protokolliert.",
+      "anchors": [
+        {
+          "file": "zsd_backorder_f01.abap",
+          "line": 146,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_backorder_f01.abap:146"
+        }
+      ]
+    },
+    {
+      "id": "BM-011-B15",
+      "text": "Danach wird die Auftragssperre wieder gelöst.",
+      "anchors": [
+        {
+          "file": "zsd_backorder_f01.abap",
+          "line": 154,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_backorder_f01.abap:154"
+        }
+      ]
+    },
+    {
+      "id": "BM-011-B16",
+      "text": "Am Ende wird das Verteilprotokoll mit Auftrag, Position, Material, Zuteilung, Status und Meldung als ALV-Liste angezeigt.",
+      "anchors": [
+        {
+          "file": "zsd_backorder_f01.abap",
+          "line": 171,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_backorder_f01.abap:171"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "sos",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_backorder.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_backorder.abap:17"
+        },
+        "meaning": "Reportstart"
+      },
+      {
+        "id": "c_rl",
+        "type": "call",
+        "anchor": {
+          "file": "zsd_backorder.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_backorder.abap:18"
+        },
+        "meaning": "Rückstände ermitteln"
+      },
+      {
+        "id": "g_leer",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_backorder.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_backorder.abap:19"
+        },
+        "meaning": "Rückstände gefunden?"
+      },
+      {
+        "id": "m_leer",
+        "type": "output",
+        "anchor": {
+          "file": "zsd_backorder.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_backorder.abap:20"
+        },
+        "meaning": "Hinweis: keine Rückstände"
+      },
+      {
+        "id": "e_sos",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_backorder.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_backorder.abap:21"
+        },
+        "meaning": "START-OF-SELECTION verlassen"
+      },
+      {
+        "id": "c_vt",
+        "type": "call",
+        "anchor": {
+          "file": "zsd_backorder.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_backorder.abap:23"
+        },
+        "meaning": "Bestand verteilen"
+      },
+      {
+        "id": "eos",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_backorder.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_backorder.abap:25"
+        },
+        "meaning": "Abschlussereignis (läuft auch nach RETURN)"
+      },
+      {
+        "id": "c_pa",
+        "type": "call",
+        "anchor": {
+          "file": "zsd_backorder.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_backorder.abap:26"
+        },
+        "meaning": "Protokoll anzeigen"
+      },
+      {
+        "id": "e_end",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_backorder.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_backorder.abap:26"
+        },
+        "meaning": "Report beendet"
+      },
+      {
+        "id": "rs",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_backorder_f01.abap",
+          "line": 10,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_backorder_f01.abap:10"
+        },
+        "meaning": "Rückstandsermittlung"
+      },
+      {
+        "id": "q1",
+        "type": "read",
+        "anchor": {
+          "file": "zsd_backorder_f01.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_backorder_f01.abap:14"
+        },
+        "meaning": "Nicht abgesagte, nicht voll belieferte Auftragspositionen lesen"
+      },
+      {
+        "id": "chk",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_backorder_f01.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_backorder_f01.abap:27"
+        },
+        "meaning": "Positionen gefunden?"
+      },
+      {
+        "id": "q2",
+        "type": "read",
+        "anchor": {
+          "file": "zsd_backorder_f01.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_backorder_f01.abap:29"
+        },
+        "meaning": "Einteilungen der Positionen lesen"
+      },
+      {
+        "id": "l1",
+        "type": "loop",
+        "anchor": {
+          "file": "zsd_backorder_f01.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_backorder_f01.abap:34"
+        },
+        "meaning": "Je Position"
+      },
+      {
+        "id": "l2",
+        "type": "loop",
+        "anchor": {
+          "file": "zsd_backorder_f01.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_backorder_f01.abap:36"
+        },
+        "meaning": "Einteilungen der Position"
+      },
+      {
+        "id": "sum",
+        "type": "action",
+        "anchor": {
+          "file": "zsd_backorder_f01.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_backorder_f01.abap:38"
+        },
+        "meaning": "Bestätigte Menge summieren"
+      },
+      {
+        "id": "off",
+        "type": "action",
+        "anchor": {
+          "file": "zsd_backorder_f01.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_backorder_f01.abap:40"
+        },
+        "meaning": "Unbestätigte Restmenge berechnen"
+      },
+      {
+        "id": "g_off",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_backorder_f01.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_backorder_f01.abap:42"
+        },
+        "meaning": "Kein Rückstand oder noch nicht fällig?"
+      },
+      {
+        "id": "prio",
+        "type": "action",
+        "anchor": {
+          "file": "zsd_backorder_f01.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_backorder_f01.abap:50"
+        },
+        "meaning": "Rückstände nach Lieferpriorität und Wunschtermin ordnen"
+      },
+      {
+        "id": "re",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_backorder_f01.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_backorder_f01.abap:51"
+        },
+        "meaning": "Rückstandsliste fertig"
+      },
+      {
+        "id": "vs",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_backorder_f01.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_backorder_f01.abap:58"
+        },
+        "meaning": "Verteilung"
+      },
+      {
+        "id": "l3",
+        "type": "loop",
+        "anchor": {
+          "file": "zsd_backorder_f01.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_backorder_f01.abap:62"
+        },
+        "meaning": "Rückstände in Prioritätsreihenfolge"
+      },
+      {
+        "id": "atn",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_backorder_f01.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_backorder_f01.abap:63"
+        },
+        "meaning": "Neues Material/Werk?"
+      },
+      {
+        "id": "q3",
+        "type": "read",
+        "anchor": {
+          "file": "zsd_backorder_f01.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_backorder_f01.abap:65"
+        },
+        "meaning": "Frei verwendbaren Werksbestand lesen"
+      },
+      {
+        "id": "g_frei",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_backorder_f01.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_backorder_f01.abap:70"
+        },
+        "meaning": "Bestand erschöpft?"
+      },
+      {
+        "id": "zut",
+        "type": "action",
+        "anchor": {
+          "file": "zsd_backorder_f01.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_backorder_f01.abap:77"
+        },
+        "meaning": "Zuteilung = Minimum aus Restmenge und freiem Bestand"
+      },
+      {
+        "id": "dec",
+        "type": "action",
+        "anchor": {
+          "file": "zsd_backorder_f01.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_backorder_f01.abap:78"
+        },
+        "meaning": "Freien Bestand um Zuteilung mindern"
+      },
+      {
+        "id": "g_test",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_backorder_f01.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_backorder_f01.abap:80"
+        },
+        "meaning": "Testlauf?"
+      },
+      {
+        "id": "c_ein",
+        "type": "call",
+        "anchor": {
+          "file": "zsd_backorder_f01.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_backorder_f01.abap:87"
+        },
+        "meaning": "Auftragsposition neu einplanen"
+      },
+      {
+        "id": "ve",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_backorder_f01.abap",
+          "line": 89,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_backorder_f01.abap:89"
+        },
+        "meaning": "Verteilung beendet"
+      },
+      {
+        "id": "ns",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_backorder_f01.abap",
+          "line": 96,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_backorder_f01.abap:96"
+        },
+        "meaning": "Neueinplanung einer Position"
+      },
+      {
+        "id": "enq",
+        "type": "lock",
+        "anchor": {
+          "file": "zsd_backorder_f01.abap",
+          "line": 104,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_backorder_f01.abap:104"
+        },
+        "meaning": "Kundenauftrag sperren"
+      },
+      {
+        "id": "g_enq",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_backorder_f01.abap",
+          "line": 111,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_backorder_f01.abap:111"
+        },
+        "meaning": "Sperre erhalten?"
+      },
+      {
+        "id": "e_enq",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_backorder_f01.abap",
+          "line": 115,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_backorder_f01.abap:115"
+        },
+        "meaning": "Position übersprungen: Auftrag in Bearbeitung"
+      },
+      {
+        "id": "chg",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zsd_backorder_f01.abap",
+          "line": 128,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_backorder_f01.abap:128"
+        },
+        "meaning": "Einteilung 0001 auf Stichtag mit voller Auftragsmenge ändern"
+      },
+      {
+        "id": "rd",
+        "type": "read",
+        "anchor": {
+          "file": "zsd_backorder_f01.abap",
+          "line": 139,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_backorder_f01.abap:139"
+        },
+        "meaning": "Fehlermeldung im Ergebnis suchen"
+      },
+      {
+        "id": "g_ret",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_backorder_f01.abap",
+          "line": 140,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_backorder_f01.abap:140"
+        },
+        "meaning": "Änderung abgelehnt?"
+      },
+      {
+        "id": "rb",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zsd_backorder_f01.abap",
+          "line": 141,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_backorder_f01.abap:141"
+        },
+        "meaning": "Änderung verwerfen"
+      },
+      {
+        "id": "cm",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zsd_backorder_f01.abap",
+          "line": 146,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_backorder_f01.abap:146"
+        },
+        "meaning": "Änderung festschreiben"
+      },
+      {
+        "id": "deq",
+        "type": "lock",
+        "anchor": {
+          "file": "zsd_backorder_f01.abap",
+          "line": 154,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_backorder_f01.abap:154"
+        },
+        "meaning": "Auftragssperre lösen"
+      },
+      {
+        "id": "ne",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_backorder_f01.abap",
+          "line": 157,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_backorder_f01.abap:157"
+        },
+        "meaning": "Neueinplanung beendet"
+      },
+      {
+        "id": "ps",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_backorder_f01.abap",
+          "line": 162,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_backorder_f01.abap:162"
+        },
+        "meaning": "Protokollanzeige"
+      },
+      {
+        "id": "alv",
+        "type": "output",
+        "anchor": {
+          "file": "zsd_backorder_f01.abap",
+          "line": 171,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_backorder_f01.abap:171"
+        },
+        "meaning": "Verteilprotokoll als ALV anzeigen"
+      },
+      {
+        "id": "pe",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_backorder_f01.abap",
+          "line": 180,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_backorder_f01.abap:180"
+        },
+        "meaning": "Anzeige beendet"
+      }
+    ],
+    "edges": [
+      {
+        "from": "sos",
+        "to": "c_rl",
+        "condition": "always"
+      },
+      {
+        "from": "c_rl",
+        "to": "rs",
+        "condition": "always"
+      },
+      {
+        "from": "g_leer",
+        "to": "m_leer",
+        "condition": "gt_rueck IS INITIAL"
+      },
+      {
+        "from": "m_leer",
+        "to": "e_sos",
+        "condition": "always"
+      },
+      {
+        "from": "g_leer",
+        "to": "c_vt",
+        "condition": "else"
+      },
+      {
+        "from": "c_vt",
+        "to": "vs",
+        "condition": "always"
+      },
+      {
+        "from": "e_sos",
+        "to": "eos",
+        "condition": "always"
+      },
+      {
+        "from": "eos",
+        "to": "c_pa",
+        "condition": "always"
+      },
+      {
+        "from": "c_pa",
+        "to": "ps",
+        "condition": "always"
+      },
+      {
+        "from": "rs",
+        "to": "q1",
+        "condition": "always"
+      },
+      {
+        "from": "q1",
+        "to": "chk",
+        "condition": "always"
+      },
+      {
+        "from": "chk",
+        "to": "q2",
+        "condition": "gt_rueck IS NOT INITIAL"
+      },
+      {
+        "from": "chk",
+        "to": "re",
+        "condition": "else"
+      },
+      {
+        "from": "q2",
+        "to": "l1",
+        "condition": "always"
+      },
+      {
+        "from": "l1",
+        "to": "l2",
+        "condition": "next row"
+      },
+      {
+        "from": "l2",
+        "to": "sum",
+        "condition": "next row"
+      },
+      {
+        "from": "sum",
+        "to": "l2",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l2",
+        "to": "off",
+        "condition": "no more rows"
+      },
+      {
+        "from": "off",
+        "to": "g_off",
+        "condition": "always"
+      },
+      {
+        "from": "g_off",
+        "to": "l1",
+        "condition": "gs_rueck-offen <= 0 OR gs_rueck-edatu > p_datum"
+      },
+      {
+        "from": "g_off",
+        "to": "l1",
+        "condition": "else"
+      },
+      {
+        "from": "l1",
+        "to": "prio",
+        "condition": "no more rows"
+      },
+      {
+        "from": "prio",
+        "to": "re",
+        "condition": "always"
+      },
+      {
+        "from": "vs",
+        "to": "l3",
+        "condition": "always"
+      },
+      {
+        "from": "l3",
+        "to": "atn",
+        "condition": "next row"
+      },
+      {
+        "from": "atn",
+        "to": "q3",
+        "condition": "AT NEW werks"
+      },
+      {
+        "from": "atn",
+        "to": "g_frei",
+        "condition": "else"
+      },
+      {
+        "from": "q3",
+        "to": "g_frei",
+        "condition": "always"
+      },
+      {
+        "from": "g_frei",
+        "to": "l3",
+        "condition": "lv_frei <= 0"
+      },
+      {
+        "from": "g_frei",
+        "to": "zut",
+        "condition": "else"
+      },
+      {
+        "from": "zut",
+        "to": "dec",
+        "condition": "always"
+      },
+      {
+        "from": "dec",
+        "to": "g_test",
+        "condition": "always"
+      },
+      {
+        "from": "g_test",
+        "to": "l3",
+        "condition": "p_test = abap_true"
+      },
+      {
+        "from": "g_test",
+        "to": "c_ein",
+        "condition": "else"
+      },
+      {
+        "from": "c_ein",
+        "to": "ns",
+        "condition": "always"
+      },
+      {
+        "from": "l3",
+        "to": "ve",
+        "condition": "no more rows"
+      },
+      {
+        "from": "ns",
+        "to": "enq",
+        "condition": "always"
+      },
+      {
+        "from": "enq",
+        "to": "g_enq",
+        "condition": "always"
+      },
+      {
+        "from": "g_enq",
+        "to": "e_enq",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g_enq",
+        "to": "chg",
+        "condition": "else"
+      },
+      {
+        "from": "chg",
+        "to": "rd",
+        "condition": "always"
+      },
+      {
+        "from": "rd",
+        "to": "g_ret",
+        "condition": "always"
+      },
+      {
+        "from": "g_ret",
+        "to": "rb",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "g_ret",
+        "to": "cm",
+        "condition": "else"
+      },
+      {
+        "from": "rb",
+        "to": "deq",
+        "condition": "always"
+      },
+      {
+        "from": "cm",
+        "to": "deq",
+        "condition": "always"
+      },
+      {
+        "from": "deq",
+        "to": "ne",
+        "condition": "always"
+      },
+      {
+        "from": "ps",
+        "to": "alv",
+        "condition": "always"
+      },
+      {
+        "from": "alv",
+        "to": "pe",
+        "condition": "always"
+      },
+      {
+        "from": "re",
+        "to": "g_leer",
+        "condition": "always"
+      },
+      {
+        "from": "ve",
+        "to": "eos",
+        "condition": "always"
+      },
+      {
+        "from": "pe",
+        "to": "e_end",
+        "condition": "always"
+      },
+      {
+        "from": "ne",
+        "to": "l3",
+        "condition": "next iteration"
+      },
+      {
+        "from": "e_enq",
+        "to": "l3",
+        "condition": "next iteration"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zsd_backorder_f01.abap:128 — kein Fachsatz „die zugeteilte Menge wird im Auftrag bestätigt“: der BAPI erhält die volle Auftragsmenge und den Stichtag, iv_menge wird nur protokolliert; was bestätigt wird, entscheidet die Standard-ATP-Prüfung",
+    "zsd_backorder_f01.abap:78 — kein Fachsatz „der freie Bestand wird nur bei erfolgreicher Änderung verbraucht“: er wird vor Testlauf-Entscheidung und BAPI gemindert, auch bei Sperre oder Ablehnung",
+    "zsd_backorder_f01.abap:65 — kein Fachsatz „nur nicht reservierter/unbestätigter Bestand wird verteilt“: gelesen wird der gesamte frei verwendbare Lagerbestand, bestehende Bestätigungen anderer Aufträge werden nicht abgezogen",
+    "zsd_backorder_f01.abap:46 — kein write-Knoten: MODIFY wirkt auf die interne Tabelle, nicht auf die Datenbank"
+  ],
+  "processDescription": "Der Report wird von der Disposition mit Verkaufsorganisationen, Werken, optional Materialien, einem Stichtag (Vorschlag heute) und dem Testlaufkennzeichen gestartet. Er liest alle nicht abgesagten, nicht voll belieferten Positionen von Kundenaufträgen und ermittelt aus den Einteilungen je Position die unbestätigte Restmenge. Als Rückstand bleiben Positionen mit Restmenge, deren Wunschlieferdatum spätestens am Stichtag liegt, geordnet nach Material, Werk, Lieferpriorität und Wunschtermin. Gibt es keine, erscheint ein Hinweis, und am Ende wird ein leeres Protokoll gezeigt. Sonst ermittelt er je Material und Werk den frei verwendbaren Lagerbestand und teilt ihn der Reihe nach zu, jeweils höchstens die Restmenge der Position. Ist der Bestand erschöpft, protokolliert er die übrigen Positionen als unversorgt. Im Testlauf protokolliert er nur die geplanten Zuteilungen. Im Echtlauf sperrt er den Auftrag, setzt die erste Einteilung per BAPI auf Stichtag und volle Auftragsmenge, damit die Standardprüfung neu bestätigt, schreibt bei Erfolg fest oder rollt bei Fehler zurück und löst die Sperre. Ist der Auftrag gesperrt, wird die Position übersprungen, der Bestand gilt dennoch als verbraucht. Zum Schluss zeigt er das Protokoll als ALV-Liste."
+}

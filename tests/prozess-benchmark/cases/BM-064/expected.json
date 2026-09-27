@@ -1,0 +1,252 @@
+{
+  "id": "BM-064",
+  "title": "Freigabesperre für Fertigungsaufträge ohne Prüfplan (BAdI WORKORDER_UPDATE)",
+  "classes": [
+    "K05",
+    "K01",
+    "K16"
+  ],
+  "classic_level": "B",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "WORKORDER_UPDATE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 3,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:3"
+      },
+      "identity": {
+        "objectType": "BADI"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "MAPL",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 11,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:11"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-064-B01",
+      "text": "Die Prüfung greift nur bei der Freigabe von Aufträgen der Werke 1000 und 1100; für andere Werke wird die Freigabe ohne Prüfung zugelassen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 8,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:8"
+        }
+      ]
+    },
+    {
+      "id": "BM-064-B02",
+      "text": "Für Material und Werk des Auftrags wird eine nicht gelöschte Zuordnung zu einem Prüfplan (Plantyp Q) gesucht.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 11,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:11"
+        }
+      ]
+    },
+    {
+      "id": "BM-064-B03",
+      "text": "Fehlt ein Prüfplan, wird der Hinweis „Kein Pruefplan fuer Material … – Freigabe nicht moeglich“ ausgegeben und die Freigabe über die Ausnahme ERROR abgelehnt.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:16"
+        },
+        {
+          "file": "source.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:17"
+        },
+        {
+          "file": "source.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:20"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 3,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:3"
+        },
+        "meaning": "Einstieg bei Freigabe eines Fertigungsauftrags"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 8,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:8"
+        },
+        "meaning": "Werk mit QM-Pflicht (1000/1100)?"
+      },
+      {
+        "id": "q",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 11,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:11"
+        },
+        "meaning": "Nicht gelöschte Prüfplanzuordnung (Plantyp Q) für Material und Werk lesen"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:16"
+        },
+        "meaning": "Prüfplan vorhanden?"
+      },
+      {
+        "id": "m",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:17"
+        },
+        "meaning": "Hinweis: kein Prüfplan, Freigabe nicht möglich"
+      },
+      {
+        "id": "x",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:20"
+        },
+        "meaning": "Ausnahme ERROR – Freigabe wird abgelehnt"
+      },
+      {
+        "id": "done",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:23"
+        },
+        "meaning": "Freigabe zulassen"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "q",
+        "condition": "is_header_dialog-werks = '1000' OR is_header_dialog-werks = '1100'"
+      },
+      {
+        "from": "g1",
+        "to": "done",
+        "condition": "else"
+      },
+      {
+        "from": "q",
+        "to": "g2",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "m",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "m",
+        "to": "x",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "done",
+        "condition": "else"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "source.abap:11 — kein Fachsatz „Die Gültigkeit oder der Status des Prüfplans wird geprüft“ (geprüft werden nur Existenz der Zuordnung und Löschkennzeichen)",
+    "gesamte Scheibe — kein Fachsatz „Es wird ein Prüflos angelegt“ (der BAdI liest nur und lehnt ggf. ab)",
+    "source.abap:8 — kein Fachsatz „Aufträge anderer Werke werden gesperrt“ (dort endet die Methode ohne Ausnahme, die Freigabe geht durch)"
+  ],
+  "processDescription": "Beim Freigeben eines Fertigungsauftrags ruft SAP die BAdI-Methode AT_RELEASE auf. Die Implementierung prüft nur Aufträge der Werke 1000 und 1100; für alle anderen Werke endet sie sofort und die Freigabe läuft weiter. Für die betroffenen Werke sucht sie eine nicht gelöschte Prüfplanzuordnung für Material und Werk. Gibt es keine, weist sie mit einem Hinweis auf den fehlenden Prüfplan hin und löst die Ausnahme ERROR aus, womit die Freigabe abgelehnt wird. Ist ein Prüfplan zugeordnet, endet die Methode ohne Einwand."
+}

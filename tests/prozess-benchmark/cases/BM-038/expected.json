@@ -1,0 +1,2568 @@
+{
+  "id": "BM-038",
+  "title": "WM-Kommissionierwelle: Transportaufträge zu Lieferungen, Fixplatz-Quittierung und paralleler TA-Druck",
+  "classes": [
+    "K01",
+    "K03",
+    "K06",
+    "K12",
+    "K09"
+  ],
+  "classic_level": "D",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [
+    "Setzt UPDATE LTAK SET DRUKZ = 'X' das Druckkennzeichen fachlich richtig? DRUKZ ist im Standard ein Druckcode, kein Flag.",
+    "Der Druckbaustein schreibt per COMMIT WORK in einer eigenen aRFC-Session; ist das mit der Sperrlogik des Standard-TA-Drucks vereinbar?"
+  ],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "LIKP",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zwm_pick_wave_f01.abap",
+        "line": 7,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zwm_pick_wave_f01.abap:7"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "VBUK",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zwm_pick_wave_f01.abap",
+        "line": 7,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zwm_pick_wave_f01.abap:7"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ENQUEUE_EVVBLKE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zwm_pick_wave_f01.abap",
+        "line": 38,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zwm_pick_wave_f01.abap:38"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "L_TO_CREATE_DN",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zwm_pick_wave_f01.abap",
+        "line": 51,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zwm_pick_wave_f01.abap:51"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "L_TO_CONFIRM",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zwm_pick_wave_f01.abap",
+        "line": 99,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zwm_pick_wave_f01.abap:99"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "Z_WM_PRINT_TO",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zwm_pick_wave_f01.abap",
+        "line": 138,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zwm_pick_wave_f01.abap:138"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "LTAK",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "z_wm_print_to.abap",
+        "line": 23,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_wm_print_to.abap:23"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "LTAP",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "z_wm_print_to.abap",
+        "line": 29,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_wm_print_to.abap:29"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZWM_FORM",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "z_wm_print_to.abap",
+        "line": 34,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_wm_print_to.abap:34"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "SSF_FUNCTION_MODULE_NAME",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "z_wm_print_to.abap",
+        "line": 40,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_wm_print_to.abap:40"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "LTAK",
+      "owner": "SAP",
+      "usage": "write",
+      "anchor": {
+        "file": "z_wm_print_to.abap",
+        "line": 82,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_wm_print_to.abap:82"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZCL_WM_PICK_LOG",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zwm_pick_wave.abap",
+        "line": 19,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zwm_pick_wave.abap:19"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAL_DB_SAVE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_wm_pick_log.abap",
+        "line": 73,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_wm_pick_log.abap:73"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-038-B01",
+      "text": "Für jeden Lauf wird ein Anwendungsprotokoll ZWM/WAVE mit Lagernummer, Versandstelle und Datum als externer Nummer und 30 Tagen Aufbewahrung angelegt.",
+      "anchors": [
+        {
+          "file": "zwm_pick_wave.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave.abap:19"
+        },
+        {
+          "file": "zcl_wm_pick_log.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_wm_pick_log.abap:28"
+        },
+        {
+          "file": "zcl_wm_pick_log.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_wm_pick_log.abap:29"
+        }
+      ]
+    },
+    {
+      "id": "BM-038-B02",
+      "text": "Es werden die Auslieferungen der Versandstelle und Lagernummer in den gewählten Routen und Warenausgangsdaten gelesen, die noch nicht kommissioniert, WM-seitig noch offen und nicht gesperrt sind.",
+      "anchors": [
+        {
+          "file": "zwm_pick_wave_f01.abap",
+          "line": 7,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave_f01.abap:7"
+        }
+      ]
+    },
+    {
+      "id": "BM-038-B03",
+      "text": "Gibt es keine, wird eine Warnung protokolliert, das Protokoll gesichert, ein Hinweis ausgegeben und die Welle beendet.",
+      "anchors": [
+        {
+          "file": "zwm_pick_wave.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave.abap:22"
+        },
+        {
+          "file": "zwm_pick_wave.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave.abap:23"
+        },
+        {
+          "file": "zwm_pick_wave.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave.abap:24"
+        },
+        {
+          "file": "zwm_pick_wave.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave.abap:25"
+        },
+        {
+          "file": "zwm_pick_wave.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave.abap:26"
+        }
+      ]
+    },
+    {
+      "id": "BM-038-B04",
+      "text": "Die Lieferungen werden nach Lieferpriorität, Route und Warenausgangsdatum sortiert und die Welle auf die eingegebene Höchstzahl gekappt; die Kappung wird protokolliert.",
+      "anchors": [
+        {
+          "file": "zwm_pick_wave_f01.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave_f01.abap:23"
+        },
+        {
+          "file": "zwm_pick_wave_f01.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave_f01.abap:25"
+        },
+        {
+          "file": "zwm_pick_wave_f01.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave_f01.abap:26"
+        }
+      ]
+    },
+    {
+      "id": "BM-038-B05",
+      "text": "Jede Lieferung der Welle wird gesperrt; ist sie von anderer Seite gesperrt, wird sie mit Warnung übersprungen.",
+      "anchors": [
+        {
+          "file": "zwm_pick_wave_f01.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave_f01.abap:38"
+        },
+        {
+          "file": "zwm_pick_wave_f01.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave_f01.abap:45"
+        },
+        {
+          "file": "zwm_pick_wave_f01.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave_f01.abap:46"
+        },
+        {
+          "file": "zwm_pick_wave_f01.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave_f01.abap:48"
+        }
+      ]
+    },
+    {
+      "id": "BM-038-B06",
+      "text": "Zur Lieferung wird ein Transportauftrag angelegt und sofort festgeschrieben.",
+      "anchors": [
+        {
+          "file": "zwm_pick_wave_f01.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave_f01.abap:51"
+        }
+      ]
+    },
+    {
+      "id": "BM-038-B07",
+      "text": "Scheitert die Anlage, wird die Systemmeldung protokolliert, die Lieferung entsperrt und als fehlerhaft markiert.",
+      "anchors": [
+        {
+          "file": "zwm_pick_wave_f01.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave_f01.abap:78"
+        },
+        {
+          "file": "zwm_pick_wave_f01.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave_f01.abap:79"
+        },
+        {
+          "file": "zwm_pick_wave_f01.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave_f01.abap:80"
+        },
+        {
+          "file": "zwm_pick_wave_f01.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave_f01.abap:81"
+        }
+      ]
+    },
+    {
+      "id": "BM-038-B08",
+      "text": "Gelingt sie, werden TA-Nummer und Erfolg protokolliert.",
+      "anchors": [
+        {
+          "file": "zwm_pick_wave_f01.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave_f01.abap:86"
+        },
+        {
+          "file": "zwm_pick_wave_f01.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave_f01.abap:87"
+        }
+      ]
+    },
+    {
+      "id": "BM-038-B09",
+      "text": "Ist Sofortquittierung gewählt und stammen alle TA-Positionen aus dem Fixplatz-Lagertyp 005, wird der Transportauftrag sofort quittiert; bei Erfolg gilt die Lieferung als quittiert, sonst wird die Meldung protokolliert.",
+      "anchors": [
+        {
+          "file": "zwm_pick_wave_f01.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave_f01.abap:90"
+        },
+        {
+          "file": "zwm_pick_wave_f01.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave_f01.abap:93"
+        },
+        {
+          "file": "zwm_pick_wave_f01.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave_f01.abap:98"
+        },
+        {
+          "file": "zwm_pick_wave_f01.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave_f01.abap:99"
+        },
+        {
+          "file": "zwm_pick_wave_f01.abap",
+          "line": 110,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave_f01.abap:110"
+        },
+        {
+          "file": "zwm_pick_wave_f01.abap",
+          "line": 111,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave_f01.abap:111"
+        }
+      ]
+    },
+    {
+      "id": "BM-038-B10",
+      "text": "Danach wird die Lieferung wieder entsperrt.",
+      "anchors": [
+        {
+          "file": "zwm_pick_wave_f01.abap",
+          "line": 118,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave_f01.abap:118"
+        },
+        {
+          "file": "zwm_pick_wave_f01.abap",
+          "line": 123,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave_f01.abap:123"
+        }
+      ]
+    },
+    {
+      "id": "BM-038-B11",
+      "text": "Ist Drucken gewählt, wird für jeden angelegten, nicht sofort quittierten Transportauftrag die Kommissionierliste als asynchroner Druckauftrag gestartet, höchstens fünf gleichzeitig.",
+      "anchors": [
+        {
+          "file": "zwm_pick_wave.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave.abap:35"
+        },
+        {
+          "file": "zwm_pick_wave_f01.abap",
+          "line": 133,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave_f01.abap:133"
+        },
+        {
+          "file": "zwm_pick_wave_f01.abap",
+          "line": 135,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave_f01.abap:135"
+        },
+        {
+          "file": "zwm_pick_wave_f01.abap",
+          "line": 138,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave_f01.abap:138"
+        }
+      ]
+    },
+    {
+      "id": "BM-038-B12",
+      "text": "Kann ein Druckauftrag nicht gestartet werden, wird das protokolliert; am Ende wartet der Lauf höchstens 120 Sekunden auf alle Druckaufträge.",
+      "anchors": [
+        {
+          "file": "zwm_pick_wave_f01.abap",
+          "line": 150,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave_f01.abap:150"
+        },
+        {
+          "file": "zwm_pick_wave_f01.abap",
+          "line": 153,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave_f01.abap:153"
+        },
+        {
+          "file": "zwm_pick_wave_f01.abap",
+          "line": 156,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave_f01.abap:156"
+        }
+      ]
+    },
+    {
+      "id": "BM-038-B13",
+      "text": "Der Druckbaustein liest Kopf und Positionen des Transportauftrags; fehlt der Kopf, meldet er einen Druckfehler.",
+      "anchors": [
+        {
+          "file": "z_wm_print_to.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_wm_print_to.abap:23"
+        },
+        {
+          "file": "z_wm_print_to.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_wm_print_to.abap:26"
+        },
+        {
+          "file": "z_wm_print_to.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_wm_print_to.abap:29"
+        }
+      ]
+    },
+    {
+      "id": "BM-038-B14",
+      "text": "Das Formular kommt aus der Lagernummern-Zuordnung, sonst gilt ZWM_PICKLIST; die Liste wird ohne Dialog sofort auf dem gewählten Drucker ausgegeben.",
+      "anchors": [
+        {
+          "file": "z_wm_print_to.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_wm_print_to.abap:34"
+        },
+        {
+          "file": "z_wm_print_to.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_wm_print_to.abap:37"
+        },
+        {
+          "file": "z_wm_print_to.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_wm_print_to.abap:40"
+        },
+        {
+          "file": "z_wm_print_to.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_wm_print_to.abap:59"
+        }
+      ]
+    },
+    {
+      "id": "BM-038-B15",
+      "text": "Nach erfolgreichem Druck wird am TA-Kopf das Druckkennzeichen direkt in der Datenbank gesetzt und festgeschrieben.",
+      "anchors": [
+        {
+          "file": "z_wm_print_to.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_wm_print_to.abap:82"
+        },
+        {
+          "file": "z_wm_print_to.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_wm_print_to.abap:85"
+        }
+      ]
+    },
+    {
+      "id": "BM-038-B16",
+      "text": "Die Rückmeldung jedes Druckauftrags wird empfangen; Spoolnummern werden gesammelt, Fehler protokolliert.",
+      "anchors": [
+        {
+          "file": "zwm_pick_wave_f01.abap",
+          "line": 164,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave_f01.abap:164"
+        },
+        {
+          "file": "zwm_pick_wave_f01.abap",
+          "line": 172,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave_f01.abap:172"
+        },
+        {
+          "file": "zwm_pick_wave_f01.abap",
+          "line": 173,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave_f01.abap:173"
+        },
+        {
+          "file": "zwm_pick_wave_f01.abap",
+          "line": 175,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave_f01.abap:175"
+        }
+      ]
+    },
+    {
+      "id": "BM-038-B17",
+      "text": "Das Protokoll wird gesichert; im Dialog wird es angezeigt, im Hintergrund werden die Zähler je Status und die Zahl der Druckaufträge ausgegeben.",
+      "anchors": [
+        {
+          "file": "zwm_pick_wave.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave.abap:39"
+        },
+        {
+          "file": "zwm_pick_wave.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave.abap:42"
+        },
+        {
+          "file": "zcl_wm_pick_log.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_wm_pick_log.abap:84"
+        },
+        {
+          "file": "zwm_pick_wave_f01.abap",
+          "line": 190,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave_f01.abap:190"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "zwm_pick_wave.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave.abap:18"
+        },
+        "meaning": "Wellenlauf startet"
+      },
+      {
+        "id": "lg",
+        "type": "call",
+        "anchor": {
+          "file": "zwm_pick_wave.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave.abap:19"
+        },
+        "meaning": "Anwendungsprotokoll anlegen"
+      },
+      {
+        "id": "c0",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_wm_pick_log.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_wm_pick_log.abap:21"
+        },
+        "meaning": "Protokollobjekt"
+      },
+      {
+        "id": "c1",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_wm_pick_log.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_wm_pick_log.abap:29"
+        },
+        "meaning": "Protokoll ZWM/WAVE mit 30 Tagen Aufbewahrung"
+      },
+      {
+        "id": "pl",
+        "type": "call",
+        "anchor": {
+          "file": "zwm_pick_wave.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave.abap:21"
+        },
+        "meaning": "Offene Lieferungen lesen"
+      },
+      {
+        "id": "f1",
+        "type": "start",
+        "anchor": {
+          "file": "zwm_pick_wave_f01.abap",
+          "line": 5,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave_f01.abap:5"
+        },
+        "meaning": "Lieferselektion"
+      },
+      {
+        "id": "q1",
+        "type": "read",
+        "anchor": {
+          "file": "zwm_pick_wave_f01.abap",
+          "line": 7,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave_f01.abap:7"
+        },
+        "meaning": "Nicht kommissionierte, WM-relevante, nicht gesperrte Lieferungen lesen"
+      },
+      {
+        "id": "g0",
+        "type": "gateway",
+        "anchor": {
+          "file": "zwm_pick_wave.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave.abap:22"
+        },
+        "meaning": "Lieferungen vorhanden?"
+      },
+      {
+        "id": "a0",
+        "type": "call",
+        "anchor": {
+          "file": "zwm_pick_wave.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave.abap:23"
+        },
+        "meaning": "Warnung protokollieren"
+      },
+      {
+        "id": "sv0",
+        "type": "call",
+        "anchor": {
+          "file": "zwm_pick_wave.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave.abap:24"
+        },
+        "meaning": "Protokoll sichern"
+      },
+      {
+        "id": "m0",
+        "type": "output",
+        "anchor": {
+          "file": "zwm_pick_wave.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave.abap:25"
+        },
+        "meaning": "Hinweis: keine Lieferungen"
+      },
+      {
+        "id": "r0",
+        "type": "end",
+        "anchor": {
+          "file": "zwm_pick_wave.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave.abap:26"
+        },
+        "meaning": "Welle beenden"
+      },
+      {
+        "id": "ca0",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_wm_pick_log.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_wm_pick_log.abap:38"
+        },
+        "meaning": "Freitextmeldung"
+      },
+      {
+        "id": "ca1",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_wm_pick_log.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_wm_pick_log.abap:41"
+        },
+        "meaning": "Meldung ins Protokoll"
+      },
+      {
+        "id": "sv",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_wm_pick_log.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_wm_pick_log.abap:70"
+        },
+        "meaning": "Protokoll sichern"
+      },
+      {
+        "id": "svb",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_wm_pick_log.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_wm_pick_log.abap:73"
+        },
+        "meaning": "Protokoll speichern"
+      },
+      {
+        "id": "svc",
+        "type": "transaction",
+        "anchor": {
+          "file": "zcl_wm_pick_log.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_wm_pick_log.abap:78"
+        },
+        "meaning": "Festschreiben"
+      },
+      {
+        "id": "pw",
+        "type": "call",
+        "anchor": {
+          "file": "zwm_pick_wave.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave.abap:29"
+        },
+        "meaning": "Welle bilden"
+      },
+      {
+        "id": "fw",
+        "type": "start",
+        "anchor": {
+          "file": "zwm_pick_wave_f01.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave_f01.abap:20"
+        },
+        "meaning": "Wellenbildung"
+      },
+      {
+        "id": "gw",
+        "type": "gateway",
+        "anchor": {
+          "file": "zwm_pick_wave_f01.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave_f01.abap:25"
+        },
+        "meaning": "Mehr Lieferungen als Wellengröße?"
+      },
+      {
+        "id": "dw",
+        "type": "action",
+        "anchor": {
+          "file": "zwm_pick_wave_f01.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave_f01.abap:26"
+        },
+        "meaning": "Welle auf Höchstzahl kappen"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "zwm_pick_wave.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave.abap:31"
+        },
+        "meaning": "Lieferungen der Welle durchlaufen"
+      },
+      {
+        "id": "pt",
+        "type": "call",
+        "anchor": {
+          "file": "zwm_pick_wave.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave.abap:32"
+        },
+        "meaning": "Transportauftrag erzeugen"
+      },
+      {
+        "id": "ft",
+        "type": "start",
+        "anchor": {
+          "file": "zwm_pick_wave_f01.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave_f01.abap:33"
+        },
+        "meaning": "TA-Erzeugung"
+      },
+      {
+        "id": "lk",
+        "type": "lock",
+        "anchor": {
+          "file": "zwm_pick_wave_f01.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave_f01.abap:38"
+        },
+        "meaning": "Lieferung sperren"
+      },
+      {
+        "id": "gl",
+        "type": "gateway",
+        "anchor": {
+          "file": "zwm_pick_wave_f01.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave_f01.abap:45"
+        },
+        "meaning": "Sperre erhalten?"
+      },
+      {
+        "id": "al",
+        "type": "action",
+        "anchor": {
+          "file": "zwm_pick_wave_f01.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave_f01.abap:46"
+        },
+        "meaning": "Status gesperrt, Warnung protokollieren"
+      },
+      {
+        "id": "rl",
+        "type": "end",
+        "anchor": {
+          "file": "zwm_pick_wave_f01.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave_f01.abap:48"
+        },
+        "meaning": "Lieferung überspringen"
+      },
+      {
+        "id": "to",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zwm_pick_wave_f01.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave_f01.abap:51"
+        },
+        "meaning": "Transportauftrag zur Lieferung anlegen"
+      },
+      {
+        "id": "gt",
+        "type": "gateway",
+        "anchor": {
+          "file": "zwm_pick_wave_f01.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave_f01.abap:78"
+        },
+        "meaning": "TA angelegt?"
+      },
+      {
+        "id": "ae",
+        "type": "action",
+        "anchor": {
+          "file": "zwm_pick_wave_f01.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave_f01.abap:79"
+        },
+        "meaning": "Status Fehler, Systemmeldung protokollieren"
+      },
+      {
+        "id": "pe1",
+        "type": "call",
+        "anchor": {
+          "file": "zwm_pick_wave_f01.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave_f01.abap:81"
+        },
+        "meaning": "Lieferung entsperren"
+      },
+      {
+        "id": "re",
+        "type": "end",
+        "anchor": {
+          "file": "zwm_pick_wave_f01.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave_f01.abap:82"
+        },
+        "meaning": "Lieferung abgeschlossen mit Fehler"
+      },
+      {
+        "id": "as",
+        "type": "action",
+        "anchor": {
+          "file": "zwm_pick_wave_f01.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave_f01.abap:86"
+        },
+        "meaning": "TA-Nummer und Status merken, Erfolg protokollieren"
+      },
+      {
+        "id": "gc",
+        "type": "gateway",
+        "anchor": {
+          "file": "zwm_pick_wave_f01.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave_f01.abap:90"
+        },
+        "meaning": "Sofortquittierung gewählt?"
+      },
+      {
+        "id": "lf",
+        "type": "loop",
+        "anchor": {
+          "file": "zwm_pick_wave_f01.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave_f01.abap:92"
+        },
+        "meaning": "TA-Positionen prüfen"
+      },
+      {
+        "id": "gf",
+        "type": "gateway",
+        "anchor": {
+          "file": "zwm_pick_wave_f01.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave_f01.abap:93"
+        },
+        "meaning": "Position nicht aus Fixplatz-Lagertyp?"
+      },
+      {
+        "id": "af",
+        "type": "action",
+        "anchor": {
+          "file": "zwm_pick_wave_f01.abap",
+          "line": 94,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave_f01.abap:94"
+        },
+        "meaning": "Keine reine Fixplatz-Kommissionierung"
+      },
+      {
+        "id": "gx",
+        "type": "gateway",
+        "anchor": {
+          "file": "zwm_pick_wave_f01.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave_f01.abap:98"
+        },
+        "meaning": "Alle Positionen aus Fixplatz?"
+      },
+      {
+        "id": "cf",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zwm_pick_wave_f01.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave_f01.abap:99"
+        },
+        "meaning": "TA sofort quittieren"
+      },
+      {
+        "id": "gq",
+        "type": "gateway",
+        "anchor": {
+          "file": "zwm_pick_wave_f01.abap",
+          "line": 110,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave_f01.abap:110"
+        },
+        "meaning": "Quittierung erfolgreich?"
+      },
+      {
+        "id": "aq",
+        "type": "action",
+        "anchor": {
+          "file": "zwm_pick_wave_f01.abap",
+          "line": 111,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave_f01.abap:111"
+        },
+        "meaning": "Status quittiert"
+      },
+      {
+        "id": "pe2",
+        "type": "call",
+        "anchor": {
+          "file": "zwm_pick_wave_f01.abap",
+          "line": 118,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave_f01.abap:118"
+        },
+        "meaning": "Lieferung entsperren"
+      },
+      {
+        "id": "fe",
+        "type": "start",
+        "anchor": {
+          "file": "zwm_pick_wave_f01.abap",
+          "line": 122,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave_f01.abap:122"
+        },
+        "meaning": "Entsperren"
+      },
+      {
+        "id": "dq",
+        "type": "lock",
+        "anchor": {
+          "file": "zwm_pick_wave_f01.abap",
+          "line": 123,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave_f01.abap:123"
+        },
+        "meaning": "Liefersperre freigeben"
+      },
+      {
+        "id": "gp",
+        "type": "gateway",
+        "anchor": {
+          "file": "zwm_pick_wave.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave.abap:35"
+        },
+        "meaning": "Druck gewählt?"
+      },
+      {
+        "id": "pd",
+        "type": "call",
+        "anchor": {
+          "file": "zwm_pick_wave.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave.abap:36"
+        },
+        "meaning": "TAs drucken"
+      },
+      {
+        "id": "fd",
+        "type": "start",
+        "anchor": {
+          "file": "zwm_pick_wave_f01.abap",
+          "line": 129,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave_f01.abap:129"
+        },
+        "meaning": "Parallel-Druck"
+      },
+      {
+        "id": "ld",
+        "type": "loop",
+        "anchor": {
+          "file": "zwm_pick_wave_f01.abap",
+          "line": 133,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave_f01.abap:133"
+        },
+        "meaning": "Nicht quittierte TAs durchlaufen"
+      },
+      {
+        "id": "wt",
+        "type": "action",
+        "anchor": {
+          "file": "zwm_pick_wave_f01.abap",
+          "line": 135,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave_f01.abap:135"
+        },
+        "meaning": "Auf freien Druckslot warten (max. 5)"
+      },
+      {
+        "id": "pr",
+        "type": "async",
+        "anchor": {
+          "file": "zwm_pick_wave_f01.abap",
+          "line": 138,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave_f01.abap:138"
+        },
+        "meaning": "Kommissionierliste asynchron drucken"
+      },
+      {
+        "id": "p0",
+        "type": "start",
+        "anchor": {
+          "file": "z_wm_print_to.abap",
+          "line": 1,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_wm_print_to.abap:1"
+        },
+        "meaning": "Druckbaustein"
+      },
+      {
+        "id": "pq1",
+        "type": "read",
+        "anchor": {
+          "file": "z_wm_print_to.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_wm_print_to.abap:23"
+        },
+        "meaning": "TA-Kopf lesen"
+      },
+      {
+        "id": "pg1",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_wm_print_to.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_wm_print_to.abap:26"
+        },
+        "meaning": "TA vorhanden?"
+      },
+      {
+        "id": "px1",
+        "type": "end",
+        "anchor": {
+          "file": "z_wm_print_to.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_wm_print_to.abap:27"
+        },
+        "meaning": "Druckfehler"
+      },
+      {
+        "id": "pq2",
+        "type": "read",
+        "anchor": {
+          "file": "z_wm_print_to.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_wm_print_to.abap:29"
+        },
+        "meaning": "TA-Positionen nach Vonplatz sortiert lesen"
+      },
+      {
+        "id": "pq3",
+        "type": "read",
+        "anchor": {
+          "file": "z_wm_print_to.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_wm_print_to.abap:34"
+        },
+        "meaning": "Formular der Lagernummer lesen"
+      },
+      {
+        "id": "pg3",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_wm_print_to.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_wm_print_to.abap:36"
+        },
+        "meaning": "Formular gepflegt?"
+      },
+      {
+        "id": "pa3",
+        "type": "action",
+        "anchor": {
+          "file": "z_wm_print_to.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_wm_print_to.abap:37"
+        },
+        "meaning": "Standardformular ZWM_PICKLIST"
+      },
+      {
+        "id": "pf",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "z_wm_print_to.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_wm_print_to.abap:40"
+        },
+        "meaning": "Formularbaustein ermitteln"
+      },
+      {
+        "id": "pg4",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_wm_print_to.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_wm_print_to.abap:49"
+        },
+        "meaning": "Formular aktiv?"
+      },
+      {
+        "id": "px4",
+        "type": "end",
+        "anchor": {
+          "file": "z_wm_print_to.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_wm_print_to.abap:50"
+        },
+        "meaning": "Druckfehler"
+      },
+      {
+        "id": "pdyn",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "z_wm_print_to.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_wm_print_to.abap:59"
+        },
+        "meaning": "Smart Form sofort auf Drucker ausgeben"
+      },
+      {
+        "id": "pg5",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_wm_print_to.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_wm_print_to.abap:75"
+        },
+        "meaning": "Druck erfolgreich?"
+      },
+      {
+        "id": "px5",
+        "type": "end",
+        "anchor": {
+          "file": "z_wm_print_to.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_wm_print_to.abap:76"
+        },
+        "meaning": "Druckfehler"
+      },
+      {
+        "id": "pu",
+        "type": "write",
+        "anchor": {
+          "file": "z_wm_print_to.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_wm_print_to.abap:82"
+        },
+        "meaning": "Druckkennzeichen am TA-Kopf setzen"
+      },
+      {
+        "id": "pc",
+        "type": "transaction",
+        "anchor": {
+          "file": "z_wm_print_to.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_wm_print_to.abap:85"
+        },
+        "meaning": "Festschreiben"
+      },
+      {
+        "id": "pe",
+        "type": "end",
+        "anchor": {
+          "file": "z_wm_print_to.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_wm_print_to.abap:87"
+        },
+        "meaning": "Spoolnummer zurück"
+      },
+      {
+        "id": "gs",
+        "type": "gateway",
+        "anchor": {
+          "file": "zwm_pick_wave_f01.abap",
+          "line": 150,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave_f01.abap:150"
+        },
+        "meaning": "Druckauftrag gestartet?"
+      },
+      {
+        "id": "ao",
+        "type": "action",
+        "anchor": {
+          "file": "zwm_pick_wave_f01.abap",
+          "line": 151,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave_f01.abap:151"
+        },
+        "meaning": "Offene Druckaufträge zählen"
+      },
+      {
+        "id": "wa",
+        "type": "action",
+        "anchor": {
+          "file": "zwm_pick_wave_f01.abap",
+          "line": 156,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave_f01.abap:156"
+        },
+        "meaning": "Auf alle Druckaufträge warten (max. 120 s)"
+      },
+      {
+        "id": "fdf",
+        "type": "start",
+        "anchor": {
+          "file": "zwm_pick_wave_f01.abap",
+          "line": 160,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave_f01.abap:160"
+        },
+        "meaning": "Rückmeldung Druckauftrag"
+      },
+      {
+        "id": "rr",
+        "type": "async",
+        "anchor": {
+          "file": "zwm_pick_wave_f01.abap",
+          "line": 164,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave_f01.abap:164"
+        },
+        "meaning": "Ergebnis des Druckauftrags empfangen"
+      },
+      {
+        "id": "ad",
+        "type": "action",
+        "anchor": {
+          "file": "zwm_pick_wave_f01.abap",
+          "line": 171,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave_f01.abap:171"
+        },
+        "meaning": "Offene Druckaufträge verringern"
+      },
+      {
+        "id": "gd",
+        "type": "gateway",
+        "anchor": {
+          "file": "zwm_pick_wave_f01.abap",
+          "line": 172,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave_f01.abap:172"
+        },
+        "meaning": "Druck erfolgreich?"
+      },
+      {
+        "id": "adl",
+        "type": "call",
+        "anchor": {
+          "file": "zwm_pick_wave_f01.abap",
+          "line": 175,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave_f01.abap:175"
+        },
+        "meaning": "Druckfehler protokollieren"
+      },
+      {
+        "id": "sv1",
+        "type": "call",
+        "anchor": {
+          "file": "zwm_pick_wave.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave.abap:39"
+        },
+        "meaning": "Protokoll sichern"
+      },
+      {
+        "id": "eos",
+        "type": "start",
+        "anchor": {
+          "file": "zwm_pick_wave.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave.abap:41"
+        },
+        "meaning": "Ergebnisanzeige"
+      },
+      {
+        "id": "gb",
+        "type": "gateway",
+        "anchor": {
+          "file": "zwm_pick_wave.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave.abap:42"
+        },
+        "meaning": "Dialog?"
+      },
+      {
+        "id": "dsp",
+        "type": "call",
+        "anchor": {
+          "file": "zwm_pick_wave.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave.abap:43"
+        },
+        "meaning": "Protokoll anzeigen"
+      },
+      {
+        "id": "d0",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_wm_pick_log.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_wm_pick_log.abap:81"
+        },
+        "meaning": "Protokollanzeige"
+      },
+      {
+        "id": "d1",
+        "type": "output",
+        "anchor": {
+          "file": "zcl_wm_pick_log.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_wm_pick_log.abap:84"
+        },
+        "meaning": "Anwendungsprotokoll anzeigen"
+      },
+      {
+        "id": "pz",
+        "type": "call",
+        "anchor": {
+          "file": "zwm_pick_wave.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave.abap:45"
+        },
+        "meaning": "Zusammenfassung ausgeben"
+      },
+      {
+        "id": "fz",
+        "type": "start",
+        "anchor": {
+          "file": "zwm_pick_wave_f01.abap",
+          "line": 180,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave_f01.abap:180"
+        },
+        "meaning": "Zusammenfassung"
+      },
+      {
+        "id": "lz",
+        "type": "loop",
+        "anchor": {
+          "file": "zwm_pick_wave_f01.abap",
+          "line": 182,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave_f01.abap:182"
+        },
+        "meaning": "Lieferungen zählen"
+      },
+      {
+        "id": "cz",
+        "type": "gateway",
+        "anchor": {
+          "file": "zwm_pick_wave_f01.abap",
+          "line": 183,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave_f01.abap:183"
+        },
+        "meaning": "Status?"
+      },
+      {
+        "id": "wz",
+        "type": "output",
+        "anchor": {
+          "file": "zwm_pick_wave_f01.abap",
+          "line": 190,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave_f01.abap:190"
+        },
+        "meaning": "Zähler je Status und Druckaufträge ins Spool"
+      },
+      {
+        "id": "xc",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_wm_pick_log.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_wm_pick_log.abap:36"
+        },
+        "meaning": "CONSTRUCTOR beendet, Protokoll angelegt"
+      },
+      {
+        "id": "x1",
+        "type": "end",
+        "anchor": {
+          "file": "zwm_pick_wave_f01.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave_f01.abap:17"
+        },
+        "meaning": "LIEFERUNGEN_LESEN beendet"
+      },
+      {
+        "id": "xca",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_wm_pick_log.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_wm_pick_log.abap:48"
+        },
+        "meaning": "ADD beendet"
+      },
+      {
+        "id": "xsv",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_wm_pick_log.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_wm_pick_log.abap:79"
+        },
+        "meaning": "SAVE beendet"
+      },
+      {
+        "id": "xw",
+        "type": "end",
+        "anchor": {
+          "file": "zwm_pick_wave_f01.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave_f01.abap:30"
+        },
+        "meaning": "WELLE_BILDEN beendet"
+      },
+      {
+        "id": "xt",
+        "type": "end",
+        "anchor": {
+          "file": "zwm_pick_wave_f01.abap",
+          "line": 119,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave_f01.abap:119"
+        },
+        "meaning": "TA_ERZEUGEN beendet"
+      },
+      {
+        "id": "xfe",
+        "type": "end",
+        "anchor": {
+          "file": "zwm_pick_wave_f01.abap",
+          "line": 126,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave_f01.abap:126"
+        },
+        "meaning": "ENTSPERREN beendet"
+      },
+      {
+        "id": "xd",
+        "type": "end",
+        "anchor": {
+          "file": "zwm_pick_wave_f01.abap",
+          "line": 157,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave_f01.abap:157"
+        },
+        "meaning": "TA_DRUCKEN beendet"
+      },
+      {
+        "id": "xdf",
+        "type": "end",
+        "anchor": {
+          "file": "zwm_pick_wave_f01.abap",
+          "line": 177,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave_f01.abap:177"
+        },
+        "meaning": "DRUCK_FERTIG beendet"
+      },
+      {
+        "id": "eend",
+        "type": "end",
+        "anchor": {
+          "file": "zwm_pick_wave.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave.abap:46"
+        },
+        "meaning": "Wellenlauf beendet"
+      },
+      {
+        "id": "xdsp",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_wm_pick_log.abap",
+          "line": 89,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_wm_pick_log.abap:89"
+        },
+        "meaning": "DISPLAY beendet"
+      },
+      {
+        "id": "xz",
+        "type": "end",
+        "anchor": {
+          "file": "zwm_pick_wave_f01.abap",
+          "line": 196,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zwm_pick_wave_f01.abap:196"
+        },
+        "meaning": "ZUSAMMENFASSUNG beendet"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "lg",
+        "condition": "always"
+      },
+      {
+        "from": "lg",
+        "to": "c0",
+        "condition": "always"
+      },
+      {
+        "from": "c0",
+        "to": "c1",
+        "condition": "always"
+      },
+      {
+        "from": "c1",
+        "to": "xc",
+        "condition": "always"
+      },
+      {
+        "from": "pl",
+        "to": "f1",
+        "condition": "always"
+      },
+      {
+        "from": "f1",
+        "to": "q1",
+        "condition": "always"
+      },
+      {
+        "from": "q1",
+        "to": "x1",
+        "condition": "always"
+      },
+      {
+        "from": "g0",
+        "to": "a0",
+        "condition": "gt_lief IS INITIAL"
+      },
+      {
+        "from": "a0",
+        "to": "ca0",
+        "condition": "always"
+      },
+      {
+        "from": "sv0",
+        "to": "sv",
+        "condition": "always"
+      },
+      {
+        "from": "m0",
+        "to": "r0",
+        "condition": "always"
+      },
+      {
+        "from": "r0",
+        "to": "eos",
+        "condition": "always"
+      },
+      {
+        "from": "ca0",
+        "to": "ca1",
+        "condition": "always"
+      },
+      {
+        "from": "sv",
+        "to": "svb",
+        "condition": "always"
+      },
+      {
+        "from": "svb",
+        "to": "svc",
+        "condition": "always"
+      },
+      {
+        "from": "g0",
+        "to": "pw",
+        "condition": "else"
+      },
+      {
+        "from": "pw",
+        "to": "fw",
+        "condition": "always"
+      },
+      {
+        "from": "fw",
+        "to": "gw",
+        "condition": "always"
+      },
+      {
+        "from": "gw",
+        "to": "dw",
+        "condition": "lv_anz > p_max"
+      },
+      {
+        "from": "gw",
+        "to": "xw",
+        "condition": "else"
+      },
+      {
+        "from": "dw",
+        "to": "xw",
+        "condition": "always"
+      },
+      {
+        "from": "l",
+        "to": "pt",
+        "condition": "next row"
+      },
+      {
+        "from": "pt",
+        "to": "ft",
+        "condition": "always"
+      },
+      {
+        "from": "ft",
+        "to": "lk",
+        "condition": "always"
+      },
+      {
+        "from": "lk",
+        "to": "gl",
+        "condition": "always"
+      },
+      {
+        "from": "gl",
+        "to": "al",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "al",
+        "to": "rl",
+        "condition": "always"
+      },
+      {
+        "from": "rl",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "gl",
+        "to": "to",
+        "condition": "else"
+      },
+      {
+        "from": "to",
+        "to": "gt",
+        "condition": "always"
+      },
+      {
+        "from": "gt",
+        "to": "ae",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "ae",
+        "to": "pe1",
+        "condition": "always"
+      },
+      {
+        "from": "pe1",
+        "to": "fe",
+        "condition": "always"
+      },
+      {
+        "from": "re",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "gt",
+        "to": "as",
+        "condition": "else"
+      },
+      {
+        "from": "as",
+        "to": "gc",
+        "condition": "always"
+      },
+      {
+        "from": "gc",
+        "to": "lf",
+        "condition": "p_conf = abap_true"
+      },
+      {
+        "from": "gc",
+        "to": "pe2",
+        "condition": "else"
+      },
+      {
+        "from": "lf",
+        "to": "gf",
+        "condition": "next row"
+      },
+      {
+        "from": "gf",
+        "to": "af",
+        "condition": "ls_ltap-vltyp <> gc_fixplatz"
+      },
+      {
+        "from": "gf",
+        "to": "lf",
+        "condition": "else"
+      },
+      {
+        "from": "af",
+        "to": "gx",
+        "condition": "always"
+      },
+      {
+        "from": "lf",
+        "to": "gx",
+        "condition": "no more rows"
+      },
+      {
+        "from": "gx",
+        "to": "cf",
+        "condition": "lv_fix = abap_true"
+      },
+      {
+        "from": "gx",
+        "to": "pe2",
+        "condition": "else"
+      },
+      {
+        "from": "cf",
+        "to": "gq",
+        "condition": "always"
+      },
+      {
+        "from": "gq",
+        "to": "aq",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "gq",
+        "to": "pe2",
+        "condition": "else"
+      },
+      {
+        "from": "aq",
+        "to": "pe2",
+        "condition": "always"
+      },
+      {
+        "from": "pe2",
+        "to": "fe",
+        "condition": "always"
+      },
+      {
+        "from": "fe",
+        "to": "dq",
+        "condition": "always"
+      },
+      {
+        "from": "l",
+        "to": "gp",
+        "condition": "no more rows"
+      },
+      {
+        "from": "gp",
+        "to": "pd",
+        "condition": "p_print = abap_true"
+      },
+      {
+        "from": "gp",
+        "to": "sv1",
+        "condition": "else"
+      },
+      {
+        "from": "pd",
+        "to": "fd",
+        "condition": "always"
+      },
+      {
+        "from": "fd",
+        "to": "ld",
+        "condition": "always"
+      },
+      {
+        "from": "ld",
+        "to": "wt",
+        "condition": "next row"
+      },
+      {
+        "from": "wt",
+        "to": "pr",
+        "condition": "always"
+      },
+      {
+        "from": "pr",
+        "to": "p0",
+        "condition": "always"
+      },
+      {
+        "from": "pr",
+        "to": "gs",
+        "condition": "always"
+      },
+      {
+        "from": "gs",
+        "to": "ao",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "gs",
+        "to": "ld",
+        "condition": "else"
+      },
+      {
+        "from": "ao",
+        "to": "ld",
+        "condition": "next iteration"
+      },
+      {
+        "from": "ld",
+        "to": "wa",
+        "condition": "no more rows"
+      },
+      {
+        "from": "wa",
+        "to": "xd",
+        "condition": "always"
+      },
+      {
+        "from": "p0",
+        "to": "pq1",
+        "condition": "always"
+      },
+      {
+        "from": "pq1",
+        "to": "pg1",
+        "condition": "always"
+      },
+      {
+        "from": "pg1",
+        "to": "px1",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "pg1",
+        "to": "pq2",
+        "condition": "else"
+      },
+      {
+        "from": "pq2",
+        "to": "pq3",
+        "condition": "always"
+      },
+      {
+        "from": "pq3",
+        "to": "pg3",
+        "condition": "always"
+      },
+      {
+        "from": "pg3",
+        "to": "pa3",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "pg3",
+        "to": "pf",
+        "condition": "else"
+      },
+      {
+        "from": "pa3",
+        "to": "pf",
+        "condition": "always"
+      },
+      {
+        "from": "pf",
+        "to": "pg4",
+        "condition": "always"
+      },
+      {
+        "from": "pg4",
+        "to": "px4",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "pg4",
+        "to": "pdyn",
+        "condition": "else"
+      },
+      {
+        "from": "pdyn",
+        "to": "pg5",
+        "condition": "always"
+      },
+      {
+        "from": "pg5",
+        "to": "px5",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "pg5",
+        "to": "pu",
+        "condition": "else"
+      },
+      {
+        "from": "pu",
+        "to": "pc",
+        "condition": "always"
+      },
+      {
+        "from": "pc",
+        "to": "pe",
+        "condition": "always"
+      },
+      {
+        "from": "pe",
+        "to": "fdf",
+        "condition": "always"
+      },
+      {
+        "from": "px1",
+        "to": "fdf",
+        "condition": "always"
+      },
+      {
+        "from": "px4",
+        "to": "fdf",
+        "condition": "always"
+      },
+      {
+        "from": "px5",
+        "to": "fdf",
+        "condition": "always"
+      },
+      {
+        "from": "fdf",
+        "to": "rr",
+        "condition": "always"
+      },
+      {
+        "from": "rr",
+        "to": "ad",
+        "condition": "always"
+      },
+      {
+        "from": "ad",
+        "to": "gd",
+        "condition": "always"
+      },
+      {
+        "from": "gd",
+        "to": "adl",
+        "condition": "else"
+      },
+      {
+        "from": "adl",
+        "to": "ca0",
+        "condition": "always"
+      },
+      {
+        "from": "sv1",
+        "to": "sv",
+        "condition": "always"
+      },
+      {
+        "from": "eos",
+        "to": "gb",
+        "condition": "always"
+      },
+      {
+        "from": "gb",
+        "to": "dsp",
+        "condition": "sy-batch = abap_false"
+      },
+      {
+        "from": "gb",
+        "to": "pz",
+        "condition": "else"
+      },
+      {
+        "from": "dsp",
+        "to": "d0",
+        "condition": "always"
+      },
+      {
+        "from": "d0",
+        "to": "d1",
+        "condition": "always"
+      },
+      {
+        "from": "pz",
+        "to": "fz",
+        "condition": "always"
+      },
+      {
+        "from": "fz",
+        "to": "lz",
+        "condition": "always"
+      },
+      {
+        "from": "lz",
+        "to": "cz",
+        "condition": "next row"
+      },
+      {
+        "from": "cz",
+        "to": "lz",
+        "condition": "WHEN 'S'"
+      },
+      {
+        "from": "cz",
+        "to": "lz",
+        "condition": "WHEN 'Q'"
+      },
+      {
+        "from": "cz",
+        "to": "lz",
+        "condition": "WHEN 'E'"
+      },
+      {
+        "from": "cz",
+        "to": "lz",
+        "condition": "WHEN 'L'"
+      },
+      {
+        "from": "lz",
+        "to": "wz",
+        "condition": "no more rows"
+      },
+      {
+        "from": "xc",
+        "to": "pl",
+        "condition": "always"
+      },
+      {
+        "from": "x1",
+        "to": "g0",
+        "condition": "always"
+      },
+      {
+        "from": "xca",
+        "to": "sv0",
+        "condition": "always"
+      },
+      {
+        "from": "ca1",
+        "to": "xca",
+        "condition": "always"
+      },
+      {
+        "from": "xsv",
+        "to": "m0",
+        "condition": "always"
+      },
+      {
+        "from": "xsv",
+        "to": "eos",
+        "condition": "always"
+      },
+      {
+        "from": "svc",
+        "to": "xsv",
+        "condition": "always"
+      },
+      {
+        "from": "xw",
+        "to": "l",
+        "condition": "always"
+      },
+      {
+        "from": "xt",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "xfe",
+        "to": "re",
+        "condition": "always"
+      },
+      {
+        "from": "xfe",
+        "to": "xt",
+        "condition": "always"
+      },
+      {
+        "from": "dq",
+        "to": "xfe",
+        "condition": "always"
+      },
+      {
+        "from": "xd",
+        "to": "sv1",
+        "condition": "always"
+      },
+      {
+        "from": "gd",
+        "to": "xdf",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "xca",
+        "to": "xdf",
+        "condition": "always"
+      },
+      {
+        "from": "xdsp",
+        "to": "eend",
+        "condition": "always"
+      },
+      {
+        "from": "d1",
+        "to": "xdsp",
+        "condition": "always"
+      },
+      {
+        "from": "xz",
+        "to": "eend",
+        "condition": "always"
+      },
+      {
+        "from": "wz",
+        "to": "xz",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zwm_pick_wave_f01.abap:133 — kein Fachsatz „Für jeden Transportauftrag wird eine Kommissionierliste gedruckt“ (sofort quittierte TAs mit Status Q werden nicht gedruckt)",
+    "zwm_pick_wave_f01.abap:99 — kein Fachsatz „Der Warenausgang wird gebucht“ (es wird nur der TA quittiert; die Warenausgangsbuchung ist nicht Teil des Codes)",
+    "z_wm_print_to.abap:82 — kein Fachsatz „Der TA wird als erledigt markiert“ (es wird nur das Druckkennzeichen gesetzt)",
+    "zwm_pick_wave_f01.abap:156 — kein Fachsatz „Der Lauf wartet, bis alle Drucke erfolgreich sind“ (nach 120 Sekunden geht er weiter, ohne Fehler zu melden)"
+  ],
+  "processDescription": "Die Versandleitung oder ein Job startet die Kommissionierwelle mit Lagernummer, Versandstelle, Routen, Warenausgangsdaten, Wellengröße und den Schaltern für Sofortquittierung und Druck. Der Lauf legt ein Anwendungsprotokoll an und liest die noch nicht kommissionierten, WM-offenen und nicht gesperrten Lieferungen; ohne Treffer protokolliert er eine Warnung und endet. Die Lieferungen werden nach Priorität, Route und Warenausgangsdatum sortiert und auf die Wellengröße gekappt. Je Lieferung wird gesperrt (gesperrte werden übersprungen), ein Transportauftrag angelegt und festgeschrieben, bei Fehler protokolliert, und die Lieferung wieder entsperrt. Stammen bei gewählter Sofortquittierung alle TA-Positionen aus dem Fixplatz-Lagertyp 005, wird der TA sofort quittiert. Ist Druck gewählt, startet der Lauf für jeden angelegten, nicht quittierten TA einen asynchronen Druckauftrag mit höchstens fünf parallel; der Druckbaustein liest den TA, bestimmt das Formular je Lagernummer (Standard ZWM_PICKLIST), druckt es sofort und setzt am TA-Kopf direkt das Druckkennzeichen. Rückmeldungen werden gesammelt, Fehler protokolliert; nach spätestens 120 Sekunden Wartezeit geht der Lauf weiter. Zum Schluss wird das Protokoll gesichert und im Dialog angezeigt, im Hintergrund eine Zusammenfassung nach Status ausgegeben."
+}

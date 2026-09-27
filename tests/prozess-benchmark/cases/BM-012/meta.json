@@ -1,0 +1,26 @@
+{
+  "id": "BM-012",
+  "title": "IDoc-Eingang ORDERS05: Bestellung prüfen, Kunde und Material umschlüsseln, Auftrag per BAPI anlegen, Status 51/53",
+  "domain": "SD / Order-to-Cash",
+  "band": "komplex",
+  "loc": 297,
+  "constructs": [
+    "IDoc-Eingangsbaustein mit Standardschnittstelle (EDIDC/EDIDD/BDIDOCSTAT)",
+    "LOOP AT … WHERE docnum",
+    "CASE segnam mit Segmentcast",
+    "geschachteltes CASE",
+    "MESSAGE … INTO",
+    "FIELD-SYMBOLS",
+    "SELECT SINGLE mit INNER JOIN (Dublettenprüfung)",
+    "BAPI_SALESORDER_CREATEFROMDAT2 ohne eigenes COMMIT",
+    "CONVERSION_EXIT_MATN1_INPUT",
+    "Workflow-Rückgabe c_wf_result_*"
+  ],
+  "scenario": "Kundeneigener Eingangsbaustein für EDI-Bestellungen von Händlern (Vorgangscode ZORD), der statt IDOC_INPUT_ORDERS mit eigener Kunden- und Materialumschlüsselung Aufträge anlegt.",
+  "s4_issues": [
+    "KNMT ist in S/4 durch die Kunden-Material-Info (weiterhin KNMT, aber CVI/Business Partner) abgedeckt; Pflege prüfen",
+    "Materialnummer 40-stellig: CONVERSION_EXIT_MATN1_INPUT und Feld lfmat (35) gegen Längenerweiterung prüfen",
+    "direkter Zugriff auf VBAK/VBKD/KNA1",
+    "EDI in S/4 Cloud über SAP Integration Suite / API_SALES_ORDER_SRV statt IDoc-Eigenbau"
+  ]
+}

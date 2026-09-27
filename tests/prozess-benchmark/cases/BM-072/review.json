@@ -1,0 +1,84 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten emauth",
+      "before": "—",
+      "after": "end zpp_plaf_umsetzen.abap:18 „Dialogschritt abgebrochen, Benutzer bleibt im Selektionsbild“",
+      "why": "MESSAGE TYPE E beendet den Pfad: output + end auf derselben Zeile",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kante mauth→emauth",
+      "before": "—",
+      "after": "[always]",
+      "why": "Pfadende nach Fehlermeldung",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten fe1",
+      "before": "—",
+      "after": "end zpp_plaf_umsetzen_f01.abap:23 „Planaufträge selektiert und sortiert, Rückkehr“",
+      "why": "Konvention: jeder auslaufende FORM hat einen eigenen end-Knoten auf ENDFORM; Rückkehr zum Aufrufer läuft über diesen",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kante gfix→g0",
+      "before": "gfix→g0 [p_fix = abap_true]",
+      "after": "gfix→fe1 [p_fix = abap_true]",
+      "why": "Konvention: jeder auslaufende FORM hat einen eigenen end-Knoten auf ENDFORM; Rückkehr zum Aufrufer läuft über diesen",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante gfix→g0",
+      "before": "gfix→g0 [else]",
+      "after": "gfix→fe1 [else]",
+      "why": "Konvention: jeder auslaufende FORM hat einen eigenen end-Knoten auf ENDFORM; Rückkehr zum Aufrufer läuft über diesen",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante fe1→g0",
+      "before": "—",
+      "after": "[always]",
+      "why": "Rückkante vom FORM-Ende zum nächsten Schritt nach PERFORM lese_planauftraege",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten fe2",
+      "before": "—",
+      "after": "end zpp_plaf_umsetzen_f01.abap:44 „Material ok, Rückkehr mit cv_ok = X“",
+      "why": "Konvention: jeder auslaufende FORM hat einen eigenen end-Knoten auf ENDFORM; Rückkehr zum Aufrufer läuft über diesen",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kante a2→gok1",
+      "before": "a2→gok1 [always]",
+      "after": "a2→fe2 [always]",
+      "why": "Konvention: jeder auslaufende FORM hat einen eigenen end-Knoten auf ENDFORM; Rückkehr zum Aufrufer läuft über diesen",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante fe2→gok1",
+      "before": "—",
+      "after": "[always]",
+      "why": "Rückkante vom FORM-Ende zum nächsten Schritt nach PERFORM pruefe_material",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten fe5",
+      "before": "—",
+      "after": "end zpp_plaf_umsetzen_f01.abap:155 „Protokoll angezeigt, Ende“",
+      "why": "Konvention: jeder auslaufende FORM hat einen eigenen end-Knoten auf ENDFORM; Rückkehr zum Aufrufer läuft über diesen",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kante alv→fe5",
+      "before": "—",
+      "after": "[always]",
+      "why": "ALV-Aufruf ist die letzte Anweisung des FORM ausgabe",
+      "category": "Kante"
+    }
+  ],
+  "doubts": []
+}

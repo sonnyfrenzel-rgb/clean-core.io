@@ -1,0 +1,21 @@
+{
+  "id": "BM-041",
+  "title": "Überfällige offene Debitorenposten zum Stichtag summieren",
+  "domain": "FI/CO / Record-to-Report",
+  "band": "einfach",
+  "loc": 31,
+  "constructs": [
+    "REPORT",
+    "PARAMETERS",
+    "SELECT * INTO TABLE",
+    "LOOP AT",
+    "COND",
+    "WRITE"
+  ],
+  "scenario": "Gewachsene Buchhaltungsliste, mit der Debitorenbuchhalter vor dem Mahnlauf die Überfälligkeit eines einzelnen Kunden prüfen; in fast jedem ECC-System mehrfach vorhanden.",
+  "s4_issues": [
+    "BSID ist in S/4HANA nur noch Kompatibilitäts-View auf ACDOCA",
+    "SELECT * auf Indextabelle statt I_OperationalAcctgDocItem",
+    "Fälligkeit nur aus Zahlungsziel 1 statt Standard-Fälligkeitslogik"
+  ]
+}

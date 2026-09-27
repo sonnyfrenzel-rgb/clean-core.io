@@ -1,0 +1,270 @@
+{
+  "id": "BM-045",
+  "title": "Ist-Kosten einer Kostenstelle je Kostenart für ein Geschäftsjahr",
+  "classes": [
+    "K01"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "COSP",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 17,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:17"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-045-B01",
+      "text": "Die Kostenstelle wird über ihre Objektnummer aus Kostenrechnungskreis und Kostenstellennummer angesprochen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:16"
+        }
+      ]
+    },
+    {
+      "id": "BM-045-B02",
+      "text": "Es werden die Ist-Summensätze (Werttyp 04, Version 000) der Kostenstelle für das gewählte Geschäftsjahr gelesen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:17"
+        }
+      ]
+    },
+    {
+      "id": "BM-045-B03",
+      "text": "Ohne Istkosten erhält der Anwender einen Hinweis und die Auswertung endet.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:22"
+        },
+        {
+          "file": "source.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:23"
+        },
+        {
+          "file": "source.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:24"
+        }
+      ]
+    },
+    {
+      "id": "BM-045-B04",
+      "text": "Je Kostenart wird der Jahreswert als Summe der Perioden 1 bis 12 in Kostenrechnungskreiswährung gebildet und mit dem Soll/Haben-Kennzeichen ausgegeben.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:28"
+        },
+        {
+          "file": "source.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:32"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:15"
+        },
+        "meaning": "Reportstart"
+      },
+      {
+        "id": "q",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:17"
+        },
+        "meaning": "Ist-Summensätze der Kostenstelle im Geschäftsjahr lesen"
+      },
+      {
+        "id": "g",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:22"
+        },
+        "meaning": "Istkosten vorhanden?"
+      },
+      {
+        "id": "m",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:23"
+        },
+        "meaning": "Hinweis: keine Istkosten"
+      },
+      {
+        "id": "x",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:24"
+        },
+        "meaning": "Verarbeitung beenden"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "source.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:27"
+        },
+        "meaning": "Kostenarten-Summensätze durchlaufen"
+      },
+      {
+        "id": "o",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:32"
+        },
+        "meaning": "Kostenart mit Jahreswert ausgeben"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:33"
+        },
+        "meaning": "Liste fertig"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "q",
+        "condition": "always"
+      },
+      {
+        "from": "q",
+        "to": "g",
+        "condition": "always"
+      },
+      {
+        "from": "g",
+        "to": "m",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "m",
+        "to": "x",
+        "condition": "always"
+      },
+      {
+        "from": "g",
+        "to": "l",
+        "condition": "else"
+      },
+      {
+        "from": "l",
+        "to": "o",
+        "condition": "next row"
+      },
+      {
+        "from": "o",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l",
+        "to": "e",
+        "condition": "no more rows"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "source.abap:28 — kein Fachsatz „Sonderperioden werden berücksichtigt“ (nur WKG001 bis WKG012)",
+    "source.abap:17 — kein Fachsatz „Plankosten werden mit Istkosten verglichen“ (nur Werttyp 04)",
+    "source.abap:17 — kein Fachsatz „sekundäre Kosten werden einbezogen“ (COSS wird nicht gelesen)"
+  ],
+  "processDescription": "Der Kostenstellenverantwortliche startet den Report mit Kostenrechnungskreis, Kostenstelle und Geschäftsjahr (vorbelegt mit dem aktuellen Jahr). Aus Kostenrechnungskreis und Kostenstelle wird die Objektnummer gebildet, und die primären Ist-Summensätze der Version 000 werden gelesen. Gibt es keine, erscheint ein Hinweis und die Auswertung endet. Sonst wird je Kostenart die Summe der Perioden 1 bis 12 gebildet und als Liste ausgegeben. Es wird nichts geändert."
+}

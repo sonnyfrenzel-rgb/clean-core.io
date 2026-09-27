@@ -1,0 +1,21 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten xx (neu)",
+      "before": "—",
+      "after": "end source.abap:31 „Report mit Fehler abgebrochen“; neu x->xx [always]",
+      "why": "MESSAGE vom Typ E/A beendet den Pfad; wie im übrigen Benchmark (z. B. BM-048, BM-051, BM-058) folgt dem output-Knoten ein end-Knoten auf derselben Anweisung. Validator-Warnung „keine ausgehende Kante“.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten ed (neu)",
+      "before": "—",
+      "after": "end source.abap:32 „Liste angezeigt, Report endet“; neu d->ed [always]",
+      "why": "Pfadende ohne end-Knoten (Validator-Warnung „keine ausgehende Kante“); Brieftabelle: end bei implizitem Blockende auf der letzten Anweisung.",
+      "category": "fehlender Knoten"
+    }
+  ],
+  "doubts": []
+}

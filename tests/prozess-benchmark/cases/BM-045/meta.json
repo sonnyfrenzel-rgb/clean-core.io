@@ -1,0 +1,23 @@
+{
+  "id": "BM-045",
+  "title": "Ist-Kosten einer Kostenstelle je Kostenart für ein Geschäftsjahr",
+  "domain": "FI/CO / Record-to-Report",
+  "band": "einfach",
+  "loc": 33,
+  "constructs": [
+    "REPORT",
+    "INITIALIZATION",
+    "CONCATENATE (Objektnummer)",
+    "SELECT * INTO TABLE",
+    "MESSAGE TYPE S",
+    "RETURN",
+    "LOOP AT",
+    "WRITE"
+  ],
+  "scenario": "Schnellauswertung des Kostenstellenverantwortlichen neben dem Standardbericht S_ALR_87013611; liest die Summensätze direkt und addiert zwölf Periodenfelder.",
+  "s4_issues": [
+    "COSP ist in S/4HANA nur Kompatibilitäts-View (Ist-Daten in ACDOCA)",
+    "Objektnummer wird hart als 'KS'+KOKRS+KOSTL gebaut",
+    "Sonderperioden 13–16 fehlen"
+  ]
+}

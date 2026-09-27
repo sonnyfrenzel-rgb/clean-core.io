@@ -1,0 +1,23 @@
+{
+  "id": "BM-091",
+  "title": "CVI-Vorprüfung: Kundenstamm vor der Geschäftspartner-Umstellung prüfen und bereinigen",
+  "domain": "Querschnitt — Schnittstellen, Stammdaten, HR, Workflow, technische Jobs",
+  "band": "komplex",
+  "loc": 188,
+  "constructs": [
+    "SELECT neue Syntax",
+    "FOR ALL ENTRIES mit Leermengenschutz",
+    "READ TABLE Lookup",
+    "PERFORM mit USING",
+    "SELECT MAX",
+    "UPDATE KNA1",
+    "COMMIT WORK",
+    "CL_SALV_TABLE"
+  ],
+  "scenario": "Vorprojekt einer S/4-Conversion: Vor der Kunde-Geschäftspartner-Synchronisation (CVI) prüft ein Report die Datenqualität des Kundenstamms und merkt inaktive Kunden zum Löschen vor.",
+  "s4_issues": [
+    "Direktes UPDATE auf KNA1 (in S/4 nur über Geschäftspartner/CVI zulässig)",
+    "Direkter Lesezugriff auf KNA1, ADRC, VBAK, T005",
+    "CVI_CUST_LINK als Umsetzungsindikator"
+  ]
+}

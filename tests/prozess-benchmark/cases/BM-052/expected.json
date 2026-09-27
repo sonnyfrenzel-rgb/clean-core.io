@@ -1,0 +1,1261 @@
+{
+  "id": "BM-052",
+  "title": "Kontoauszugsdatei einlesen und Zahlungseingänge per Posting Interface gegen Debitorenposten ausgleichen",
+  "classes": [
+    "K01",
+    "K03",
+    "K17"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "TVARVC",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zfi_bankstmt.abap",
+        "line": 51,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zfi_bankstmt.abap:51"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BSID",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zfi_bankstmt_f01.abap",
+        "line": 59,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zfi_bankstmt_f01.abap:59"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "POSTING_INTERFACE_START",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zfi_bankstmt.abap",
+        "line": 56,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zfi_bankstmt.abap:56"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "POSTING_INTERFACE_CLEARING",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zfi_bankstmt_f01.abap",
+        "line": 122,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zfi_bankstmt_f01.abap:122"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "POSTING_INTERFACE_END",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zfi_bankstmt.abap",
+        "line": 80,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zfi_bankstmt.abap:80"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "FB05",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zfi_bankstmt_f01.abap",
+        "line": 122,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zfi_bankstmt_f01.abap:122"
+      },
+      "identity": {
+        "objectType": "TRAN"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "REUSE_ALV_GRID_DISPLAY",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zfi_bankstmt_f01.abap",
+        "line": 175,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zfi_bankstmt_f01.abap:175"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-052-B01",
+      "text": "Die Kontoauszugsdatei der Hausbank wird vom Applikationsserver gelesen; ist sie nicht lesbar, bricht der Report mit Fehlermeldung ab.",
+      "anchors": [
+        {
+          "file": "zfi_bankstmt_f01.abap",
+          "line": 13,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_f01.abap:13"
+        },
+        {
+          "file": "zfi_bankstmt_f01.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_f01.abap:14"
+        },
+        {
+          "file": "zfi_bankstmt_f01.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_f01.abap:15"
+        }
+      ]
+    },
+    {
+      "id": "BM-052-B02",
+      "text": "Die Kopfzeile der Datei wird übersprungen; jede weitere Zeile liefert Valutadatum, Betrag, Währung, Verwendungszweck und Auftraggeber.",
+      "anchors": [
+        {
+          "file": "zfi_bankstmt_f01.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_f01.abap:24"
+        },
+        {
+          "file": "zfi_bankstmt_f01.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_f01.abap:29"
+        }
+      ]
+    },
+    {
+      "id": "BM-052-B03",
+      "text": "Nur Gutschriften mit positivem Betrag werden übernommen; Lastschriften werden ignoriert.",
+      "anchors": [
+        {
+          "file": "zfi_bankstmt_f01.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_f01.abap:34"
+        }
+      ]
+    },
+    {
+      "id": "BM-052-B04",
+      "text": "Enthält die Datei keine Gutschriften, erhält der Anwender einen Hinweis und der Report endet.",
+      "anchors": [
+        {
+          "file": "zfi_bankstmt.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt.abap:45"
+        },
+        {
+          "file": "zfi_bankstmt.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt.abap:46"
+        },
+        {
+          "file": "zfi_bankstmt.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt.abap:47"
+        }
+      ]
+    },
+    {
+      "id": "BM-052-B05",
+      "text": "Die zulässige Ausgleichsdifferenz wird aus der Variablentabelle gelesen; ohne Eintrag gilt 1,00.",
+      "anchors": [
+        {
+          "file": "zfi_bankstmt.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt.abap:51"
+        }
+      ]
+    },
+    {
+      "id": "BM-052-B06",
+      "text": "Im Echtlauf wird vor der Verarbeitung die Buchungsschnittstelle im Hintergrundmodus mit synchroner Verbuchung geöffnet und danach wieder geschlossen.",
+      "anchors": [
+        {
+          "file": "zfi_bankstmt.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt.abap:55"
+        },
+        {
+          "file": "zfi_bankstmt.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt.abap:56"
+        },
+        {
+          "file": "zfi_bankstmt.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt.abap:79"
+        },
+        {
+          "file": "zfi_bankstmt.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt.abap:80"
+        }
+      ]
+    },
+    {
+      "id": "BM-052-B07",
+      "text": "Je Gutschrift wird im Verwendungszweck eine Rechnungsnummer der Form RE plus acht Ziffern gesucht; fehlt sie, bleibt der Umsatz mit Hinweis offen.",
+      "anchors": [
+        {
+          "file": "zfi_bankstmt_f01.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_f01.abap:49"
+        },
+        {
+          "file": "zfi_bankstmt_f01.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_f01.abap:51"
+        },
+        {
+          "file": "zfi_bankstmt_f01.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_f01.abap:54"
+        }
+      ]
+    },
+    {
+      "id": "BM-052-B08",
+      "text": "Zur gefundenen Rechnungsnummer werden die offenen Debitorenposten des Buchungskreises mit dieser Referenz gelesen; gibt es keine, bleibt der Umsatz offen.",
+      "anchors": [
+        {
+          "file": "zfi_bankstmt_f01.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_f01.abap:59"
+        },
+        {
+          "file": "zfi_bankstmt_f01.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_f01.abap:63"
+        },
+        {
+          "file": "zfi_bankstmt_f01.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_f01.abap:66"
+        }
+      ]
+    },
+    {
+      "id": "BM-052-B09",
+      "text": "Der Saldo der gefundenen Posten wird vorzeichengerecht gebildet (Soll positiv, Haben negativ).",
+      "anchors": [
+        {
+          "file": "zfi_bankstmt_f01.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_f01.abap:71"
+        }
+      ]
+    },
+    {
+      "id": "BM-052-B10",
+      "text": "Liegt die Differenz zwischen Saldo und Gutschrift innerhalb der Toleranz, gilt der Umsatz als zugeordnet; sonst bleibt er als Teilzahlung zur manuellen Klärung offen.",
+      "anchors": [
+        {
+          "file": "zfi_bankstmt_f01.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_f01.abap:76"
+        },
+        {
+          "file": "zfi_bankstmt_f01.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_f01.abap:77"
+        },
+        {
+          "file": "zfi_bankstmt_f01.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_f01.abap:79"
+        }
+      ]
+    },
+    {
+      "id": "BM-052-B11",
+      "text": "Zugeordnete Umsätze werden nur im Echtlauf gebucht: Zahlungseingang auf das Bankverrechnungskonto mit Ausgleich aller gefundenen Posten über die Ausgleichstransaktion.",
+      "anchors": [
+        {
+          "file": "zfi_bankstmt.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt.abap:74"
+        },
+        {
+          "file": "zfi_bankstmt_f01.abap",
+          "line": 103,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_f01.abap:103"
+        },
+        {
+          "file": "zfi_bankstmt_f01.abap",
+          "line": 114,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_f01.abap:114"
+        },
+        {
+          "file": "zfi_bankstmt_f01.abap",
+          "line": 122,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_f01.abap:122"
+        }
+      ]
+    },
+    {
+      "id": "BM-052-B12",
+      "text": "War der Ausgleich erfolgreich, wird der Umsatz mit der Ausgleichsbelegnummer als gebucht markiert, sonst mit der Fehlermeldung als fehlerhaft.",
+      "anchors": [
+        {
+          "file": "zfi_bankstmt_f01.abap",
+          "line": 149,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_f01.abap:149"
+        },
+        {
+          "file": "zfi_bankstmt_f01.abap",
+          "line": 150,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_f01.abap:150"
+        },
+        {
+          "file": "zfi_bankstmt_f01.abap",
+          "line": 154,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_f01.abap:154"
+        }
+      ]
+    },
+    {
+      "id": "BM-052-B13",
+      "text": "Zum Schluss werden alle Umsätze mit Zuordnung, Status, Ausgleichsbeleg und Hinweis als ALV-Liste angezeigt.",
+      "anchors": [
+        {
+          "file": "zfi_bankstmt_f01.abap",
+          "line": 175,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_f01.abap:175"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "zfi_bankstmt.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt.abap:43"
+        },
+        "meaning": "Reportstart"
+      },
+      {
+        "id": "cr",
+        "type": "call",
+        "anchor": {
+          "file": "zfi_bankstmt.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt.abap:44"
+        },
+        "meaning": "Kontoauszugsdatei einlesen"
+      },
+      {
+        "id": "s1",
+        "type": "start",
+        "anchor": {
+          "file": "zfi_bankstmt_f01.abap",
+          "line": 8,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_f01.abap:8"
+        },
+        "meaning": "Dateileseroutine"
+      },
+      {
+        "id": "od",
+        "type": "output",
+        "anchor": {
+          "file": "zfi_bankstmt_f01.abap",
+          "line": 13,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_f01.abap:13"
+        },
+        "meaning": "Datei auf dem Applikationsserver zum Lesen öffnen"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_bankstmt_f01.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_f01.abap:14"
+        },
+        "meaning": "Datei nicht lesbar?"
+      },
+      {
+        "id": "m1",
+        "type": "output",
+        "anchor": {
+          "file": "zfi_bankstmt_f01.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_f01.abap:15"
+        },
+        "meaning": "Fehler: Datei nicht lesbar"
+      },
+      {
+        "id": "x1",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_bankstmt_f01.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_f01.abap:15"
+        },
+        "meaning": "Abbruch"
+      },
+      {
+        "id": "dl",
+        "type": "loop",
+        "anchor": {
+          "file": "zfi_bankstmt_f01.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_f01.abap:18"
+        },
+        "meaning": "Dateizeilen lesen, bis Dateiende"
+      },
+      {
+        "id": "rd",
+        "type": "action",
+        "anchor": {
+          "file": "zfi_bankstmt_f01.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_f01.abap:19"
+        },
+        "meaning": "Nächste Zeile der Datei lesen"
+      },
+      {
+        "id": "geof",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_bankstmt_f01.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_f01.abap:20"
+        },
+        "meaning": "Dateiende erreicht?"
+      },
+      {
+        "id": "ghdr",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_bankstmt_f01.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_f01.abap:24"
+        },
+        "meaning": "Kopfzeile?"
+      },
+      {
+        "id": "gcr",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_bankstmt_f01.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_f01.abap:34"
+        },
+        "meaning": "Gutschrift (Betrag positiv)?"
+      },
+      {
+        "id": "e1",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_bankstmt_f01.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_f01.abap:39"
+        },
+        "meaning": "Datei gelesen und geschlossen"
+      },
+      {
+        "id": "g0",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_bankstmt.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt.abap:45"
+        },
+        "meaning": "Gutschriften vorhanden?"
+      },
+      {
+        "id": "m0",
+        "type": "output",
+        "anchor": {
+          "file": "zfi_bankstmt.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt.abap:46"
+        },
+        "meaning": "Hinweis: keine Gutschriften"
+      },
+      {
+        "id": "x0",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_bankstmt.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt.abap:47"
+        },
+        "meaning": "Verarbeitung beenden"
+      },
+      {
+        "id": "qt",
+        "type": "read",
+        "anchor": {
+          "file": "zfi_bankstmt.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt.abap:51"
+        },
+        "meaning": "Ausgleichstoleranz aus Variablentabelle lesen"
+      },
+      {
+        "id": "gt1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_bankstmt.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt.abap:55"
+        },
+        "meaning": "Echtlauf?"
+      },
+      {
+        "id": "pis",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zfi_bankstmt.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt.abap:56"
+        },
+        "meaning": "Buchungsschnittstelle für Batch-Input öffnen"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "zfi_bankstmt.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt.abap:72"
+        },
+        "meaning": "Umsätze durchlaufen"
+      },
+      {
+        "id": "cm",
+        "type": "call",
+        "anchor": {
+          "file": "zfi_bankstmt.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt.abap:73"
+        },
+        "meaning": "Umsatz offenen Posten zuordnen"
+      },
+      {
+        "id": "s2",
+        "type": "start",
+        "anchor": {
+          "file": "zfi_bankstmt_f01.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_f01.abap:44"
+        },
+        "meaning": "Zuordnungsroutine"
+      },
+      {
+        "id": "fr",
+        "type": "action",
+        "anchor": {
+          "file": "zfi_bankstmt_f01.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_f01.abap:49"
+        },
+        "meaning": "Rechnungsnummer im Verwendungszweck suchen"
+      },
+      {
+        "id": "g21",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_bankstmt_f01.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_f01.abap:51"
+        },
+        "meaning": "Keine Rechnungsnummer gefunden?"
+      },
+      {
+        "id": "x21",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_bankstmt_f01.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_f01.abap:54"
+        },
+        "meaning": "Umsatz bleibt offen (keine Referenz)"
+      },
+      {
+        "id": "q22",
+        "type": "read",
+        "anchor": {
+          "file": "zfi_bankstmt_f01.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_f01.abap:59"
+        },
+        "meaning": "Offene Debitorenposten zur Rechnungsnummer lesen"
+      },
+      {
+        "id": "g22",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_bankstmt_f01.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_f01.abap:63"
+        },
+        "meaning": "Keine offenen Posten?"
+      },
+      {
+        "id": "x22",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_bankstmt_f01.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_f01.abap:66"
+        },
+        "meaning": "Umsatz bleibt offen (kein Posten)"
+      },
+      {
+        "id": "sum",
+        "type": "action",
+        "anchor": {
+          "file": "zfi_bankstmt_f01.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_f01.abap:71"
+        },
+        "meaning": "Saldo der offenen Posten bilden"
+      },
+      {
+        "id": "g23",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_bankstmt_f01.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_f01.abap:76"
+        },
+        "meaning": "Abweichung innerhalb der Toleranz?"
+      },
+      {
+        "id": "e2",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_bankstmt_f01.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_f01.abap:82"
+        },
+        "meaning": "Zuordnungsstatus gesetzt"
+      },
+      {
+        "id": "gm",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_bankstmt.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt.abap:74"
+        },
+        "meaning": "Zugeordnet und Echtlauf?"
+      },
+      {
+        "id": "cp",
+        "type": "call",
+        "anchor": {
+          "file": "zfi_bankstmt.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt.abap:75"
+        },
+        "meaning": "Ausgleich buchen"
+      },
+      {
+        "id": "s3",
+        "type": "start",
+        "anchor": {
+          "file": "zfi_bankstmt_f01.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_f01.abap:87"
+        },
+        "meaning": "Ausgleichsroutine"
+      },
+      {
+        "id": "pc",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zfi_bankstmt_f01.abap",
+          "line": 122,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_f01.abap:122"
+        },
+        "meaning": "Zahlungseingang mit Ausgleich der Posten über FB05 buchen"
+      },
+      {
+        "id": "g31",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_bankstmt_f01.abap",
+          "line": 149,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_f01.abap:149"
+        },
+        "meaning": "Ausgleich erfolgreich?"
+      },
+      {
+        "id": "e3",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_bankstmt_f01.abap",
+          "line": 157,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_f01.abap:157"
+        },
+        "meaning": "Buchungsstatus gesetzt"
+      },
+      {
+        "id": "gt2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_bankstmt.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt.abap:79"
+        },
+        "meaning": "Echtlauf?"
+      },
+      {
+        "id": "pie",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zfi_bankstmt.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt.abap:80"
+        },
+        "meaning": "Buchungsschnittstelle schließen"
+      },
+      {
+        "id": "cd",
+        "type": "call",
+        "anchor": {
+          "file": "zfi_bankstmt.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt.abap:86"
+        },
+        "meaning": "Ergebnis anzeigen"
+      },
+      {
+        "id": "s4",
+        "type": "start",
+        "anchor": {
+          "file": "zfi_bankstmt_f01.abap",
+          "line": 162,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_f01.abap:162"
+        },
+        "meaning": "Anzeigeroutine"
+      },
+      {
+        "id": "alv",
+        "type": "output",
+        "anchor": {
+          "file": "zfi_bankstmt_f01.abap",
+          "line": 175,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_f01.abap:175"
+        },
+        "meaning": "Umsätze mit Status als ALV-Liste anzeigen"
+      },
+      {
+        "id": "e4",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_bankstmt_f01.abap",
+          "line": 183,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt_f01.abap:183"
+        },
+        "meaning": "Anzeige beendet"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_bankstmt.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bankstmt.abap:86"
+        },
+        "meaning": "Report fertig"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "cr",
+        "condition": "always"
+      },
+      {
+        "from": "cr",
+        "to": "s1",
+        "condition": "always"
+      },
+      {
+        "from": "s1",
+        "to": "od",
+        "condition": "always"
+      },
+      {
+        "from": "od",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "m1",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "m1",
+        "to": "x1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "dl",
+        "condition": "else"
+      },
+      {
+        "from": "dl",
+        "to": "rd",
+        "condition": "next row"
+      },
+      {
+        "from": "rd",
+        "to": "geof",
+        "condition": "always"
+      },
+      {
+        "from": "geof",
+        "to": "e1",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "geof",
+        "to": "ghdr",
+        "condition": "else"
+      },
+      {
+        "from": "ghdr",
+        "to": "dl",
+        "condition": "sy-index = 1"
+      },
+      {
+        "from": "ghdr",
+        "to": "gcr",
+        "condition": "else"
+      },
+      {
+        "from": "gcr",
+        "to": "dl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "e1",
+        "to": "g0",
+        "condition": "always"
+      },
+      {
+        "from": "g0",
+        "to": "m0",
+        "condition": "gt_stmt IS INITIAL"
+      },
+      {
+        "from": "m0",
+        "to": "x0",
+        "condition": "always"
+      },
+      {
+        "from": "g0",
+        "to": "qt",
+        "condition": "else"
+      },
+      {
+        "from": "qt",
+        "to": "gt1",
+        "condition": "always"
+      },
+      {
+        "from": "gt1",
+        "to": "pis",
+        "condition": "p_test IS INITIAL"
+      },
+      {
+        "from": "pis",
+        "to": "l",
+        "condition": "always"
+      },
+      {
+        "from": "gt1",
+        "to": "l",
+        "condition": "else"
+      },
+      {
+        "from": "l",
+        "to": "cm",
+        "condition": "next row"
+      },
+      {
+        "from": "cm",
+        "to": "s2",
+        "condition": "always"
+      },
+      {
+        "from": "s2",
+        "to": "fr",
+        "condition": "always"
+      },
+      {
+        "from": "fr",
+        "to": "g21",
+        "condition": "always"
+      },
+      {
+        "from": "g21",
+        "to": "x21",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g21",
+        "to": "q22",
+        "condition": "else"
+      },
+      {
+        "from": "q22",
+        "to": "g22",
+        "condition": "always"
+      },
+      {
+        "from": "g22",
+        "to": "x22",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g22",
+        "to": "sum",
+        "condition": "else"
+      },
+      {
+        "from": "sum",
+        "to": "g23",
+        "condition": "always"
+      },
+      {
+        "from": "g23",
+        "to": "e2",
+        "condition": "abs( lv_sum - <gs_stmt>-wrbtr ) <= gv_tol"
+      },
+      {
+        "from": "g23",
+        "to": "e2",
+        "condition": "else"
+      },
+      {
+        "from": "x21",
+        "to": "gm",
+        "condition": "always"
+      },
+      {
+        "from": "x22",
+        "to": "gm",
+        "condition": "always"
+      },
+      {
+        "from": "e2",
+        "to": "gm",
+        "condition": "always"
+      },
+      {
+        "from": "gm",
+        "to": "cp",
+        "condition": "<gs_stmt>-status = 'M' AND p_test IS INITIAL"
+      },
+      {
+        "from": "cp",
+        "to": "s3",
+        "condition": "always"
+      },
+      {
+        "from": "s3",
+        "to": "pc",
+        "condition": "always"
+      },
+      {
+        "from": "pc",
+        "to": "g31",
+        "condition": "always"
+      },
+      {
+        "from": "g31",
+        "to": "e3",
+        "condition": "sy-subrc = 0 AND lv_subrc = 0"
+      },
+      {
+        "from": "g31",
+        "to": "e3",
+        "condition": "else"
+      },
+      {
+        "from": "e3",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "gm",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l",
+        "to": "gt2",
+        "condition": "no more rows"
+      },
+      {
+        "from": "gt2",
+        "to": "pie",
+        "condition": "p_test IS INITIAL"
+      },
+      {
+        "from": "pie",
+        "to": "cd",
+        "condition": "always"
+      },
+      {
+        "from": "gt2",
+        "to": "cd",
+        "condition": "else"
+      },
+      {
+        "from": "cd",
+        "to": "s4",
+        "condition": "always"
+      },
+      {
+        "from": "s4",
+        "to": "alv",
+        "condition": "always"
+      },
+      {
+        "from": "alv",
+        "to": "e4",
+        "condition": "always"
+      },
+      {
+        "from": "e4",
+        "to": "e",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zfi_bankstmt_f01.abap:76 — kein Fachsatz „Teilzahlungen werden als Restposten gebucht“ (abweichende Beträge bleiben nur zur manuellen Klärung offen)",
+    "zfi_bankstmt_f01.abap:59 — kein Fachsatz „Währung der Gutschrift wird mit den Posten abgeglichen“ (verglichen werden nur Beträge)",
+    "zfi_bankstmt.abap:56 — kein Fachsatz „ein Fehler beim Öffnen der Schnittstelle bricht den Lauf ab“ (sy-subrc wird nicht ausgewertet)",
+    "zfi_bankstmt_f01.abap:34 — kein Fachsatz „Lastschriften werden gebucht“ (sie werden verworfen)"
+  ],
+  "processDescription": "Die Debitorenbuchhaltung startet den Report mit dem Pfad der Kontoauszugsdatei, Buchungskreis, Bankverrechnungskonto, Belegart und Testlauf-Schalter. Die Datei wird zeilenweise gelesen, die Kopfzeile übersprungen und nur Gutschriften übernommen; ist die Datei nicht lesbar, bricht der Report ab, enthält sie keine Gutschriften, endet er mit Hinweis. Die Ausgleichstoleranz kommt aus der Variablentabelle. Für jede Gutschrift wird im Verwendungszweck eine Rechnungsnummer gesucht, die offenen Posten mit dieser Referenz gelesen und ihr Saldo mit dem Gutschriftbetrag verglichen. Innerhalb der Toleranz gilt der Umsatz als zugeordnet, sonst bleibt er offen. Nur im Echtlauf wird für zugeordnete Umsätze über die Buchungsschnittstelle ein Zahlungseingang mit Ausgleich gebucht und das Ergebnis am Umsatz vermerkt. Am Ende werden alle Umsätze mit Status als ALV-Liste angezeigt."
+}

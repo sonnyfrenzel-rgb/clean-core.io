@@ -1,0 +1,589 @@
+{
+  "id": "BM-030",
+  "title": "WM-Nachschub für Kommissionier-Fixplätze per Transportauftrag (L_TO_CREATE_SINGLE)",
+  "classes": [
+    "K01",
+    "K03",
+    "K12"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "ENQUEUE_EZ_WM_NACHSCH",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 25,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:25"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "MLGT",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 37,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:37"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "LQUA",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 45,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:45"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "L_TO_CREATE_SINGLE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 61,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:61"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "DEQUEUE_EZ_WM_NACHSCH",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 91,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:91"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-030-B01",
+      "text": "Der Nachschublauf wird für Lagernummer und Lagertyp exklusiv gesperrt; läuft bereits einer, endet der Baustein mit der Ausnahme LOCKED.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:25"
+        },
+        {
+          "file": "source.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:33"
+        },
+        {
+          "file": "source.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:34"
+        }
+      ]
+    },
+    {
+      "id": "BM-030-B02",
+      "text": "Es werden alle nicht gelöschten Materialien mit festem Lagerplatz im Kommissionier-Lagertyp gelesen; betrachtet werden nur solche mit gepflegter Mindestmenge.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:37"
+        },
+        {
+          "file": "source.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:43"
+        }
+      ]
+    },
+    {
+      "id": "BM-030-B03",
+      "text": "Je Fixplatz wird die verfügbare Menge aller Quants des Materials auf diesem Platz summiert.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:45"
+        }
+      ]
+    },
+    {
+      "id": "BM-030-B04",
+      "text": "Liegt sie nicht unter der Mindestmenge, ist kein Nachschub nötig.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:51"
+        }
+      ]
+    },
+    {
+      "id": "BM-030-B05",
+      "text": "Die Nachschubmenge ist die im Lagertyp gepflegte Nachschubmenge, sonst die Differenz bis zur Maximalmenge des Platzes.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:55"
+        },
+        {
+          "file": "source.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:56"
+        },
+        {
+          "file": "source.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:58"
+        }
+      ]
+    },
+    {
+      "id": "BM-030-B06",
+      "text": "Für diese Menge wird mit der WM-Bewegungsart (Vorschlag 319) ein Transportauftrag mit dem Fixplatz als Nachplatz angelegt und sofort festgeschrieben.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:61"
+        }
+      ]
+    },
+    {
+      "id": "BM-030-B07",
+      "text": "Jeder angelegte Transportauftrag wird gezählt und mit Nummer, Material und Platz protokolliert, jeder gescheiterte mit Material und Fehlernummer.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:80"
+        },
+        {
+          "file": "source.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:81"
+        },
+        {
+          "file": "source.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:85"
+        }
+      ]
+    },
+    {
+      "id": "BM-030-B08",
+      "text": "Am Ende wird die Sperre freigegeben und die Anzahl der Transportaufträge mit dem Protokoll zurückgegeben.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 91,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:91"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 1,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:1"
+        },
+        "meaning": "Baustein-Einstieg (Job/Leitstand)"
+      },
+      {
+        "id": "lk",
+        "type": "lock",
+        "anchor": {
+          "file": "source.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:25"
+        },
+        "meaning": "Nachschublauf für Lagernummer/Lagertyp sperren"
+      },
+      {
+        "id": "gl",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:33"
+        },
+        "meaning": "Sperre erhalten?"
+      },
+      {
+        "id": "rl",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:34"
+        },
+        "meaning": "Ausnahme LOCKED: Lauf bereits aktiv"
+      },
+      {
+        "id": "q",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:37"
+        },
+        "meaning": "Fixplatz-Materialien des Lagertyps lesen"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "source.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:43"
+        },
+        "meaning": "Fixplätze mit Mindestmenge durchlaufen"
+      },
+      {
+        "id": "qs",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:45"
+        },
+        "meaning": "Verfügbare Menge auf dem Fixplatz summieren"
+      },
+      {
+        "id": "gm",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:51"
+        },
+        "meaning": "Mindestmenge erreicht?"
+      },
+      {
+        "id": "gn",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:55"
+        },
+        "meaning": "Nachschubmenge gepflegt?"
+      },
+      {
+        "id": "an",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:56"
+        },
+        "meaning": "Nachschubmenge übernehmen"
+      },
+      {
+        "id": "ax",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:58"
+        },
+        "meaning": "Auffüllen bis Maximalmenge"
+      },
+      {
+        "id": "to",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:61"
+        },
+        "meaning": "Transportauftrag an den Fixplatz anlegen"
+      },
+      {
+        "id": "gt",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:80"
+        },
+        "meaning": "Transportauftrag angelegt?"
+      },
+      {
+        "id": "ps",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:81"
+        },
+        "meaning": "Erfolg zählen und mit TA-Nummer protokollieren"
+      },
+      {
+        "id": "pe",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:85"
+        },
+        "meaning": "Fehler protokollieren"
+      },
+      {
+        "id": "dq",
+        "type": "lock",
+        "anchor": {
+          "file": "source.abap",
+          "line": 91,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:91"
+        },
+        "meaning": "Sperre freigeben"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 96,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:96"
+        },
+        "meaning": "Anzahl TA und Protokoll zurückgeben"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "lk",
+        "condition": "always"
+      },
+      {
+        "from": "lk",
+        "to": "gl",
+        "condition": "always"
+      },
+      {
+        "from": "gl",
+        "to": "rl",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "gl",
+        "to": "q",
+        "condition": "else"
+      },
+      {
+        "from": "q",
+        "to": "l",
+        "condition": "always"
+      },
+      {
+        "from": "l",
+        "to": "qs",
+        "condition": "next row"
+      },
+      {
+        "from": "qs",
+        "to": "gm",
+        "condition": "always"
+      },
+      {
+        "from": "gm",
+        "to": "l",
+        "condition": "lv_verme >= ls_mlgt-lpmin"
+      },
+      {
+        "from": "gm",
+        "to": "gn",
+        "condition": "else"
+      },
+      {
+        "from": "gn",
+        "to": "an",
+        "condition": "ls_mlgt-nsmng > 0"
+      },
+      {
+        "from": "gn",
+        "to": "ax",
+        "condition": "else"
+      },
+      {
+        "from": "an",
+        "to": "to",
+        "condition": "always"
+      },
+      {
+        "from": "ax",
+        "to": "to",
+        "condition": "always"
+      },
+      {
+        "from": "to",
+        "to": "gt",
+        "condition": "always"
+      },
+      {
+        "from": "gt",
+        "to": "ps",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "gt",
+        "to": "pe",
+        "condition": "else"
+      },
+      {
+        "from": "ps",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "pe",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l",
+        "to": "dq",
+        "condition": "no more rows"
+      },
+      {
+        "from": "dq",
+        "to": "e",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "source.abap:61 — kein Fachsatz „Der Transportauftrag wird quittiert“ (es wird nur angelegt und committet, nicht quittiert)",
+    "source.abap:61 — kein Fachsatz „Der Vonplatz im Reservelager wird vom Code bestimmt“ (der Code gibt nur den Nachplatz vor; die Vonplatzfindung liegt bei der WM-Strategie)",
+    "source.abap:45 — kein Fachsatz „Offene Transportaufträge zum Fixplatz werden berücksichtigt“ (nur verfügbare Quantmenge, keine Zugänge in Arbeit)",
+    "source.abap:34 — kein Fachsatz „Der Lauf wartet, bis die Sperre frei ist“ (er bricht sofort ab)"
+  ],
+  "processDescription": "Ein Job alle 30 Minuten oder der Lagerleitstand ruft den Baustein mit Lagernummer, Kommissionier-Lagertyp (Vorschlag 005), Werk und WM-Bewegungsart (Vorschlag 319). Zuerst sperrt er den Nachschub für Lagernummer und Lagertyp; ist die Sperre belegt, endet er mit LOCKED. Dann liest er alle nicht gelöschten Materialien mit Fixplatz im Lagertyp und betrachtet die mit gepflegter Mindestmenge. Für jeden Fixplatz summiert er die verfügbare Quantmenge; liegt sie unter der Mindestmenge, bestimmt er die Nachschubmenge aus der gepflegten Nachschubmenge oder als Auffüllung bis zur Maximalmenge und legt einen Transportauftrag an den Fixplatz an, der sofort festgeschrieben wird. Erfolge werden gezählt und mit TA-Nummer protokolliert, Fehler mit Fehlernummer. Zum Schluss gibt er die Sperre frei und liefert Anzahl und Protokoll zurück; offene Transportaufträge zum Platz werden nicht gegengerechnet."
+}

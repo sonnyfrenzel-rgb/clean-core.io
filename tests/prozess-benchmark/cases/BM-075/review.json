@@ -1,0 +1,37 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten em3",
+      "before": "—",
+      "after": "end zcl_im_pp_conf_check.abap:48 „Ausnahme ERROR_WITH_MESSAGE – Sichern abgelehnt“",
+      "why": "MESSAGE TYPE E … RAISING error_with_message beendet die Methode über die klassische Ausnahme; Konvention: output + end auf derselben Zeile",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kante m3→em3",
+      "before": "—",
+      "after": "[always]",
+      "why": "Pfadende nach Fehlermeldung mit RAISING",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten em5",
+      "before": "—",
+      "after": "end zcl_im_pp_conf_check.abap:78 „Ausnahme ERROR_WITH_MESSAGE – Storno abgelehnt“",
+      "why": "MESSAGE TYPE E … RAISING error_with_message beendet die Methode über die klassische Ausnahme; Konvention: output + end auf derselben Zeile",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kante m5→em5",
+      "before": "—",
+      "after": "[always]",
+      "why": "Pfadende nach Fehlermeldung mit RAISING",
+      "category": "Kante"
+    }
+  ],
+  "doubts": [
+    "zcl_im_pp_conf_check.abap:87/90 — Signatur von IF_EX_WORKORDER_CONFIRM~IN_UPDATE (Parametername IT_CONFIRMATIONS) und die Ausnahme ERROR_WITH_MESSAGE bei AT_SAVE/AT_CANCEL_CHECK nicht gegen das System verifiziert (vom Autor gemeldet); plausibel, nicht geändert."
+  ]
+}

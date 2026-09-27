@@ -1,0 +1,22 @@
+{
+  "id": "BM-031",
+  "title": "Rechnungsprüfung MIRO: kreditorspezifische Preis-/Mengentoleranz beim Sichern (INVOICE_UPDATE)",
+  "domain": "MM / Procure-to-Pay, Bestandsführung, Lager (WM/EWM)",
+  "band": "komplex",
+  "loc": 194,
+  "constructs": [
+    "BAdI-Implementierung INVOICE_UPDATE",
+    "Hilfsklasse mit RETURNING",
+    "SELECT SINGLE mit Fallback-Kaskade",
+    "SELECT SUM( CASE … ) neue Open-SQL-Syntax",
+    "MESSAGE … RAISING",
+    "CALL FUNCTION IN UPDATE TASK",
+    "Verbuchungsbaustein mit MODIFY und MESSAGE A"
+  ],
+  "scenario": "P2P-Harmonisierungsprojekt: zusätzliche kreditorspezifische Toleranzprüfung in MIRO neben der Standard-Toleranz (OMR6); in der S/4-Analyse wegen EKBE-Summen und Z-Protokolltabelle relevant.",
+  "s4_issues": [
+    "INVOICE_UPDATE in S/4HANA weiterhin vorhanden, aber Toleranzen gehören in Standard-Customizing bzw. Clean-Core-konforme Validierung",
+    "EKBE/EKPO-Direktzugriff, Nachfolger I_PurchaseOrderHistoryAPI01 / I_PurchaseOrderItemAPI01",
+    "Belegnummer in CHANGE_AT_SAVE ggf. noch nicht vergeben"
+  ]
+}

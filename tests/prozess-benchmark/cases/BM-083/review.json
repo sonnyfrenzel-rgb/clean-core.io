@@ -1,0 +1,14 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten set",
+      "before": "action source.abap:32 „Organisationseinheit und Kostenstelle übernehmen“",
+      "after": "entfernt; überbrückt: g->e2 [else]",
+      "why": "Reine Zuweisungen der Exportparameter (Z. 32/33) sind laut Autorenbrief keine Knoten; der Inhalt bleibt in Fachsatz B03.",
+      "category": "überflüssiger Knoten"
+    }
+  ],
+  "doubts": []
+}

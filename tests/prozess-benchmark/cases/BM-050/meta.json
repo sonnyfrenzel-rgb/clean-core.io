@@ -1,0 +1,23 @@
+{
+  "id": "BM-050",
+  "title": "Freigegebene Innenaufträge einzeln per Batch-Input über KO88 abrechnen",
+  "domain": "FI/CO / Record-to-Report",
+  "band": "mittel",
+  "loc": 85,
+  "constructs": [
+    "REPORT",
+    "DEFINE-Makro",
+    "SELECT mit SELECT-OPTIONS",
+    "STATUS_CHECK",
+    "CALL TRANSACTION USING bdcdata MODE 'N' MESSAGES INTO",
+    "READ TABLE WITH KEY",
+    "Zähler",
+    "WRITE-Protokoll"
+  ],
+  "scenario": "Im Monatsabschluss rechnet das Controlling Innenaufträge einer Auftragsart einzeln ab, weil die Sammelabrechnung KO8G bei einem fehlerhaften Auftrag den ganzen Lauf stört; der Report treibt KO88 per Batch-Input.",
+  "s4_issues": [
+    "Batch-Input auf KO88 hängt an Dynpro-Layout und ist in S/4HANA Cloud nicht möglich",
+    "Direkter Lesezugriff auf AUFK (I_InternalOrder)",
+    "Einzelabrechnung statt Standard-Sammelabrechnung mit Parallelisierung"
+  ]
+}

@@ -1,0 +1,268 @@
+{
+  "id": "BM-025",
+  "title": "Offene Inventurdifferenzen je Werk und Lagerort",
+  "classes": [
+    "K01"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "ISEG",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 12,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:12"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-025-B01",
+      "text": "Es werden die Inventurbelegpositionen des Werks und Geschäftsjahres gelesen, die bereits gezählt, deren Differenzen aber noch nicht gebucht sind.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:12"
+        }
+      ]
+    },
+    {
+      "id": "BM-025-B02",
+      "text": "Ist ein Lagerort angegeben, bleiben nur dessen Positionen übrig.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:17"
+        },
+        {
+          "file": "source.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:18"
+        }
+      ]
+    },
+    {
+      "id": "BM-025-B03",
+      "text": "Je Position wird die Differenz aus Zählmenge und Buchbestand berechnet.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:22"
+        }
+      ]
+    },
+    {
+      "id": "BM-025-B04",
+      "text": "Inventurbeleg, Position, Material, Lagerort, Buchbestand, Zählmenge und Differenz werden ausgegeben, Minderbestände rot und Mehrbestände grün.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:28"
+        },
+        {
+          "file": "source.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:23"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 11,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:11"
+        },
+        "meaning": "Reportstart"
+      },
+      {
+        "id": "q",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:12"
+        },
+        "meaning": "Gezählte, noch nicht ausgebuchte Inventurpositionen lesen"
+      },
+      {
+        "id": "g",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:17"
+        },
+        "meaning": "Lagerort eingeschränkt?"
+      },
+      {
+        "id": "f",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:18"
+        },
+        "meaning": "Auf den Lagerort filtern"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "source.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:21"
+        },
+        "meaning": "Inventurpositionen durchlaufen"
+      },
+      {
+        "id": "a",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:22"
+        },
+        "meaning": "Differenz Zählmenge minus Buchbestand"
+      },
+      {
+        "id": "o",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:28"
+        },
+        "meaning": "Position mit Differenz ausgeben"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:31"
+        },
+        "meaning": "Liste fertig"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "q",
+        "condition": "always"
+      },
+      {
+        "from": "q",
+        "to": "g",
+        "condition": "always"
+      },
+      {
+        "from": "g",
+        "to": "f",
+        "condition": "p_lgort IS NOT INITIAL"
+      },
+      {
+        "from": "f",
+        "to": "l",
+        "condition": "always"
+      },
+      {
+        "from": "g",
+        "to": "l",
+        "condition": "else"
+      },
+      {
+        "from": "l",
+        "to": "a",
+        "condition": "next row"
+      },
+      {
+        "from": "a",
+        "to": "o",
+        "condition": "always"
+      },
+      {
+        "from": "o",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l",
+        "to": "e",
+        "condition": "no more rows"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "source.abap:12 — kein Fachsatz „Die Differenzen werden gebucht“ (XDIFF = space wird nur gelesen; nichts wird gebucht)",
+    "source.abap:22 — kein Fachsatz „Der Differenzwert in Euro wird berechnet“ (es ist eine Mengendifferenz)",
+    "source.abap:23 — kein Fachsatz „Positionen ohne Differenz werden ausgeblendet“ (Nulldifferenzen erscheinen grün in der Liste)"
+  ],
+  "processDescription": "Vor dem Buchen der Inventurdifferenzen startet die Lagerleitung den Report mit Werk, optional Lagerort und Geschäftsjahr. Er liest alle Positionen von Inventurbelegen, die gezählt sind, deren Differenz aber noch nicht gebucht ist. Ist ein Lagerort vorgegeben, werden die übrigen Lagerorte herausgefiltert. Für jede Position wird die Mengendifferenz Zählmenge minus Buchbestand berechnet und zusammen mit Beleg, Position, Material, Lagerort, Buchbestand und Zählmenge ausgegeben; negative Differenzen erscheinen rot, alle anderen grün. Der Report bucht nichts."
+}

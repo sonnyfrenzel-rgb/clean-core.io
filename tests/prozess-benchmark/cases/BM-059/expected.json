@@ -1,0 +1,2715 @@
+{
+  "id": "BM-059",
+  "title": "Zahlungsfreigabe im Vier-Augen-Prinzip vor dem Zahllauf (Dynpro-Modulpool)",
+  "classes": [
+    "K07",
+    "K01",
+    "K03"
+  ],
+  "classic_level": "D",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "REGUH",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "mzfi_payrelf01.abap",
+        "line": 73,
+        "token": null,
+        "expressionPath": null,
+        "raw": "mzfi_payrelf01.abap:73"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "REGUP",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "mzfi_payrelf01.abap",
+        "line": 84,
+        "token": null,
+        "expressionPath": null,
+        "raw": "mzfi_payrelf01.abap:84"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZFI_PAYRUN_LOG",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "mzfi_payrelf01.abap",
+        "line": 68,
+        "token": null,
+        "expressionPath": null,
+        "raw": "mzfi_payrelf01.abap:68"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZFI_PAYREL",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "mzfi_payrelf01.abap",
+        "line": 90,
+        "token": null,
+        "expressionPath": null,
+        "raw": "mzfi_payrelf01.abap:90"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZFI_PAYREL_LIM",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "mzfi_payrelf01.abap",
+        "line": 161,
+        "token": null,
+        "expressionPath": null,
+        "raw": "mzfi_payrelf01.abap:161"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZFI_PAYREL",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "z_fi_payrel_update.abap",
+        "line": 51,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_fi_payrel_update.abap:51"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZFI_PAYREL_H",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "z_fi_payrel_update.abap",
+        "line": 58,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_fi_payrel_update.abap:58"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "Z_FI_PAYREL_UPDATE",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "mzfi_payrelf01.abap",
+        "line": 262,
+        "token": null,
+        "expressionPath": null,
+        "raw": "mzfi_payrelf01.abap:262"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ENQUEUE_EZFI_PAYREL",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "mzfi_payrelf01.abap",
+        "line": 16,
+        "token": null,
+        "expressionPath": null,
+        "raw": "mzfi_payrelf01.abap:16"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "DEQUEUE_EZFI_PAYREL",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "mzfi_payrelf01.abap",
+        "line": 42,
+        "token": null,
+        "expressionPath": null,
+        "raw": "mzfi_payrelf01.abap:42"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "POPUP_TO_CONFIRM",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "mzfi_payrelf01.abap",
+        "line": 244,
+        "token": null,
+        "expressionPath": null,
+        "raw": "mzfi_payrelf01.abap:244"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "POPUP_GET_VALUES",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "mzfi_payrelf01.abap",
+        "line": 210,
+        "token": null,
+        "expressionPath": null,
+        "raw": "mzfi_payrelf01.abap:210"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "SWE_EVENT_CREATE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "mzfi_payrelf01.abap",
+        "line": 277,
+        "token": null,
+        "expressionPath": null,
+        "raw": "mzfi_payrelf01.abap:277"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "F110",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "mzfi_payrelf01.abap",
+        "line": 348,
+        "token": null,
+        "expressionPath": null,
+        "raw": "mzfi_payrelf01.abap:348"
+      },
+      "identity": {
+        "objectType": "TRAN"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-059-B01",
+      "text": "Ohne Sperre auf einen Zahllauf blendet das Einstiegsbild Freigeben, Ablehnen, Sichern und Zahllauf-Start aus; bei ungesicherten Änderungen ist nur der Start des Zahllaufs ausgeblendet.",
+      "anchors": [
+        {
+          "file": "mzfi_payrelo01.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelo01.abap:12"
+        },
+        {
+          "file": "mzfi_payrelo01.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelo01.abap:22"
+        }
+      ]
+    },
+    {
+      "id": "BM-059-B02",
+      "text": "Abbrechen oder Beenden verlässt die Transaktion sofort ohne Rückfrage, ungesicherte Freigaben gehen verloren.",
+      "anchors": [
+        {
+          "file": "mzfi_payreli01.abap",
+          "line": 13,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payreli01.abap:13"
+        }
+      ]
+    },
+    {
+      "id": "BM-059-B03",
+      "text": "Mit der Funktion Lesen wird der auf dem Bild eingegebene Zahllauf (Laufdatum und Identifikation) exklusiv gegen parallele Bearbeitung gesperrt.",
+      "anchors": [
+        {
+          "file": "mzfi_payreli01.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payreli01.abap:33"
+        },
+        {
+          "file": "mzfi_payrelf01.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:16"
+        }
+      ]
+    },
+    {
+      "id": "BM-059-B04",
+      "text": "Ist der Zahllauf bereits von einem anderen Benutzer gesperrt, wird der Sperrinhaber gemeldet und keine Zahlung angezeigt.",
+      "anchors": [
+        {
+          "file": "mzfi_payrelf01.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:27"
+        },
+        {
+          "file": "mzfi_payrelf01.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:31"
+        }
+      ]
+    },
+    {
+      "id": "BM-059-B05",
+      "text": "Nach erfolgreicher Sperre wird der Zahlungsvorschlag gelesen.",
+      "anchors": [
+        {
+          "file": "mzfi_payrelf01.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:34"
+        }
+      ]
+    },
+    {
+      "id": "BM-059-B06",
+      "text": "Der Ersteller des Zahlungsvorschlags wird aus dem kundeneigenen Protokoll der Vorschlagsläufe ermittelt.",
+      "anchors": [
+        {
+          "file": "mzfi_payrelf01.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:68"
+        }
+      ]
+    },
+    {
+      "id": "BM-059-B07",
+      "text": "Gelesen werden nur Zahlungen des Vorschlags mit Zahlungsbelegnummer; Ausnahmen ohne Belegnummer bleiben außen vor.",
+      "anchors": [
+        {
+          "file": "mzfi_payrelf01.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:73"
+        }
+      ]
+    },
+    {
+      "id": "BM-059-B08",
+      "text": "Enthält der Vorschlag keine solche Zahlung, wird dies als Warnung gemeldet und das Lesen beendet.",
+      "anchors": [
+        {
+          "file": "mzfi_payrelf01.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:78"
+        },
+        {
+          "file": "mzfi_payrelf01.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:79"
+        },
+        {
+          "file": "mzfi_payrelf01.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:80"
+        }
+      ]
+    },
+    {
+      "id": "BM-059-B09",
+      "text": "Zu jeder Zahlung wird die Anzahl der bezahlten Posten aus den Positionen des Vorschlags bestimmt.",
+      "anchors": [
+        {
+          "file": "mzfi_payrelf01.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:84"
+        }
+      ]
+    },
+    {
+      "id": "BM-059-B10",
+      "text": "Früher gesicherte Freigaben und Ablehnungen werden je Zahlung mit Status, Freigebern und Ablehnungsgrund übernommen.",
+      "anchors": [
+        {
+          "file": "mzfi_payrelf01.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:90"
+        },
+        {
+          "file": "mzfi_payrelf01.abap",
+          "line": 112,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:112"
+        },
+        {
+          "file": "mzfi_payrelf01.abap",
+          "line": 113,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:113"
+        }
+      ]
+    },
+    {
+      "id": "BM-059-B11",
+      "text": "Der Ersteller des Vorschlags darf keine Zahlung dieses Laufs freigeben; er erhält eine Fehlermeldung und die Freigabe wird abgebrochen (Vier-Augen-Prinzip).",
+      "anchors": [
+        {
+          "file": "mzfi_payrelf01.abap",
+          "line": 138,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:138"
+        },
+        {
+          "file": "mzfi_payrelf01.abap",
+          "line": 139,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:139"
+        },
+        {
+          "file": "mzfi_payrelf01.abap",
+          "line": 140,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:140"
+        }
+      ]
+    },
+    {
+      "id": "BM-059-B12",
+      "text": "Freigegeben werden nur markierte Zahlungen, die weder endgültig freigegeben noch abgelehnt sind.",
+      "anchors": [
+        {
+          "file": "mzfi_payrelf01.abap",
+          "line": 143,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:143"
+        }
+      ]
+    },
+    {
+      "id": "BM-059-B13",
+      "text": "Für jede Zahlung wird die Freigabeberechtigung im zahlenden Buchungskreis geprüft; ohne Berechtigung wird die Zahlung übersprungen und mitgezählt.",
+      "anchors": [
+        {
+          "file": "mzfi_payrelf01.abap",
+          "line": 150,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:150"
+        },
+        {
+          "file": "mzfi_payrelf01.abap",
+          "line": 153,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:153"
+        }
+      ]
+    },
+    {
+      "id": "BM-059-B14",
+      "text": "Die Betragsgrenze des Freigebers wird je Buchungskreis und Zahlungswährung aus der kundeneigenen Grenzentabelle gelesen; fehlt der Eintrag, gilt die Grenze null.",
+      "anchors": [
+        {
+          "file": "mzfi_payrelf01.abap",
+          "line": 161,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:161"
+        }
+      ]
+    },
+    {
+      "id": "BM-059-B15",
+      "text": "Wartet eine Zahlung bereits auf die Zweitfreigabe, wird sie endgültig freigegeben, sofern der Benutzer nicht selbst der Erstfreigeber ist; sonst wird sie mit Hinweis übersprungen.",
+      "anchors": [
+        {
+          "file": "mzfi_payrelf01.abap",
+          "line": 167,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:167"
+        },
+        {
+          "file": "mzfi_payrelf01.abap",
+          "line": 169,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:169"
+        },
+        {
+          "file": "mzfi_payrelf01.abap",
+          "line": 170,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:170"
+        },
+        {
+          "file": "mzfi_payrelf01.abap",
+          "line": 173,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:173"
+        }
+      ]
+    },
+    {
+      "id": "BM-059-B16",
+      "text": "Liegt der Zahlbetrag (Absolutwert in Zahlungswährung) über der Grenze des Freigebers, erhält die Zahlung nur die Erstfreigabe und braucht einen zweiten Freigeber.",
+      "anchors": [
+        {
+          "file": "mzfi_payrelf01.abap",
+          "line": 177,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:177"
+        }
+      ]
+    },
+    {
+      "id": "BM-059-B17",
+      "text": "Bis zur Grenze gibt ein einzelner Freigeber die Zahlung endgültig frei.",
+      "anchors": [
+        {
+          "file": "mzfi_payrelf01.abap",
+          "line": 180,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:180"
+        }
+      ]
+    },
+    {
+      "id": "BM-059-B18",
+      "text": "Am Ende wird gemeldet, wie viele Zahlungen freigegeben und wie viele mangels Berechtigung übersprungen wurden.",
+      "anchors": [
+        {
+          "file": "mzfi_payrelf01.abap",
+          "line": 192,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:192"
+        }
+      ]
+    },
+    {
+      "id": "BM-059-B19",
+      "text": "Zum Ablehnen muss ein Ablehnungsgrund erfasst werden; bei Abbruch oder leerem Grund wird nichts abgelehnt.",
+      "anchors": [
+        {
+          "file": "mzfi_payrelf01.abap",
+          "line": 210,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:210"
+        },
+        {
+          "file": "mzfi_payrelf01.abap",
+          "line": 224,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:224"
+        }
+      ]
+    },
+    {
+      "id": "BM-059-B20",
+      "text": "Markierte, noch nicht endgültig freigegebene Zahlungen werden mit Grund und ablehnendem Benutzer als abgelehnt gekennzeichnet.",
+      "anchors": [
+        {
+          "file": "mzfi_payrelf01.abap",
+          "line": 225,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:225"
+        },
+        {
+          "file": "mzfi_payrelf01.abap",
+          "line": 226,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:226"
+        }
+      ]
+    },
+    {
+      "id": "BM-059-B21",
+      "text": "Gesichert wird nur, wenn ungesicherte Änderungen vorliegen und der Benutzer die Sicherheitsabfrage bestätigt.",
+      "anchors": [
+        {
+          "file": "mzfi_payrelf01.abap",
+          "line": 242,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:242"
+        },
+        {
+          "file": "mzfi_payrelf01.abap",
+          "line": 244,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:244"
+        },
+        {
+          "file": "mzfi_payrelf01.abap",
+          "line": 257,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:257"
+        }
+      ]
+    },
+    {
+      "id": "BM-059-B22",
+      "text": "Die Freigabestände des Laufs werden zur Fortschreibung der Freigabetabelle im Verbucher vorgemerkt.",
+      "anchors": [
+        {
+          "file": "mzfi_payrelf01.abap",
+          "line": 262,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:262"
+        }
+      ]
+    },
+    {
+      "id": "BM-059-B23",
+      "text": "Wartet mindestens eine Zahlung des Laufs auf eine Zweitfreigabe, wird das Workflow-Ereignis SECONDRELEASEREQUIRED zum Zahllauf vorgemerkt.",
+      "anchors": [
+        {
+          "file": "mzfi_payrelf01.abap",
+          "line": 276,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:276"
+        },
+        {
+          "file": "mzfi_payrelf01.abap",
+          "line": 277,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:277"
+        }
+      ]
+    },
+    {
+      "id": "BM-059-B24",
+      "text": "Ist mindestens eine Zahlung des Laufs endgültig freigegeben, wird das Workflow-Ereignis RELEASED zum Zahllauf vorgemerkt.",
+      "anchors": [
+        {
+          "file": "mzfi_payrelf01.abap",
+          "line": 286,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:286"
+        },
+        {
+          "file": "mzfi_payrelf01.abap",
+          "line": 287,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:287"
+        }
+      ]
+    },
+    {
+      "id": "BM-059-B25",
+      "text": "Erst COMMIT WORK stößt Fortschreibung und Ereignisse asynchron an; die Erfolgsmeldung erscheint, ohne auf das Ende der Verbuchung zu warten.",
+      "anchors": [
+        {
+          "file": "mzfi_payrelf01.abap",
+          "line": 294,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:294"
+        },
+        {
+          "file": "mzfi_payrelf01.abap",
+          "line": 297,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:297"
+        }
+      ]
+    },
+    {
+      "id": "BM-059-B26",
+      "text": "Soll eine in der Freigabetabelle bereits endgültig freigegebene Zahlung einen anderen Status erhalten, bricht der Verbuchungsbaustein die gesamte Verbuchung ab.",
+      "anchors": [
+        {
+          "file": "z_fi_payrel_update.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_fi_payrel_update.abap:27"
+        },
+        {
+          "file": "z_fi_payrel_update.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_fi_payrel_update.abap:33"
+        },
+        {
+          "file": "z_fi_payrel_update.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_fi_payrel_update.abap:34"
+        }
+      ]
+    },
+    {
+      "id": "BM-059-B27",
+      "text": "Sonst wird je entschiedener Zahlung der Freigabesatz mit Status, Freigebern, Grund und Änderungsdaten geschrieben und die Sicherung in einer Historientabelle protokolliert.",
+      "anchors": [
+        {
+          "file": "z_fi_payrel_update.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_fi_payrel_update.abap:51"
+        },
+        {
+          "file": "z_fi_payrel_update.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_fi_payrel_update.abap:58"
+        }
+      ]
+    },
+    {
+      "id": "BM-059-B28",
+      "text": "Der Zahllauf kann nur eingeplant werden, wenn alle Zahlungen des Vorschlags endgültig freigegeben sind; sonst wird die Zahl der offenen, erstfreigegebenen oder abgelehnten Zahlungen gemeldet.",
+      "anchors": [
+        {
+          "file": "mzfi_payrelf01.abap",
+          "line": 310,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:310"
+        },
+        {
+          "file": "mzfi_payrelf01.abap",
+          "line": 314,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:314"
+        },
+        {
+          "file": "mzfi_payrelf01.abap",
+          "line": 315,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:315"
+        }
+      ]
+    },
+    {
+      "id": "BM-059-B29",
+      "text": "Nach einer Sicherheitsabfrage wird der Zahllauf zu Laufdatum und Identifikation per Batch-Input über die Transaktion F110 eingeplant.",
+      "anchors": [
+        {
+          "file": "mzfi_payrelf01.abap",
+          "line": 319,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:319"
+        },
+        {
+          "file": "mzfi_payrelf01.abap",
+          "line": 332,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:332"
+        },
+        {
+          "file": "mzfi_payrelf01.abap",
+          "line": 348,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:348"
+        }
+      ]
+    },
+    {
+      "id": "BM-059-B30",
+      "text": "Scheitert der Batch-Input, wird ein Fehler gemeldet, sonst die Einplanung des Zahllaufs bestätigt.",
+      "anchors": [
+        {
+          "file": "mzfi_payrelf01.abap",
+          "line": 352,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:352"
+        },
+        {
+          "file": "mzfi_payrelf01.abap",
+          "line": 353,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:353"
+        },
+        {
+          "file": "mzfi_payrelf01.abap",
+          "line": 355,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:355"
+        }
+      ]
+    },
+    {
+      "id": "BM-059-B31",
+      "text": "Beim Zurück-Navigieren mit ungesicherten Änderungen fragt eine Sicherheitsabfrage nach; bei Bestätigung wird die Sperre gelöst und das Bild verlassen.",
+      "anchors": [
+        {
+          "file": "mzfi_payreli01.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payreli01.abap:44"
+        },
+        {
+          "file": "mzfi_payreli01.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payreli01.abap:45"
+        },
+        {
+          "file": "mzfi_payreli01.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payreli01.abap:61"
+        },
+        {
+          "file": "mzfi_payreli01.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payreli01.abap:62"
+        },
+        {
+          "file": "mzfi_payreli01.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payreli01.abap:63"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "st_s",
+        "type": "start",
+        "anchor": {
+          "file": "mzfi_payrelo01.abap",
+          "line": 8,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelo01.abap:8"
+        },
+        "meaning": "PBO Bild 0100: Oberflächenstatus aufbauen"
+      },
+      {
+        "id": "st_g",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzfi_payrelo01.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelo01.abap:12"
+        },
+        "meaning": "Zahllauf gesperrt bzw. ungesicherte Änderungen?"
+      },
+      {
+        "id": "st_pf",
+        "type": "action",
+        "anchor": {
+          "file": "mzfi_payrelo01.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelo01.abap:22"
+        },
+        "meaning": "Funktionsleiste ohne die ausgeschlossenen Funktionen setzen"
+      },
+      {
+        "id": "x_st",
+        "type": "end",
+        "anchor": {
+          "file": "mzfi_payrelo01.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelo01.abap:24"
+        },
+        "meaning": "PBO beendet, Bild 0100 wird angezeigt"
+      },
+      {
+        "id": "ex_s",
+        "type": "start",
+        "anchor": {
+          "file": "mzfi_payreli01.abap",
+          "line": 8,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payreli01.abap:8"
+        },
+        "meaning": "Abbrechen/Beenden auf Bild 0100 (AT EXIT-COMMAND)"
+      },
+      {
+        "id": "ex_end",
+        "type": "end",
+        "anchor": {
+          "file": "mzfi_payreli01.abap",
+          "line": 13,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payreli01.abap:13"
+        },
+        "meaning": "Transaktion ohne Rückfrage verlassen"
+      },
+      {
+        "id": "uc_s",
+        "type": "start",
+        "anchor": {
+          "file": "mzfi_payreli01.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payreli01.abap:26"
+        },
+        "meaning": "PAI Bild 0100: Benutzerkommando verarbeiten"
+      },
+      {
+        "id": "uc_case",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzfi_payreli01.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payreli01.abap:30"
+        },
+        "meaning": "Welche Funktion wurde gewählt?"
+      },
+      {
+        "id": "uc_lock",
+        "type": "call",
+        "anchor": {
+          "file": "mzfi_payreli01.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payreli01.abap:33"
+        },
+        "meaning": "Zahllauf sperren und Vorschlag lesen"
+      },
+      {
+        "id": "uc_rel",
+        "type": "call",
+        "anchor": {
+          "file": "mzfi_payreli01.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payreli01.abap:35"
+        },
+        "meaning": "Markierte Zahlungen freigeben"
+      },
+      {
+        "id": "uc_rej",
+        "type": "call",
+        "anchor": {
+          "file": "mzfi_payreli01.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payreli01.abap:38"
+        },
+        "meaning": "Markierte Zahlungen ablehnen"
+      },
+      {
+        "id": "uc_sav",
+        "type": "call",
+        "anchor": {
+          "file": "mzfi_payreli01.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payreli01.abap:40"
+        },
+        "meaning": "Freigaben sichern"
+      },
+      {
+        "id": "uc_f110",
+        "type": "call",
+        "anchor": {
+          "file": "mzfi_payreli01.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payreli01.abap:42"
+        },
+        "meaning": "Zahllauf einplanen"
+      },
+      {
+        "id": "uc_bg",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzfi_payreli01.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payreli01.abap:44"
+        },
+        "meaning": "Ungesicherte Änderungen vorhanden?"
+      },
+      {
+        "id": "uc_bpop",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "mzfi_payreli01.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payreli01.abap:45"
+        },
+        "meaning": "Sicherheitsabfrage: ungesicherte Freigaben verwerfen?"
+      },
+      {
+        "id": "uc_bpg",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzfi_payreli01.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payreli01.abap:61"
+        },
+        "meaning": "Verlassen bestätigt?"
+      },
+      {
+        "id": "uc_bun",
+        "type": "call",
+        "anchor": {
+          "file": "mzfi_payreli01.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payreli01.abap:62"
+        },
+        "meaning": "Sperre auf den Zahllauf lösen"
+      },
+      {
+        "id": "uc_bend",
+        "type": "end",
+        "anchor": {
+          "file": "mzfi_payreli01.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payreli01.abap:63"
+        },
+        "meaning": "Bild verlassen, zurück zum Aufrufer"
+      },
+      {
+        "id": "uc_end",
+        "type": "end",
+        "anchor": {
+          "file": "mzfi_payreli01.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payreli01.abap:72"
+        },
+        "meaning": "Bild 0100 erneut prozessieren"
+      },
+      {
+        "id": "lk_s",
+        "type": "start",
+        "anchor": {
+          "file": "mzfi_payrelf01.abap",
+          "line": 9,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:9"
+        },
+        "meaning": "Zahllauf sperren"
+      },
+      {
+        "id": "lk_enq",
+        "type": "lock",
+        "anchor": {
+          "file": "mzfi_payrelf01.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:16"
+        },
+        "meaning": "Exklusive Sperre auf Laufdatum/Identifikation setzen"
+      },
+      {
+        "id": "lk_g",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzfi_payrelf01.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:27"
+        },
+        "meaning": "Sperre erhalten?"
+      },
+      {
+        "id": "lk_msg",
+        "type": "output",
+        "anchor": {
+          "file": "mzfi_payrelf01.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:31"
+        },
+        "meaning": "Meldung: Lauf von anderem Benutzer gesperrt"
+      },
+      {
+        "id": "lk_read",
+        "type": "call",
+        "anchor": {
+          "file": "mzfi_payrelf01.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:34"
+        },
+        "meaning": "Zahlungsvorschlag lesen"
+      },
+      {
+        "id": "x_lk",
+        "type": "end",
+        "anchor": {
+          "file": "mzfi_payrelf01.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:36"
+        },
+        "meaning": "LOCK_RUN beendet"
+      },
+      {
+        "id": "ul_s",
+        "type": "start",
+        "anchor": {
+          "file": "mzfi_payrelf01.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:41"
+        },
+        "meaning": "Sperre lösen"
+      },
+      {
+        "id": "ul_deq",
+        "type": "lock",
+        "anchor": {
+          "file": "mzfi_payrelf01.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:42"
+        },
+        "meaning": "Sperre auf den Zahllauf aufheben"
+      },
+      {
+        "id": "x_ul",
+        "type": "end",
+        "anchor": {
+          "file": "mzfi_payrelf01.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:50"
+        },
+        "meaning": "UNLOCK_RUN beendet, Sperre gelöst"
+      },
+      {
+        "id": "rp_s",
+        "type": "start",
+        "anchor": {
+          "file": "mzfi_payrelf01.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:56"
+        },
+        "meaning": "Zahlungsvorschlag lesen"
+      },
+      {
+        "id": "rp_cr",
+        "type": "read",
+        "anchor": {
+          "file": "mzfi_payrelf01.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:68"
+        },
+        "meaning": "Ersteller des Vorschlags aus dem Protokoll lesen"
+      },
+      {
+        "id": "rp_q",
+        "type": "read",
+        "anchor": {
+          "file": "mzfi_payrelf01.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:73"
+        },
+        "meaning": "Zahlungen des Vorschlags mit Belegnummer lesen"
+      },
+      {
+        "id": "rp_g",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzfi_payrelf01.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:78"
+        },
+        "meaning": "Zahlungen gefunden?"
+      },
+      {
+        "id": "rp_m0",
+        "type": "output",
+        "anchor": {
+          "file": "mzfi_payrelf01.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:79"
+        },
+        "meaning": "Meldung: keine Zahlungen im Vorschlag"
+      },
+      {
+        "id": "rp_ret0",
+        "type": "end",
+        "anchor": {
+          "file": "mzfi_payrelf01.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:80"
+        },
+        "meaning": "Lesen abbrechen"
+      },
+      {
+        "id": "rp_up",
+        "type": "read",
+        "anchor": {
+          "file": "mzfi_payrelf01.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:84"
+        },
+        "meaning": "Bezahlte Posten des Vorschlags lesen"
+      },
+      {
+        "id": "rp_rel",
+        "type": "read",
+        "anchor": {
+          "file": "mzfi_payrelf01.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:90"
+        },
+        "meaning": "Bisherige Freigaben des Laufs lesen"
+      },
+      {
+        "id": "rp_l",
+        "type": "loop",
+        "anchor": {
+          "file": "mzfi_payrelf01.abap",
+          "line": 94,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:94"
+        },
+        "meaning": "Zahlungen für die Anzeige aufbereiten"
+      },
+      {
+        "id": "rp_rg",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzfi_payrelf01.abap",
+          "line": 112,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:112"
+        },
+        "meaning": "Freigabesatz zur Zahlung vorhanden?"
+      },
+      {
+        "id": "rp_st",
+        "type": "action",
+        "anchor": {
+          "file": "mzfi_payrelf01.abap",
+          "line": 113,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:113"
+        },
+        "meaning": "Status, Freigeber und Grund übernehmen"
+      },
+      {
+        "id": "rp_m1",
+        "type": "output",
+        "anchor": {
+          "file": "mzfi_payrelf01.abap",
+          "line": 123,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:123"
+        },
+        "meaning": "Meldung: Anzahl gelesener Zahlungen"
+      },
+      {
+        "id": "x_rp",
+        "type": "end",
+        "anchor": {
+          "file": "mzfi_payrelf01.abap",
+          "line": 124,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:124"
+        },
+        "meaning": "READ_PROPOSAL beendet, Zahlungen aufbereitet"
+      },
+      {
+        "id": "rl_s",
+        "type": "start",
+        "anchor": {
+          "file": "mzfi_payrelf01.abap",
+          "line": 130,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:130"
+        },
+        "meaning": "Markierte Zahlungen freigeben"
+      },
+      {
+        "id": "rl_4e",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzfi_payrelf01.abap",
+          "line": 138,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:138"
+        },
+        "meaning": "Freigeber ist Ersteller des Vorschlags?"
+      },
+      {
+        "id": "rl_4em",
+        "type": "output",
+        "anchor": {
+          "file": "mzfi_payrelf01.abap",
+          "line": 139,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:139"
+        },
+        "meaning": "Meldung: Vier-Augen-Prinzip verletzt"
+      },
+      {
+        "id": "rl_4er",
+        "type": "end",
+        "anchor": {
+          "file": "mzfi_payrelf01.abap",
+          "line": 140,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:140"
+        },
+        "meaning": "Freigabe abbrechen"
+      },
+      {
+        "id": "rl_l",
+        "type": "loop",
+        "anchor": {
+          "file": "mzfi_payrelf01.abap",
+          "line": 143,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:143"
+        },
+        "meaning": "Markierte, noch nicht entschiedene Zahlungen durchlaufen"
+      },
+      {
+        "id": "rl_auth",
+        "type": "action",
+        "anchor": {
+          "file": "mzfi_payrelf01.abap",
+          "line": 150,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:150"
+        },
+        "meaning": "Freigabeberechtigung im zahlenden Buchungskreis prüfen"
+      },
+      {
+        "id": "rl_authg",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzfi_payrelf01.abap",
+          "line": 153,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:153"
+        },
+        "meaning": "Berechtigung vorhanden?"
+      },
+      {
+        "id": "rl_lim",
+        "type": "read",
+        "anchor": {
+          "file": "mzfi_payrelf01.abap",
+          "line": 161,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:161"
+        },
+        "meaning": "Betragsgrenze des Freigebers lesen"
+      },
+      {
+        "id": "rl_2g",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzfi_payrelf01.abap",
+          "line": 167,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:167"
+        },
+        "meaning": "Zweitfreigabe fällig oder Betrag über Grenze?"
+      },
+      {
+        "id": "rl_2same",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzfi_payrelf01.abap",
+          "line": 169,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:169"
+        },
+        "meaning": "Zweitfreigeber gleich Erstfreigeber?"
+      },
+      {
+        "id": "rl_2sm",
+        "type": "output",
+        "anchor": {
+          "file": "mzfi_payrelf01.abap",
+          "line": 170,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:170"
+        },
+        "meaning": "Hinweis: Erstfreigeber darf nicht zweitfreigeben"
+      },
+      {
+        "id": "rl_fin2",
+        "type": "action",
+        "anchor": {
+          "file": "mzfi_payrelf01.abap",
+          "line": 173,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:173"
+        },
+        "meaning": "Zweitfreigabe: Zahlung endgültig freigegeben"
+      },
+      {
+        "id": "rl_fin1",
+        "type": "action",
+        "anchor": {
+          "file": "mzfi_payrelf01.abap",
+          "line": 177,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:177"
+        },
+        "meaning": "Nur Erstfreigabe: zweiter Freigeber erforderlich"
+      },
+      {
+        "id": "rl_fin",
+        "type": "action",
+        "anchor": {
+          "file": "mzfi_payrelf01.abap",
+          "line": 180,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:180"
+        },
+        "meaning": "Zahlung durch einen Freigeber endgültig freigegeben"
+      },
+      {
+        "id": "rl_m",
+        "type": "output",
+        "anchor": {
+          "file": "mzfi_payrelf01.abap",
+          "line": 192,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:192"
+        },
+        "meaning": "Meldung: Anzahl freigegeben / übersprungen"
+      },
+      {
+        "id": "x_rl",
+        "type": "end",
+        "anchor": {
+          "file": "mzfi_payrelf01.abap",
+          "line": 193,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:193"
+        },
+        "meaning": "RELEASE_MARKED beendet"
+      },
+      {
+        "id": "rj_s",
+        "type": "start",
+        "anchor": {
+          "file": "mzfi_payrelf01.abap",
+          "line": 199,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:199"
+        },
+        "meaning": "Markierte Zahlungen ablehnen"
+      },
+      {
+        "id": "rj_pop",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "mzfi_payrelf01.abap",
+          "line": 210,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:210"
+        },
+        "meaning": "Ablehnungsgrund abfragen"
+      },
+      {
+        "id": "rj_pg",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzfi_payrelf01.abap",
+          "line": 224,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:224"
+        },
+        "meaning": "Grund erfasst und nicht abgebrochen?"
+      },
+      {
+        "id": "rj_l",
+        "type": "loop",
+        "anchor": {
+          "file": "mzfi_payrelf01.abap",
+          "line": 225,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:225"
+        },
+        "meaning": "Markierte, nicht endgültig freigegebene Zahlungen durchlaufen"
+      },
+      {
+        "id": "rj_set",
+        "type": "action",
+        "anchor": {
+          "file": "mzfi_payrelf01.abap",
+          "line": 226,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:226"
+        },
+        "meaning": "Zahlung als abgelehnt mit Grund kennzeichnen"
+      },
+      {
+        "id": "x_rj",
+        "type": "end",
+        "anchor": {
+          "file": "mzfi_payrelf01.abap",
+          "line": 233,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:233"
+        },
+        "meaning": "REJECT_MARKED beendet"
+      },
+      {
+        "id": "sv_s",
+        "type": "start",
+        "anchor": {
+          "file": "mzfi_payrelf01.abap",
+          "line": 239,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:239"
+        },
+        "meaning": "Freigaben sichern"
+      },
+      {
+        "id": "sv_g0",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzfi_payrelf01.abap",
+          "line": 242,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:242"
+        },
+        "meaning": "Ungesicherte Änderungen vorhanden?"
+      },
+      {
+        "id": "sv_pop",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "mzfi_payrelf01.abap",
+          "line": 244,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:244"
+        },
+        "meaning": "Sicherheitsabfrage: verbindlich sichern?"
+      },
+      {
+        "id": "sv_popg",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzfi_payrelf01.abap",
+          "line": 257,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:257"
+        },
+        "meaning": "Sichern bestätigt?"
+      },
+      {
+        "id": "sv_popr",
+        "type": "end",
+        "anchor": {
+          "file": "mzfi_payrelf01.abap",
+          "line": 258,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:258"
+        },
+        "meaning": "Sichern abgebrochen"
+      },
+      {
+        "id": "sv_upd",
+        "type": "update_task",
+        "anchor": {
+          "file": "mzfi_payrelf01.abap",
+          "line": 262,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:262"
+        },
+        "meaning": "Fortschreibung der Freigabetabelle registrieren"
+      },
+      {
+        "id": "sv_g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzfi_payrelf01.abap",
+          "line": 276,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:276"
+        },
+        "meaning": "Zahlung wartet auf Zweitfreigabe?"
+      },
+      {
+        "id": "sv_ev1",
+        "type": "update_task",
+        "anchor": {
+          "file": "mzfi_payrelf01.abap",
+          "line": 277,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:277"
+        },
+        "meaning": "Workflow-Ereignis SECONDRELEASEREQUIRED registrieren"
+      },
+      {
+        "id": "sv_g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzfi_payrelf01.abap",
+          "line": 286,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:286"
+        },
+        "meaning": "Zahlung endgültig freigegeben?"
+      },
+      {
+        "id": "sv_ev2",
+        "type": "update_task",
+        "anchor": {
+          "file": "mzfi_payrelf01.abap",
+          "line": 287,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:287"
+        },
+        "meaning": "Workflow-Ereignis RELEASED registrieren"
+      },
+      {
+        "id": "sv_com",
+        "type": "transaction",
+        "anchor": {
+          "file": "mzfi_payrelf01.abap",
+          "line": 294,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:294"
+        },
+        "meaning": "COMMIT WORK: Verbuchung asynchron anstoßen"
+      },
+      {
+        "id": "sv_m",
+        "type": "output",
+        "anchor": {
+          "file": "mzfi_payrelf01.abap",
+          "line": 297,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:297"
+        },
+        "meaning": "Meldung: Freigaben gesichert"
+      },
+      {
+        "id": "x_sv",
+        "type": "end",
+        "anchor": {
+          "file": "mzfi_payrelf01.abap",
+          "line": 298,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:298"
+        },
+        "meaning": "SAVE_RELEASES beendet"
+      },
+      {
+        "id": "f1_s",
+        "type": "start",
+        "anchor": {
+          "file": "mzfi_payrelf01.abap",
+          "line": 304,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:304"
+        },
+        "meaning": "Zahllauf einplanen"
+      },
+      {
+        "id": "f1_cnt",
+        "type": "action",
+        "anchor": {
+          "file": "mzfi_payrelf01.abap",
+          "line": 310,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:310"
+        },
+        "meaning": "Anzahl nicht endgültig freigegebener Zahlungen bestimmen"
+      },
+      {
+        "id": "f1_g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzfi_payrelf01.abap",
+          "line": 314,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:314"
+        },
+        "meaning": "Noch nicht freigegebene Zahlungen?"
+      },
+      {
+        "id": "f1_m1",
+        "type": "output",
+        "anchor": {
+          "file": "mzfi_payrelf01.abap",
+          "line": 315,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:315"
+        },
+        "meaning": "Meldung: Zahllauf nicht möglich"
+      },
+      {
+        "id": "f1_r1",
+        "type": "end",
+        "anchor": {
+          "file": "mzfi_payrelf01.abap",
+          "line": 316,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:316"
+        },
+        "meaning": "Start abbrechen"
+      },
+      {
+        "id": "f1_pop",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "mzfi_payrelf01.abap",
+          "line": 319,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:319"
+        },
+        "meaning": "Sicherheitsabfrage: Zahllauf einplanen?"
+      },
+      {
+        "id": "f1_popg",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzfi_payrelf01.abap",
+          "line": 332,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:332"
+        },
+        "meaning": "Einplanung bestätigt?"
+      },
+      {
+        "id": "f1_popr",
+        "type": "end",
+        "anchor": {
+          "file": "mzfi_payrelf01.abap",
+          "line": 333,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:333"
+        },
+        "meaning": "Einplanung abgebrochen"
+      },
+      {
+        "id": "f1_ct",
+        "type": "transaction",
+        "anchor": {
+          "file": "mzfi_payrelf01.abap",
+          "line": 348,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:348"
+        },
+        "meaning": "F110 per Batch-Input: Zahllauf einplanen"
+      },
+      {
+        "id": "f1_ctg",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzfi_payrelf01.abap",
+          "line": 352,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:352"
+        },
+        "meaning": "Batch-Input fehlerfrei?"
+      },
+      {
+        "id": "f1_ctm",
+        "type": "output",
+        "anchor": {
+          "file": "mzfi_payrelf01.abap",
+          "line": 353,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:353"
+        },
+        "meaning": "Meldung: Einplanung fehlgeschlagen"
+      },
+      {
+        "id": "f1_ok",
+        "type": "output",
+        "anchor": {
+          "file": "mzfi_payrelf01.abap",
+          "line": 355,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:355"
+        },
+        "meaning": "Meldung: Zahllauf eingeplant"
+      },
+      {
+        "id": "x_f1",
+        "type": "end",
+        "anchor": {
+          "file": "mzfi_payrelf01.abap",
+          "line": 357,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzfi_payrelf01.abap:357"
+        },
+        "meaning": "START_PAYMENT_RUN beendet"
+      },
+      {
+        "id": "fu_s",
+        "type": "start",
+        "anchor": {
+          "file": "z_fi_payrel_update.abap",
+          "line": 1,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_fi_payrel_update.abap:1"
+        },
+        "meaning": "Verbuchung der Freigaben (Verbuchungsbaustein)"
+      },
+      {
+        "id": "fu_l",
+        "type": "loop",
+        "anchor": {
+          "file": "z_fi_payrel_update.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_fi_payrel_update.abap:25"
+        },
+        "meaning": "Entschiedene Zahlungen durchlaufen"
+      },
+      {
+        "id": "fu_q",
+        "type": "read",
+        "anchor": {
+          "file": "z_fi_payrel_update.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_fi_payrel_update.abap:27"
+        },
+        "meaning": "Bestehenden Freigabesatz lesen"
+      },
+      {
+        "id": "fu_g",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_fi_payrel_update.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_fi_payrel_update.abap:33"
+        },
+        "meaning": "Endgültige Freigabe würde zurückgesetzt?"
+      },
+      {
+        "id": "fu_abort",
+        "type": "output",
+        "anchor": {
+          "file": "z_fi_payrel_update.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_fi_payrel_update.abap:34"
+        },
+        "meaning": "Abbruchmeldung (Typ A) im Verbucher"
+      },
+      {
+        "id": "fu_abx",
+        "type": "end",
+        "anchor": {
+          "file": "z_fi_payrel_update.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_fi_payrel_update.abap:34"
+        },
+        "meaning": "Verbuchung abgebrochen, alle Änderungen zurückgerollt"
+      },
+      {
+        "id": "fu_mod",
+        "type": "write",
+        "anchor": {
+          "file": "z_fi_payrel_update.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_fi_payrel_update.abap:51"
+        },
+        "meaning": "Freigabesatz schreiben"
+      },
+      {
+        "id": "fu_ins",
+        "type": "write",
+        "anchor": {
+          "file": "z_fi_payrel_update.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_fi_payrel_update.abap:58"
+        },
+        "meaning": "Historie der Sicherung schreiben"
+      },
+      {
+        "id": "x_fu",
+        "type": "end",
+        "anchor": {
+          "file": "z_fi_payrel_update.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_fi_payrel_update.abap:59"
+        },
+        "meaning": "Verbuchung der Freigaben beendet"
+      }
+    ],
+    "edges": [
+      {
+        "from": "st_s",
+        "to": "st_g",
+        "condition": "always"
+      },
+      {
+        "from": "st_g",
+        "to": "st_pf",
+        "condition": "gv_locked = abap_false"
+      },
+      {
+        "from": "st_g",
+        "to": "st_pf",
+        "condition": "gv_changed = abap_true"
+      },
+      {
+        "from": "st_g",
+        "to": "st_pf",
+        "condition": "else"
+      },
+      {
+        "from": "ex_s",
+        "to": "ex_end",
+        "condition": "always"
+      },
+      {
+        "from": "uc_s",
+        "to": "uc_case",
+        "condition": "always"
+      },
+      {
+        "from": "uc_case",
+        "to": "uc_lock",
+        "condition": "WHEN 'READ'"
+      },
+      {
+        "from": "uc_case",
+        "to": "uc_rel",
+        "condition": "WHEN 'REL'"
+      },
+      {
+        "from": "uc_case",
+        "to": "uc_rej",
+        "condition": "WHEN 'REJ'"
+      },
+      {
+        "from": "uc_case",
+        "to": "uc_sav",
+        "condition": "WHEN 'SAVE'"
+      },
+      {
+        "from": "uc_case",
+        "to": "uc_f110",
+        "condition": "WHEN 'F110'"
+      },
+      {
+        "from": "uc_case",
+        "to": "uc_bg",
+        "condition": "WHEN 'BACK'"
+      },
+      {
+        "from": "uc_case",
+        "to": "uc_end",
+        "condition": "else"
+      },
+      {
+        "from": "uc_lock",
+        "to": "lk_s",
+        "condition": "always"
+      },
+      {
+        "from": "uc_rel",
+        "to": "rl_s",
+        "condition": "always"
+      },
+      {
+        "from": "uc_rej",
+        "to": "rj_s",
+        "condition": "always"
+      },
+      {
+        "from": "uc_sav",
+        "to": "sv_s",
+        "condition": "always"
+      },
+      {
+        "from": "uc_f110",
+        "to": "f1_s",
+        "condition": "always"
+      },
+      {
+        "from": "uc_bg",
+        "to": "uc_bpop",
+        "condition": "gv_changed = abap_true"
+      },
+      {
+        "from": "uc_bg",
+        "to": "uc_bpg",
+        "condition": "else"
+      },
+      {
+        "from": "uc_bpop",
+        "to": "uc_bpg",
+        "condition": "always"
+      },
+      {
+        "from": "uc_bpg",
+        "to": "uc_bun",
+        "condition": "gv_answer = '1'"
+      },
+      {
+        "from": "uc_bpg",
+        "to": "uc_end",
+        "condition": "else"
+      },
+      {
+        "from": "uc_bun",
+        "to": "ul_s",
+        "condition": "always"
+      },
+      {
+        "from": "ul_s",
+        "to": "ul_deq",
+        "condition": "always"
+      },
+      {
+        "from": "ul_deq",
+        "to": "x_ul",
+        "condition": "always"
+      },
+      {
+        "from": "lk_s",
+        "to": "lk_enq",
+        "condition": "always"
+      },
+      {
+        "from": "lk_enq",
+        "to": "lk_g",
+        "condition": "always"
+      },
+      {
+        "from": "lk_g",
+        "to": "lk_msg",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "lk_g",
+        "to": "lk_read",
+        "condition": "else"
+      },
+      {
+        "from": "lk_msg",
+        "to": "x_lk",
+        "condition": "always"
+      },
+      {
+        "from": "lk_read",
+        "to": "rp_s",
+        "condition": "always"
+      },
+      {
+        "from": "rp_s",
+        "to": "rp_cr",
+        "condition": "always"
+      },
+      {
+        "from": "rp_cr",
+        "to": "rp_q",
+        "condition": "always"
+      },
+      {
+        "from": "rp_q",
+        "to": "rp_g",
+        "condition": "always"
+      },
+      {
+        "from": "rp_g",
+        "to": "rp_m0",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "rp_m0",
+        "to": "rp_ret0",
+        "condition": "always"
+      },
+      {
+        "from": "rp_g",
+        "to": "rp_up",
+        "condition": "else"
+      },
+      {
+        "from": "rp_ret0",
+        "to": "x_lk",
+        "condition": "always"
+      },
+      {
+        "from": "rp_up",
+        "to": "rp_rel",
+        "condition": "always"
+      },
+      {
+        "from": "rp_rel",
+        "to": "rp_l",
+        "condition": "always"
+      },
+      {
+        "from": "rp_l",
+        "to": "rp_rg",
+        "condition": "next row"
+      },
+      {
+        "from": "rp_rg",
+        "to": "rp_st",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "rp_rg",
+        "to": "rp_l",
+        "condition": "else"
+      },
+      {
+        "from": "rp_st",
+        "to": "rp_l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "rp_l",
+        "to": "rp_m1",
+        "condition": "no more rows"
+      },
+      {
+        "from": "rp_m1",
+        "to": "x_rp",
+        "condition": "always"
+      },
+      {
+        "from": "rl_s",
+        "to": "rl_4e",
+        "condition": "always"
+      },
+      {
+        "from": "rl_4e",
+        "to": "rl_4em",
+        "condition": "gv_creator = sy-uname"
+      },
+      {
+        "from": "rl_4em",
+        "to": "rl_4er",
+        "condition": "always"
+      },
+      {
+        "from": "rl_4er",
+        "to": "uc_end",
+        "condition": "always"
+      },
+      {
+        "from": "rl_4e",
+        "to": "rl_l",
+        "condition": "else"
+      },
+      {
+        "from": "rl_l",
+        "to": "rl_auth",
+        "condition": "next row"
+      },
+      {
+        "from": "rl_auth",
+        "to": "rl_authg",
+        "condition": "always"
+      },
+      {
+        "from": "rl_authg",
+        "to": "rl_l",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "rl_authg",
+        "to": "rl_lim",
+        "condition": "else"
+      },
+      {
+        "from": "rl_lim",
+        "to": "rl_2g",
+        "condition": "always"
+      },
+      {
+        "from": "rl_2g",
+        "to": "rl_2same",
+        "condition": "gs_pay-status = gc_status_first"
+      },
+      {
+        "from": "rl_2g",
+        "to": "rl_fin1",
+        "condition": "lv_betr > lv_limit"
+      },
+      {
+        "from": "rl_2g",
+        "to": "rl_fin",
+        "condition": "else"
+      },
+      {
+        "from": "rl_2same",
+        "to": "rl_2sm",
+        "condition": "gs_pay-rel1_user = sy-uname"
+      },
+      {
+        "from": "rl_2sm",
+        "to": "rl_l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "rl_2same",
+        "to": "rl_fin2",
+        "condition": "else"
+      },
+      {
+        "from": "rl_fin2",
+        "to": "rl_l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "rl_fin1",
+        "to": "rl_l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "rl_fin",
+        "to": "rl_l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "rl_l",
+        "to": "rl_m",
+        "condition": "no more rows"
+      },
+      {
+        "from": "rl_m",
+        "to": "x_rl",
+        "condition": "always"
+      },
+      {
+        "from": "rj_s",
+        "to": "rj_pop",
+        "condition": "always"
+      },
+      {
+        "from": "rj_pop",
+        "to": "rj_pg",
+        "condition": "always"
+      },
+      {
+        "from": "rj_pg",
+        "to": "rj_l",
+        "condition": "lv_rc <> 'A' AND lv_reason IS NOT INITIAL"
+      },
+      {
+        "from": "rj_pg",
+        "to": "x_rj",
+        "condition": "else"
+      },
+      {
+        "from": "rj_l",
+        "to": "rj_set",
+        "condition": "next row"
+      },
+      {
+        "from": "rj_set",
+        "to": "rj_l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "rj_l",
+        "to": "x_rj",
+        "condition": "no more rows"
+      },
+      {
+        "from": "sv_s",
+        "to": "sv_g0",
+        "condition": "always"
+      },
+      {
+        "from": "sv_g0",
+        "to": "sv_pop",
+        "condition": "gv_changed = abap_true"
+      },
+      {
+        "from": "sv_g0",
+        "to": "x_sv",
+        "condition": "else"
+      },
+      {
+        "from": "sv_pop",
+        "to": "sv_popg",
+        "condition": "always"
+      },
+      {
+        "from": "sv_popg",
+        "to": "sv_popr",
+        "condition": "gv_answer <> '1'"
+      },
+      {
+        "from": "sv_popr",
+        "to": "uc_end",
+        "condition": "always"
+      },
+      {
+        "from": "sv_popg",
+        "to": "sv_upd",
+        "condition": "else"
+      },
+      {
+        "from": "sv_upd",
+        "to": "sv_g1",
+        "condition": "always"
+      },
+      {
+        "from": "sv_g1",
+        "to": "sv_ev1",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "sv_g1",
+        "to": "sv_g2",
+        "condition": "else"
+      },
+      {
+        "from": "sv_ev1",
+        "to": "sv_g2",
+        "condition": "always"
+      },
+      {
+        "from": "sv_g2",
+        "to": "sv_ev2",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "sv_g2",
+        "to": "sv_com",
+        "condition": "else"
+      },
+      {
+        "from": "sv_ev2",
+        "to": "sv_com",
+        "condition": "always"
+      },
+      {
+        "from": "sv_com",
+        "to": "sv_m",
+        "condition": "always"
+      },
+      {
+        "from": "sv_com",
+        "to": "fu_s",
+        "condition": "always"
+      },
+      {
+        "from": "sv_m",
+        "to": "x_sv",
+        "condition": "always"
+      },
+      {
+        "from": "f1_s",
+        "to": "f1_cnt",
+        "condition": "always"
+      },
+      {
+        "from": "f1_cnt",
+        "to": "f1_g1",
+        "condition": "always"
+      },
+      {
+        "from": "f1_g1",
+        "to": "f1_m1",
+        "condition": "lv_open > 0"
+      },
+      {
+        "from": "f1_m1",
+        "to": "f1_r1",
+        "condition": "always"
+      },
+      {
+        "from": "f1_r1",
+        "to": "uc_end",
+        "condition": "always"
+      },
+      {
+        "from": "f1_g1",
+        "to": "f1_pop",
+        "condition": "else"
+      },
+      {
+        "from": "f1_pop",
+        "to": "f1_popg",
+        "condition": "always"
+      },
+      {
+        "from": "f1_popg",
+        "to": "f1_popr",
+        "condition": "gv_answer <> '1'"
+      },
+      {
+        "from": "f1_popr",
+        "to": "uc_end",
+        "condition": "always"
+      },
+      {
+        "from": "f1_popg",
+        "to": "f1_ct",
+        "condition": "else"
+      },
+      {
+        "from": "f1_ct",
+        "to": "f1_ctg",
+        "condition": "always"
+      },
+      {
+        "from": "f1_ctg",
+        "to": "f1_ctm",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "f1_ctg",
+        "to": "f1_ok",
+        "condition": "else"
+      },
+      {
+        "from": "f1_ctm",
+        "to": "x_f1",
+        "condition": "always"
+      },
+      {
+        "from": "f1_ok",
+        "to": "x_f1",
+        "condition": "always"
+      },
+      {
+        "from": "fu_s",
+        "to": "fu_l",
+        "condition": "always"
+      },
+      {
+        "from": "fu_l",
+        "to": "fu_q",
+        "condition": "next row"
+      },
+      {
+        "from": "fu_q",
+        "to": "fu_g",
+        "condition": "always"
+      },
+      {
+        "from": "fu_g",
+        "to": "fu_abort",
+        "condition": "sy-subrc = 0 AND ls_old-status = 'F' AND ls_pay-status <> 'F'"
+      },
+      {
+        "from": "fu_abort",
+        "to": "fu_abx",
+        "condition": "always"
+      },
+      {
+        "from": "fu_g",
+        "to": "fu_mod",
+        "condition": "else"
+      },
+      {
+        "from": "fu_mod",
+        "to": "fu_l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "fu_l",
+        "to": "fu_ins",
+        "condition": "no more rows"
+      },
+      {
+        "from": "x_rp",
+        "to": "x_lk",
+        "condition": "always"
+      },
+      {
+        "from": "x_lk",
+        "to": "uc_end",
+        "condition": "always"
+      },
+      {
+        "from": "x_ul",
+        "to": "uc_bend",
+        "condition": "always"
+      },
+      {
+        "from": "x_rl",
+        "to": "uc_end",
+        "condition": "always"
+      },
+      {
+        "from": "x_rj",
+        "to": "uc_end",
+        "condition": "always"
+      },
+      {
+        "from": "x_sv",
+        "to": "uc_end",
+        "condition": "always"
+      },
+      {
+        "from": "x_f1",
+        "to": "uc_end",
+        "condition": "always"
+      },
+      {
+        "from": "st_pf",
+        "to": "x_st",
+        "condition": "always"
+      },
+      {
+        "from": "fu_ins",
+        "to": "x_fu",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "mzfi_payrelf01.abap:180 — kein Fachsatz „die Zahlung wird ausgeführt bzw. bezahlt“ (die Freigabe setzt nur einen Status in der internen Tabelle; gezahlt wird erst im Zahllauf F110, der hier höchstens eingeplant wird)",
+    "mzfi_payrelf01.abap:138 — kein Fachsatz „ohne bekannten Ersteller des Vorschlags wird die Freigabe verweigert“ (fehlt der Satz in ZFI_PAYRUN_LOG, ist gv_creator leer und die Vier-Augen-Prüfung greift nie)",
+    "mzfi_payrelf01.abap:226 — kein Fachsatz „abgelehnte Zahlungen werden aus dem Zahlungsvorschlag entfernt oder gesperrt“ (nur der Status in der Freigabetabelle ändert sich; der Vorschlag in REGUH/REGUP bleibt unverändert)",
+    "mzfi_payrelf01.abap:297 — kein Fachsatz „die Freigaben sind zu diesem Zeitpunkt in ZFI_PAYREL fortgeschrieben“ (COMMIT WORK ohne AND WAIT; die Verbuchung läuft asynchron und kann noch mit Typ-A-Meldung abbrechen)"
+  ],
+  "processDescription": "Ein Mitarbeiter der Kreditorenbuchhaltung ruft die Freigabetransaktion auf, gibt Laufdatum und Identifikation eines F110-Zahlungsvorschlags ein und wählt Lesen. Das Programm sperrt den Zahllauf exklusiv; ist er von einem anderen Benutzer gesperrt, wird der Sperrinhaber gemeldet. Sonst liest es den Ersteller des Vorschlags aus einem kundeneigenen Protokoll, die Zahlungen des Vorschlags mit Belegnummer samt bezahlten Posten und die bereits gesicherten Freigaben. Beim Freigeben wird zuerst das Vier-Augen-Prinzip geprüft: Der Ersteller des Vorschlags darf nicht freigeben. Für jede markierte offene Zahlung werden die Freigabeberechtigung im zahlenden Buchungskreis und die persönliche Betragsgrenze geprüft; bis zur Grenze gibt ein Freigeber allein endgültig frei, darüber entsteht nur eine Erstfreigabe, und ein zweiter, vom Erstfreigeber verschiedener Benutzer gibt endgültig frei. Ablehnungen verlangen einen Grund. Beim Sichern werden nach einer Sicherheitsabfrage die Fortschreibung der Freigabetabelle und je nach Lage die Workflow-Ereignisse für Zweitfreigabe und erfolgte Freigabe im Verbucher vorgemerkt und mit COMMIT WORK asynchron angestoßen. Der Verbuchungsbaustein schreibt Freigabesätze und Historie und bricht ab, wenn eine endgültig freigegebene Zahlung zurückgesetzt würde. Erst wenn alle Zahlungen endgültig freigegeben sind, plant der Benutzer nach einer weiteren Sicherheitsabfrage den Zahllauf per Batch-Input über F110 ein; Fehler der Einplanung werden gemeldet. Zurück fragt bei ungesicherten Änderungen nach und löst die Sperre, Abbrechen verlässt die Transaktion ohne Rückfrage."
+}

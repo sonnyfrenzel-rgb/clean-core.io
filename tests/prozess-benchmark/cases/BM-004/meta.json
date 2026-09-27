@@ -1,0 +1,18 @@
+{
+  "id": "BM-004",
+  "title": "Kundensperren ermitteln: zentral vor Vertriebsbereich",
+  "domain": "SD / Order-to-Cash",
+  "band": "einfach",
+  "loc": 32,
+  "constructs": [
+    "FUNCTION mit klassischer Ausnahme",
+    "SELECT SINGLE INTO (…)",
+    "RAISE",
+    "bedingter Zweitzugriff"
+  ],
+  "scenario": "Kleiner Hilfsbaustein, den Auftragsexits und Schnittstellen aufrufen, um vor dem Anlegen eines Belegs die Auftrags-, Liefer- und Fakturasperre eines Kunden zu kennen.",
+  "s4_issues": [
+    "KNA1/KNVV sind in S/4 über Business Partner (CVI) gepflegt; Lesen bleibt möglich, Nachfolger I_Customer / I_CustomerSalesArea",
+    "klassische Ausnahmen statt klassenbasierter Ausnahmen"
+  ]
+}

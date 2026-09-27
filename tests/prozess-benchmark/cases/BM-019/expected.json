@@ -1,0 +1,2146 @@
+{
+  "id": "BM-019",
+  "title": "Webshop-Bestellung per RFC: Dublettenschutz, Kunde finden oder anlegen, Verfügbarkeit, Preisabgleich, Auftragsanlage mit Protokoll und Ereignis",
+  "classes": [
+    "K03",
+    "K09",
+    "K12",
+    "K01",
+    "K04"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "ZSD_WEBSHOP_LOG",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "z_sd_webshop_order.abap",
+        "line": 32,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_sd_webshop_order.abap:32"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZCL_SD_WEBSHOP_CUSTOMER",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "z_sd_webshop_order.abap",
+        "line": 52,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_sd_webshop_order.abap:52"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZCL_SD_WEBSHOP_ORDER",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "z_sd_webshop_order.abap",
+        "line": 56,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_sd_webshop_order.abap:56"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "Z_SD_WEBSHOP_LOG_UPD",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "z_sd_webshop_order.abap",
+        "line": 67,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_sd_webshop_order.abap:67"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "SWE_EVENT_CREATE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "z_sd_webshop_order.abap",
+        "line": 100,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_sd_webshop_order.abap:100"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "KNA1",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_sd_webshop_customer.abap",
+        "line": 65,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_sd_webshop_customer.abap:65"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ADR6",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_sd_webshop_customer.abap",
+        "line": 65,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_sd_webshop_customer.abap:65"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "KNVV",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_sd_webshop_customer.abap",
+        "line": 80,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_sd_webshop_customer.abap:80"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "KNB1",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_sd_webshop_customer.abap",
+        "line": 107,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_sd_webshop_customer.abap:107"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "SD_CUSTOMER_MAINTAIN_ALL",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_sd_webshop_customer.abap",
+        "line": 135,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_sd_webshop_customer.abap:135"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_MATERIAL_AVAILABILITY",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_sd_webshop_order.abap",
+        "line": 56,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_sd_webshop_order.abap:56"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_SALESORDER_SIMULATE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_sd_webshop_order.abap",
+        "line": 98,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_sd_webshop_order.abap:98"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_SALESORDER_CREATEFROMDAT2",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_sd_webshop_order.abap",
+        "line": 140,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_sd_webshop_order.abap:140"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZSD_WEBSHOP_LOG",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "z_sd_webshop_log_upd.abap",
+        "line": 9,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_sd_webshop_log_upd.abap:9"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-019-B01",
+      "text": "Wurde dieselbe Shopbestellung bereits erfolgreich übernommen, wird der vorhandene Auftrag mit Status D zurückgegeben und nichts neu angelegt.",
+      "anchors": [
+        {
+          "file": "z_sd_webshop_order.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_webshop_order.abap:32"
+        },
+        {
+          "file": "z_sd_webshop_order.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_webshop_order.abap:35"
+        },
+        {
+          "file": "z_sd_webshop_order.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_webshop_order.abap:40"
+        }
+      ]
+    },
+    {
+      "id": "BM-019-B02",
+      "text": "Eine Bestellung ohne Positionen wird mit Fehler 901 abgelehnt.",
+      "anchors": [
+        {
+          "file": "z_sd_webshop_order.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_webshop_order.abap:43"
+        },
+        {
+          "file": "z_sd_webshop_order.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_webshop_order.abap:47"
+        }
+      ]
+    },
+    {
+      "id": "BM-019-B03",
+      "text": "Ist im Shopkonto eine Kundennummer hinterlegt, ist diese der Auftraggeber.",
+      "anchors": [
+        {
+          "file": "zcl_sd_webshop_customer.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_webshop_customer.abap:45"
+        }
+      ]
+    },
+    {
+      "id": "BM-019-B04",
+      "text": "Sonst wird der erste nicht zum Löschen vorgemerkte Kunde der Kontengruppe ZWEB gesucht, dessen Mailsuchbegriff (die ersten 20 Zeichen der Adresse in Großbuchstaben) passt.",
+      "anchors": [
+        {
+          "file": "zcl_sd_webshop_customer.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_webshop_customer.abap:48"
+        },
+        {
+          "file": "zcl_sd_webshop_customer.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_webshop_customer.abap:65"
+        }
+      ]
+    },
+    {
+      "id": "BM-019-B05",
+      "text": "Für einen vorhandenen Kunden muss der Webshop-Vertriebsbereich 1000/30/00 angelegt sein und darf keine Auftragssperre haben, sonst wird die Bestellung abgelehnt.",
+      "anchors": [
+        {
+          "file": "zcl_sd_webshop_customer.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_webshop_customer.abap:54"
+        },
+        {
+          "file": "zcl_sd_webshop_customer.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_webshop_customer.abap:80"
+        },
+        {
+          "file": "zcl_sd_webshop_customer.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_webshop_customer.abap:85"
+        },
+        {
+          "file": "zcl_sd_webshop_customer.abap",
+          "line": 91,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_webshop_customer.abap:91"
+        }
+      ]
+    },
+    {
+      "id": "BM-019-B06",
+      "text": "Wird kein Kunde gefunden, wird ein Neukunde mit Name, Anschrift und E-Mail aus dem Shop angelegt; Kontengruppe, Buchungskreis- und Vertriebsdaten stammen vom Vorlagekunden WEBVORLAGE.",
+      "anchors": [
+        {
+          "file": "zcl_sd_webshop_customer.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_webshop_customer.abap:52"
+        },
+        {
+          "file": "zcl_sd_webshop_customer.abap",
+          "line": 106,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_webshop_customer.abap:106"
+        },
+        {
+          "file": "zcl_sd_webshop_customer.abap",
+          "line": 107,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_webshop_customer.abap:107"
+        },
+        {
+          "file": "zcl_sd_webshop_customer.abap",
+          "line": 110,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_webshop_customer.abap:110"
+        },
+        {
+          "file": "zcl_sd_webshop_customer.abap",
+          "line": 135,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_webshop_customer.abap:135"
+        }
+      ]
+    },
+    {
+      "id": "BM-019-B07",
+      "text": "Fehlt ein Teil der Vorlage oder scheitert die Anlage, wird die Bestellung abgelehnt.",
+      "anchors": [
+        {
+          "file": "zcl_sd_webshop_customer.abap",
+          "line": 115,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_webshop_customer.abap:115"
+        },
+        {
+          "file": "zcl_sd_webshop_customer.abap",
+          "line": 146,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_webshop_customer.abap:146"
+        }
+      ]
+    },
+    {
+      "id": "BM-019-B08",
+      "text": "Für jede Position wird die im Werk verfügbare Menge ermittelt; ein Fehler der Prüfung lehnt die Bestellung ab.",
+      "anchors": [
+        {
+          "file": "zcl_sd_webshop_order.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_webshop_order.abap:56"
+        },
+        {
+          "file": "zcl_sd_webshop_order.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_webshop_order.abap:65"
+        }
+      ]
+    },
+    {
+      "id": "BM-019-B09",
+      "text": "Reicht die verfügbare Menge nicht, wird die Bestellung abgelehnt, außer der Kunde hat Teillieferung erlaubt; dann gibt es nur die Warnung 910.",
+      "anchors": [
+        {
+          "file": "zcl_sd_webshop_order.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_webshop_order.abap:71"
+        },
+        {
+          "file": "zcl_sd_webshop_order.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_webshop_order.abap:73"
+        }
+      ]
+    },
+    {
+      "id": "BM-019-B10",
+      "text": "Die Bestellung wird als Auftrag ZWEB mit der SAP-Preisfindung simuliert.",
+      "anchors": [
+        {
+          "file": "zcl_sd_webshop_order.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_webshop_order.abap:98"
+        }
+      ]
+    },
+    {
+      "id": "BM-019-B11",
+      "text": "Weicht der Nettowert einer Position um mehr als 1 Cent vom Shoppreis ab, gilt der Preisabgleich als gescheitert (Meldung 911 je Position); der SAP-Nettowert wird über alle Positionen summiert.",
+      "anchors": [
+        {
+          "file": "zcl_sd_webshop_order.abap",
+          "line": 116,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_webshop_order.abap:116"
+        },
+        {
+          "file": "zcl_sd_webshop_order.abap",
+          "line": 117,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_webshop_order.abap:117"
+        },
+        {
+          "file": "zcl_sd_webshop_order.abap",
+          "line": 123,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_webshop_order.abap:123"
+        }
+      ]
+    },
+    {
+      "id": "BM-019-B12",
+      "text": "Bei Preisabweichung wird kein Auftrag angelegt; die Bestellung wird mit Status P protokolliert, festgeschrieben und mit den Preismeldungen zurückgegeben.",
+      "anchors": [
+        {
+          "file": "z_sd_webshop_order.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_webshop_order.abap:61"
+        },
+        {
+          "file": "z_sd_webshop_order.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_webshop_order.abap:67"
+        },
+        {
+          "file": "z_sd_webshop_order.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_webshop_order.abap:70"
+        },
+        {
+          "file": "z_sd_webshop_order.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_webshop_order.abap:71"
+        }
+      ]
+    },
+    {
+      "id": "BM-019-B13",
+      "text": "Sonst wird ein Kundenauftrag ZWEB mit der Shopbestellnummer als Kundenbestellnummer, dem Auftraggeber und je Shopposition einer Position mit Einteilung angelegt.",
+      "anchors": [
+        {
+          "file": "z_sd_webshop_order.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_webshop_order.abap:75"
+        },
+        {
+          "file": "zcl_sd_webshop_order.abap",
+          "line": 140,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_webshop_order.abap:140"
+        }
+      ]
+    },
+    {
+      "id": "BM-019-B14",
+      "text": "Liefert die Anlage keine Auftragsnummer, wird die Bestellung abgelehnt.",
+      "anchors": [
+        {
+          "file": "zcl_sd_webshop_order.abap",
+          "line": 152,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_webshop_order.abap:152"
+        }
+      ]
+    },
+    {
+      "id": "BM-019-B15",
+      "text": "Jede Ablehnung aus Kundenermittlung, Verfügbarkeit oder Anlage verwirft alle Änderungen dieser Übertragung und gibt Status E mit dem Ausnahmetext zurück.",
+      "anchors": [
+        {
+          "file": "z_sd_webshop_order.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_webshop_order.abap:82"
+        },
+        {
+          "file": "z_sd_webshop_order.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_webshop_order.abap:83"
+        }
+      ]
+    },
+    {
+      "id": "BM-019-B16",
+      "text": "Nach erfolgreicher Anlage wird die Bestellung mit Auftrag, Kunde, Nettowert und Status S protokolliert.",
+      "anchors": [
+        {
+          "file": "z_sd_webshop_order.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_webshop_order.abap:93"
+        },
+        {
+          "file": "z_sd_webshop_log_upd.abap",
+          "line": 9,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_webshop_log_upd.abap:9"
+        }
+      ]
+    },
+    {
+      "id": "BM-019-B17",
+      "text": "Aufträge ab einem Nettowert von 25.000 lösen das Workflow-Ereignis ZWEBBIG für den Key-Account aus.",
+      "anchors": [
+        {
+          "file": "z_sd_webshop_order.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_webshop_order.abap:98"
+        },
+        {
+          "file": "z_sd_webshop_order.abap",
+          "line": 100,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_webshop_order.abap:100"
+        }
+      ]
+    },
+    {
+      "id": "BM-019-B18",
+      "text": "Auftrag, Protokoll und Ereignis werden gemeinsam festgeschrieben, und Auftragsnummer, Kunde und Status S gehen an den Shop zurück.",
+      "anchors": [
+        {
+          "file": "z_sd_webshop_order.abap",
+          "line": 110,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_webshop_order.abap:110"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "z_sd_webshop_order.abap",
+          "line": 1,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_webshop_order.abap:1"
+        },
+        "meaning": "Webshop-Bestellung per RFC empfangen"
+      },
+      {
+        "id": "q_dup",
+        "type": "read",
+        "anchor": {
+          "file": "z_sd_webshop_order.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_webshop_order.abap:32"
+        },
+        "meaning": "Bereits erfolgreich übernommene Shopbestellung suchen"
+      },
+      {
+        "id": "g_dup",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_sd_webshop_order.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_webshop_order.abap:35"
+        },
+        "meaning": "Schon übernommen?"
+      },
+      {
+        "id": "e_dup",
+        "type": "end",
+        "anchor": {
+          "file": "z_sd_webshop_order.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_webshop_order.abap:40"
+        },
+        "meaning": "Vorhandenen Auftrag mit Status D zurückgeben"
+      },
+      {
+        "id": "g_items",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_sd_webshop_order.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_webshop_order.abap:43"
+        },
+        "meaning": "Bestellung ohne Positionen?"
+      },
+      {
+        "id": "e_items",
+        "type": "end",
+        "anchor": {
+          "file": "z_sd_webshop_order.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_webshop_order.abap:47"
+        },
+        "meaning": "Fehler 901 zurückgeben"
+      },
+      {
+        "id": "nc",
+        "type": "call",
+        "anchor": {
+          "file": "z_sd_webshop_order.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_webshop_order.abap:52"
+        },
+        "meaning": "Kundenermittlung vorbereiten"
+      },
+      {
+        "id": "goc",
+        "type": "call",
+        "anchor": {
+          "file": "z_sd_webshop_order.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_webshop_order.abap:53"
+        },
+        "meaning": "Auftraggeber ermitteln oder anlegen"
+      },
+      {
+        "id": "no",
+        "type": "call",
+        "anchor": {
+          "file": "z_sd_webshop_order.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_webshop_order.abap:56"
+        },
+        "meaning": "Bestellung mit Kunde übernehmen"
+      },
+      {
+        "id": "ca",
+        "type": "call",
+        "anchor": {
+          "file": "z_sd_webshop_order.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_webshop_order.abap:59"
+        },
+        "meaning": "Verfügbarkeit prüfen"
+      },
+      {
+        "id": "cp",
+        "type": "call",
+        "anchor": {
+          "file": "z_sd_webshop_order.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_webshop_order.abap:61"
+        },
+        "meaning": "Shoppreise mit SAP-Preisfindung abgleichen"
+      },
+      {
+        "id": "g_cp",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_sd_webshop_order.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_webshop_order.abap:61"
+        },
+        "meaning": "Preisabweichung?"
+      },
+      {
+        "id": "upd1",
+        "type": "update_task",
+        "anchor": {
+          "file": "z_sd_webshop_order.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_webshop_order.abap:67"
+        },
+        "meaning": "Protokollsatz mit Status P anmelden"
+      },
+      {
+        "id": "cm1",
+        "type": "transaction",
+        "anchor": {
+          "file": "z_sd_webshop_order.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_webshop_order.abap:70"
+        },
+        "meaning": "Protokoll festschreiben"
+      },
+      {
+        "id": "e_p",
+        "type": "end",
+        "anchor": {
+          "file": "z_sd_webshop_order.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_webshop_order.abap:71"
+        },
+        "meaning": "Status P mit Preismeldungen zurückgeben"
+      },
+      {
+        "id": "cr",
+        "type": "call",
+        "anchor": {
+          "file": "z_sd_webshop_order.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_webshop_order.abap:75"
+        },
+        "meaning": "Kundenauftrag anlegen"
+      },
+      {
+        "id": "rb",
+        "type": "transaction",
+        "anchor": {
+          "file": "z_sd_webshop_order.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_webshop_order.abap:82"
+        },
+        "meaning": "Alles in dieser LUW verwerfen"
+      },
+      {
+        "id": "e_x",
+        "type": "end",
+        "anchor": {
+          "file": "z_sd_webshop_order.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_webshop_order.abap:83"
+        },
+        "meaning": "Status E mit Ausnahmetext zurückgeben"
+      },
+      {
+        "id": "upd2",
+        "type": "update_task",
+        "anchor": {
+          "file": "z_sd_webshop_order.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_webshop_order.abap:93"
+        },
+        "meaning": "Protokollsatz mit Auftrag, Nettowert und Status S anmelden"
+      },
+      {
+        "id": "g_big",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_sd_webshop_order.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_webshop_order.abap:98"
+        },
+        "meaning": "Großauftrag ab 25.000?"
+      },
+      {
+        "id": "ev",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "z_sd_webshop_order.abap",
+          "line": 100,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_webshop_order.abap:100"
+        },
+        "meaning": "Workflow-Ereignis ZWEBBIG zum Auftrag auslösen"
+      },
+      {
+        "id": "cm2",
+        "type": "transaction",
+        "anchor": {
+          "file": "z_sd_webshop_order.abap",
+          "line": 110,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_webshop_order.abap:110"
+        },
+        "meaning": "Auftrag, Protokoll und Ereignis festschreiben"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "z_sd_webshop_order.abap",
+          "line": 111,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_webshop_order.abap:111"
+        },
+        "meaning": "Auftragsnummer, Kunde und Status S zurück"
+      },
+      {
+        "id": "kc",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_sd_webshop_customer.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_webshop_customer.abap:39"
+        },
+        "meaning": "Kundenermittlung anlegen"
+      },
+      {
+        "id": "kce",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_sd_webshop_customer.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_webshop_customer.abap:41"
+        },
+        "meaning": "Bestelldaten übernommen"
+      },
+      {
+        "id": "gs",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_sd_webshop_customer.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_webshop_customer.abap:44"
+        },
+        "meaning": "Auftraggeber bestimmen"
+      },
+      {
+        "id": "g_kn",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_sd_webshop_customer.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_webshop_customer.abap:45"
+        },
+        "meaning": "Shopkonto mit Kundennummer?"
+      },
+      {
+        "id": "c_find",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_sd_webshop_customer.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_webshop_customer.abap:48"
+        },
+        "meaning": "Kunde über E-Mail suchen"
+      },
+      {
+        "id": "g_new",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_sd_webshop_customer.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_webshop_customer.abap:51"
+        },
+        "meaning": "Kein Kunde gefunden?"
+      },
+      {
+        "id": "c_cre",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_sd_webshop_customer.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_webshop_customer.abap:52"
+        },
+        "meaning": "Neukunden anlegen"
+      },
+      {
+        "id": "c_chk",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_sd_webshop_customer.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_webshop_customer.abap:54"
+        },
+        "meaning": "Vertriebsbereich des Kunden prüfen"
+      },
+      {
+        "id": "ge",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_sd_webshop_customer.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_webshop_customer.abap:56"
+        },
+        "meaning": "Kundennummer zurück"
+      },
+      {
+        "id": "fs",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_sd_webshop_customer.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_webshop_customer.abap:59"
+        },
+        "meaning": "E-Mail-Suche"
+      },
+      {
+        "id": "l_f",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_sd_webshop_customer.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_webshop_customer.abap:65"
+        },
+        "meaning": "Ersten nicht gelöschten ZWEB-Kunden mit passendem Mailsuchbegriff lesen"
+      },
+      {
+        "id": "fe",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_sd_webshop_customer.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_webshop_customer.abap:74"
+        },
+        "meaning": "Treffer oder leer zurück"
+      },
+      {
+        "id": "cs",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_sd_webshop_customer.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_webshop_customer.abap:77"
+        },
+        "meaning": "Vertriebsbereichsprüfung"
+      },
+      {
+        "id": "q_knvv",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_sd_webshop_customer.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_webshop_customer.abap:80"
+        },
+        "meaning": "Auftragssperre im Webshop-Vertriebsbereich lesen"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_sd_webshop_customer.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_webshop_customer.abap:85"
+        },
+        "meaning": "Vertriebsbereich angelegt?"
+      },
+      {
+        "id": "x1",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_sd_webshop_customer.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_webshop_customer.abap:86"
+        },
+        "meaning": "Ausnahme: kein Vertriebsbereich"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_sd_webshop_customer.abap",
+          "line": 91,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_webshop_customer.abap:91"
+        },
+        "meaning": "Kunde gesperrt?"
+      },
+      {
+        "id": "x2",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_sd_webshop_customer.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_webshop_customer.abap:92"
+        },
+        "meaning": "Ausnahme: Kunde gesperrt"
+      },
+      {
+        "id": "cse",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_sd_webshop_customer.abap",
+          "line": 96,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_webshop_customer.abap:96"
+        },
+        "meaning": "Prüfung bestanden"
+      },
+      {
+        "id": "crs",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_sd_webshop_customer.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_webshop_customer.abap:99"
+        },
+        "meaning": "Neukundenanlage"
+      },
+      {
+        "id": "q1",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_sd_webshop_customer.abap",
+          "line": 106,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_webshop_customer.abap:106"
+        },
+        "meaning": "Allgemeine Daten des Vorlagekunden lesen"
+      },
+      {
+        "id": "q2",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_sd_webshop_customer.abap",
+          "line": 107,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_webshop_customer.abap:107"
+        },
+        "meaning": "Buchungskreisdaten des Vorlagekunden lesen"
+      },
+      {
+        "id": "q3",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_sd_webshop_customer.abap",
+          "line": 110,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_webshop_customer.abap:110"
+        },
+        "meaning": "Vertriebsdaten des Vorlagekunden lesen"
+      },
+      {
+        "id": "g_tpl",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_sd_webshop_customer.abap",
+          "line": 115,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_webshop_customer.abap:115"
+        },
+        "meaning": "Vorlage unvollständig?"
+      },
+      {
+        "id": "x_tpl",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_sd_webshop_customer.abap",
+          "line": 116,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_webshop_customer.abap:116"
+        },
+        "meaning": "Ausnahme: Vorlage fehlt"
+      },
+      {
+        "id": "cma",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_sd_webshop_customer.abap",
+          "line": 135,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_webshop_customer.abap:135"
+        },
+        "meaning": "Kunden mit Shopadresse und Vorlagedaten anlegen"
+      },
+      {
+        "id": "g_cma",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_sd_webshop_customer.abap",
+          "line": 146,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_webshop_customer.abap:146"
+        },
+        "meaning": "Anlage gescheitert?"
+      },
+      {
+        "id": "x_cma",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_sd_webshop_customer.abap",
+          "line": 147,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_webshop_customer.abap:147"
+        },
+        "meaning": "Ausnahme: Kundenanlage fehlgeschlagen"
+      },
+      {
+        "id": "cre",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_sd_webshop_customer.abap",
+          "line": 150,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_webshop_customer.abap:150"
+        },
+        "meaning": "Neue Kundennummer zurück"
+      },
+      {
+        "id": "oc",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_sd_webshop_order.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_webshop_order.abap:43"
+        },
+        "meaning": "Bestellung übernehmen"
+      },
+      {
+        "id": "oce",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_sd_webshop_order.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_webshop_order.abap:47"
+        },
+        "meaning": "Bestellung gespeichert"
+      },
+      {
+        "id": "as",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_sd_webshop_order.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_webshop_order.abap:50"
+        },
+        "meaning": "Verfügbarkeitsprüfung"
+      },
+      {
+        "id": "l_a",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_sd_webshop_order.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_webshop_order.abap:54"
+        },
+        "meaning": "Je Bestellposition"
+      },
+      {
+        "id": "atp",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_sd_webshop_order.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_webshop_order.abap:56"
+        },
+        "meaning": "Verfügbare Menge im Werk ermitteln"
+      },
+      {
+        "id": "g_e",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_sd_webshop_order.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_webshop_order.abap:65"
+        },
+        "meaning": "Prüfung fehlgeschlagen?"
+      },
+      {
+        "id": "x_e",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_sd_webshop_order.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_webshop_order.abap:66"
+        },
+        "meaning": "Ausnahme: Verfügbarkeitsfehler"
+      },
+      {
+        "id": "g_av",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_sd_webshop_order.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_webshop_order.abap:71"
+        },
+        "meaning": "Nicht genug verfügbar?"
+      },
+      {
+        "id": "g_part",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_sd_webshop_order.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_webshop_order.abap:73"
+        },
+        "meaning": "Teillieferung nicht erlaubt?"
+      },
+      {
+        "id": "x_part",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_sd_webshop_order.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_webshop_order.abap:74"
+        },
+        "meaning": "Ausnahme: nicht verfügbar"
+      },
+      {
+        "id": "ae",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_sd_webshop_order.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_webshop_order.abap:83"
+        },
+        "meaning": "Verfügbarkeit geprüft"
+      },
+      {
+        "id": "ps",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_sd_webshop_order.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_webshop_order.abap:86"
+        },
+        "meaning": "Preisabgleich"
+      },
+      {
+        "id": "c_b1",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_sd_webshop_order.abap",
+          "line": 95,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_webshop_order.abap:95"
+        },
+        "meaning": "Auftragsdaten aufbauen"
+      },
+      {
+        "id": "sim",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_sd_webshop_order.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_webshop_order.abap:98"
+        },
+        "meaning": "Auftrag mit SAP-Preisfindung simulieren"
+      },
+      {
+        "id": "l_p",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_sd_webshop_order.abap",
+          "line": 113,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_webshop_order.abap:113"
+        },
+        "meaning": "Je simulierter Position"
+      },
+      {
+        "id": "g_tol",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_sd_webshop_order.abap",
+          "line": 116,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_webshop_order.abap:116"
+        },
+        "meaning": "Nettowert weicht mehr als 1 Cent vom Shoppreis ab?"
+      },
+      {
+        "id": "nok",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_sd_webshop_order.abap",
+          "line": 117,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_webshop_order.abap:117"
+        },
+        "meaning": "Preisabgleich als gescheitert markieren (Meldung 911)"
+      },
+      {
+        "id": "sum",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_sd_webshop_order.abap",
+          "line": 123,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_webshop_order.abap:123"
+        },
+        "meaning": "SAP-Nettowert summieren"
+      },
+      {
+        "id": "pe",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_sd_webshop_order.abap",
+          "line": 125,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_webshop_order.abap:125"
+        },
+        "meaning": "Ergebnis des Preisabgleichs zurück"
+      },
+      {
+        "id": "crs2",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_sd_webshop_order.abap",
+          "line": 128,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_webshop_order.abap:128"
+        },
+        "meaning": "Auftragsanlage"
+      },
+      {
+        "id": "c_b2",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_sd_webshop_order.abap",
+          "line": 135,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_webshop_order.abap:135"
+        },
+        "meaning": "Auftragsdaten aufbauen"
+      },
+      {
+        "id": "bapi",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_sd_webshop_order.abap",
+          "line": 140,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_webshop_order.abap:140"
+        },
+        "meaning": "Kundenauftrag ZWEB anlegen (ohne Commit)"
+      },
+      {
+        "id": "g_c",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_sd_webshop_order.abap",
+          "line": 152,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_webshop_order.abap:152"
+        },
+        "meaning": "Keine Auftragsnummer?"
+      },
+      {
+        "id": "x_c",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_sd_webshop_order.abap",
+          "line": 153,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_webshop_order.abap:153"
+        },
+        "meaning": "Ausnahme: Auftragsanlage fehlgeschlagen"
+      },
+      {
+        "id": "ce",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_sd_webshop_order.abap",
+          "line": 156,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_webshop_order.abap:156"
+        },
+        "meaning": "Auftragsnummer zurück"
+      },
+      {
+        "id": "bs",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_sd_webshop_order.abap",
+          "line": 159,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_webshop_order.abap:159"
+        },
+        "meaning": "Auftragsdaten aufbauen"
+      },
+      {
+        "id": "be",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_sd_webshop_order.abap",
+          "line": 182,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_webshop_order.abap:182"
+        },
+        "meaning": "Kopf, Auftraggeber, Positionen und Einteilungen gefüllt"
+      },
+      {
+        "id": "us",
+        "type": "start",
+        "anchor": {
+          "file": "z_sd_webshop_log_upd.abap",
+          "line": 1,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_webshop_log_upd.abap:1"
+        },
+        "meaning": "Verbuchung Webshop-Protokoll"
+      },
+      {
+        "id": "mod",
+        "type": "write",
+        "anchor": {
+          "file": "z_sd_webshop_log_upd.abap",
+          "line": 9,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_webshop_log_upd.abap:9"
+        },
+        "meaning": "Protokollsatz je Shopbestellung schreiben oder überschreiben"
+      },
+      {
+        "id": "ue",
+        "type": "end",
+        "anchor": {
+          "file": "z_sd_webshop_log_upd.abap",
+          "line": 10,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_webshop_log_upd.abap:10"
+        },
+        "meaning": "Protokoll verbucht"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "q_dup",
+        "condition": "always"
+      },
+      {
+        "from": "q_dup",
+        "to": "g_dup",
+        "condition": "always"
+      },
+      {
+        "from": "g_dup",
+        "to": "e_dup",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "g_dup",
+        "to": "g_items",
+        "condition": "else"
+      },
+      {
+        "from": "g_items",
+        "to": "e_items",
+        "condition": "it_items IS INITIAL"
+      },
+      {
+        "from": "g_items",
+        "to": "nc",
+        "condition": "else"
+      },
+      {
+        "from": "nc",
+        "to": "kc",
+        "condition": "always"
+      },
+      {
+        "from": "goc",
+        "to": "gs",
+        "condition": "always"
+      },
+      {
+        "from": "no",
+        "to": "oc",
+        "condition": "always"
+      },
+      {
+        "from": "ca",
+        "to": "as",
+        "condition": "always"
+      },
+      {
+        "from": "cp",
+        "to": "ps",
+        "condition": "always"
+      },
+      {
+        "from": "g_cp",
+        "to": "upd1",
+        "condition": "lo_order->check_prices( ) = abap_false"
+      },
+      {
+        "from": "upd1",
+        "to": "cm1",
+        "condition": "always"
+      },
+      {
+        "from": "cm1",
+        "to": "us",
+        "condition": "always"
+      },
+      {
+        "from": "cm1",
+        "to": "e_p",
+        "condition": "always"
+      },
+      {
+        "from": "g_cp",
+        "to": "cr",
+        "condition": "else"
+      },
+      {
+        "from": "cr",
+        "to": "crs2",
+        "condition": "always"
+      },
+      {
+        "from": "rb",
+        "to": "e_x",
+        "condition": "always"
+      },
+      {
+        "from": "upd2",
+        "to": "g_big",
+        "condition": "always"
+      },
+      {
+        "from": "g_big",
+        "to": "ev",
+        "condition": "ls_log-netwr >= 25000"
+      },
+      {
+        "from": "g_big",
+        "to": "cm2",
+        "condition": "else"
+      },
+      {
+        "from": "ev",
+        "to": "cm2",
+        "condition": "always"
+      },
+      {
+        "from": "cm2",
+        "to": "us",
+        "condition": "always"
+      },
+      {
+        "from": "cm2",
+        "to": "e",
+        "condition": "always"
+      },
+      {
+        "from": "kc",
+        "to": "kce",
+        "condition": "always"
+      },
+      {
+        "from": "gs",
+        "to": "g_kn",
+        "condition": "always"
+      },
+      {
+        "from": "g_kn",
+        "to": "g_new",
+        "condition": "ms_header-kunnr IS NOT INITIAL"
+      },
+      {
+        "from": "g_kn",
+        "to": "c_find",
+        "condition": "else"
+      },
+      {
+        "from": "c_find",
+        "to": "fs",
+        "condition": "always"
+      },
+      {
+        "from": "g_new",
+        "to": "c_cre",
+        "condition": "rv_kunnr IS INITIAL"
+      },
+      {
+        "from": "g_new",
+        "to": "c_chk",
+        "condition": "else"
+      },
+      {
+        "from": "c_cre",
+        "to": "crs",
+        "condition": "always"
+      },
+      {
+        "from": "c_chk",
+        "to": "cs",
+        "condition": "always"
+      },
+      {
+        "from": "fs",
+        "to": "l_f",
+        "condition": "always"
+      },
+      {
+        "from": "l_f",
+        "to": "fe",
+        "condition": "no more rows"
+      },
+      {
+        "from": "cs",
+        "to": "q_knvv",
+        "condition": "always"
+      },
+      {
+        "from": "q_knvv",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "x1",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g1",
+        "to": "g2",
+        "condition": "else"
+      },
+      {
+        "from": "g2",
+        "to": "x2",
+        "condition": "lv_aufsd IS NOT INITIAL"
+      },
+      {
+        "from": "g2",
+        "to": "cse",
+        "condition": "else"
+      },
+      {
+        "from": "crs",
+        "to": "q1",
+        "condition": "always"
+      },
+      {
+        "from": "q1",
+        "to": "q2",
+        "condition": "always"
+      },
+      {
+        "from": "q2",
+        "to": "q3",
+        "condition": "always"
+      },
+      {
+        "from": "q3",
+        "to": "g_tpl",
+        "condition": "always"
+      },
+      {
+        "from": "g_tpl",
+        "to": "x_tpl",
+        "condition": "ls_kna1 IS INITIAL OR ls_knb1 IS INITIAL OR ls_knvv IS INITIAL"
+      },
+      {
+        "from": "g_tpl",
+        "to": "cma",
+        "condition": "else"
+      },
+      {
+        "from": "cma",
+        "to": "g_cma",
+        "condition": "always"
+      },
+      {
+        "from": "g_cma",
+        "to": "x_cma",
+        "condition": "sy-subrc <> 0 OR rv_kunnr IS INITIAL"
+      },
+      {
+        "from": "g_cma",
+        "to": "cre",
+        "condition": "else"
+      },
+      {
+        "from": "oc",
+        "to": "oce",
+        "condition": "always"
+      },
+      {
+        "from": "as",
+        "to": "l_a",
+        "condition": "always"
+      },
+      {
+        "from": "l_a",
+        "to": "atp",
+        "condition": "next row"
+      },
+      {
+        "from": "atp",
+        "to": "g_e",
+        "condition": "always"
+      },
+      {
+        "from": "g_e",
+        "to": "x_e",
+        "condition": "ls_ret-type = 'E'"
+      },
+      {
+        "from": "g_e",
+        "to": "g_av",
+        "condition": "else"
+      },
+      {
+        "from": "g_av",
+        "to": "g_part",
+        "condition": "lv_avail < ls_item-quantity"
+      },
+      {
+        "from": "g_av",
+        "to": "l_a",
+        "condition": "else"
+      },
+      {
+        "from": "g_part",
+        "to": "x_part",
+        "condition": "ms_header-partial_ok = abap_false"
+      },
+      {
+        "from": "g_part",
+        "to": "l_a",
+        "condition": "else"
+      },
+      {
+        "from": "l_a",
+        "to": "ae",
+        "condition": "no more rows"
+      },
+      {
+        "from": "ps",
+        "to": "c_b1",
+        "condition": "always"
+      },
+      {
+        "from": "c_b1",
+        "to": "bs",
+        "condition": "always"
+      },
+      {
+        "from": "sim",
+        "to": "l_p",
+        "condition": "always"
+      },
+      {
+        "from": "l_p",
+        "to": "g_tol",
+        "condition": "next row"
+      },
+      {
+        "from": "g_tol",
+        "to": "nok",
+        "condition": "abs( ls_out-net_value1 - ls_item-shop_net ) > c_tol"
+      },
+      {
+        "from": "g_tol",
+        "to": "sum",
+        "condition": "else"
+      },
+      {
+        "from": "nok",
+        "to": "sum",
+        "condition": "always"
+      },
+      {
+        "from": "sum",
+        "to": "l_p",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l_p",
+        "to": "pe",
+        "condition": "no more rows"
+      },
+      {
+        "from": "crs2",
+        "to": "c_b2",
+        "condition": "always"
+      },
+      {
+        "from": "c_b2",
+        "to": "bs",
+        "condition": "always"
+      },
+      {
+        "from": "bapi",
+        "to": "g_c",
+        "condition": "always"
+      },
+      {
+        "from": "g_c",
+        "to": "x_c",
+        "condition": "rv_vbeln IS INITIAL"
+      },
+      {
+        "from": "g_c",
+        "to": "ce",
+        "condition": "else"
+      },
+      {
+        "from": "bs",
+        "to": "be",
+        "condition": "always"
+      },
+      {
+        "from": "us",
+        "to": "mod",
+        "condition": "always"
+      },
+      {
+        "from": "mod",
+        "to": "ue",
+        "condition": "always"
+      },
+      {
+        "from": "kce",
+        "to": "goc",
+        "condition": "always"
+      },
+      {
+        "from": "ge",
+        "to": "no",
+        "condition": "always"
+      },
+      {
+        "from": "oce",
+        "to": "ca",
+        "condition": "always"
+      },
+      {
+        "from": "ae",
+        "to": "cp",
+        "condition": "always"
+      },
+      {
+        "from": "pe",
+        "to": "g_cp",
+        "condition": "always"
+      },
+      {
+        "from": "ce",
+        "to": "upd2",
+        "condition": "always"
+      },
+      {
+        "from": "fe",
+        "to": "g_new",
+        "condition": "always"
+      },
+      {
+        "from": "cre",
+        "to": "ge",
+        "condition": "always"
+      },
+      {
+        "from": "cse",
+        "to": "ge",
+        "condition": "always"
+      },
+      {
+        "from": "be",
+        "to": "sim",
+        "condition": "always"
+      },
+      {
+        "from": "be",
+        "to": "bapi",
+        "condition": "always"
+      },
+      {
+        "from": "x1",
+        "to": "rb",
+        "condition": "CATCH zcx_sd_webshop INTO lx_web"
+      },
+      {
+        "from": "x2",
+        "to": "rb",
+        "condition": "CATCH zcx_sd_webshop INTO lx_web"
+      },
+      {
+        "from": "x_tpl",
+        "to": "rb",
+        "condition": "CATCH zcx_sd_webshop INTO lx_web"
+      },
+      {
+        "from": "x_cma",
+        "to": "rb",
+        "condition": "CATCH zcx_sd_webshop INTO lx_web"
+      },
+      {
+        "from": "x_e",
+        "to": "rb",
+        "condition": "CATCH zcx_sd_webshop INTO lx_web"
+      },
+      {
+        "from": "x_part",
+        "to": "rb",
+        "condition": "CATCH zcx_sd_webshop INTO lx_web"
+      },
+      {
+        "from": "x_c",
+        "to": "rb",
+        "condition": "CATCH zcx_sd_webshop INTO lx_web"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zcl_sd_webshop_customer.abap:65 — kein Fachsatz „der Kunde wird eindeutig über seine E-Mail-Adresse gefunden“: verglichen wird nur der 20-stellige Großbuchstaben-Suchbegriff, der erste Treffer gewinnt",
+    "z_sd_webshop_order.abap:70 — kein Fachsatz „bei Preisabweichung wird nichts festgeschrieben“: der Protokollsatz mit Status P und alles, was die Neukundenanlage in dieser LUW angemeldet hat, werden festgeschrieben",
+    "z_sd_webshop_order.abap:98 — kein Fachsatz „Schwelle 25.000 EUR“: die Schwelle gilt in Belegwährung ohne Umrechnung",
+    "zcl_sd_webshop_order.abap:140 — kein Fachsatz „der Auftrag ist nach der Anlage gespeichert“: erst der COMMIT WORK am Ende des Bausteins schreibt ihn fest"
+  ],
+  "processDescription": "Die Webshop-Middleware ruft den Baustein per RFC mit Bestellkopf und Positionen auf. Wurde die Shopbestellung schon erfolgreich übernommen, gibt er den vorhandenen Auftrag zurück; eine Bestellung ohne Positionen lehnt er ab. Den Auftraggeber übernimmt er aus dem Shopkonto oder sucht ihn über die E-Mail-Adresse; findet er keinen, legt er nach einem Vorlagekunden einen Neukunden an, sonst prüft er, ob der Webshop-Vertriebsbereich existiert und nicht gesperrt ist. Dann prüft er je Position die verfügbare Menge; reicht sie nicht, lehnt er ab, sofern der Kunde keine Teillieferung erlaubt hat. Anschließend simuliert er den Auftrag mit der SAP-Preisfindung und vergleicht jeden Positionswert mit dem Shoppreis. Weicht ein Preis um mehr als einen Cent ab, legt er keinen Auftrag an, protokolliert die Bestellung mit Status P und gibt die Preismeldungen zurück. Sonst legt er den Kundenauftrag an. Jede Ablehnung verwirft alle Änderungen und liefert Status E. Nach erfolgreicher Anlage protokolliert er die Bestellung, meldet Aufträge ab 25.000 per Workflow-Ereignis und schreibt alles gemeinsam fest."
+}

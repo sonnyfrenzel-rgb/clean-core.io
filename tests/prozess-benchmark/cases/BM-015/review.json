@@ -1,0 +1,86 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Kante c500→e_auth",
+      "before": "c500->e_auth [always]",
+      "after": "entfällt; xe->e_auth [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks; Rückkante vom end des Blocks → Folgeschritt; keine Direktkante Aufruf → Folgeschritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante c_fak→g_fak",
+      "before": "c_fak->g_fak [always]",
+      "after": "entfällt; e1->g_fak [always], e2->g_fak [always], e3->g_fak [always], fe->g_fak [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks; Rückkante vom end des Blocks → Folgeschritt; keine Direktkante Aufruf → Folgeschritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante c_men→g_men",
+      "before": "c_men->g_men [always]",
+      "after": "entfällt; me->g_men [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks; Rückkante vom end des Blocks → Folgeschritt; keine Direktkante Aufruf → Folgeschritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante c_ret→e",
+      "before": "c_ret->e [always]",
+      "after": "entfällt; e_rb->e [always], re->e [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks; Rückkante vom end des Blocks → Folgeschritt; keine Direktkante Aufruf → Folgeschritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante c501→e1",
+      "before": "c501->e1 [always]",
+      "after": "entfällt; xe->e1 [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks; Rückkante vom end des Blocks → Folgeschritt; keine Direktkante Aufruf → Folgeschritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante c502→e2",
+      "before": "c502->e2 [always]",
+      "after": "entfällt; xe->e2 [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks; Rückkante vom end des Blocks → Folgeschritt; keine Direktkante Aufruf → Folgeschritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante c503→e3",
+      "before": "c503->e3 [always]",
+      "after": "entfällt; xe->e3 [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks; Rückkante vom end des Blocks → Folgeschritt; keine Direktkante Aufruf → Folgeschritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante c504→l",
+      "before": "c504->l [next iteration]",
+      "after": "entfällt; xe->l [next iteration]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks; Rückkante vom end des Blocks → Folgeschritt; keine Direktkante Aufruf → Folgeschritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante c505→l",
+      "before": "c505->l [next iteration]",
+      "after": "entfällt; Rückkehr über xe->l [next iteration] (dieselbe Rückkante wie für c504, daher nur einmal vorhanden)",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks; Rückkante vom end des Blocks → Folgeschritt; keine Direktkante.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten rb",
+      "before": "transaction",
+      "after": "opaque_call",
+      "why": "Vereinheitlichte Konvention: BAPI_TRANSACTION_COMMIT/_ROLLBACK sind opaque_call.",
+      "category": "Knotenart"
+    },
+    {
+      "where": "Knoten cm",
+      "before": "transaction",
+      "after": "opaque_call",
+      "why": "Vereinheitlichte Konvention: BAPI_TRANSACTION_COMMIT/_ROLLBACK sind opaque_call.",
+      "category": "Knotenart"
+    }
+  ],
+  "doubts": [
+    "FORM fehler hat sieben Aufrufer; nach der Konvention „je Aufrufer eine Rückkante“ gehen von xe sechs verschiedene Rückkanten aus (c504 und c505 kehren beide in die Schleife l zurück und teilen sich xe->l [next iteration]). Die Rückkanten sind im Graphen nicht aufruferspezifisch — ein pfadgenauer Vergleich kann xe->e_auth usw. nicht vom Aufrufer unterscheiden."
+  ]
+}

@@ -1,0 +1,1301 @@
+{
+  "id": "BM-091",
+  "title": "CVI-Vorprüfung: Kundenstamm vor der Geschäftspartner-Umstellung prüfen und bereinigen",
+  "classes": [
+    "K01",
+    "K02",
+    "K04"
+  ],
+  "classic_level": "D",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "KNA1",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcvi_precheck.abap",
+        "line": 51,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcvi_precheck.abap:51"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "CVI_CUST_LINK",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcvi_precheck.abap",
+        "line": 63,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcvi_precheck.abap:63"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "T005",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcvi_precheck_f01.abap",
+        "line": 11,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcvi_precheck_f01.abap:11"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ADRC",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcvi_precheck_f01.abap",
+        "line": 37,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcvi_precheck_f01.abap:37"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "VBAK",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcvi_precheck_f01.abap",
+        "line": 50,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcvi_precheck_f01.abap:50"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "KNA1",
+      "owner": "SAP",
+      "usage": "write",
+      "anchor": {
+        "file": "zcvi_precheck_f01.abap",
+        "line": 79,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcvi_precheck_f01.abap:79"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "CL_SALV_TABLE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcvi_precheck_f01.abap",
+        "line": 95,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcvi_precheck_f01.abap:95"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-091-B01",
+      "text": "Es werden die nicht zum Löschen vorgemerkten Kunden der gewählten Nummern und Kontengruppen gelesen.",
+      "anchors": [
+        {
+          "file": "zcvi_precheck.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcvi_precheck.abap:51"
+        }
+      ]
+    },
+    {
+      "id": "BM-091-B02",
+      "text": "Gibt es keine, wird das gemeldet und der Lauf beendet.",
+      "anchors": [
+        {
+          "file": "zcvi_precheck.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcvi_precheck.abap:57"
+        },
+        {
+          "file": "zcvi_precheck.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcvi_precheck.abap:58"
+        },
+        {
+          "file": "zcvi_precheck.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcvi_precheck.abap:59"
+        }
+      ]
+    },
+    {
+      "id": "BM-091-B03",
+      "text": "Kunden, zu denen bereits ein Geschäftspartner verknüpft ist, werden nicht geprüft.",
+      "anchors": [
+        {
+          "file": "zcvi_precheck.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcvi_precheck.abap:63"
+        },
+        {
+          "file": "zcvi_precheck.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcvi_precheck.abap:69"
+        },
+        {
+          "file": "zcvi_precheck.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcvi_precheck.abap:71"
+        }
+      ]
+    },
+    {
+      "id": "BM-091-B04",
+      "text": "Ist der Länderschlüssel des Kunden unbekannt, wird ein Fehler vermerkt und die Länderprüfung für diesen Kunden beendet.",
+      "anchors": [
+        {
+          "file": "zcvi_precheck_f01.abap",
+          "line": 11,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcvi_precheck_f01.abap:11"
+        },
+        {
+          "file": "zcvi_precheck_f01.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcvi_precheck_f01.abap:15"
+        },
+        {
+          "file": "zcvi_precheck_f01.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcvi_precheck_f01.abap:16"
+        }
+      ]
+    },
+    {
+      "id": "BM-091-B05",
+      "text": "Weicht die Länge der Postleitzahl von der für das Land vorgeschriebenen Länge ab, wird ein Fehler vermerkt.",
+      "anchors": [
+        {
+          "file": "zcvi_precheck_f01.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcvi_precheck_f01.abap:21"
+        },
+        {
+          "file": "zcvi_precheck_f01.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcvi_precheck_f01.abap:22"
+        }
+      ]
+    },
+    {
+      "id": "BM-091-B06",
+      "text": "Fehlt bei einem Kunden in einem EU-Land die Umsatzsteuer-Id, wird eine Warnung vermerkt.",
+      "anchors": [
+        {
+          "file": "zcvi_precheck_f01.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcvi_precheck_f01.abap:26"
+        },
+        {
+          "file": "zcvi_precheck_f01.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcvi_precheck_f01.abap:27"
+        }
+      ]
+    },
+    {
+      "id": "BM-091-B07",
+      "text": "Hat der Kunde keine Adresse in der zentralen Adressverwaltung, wird ein Fehler vermerkt.",
+      "anchors": [
+        {
+          "file": "zcvi_precheck_f01.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcvi_precheck_f01.abap:37"
+        },
+        {
+          "file": "zcvi_precheck_f01.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcvi_precheck_f01.abap:39"
+        },
+        {
+          "file": "zcvi_precheck_f01.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcvi_precheck_f01.abap:40"
+        }
+      ]
+    },
+    {
+      "id": "BM-091-B08",
+      "text": "Liegt der letzte Verkaufsbeleg des Kunden vor der Grenze von eingegebenen Jahren – oder gibt es keinen –, wird der Kunde als inaktiv vermerkt.",
+      "anchors": [
+        {
+          "file": "zcvi_precheck.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcvi_precheck.abap:49"
+        },
+        {
+          "file": "zcvi_precheck_f01.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcvi_precheck_f01.abap:50"
+        },
+        {
+          "file": "zcvi_precheck_f01.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcvi_precheck_f01.abap:53"
+        },
+        {
+          "file": "zcvi_precheck_f01.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcvi_precheck_f01.abap:54"
+        }
+      ]
+    },
+    {
+      "id": "BM-091-B09",
+      "text": "Nur mit gesetzter Bereinigungsoption werden alle inaktiven Kunden direkt im Kundenstamm zum Löschen vorgemerkt und festgeschrieben.",
+      "anchors": [
+        {
+          "file": "zcvi_precheck.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcvi_precheck.abap:79"
+        },
+        {
+          "file": "zcvi_precheck_f01.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcvi_precheck_f01.abap:79"
+        },
+        {
+          "file": "zcvi_precheck_f01.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcvi_precheck_f01.abap:84"
+        }
+      ]
+    },
+    {
+      "id": "BM-091-B10",
+      "text": "Zum Schluss werden alle Befunde als ALV-Liste angezeigt.",
+      "anchors": [
+        {
+          "file": "zcvi_precheck_f01.abap",
+          "line": 95,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcvi_precheck_f01.abap:95"
+        },
+        {
+          "file": "zcvi_precheck_f01.abap",
+          "line": 104,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcvi_precheck_f01.abap:104"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "zcvi_precheck.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcvi_precheck.abap:48"
+        },
+        "meaning": "Reportstart"
+      },
+      {
+        "id": "rk",
+        "type": "read",
+        "anchor": {
+          "file": "zcvi_precheck.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcvi_precheck.abap:51"
+        },
+        "meaning": "Nicht gelöschte Kunden der Selektion lesen"
+      },
+      {
+        "id": "g0",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcvi_precheck.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcvi_precheck.abap:57"
+        },
+        "meaning": "Keine Kunden?"
+      },
+      {
+        "id": "m0",
+        "type": "output",
+        "anchor": {
+          "file": "zcvi_precheck.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcvi_precheck.abap:58"
+        },
+        "meaning": "Keine Kunden melden"
+      },
+      {
+        "id": "e0",
+        "type": "end",
+        "anchor": {
+          "file": "zcvi_precheck.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcvi_precheck.abap:59"
+        },
+        "meaning": "Lauf beenden"
+      },
+      {
+        "id": "rl",
+        "type": "read",
+        "anchor": {
+          "file": "zcvi_precheck.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcvi_precheck.abap:63"
+        },
+        "meaning": "Bereits umgesetzte Kunden (GP-Verknüpfung) lesen"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "zcvi_precheck.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcvi_precheck.abap:68"
+        },
+        "meaning": "Kunden durchlaufen"
+      },
+      {
+        "id": "rt",
+        "type": "read",
+        "anchor": {
+          "file": "zcvi_precheck.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcvi_precheck.abap:69"
+        },
+        "meaning": "Ist der Kunde schon Geschäftspartner?"
+      },
+      {
+        "id": "gl",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcvi_precheck.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcvi_precheck.abap:71"
+        },
+        "meaning": "Bereits umgesetzt?"
+      },
+      {
+        "id": "cc",
+        "type": "call",
+        "anchor": {
+          "file": "zcvi_precheck.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcvi_precheck.abap:74"
+        },
+        "meaning": "Land, PLZ und USt-Id prüfen"
+      },
+      {
+        "id": "ca",
+        "type": "call",
+        "anchor": {
+          "file": "zcvi_precheck.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcvi_precheck.abap:75"
+        },
+        "meaning": "ZAV-Adresse prüfen"
+      },
+      {
+        "id": "cv",
+        "type": "call",
+        "anchor": {
+          "file": "zcvi_precheck.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcvi_precheck.abap:76"
+        },
+        "meaning": "Aktivität prüfen"
+      },
+      {
+        "id": "gu",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcvi_precheck.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcvi_precheck.abap:79"
+        },
+        "meaning": "Bereinigung gewünscht?"
+      },
+      {
+        "id": "cf",
+        "type": "call",
+        "anchor": {
+          "file": "zcvi_precheck.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcvi_precheck.abap:80"
+        },
+        "meaning": "Inaktive Kunden zum Löschen vormerken"
+      },
+      {
+        "id": "cd",
+        "type": "call",
+        "anchor": {
+          "file": "zcvi_precheck.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcvi_precheck.abap:83"
+        },
+        "meaning": "Prüfergebnis anzeigen"
+      },
+      {
+        "id": "e_main",
+        "type": "end",
+        "anchor": {
+          "file": "zcvi_precheck.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcvi_precheck.abap:83"
+        },
+        "meaning": "Report endet nach der Anzeige"
+      },
+      {
+        "id": "s_ct",
+        "type": "start",
+        "anchor": {
+          "file": "zcvi_precheck_f01.abap",
+          "line": 8,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcvi_precheck_f01.abap:8"
+        },
+        "meaning": "Länderprüfung"
+      },
+      {
+        "id": "r5",
+        "type": "read",
+        "anchor": {
+          "file": "zcvi_precheck_f01.abap",
+          "line": 11,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcvi_precheck_f01.abap:11"
+        },
+        "meaning": "Länderregeln (PLZ-Länge, EU) lesen"
+      },
+      {
+        "id": "g_ct1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcvi_precheck_f01.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcvi_precheck_f01.abap:15"
+        },
+        "meaning": "Land unbekannt?"
+      },
+      {
+        "id": "i1",
+        "type": "call",
+        "anchor": {
+          "file": "zcvi_precheck_f01.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcvi_precheck_f01.abap:16"
+        },
+        "meaning": "Fehler: Land unbekannt"
+      },
+      {
+        "id": "e_ct1",
+        "type": "end",
+        "anchor": {
+          "file": "zcvi_precheck_f01.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcvi_precheck_f01.abap:17"
+        },
+        "meaning": "Prüfung abbrechen"
+      },
+      {
+        "id": "g_ct2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcvi_precheck_f01.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcvi_precheck_f01.abap:21"
+        },
+        "meaning": "PLZ-Länge falsch?"
+      },
+      {
+        "id": "i2",
+        "type": "call",
+        "anchor": {
+          "file": "zcvi_precheck_f01.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcvi_precheck_f01.abap:22"
+        },
+        "meaning": "Fehler: PLZ-Länge"
+      },
+      {
+        "id": "g_ct3",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcvi_precheck_f01.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcvi_precheck_f01.abap:26"
+        },
+        "meaning": "EU-Land ohne USt-Id?"
+      },
+      {
+        "id": "i3",
+        "type": "call",
+        "anchor": {
+          "file": "zcvi_precheck_f01.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcvi_precheck_f01.abap:27"
+        },
+        "meaning": "Warnung: USt-Id fehlt"
+      },
+      {
+        "id": "e_ct",
+        "type": "end",
+        "anchor": {
+          "file": "zcvi_precheck_f01.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcvi_precheck_f01.abap:29"
+        },
+        "meaning": "Ende Länderprüfung"
+      },
+      {
+        "id": "s_ad",
+        "type": "start",
+        "anchor": {
+          "file": "zcvi_precheck_f01.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcvi_precheck_f01.abap:34"
+        },
+        "meaning": "Adressprüfung"
+      },
+      {
+        "id": "r6",
+        "type": "read",
+        "anchor": {
+          "file": "zcvi_precheck_f01.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcvi_precheck_f01.abap:37"
+        },
+        "meaning": "ZAV-Adresse lesen"
+      },
+      {
+        "id": "g_ad",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcvi_precheck_f01.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcvi_precheck_f01.abap:39"
+        },
+        "meaning": "Adresse fehlt?"
+      },
+      {
+        "id": "i4",
+        "type": "call",
+        "anchor": {
+          "file": "zcvi_precheck_f01.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcvi_precheck_f01.abap:40"
+        },
+        "meaning": "Fehler: keine Adresse"
+      },
+      {
+        "id": "e_ad",
+        "type": "end",
+        "anchor": {
+          "file": "zcvi_precheck_f01.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcvi_precheck_f01.abap:42"
+        },
+        "meaning": "Ende Adressprüfung"
+      },
+      {
+        "id": "s_ac",
+        "type": "start",
+        "anchor": {
+          "file": "zcvi_precheck_f01.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcvi_precheck_f01.abap:47"
+        },
+        "meaning": "Aktivitätsprüfung"
+      },
+      {
+        "id": "r7",
+        "type": "read",
+        "anchor": {
+          "file": "zcvi_precheck_f01.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcvi_precheck_f01.abap:50"
+        },
+        "meaning": "Datum des letzten Verkaufsbelegs lesen"
+      },
+      {
+        "id": "g_ac",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcvi_precheck_f01.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcvi_precheck_f01.abap:53"
+        },
+        "meaning": "Letzter Beleg älter als Grenze?"
+      },
+      {
+        "id": "i5",
+        "type": "call",
+        "anchor": {
+          "file": "zcvi_precheck_f01.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcvi_precheck_f01.abap:54"
+        },
+        "meaning": "Kunde als inaktiv vermerken"
+      },
+      {
+        "id": "e_ac",
+        "type": "end",
+        "anchor": {
+          "file": "zcvi_precheck_f01.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcvi_precheck_f01.abap:56"
+        },
+        "meaning": "Ende Aktivitätsprüfung"
+      },
+      {
+        "id": "s_ai",
+        "type": "start",
+        "anchor": {
+          "file": "zcvi_precheck_f01.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcvi_precheck_f01.abap:61"
+        },
+        "meaning": "Prüfbefund vermerken"
+      },
+      {
+        "id": "e_ai",
+        "type": "end",
+        "anchor": {
+          "file": "zcvi_precheck_f01.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcvi_precheck_f01.abap:69"
+        },
+        "meaning": "Befund angehängt"
+      },
+      {
+        "id": "s_fx",
+        "type": "start",
+        "anchor": {
+          "file": "zcvi_precheck_f01.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcvi_precheck_f01.abap:74"
+        },
+        "meaning": "Bereinigung"
+      },
+      {
+        "id": "l_fx",
+        "type": "loop",
+        "anchor": {
+          "file": "zcvi_precheck_f01.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcvi_precheck_f01.abap:77"
+        },
+        "meaning": "Inaktive Kunden durchlaufen"
+      },
+      {
+        "id": "w_fx",
+        "type": "write",
+        "anchor": {
+          "file": "zcvi_precheck_f01.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcvi_precheck_f01.abap:79"
+        },
+        "meaning": "Löschvormerkung direkt im Kundenstamm setzen"
+      },
+      {
+        "id": "cw",
+        "type": "transaction",
+        "anchor": {
+          "file": "zcvi_precheck_f01.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcvi_precheck_f01.abap:84"
+        },
+        "meaning": "Löschvormerkungen festschreiben"
+      },
+      {
+        "id": "e_fx",
+        "type": "end",
+        "anchor": {
+          "file": "zcvi_precheck_f01.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcvi_precheck_f01.abap:85"
+        },
+        "meaning": "Bereinigung beendet"
+      },
+      {
+        "id": "s_al",
+        "type": "start",
+        "anchor": {
+          "file": "zcvi_precheck_f01.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcvi_precheck_f01.abap:90"
+        },
+        "meaning": "Anzeige"
+      },
+      {
+        "id": "alv_f",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcvi_precheck_f01.abap",
+          "line": 95,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcvi_precheck_f01.abap:95"
+        },
+        "meaning": "ALV für Befundliste erzeugen"
+      },
+      {
+        "id": "m_alv",
+        "type": "output",
+        "anchor": {
+          "file": "zcvi_precheck_f01.abap",
+          "line": 101,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcvi_precheck_f01.abap:101"
+        },
+        "meaning": "Abbruch bei ALV-Fehler"
+      },
+      {
+        "id": "e_alm",
+        "type": "end",
+        "anchor": {
+          "file": "zcvi_precheck_f01.abap",
+          "line": 101,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcvi_precheck_f01.abap:101"
+        },
+        "meaning": "Report bricht bei ALV-Fehler ab"
+      },
+      {
+        "id": "alv_d",
+        "type": "output",
+        "anchor": {
+          "file": "zcvi_precheck_f01.abap",
+          "line": 104,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcvi_precheck_f01.abap:104"
+        },
+        "meaning": "Befundliste anzeigen"
+      },
+      {
+        "id": "e_al",
+        "type": "end",
+        "anchor": {
+          "file": "zcvi_precheck_f01.abap",
+          "line": 105,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcvi_precheck_f01.abap:105"
+        },
+        "meaning": "Anzeige beendet"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "rk",
+        "condition": "always"
+      },
+      {
+        "from": "rk",
+        "to": "g0",
+        "condition": "always"
+      },
+      {
+        "from": "g0",
+        "to": "m0",
+        "condition": "gt_kna1 IS INITIAL"
+      },
+      {
+        "from": "m0",
+        "to": "e0",
+        "condition": "always"
+      },
+      {
+        "from": "g0",
+        "to": "rl",
+        "condition": "else"
+      },
+      {
+        "from": "rl",
+        "to": "l",
+        "condition": "always"
+      },
+      {
+        "from": "l",
+        "to": "rt",
+        "condition": "next row"
+      },
+      {
+        "from": "rt",
+        "to": "gl",
+        "condition": "always"
+      },
+      {
+        "from": "gl",
+        "to": "l",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "gl",
+        "to": "cc",
+        "condition": "else"
+      },
+      {
+        "from": "cc",
+        "to": "s_ct",
+        "condition": "always"
+      },
+      {
+        "from": "ca",
+        "to": "s_ad",
+        "condition": "always"
+      },
+      {
+        "from": "cv",
+        "to": "s_ac",
+        "condition": "always"
+      },
+      {
+        "from": "l",
+        "to": "gu",
+        "condition": "no more rows"
+      },
+      {
+        "from": "gu",
+        "to": "cf",
+        "condition": "p_upd = 'X'"
+      },
+      {
+        "from": "gu",
+        "to": "cd",
+        "condition": "else"
+      },
+      {
+        "from": "cf",
+        "to": "s_fx",
+        "condition": "always"
+      },
+      {
+        "from": "cd",
+        "to": "s_al",
+        "condition": "always"
+      },
+      {
+        "from": "s_ct",
+        "to": "r5",
+        "condition": "always"
+      },
+      {
+        "from": "r5",
+        "to": "g_ct1",
+        "condition": "always"
+      },
+      {
+        "from": "g_ct1",
+        "to": "i1",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "i1",
+        "to": "s_ai",
+        "condition": "always"
+      },
+      {
+        "from": "g_ct1",
+        "to": "g_ct2",
+        "condition": "else"
+      },
+      {
+        "from": "g_ct2",
+        "to": "i2",
+        "condition": "ls_t005-lnplz > 0 AND lv_len <> ls_t005-lnplz"
+      },
+      {
+        "from": "i2",
+        "to": "s_ai",
+        "condition": "always"
+      },
+      {
+        "from": "g_ct2",
+        "to": "g_ct3",
+        "condition": "else"
+      },
+      {
+        "from": "g_ct3",
+        "to": "i3",
+        "condition": "ls_t005-xegld = 'X' AND ps_kna1-stceg IS INITIAL"
+      },
+      {
+        "from": "i3",
+        "to": "s_ai",
+        "condition": "always"
+      },
+      {
+        "from": "g_ct3",
+        "to": "e_ct",
+        "condition": "else"
+      },
+      {
+        "from": "s_ad",
+        "to": "r6",
+        "condition": "always"
+      },
+      {
+        "from": "r6",
+        "to": "g_ad",
+        "condition": "always"
+      },
+      {
+        "from": "g_ad",
+        "to": "i4",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "i4",
+        "to": "s_ai",
+        "condition": "always"
+      },
+      {
+        "from": "g_ad",
+        "to": "e_ad",
+        "condition": "else"
+      },
+      {
+        "from": "s_ac",
+        "to": "r7",
+        "condition": "always"
+      },
+      {
+        "from": "r7",
+        "to": "g_ac",
+        "condition": "always"
+      },
+      {
+        "from": "g_ac",
+        "to": "i5",
+        "condition": "lv_last < gv_limit"
+      },
+      {
+        "from": "i5",
+        "to": "s_ai",
+        "condition": "always"
+      },
+      {
+        "from": "g_ac",
+        "to": "e_ac",
+        "condition": "else"
+      },
+      {
+        "from": "s_ai",
+        "to": "e_ai",
+        "condition": "always"
+      },
+      {
+        "from": "s_fx",
+        "to": "l_fx",
+        "condition": "always"
+      },
+      {
+        "from": "l_fx",
+        "to": "w_fx",
+        "condition": "next row"
+      },
+      {
+        "from": "w_fx",
+        "to": "l_fx",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l_fx",
+        "to": "cw",
+        "condition": "no more rows"
+      },
+      {
+        "from": "s_al",
+        "to": "alv_f",
+        "condition": "always"
+      },
+      {
+        "from": "alv_f",
+        "to": "m_alv",
+        "condition": "CATCH cx_salv_msg INTO lx_msg"
+      },
+      {
+        "from": "alv_f",
+        "to": "alv_d",
+        "condition": "always"
+      },
+      {
+        "from": "cw",
+        "to": "e_fx",
+        "condition": "always"
+      },
+      {
+        "from": "m_alv",
+        "to": "e_alm",
+        "condition": "always"
+      },
+      {
+        "from": "alv_d",
+        "to": "e_al",
+        "condition": "always"
+      },
+      {
+        "from": "e_ct1",
+        "to": "ca",
+        "condition": "always"
+      },
+      {
+        "from": "e_ct",
+        "to": "ca",
+        "condition": "always"
+      },
+      {
+        "from": "e_ad",
+        "to": "cv",
+        "condition": "always"
+      },
+      {
+        "from": "e_ac",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "e_fx",
+        "to": "cd",
+        "condition": "always"
+      },
+      {
+        "from": "e_al",
+        "to": "e_main",
+        "condition": "always"
+      },
+      {
+        "from": "e_ai",
+        "to": "e_ct1",
+        "condition": "always"
+      },
+      {
+        "from": "e_ai",
+        "to": "g_ct3",
+        "condition": "always"
+      },
+      {
+        "from": "e_ai",
+        "to": "e_ct",
+        "condition": "always"
+      },
+      {
+        "from": "e_ai",
+        "to": "e_ad",
+        "condition": "always"
+      },
+      {
+        "from": "e_ai",
+        "to": "e_ac",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zcvi_precheck_f01.abap:79 — kein Fachsatz „fehlerhafte Postleitzahlen oder Umsatzsteuer-Ids werden korrigiert“ (bereinigt wird nur die Löschvormerkung inaktiver Kunden).",
+    "zcvi_precheck_f01.abap:79 — kein Fachsatz „Kunden werden gelöscht“ (nur Löschvormerkung).",
+    "gesamte Scheibe — kein Fachsatz „Geschäftspartner werden angelegt oder synchronisiert“ (der Report prüft nur vor der Synchronisation).",
+    "zcvi_precheck_f01.abap:53 — kein Fachsatz „Kunden ohne Verkaufsbeleg werden übersprungen“ (ohne Beleg ist das Maximum leer und der Kunde gilt als inaktiv)."
+  ],
+  "processDescription": "Im Vorprojekt einer S/4-Conversion prüft der Report den Kundenstamm, bevor Kunden zu Geschäftspartnern synchronisiert werden. Er liest die nicht zum Löschen vorgemerkten Kunden der gewählten Nummern und Kontengruppen und endet mit einer Meldung, wenn es keine gibt. Kunden mit bereits verknüpftem Geschäftspartner überspringt er. Für alle anderen prüft er anhand der Ländertabelle, ob das Land bekannt ist, ob die Postleitzahl die vorgeschriebene Länge hat und ob in EU-Ländern die Umsatzsteuer-Id gefüllt ist. Danach prüft er, ob eine Adresse in der zentralen Adressverwaltung existiert, und ob der letzte Verkaufsbeleg jünger als die eingegebene Zahl von Jahren ist; Kunden ohne Beleg gelten als inaktiv. Jeder Befund wird als Fehler, Warnung oder Inaktivität vermerkt. Mit gesetzter Bereinigungsoption setzt der Report für alle inaktiven Kunden direkt in KNA1 die Löschvormerkung mit Änderungsdatum und -benutzer und schreibt fest. Zum Schluss zeigt er alle Befunde als ALV-Liste."
+}

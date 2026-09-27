@@ -1,0 +1,75 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten x_set",
+      "before": "action zcl_wf_vendor_bank.abap:221 „Alten Feldwert einsetzen“",
+      "after": "entfernt; überbrückt: x_g->x_mod [sy-subrc = 0]",
+      "why": "<lv_field> = ls_pos-value_old (Z. 221) ist eine reine Zuweisung; laut Autorenbrief kein Knoten. Inhalt bleibt in Fachsatz B15.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Knoten n_a",
+      "before": "action zcl_wf_vendor_bank.abap:237 „Betreff „freigegeben““",
+      "after": "entfernt; überbrückt: n_g->n_ml [iv_result = 'A']",
+      "why": "Reine Zuweisung des Betreffs (Z. 237); laut Autorenbrief kein Knoten, steuert keinen Fluss. Inhalt bleibt in Fachsatz B17.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Knoten n_r",
+      "before": "action zcl_wf_vendor_bank.abap:239 „Betreff „abgelehnt““",
+      "after": "entfernt; überbrückt: n_g->n_ml [else]",
+      "why": "Reine Zuweisung des Betreffs (Z. 239); laut Autorenbrief kein Knoten, steuert keinen Fluss. Inhalt bleibt in Fachsatz B17.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Knoten m_e (neu)",
+      "before": "—",
+      "after": "end zfi_bank_wf_monitor.abap:50 „Überwachungslauf endet nach der Ausgabe“",
+      "why": "Implizites Ende von START-OF-SELECTION fehlte; m_o2 hatte keine ausgehende Kante.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kanten a_c",
+      "before": "a_c->a_g [always]",
+      "after": "lc_e->a_g [always]",
+      "why": "Konvention Aufrufe im Fall: Aufruf → Start des Ziels, end des Ziels → nächster Schritt (je Aufrufer eine Rückkante); die Direktkante Aufruf → Folgeknoten entfällt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten x_c",
+      "before": "x_c->x_r [always]",
+      "after": "lc_e->x_r [always]",
+      "why": "Konvention Aufrufe im Fall: Aufruf → Start des Ziels, end des Ziels → nächster Schritt (je Aufrufer eine Rückkante); die Direktkante Aufruf → Folgeknoten entfällt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten r_c",
+      "before": "r_c->r_w1 [always]",
+      "after": "x_e->r_w1 [always]",
+      "why": "Konvention Aufrufe im Fall: Aufruf → Start des Ziels, end des Ziels → nächster Schritt (je Aufrufer eine Rückkante); die Direktkante Aufruf → Folgeknoten entfällt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten m_ce",
+      "before": "m_ce->m_l [next iteration]",
+      "after": "w_e->m_l [next iteration]",
+      "why": "Konvention Aufrufe im Fall: Aufruf → Start des Ziels, end des Ziels → nächster Schritt (je Aufrufer eine Rückkante); die Direktkante Aufruf → Folgeknoten entfällt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten m_cr",
+      "before": "m_cr->m_l [next iteration]",
+      "after": "w_e->m_l [next iteration]",
+      "why": "Konvention Aufrufe im Fall: Aufruf → Start des Ziels, end des Ziels → nächster Schritt (je Aufrufer eine Rückkante); die Direktkante Aufruf → Folgeknoten entfällt.",
+      "category": "Kante"
+    }
+  ],
+  "doubts": [],
+  "notes": [
+    "x_e1 (Z. 210, RAISE EXCEPTION) erhält keine Rückkante zu r_w1: die Ausnahme verlässt RESTORE_BANK_DATA und über RAISING auch REJECT; der Schritt Ablehnen endet dort mit Fehler.",
+    "Leere IF_WORKFLOW-Methoden (refresh, execute_default_method, release) und die Einzeiler lpor/default_attribute_value bleiben ohne Knoten: sie wirken nie fachlich. f_a (Z. 53) bleibt als Instanzbildung des Workflow-Objekts (kein reines Zuweisen).",
+    "Gateway n_g (Z. 236) bleibt mit zwei Kanten zu n_ml: es wählt den Betreff freigegeben/abgelehnt; nach Entfernen der Zuweisungsknoten führen beide Zweige zum Versand."
+  ]
+}

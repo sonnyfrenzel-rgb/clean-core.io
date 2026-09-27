@@ -1,0 +1,596 @@
+{
+  "id": "BM-006",
+  "title": "Rabattanalyse: Rabattkonditionen aus KONV je Auftrag summieren und mit Ampel anzeigen",
+  "classes": [
+    "K01",
+    "K09"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "VBAK",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 34,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:34"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "KONV",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 44,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:44"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "CL_SALV_TABLE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 72,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:72"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-006-B01",
+      "text": "Es werden die Kundenaufträge der eingegebenen Verkaufsorganisationen, Auftragsdaten und Kunden gelesen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:34"
+        }
+      ]
+    },
+    {
+      "id": "BM-006-B02",
+      "text": "Ohne Treffer erscheint ein Hinweis und der Report endet ohne Liste.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:38"
+        },
+        {
+          "file": "source.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:39"
+        },
+        {
+          "file": "source.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:40"
+        }
+      ]
+    },
+    {
+      "id": "BM-006-B03",
+      "text": "Zu den Aufträgen werden nur aktive Zu- und Abschlagskonditionen gelesen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:44"
+        }
+      ]
+    },
+    {
+      "id": "BM-006-B04",
+      "text": "Als Rabatt zählen nur kundeneigene Konditionsarten (Z…) und K007; ihre Werte werden je Auftrag summiert.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:55"
+        },
+        {
+          "file": "source.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:56"
+        }
+      ]
+    },
+    {
+      "id": "BM-006-B05",
+      "text": "Die Rabattquote ist der Rabattbetrag im Verhältnis zu Nettowert plus Rabatt, in Prozent; bei Nettowert null bleibt sie null.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:59"
+        },
+        {
+          "file": "source.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:60"
+        }
+      ]
+    },
+    {
+      "id": "BM-006-B06",
+      "text": "Aufträge mit einer Rabattquote über dem eingegebenen Grenzwert (Vorschlag 15 %) werden rot, alle anderen grün markiert.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:63"
+        },
+        {
+          "file": "source.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:64"
+        },
+        {
+          "file": "source.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:66"
+        }
+      ]
+    },
+    {
+      "id": "BM-006-B07",
+      "text": "Das Ergebnis wird als ALV-Liste mit allen Standardfunktionen angezeigt.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:72"
+        },
+        {
+          "file": "source.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:78"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:33"
+        },
+        "meaning": "Reportstart"
+      },
+      {
+        "id": "q1",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:34"
+        },
+        "meaning": "Kundenaufträge der Selektion lesen"
+      },
+      {
+        "id": "g0",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:38"
+        },
+        "meaning": "Aufträge gefunden?"
+      },
+      {
+        "id": "m0",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:39"
+        },
+        "meaning": "Hinweis: keine Aufträge"
+      },
+      {
+        "id": "e0",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:40"
+        },
+        "meaning": "Report ohne Liste beenden"
+      },
+      {
+        "id": "q2",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:44"
+        },
+        "meaning": "Aktive Zu- und Abschläge der Aufträge lesen"
+      },
+      {
+        "id": "l1",
+        "type": "loop",
+        "anchor": {
+          "file": "source.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:50"
+        },
+        "meaning": "Je Auftrag"
+      },
+      {
+        "id": "l2",
+        "type": "loop",
+        "anchor": {
+          "file": "source.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:53"
+        },
+        "meaning": "Konditionen des Auftrags durchgehen"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:55"
+        },
+        "meaning": "Zählt die Kondition als Rabatt?"
+      },
+      {
+        "id": "a1",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:56"
+        },
+        "meaning": "Konditionswert zur Rabattsumme addieren"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:59"
+        },
+        "meaning": "Nettowert vorhanden?"
+      },
+      {
+        "id": "a2",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:60"
+        },
+        "meaning": "Rabattquote auf den Bruttowert berechnen"
+      },
+      {
+        "id": "g3",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:63"
+        },
+        "meaning": "Quote über Grenzwert?"
+      },
+      {
+        "id": "rot",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:64"
+        },
+        "meaning": "Ampel rot"
+      },
+      {
+        "id": "gruen",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:66"
+        },
+        "meaning": "Ampel grün"
+      },
+      {
+        "id": "alv",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:72"
+        },
+        "meaning": "ALV-Liste erzeugen"
+      },
+      {
+        "id": "merr",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:75"
+        },
+        "meaning": "ALV-Fehler melden"
+      },
+      {
+        "id": "xerr",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:75"
+        },
+        "meaning": "Abbruch bei ALV-Fehler"
+      },
+      {
+        "id": "disp",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:78"
+        },
+        "meaning": "Rabattliste anzeigen"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:78"
+        },
+        "meaning": "Report beendet"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "q1",
+        "condition": "always"
+      },
+      {
+        "from": "q1",
+        "to": "g0",
+        "condition": "always"
+      },
+      {
+        "from": "g0",
+        "to": "m0",
+        "condition": "gt_vbak IS INITIAL"
+      },
+      {
+        "from": "m0",
+        "to": "e0",
+        "condition": "always"
+      },
+      {
+        "from": "g0",
+        "to": "q2",
+        "condition": "else"
+      },
+      {
+        "from": "q2",
+        "to": "l1",
+        "condition": "always"
+      },
+      {
+        "from": "l1",
+        "to": "l2",
+        "condition": "next row"
+      },
+      {
+        "from": "l2",
+        "to": "g1",
+        "condition": "next row"
+      },
+      {
+        "from": "g1",
+        "to": "a1",
+        "condition": "gs_konv-kschl(1) = 'Z' OR gs_konv-kschl = 'K007'"
+      },
+      {
+        "from": "g1",
+        "to": "l2",
+        "condition": "else"
+      },
+      {
+        "from": "a1",
+        "to": "l2",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l2",
+        "to": "g2",
+        "condition": "no more rows"
+      },
+      {
+        "from": "g2",
+        "to": "a2",
+        "condition": "gs_vbak-netwr <> 0"
+      },
+      {
+        "from": "g2",
+        "to": "g3",
+        "condition": "else"
+      },
+      {
+        "from": "a2",
+        "to": "g3",
+        "condition": "always"
+      },
+      {
+        "from": "g3",
+        "to": "rot",
+        "condition": "gs_out-quote > p_grenz"
+      },
+      {
+        "from": "g3",
+        "to": "gruen",
+        "condition": "else"
+      },
+      {
+        "from": "rot",
+        "to": "l1",
+        "condition": "next iteration"
+      },
+      {
+        "from": "gruen",
+        "to": "l1",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l1",
+        "to": "alv",
+        "condition": "no more rows"
+      },
+      {
+        "from": "alv",
+        "to": "merr",
+        "condition": "CATCH cx_salv_msg INTO gx_salv"
+      },
+      {
+        "from": "merr",
+        "to": "xerr",
+        "condition": "always"
+      },
+      {
+        "from": "alv",
+        "to": "disp",
+        "condition": "always"
+      },
+      {
+        "from": "disp",
+        "to": "e",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "source.abap:55 — kein Fachsatz „alle Rabatte des Auftrags werden summiert“: K004/K005 und andere Standardrabatte werden bewusst nicht gezählt",
+    "source.abap:63 — kein Fachsatz „Aufträge über dem Grenzwert werden gesperrt oder gemeldet“: es wird nur eine Ampel in der Liste gesetzt",
+    "source.abap:60 — kein Fachsatz „Quote bezogen auf den Nettowert“: der Nenner ist Nettowert plus Rabattbetrag"
+  ],
+  "processDescription": "Der Report wird vom Vertriebscontrolling mit Verkaufsorganisationen, optionalem Auftragsdatum und Kunden sowie einem Rabattgrenzwert gestartet. Er liest die passenden Kundenaufträge; ohne Treffer meldet er das und endet. Zu allen gefundenen Aufträgen liest er die aktiven Zu- und Abschlagskonditionen aus den Belegkonditionen. Je Auftrag summiert er die Werte der kundeneigenen Konditionsarten und der K007; Standardrabatte wie K004 und K005 bleiben außen vor. Aus Rabattsumme und Nettowert errechnet er eine Rabattquote bezogen auf den Wert vor Rabatt; ist der Nettowert null, bleibt die Quote null. Liegt die Quote über dem Grenzwert, erhält der Auftrag eine rote Ampel, sonst eine grüne. Die Liste wird als ALV angezeigt; scheitert der Aufbau der ALV, bricht der Report mit einer Fehlermeldung ab. Es werden keine Belege verändert."
+}

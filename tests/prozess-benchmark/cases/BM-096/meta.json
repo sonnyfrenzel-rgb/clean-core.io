@@ -1,0 +1,28 @@
+{
+  "id": "BM-096",
+  "title": "IDoc-Eingang Materialstamm aus MDM-Hub: Segmentmapping, Serialisierung, BAPI je Werk",
+  "domain": "Querschnitt — Schnittstellen, Stammdaten, HR, Workflow, technische Jobs",
+  "band": "sehr komplex",
+  "loc": 411,
+  "constructs": [
+    "Funktionsgruppe mit TOP/F01/F02",
+    "IDOC_INPUT-Schnittstelle",
+    "LOOP EDIDD + CASE segnam",
+    "Makro map_field",
+    "CONVERSION_EXIT_MATN1_INPUT",
+    "EXTENSIONIN (BAPI_TE_MARA)",
+    "ENQUEUE_EMMARAE/DEQUEUE_EMMARAE",
+    "BAPI_MATERIAL_SAVEDATA je Werk",
+    "BAPI_TRANSACTION_COMMIT/ROLLBACK im IDoc-Baustein",
+    "Kundeneigene Serialisierung",
+    "IDoc-Status 51/53/68",
+    "PERFORM TABLES"
+  ],
+  "scenario": "Eingangsverarbeitung eines zentralen Stammdaten-Hubs: Materialien werden als kundeneigener IDoc-Typ ZMATMAS01 geliefert und im ERP je Werk angelegt oder geändert; typischer Kandidat für die Ablösung durch MDG/Standard-MATMAS.",
+  "s4_issues": [
+    "Materialnummer 40-stellig: Konvertierung und Segmentlänge ZE1MARAM prüfen",
+    "COMMIT im IDoc-Eingangsbaustein widerspricht der ALE-LUW-Steuerung",
+    "Kundenfelder MARA-ZZ* und EXTENSIONIN im Zielsystem nachziehen",
+    "Kundeneigene Serialisierung statt Standard (BD55/Serialisierungsgruppen)"
+  ]
+}

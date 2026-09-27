@@ -1,0 +1,244 @@
+{
+  "id": "BM-005",
+  "title": "Sichern-Exit: Streckenauftrag ohne Bestellnummer abweisen, Großmengen melden",
+  "classes": [
+    "K16",
+    "K12"
+  ],
+  "classic_level": "D",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": true
+  },
+  "objects": [],
+  "businessStatements": [
+    {
+      "id": "BM-005-B01",
+      "text": "Ein Streckenauftrag (Auftragsart ZTAS) ohne Kundenbestellnummer wird mit einer Fehlermeldung am Sichern gehindert.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 6,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:6"
+        },
+        {
+          "file": "source.abap",
+          "line": 7,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:7"
+        }
+      ]
+    },
+    {
+      "id": "BM-005-B02",
+      "text": "Für jede nicht gelöschte Position mit einer Auftragsmenge über 9999 erhält der Erfasser eine Warnung mit Positionsnummer und Menge.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 11,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:11"
+        },
+        {
+          "file": "source.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:12"
+        },
+        {
+          "file": "source.abap",
+          "line": 13,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:13"
+        }
+      ]
+    },
+    {
+      "id": "BM-005-B03",
+      "text": "Die Großmengenwarnung hält das Sichern nicht auf.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 13,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:13"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 4,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:4"
+        },
+        "meaning": "Exit vor dem Sichern des Auftrags"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 6,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:6"
+        },
+        "meaning": "Streckenauftrag ohne Kundenbestellnummer?"
+      },
+      {
+        "id": "m1",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 7,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:7"
+        },
+        "meaning": "Fehlermeldung: Bestellnummer fehlt"
+      },
+      {
+        "id": "x1",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 7,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:7"
+        },
+        "meaning": "Sichern abgebrochen, Benutzer bleibt im Beleg"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "source.abap",
+          "line": 11,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:11"
+        },
+        "meaning": "Nicht gelöschte Positionen durchgehen"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:12"
+        },
+        "meaning": "Auftragsmenge über 9999?"
+      },
+      {
+        "id": "m2",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 13,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:13"
+        },
+        "meaning": "Warnung Großmenge je Position"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:16"
+        },
+        "meaning": "Prüfungen bestanden, Sichern läuft weiter"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "m1",
+        "condition": "vbak-auart = 'ZTAS' AND vbkd-bstkd IS INITIAL"
+      },
+      {
+        "from": "m1",
+        "to": "x1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "l",
+        "condition": "else"
+      },
+      {
+        "from": "l",
+        "to": "g2",
+        "condition": "next row"
+      },
+      {
+        "from": "g2",
+        "to": "m2",
+        "condition": "xvbap-kwmeng > 9999"
+      },
+      {
+        "from": "m2",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "g2",
+        "to": "l",
+        "condition": "else"
+      },
+      {
+        "from": "l",
+        "to": "e",
+        "condition": "no more rows"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "source.abap:13 — kein Fachsatz „die Disposition wird informiert“: es gibt nur eine Warnung an den Erfasser, keine Nachricht an Dritte",
+    "source.abap:6 — kein Fachsatz „jeder Auftrag braucht eine Bestellnummer“: die Pflicht gilt nur für Auftragsart ZTAS"
+  ],
+  "processDescription": "Der Exit läuft im Standard-Kundenauftrag unmittelbar vor dem Sichern. Hat ein Streckenauftrag (Auftragsart ZTAS) keine Kundenbestellnummer, gibt er eine Fehlermeldung aus; das Sichern wird abgebrochen und der Erfasser bleibt im Beleg. Andernfalls durchläuft er alle Positionen, die nicht zum Löschen markiert sind. Für jede Position mit einer Auftragsmenge über 9999 erscheint eine Warnung mit Positionsnummer und Menge, die das Sichern nicht verhindert. Danach setzt der Standard das Sichern fort."
+}

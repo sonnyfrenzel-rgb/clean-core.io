@@ -1,0 +1,25 @@
+{
+  "id": "BM-048",
+  "title": "Restbuchwerte der Anlagen je Bewertungsbereich mit Nutzungsstatus als ALV",
+  "domain": "FI/CO / Record-to-Report",
+  "band": "mittel",
+  "loc": 104,
+  "constructs": [
+    "REPORT",
+    "SELECT-OPTIONS",
+    "INNER JOIN",
+    "LOOP mit Berechnung",
+    "IF/ELSEIF/ELSE",
+    "CONTINUE",
+    "PERFORM",
+    "CL_SALV_TABLE=>FACTORY",
+    "TRY/CATCH",
+    "MESSAGE TYPE E"
+  ],
+  "scenario": "Anlagenbuchhaltung prüft vor dem Jahresabschluss, welche aktiven Anlagen voll abgeschrieben sind (Kandidaten für Abgang oder Verschrottung); gewachsener Report neben S_ALR_87011990.",
+  "s4_issues": [
+    "ANLC entfällt in S/4HANA als Wertetabelle (neue Anlagenbuchhaltung, Werte in ACDOCA / FAAT_DOC_IT); Zugriff nur über Kompatibilitäts-View",
+    "Join ANLA/ANLC mit fest codiertem Bewertungsbereich 01",
+    "Restbuchwertformel ohne Aufwertungen und Zinsen"
+  ]
+}

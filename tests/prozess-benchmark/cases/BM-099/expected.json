@@ -1,0 +1,2346 @@
+{
+  "id": "BM-099",
+  "title": "Modulpool Lieferantenzertifikate: Einstieg, Detailbild, Sperre, Berechtigung, Sichern und Löschen",
+  "classes": [
+    "K07",
+    "K12",
+    "K15",
+    "K01"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "ZVCERT",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "mzvcerti01.abap",
+        "line": 39,
+        "token": null,
+        "expressionPath": null,
+        "raw": "mzvcerti01.abap:39"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "LFA1",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "mzvcertf01.abap",
+        "line": 12,
+        "token": null,
+        "expressionPath": null,
+        "raw": "mzvcertf01.abap:12"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ENQUEUE_EZVCERT",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "mzvcertf01.abap",
+        "line": 51,
+        "token": null,
+        "expressionPath": null,
+        "raw": "mzvcertf01.abap:51"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZVCERT_TYPET",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "mzvcerto01.abap",
+        "line": 27,
+        "token": null,
+        "expressionPath": null,
+        "raw": "mzvcerto01.abap:27"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZVCERT_TYPE",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "mzvcertf01.abap",
+        "line": 89,
+        "token": null,
+        "expressionPath": null,
+        "raw": "mzvcertf01.abap:89"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZVCERT",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "mzvcertf01.abap",
+        "line": 119,
+        "token": null,
+        "expressionPath": null,
+        "raw": "mzvcertf01.abap:119"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZVCERT_LOG",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "mzvcertf01.abap",
+        "line": 131,
+        "token": null,
+        "expressionPath": null,
+        "raw": "mzvcertf01.abap:131"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "POPUP_TO_CONFIRM",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "mzvcertf01.abap",
+        "line": 166,
+        "token": null,
+        "expressionPath": null,
+        "raw": "mzvcertf01.abap:166"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZVCERT",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "mzvcertf01.abap",
+        "line": 182,
+        "token": null,
+        "expressionPath": null,
+        "raw": "mzvcertf01.abap:182"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-099-B01",
+      "text": "Im Einstiegsbild wählt der Benutzer Anzeigen, Anlegen oder Ändern; andere Funktionen bewirken nichts.",
+      "anchors": [
+        {
+          "file": "mzvcerti01.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcerti01.abap:25"
+        },
+        {
+          "file": "mzvcerti01.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcerti01.abap:33"
+        }
+      ]
+    },
+    {
+      "id": "BM-099-B02",
+      "text": "Der Kreditor muss existieren; ist er zentral gesperrt oder zum Löschen vorgemerkt, wird die Pflege mit Fehlermeldung verweigert.",
+      "anchors": [
+        {
+          "file": "mzvcertf01.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcertf01.abap:12"
+        },
+        {
+          "file": "mzvcertf01.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcertf01.abap:15"
+        },
+        {
+          "file": "mzvcertf01.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcertf01.abap:17"
+        },
+        {
+          "file": "mzvcertf01.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcertf01.abap:18"
+        }
+      ]
+    },
+    {
+      "id": "BM-099-B03",
+      "text": "Die Berechtigung wird für die Zertifikatsart mit der Aktivität des Modus geprüft: Anzeigen 03, Anlegen 01, Ändern 02; ohne Berechtigung wird abgelehnt.",
+      "anchors": [
+        {
+          "file": "mzvcertf01.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcertf01.abap:30"
+        },
+        {
+          "file": "mzvcertf01.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcertf01.abap:39"
+        },
+        {
+          "file": "mzvcertf01.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcertf01.abap:43"
+        }
+      ]
+    },
+    {
+      "id": "BM-099-B04",
+      "text": "Beim Anlegen darf das Zertifikat für Kreditor und Art noch nicht existieren, beim Anzeigen und Ändern muss es existieren.",
+      "anchors": [
+        {
+          "file": "mzvcerti01.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcerti01.abap:39"
+        },
+        {
+          "file": "mzvcerti01.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcerti01.abap:42"
+        },
+        {
+          "file": "mzvcerti01.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcerti01.abap:43"
+        },
+        {
+          "file": "mzvcerti01.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcerti01.abap:45"
+        }
+      ]
+    },
+    {
+      "id": "BM-099-B05",
+      "text": "In Anlage und Änderung wird das Zertifikat für andere Benutzer gesperrt; bearbeitet es bereits jemand, wird mit dessen Namen abgelehnt.",
+      "anchors": [
+        {
+          "file": "mzvcerti01.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcerti01.abap:48"
+        },
+        {
+          "file": "mzvcertf01.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcertf01.abap:51"
+        },
+        {
+          "file": "mzvcertf01.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcertf01.abap:60"
+        }
+      ]
+    },
+    {
+      "id": "BM-099-B06",
+      "text": "Beim Anzeigen und Ändern werden die gespeicherten Daten ins Detailbild übernommen, danach wird das Detailbild gerufen.",
+      "anchors": [
+        {
+          "file": "mzvcerti01.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcerti01.abap:51"
+        },
+        {
+          "file": "mzvcerti01.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcerti01.abap:52"
+        },
+        {
+          "file": "mzvcerti01.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcerti01.abap:54"
+        }
+      ]
+    },
+    {
+      "id": "BM-099-B07",
+      "text": "Das Detailbild zeigt Name und Ort des Lieferanten, den Text der Zertifikatsart und die Restlaufzeit in Tagen bis Gültig-bis.",
+      "anchors": [
+        {
+          "file": "mzvcerto01.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcerto01.abap:25"
+        },
+        {
+          "file": "mzvcerto01.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcerto01.abap:27"
+        },
+        {
+          "file": "mzvcerto01.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcerto01.abap:30"
+        }
+      ]
+    },
+    {
+      "id": "BM-099-B08",
+      "text": "Im Anzeigemodus sind die Pflegefelder des Detailbilds nicht eingabebereit.",
+      "anchors": [
+        {
+          "file": "mzvcerto01.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcerto01.abap:32"
+        },
+        {
+          "file": "mzvcerto01.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcerto01.abap:34"
+        },
+        {
+          "file": "mzvcerto01.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcerto01.abap:36"
+        }
+      ]
+    },
+    {
+      "id": "BM-099-B09",
+      "text": "Sichern im Anzeigemodus bewirkt nur einen Hinweis.",
+      "anchors": [
+        {
+          "file": "mzvcerti01.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcerti01.abap:70"
+        },
+        {
+          "file": "mzvcerti01.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcerti01.abap:71"
+        }
+      ]
+    },
+    {
+      "id": "BM-099-B10",
+      "text": "Vor dem Sichern muss Gültig-bis am oder nach Gültig-ab liegen und die Zertifikatsart im Customizing definiert sein.",
+      "anchors": [
+        {
+          "file": "mzvcertf01.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcertf01.abap:85"
+        },
+        {
+          "file": "mzvcertf01.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcertf01.abap:86"
+        },
+        {
+          "file": "mzvcertf01.abap",
+          "line": 89,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcertf01.abap:89"
+        },
+        {
+          "file": "mzvcertf01.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcertf01.abap:92"
+        }
+      ]
+    },
+    {
+      "id": "BM-099-B11",
+      "text": "Beim Sichern erhält das Zertifikat den Status E, wenn Gültig-bis vor heute liegt, sonst G.",
+      "anchors": [
+        {
+          "file": "mzvcertf01.abap",
+          "line": 114,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcertf01.abap:114"
+        },
+        {
+          "file": "mzvcertf01.abap",
+          "line": 115,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcertf01.abap:115"
+        },
+        {
+          "file": "mzvcertf01.abap",
+          "line": 117,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcertf01.abap:117"
+        }
+      ]
+    },
+    {
+      "id": "BM-099-B12",
+      "text": "Das Zertifikat wird mit Änderer und Änderungsdatum gespeichert.",
+      "anchors": [
+        {
+          "file": "mzvcertf01.abap",
+          "line": 119,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcertf01.abap:119"
+        }
+      ]
+    },
+    {
+      "id": "BM-099-B13",
+      "text": "Jede Sicherung wird mit Modus, Benutzer, Zeitpunkt sowie alter und neuer Gültigkeit und Zertifikatsnummer protokolliert, festgeschrieben und bestätigt.",
+      "anchors": [
+        {
+          "file": "mzvcertf01.abap",
+          "line": 131,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcertf01.abap:131"
+        },
+        {
+          "file": "mzvcertf01.abap",
+          "line": 155,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcertf01.abap:155"
+        },
+        {
+          "file": "mzvcertf01.abap",
+          "line": 156,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcertf01.abap:156"
+        }
+      ]
+    },
+    {
+      "id": "BM-099-B14",
+      "text": "Nach dem Sichern wird die Sperre freigegeben und zum Einstiegsbild zurückgekehrt.",
+      "anchors": [
+        {
+          "file": "mzvcerti01.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcerti01.abap:76"
+        },
+        {
+          "file": "mzvcerti01.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcerti01.abap:77"
+        }
+      ]
+    },
+    {
+      "id": "BM-099-B15",
+      "text": "Beim Löschen wird eine Sicherheitsabfrage mit Vorschlag Nein gestellt; ohne Bestätigung wird nichts gelöscht.",
+      "anchors": [
+        {
+          "file": "mzvcertf01.abap",
+          "line": 166,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcertf01.abap:166"
+        },
+        {
+          "file": "mzvcertf01.abap",
+          "line": 178,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcertf01.abap:178"
+        },
+        {
+          "file": "mzvcertf01.abap",
+          "line": 179,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcertf01.abap:179"
+        }
+      ]
+    },
+    {
+      "id": "BM-099-B16",
+      "text": "Nach Bestätigung wird das Zertifikat gelöscht, festgeschrieben und die Löschung gemeldet.",
+      "anchors": [
+        {
+          "file": "mzvcertf01.abap",
+          "line": 182,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcertf01.abap:182"
+        },
+        {
+          "file": "mzvcertf01.abap",
+          "line": 186,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcertf01.abap:186"
+        },
+        {
+          "file": "mzvcertf01.abap",
+          "line": 187,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcertf01.abap:187"
+        }
+      ]
+    },
+    {
+      "id": "BM-099-B17",
+      "text": "Nach Löschen, Zurück oder Abbrechen wird die Sperre freigegeben und zum Einstiegsbild zurückgekehrt.",
+      "anchors": [
+        {
+          "file": "mzvcerti01.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcerti01.abap:80"
+        },
+        {
+          "file": "mzvcerti01.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcerti01.abap:83"
+        },
+        {
+          "file": "mzvcerti01.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcerti01.abap:84"
+        }
+      ]
+    },
+    {
+      "id": "BM-099-B18",
+      "text": "Eine Sperre wird nur freigegeben, wenn sie gesetzt wurde.",
+      "anchors": [
+        {
+          "file": "mzvcertf01.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcertf01.abap:69"
+        },
+        {
+          "file": "mzvcertf01.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcertf01.abap:70"
+        }
+      ]
+    },
+    {
+      "id": "BM-099-B19",
+      "text": "Mit der Abbruchfunktion wird eine gesetzte Sperre freigegeben und die Transaktion verlassen.",
+      "anchors": [
+        {
+          "file": "mzvcerti01.abap",
+          "line": 9,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcerti01.abap:9"
+        },
+        {
+          "file": "mzvcerti01.abap",
+          "line": 10,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcerti01.abap:10"
+        },
+        {
+          "file": "mzvcerti01.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcerti01.abap:12"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "p1_s",
+        "type": "start",
+        "anchor": {
+          "file": "mzvcerto01.abap",
+          "line": 8,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcerto01.abap:8"
+        },
+        "meaning": "Einstiegsbild aufbauen"
+      },
+      {
+        "id": "p1_e",
+        "type": "end",
+        "anchor": {
+          "file": "mzvcerto01.abap",
+          "line": 11,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcerto01.abap:11"
+        },
+        "meaning": "Einstiegsbild bereit"
+      },
+      {
+        "id": "p2_s",
+        "type": "start",
+        "anchor": {
+          "file": "mzvcerto01.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcerto01.abap:20"
+        },
+        "meaning": "Detailbild aufbauen"
+      },
+      {
+        "id": "p2_r",
+        "type": "read",
+        "anchor": {
+          "file": "mzvcerto01.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcerto01.abap:27"
+        },
+        "meaning": "Text der Zertifikatsart lesen"
+      },
+      {
+        "id": "p2_g",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzvcerto01.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcerto01.abap:32"
+        },
+        "meaning": "Anzeigemodus?"
+      },
+      {
+        "id": "p2_l",
+        "type": "loop",
+        "anchor": {
+          "file": "mzvcerto01.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcerto01.abap:33"
+        },
+        "meaning": "Bildfelder durchlaufen"
+      },
+      {
+        "id": "p2_g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzvcerto01.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcerto01.abap:34"
+        },
+        "meaning": "Pflegefeld?"
+      },
+      {
+        "id": "p2_a",
+        "type": "action",
+        "anchor": {
+          "file": "mzvcerto01.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcerto01.abap:36"
+        },
+        "meaning": "Feld nicht eingabebereit schalten"
+      },
+      {
+        "id": "p2_e",
+        "type": "end",
+        "anchor": {
+          "file": "mzvcerto01.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcerto01.abap:40"
+        },
+        "meaning": "Detailbild bereit"
+      },
+      {
+        "id": "x_s",
+        "type": "start",
+        "anchor": {
+          "file": "mzvcerti01.abap",
+          "line": 8,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcerti01.abap:8"
+        },
+        "meaning": "Abbruchfunktion"
+      },
+      {
+        "id": "x_g",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzvcerti01.abap",
+          "line": 9,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcerti01.abap:9"
+        },
+        "meaning": "Sperre gesetzt?"
+      },
+      {
+        "id": "x_c",
+        "type": "call",
+        "anchor": {
+          "file": "mzvcerti01.abap",
+          "line": 10,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcerti01.abap:10"
+        },
+        "meaning": "Sperre freigeben"
+      },
+      {
+        "id": "x_e",
+        "type": "end",
+        "anchor": {
+          "file": "mzvcerti01.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcerti01.abap:12"
+        },
+        "meaning": "Transaktion verlassen"
+      },
+      {
+        "id": "u1_s",
+        "type": "start",
+        "anchor": {
+          "file": "mzvcerti01.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcerti01.abap:21"
+        },
+        "meaning": "Funktion im Einstiegsbild"
+      },
+      {
+        "id": "u1_c",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzvcerti01.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcerti01.abap:25"
+        },
+        "meaning": "Funktion unterscheiden"
+      },
+      {
+        "id": "u1_e0",
+        "type": "end",
+        "anchor": {
+          "file": "mzvcerti01.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcerti01.abap:33"
+        },
+        "meaning": "Andere Funktion: nichts tun"
+      },
+      {
+        "id": "u1_cv",
+        "type": "call",
+        "anchor": {
+          "file": "mzvcerti01.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcerti01.abap:36"
+        },
+        "meaning": "Kreditor prüfen"
+      },
+      {
+        "id": "u1_ca",
+        "type": "call",
+        "anchor": {
+          "file": "mzvcerti01.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcerti01.abap:37"
+        },
+        "meaning": "Berechtigung prüfen"
+      },
+      {
+        "id": "u1_r",
+        "type": "read",
+        "anchor": {
+          "file": "mzvcerti01.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcerti01.abap:39"
+        },
+        "meaning": "Vorhandenes Zertifikat lesen"
+      },
+      {
+        "id": "u1_g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzvcerti01.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcerti01.abap:42"
+        },
+        "meaning": "Existenz passt nicht zum Modus?"
+      },
+      {
+        "id": "u1_m3",
+        "type": "output",
+        "anchor": {
+          "file": "mzvcerti01.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcerti01.abap:43"
+        },
+        "meaning": "Fehler: existiert bereits"
+      },
+      {
+        "id": "u1_e3",
+        "type": "end",
+        "anchor": {
+          "file": "mzvcerti01.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcerti01.abap:43"
+        },
+        "meaning": "Abbruch: Zertifikat existiert bereits"
+      },
+      {
+        "id": "u1_m4",
+        "type": "output",
+        "anchor": {
+          "file": "mzvcerti01.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcerti01.abap:45"
+        },
+        "meaning": "Fehler: existiert nicht"
+      },
+      {
+        "id": "u1_e4",
+        "type": "end",
+        "anchor": {
+          "file": "mzvcerti01.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcerti01.abap:45"
+        },
+        "meaning": "Abbruch: Zertifikat existiert nicht"
+      },
+      {
+        "id": "u1_g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzvcerti01.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcerti01.abap:48"
+        },
+        "meaning": "Pflegemodus?"
+      },
+      {
+        "id": "u1_lk",
+        "type": "call",
+        "anchor": {
+          "file": "mzvcerti01.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcerti01.abap:49"
+        },
+        "meaning": "Zertifikat sperren"
+      },
+      {
+        "id": "u1_g3",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzvcerti01.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcerti01.abap:51"
+        },
+        "meaning": "Vorhandenes Zertifikat?"
+      },
+      {
+        "id": "u1_cs",
+        "type": "output",
+        "anchor": {
+          "file": "mzvcerti01.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcerti01.abap:54"
+        },
+        "meaning": "Detailbild rufen"
+      },
+      {
+        "id": "u1_e",
+        "type": "end",
+        "anchor": {
+          "file": "mzvcerti01.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcerti01.abap:55"
+        },
+        "meaning": "Zurück aus Detailbild"
+      },
+      {
+        "id": "u2_s",
+        "type": "start",
+        "anchor": {
+          "file": "mzvcerti01.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcerti01.abap:64"
+        },
+        "meaning": "Funktion im Detailbild"
+      },
+      {
+        "id": "u2_c",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzvcerti01.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcerti01.abap:68"
+        },
+        "meaning": "Funktion unterscheiden"
+      },
+      {
+        "id": "u2_g",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzvcerti01.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcerti01.abap:70"
+        },
+        "meaning": "Sichern im Anzeigemodus?"
+      },
+      {
+        "id": "u2_m",
+        "type": "output",
+        "anchor": {
+          "file": "mzvcerti01.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcerti01.abap:71"
+        },
+        "meaning": "Hinweis: nichts zu sichern"
+      },
+      {
+        "id": "u2_er",
+        "type": "end",
+        "anchor": {
+          "file": "mzvcerti01.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcerti01.abap:72"
+        },
+        "meaning": "Im Detailbild bleiben"
+      },
+      {
+        "id": "u2_v",
+        "type": "call",
+        "anchor": {
+          "file": "mzvcerti01.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcerti01.abap:74"
+        },
+        "meaning": "Eingaben prüfen"
+      },
+      {
+        "id": "u2_sv",
+        "type": "call",
+        "anchor": {
+          "file": "mzvcerti01.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcerti01.abap:75"
+        },
+        "meaning": "Zertifikat sichern"
+      },
+      {
+        "id": "u2_u1",
+        "type": "call",
+        "anchor": {
+          "file": "mzvcerti01.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcerti01.abap:76"
+        },
+        "meaning": "Sperre freigeben"
+      },
+      {
+        "id": "u2_l1",
+        "type": "end",
+        "anchor": {
+          "file": "mzvcerti01.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcerti01.abap:77"
+        },
+        "meaning": "Zum Einstieg"
+      },
+      {
+        "id": "u2_d",
+        "type": "call",
+        "anchor": {
+          "file": "mzvcerti01.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcerti01.abap:79"
+        },
+        "meaning": "Zertifikat löschen"
+      },
+      {
+        "id": "u2_u2",
+        "type": "call",
+        "anchor": {
+          "file": "mzvcerti01.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcerti01.abap:80"
+        },
+        "meaning": "Sperre freigeben"
+      },
+      {
+        "id": "u2_l2",
+        "type": "end",
+        "anchor": {
+          "file": "mzvcerti01.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcerti01.abap:81"
+        },
+        "meaning": "Zum Einstieg"
+      },
+      {
+        "id": "u2_u3",
+        "type": "call",
+        "anchor": {
+          "file": "mzvcerti01.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcerti01.abap:83"
+        },
+        "meaning": "Sperre freigeben"
+      },
+      {
+        "id": "u2_l3",
+        "type": "end",
+        "anchor": {
+          "file": "mzvcerti01.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcerti01.abap:84"
+        },
+        "meaning": "Zum Einstieg"
+      },
+      {
+        "id": "u2_e",
+        "type": "end",
+        "anchor": {
+          "file": "mzvcerti01.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcerti01.abap:86"
+        },
+        "meaning": "Unbekannte Funktion: Bild bleibt"
+      },
+      {
+        "id": "cv_s",
+        "type": "start",
+        "anchor": {
+          "file": "mzvcertf01.abap",
+          "line": 11,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcertf01.abap:11"
+        },
+        "meaning": "Kreditorprüfung"
+      },
+      {
+        "id": "cv_r",
+        "type": "read",
+        "anchor": {
+          "file": "mzvcertf01.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcertf01.abap:12"
+        },
+        "meaning": "Kreditor lesen"
+      },
+      {
+        "id": "cv_g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzvcertf01.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcertf01.abap:14"
+        },
+        "meaning": "Kreditor unbekannt?"
+      },
+      {
+        "id": "cv_m1",
+        "type": "output",
+        "anchor": {
+          "file": "mzvcertf01.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcertf01.abap:15"
+        },
+        "meaning": "Fehler: Kreditor existiert nicht"
+      },
+      {
+        "id": "cv_e1",
+        "type": "end",
+        "anchor": {
+          "file": "mzvcertf01.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcertf01.abap:15"
+        },
+        "meaning": "Abbruch: Kreditor existiert nicht"
+      },
+      {
+        "id": "cv_g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzvcertf01.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcertf01.abap:17"
+        },
+        "meaning": "Gesperrt oder zum Löschen vorgemerkt?"
+      },
+      {
+        "id": "cv_m2",
+        "type": "output",
+        "anchor": {
+          "file": "mzvcertf01.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcertf01.abap:18"
+        },
+        "meaning": "Fehler: Kreditor gesperrt"
+      },
+      {
+        "id": "cv_e2",
+        "type": "end",
+        "anchor": {
+          "file": "mzvcertf01.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcertf01.abap:18"
+        },
+        "meaning": "Abbruch: Kreditor gesperrt"
+      },
+      {
+        "id": "cv_e",
+        "type": "end",
+        "anchor": {
+          "file": "mzvcertf01.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcertf01.abap:20"
+        },
+        "meaning": "Kreditor in Ordnung"
+      },
+      {
+        "id": "ca_s",
+        "type": "start",
+        "anchor": {
+          "file": "mzvcertf01.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcertf01.abap:27"
+        },
+        "meaning": "Berechtigungsprüfung"
+      },
+      {
+        "id": "ca_c",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzvcertf01.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcertf01.abap:30"
+        },
+        "meaning": "Aktivität aus Modus ableiten"
+      },
+      {
+        "id": "ca_a",
+        "type": "action",
+        "anchor": {
+          "file": "mzvcertf01.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcertf01.abap:39"
+        },
+        "meaning": "Berechtigung für Aktivität und Zertifikatsart prüfen"
+      },
+      {
+        "id": "ca_g",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzvcertf01.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcertf01.abap:42"
+        },
+        "meaning": "Keine Berechtigung?"
+      },
+      {
+        "id": "ca_m",
+        "type": "output",
+        "anchor": {
+          "file": "mzvcertf01.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcertf01.abap:43"
+        },
+        "meaning": "Fehler: keine Berechtigung"
+      },
+      {
+        "id": "ca_e1",
+        "type": "end",
+        "anchor": {
+          "file": "mzvcertf01.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcertf01.abap:43"
+        },
+        "meaning": "Abbruch: keine Berechtigung"
+      },
+      {
+        "id": "ca_e",
+        "type": "end",
+        "anchor": {
+          "file": "mzvcertf01.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcertf01.abap:45"
+        },
+        "meaning": "Berechtigt"
+      },
+      {
+        "id": "lk_s",
+        "type": "start",
+        "anchor": {
+          "file": "mzvcertf01.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcertf01.abap:50"
+        },
+        "meaning": "Sperren"
+      },
+      {
+        "id": "lk_q",
+        "type": "lock",
+        "anchor": {
+          "file": "mzvcertf01.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcertf01.abap:51"
+        },
+        "meaning": "Zertifikat für Kreditor und Art sperren"
+      },
+      {
+        "id": "lk_g",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzvcertf01.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcertf01.abap:59"
+        },
+        "meaning": "Von anderem gesperrt?"
+      },
+      {
+        "id": "lk_m",
+        "type": "output",
+        "anchor": {
+          "file": "mzvcertf01.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcertf01.abap:60"
+        },
+        "meaning": "Fehler: wird von Benutzer bearbeitet"
+      },
+      {
+        "id": "lk_e1",
+        "type": "end",
+        "anchor": {
+          "file": "mzvcertf01.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcertf01.abap:60"
+        },
+        "meaning": "Abbruch: Zertifikat in Bearbeitung"
+      },
+      {
+        "id": "lk_e",
+        "type": "end",
+        "anchor": {
+          "file": "mzvcertf01.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcertf01.abap:63"
+        },
+        "meaning": "Gesperrt"
+      },
+      {
+        "id": "ul_s",
+        "type": "start",
+        "anchor": {
+          "file": "mzvcertf01.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcertf01.abap:68"
+        },
+        "meaning": "Entsperren"
+      },
+      {
+        "id": "ul_g",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzvcertf01.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcertf01.abap:69"
+        },
+        "meaning": "Sperre gesetzt?"
+      },
+      {
+        "id": "ul_q",
+        "type": "lock",
+        "anchor": {
+          "file": "mzvcertf01.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcertf01.abap:70"
+        },
+        "meaning": "Sperre freigeben"
+      },
+      {
+        "id": "ul_e",
+        "type": "end",
+        "anchor": {
+          "file": "mzvcertf01.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcertf01.abap:75"
+        },
+        "meaning": "Entsperrt"
+      },
+      {
+        "id": "vd_s",
+        "type": "start",
+        "anchor": {
+          "file": "mzvcertf01.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcertf01.abap:82"
+        },
+        "meaning": "Plausibilisierung"
+      },
+      {
+        "id": "vd_g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzvcertf01.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcertf01.abap:85"
+        },
+        "meaning": "Gültig-bis vor Gültig-ab?"
+      },
+      {
+        "id": "vd_m1",
+        "type": "output",
+        "anchor": {
+          "file": "mzvcertf01.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcertf01.abap:86"
+        },
+        "meaning": "Fehler: Zeitraum"
+      },
+      {
+        "id": "vd_e1",
+        "type": "end",
+        "anchor": {
+          "file": "mzvcertf01.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcertf01.abap:86"
+        },
+        "meaning": "Abbruch: Zeitraum unplausibel"
+      },
+      {
+        "id": "vd_r",
+        "type": "read",
+        "anchor": {
+          "file": "mzvcertf01.abap",
+          "line": 89,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcertf01.abap:89"
+        },
+        "meaning": "Zertifikatsart im Customizing prüfen"
+      },
+      {
+        "id": "vd_g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzvcertf01.abap",
+          "line": 91,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcertf01.abap:91"
+        },
+        "meaning": "Zertifikatsart unbekannt?"
+      },
+      {
+        "id": "vd_m2",
+        "type": "output",
+        "anchor": {
+          "file": "mzvcertf01.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcertf01.abap:92"
+        },
+        "meaning": "Fehler: Zertifikatsart"
+      },
+      {
+        "id": "vd_e2",
+        "type": "end",
+        "anchor": {
+          "file": "mzvcertf01.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcertf01.abap:92"
+        },
+        "meaning": "Abbruch: Zertifikatsart unbekannt"
+      },
+      {
+        "id": "vd_e",
+        "type": "end",
+        "anchor": {
+          "file": "mzvcertf01.abap",
+          "line": 101,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcertf01.abap:101"
+        },
+        "meaning": "Eingaben plausibel"
+      },
+      {
+        "id": "sv_s",
+        "type": "start",
+        "anchor": {
+          "file": "mzvcertf01.abap",
+          "line": 109,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcertf01.abap:109"
+        },
+        "meaning": "Sichern"
+      },
+      {
+        "id": "sv_g",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzvcertf01.abap",
+          "line": 114,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcertf01.abap:114"
+        },
+        "meaning": "Bereits abgelaufen?"
+      },
+      {
+        "id": "sv_w1",
+        "type": "write",
+        "anchor": {
+          "file": "mzvcertf01.abap",
+          "line": 119,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcertf01.abap:119"
+        },
+        "meaning": "Zertifikat mit Änderer und Datum speichern"
+      },
+      {
+        "id": "sv_w2",
+        "type": "write",
+        "anchor": {
+          "file": "mzvcertf01.abap",
+          "line": 131,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcertf01.abap:131"
+        },
+        "meaning": "Änderung mit alten und neuen Werten protokollieren"
+      },
+      {
+        "id": "sv_cw",
+        "type": "transaction",
+        "anchor": {
+          "file": "mzvcertf01.abap",
+          "line": 155,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcertf01.abap:155"
+        },
+        "meaning": "Festschreiben"
+      },
+      {
+        "id": "sv_m",
+        "type": "output",
+        "anchor": {
+          "file": "mzvcertf01.abap",
+          "line": 156,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcertf01.abap:156"
+        },
+        "meaning": "Erfolg melden"
+      },
+      {
+        "id": "sv_e",
+        "type": "end",
+        "anchor": {
+          "file": "mzvcertf01.abap",
+          "line": 157,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcertf01.abap:157"
+        },
+        "meaning": "Gesichert"
+      },
+      {
+        "id": "dl_s",
+        "type": "start",
+        "anchor": {
+          "file": "mzvcertf01.abap",
+          "line": 165,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcertf01.abap:165"
+        },
+        "meaning": "Löschen"
+      },
+      {
+        "id": "dl_p",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "mzvcertf01.abap",
+          "line": 166,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcertf01.abap:166"
+        },
+        "meaning": "Sicherheitsabfrage (Vorschlag Nein)"
+      },
+      {
+        "id": "dl_g",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzvcertf01.abap",
+          "line": 178,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcertf01.abap:178"
+        },
+        "meaning": "Nicht bestätigt?"
+      },
+      {
+        "id": "dl_e1",
+        "type": "end",
+        "anchor": {
+          "file": "mzvcertf01.abap",
+          "line": 179,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcertf01.abap:179"
+        },
+        "meaning": "Nicht löschen"
+      },
+      {
+        "id": "dl_w",
+        "type": "write",
+        "anchor": {
+          "file": "mzvcertf01.abap",
+          "line": 182,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcertf01.abap:182"
+        },
+        "meaning": "Zertifikat löschen"
+      },
+      {
+        "id": "dl_cw",
+        "type": "transaction",
+        "anchor": {
+          "file": "mzvcertf01.abap",
+          "line": 186,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcertf01.abap:186"
+        },
+        "meaning": "Festschreiben"
+      },
+      {
+        "id": "dl_m",
+        "type": "output",
+        "anchor": {
+          "file": "mzvcertf01.abap",
+          "line": 187,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcertf01.abap:187"
+        },
+        "meaning": "Löschung melden"
+      },
+      {
+        "id": "dl_e",
+        "type": "end",
+        "anchor": {
+          "file": "mzvcertf01.abap",
+          "line": 188,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzvcertf01.abap:188"
+        },
+        "meaning": "Gelöscht"
+      }
+    ],
+    "edges": [
+      {
+        "from": "p1_s",
+        "to": "p1_e",
+        "condition": "always"
+      },
+      {
+        "from": "p2_s",
+        "to": "p2_r",
+        "condition": "always"
+      },
+      {
+        "from": "p2_r",
+        "to": "p2_g",
+        "condition": "always"
+      },
+      {
+        "from": "p2_g",
+        "to": "p2_l",
+        "condition": "gv_mode = gc_display"
+      },
+      {
+        "from": "p2_g",
+        "to": "p2_e",
+        "condition": "else"
+      },
+      {
+        "from": "p2_l",
+        "to": "p2_g2",
+        "condition": "next row"
+      },
+      {
+        "from": "p2_g2",
+        "to": "p2_a",
+        "condition": "screen-group1 = 'EDT'"
+      },
+      {
+        "from": "p2_g2",
+        "to": "p2_l",
+        "condition": "else"
+      },
+      {
+        "from": "p2_a",
+        "to": "p2_l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "p2_l",
+        "to": "p2_e",
+        "condition": "no more rows"
+      },
+      {
+        "from": "x_s",
+        "to": "x_g",
+        "condition": "always"
+      },
+      {
+        "from": "x_g",
+        "to": "x_c",
+        "condition": "gv_locked = 'X'"
+      },
+      {
+        "from": "x_g",
+        "to": "x_e",
+        "condition": "else"
+      },
+      {
+        "from": "x_c",
+        "to": "ul_s",
+        "condition": "always"
+      },
+      {
+        "from": "u1_s",
+        "to": "u1_c",
+        "condition": "always"
+      },
+      {
+        "from": "u1_c",
+        "to": "u1_cv",
+        "condition": "WHEN 'SHOW'"
+      },
+      {
+        "from": "u1_c",
+        "to": "u1_cv",
+        "condition": "WHEN 'CREA'"
+      },
+      {
+        "from": "u1_c",
+        "to": "u1_cv",
+        "condition": "WHEN 'CHNG'"
+      },
+      {
+        "from": "u1_c",
+        "to": "u1_e0",
+        "condition": "WHEN OTHERS"
+      },
+      {
+        "from": "u1_cv",
+        "to": "cv_s",
+        "condition": "always"
+      },
+      {
+        "from": "u1_ca",
+        "to": "ca_s",
+        "condition": "always"
+      },
+      {
+        "from": "u1_r",
+        "to": "u1_g1",
+        "condition": "always"
+      },
+      {
+        "from": "u1_g1",
+        "to": "u1_m3",
+        "condition": "sy-subrc = 0 AND gv_mode = gc_create"
+      },
+      {
+        "from": "u1_g1",
+        "to": "u1_m4",
+        "condition": "sy-subrc <> 0 AND gv_mode <> gc_create"
+      },
+      {
+        "from": "u1_g1",
+        "to": "u1_g2",
+        "condition": "else"
+      },
+      {
+        "from": "u1_g2",
+        "to": "u1_lk",
+        "condition": "gv_mode <> gc_display"
+      },
+      {
+        "from": "u1_g2",
+        "to": "u1_g3",
+        "condition": "else"
+      },
+      {
+        "from": "u1_lk",
+        "to": "lk_s",
+        "condition": "always"
+      },
+      {
+        "from": "u1_g3",
+        "to": "u1_cs",
+        "condition": "else"
+      },
+      {
+        "from": "u1_cs",
+        "to": "u1_e",
+        "condition": "always"
+      },
+      {
+        "from": "u2_s",
+        "to": "u2_c",
+        "condition": "always"
+      },
+      {
+        "from": "u2_c",
+        "to": "u2_g",
+        "condition": "WHEN 'SAVE'"
+      },
+      {
+        "from": "u2_g",
+        "to": "u2_m",
+        "condition": "gv_mode = gc_display"
+      },
+      {
+        "from": "u2_m",
+        "to": "u2_er",
+        "condition": "always"
+      },
+      {
+        "from": "u2_g",
+        "to": "u2_v",
+        "condition": "else"
+      },
+      {
+        "from": "u2_v",
+        "to": "vd_s",
+        "condition": "always"
+      },
+      {
+        "from": "u2_sv",
+        "to": "sv_s",
+        "condition": "always"
+      },
+      {
+        "from": "u2_u1",
+        "to": "ul_s",
+        "condition": "always"
+      },
+      {
+        "from": "u2_c",
+        "to": "u2_d",
+        "condition": "WHEN 'DELE'"
+      },
+      {
+        "from": "u2_d",
+        "to": "dl_s",
+        "condition": "always"
+      },
+      {
+        "from": "u2_u2",
+        "to": "ul_s",
+        "condition": "always"
+      },
+      {
+        "from": "u2_c",
+        "to": "u2_u3",
+        "condition": "WHEN 'BACK' OR 'CANC'"
+      },
+      {
+        "from": "u2_u3",
+        "to": "ul_s",
+        "condition": "always"
+      },
+      {
+        "from": "u2_c",
+        "to": "u2_e",
+        "condition": "else"
+      },
+      {
+        "from": "cv_s",
+        "to": "cv_r",
+        "condition": "always"
+      },
+      {
+        "from": "cv_r",
+        "to": "cv_g1",
+        "condition": "always"
+      },
+      {
+        "from": "cv_g1",
+        "to": "cv_m1",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "cv_g1",
+        "to": "cv_g2",
+        "condition": "else"
+      },
+      {
+        "from": "cv_g2",
+        "to": "cv_m2",
+        "condition": "lfa1-sperr = 'X' OR lfa1-loevm = 'X'"
+      },
+      {
+        "from": "cv_g2",
+        "to": "cv_e",
+        "condition": "else"
+      },
+      {
+        "from": "ca_s",
+        "to": "ca_c",
+        "condition": "always"
+      },
+      {
+        "from": "ca_c",
+        "to": "ca_a",
+        "condition": "WHEN gc_display"
+      },
+      {
+        "from": "ca_c",
+        "to": "ca_a",
+        "condition": "WHEN gc_create"
+      },
+      {
+        "from": "ca_c",
+        "to": "ca_a",
+        "condition": "WHEN OTHERS"
+      },
+      {
+        "from": "ca_a",
+        "to": "ca_g",
+        "condition": "always"
+      },
+      {
+        "from": "ca_g",
+        "to": "ca_m",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "ca_g",
+        "to": "ca_e",
+        "condition": "else"
+      },
+      {
+        "from": "lk_s",
+        "to": "lk_q",
+        "condition": "always"
+      },
+      {
+        "from": "lk_q",
+        "to": "lk_g",
+        "condition": "always"
+      },
+      {
+        "from": "lk_g",
+        "to": "lk_m",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "lk_g",
+        "to": "lk_e",
+        "condition": "else"
+      },
+      {
+        "from": "ul_s",
+        "to": "ul_g",
+        "condition": "always"
+      },
+      {
+        "from": "ul_g",
+        "to": "ul_q",
+        "condition": "gv_locked = 'X'"
+      },
+      {
+        "from": "ul_g",
+        "to": "ul_e",
+        "condition": "else"
+      },
+      {
+        "from": "ul_q",
+        "to": "ul_e",
+        "condition": "always"
+      },
+      {
+        "from": "vd_s",
+        "to": "vd_g1",
+        "condition": "always"
+      },
+      {
+        "from": "vd_g1",
+        "to": "vd_m1",
+        "condition": "zvcert-valid_to < zvcert-valid_from"
+      },
+      {
+        "from": "vd_g1",
+        "to": "vd_r",
+        "condition": "else"
+      },
+      {
+        "from": "vd_r",
+        "to": "vd_g2",
+        "condition": "always"
+      },
+      {
+        "from": "vd_g2",
+        "to": "vd_m2",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "vd_g2",
+        "to": "vd_e",
+        "condition": "else"
+      },
+      {
+        "from": "sv_s",
+        "to": "sv_g",
+        "condition": "always"
+      },
+      {
+        "from": "sv_w1",
+        "to": "sv_w2",
+        "condition": "always"
+      },
+      {
+        "from": "sv_w2",
+        "to": "sv_cw",
+        "condition": "always"
+      },
+      {
+        "from": "sv_cw",
+        "to": "sv_m",
+        "condition": "always"
+      },
+      {
+        "from": "sv_m",
+        "to": "sv_e",
+        "condition": "always"
+      },
+      {
+        "from": "dl_s",
+        "to": "dl_p",
+        "condition": "always"
+      },
+      {
+        "from": "dl_p",
+        "to": "dl_g",
+        "condition": "always"
+      },
+      {
+        "from": "dl_g",
+        "to": "dl_e1",
+        "condition": "gv_answer <> '1'"
+      },
+      {
+        "from": "dl_g",
+        "to": "dl_w",
+        "condition": "else"
+      },
+      {
+        "from": "dl_w",
+        "to": "dl_cw",
+        "condition": "always"
+      },
+      {
+        "from": "dl_cw",
+        "to": "dl_m",
+        "condition": "always"
+      },
+      {
+        "from": "dl_m",
+        "to": "dl_e",
+        "condition": "always"
+      },
+      {
+        "from": "u1_m3",
+        "to": "u1_e3",
+        "condition": "always"
+      },
+      {
+        "from": "u1_m4",
+        "to": "u1_e4",
+        "condition": "always"
+      },
+      {
+        "from": "cv_m1",
+        "to": "cv_e1",
+        "condition": "always"
+      },
+      {
+        "from": "cv_m2",
+        "to": "cv_e2",
+        "condition": "always"
+      },
+      {
+        "from": "ca_m",
+        "to": "ca_e1",
+        "condition": "always"
+      },
+      {
+        "from": "lk_m",
+        "to": "lk_e1",
+        "condition": "always"
+      },
+      {
+        "from": "vd_m1",
+        "to": "vd_e1",
+        "condition": "always"
+      },
+      {
+        "from": "vd_m2",
+        "to": "vd_e2",
+        "condition": "always"
+      },
+      {
+        "from": "u1_g3",
+        "to": "u1_cs",
+        "condition": "gv_mode <> gc_create"
+      },
+      {
+        "from": "sv_g",
+        "to": "sv_w1",
+        "condition": "zvcert-valid_to < sy-datum"
+      },
+      {
+        "from": "sv_g",
+        "to": "sv_w1",
+        "condition": "else"
+      },
+      {
+        "from": "ul_e",
+        "to": "x_e",
+        "condition": "always"
+      },
+      {
+        "from": "cv_e",
+        "to": "u1_ca",
+        "condition": "always"
+      },
+      {
+        "from": "ca_e",
+        "to": "u1_r",
+        "condition": "always"
+      },
+      {
+        "from": "lk_e",
+        "to": "u1_g3",
+        "condition": "always"
+      },
+      {
+        "from": "vd_e",
+        "to": "u2_sv",
+        "condition": "always"
+      },
+      {
+        "from": "sv_e",
+        "to": "u2_u1",
+        "condition": "always"
+      },
+      {
+        "from": "ul_e",
+        "to": "u2_l1",
+        "condition": "always"
+      },
+      {
+        "from": "dl_e1",
+        "to": "u2_u2",
+        "condition": "always"
+      },
+      {
+        "from": "dl_e",
+        "to": "u2_u2",
+        "condition": "always"
+      },
+      {
+        "from": "ul_e",
+        "to": "u2_l2",
+        "condition": "always"
+      },
+      {
+        "from": "ul_e",
+        "to": "u2_l3",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "mzvcerti01.abap:79 — kein Fachsatz „Löschen ist nur im Änderungsmodus und mit Löschberechtigung möglich“ (DELE läuft auch im Anzeigemodus, geprüft wurde dort nur Aktivität 03, eine Aktivität 06 wird nie geprüft, und es besteht keine Sperre).",
+    "mzvcertf01.abap:182 — kein Fachsatz „die Löschung wird protokolliert oder QM per Mail informiert“ (nur Sicherungen schreiben ZVCERT_LOG; die Mail ist auskommentiert).",
+    "gesamte Scheibe — kein Fachsatz „Änderungen erzeugen Änderungsbelege“ (CHANGEDOCUMENT_* nur auskommentiert).",
+    "mzvcertf01.abap:89 — kein Fachsatz „die maximale Gültigkeitsdauer der Zertifikatsart wird geprüft“ (MAXYEARS wird nicht gelesen; die ISO-Prüfung ist auskommentiert)."
+  ],
+  "processDescription": "Einkauf und Qualitätssicherung pflegen in der Transaktion ZVCERT Lieferantenzertifikate. Im Einstiegsbild geben sie Kreditor und Zertifikatsart ein und wählen Anzeigen, Anlegen oder Ändern. Der Kreditor muss existieren und darf nicht gesperrt oder zum Löschen vorgemerkt sein; die Berechtigung wird je Zertifikatsart mit der zum Modus passenden Aktivität geprüft. Beim Anlegen darf das Zertifikat noch nicht existieren, sonst muss es existieren. In Anlage und Änderung wird es gesperrt, dann erscheint das Detailbild – im Anzeigemodus ohne eingabebereite Felder. Beim Sichern werden der Gültigkeitszeitraum und die Zertifikatsart geprüft, der Status abhängig vom heutigen Datum auf abgelaufen oder gültig gesetzt, das Zertifikat gespeichert, die Änderung mit alten und neuen Werten protokolliert und festgeschrieben. Beim Löschen fragt das Programm nach und löscht nach Bestätigung ohne Protokoll. Nach Sichern, Löschen, Zurück oder Abbrechen wird die Sperre gelöst und das Einstiegsbild erscheint; die Abbruchfunktion verlässt die Transaktion. Löschen ist auch im Anzeigemodus möglich."
+}

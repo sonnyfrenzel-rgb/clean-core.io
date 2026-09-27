@@ -1,0 +1,28 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten g4",
+      "before": "gateway zcl_pp_bom_check.abap:75 „Dispomerkmal ND (keine Disposition)?“ (+3 Kanten)",
+      "after": "entfernt",
+      "why": "ELSEIF ist nach vereinheitlichter Konvention eine Bedingungskante des ursprünglichen Gateways g3, kein eigenes Gateway",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Kante g3→cb",
+      "before": "—",
+      "after": "[ls_marc-dismm = 'ND']",
+      "why": "ELSEIF-Zweig als Bedingungskante von g3",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante g3→cb",
+      "before": "—",
+      "after": "[else]",
+      "why": "Sonst-Zweig (weder Löschvormerkung noch ND) führt ebenfalls zur Sperrprüfung",
+      "category": "Kante"
+    }
+  ],
+  "doubts": []
+}

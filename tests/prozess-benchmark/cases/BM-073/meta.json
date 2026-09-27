@@ -1,0 +1,27 @@
+{
+  "id": "BM-073",
+  "title": "Freigabe von Wartungsplan-Aufträgen im Dialog (SALV) und im Hintergrund",
+  "domain": "PP / PM / QM — Produktion, Instandhaltung, Qualität",
+  "band": "komplex",
+  "loc": 206,
+  "constructs": [
+    "REPORT mit lokaler Klasse im Include",
+    "SELECT INNER JOIN AUFK/AFIH/AFKO",
+    "SELECT SINGLE JEST je Zeile (Systemstatus)",
+    "CHECK in Methode",
+    "sy-batch-Verzweigung",
+    "VALUE #( FOR … )",
+    "BAPI_ALM_ORDER_MAINTAIN (RELEASE/SAVE)",
+    "BAPI_TRANSACTION_COMMIT/ROLLBACK",
+    "CL_SALV_TABLE mit eigenem GUI-Status",
+    "SET HANDLER / Ereignis ADDED_FUNCTION",
+    "CASE"
+  ],
+  "scenario": "Werkzeug der Instandhaltungsplanung, das die vom Wartungsplan-Terminierungsjob erzeugten Aufträge mit nahem Eckstart gesammelt freigibt – im Dialog nach Auswahl, nachts im Job vollständig; ein typischer Kandidat, der in S/4 durch Standard-Massenänderung oder Fiori ersetzt werden soll.",
+  "s4_issues": [
+    "Direktzugriff AUFK/AFIH/AFKO/JEST/EQUI statt CDS (I_MaintenanceOrder, Statusschnittstelle)",
+    "Statusprüfung über JEST-Rohdaten mit Objektnummernaufbau 'OR'+AUFNR",
+    "SELECT in der Schleife",
+    "SALV-Vollbild mit eigenem GUI-Status nicht Fiori-fähig"
+  ]
+}

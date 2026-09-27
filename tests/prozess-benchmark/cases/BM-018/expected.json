@@ -1,0 +1,2377 @@
+{
+  "id": "BM-018",
+  "title": "Kampagnenpreise: Preisfindungs-Exits und Bedingung 905, Neubewertung offener Aufträge per BAPI mit Liefersperre bei großer Abweichung",
+  "classes": [
+    "K16",
+    "K01",
+    "K04",
+    "K03",
+    "K12",
+    "K15"
+  ],
+  "classic_level": "D",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "KNA1",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "mv45afzz_pricing.abap",
+        "line": 18,
+        "token": null,
+        "expressionPath": null,
+        "raw": "mv45afzz_pricing.abap:18"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "MVKE",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "mv45afzz_pricing.abap",
+        "line": 46,
+        "token": null,
+        "expressionPath": null,
+        "raw": "mv45afzz_pricing.abap:46"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZSD_KAMPAGNE",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "mv45afzz_pricing.abap",
+        "line": 54,
+        "token": null,
+        "expressionPath": null,
+        "raw": "mv45afzz_pricing.abap:54"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "VBAK",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zsd_reprice_f01.abap",
+        "line": 11,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_reprice_f01.abap:11"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "VBUK",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zsd_reprice_f01.abap",
+        "line": 11,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_reprice_f01.abap:11"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ENQUEUE_EVVBAKE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zsd_reprice_f01.abap",
+        "line": 52,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_reprice_f01.abap:52"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_SALESORDER_CHANGE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zsd_reprice_f01.abap",
+        "line": 69,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_reprice_f01.abap:69"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_ROLLBACK",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zsd_reprice_f01.abap",
+        "line": 82,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_reprice_f01.abap:82"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "DEQUEUE_EVVBAKE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zsd_reprice_f01.abap",
+        "line": 85,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_reprice_f01.abap:85"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_COMMIT",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zsd_reprice_f01.abap",
+        "line": 104,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_reprice_f01.abap:104"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "KONV",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zsd_reprice_f01.abap",
+        "line": 166,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_reprice_f01.abap:166"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "CL_SALV_TABLE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zsd_reprice_f01.abap",
+        "line": 215,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_reprice_f01.abap:215"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "Z_SD_REPRICE_LOG_UPD",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zsd_reprice.abap",
+        "line": 74,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_reprice.abap:74"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZSD_REPRICE_LOG",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "z_sd_reprice_log_upd.abap",
+        "line": 10,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_sd_reprice_log_upd.abap:10"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-018-B01",
+      "text": "Bei der Preisfindung eines Kundenauftrags wird die Kundenkategorie (Attribut 1 des Auftraggebers) als zusätzliches Kopfmerkmal übergeben.",
+      "anchors": [
+        {
+          "file": "mv45afzz_pricing.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mv45afzz_pricing.abap:18"
+        },
+        {
+          "file": "mv45afzz_pricing.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mv45afzz_pricing.abap:20"
+        },
+        {
+          "file": "mv45afzz_pricing.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mv45afzz_pricing.abap:21"
+        }
+      ]
+    },
+    {
+      "id": "BM-018-B02",
+      "text": "Webshop-Aufträge (Auftragsart ZWEB) erhalten unabhängig vom Kundenstamm die Kategorie W.",
+      "anchors": [
+        {
+          "file": "mv45afzz_pricing.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mv45afzz_pricing.abap:29"
+        },
+        {
+          "file": "mv45afzz_pricing.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mv45afzz_pricing.abap:30"
+        }
+      ]
+    },
+    {
+      "id": "BM-018-B03",
+      "text": "Für jede Position wird die erste Stufe der Produkthierarchie aus den Vertriebsdaten des Materials übergeben.",
+      "anchors": [
+        {
+          "file": "mv45afzz_pricing.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mv45afzz_pricing.abap:46"
+        },
+        {
+          "file": "mv45afzz_pricing.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mv45afzz_pricing.abap:50"
+        }
+      ]
+    },
+    {
+      "id": "BM-018-B04",
+      "text": "Gibt es für Verkaufsorganisation und Produkthierarchie am Preisdatum eine gültige Kampagne, wird die mit der höchsten Priorität als Positionsmerkmal übergeben, sonst bleibt die Kampagne leer.",
+      "anchors": [
+        {
+          "file": "mv45afzz_pricing.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mv45afzz_pricing.abap:54"
+        },
+        {
+          "file": "mv45afzz_pricing.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mv45afzz_pricing.abap:62"
+        },
+        {
+          "file": "mv45afzz_pricing.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mv45afzz_pricing.abap:63"
+        }
+      ]
+    },
+    {
+      "id": "BM-018-B05",
+      "text": "Der Kampagnenrabatt greift nur bei gefundener Kampagne, nicht bei Freilieferungen (ZFD) und nicht bei abgesagten Positionen.",
+      "anchors": [
+        {
+          "file": "rv61a905.abap",
+          "line": 10,
+          "token": null,
+          "expressionPath": null,
+          "raw": "rv61a905.abap:10"
+        },
+        {
+          "file": "rv61a905.abap",
+          "line": 11,
+          "token": null,
+          "expressionPath": null,
+          "raw": "rv61a905.abap:11"
+        },
+        {
+          "file": "rv61a905.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "rv61a905.abap:12"
+        },
+        {
+          "file": "rv61a905.abap",
+          "line": 13,
+          "token": null,
+          "expressionPath": null,
+          "raw": "rv61a905.abap:13"
+        }
+      ]
+    },
+    {
+      "id": "BM-018-B06",
+      "text": "Die Neubewertung ist nur mit der Berechtigung Z_REPRICE (Ändern) möglich.",
+      "anchors": [
+        {
+          "file": "zsd_reprice.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_reprice.abap:57"
+        },
+        {
+          "file": "zsd_reprice.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_reprice.abap:59"
+        },
+        {
+          "file": "zsd_reprice.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_reprice.abap:60"
+        }
+      ]
+    },
+    {
+      "id": "BM-018-B07",
+      "text": "Neu bewertet werden Kundenaufträge der Selektion, die weder vollständig erledigt noch vollständig abgesagt sind; ohne Treffer endet der Report mit einem Hinweis.",
+      "anchors": [
+        {
+          "file": "zsd_reprice_f01.abap",
+          "line": 11,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_reprice_f01.abap:11"
+        },
+        {
+          "file": "zsd_reprice.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_reprice.abap:64"
+        },
+        {
+          "file": "zsd_reprice.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_reprice.abap:65"
+        }
+      ]
+    },
+    {
+      "id": "BM-018-B08",
+      "text": "Aufträge, die bereits die Liefersperre Z7 tragen, werden nicht erneut bewertet.",
+      "anchors": [
+        {
+          "file": "zsd_reprice_f01.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_reprice_f01.abap:42"
+        }
+      ]
+    },
+    {
+      "id": "BM-018-B09",
+      "text": "Vor der Neubewertung wird der bisherige Kampagnenrabatt ZKA1 des Auftrags festgehalten.",
+      "anchors": [
+        {
+          "file": "zsd_reprice_f01.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_reprice_f01.abap:49"
+        },
+        {
+          "file": "zsd_reprice_f01.abap",
+          "line": 166,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_reprice_f01.abap:166"
+        }
+      ]
+    },
+    {
+      "id": "BM-018-B10",
+      "text": "Ein Auftrag in Bearbeitung wird mit Fehler übersprungen.",
+      "anchors": [
+        {
+          "file": "zsd_reprice_f01.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_reprice_f01.abap:52"
+        },
+        {
+          "file": "zsd_reprice_f01.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_reprice_f01.abap:59"
+        }
+      ]
+    },
+    {
+      "id": "BM-018-B11",
+      "text": "Die Preisfindung des Auftrags wird mit der gewählten Preisfindungsart neu ausgeführt, im Testlauf nur simuliert.",
+      "anchors": [
+        {
+          "file": "zsd_reprice_f01.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_reprice_f01.abap:69"
+        }
+      ]
+    },
+    {
+      "id": "BM-018-B12",
+      "text": "Meldet die Neubewertung einen Fehler oder Abbruch, wird verworfen und der Auftrag mit der Meldung als fehlerhaft ausgewiesen.",
+      "anchors": [
+        {
+          "file": "zsd_reprice_f01.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_reprice_f01.abap:78"
+        },
+        {
+          "file": "zsd_reprice_f01.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_reprice_f01.abap:81"
+        },
+        {
+          "file": "zsd_reprice_f01.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_reprice_f01.abap:82"
+        }
+      ]
+    },
+    {
+      "id": "BM-018-B13",
+      "text": "Im Testlauf wird die Simulation verworfen und nur „Simulation ohne Fehler“ ausgewiesen, ohne neue Werte.",
+      "anchors": [
+        {
+          "file": "zsd_reprice_f01.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_reprice_f01.abap:92"
+        },
+        {
+          "file": "zsd_reprice_f01.abap",
+          "line": 94,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_reprice_f01.abap:94"
+        }
+      ]
+    },
+    {
+      "id": "BM-018-B14",
+      "text": "Im Echtlauf werden die neuen Preise festgeschrieben und danach neuer Nettowert und neuer Kampagnenrabatt gelesen.",
+      "anchors": [
+        {
+          "file": "zsd_reprice_f01.abap",
+          "line": 104,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_reprice_f01.abap:104"
+        },
+        {
+          "file": "zsd_reprice_f01.abap",
+          "line": 115,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_reprice_f01.abap:115"
+        },
+        {
+          "file": "zsd_reprice_f01.abap",
+          "line": 117,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_reprice_f01.abap:117"
+        }
+      ]
+    },
+    {
+      "id": "BM-018-B15",
+      "text": "Die Abweichung ist die Änderung des Nettowerts in Prozent des alten Nettowerts; bei altem Nettowert null bleibt sie null.",
+      "anchors": [
+        {
+          "file": "zsd_reprice_f01.abap",
+          "line": 120,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_reprice_f01.abap:120"
+        },
+        {
+          "file": "zsd_reprice_f01.abap",
+          "line": 121,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_reprice_f01.abap:121"
+        }
+      ]
+    },
+    {
+      "id": "BM-018-B16",
+      "text": "Liegt die Abweichung betragsmäßig über dem Grenzwert, erhält der Auftrag die Liefersperre Z7 zur Preisprüfung; der Auftrag gilt dann als Warnung, gelingt die Sperre nicht, als Fehler.",
+      "anchors": [
+        {
+          "file": "zsd_reprice_f01.abap",
+          "line": 125,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_reprice_f01.abap:125"
+        },
+        {
+          "file": "zsd_reprice_f01.abap",
+          "line": 126,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_reprice_f01.abap:126"
+        },
+        {
+          "file": "zsd_reprice_f01.abap",
+          "line": 188,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_reprice_f01.abap:188"
+        },
+        {
+          "file": "zsd_reprice_f01.abap",
+          "line": 128,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_reprice_f01.abap:128"
+        }
+      ]
+    },
+    {
+      "id": "BM-018-B17",
+      "text": "Die Liefersperre wird nur ohne Fehlermeldung festgeschrieben, sonst verworfen.",
+      "anchors": [
+        {
+          "file": "zsd_reprice_f01.abap",
+          "line": 196,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_reprice_f01.abap:196"
+        },
+        {
+          "file": "zsd_reprice_f01.abap",
+          "line": 197,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_reprice_f01.abap:197"
+        },
+        {
+          "file": "zsd_reprice_f01.abap",
+          "line": 198,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_reprice_f01.abap:198"
+        },
+        {
+          "file": "zsd_reprice_f01.abap",
+          "line": 200,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_reprice_f01.abap:200"
+        }
+      ]
+    },
+    {
+      "id": "BM-018-B18",
+      "text": "Aufträge mit geändertem Nettowert werden mit altem und neuem Wert, Preisfindungsart und Benutzer zum Protokoll vorgemerkt.",
+      "anchors": [
+        {
+          "file": "zsd_reprice_f01.abap",
+          "line": 140,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_reprice_f01.abap:140"
+        }
+      ]
+    },
+    {
+      "id": "BM-018-B19",
+      "text": "Nach allen Aufträgen werden im Echtlauf die vorgemerkten Protokollsätze gemeinsam über die Verbuchung geschrieben; scheitert das Schreiben, bricht die Verbuchung ab.",
+      "anchors": [
+        {
+          "file": "zsd_reprice.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_reprice.abap:73"
+        },
+        {
+          "file": "zsd_reprice.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_reprice.abap:74"
+        },
+        {
+          "file": "zsd_reprice.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_reprice.abap:77"
+        },
+        {
+          "file": "z_sd_reprice_log_upd.abap",
+          "line": 10,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_reprice_log_upd.abap:10"
+        },
+        {
+          "file": "z_sd_reprice_log_upd.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_reprice_log_upd.abap:12"
+        }
+      ]
+    },
+    {
+      "id": "BM-018-B20",
+      "text": "Zum Schluss wird je Auftrag eine Liste mit altem und neuem Nettowert, Abweichung, Kampagnenrabatt vorher/nachher, Status und Text angezeigt.",
+      "anchors": [
+        {
+          "file": "zsd_reprice_f01.abap",
+          "line": 215,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_reprice_f01.abap:215"
+        },
+        {
+          "file": "zsd_reprice_f01.abap",
+          "line": 225,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_reprice_f01.abap:225"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "tk",
+        "type": "start",
+        "anchor": {
+          "file": "mv45afzz_pricing.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mv45afzz_pricing.abap:14"
+        },
+        "meaning": "Kopfdaten der Preisfindung ergänzen"
+      },
+      {
+        "id": "q_kna1",
+        "type": "read",
+        "anchor": {
+          "file": "mv45afzz_pricing.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mv45afzz_pricing.abap:18"
+        },
+        "meaning": "Kundenkategorie (Attribut 1) des Auftraggebers lesen"
+      },
+      {
+        "id": "g_k",
+        "type": "gateway",
+        "anchor": {
+          "file": "mv45afzz_pricing.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mv45afzz_pricing.abap:20"
+        },
+        "meaning": "Kunde gefunden?"
+      },
+      {
+        "id": "a_k",
+        "type": "action",
+        "anchor": {
+          "file": "mv45afzz_pricing.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mv45afzz_pricing.abap:21"
+        },
+        "meaning": "Kundenkategorie für die Preisfindung setzen"
+      },
+      {
+        "id": "g_web",
+        "type": "gateway",
+        "anchor": {
+          "file": "mv45afzz_pricing.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mv45afzz_pricing.abap:29"
+        },
+        "meaning": "Webshop-Auftrag?"
+      },
+      {
+        "id": "a_web",
+        "type": "action",
+        "anchor": {
+          "file": "mv45afzz_pricing.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mv45afzz_pricing.abap:30"
+        },
+        "meaning": "Kategorie W setzen"
+      },
+      {
+        "id": "tke",
+        "type": "end",
+        "anchor": {
+          "file": "mv45afzz_pricing.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mv45afzz_pricing.abap:32"
+        },
+        "meaning": "Kopfdaten ergänzt"
+      },
+      {
+        "id": "tp",
+        "type": "start",
+        "anchor": {
+          "file": "mv45afzz_pricing.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mv45afzz_pricing.abap:40"
+        },
+        "meaning": "Positionsdaten der Preisfindung ergänzen"
+      },
+      {
+        "id": "q_mvke",
+        "type": "read",
+        "anchor": {
+          "file": "mv45afzz_pricing.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mv45afzz_pricing.abap:46"
+        },
+        "meaning": "Produkthierarchie aus den Vertriebsdaten des Materials lesen"
+      },
+      {
+        "id": "a_ph",
+        "type": "action",
+        "anchor": {
+          "file": "mv45afzz_pricing.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mv45afzz_pricing.abap:50"
+        },
+        "meaning": "Produkthierarchie-Stufe 1 setzen"
+      },
+      {
+        "id": "l_kamp",
+        "type": "loop",
+        "anchor": {
+          "file": "mv45afzz_pricing.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mv45afzz_pricing.abap:54"
+        },
+        "meaning": "Am Preisdatum gültige Kampagne mit höchster Priorität suchen"
+      },
+      {
+        "id": "g_kamp",
+        "type": "gateway",
+        "anchor": {
+          "file": "mv45afzz_pricing.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mv45afzz_pricing.abap:62"
+        },
+        "meaning": "Kampagne gefunden?"
+      },
+      {
+        "id": "a_kamp",
+        "type": "action",
+        "anchor": {
+          "file": "mv45afzz_pricing.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mv45afzz_pricing.abap:63"
+        },
+        "meaning": "Kampagne für die Preisfindung setzen"
+      },
+      {
+        "id": "tpe",
+        "type": "end",
+        "anchor": {
+          "file": "mv45afzz_pricing.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mv45afzz_pricing.abap:65"
+        },
+        "meaning": "Positionsdaten ergänzt"
+      },
+      {
+        "id": "kb",
+        "type": "start",
+        "anchor": {
+          "file": "rv61a905.abap",
+          "line": 8,
+          "token": null,
+          "expressionPath": null,
+          "raw": "rv61a905.abap:8"
+        },
+        "meaning": "Bedingung für Kampagnenrabatt ZKA1"
+      },
+      {
+        "id": "init",
+        "type": "action",
+        "anchor": {
+          "file": "rv61a905.abap",
+          "line": 9,
+          "token": null,
+          "expressionPath": null,
+          "raw": "rv61a905.abap:9"
+        },
+        "meaning": "Bedingung zunächst nicht erfüllt"
+      },
+      {
+        "id": "c1",
+        "type": "gateway",
+        "anchor": {
+          "file": "rv61a905.abap",
+          "line": 10,
+          "token": null,
+          "expressionPath": null,
+          "raw": "rv61a905.abap:10"
+        },
+        "meaning": "Kampagne vorhanden?"
+      },
+      {
+        "id": "c2",
+        "type": "gateway",
+        "anchor": {
+          "file": "rv61a905.abap",
+          "line": 11,
+          "token": null,
+          "expressionPath": null,
+          "raw": "rv61a905.abap:11"
+        },
+        "meaning": "Keine Freilieferung?"
+      },
+      {
+        "id": "c3",
+        "type": "gateway",
+        "anchor": {
+          "file": "rv61a905.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "rv61a905.abap:12"
+        },
+        "meaning": "Position nicht abgesagt?"
+      },
+      {
+        "id": "ok",
+        "type": "action",
+        "anchor": {
+          "file": "rv61a905.abap",
+          "line": 13,
+          "token": null,
+          "expressionPath": null,
+          "raw": "rv61a905.abap:13"
+        },
+        "meaning": "Bedingung erfüllt"
+      },
+      {
+        "id": "kbe",
+        "type": "end",
+        "anchor": {
+          "file": "rv61a905.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "rv61a905.abap:14"
+        },
+        "meaning": "Ergebnis an die Preisfindung"
+      },
+      {
+        "id": "sos",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_reprice.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_reprice.abap:56"
+        },
+        "meaning": "Neubewertung starten"
+      },
+      {
+        "id": "auth",
+        "type": "action",
+        "anchor": {
+          "file": "zsd_reprice.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_reprice.abap:57"
+        },
+        "meaning": "Berechtigung zur Neubewertung prüfen"
+      },
+      {
+        "id": "g_auth",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_reprice.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_reprice.abap:59"
+        },
+        "meaning": "Berechtigung fehlt?"
+      },
+      {
+        "id": "m801",
+        "type": "output",
+        "anchor": {
+          "file": "zsd_reprice.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_reprice.abap:60"
+        },
+        "meaning": "Fehler: keine Berechtigung"
+      },
+      {
+        "id": "x801",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_reprice.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_reprice.abap:60"
+        },
+        "meaning": "Abbruch"
+      },
+      {
+        "id": "c_read",
+        "type": "call",
+        "anchor": {
+          "file": "zsd_reprice.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_reprice.abap:63"
+        },
+        "meaning": "Offene Aufträge ermitteln"
+      },
+      {
+        "id": "g_empty",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_reprice.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_reprice.abap:64"
+        },
+        "meaning": "Aufträge gefunden?"
+      },
+      {
+        "id": "m802",
+        "type": "output",
+        "anchor": {
+          "file": "zsd_reprice.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_reprice.abap:65"
+        },
+        "meaning": "Hinweis: keine offenen Aufträge"
+      },
+      {
+        "id": "e_ret",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_reprice.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_reprice.abap:66"
+        },
+        "meaning": "Ende ohne Neubewertung"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "zsd_reprice.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_reprice.abap:69"
+        },
+        "meaning": "Je offenem Auftrag"
+      },
+      {
+        "id": "c_nb",
+        "type": "call",
+        "anchor": {
+          "file": "zsd_reprice.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_reprice.abap:70"
+        },
+        "meaning": "Auftrag neu bewerten"
+      },
+      {
+        "id": "g_log",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_reprice.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_reprice.abap:73"
+        },
+        "meaning": "Echtlauf mit Wertänderungen?"
+      },
+      {
+        "id": "upd",
+        "type": "update_task",
+        "anchor": {
+          "file": "zsd_reprice.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_reprice.abap:74"
+        },
+        "meaning": "Protokollsätze zur Verbuchung anmelden"
+      },
+      {
+        "id": "cm",
+        "type": "transaction",
+        "anchor": {
+          "file": "zsd_reprice.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_reprice.abap:77"
+        },
+        "meaning": "Verbuchung des Protokolls auslösen"
+      },
+      {
+        "id": "c_aus",
+        "type": "call",
+        "anchor": {
+          "file": "zsd_reprice.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_reprice.abap:80"
+        },
+        "meaning": "Ergebnis anzeigen"
+      },
+      {
+        "id": "e_end",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_reprice.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_reprice.abap:80"
+        },
+        "meaning": "Report beendet"
+      },
+      {
+        "id": "rs",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_reprice_f01.abap",
+          "line": 10,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_reprice_f01.abap:10"
+        },
+        "meaning": "Auftragsauswahl"
+      },
+      {
+        "id": "q",
+        "type": "read",
+        "anchor": {
+          "file": "zsd_reprice_f01.abap",
+          "line": 11,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_reprice_f01.abap:11"
+        },
+        "meaning": "Offene, nicht vollständig abgesagte Kundenaufträge der Selektion lesen"
+      },
+      {
+        "id": "re",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_reprice_f01.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_reprice_f01.abap:22"
+        },
+        "meaning": "Aufträge ermittelt"
+      },
+      {
+        "id": "ns",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_reprice_f01.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_reprice_f01.abap:27"
+        },
+        "meaning": "Neubewertung eines Auftrags"
+      },
+      {
+        "id": "g_z7",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_reprice_f01.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_reprice_f01.abap:42"
+        },
+        "meaning": "Auftrag schon in Preisprüfung?"
+      },
+      {
+        "id": "e_z7",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_reprice_f01.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_reprice_f01.abap:46"
+        },
+        "meaning": "Übersprungen: bereits Z7"
+      },
+      {
+        "id": "c_ks1",
+        "type": "call",
+        "anchor": {
+          "file": "zsd_reprice_f01.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_reprice_f01.abap:49"
+        },
+        "meaning": "Bisherigen Kampagnenrabatt ZKA1 summieren"
+      },
+      {
+        "id": "enq",
+        "type": "lock",
+        "anchor": {
+          "file": "zsd_reprice_f01.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_reprice_f01.abap:52"
+        },
+        "meaning": "Auftrag sperren"
+      },
+      {
+        "id": "g_enq",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_reprice_f01.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_reprice_f01.abap:59"
+        },
+        "meaning": "Auftrag in Bearbeitung?"
+      },
+      {
+        "id": "e_enq",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_reprice_f01.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_reprice_f01.abap:63"
+        },
+        "meaning": "Übersprungen: in Bearbeitung"
+      },
+      {
+        "id": "bapi",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zsd_reprice_f01.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_reprice_f01.abap:69"
+        },
+        "meaning": "Preisfindung mit gewählter Preisfindungsart neu ausführen (im Testlauf simuliert)"
+      },
+      {
+        "id": "l_ret",
+        "type": "loop",
+        "anchor": {
+          "file": "zsd_reprice_f01.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_reprice_f01.abap:78"
+        },
+        "meaning": "Erste Fehler- oder Abbruchmeldung suchen"
+      },
+      {
+        "id": "g_ret",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_reprice_f01.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_reprice_f01.abap:81"
+        },
+        "meaning": "Fehler gemeldet?"
+      },
+      {
+        "id": "rb1",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zsd_reprice_f01.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_reprice_f01.abap:82"
+        },
+        "meaning": "Änderung verwerfen"
+      },
+      {
+        "id": "deq1",
+        "type": "lock",
+        "anchor": {
+          "file": "zsd_reprice_f01.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_reprice_f01.abap:85"
+        },
+        "meaning": "Auftrag entsperren"
+      },
+      {
+        "id": "e_err",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_reprice_f01.abap",
+          "line": 89,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_reprice_f01.abap:89"
+        },
+        "meaning": "Fehler mit BAPI-Meldung vermerkt"
+      },
+      {
+        "id": "g_test",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_reprice_f01.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_reprice_f01.abap:92"
+        },
+        "meaning": "Testlauf?"
+      },
+      {
+        "id": "rb2",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zsd_reprice_f01.abap",
+          "line": 94,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_reprice_f01.abap:94"
+        },
+        "meaning": "Simulation verwerfen"
+      },
+      {
+        "id": "deq2",
+        "type": "lock",
+        "anchor": {
+          "file": "zsd_reprice_f01.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_reprice_f01.abap:97"
+        },
+        "meaning": "Auftrag entsperren"
+      },
+      {
+        "id": "e_test",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_reprice_f01.abap",
+          "line": 101,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_reprice_f01.abap:101"
+        },
+        "meaning": "„Simulation ohne Fehler“ vermerkt"
+      },
+      {
+        "id": "cm1",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zsd_reprice_f01.abap",
+          "line": 104,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_reprice_f01.abap:104"
+        },
+        "meaning": "Neue Preise festschreiben"
+      },
+      {
+        "id": "q_vbak",
+        "type": "read",
+        "anchor": {
+          "file": "zsd_reprice_f01.abap",
+          "line": 115,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_reprice_f01.abap:115"
+        },
+        "meaning": "Neuen Nettowert lesen"
+      },
+      {
+        "id": "c_ks2",
+        "type": "call",
+        "anchor": {
+          "file": "zsd_reprice_f01.abap",
+          "line": 117,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_reprice_f01.abap:117"
+        },
+        "meaning": "Neuen Kampagnenrabatt ZKA1 summieren"
+      },
+      {
+        "id": "g_nw",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_reprice_f01.abap",
+          "line": 120,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_reprice_f01.abap:120"
+        },
+        "meaning": "Alter Nettowert ungleich null?"
+      },
+      {
+        "id": "a_abw",
+        "type": "action",
+        "anchor": {
+          "file": "zsd_reprice_f01.abap",
+          "line": 121,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_reprice_f01.abap:121"
+        },
+        "meaning": "Abweichung in Prozent des alten Nettowerts"
+      },
+      {
+        "id": "g_abw",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_reprice_f01.abap",
+          "line": 125,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_reprice_f01.abap:125"
+        },
+        "meaning": "Abweichung über Grenzwert?"
+      },
+      {
+        "id": "c_sp",
+        "type": "call",
+        "anchor": {
+          "file": "zsd_reprice_f01.abap",
+          "line": 126,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_reprice_f01.abap:126"
+        },
+        "meaning": "Liefersperre Z7 setzen"
+      },
+      {
+        "id": "g_gesp",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_reprice_f01.abap",
+          "line": 128,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_reprice_f01.abap:128"
+        },
+        "meaning": "Sperre gesetzt?"
+      },
+      {
+        "id": "g_diff",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_reprice_f01.abap",
+          "line": 140,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_reprice_f01.abap:140"
+        },
+        "meaning": "Nettowert geändert?"
+      },
+      {
+        "id": "deq3",
+        "type": "lock",
+        "anchor": {
+          "file": "zsd_reprice_f01.abap",
+          "line": 151,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_reprice_f01.abap:151"
+        },
+        "meaning": "Auftrag entsperren"
+      },
+      {
+        "id": "ne",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_reprice_f01.abap",
+          "line": 155,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_reprice_f01.abap:155"
+        },
+        "meaning": "Ergebniszeile angehängt"
+      },
+      {
+        "id": "ks",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_reprice_f01.abap",
+          "line": 162,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_reprice_f01.abap:162"
+        },
+        "meaning": "Konditionssumme"
+      },
+      {
+        "id": "q_konv",
+        "type": "read",
+        "anchor": {
+          "file": "zsd_reprice_f01.abap",
+          "line": 166,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_reprice_f01.abap:166"
+        },
+        "meaning": "Wert der aktiven Konditionen der Konditionsart summieren"
+      },
+      {
+        "id": "kse",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_reprice_f01.abap",
+          "line": 170,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_reprice_f01.abap:170"
+        },
+        "meaning": "Summe zurück"
+      },
+      {
+        "id": "ps",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_reprice_f01.abap",
+          "line": 175,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_reprice_f01.abap:175"
+        },
+        "meaning": "Preissperre"
+      },
+      {
+        "id": "bapi2",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zsd_reprice_f01.abap",
+          "line": 188,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_reprice_f01.abap:188"
+        },
+        "meaning": "Liefersperre Z7 im Auftragskopf setzen"
+      },
+      {
+        "id": "rd",
+        "type": "read",
+        "anchor": {
+          "file": "zsd_reprice_f01.abap",
+          "line": 196,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_reprice_f01.abap:196"
+        },
+        "meaning": "Fehlermeldung suchen"
+      },
+      {
+        "id": "g_rd",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_reprice_f01.abap",
+          "line": 197,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_reprice_f01.abap:197"
+        },
+        "meaning": "Fehler?"
+      },
+      {
+        "id": "rb3",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zsd_reprice_f01.abap",
+          "line": 198,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_reprice_f01.abap:198"
+        },
+        "meaning": "Sperre verwerfen"
+      },
+      {
+        "id": "cm2",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zsd_reprice_f01.abap",
+          "line": 200,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_reprice_f01.abap:200"
+        },
+        "meaning": "Sperre festschreiben"
+      },
+      {
+        "id": "pe",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_reprice_f01.abap",
+          "line": 205,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_reprice_f01.abap:205"
+        },
+        "meaning": "Sperrergebnis zurück"
+      },
+      {
+        "id": "as",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_reprice_f01.abap",
+          "line": 210,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_reprice_f01.abap:210"
+        },
+        "meaning": "Ausgabe"
+      },
+      {
+        "id": "salv",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zsd_reprice_f01.abap",
+          "line": 215,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_reprice_f01.abap:215"
+        },
+        "meaning": "Ergebnisliste erzeugen"
+      },
+      {
+        "id": "merr",
+        "type": "output",
+        "anchor": {
+          "file": "zsd_reprice_f01.abap",
+          "line": 218,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_reprice_f01.abap:218"
+        },
+        "meaning": "ALV-Fehler melden"
+      },
+      {
+        "id": "xerr",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_reprice_f01.abap",
+          "line": 218,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_reprice_f01.abap:218"
+        },
+        "meaning": "Abbruch"
+      },
+      {
+        "id": "disp",
+        "type": "output",
+        "anchor": {
+          "file": "zsd_reprice_f01.abap",
+          "line": 225,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_reprice_f01.abap:225"
+        },
+        "meaning": "Alte und neue Werte, Abweichung, ZKA1, Status und Text je Auftrag anzeigen"
+      },
+      {
+        "id": "ae",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_reprice_f01.abap",
+          "line": 226,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_reprice_f01.abap:226"
+        },
+        "meaning": "Anzeige beendet"
+      },
+      {
+        "id": "us",
+        "type": "start",
+        "anchor": {
+          "file": "z_sd_reprice_log_upd.abap",
+          "line": 1,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_reprice_log_upd.abap:1"
+        },
+        "meaning": "Verbuchung Neubewertungsprotokoll"
+      },
+      {
+        "id": "mod",
+        "type": "write",
+        "anchor": {
+          "file": "z_sd_reprice_log_upd.abap",
+          "line": 10,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_reprice_log_upd.abap:10"
+        },
+        "meaning": "Protokollsätze schreiben oder überschreiben"
+      },
+      {
+        "id": "g_u",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_sd_reprice_log_upd.abap",
+          "line": 11,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_reprice_log_upd.abap:11"
+        },
+        "meaning": "Schreiben fehlgeschlagen?"
+      },
+      {
+        "id": "m_a",
+        "type": "output",
+        "anchor": {
+          "file": "z_sd_reprice_log_upd.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_reprice_log_upd.abap:12"
+        },
+        "meaning": "Abbruchmeldung im Verbucher"
+      },
+      {
+        "id": "x_a",
+        "type": "end",
+        "anchor": {
+          "file": "z_sd_reprice_log_upd.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_reprice_log_upd.abap:12"
+        },
+        "meaning": "Verbuchung abgebrochen"
+      },
+      {
+        "id": "ue",
+        "type": "end",
+        "anchor": {
+          "file": "z_sd_reprice_log_upd.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_reprice_log_upd.abap:14"
+        },
+        "meaning": "Protokoll verbucht"
+      }
+    ],
+    "edges": [
+      {
+        "from": "tk",
+        "to": "q_kna1",
+        "condition": "always"
+      },
+      {
+        "from": "q_kna1",
+        "to": "g_k",
+        "condition": "always"
+      },
+      {
+        "from": "g_k",
+        "to": "a_k",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "g_k",
+        "to": "g_web",
+        "condition": "else"
+      },
+      {
+        "from": "a_k",
+        "to": "g_web",
+        "condition": "always"
+      },
+      {
+        "from": "g_web",
+        "to": "a_web",
+        "condition": "vbak-auart = 'ZWEB'"
+      },
+      {
+        "from": "g_web",
+        "to": "tke",
+        "condition": "else"
+      },
+      {
+        "from": "a_web",
+        "to": "tke",
+        "condition": "always"
+      },
+      {
+        "from": "tp",
+        "to": "q_mvke",
+        "condition": "always"
+      },
+      {
+        "from": "q_mvke",
+        "to": "a_ph",
+        "condition": "always"
+      },
+      {
+        "from": "a_ph",
+        "to": "l_kamp",
+        "condition": "always"
+      },
+      {
+        "from": "l_kamp",
+        "to": "g_kamp",
+        "condition": "no more rows"
+      },
+      {
+        "from": "g_kamp",
+        "to": "a_kamp",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "g_kamp",
+        "to": "tpe",
+        "condition": "else"
+      },
+      {
+        "from": "a_kamp",
+        "to": "tpe",
+        "condition": "always"
+      },
+      {
+        "from": "kb",
+        "to": "init",
+        "condition": "always"
+      },
+      {
+        "from": "init",
+        "to": "c1",
+        "condition": "always"
+      },
+      {
+        "from": "c1",
+        "to": "c2",
+        "condition": "komp-zzkampagne IS NOT INITIAL"
+      },
+      {
+        "from": "c1",
+        "to": "kbe",
+        "condition": "else"
+      },
+      {
+        "from": "c2",
+        "to": "c3",
+        "condition": "komk-auart <> 'ZFD'"
+      },
+      {
+        "from": "c2",
+        "to": "kbe",
+        "condition": "else"
+      },
+      {
+        "from": "c3",
+        "to": "ok",
+        "condition": "komp-abgru IS INITIAL"
+      },
+      {
+        "from": "c3",
+        "to": "kbe",
+        "condition": "else"
+      },
+      {
+        "from": "ok",
+        "to": "kbe",
+        "condition": "always"
+      },
+      {
+        "from": "sos",
+        "to": "auth",
+        "condition": "always"
+      },
+      {
+        "from": "auth",
+        "to": "g_auth",
+        "condition": "always"
+      },
+      {
+        "from": "g_auth",
+        "to": "m801",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "m801",
+        "to": "x801",
+        "condition": "always"
+      },
+      {
+        "from": "g_auth",
+        "to": "c_read",
+        "condition": "else"
+      },
+      {
+        "from": "c_read",
+        "to": "rs",
+        "condition": "always"
+      },
+      {
+        "from": "g_empty",
+        "to": "m802",
+        "condition": "gt_auftrag IS INITIAL"
+      },
+      {
+        "from": "m802",
+        "to": "e_ret",
+        "condition": "always"
+      },
+      {
+        "from": "g_empty",
+        "to": "l",
+        "condition": "else"
+      },
+      {
+        "from": "l",
+        "to": "c_nb",
+        "condition": "next row"
+      },
+      {
+        "from": "c_nb",
+        "to": "ns",
+        "condition": "always"
+      },
+      {
+        "from": "l",
+        "to": "g_log",
+        "condition": "no more rows"
+      },
+      {
+        "from": "g_log",
+        "to": "upd",
+        "condition": "p_test = abap_false AND gt_log IS NOT INITIAL"
+      },
+      {
+        "from": "g_log",
+        "to": "c_aus",
+        "condition": "else"
+      },
+      {
+        "from": "upd",
+        "to": "cm",
+        "condition": "always"
+      },
+      {
+        "from": "cm",
+        "to": "us",
+        "condition": "always"
+      },
+      {
+        "from": "cm",
+        "to": "c_aus",
+        "condition": "always"
+      },
+      {
+        "from": "c_aus",
+        "to": "as",
+        "condition": "always"
+      },
+      {
+        "from": "rs",
+        "to": "q",
+        "condition": "always"
+      },
+      {
+        "from": "q",
+        "to": "re",
+        "condition": "always"
+      },
+      {
+        "from": "ns",
+        "to": "g_z7",
+        "condition": "always"
+      },
+      {
+        "from": "g_z7",
+        "to": "e_z7",
+        "condition": "is_auftrag-lifsk = 'Z7'"
+      },
+      {
+        "from": "g_z7",
+        "to": "c_ks1",
+        "condition": "else"
+      },
+      {
+        "from": "c_ks1",
+        "to": "ks",
+        "condition": "always"
+      },
+      {
+        "from": "enq",
+        "to": "g_enq",
+        "condition": "always"
+      },
+      {
+        "from": "g_enq",
+        "to": "e_enq",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g_enq",
+        "to": "bapi",
+        "condition": "else"
+      },
+      {
+        "from": "bapi",
+        "to": "l_ret",
+        "condition": "always"
+      },
+      {
+        "from": "l_ret",
+        "to": "g_ret",
+        "condition": "next row"
+      },
+      {
+        "from": "l_ret",
+        "to": "g_ret",
+        "condition": "no more rows"
+      },
+      {
+        "from": "g_ret",
+        "to": "rb1",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "rb1",
+        "to": "deq1",
+        "condition": "always"
+      },
+      {
+        "from": "deq1",
+        "to": "e_err",
+        "condition": "always"
+      },
+      {
+        "from": "g_ret",
+        "to": "g_test",
+        "condition": "else"
+      },
+      {
+        "from": "g_test",
+        "to": "rb2",
+        "condition": "p_test = abap_true"
+      },
+      {
+        "from": "rb2",
+        "to": "deq2",
+        "condition": "always"
+      },
+      {
+        "from": "deq2",
+        "to": "e_test",
+        "condition": "always"
+      },
+      {
+        "from": "g_test",
+        "to": "cm1",
+        "condition": "else"
+      },
+      {
+        "from": "cm1",
+        "to": "q_vbak",
+        "condition": "always"
+      },
+      {
+        "from": "q_vbak",
+        "to": "c_ks2",
+        "condition": "always"
+      },
+      {
+        "from": "c_ks2",
+        "to": "ks",
+        "condition": "always"
+      },
+      {
+        "from": "g_nw",
+        "to": "a_abw",
+        "condition": "ls_out-netwr_alt <> 0"
+      },
+      {
+        "from": "g_nw",
+        "to": "g_abw",
+        "condition": "else"
+      },
+      {
+        "from": "a_abw",
+        "to": "g_abw",
+        "condition": "always"
+      },
+      {
+        "from": "g_abw",
+        "to": "c_sp",
+        "condition": "abs( ls_out-abw_proz ) > p_maxd"
+      },
+      {
+        "from": "g_abw",
+        "to": "g_diff",
+        "condition": "else"
+      },
+      {
+        "from": "c_sp",
+        "to": "ps",
+        "condition": "always"
+      },
+      {
+        "from": "g_gesp",
+        "to": "g_diff",
+        "condition": "lv_gesperrt = abap_true"
+      },
+      {
+        "from": "g_gesp",
+        "to": "g_diff",
+        "condition": "else"
+      },
+      {
+        "from": "g_diff",
+        "to": "deq3",
+        "condition": "ls_out-netwr_neu <> ls_out-netwr_alt"
+      },
+      {
+        "from": "g_diff",
+        "to": "deq3",
+        "condition": "else"
+      },
+      {
+        "from": "deq3",
+        "to": "ne",
+        "condition": "always"
+      },
+      {
+        "from": "ks",
+        "to": "q_konv",
+        "condition": "always"
+      },
+      {
+        "from": "q_konv",
+        "to": "kse",
+        "condition": "always"
+      },
+      {
+        "from": "ps",
+        "to": "bapi2",
+        "condition": "always"
+      },
+      {
+        "from": "bapi2",
+        "to": "rd",
+        "condition": "always"
+      },
+      {
+        "from": "rd",
+        "to": "g_rd",
+        "condition": "always"
+      },
+      {
+        "from": "g_rd",
+        "to": "rb3",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "g_rd",
+        "to": "cm2",
+        "condition": "else"
+      },
+      {
+        "from": "rb3",
+        "to": "pe",
+        "condition": "always"
+      },
+      {
+        "from": "cm2",
+        "to": "pe",
+        "condition": "always"
+      },
+      {
+        "from": "as",
+        "to": "salv",
+        "condition": "always"
+      },
+      {
+        "from": "salv",
+        "to": "merr",
+        "condition": "CATCH cx_salv_msg INTO lx_alv"
+      },
+      {
+        "from": "merr",
+        "to": "xerr",
+        "condition": "always"
+      },
+      {
+        "from": "salv",
+        "to": "disp",
+        "condition": "always"
+      },
+      {
+        "from": "disp",
+        "to": "ae",
+        "condition": "always"
+      },
+      {
+        "from": "us",
+        "to": "mod",
+        "condition": "always"
+      },
+      {
+        "from": "mod",
+        "to": "g_u",
+        "condition": "always"
+      },
+      {
+        "from": "g_u",
+        "to": "m_a",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "m_a",
+        "to": "x_a",
+        "condition": "always"
+      },
+      {
+        "from": "g_u",
+        "to": "ue",
+        "condition": "else"
+      },
+      {
+        "from": "re",
+        "to": "g_empty",
+        "condition": "always"
+      },
+      {
+        "from": "e_z7",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "e_enq",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "e_err",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "e_test",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "ne",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "ae",
+        "to": "e_end",
+        "condition": "always"
+      },
+      {
+        "from": "kse",
+        "to": "enq",
+        "condition": "always"
+      },
+      {
+        "from": "kse",
+        "to": "g_nw",
+        "condition": "always"
+      },
+      {
+        "from": "pe",
+        "to": "g_gesp",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zsd_reprice_f01.abap:126 — kein Fachsatz „Aufträge mit zu großer Abweichung behalten ihre alten Preise“: die neuen Preise sind zu diesem Zeitpunkt bereits festgeschrieben, Z7 sperrt nur die Lieferung",
+    "rv61a905.abap:13 — kein Fachsatz „die Bedingung berechnet den Kampagnenrabatt“: sie entscheidet nur, ob die Kondition ZKA1 gilt; der Wert kommt aus den Konditionssätzen",
+    "zsd_reprice.abap:77 — kein Fachsatz „jede Neubewertung wird sofort protokolliert“: das Protokoll wird erst nach allen Aufträgen gesammelt verbucht; die Auftragsänderungen sind dann schon einzeln festgeschrieben",
+    "zsd_reprice_f01.abap:92 — kein Fachsatz „der Testlauf zeigt die neuen Preise“: die Simulation liefert keine Werte, neuer Nettowert und ZKA1 bleiben leer"
+  ],
+  "processDescription": "Bei jeder Preisfindung eines Kundenauftrags ergänzen zwei Exits die Kommunikationsstrukturen: im Kopf die Kundenkategorie des Auftraggebers (bei Webshop-Aufträgen fest W), je Position die erste Produkthierarchiestufe und die am Preisdatum gültige Kampagne mit höchster Priorität. Die Bedingung 905 lässt den Kampagnenrabatt ZKA1 nur zu, wenn eine Kampagne gefunden wurde, der Auftrag keine Freilieferung ist und die Position nicht abgesagt ist. Nach einem Kampagnenstart bewertet der Report mit Berechtigung Z_REPRICE alle offenen Aufträge der Selektion neu; ohne Aufträge endet er mit Hinweis. Aufträge mit Liefersperre Z7 überspringt er, gesperrte Aufträge meldet er als Fehler. Für jeden anderen hält er den bisherigen ZKA1-Wert fest und führt die Preisfindung per BAPI mit der gewählten Preisfindungsart aus; im Testlauf nur simuliert und ohne neue Werte. Fehler führen zum Verwerfen. Im Echtlauf schreibt er die neuen Preise fest, liest Nettowert und ZKA1 neu und berechnet die prozentuale Abweichung. Überschreitet sie den Grenzwert, setzt er die Liefersperre Z7 zur Preisprüfung. Aufträge mit geändertem Nettowert werden gesammelt und am Ende über die Verbuchung protokolliert. Zum Schluss zeigt er die Ergebnisliste."
+}

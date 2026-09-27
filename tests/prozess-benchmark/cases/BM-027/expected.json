@@ -1,0 +1,599 @@
+{
+  "id": "BM-027",
+  "title": "Sammelfreigabe von Bestellungen für den nächsten Freigabecode (BAPI_PO_RELEASE)",
+  "classes": [
+    "K01",
+    "K03",
+    "K15"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "EKKO",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 32,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:32"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "T16FS",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 41,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:41"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_PO_RELEASE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 59,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:59"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-027-B01",
+      "text": "Zu Beginn wird geprüft, ob der Anwender für die angegebene Freigabegruppe mit dem angegebenen Freigabecode freigeben darf; sonst bricht der Report mit Fehlermeldung ab.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:25"
+        },
+        {
+          "file": "source.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:28"
+        },
+        {
+          "file": "source.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:29"
+        }
+      ]
+    },
+    {
+      "id": "BM-027-B02",
+      "text": "Es werden die nicht gelöschten, zur Freigabe gesperrten Bestellungen der Freigabegruppe in der Bestell- und Einkaufsorganisationsauswahl gelesen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:32"
+        }
+      ]
+    },
+    {
+      "id": "BM-027-B03",
+      "text": "Für jede Bestellung wird ihre Freigabestrategie gelesen; Bestellungen ohne gepflegte Strategie werden übersprungen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:41"
+        },
+        {
+          "file": "source.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:44"
+        }
+      ]
+    },
+    {
+      "id": "BM-027-B04",
+      "text": "Es wird bestimmt, an welcher Stelle der Strategie der eigene Freigabecode steht.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:46"
+        },
+        {
+          "file": "source.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:48"
+        },
+        {
+          "file": "source.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:49"
+        }
+      ]
+    },
+    {
+      "id": "BM-027-B05",
+      "text": "Kommt der eigene Code in der Strategie nicht vor oder ist er nach dem bisherigen Freigabestand nicht als nächster an der Reihe, wird die Bestellung übersprungen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:54"
+        }
+      ]
+    },
+    {
+      "id": "BM-027-B06",
+      "text": "Sonst wird die Bestellung mit dem eigenen Code über das Standard-BAPI freigegeben.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:59"
+        }
+      ]
+    },
+    {
+      "id": "BM-027-B07",
+      "text": "Eine erfolgreiche Freigabe wird mit dem neuen Freigabestatus protokolliert, eine gescheiterte mit ihrem Grund.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:75"
+        },
+        {
+          "file": "source.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:77"
+        },
+        {
+          "file": "source.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:80"
+        }
+      ]
+    },
+    {
+      "id": "BM-027-B08",
+      "text": "Am Ende werden die Anzahl der freigegebenen und der gescheiterten Bestellungen ausgegeben.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:85"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:24"
+        },
+        "meaning": "Reportstart"
+      },
+      {
+        "id": "au",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:25"
+        },
+        "meaning": "Freigabeberechtigung für Gruppe und Code prüfen"
+      },
+      {
+        "id": "ga",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:28"
+        },
+        "meaning": "Berechtigung fehlt?"
+      },
+      {
+        "id": "ma",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:29"
+        },
+        "meaning": "Abbruch: keine Freigabeberechtigung"
+      },
+      {
+        "id": "xa",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:29"
+        },
+        "meaning": "Report ohne Berechtigung abgebrochen"
+      },
+      {
+        "id": "q",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:32"
+        },
+        "meaning": "Gesperrte Bestellungen der Freigabegruppe lesen"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "source.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:39"
+        },
+        "meaning": "Bestellungen durchlaufen"
+      },
+      {
+        "id": "qt",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:41"
+        },
+        "meaning": "Freigabestrategie der Bestellung lesen"
+      },
+      {
+        "id": "ck",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:44"
+        },
+        "meaning": "Strategie gefunden?"
+      },
+      {
+        "id": "d",
+        "type": "loop",
+        "anchor": {
+          "file": "source.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:46"
+        },
+        "meaning": "Freigabecodes der Strategie durchlaufen"
+      },
+      {
+        "id": "gc",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:48"
+        },
+        "meaning": "Eigener Code an dieser Stelle?"
+      },
+      {
+        "id": "ap",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:49"
+        },
+        "meaning": "Stufe des eigenen Codes merken"
+      },
+      {
+        "id": "gn",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:54"
+        },
+        "meaning": "Eigener Code nicht der nächste?"
+      },
+      {
+        "id": "b",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:59"
+        },
+        "meaning": "Bestellung mit eigenem Code freigeben"
+      },
+      {
+        "id": "gr",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:75"
+        },
+        "meaning": "Freigabe erfolgreich?"
+      },
+      {
+        "id": "wo",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:77"
+        },
+        "meaning": "Freigabe mit neuem Status protokollieren"
+      },
+      {
+        "id": "wf",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:80"
+        },
+        "meaning": "Fehlgeschlagene Freigabe mit Grund protokollieren"
+      },
+      {
+        "id": "ws",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:85"
+        },
+        "meaning": "Summen freigegeben/Fehler ausgeben"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:85"
+        },
+        "meaning": "Lauf beendet"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "au",
+        "condition": "always"
+      },
+      {
+        "from": "au",
+        "to": "ga",
+        "condition": "always"
+      },
+      {
+        "from": "ga",
+        "to": "ma",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "ga",
+        "to": "q",
+        "condition": "else"
+      },
+      {
+        "from": "q",
+        "to": "l",
+        "condition": "always"
+      },
+      {
+        "from": "l",
+        "to": "qt",
+        "condition": "next row"
+      },
+      {
+        "from": "qt",
+        "to": "ck",
+        "condition": "always"
+      },
+      {
+        "from": "ck",
+        "to": "d",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "ck",
+        "to": "l",
+        "condition": "else"
+      },
+      {
+        "from": "d",
+        "to": "gc",
+        "condition": "next row"
+      },
+      {
+        "from": "gc",
+        "to": "ap",
+        "condition": "<lv_code> = p_frgco"
+      },
+      {
+        "from": "gc",
+        "to": "d",
+        "condition": "else"
+      },
+      {
+        "from": "ap",
+        "to": "gn",
+        "condition": "always"
+      },
+      {
+        "from": "d",
+        "to": "gn",
+        "condition": "no more rows"
+      },
+      {
+        "from": "gn",
+        "to": "l",
+        "condition": "gv_pos = 0 OR strlen( gs_ekko-frgzu ) <> gv_pos - 1"
+      },
+      {
+        "from": "gn",
+        "to": "b",
+        "condition": "else"
+      },
+      {
+        "from": "b",
+        "to": "gr",
+        "condition": "always"
+      },
+      {
+        "from": "gr",
+        "to": "wo",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "gr",
+        "to": "wf",
+        "condition": "else"
+      },
+      {
+        "from": "wo",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "wf",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l",
+        "to": "ws",
+        "condition": "no more rows"
+      },
+      {
+        "from": "ma",
+        "to": "xa",
+        "condition": "always"
+      },
+      {
+        "from": "ws",
+        "to": "e",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "source.abap:59 — kein Fachsatz „Die Bestellung wird an den Lieferanten übermittelt“ (nur Freigabe; Nachrichtenausgabe ist nicht Teil des Codes)",
+    "source.abap:32 — kein Fachsatz „Nur Bestellungen über einer Wertgrenze“ (es gibt keine Wertselektion)",
+    "source.abap:54 — kein Fachsatz „Bereits vollständig freigegebene Bestellungen werden zurückgesetzt“ (sie werden nur übersprungen)",
+    "gesamte Scheibe — kein Fachsatz „Die Freigabe erfolgt ohne Commit“ (BAPI_PO_RELEASE schreibt selbst fest, solange NO_COMMIT nicht gesetzt ist; der Aufruf übergibt NO_COMMIT nicht)"
+  ],
+  "processDescription": "Ein Freigeber startet den Report mit Freigabegruppe, eigenem Freigabecode und optional Bestell- und Einkaufsorganisationsbereichen. Zuerst prüft der Report die Berechtigung M_EINK_FRG für Gruppe und Code und bricht ohne sie ab. Dann liest er alle nicht gelöschten, zur Freigabe gesperrten Bestellungen der Gruppe. Für jede liest er die Freigabestrategie, überspringt Bestellungen ohne Strategie und ermittelt, an welcher Stelle der eigene Code steht. Nur wenn der Code vorkommt und nach dem bisherigen Freigabestand genau als nächster an der Reihe ist, gibt er die Bestellung über BAPI_PO_RELEASE frei; der BAPI schreibt selbst fest. Jede Freigabe wird mit neuem Status oder mit Fehlergrund protokolliert, am Ende stehen die Zähler für Erfolge und Fehler."
+}

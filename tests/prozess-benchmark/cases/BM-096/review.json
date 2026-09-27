@@ -1,0 +1,168 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten a_mara",
+      "before": "action lzmatmas_inf01.abap:39 „Branche, Materialart, Warengruppe, Mengeneinheit, alte Nummer, Gewicht, Produkthierarchie übernehmen“",
+      "after": "entfernt; überbrückt: cv->lp [next iteration]",
+      "why": "Segmentfelder werden per Zuweisung/Makro in BAPI-Strukturen übertragen und per APPEND in interne Tabellen gestellt; laut Autorenbrief keine Knoten. Der fachliche Inhalt bleibt in Fachsatz B03; die Rückkante zur Segmentschleife trägt die WHEN-Bedingung.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Knoten a_makt",
+      "before": "action lzmatmas_inf01.abap:52 „Kurztext je Sprache übernehmen“",
+      "after": "entfernt; überbrückt: cp->lp [WHEN 'ZE1MAKTM']",
+      "why": "Segmentfelder werden per Zuweisung/Makro in BAPI-Strukturen übertragen und per APPEND in interne Tabellen gestellt; laut Autorenbrief keine Knoten. Der fachliche Inhalt bleibt in Fachsatz B04; die Rückkante zur Segmentschleife trägt die WHEN-Bedingung.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Knoten a_marc",
+      "before": "action lzmatmas_inf01.abap:59 „Werksdaten (Disposition, Einkauf, Beschaffung, Profit-Center) übernehmen“",
+      "after": "entfernt; überbrückt: cp->lp [WHEN 'ZE1MARCM']",
+      "why": "Segmentfelder werden per Zuweisung/Makro in BAPI-Strukturen übertragen und per APPEND in interne Tabellen gestellt; laut Autorenbrief keine Knoten. Der fachliche Inhalt bleibt in Fachsatz B05; die Rückkante zur Segmentschleife trägt die WHEN-Bedingung.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Knoten a_marm",
+      "before": "action lzmatmas_inf01.abap:69 „Alternative Mengeneinheit mit Umrechnung übernehmen“",
+      "after": "entfernt; überbrückt: cp->lp [WHEN 'ZE1MARMM']",
+      "why": "Segmentfelder werden per Zuweisung/Makro in BAPI-Strukturen übertragen und per APPEND in interne Tabellen gestellt; laut Autorenbrief keine Knoten. Der fachliche Inhalt bleibt in Fachsatz B06; die Rückkante zur Segmentschleife trägt die WHEN-Bedingung.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Knoten a_ext",
+      "before": "action lzmatmas_inf01.abap:81 „Kundenfelder Designverantwortung und RoHS übernehmen“",
+      "after": "entfernt; überbrückt: cp->lp [WHEN 'ZE1ZMAT']",
+      "why": "Segmentfelder werden per Zuweisung/Makro in BAPI-Strukturen übertragen und per APPEND in interne Tabellen gestellt; laut Autorenbrief keine Knoten. Der fachliche Inhalt bleibt in Fachsatz B07; die Rückkante zur Segmentschleife trägt die WHEN-Bedingung.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Knoten a_ok",
+      "before": "action lzmatmas_inf02.abap:170 „Erfolgsmeldung mit Materialnummer“",
+      "after": "entfernt; überbrückt: c_st->e_st [WHEN gc_status_ok]",
+      "why": "Reine Zuweisungen der Meldungsfelder (Erfolgsmeldung) in den Statussatz; laut Autorenbrief kein Knoten, sie steuern keinen weiteren Fluss. Inhalt bleibt in B08/B17/B18.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Knoten a_sk",
+      "before": "action lzmatmas_inf02.abap:174 „Warnung „übersprungen“ mit Materialnummer“",
+      "after": "entfernt; überbrückt: c_st->e_st [WHEN gc_status_skip]",
+      "why": "Reine Zuweisungen der Meldungsfelder (Warnung „übersprungen“) in den Statussatz; laut Autorenbrief kein Knoten, sie steuern keinen weiteren Fluss. Inhalt bleibt in B08/B17/B18.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Knoten a_er",
+      "before": "action lzmatmas_inf02.abap:178 „Fehlermeldung aus vermerktem Fehler“",
+      "after": "entfernt; überbrückt: c_st->e_st [WHEN OTHERS]",
+      "why": "Reine Zuweisungen der Meldungsfelder (Fehlermeldung aus dem vermerkten Fehler) in den Statussatz; laut Autorenbrief kein Knoten, sie steuern keinen weiteren Fluss. Inhalt bleibt in B08/B17/B18.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Kanten cpar",
+      "before": "cpar->cser [always]",
+      "after": "e_p->cser [always]",
+      "why": "Konvention Aufrufe im Fall: Aufruf → Start des Ziels, end des Ziels → nächster Schritt (je Aufrufer eine Rückkante); die Direktkante Aufruf → Folgeknoten entfällt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten cser",
+      "before": "cser->gskip [always]",
+      "after": "e_s1->gskip [always], e_s2->gskip [always]",
+      "why": "Konvention Aufrufe im Fall: Aufruf → Start des Ziels, end des Ziels → nächster Schritt (je Aufrufer eine Rückkante); die Direktkante Aufruf → Folgeknoten entfällt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten cs68",
+      "before": "cs68->l [next iteration]",
+      "after": "e_st->l [next iteration]",
+      "why": "Konvention Aufrufe im Fall: Aufruf → Start des Ziels, end des Ziels → nächster Schritt (je Aufrufer eine Rückkante); die Direktkante Aufruf → Folgeknoten entfällt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten cval",
+      "before": "cval->ge1 [always]",
+      "after": "e_v1->ge1 [always], e_v2->ge1 [always], e_v3->ge1 [always], e_v->ge1 [always]",
+      "why": "Konvention Aufrufe im Fall: Aufruf → Start des Ziels, end des Ziels → nächster Schritt (je Aufrufer eine Rückkante); die Direktkante Aufruf → Folgeknoten entfällt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten cpost",
+      "before": "cpost->ge2 [always]",
+      "after": "e_m1->ge2 [always], e_m->ge2 [always]",
+      "why": "Konvention Aufrufe im Fall: Aufruf → Start des Ziels, end des Ziels → nächster Schritt (je Aufrufer eine Rückkante); die Direktkante Aufruf → Folgeknoten entfällt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten cupd",
+      "before": "cupd->cs53 [always]",
+      "after": "e_u->cs53 [always]",
+      "why": "Konvention Aufrufe im Fall: Aufruf → Start des Ziels, end des Ziels → nächster Schritt (je Aufrufer eine Rückkante); die Direktkante Aufruf → Folgeknoten entfällt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten cs53",
+      "before": "cs53->l [next iteration]",
+      "after": "e_st->l [next iteration]",
+      "why": "Konvention Aufrufe im Fall: Aufruf → Start des Ziels, end des Ziels → nächster Schritt (je Aufrufer eine Rückkante); die Direktkante Aufruf → Folgeknoten entfällt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten cs51",
+      "before": "cs51->awf [always]",
+      "after": "e_st->awf [always]",
+      "why": "Konvention Aufrufe im Fall: Aufruf → Start des Ziels, end des Ziels → nächster Schritt (je Aufrufer eine Rückkante); die Direktkante Aufruf → Folgeknoten entfällt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten ce1",
+      "before": "ce1->e_v1 [always]",
+      "after": "e_e->e_v1 [always]",
+      "why": "Konvention Aufrufe im Fall: Aufruf → Start des Ziels, end des Ziels → nächster Schritt (je Aufrufer eine Rückkante); die Direktkante Aufruf → Folgeknoten entfällt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten ce2",
+      "before": "ce2->e_v2 [always]",
+      "after": "e_e->e_v2 [always]",
+      "why": "Konvention Aufrufe im Fall: Aufruf → Start des Ziels, end des Ziels → nächster Schritt (je Aufrufer eine Rückkante); die Direktkante Aufruf → Folgeknoten entfällt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten ce3",
+      "before": "ce3->e_v3 [always]",
+      "after": "e_e->e_v3 [always]",
+      "why": "Konvention Aufrufe im Fall: Aufruf → Start des Ziels, end des Ziels → nächster Schritt (je Aufrufer eine Rückkante); die Direktkante Aufruf → Folgeknoten entfällt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten ce4",
+      "before": "ce4->e_m1 [always]",
+      "after": "e_e->e_m1 [always]",
+      "why": "Konvention Aufrufe im Fall: Aufruf → Start des Ziels, end des Ziels → nächster Schritt (je Aufrufer eine Rückkante); die Direktkante Aufruf → Folgeknoten entfällt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten ce5",
+      "before": "ce5->g_m4 [always]",
+      "after": "e_e->g_m4 [always]",
+      "why": "Konvention Aufrufe im Fall: Aufruf → Start des Ziels, end des Ziels → nächster Schritt (je Aufrufer eine Rückkante); die Direktkante Aufruf → Folgeknoten entfällt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten ce6",
+      "before": "ce6->g_m4 [always]",
+      "after": "e_e->g_m4 [always]",
+      "why": "Konvention Aufrufe im Fall: Aufruf → Start des Ziels, end des Ziels → nächster Schritt (je Aufrufer eine Rückkante); die Direktkante Aufruf → Folgeknoten entfällt.",
+      "category": "Kante"
+    }
+  ],
+  "doubts": [
+    "POST_MATERIAL ruft BAPI_MATERIAL_SAVEDATA für ein neues Material mehrfach in einer LUW (Mandantendaten, dann je Werk) ohne Zwischen-COMMIT; ob der zweite Aufruf das noch nicht verbuchte Material sicher erkennt, ist Realismusfrage, nicht Skelettfrage. Nicht geändert."
+  ],
+  "notes": [
+    "a_s (inf02:25) bleibt als action: pv_skip = X legt fachlich fest, dass das IDoc als veraltet übersprungen wird, und steuert das Gateway gskip im Baustein.",
+    "awf (Z. 61) bleibt als action: workflow_result = 99999 legt das Fehlerergebnis fest, das die ALE-Folgeverarbeitung (Fehler-Workflow, BD87) steuert; gleiche Entscheidung wie st51 in BM-086.",
+    "Gateway c_st (inf02:168) bleibt mit drei Kanten zu e_st: der CASE wählt Meldungstyp und -inhalt des Statussatzes; nach Entfernen der Zuweisungsknoten führen die Zweige direkt zum Ende."
+  ]
+}

@@ -1,0 +1,2657 @@
+{
+  "id": "BM-040",
+  "title": "Filialnachschub per Umlagerungsbestellung: S032-Bestand, POS-Abverkauf per RFC, UB, Auslieferung und Warenausgang",
+  "classes": [
+    "K01",
+    "K03",
+    "K04",
+    "K12",
+    "K09"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [
+    "Scheitert der Sofort-WA, steht im Ergebnis trotzdem der Erfolgstext „UB …, Lieferung …“ und die Filiale wird an den Avis-Folgejob übergeben; gewollt?",
+    "S032-Feld MBWBEST und Dispomerkmal ZN sind kundenspezifisch zu bestätigen."
+  ],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "ZMM_STO_ROUTE",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zmm_sto_nachschub_f01.abap",
+        "line": 14,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zmm_sto_nachschub_f01.abap:14"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "MARC",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zmm_sto_nachschub_f01.abap",
+        "line": 38,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zmm_sto_nachschub_f01.abap:38"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "Z_POS_TODAY_SALES",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zmm_sto_nachschub_f01.abap",
+        "line": 50,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zmm_sto_nachschub_f01.abap:50"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "S032",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zmm_sto_nachschub_f01.abap",
+        "line": 68,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zmm_sto_nachschub_f01.abap:68"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "EKPO",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zmm_sto_nachschub_f01.abap",
+        "line": 72,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zmm_sto_nachschub_f01.abap:72"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "EKKO",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zmm_sto_nachschub_f01.abap",
+        "line": 72,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zmm_sto_nachschub_f01.abap:72"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_PO_CREATE1",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_mm_sto_creator.abap",
+        "line": 61,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_mm_sto_creator.abap:61"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_OUTB_DELIVERY_CREATE_STO",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_mm_sto_creator.abap",
+        "line": 96,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_mm_sto_creator.abap:96"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "WS_DELIVERY_UPDATE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_mm_sto_creator.abap",
+        "line": 124,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_mm_sto_creator.abap:124"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "INDX",
+      "owner": "SAP",
+      "usage": "write",
+      "anchor": {
+        "file": "zmm_sto_nachschub_f02.abap",
+        "line": 64,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zmm_sto_nachschub_f02.abap:64"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZCL_MM_STO_CREATOR",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zmm_sto_nachschub.abap",
+        "line": 32,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zmm_sto_nachschub.abap:32"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAL_LOG_CREATE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zmm_sto_nachschub_f02.abap",
+        "line": 11,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zmm_sto_nachschub_f02.abap:11"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-040-B01",
+      "text": "Als Belieferungstag wird morgen vorgeschlagen.",
+      "anchors": [
+        {
+          "file": "zmm_sto_nachschub.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub.abap:21"
+        }
+      ]
+    },
+    {
+      "id": "BM-040-B02",
+      "text": "Für den Wochentag des Belieferungstags werden die aktiven Belieferungen der gewählten Filialen aus dem Belieferungsplan gelesen (Filiale, lieferndes Werk, Lagerort, Bestellart, Einkaufsorganisation, Versandstelle, Sofort-WA-Kennzeichen).",
+      "anchors": [
+        {
+          "file": "zmm_sto_nachschub_f01.abap",
+          "line": 8,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub_f01.abap:8"
+        },
+        {
+          "file": "zmm_sto_nachschub_f01.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub_f01.abap:14"
+        }
+      ]
+    },
+    {
+      "id": "BM-040-B03",
+      "text": "Ist für den Tag keine Belieferung geplant, wird eine Warnung protokolliert und der Lauf beendet.",
+      "anchors": [
+        {
+          "file": "zmm_sto_nachschub.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub.abap:26"
+        },
+        {
+          "file": "zmm_sto_nachschub.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub.abap:27"
+        },
+        {
+          "file": "zmm_sto_nachschub.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub.abap:29"
+        }
+      ]
+    },
+    {
+      "id": "BM-040-B04",
+      "text": "Je Filiale werden die nicht gelöschten, nicht gesperrten Materialien mit Dispositionsmerkmal ZN samt Meldebestand, Höchstbestand, Rundungswert und Ausgabeeinheit gelesen.",
+      "anchors": [
+        {
+          "file": "zmm_sto_nachschub_f01.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub_f01.abap:38"
+        }
+      ]
+    },
+    {
+      "id": "BM-040-B05",
+      "text": "Die heutigen, noch nicht gebuchten Abverkäufe der Filiale werden per RFC aus dem Kassensystem geholt; ist es nicht erreichbar, wird ohne Abverkäufe weitergerechnet und eine Warnung protokolliert.",
+      "anchors": [
+        {
+          "file": "zmm_sto_nachschub_f01.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub_f01.abap:50"
+        },
+        {
+          "file": "zmm_sto_nachschub_f01.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub_f01.abap:60"
+        },
+        {
+          "file": "zmm_sto_nachschub_f01.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub_f01.abap:63"
+        }
+      ]
+    },
+    {
+      "id": "BM-040-B06",
+      "text": "Der verfügbare Bestand je Material ist der Filialbestand aus der Infostruktur S032 plus die offenen Umlagerungsbestellungen aus dem liefernden Werk minus der heutige Abverkauf.",
+      "anchors": [
+        {
+          "file": "zmm_sto_nachschub_f01.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub_f01.abap:68"
+        },
+        {
+          "file": "zmm_sto_nachschub_f01.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub_f01.abap:72"
+        },
+        {
+          "file": "zmm_sto_nachschub_f01.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub_f01.abap:82"
+        },
+        {
+          "file": "zmm_sto_nachschub_f01.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub_f01.abap:86"
+        }
+      ]
+    },
+    {
+      "id": "BM-040-B07",
+      "text": "Liegt er unter dem Meldebestand, wird bis zum Höchstbestand aufgefüllt und die Menge auf den Rundungswert aufgerundet; nur positive Mengen werden Bedarf.",
+      "anchors": [
+        {
+          "file": "zmm_sto_nachschub_f01.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub_f01.abap:88"
+        },
+        {
+          "file": "zmm_sto_nachschub_f01.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub_f01.abap:92"
+        },
+        {
+          "file": "zmm_sto_nachschub_f01.abap",
+          "line": 94,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub_f01.abap:94"
+        },
+        {
+          "file": "zmm_sto_nachschub_f01.abap",
+          "line": 96,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub_f01.abap:96"
+        }
+      ]
+    },
+    {
+      "id": "BM-040-B08",
+      "text": "Filialen ohne Bedarf werden übersprungen.",
+      "anchors": [
+        {
+          "file": "zmm_sto_nachschub.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub.abap:36"
+        }
+      ]
+    },
+    {
+      "id": "BM-040-B09",
+      "text": "Für jede Filiale mit Bedarf wird eine Umlagerungsbestellung mit dem liefernden Werk und je Material einer Position zum Lagerort der Filiale angelegt, im Testlauf nur simuliert.",
+      "anchors": [
+        {
+          "file": "zmm_sto_nachschub_f01.abap",
+          "line": 112,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub_f01.abap:112"
+        },
+        {
+          "file": "zcl_mm_sto_creator.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_sto_creator.abap:44"
+        },
+        {
+          "file": "zcl_mm_sto_creator.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_sto_creator.abap:61"
+        }
+      ]
+    },
+    {
+      "id": "BM-040-B10",
+      "text": "Meldet die Anlage einen Fehler oder Abbruch, wird zurückgerollt, der Fehler protokolliert und die nächste Filiale bearbeitet.",
+      "anchors": [
+        {
+          "file": "zcl_mm_sto_creator.abap",
+          "line": 149,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_sto_creator.abap:149"
+        },
+        {
+          "file": "zcl_mm_sto_creator.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_sto_creator.abap:73"
+        },
+        {
+          "file": "zcl_mm_sto_creator.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_sto_creator.abap:74"
+        },
+        {
+          "file": "zmm_sto_nachschub_f01.abap",
+          "line": 113,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub_f01.abap:113"
+        },
+        {
+          "file": "zmm_sto_nachschub_f01.abap",
+          "line": 115,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub_f01.abap:115"
+        }
+      ]
+    },
+    {
+      "id": "BM-040-B11",
+      "text": "Im Testlauf endet die Verarbeitung der Filiale nach der Simulation.",
+      "anchors": [
+        {
+          "file": "zcl_mm_sto_creator.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_sto_creator.abap:78"
+        },
+        {
+          "file": "zmm_sto_nachschub_f01.abap",
+          "line": 120,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub_f01.abap:120"
+        },
+        {
+          "file": "zmm_sto_nachschub_f01.abap",
+          "line": 123,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub_f01.abap:123"
+        }
+      ]
+    },
+    {
+      "id": "BM-040-B12",
+      "text": "Im Echtlauf wird die Umlagerungsbestellung festgeschrieben und zu allen ihren Positionen eine Auslieferung an der Versandstelle angelegt; bei Fehler wird zurückgerollt und protokolliert.",
+      "anchors": [
+        {
+          "file": "zcl_mm_sto_creator.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_sto_creator.abap:82"
+        },
+        {
+          "file": "zcl_mm_sto_creator.abap",
+          "line": 91,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_sto_creator.abap:91"
+        },
+        {
+          "file": "zcl_mm_sto_creator.abap",
+          "line": 96,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_sto_creator.abap:96"
+        },
+        {
+          "file": "zcl_mm_sto_creator.abap",
+          "line": 105,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_sto_creator.abap:105"
+        },
+        {
+          "file": "zmm_sto_nachschub_f01.abap",
+          "line": 128,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub_f01.abap:128"
+        }
+      ]
+    },
+    {
+      "id": "BM-040-B13",
+      "text": "Ist Sofort-Warenausgang gewählt und die Filiale dafür gekennzeichnet, wird der Warenausgang zur Lieferung mit Tagesdatum gebucht; ein Fehler wird mit Meldungstext protokolliert.",
+      "anchors": [
+        {
+          "file": "zmm_sto_nachschub_f01.abap",
+          "line": 136,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub_f01.abap:136"
+        },
+        {
+          "file": "zcl_mm_sto_creator.abap",
+          "line": 124,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_sto_creator.abap:124"
+        },
+        {
+          "file": "zcl_mm_sto_creator.abap",
+          "line": 133,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_sto_creator.abap:133"
+        },
+        {
+          "file": "zmm_sto_nachschub_f01.abap",
+          "line": 138,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub_f01.abap:138"
+        }
+      ]
+    },
+    {
+      "id": "BM-040-B14",
+      "text": "Jede Filiale mit angelegter Lieferung wird – auch nach gescheitertem Warenausgang – mit Umlagerungsbestellung und Lieferung als Erfolg protokolliert und ins Ergebnis übernommen.",
+      "anchors": [
+        {
+          "file": "zmm_sto_nachschub_f01.abap",
+          "line": 145,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub_f01.abap:145"
+        },
+        {
+          "file": "zmm_sto_nachschub_f01.abap",
+          "line": 146,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub_f01.abap:146"
+        }
+      ]
+    },
+    {
+      "id": "BM-040-B15",
+      "text": "Im Echtlauf werden nur Filialen mit Lieferung für den Avis-Folgejob unter dem Schlüssel ZSTO plus Datum abgelegt; im Testlauf wird nichts übergeben.",
+      "anchors": [
+        {
+          "file": "zmm_sto_nachschub_f02.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub_f02.abap:59"
+        },
+        {
+          "file": "zmm_sto_nachschub_f02.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub_f02.abap:62"
+        },
+        {
+          "file": "zmm_sto_nachschub_f02.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub_f02.abap:64"
+        },
+        {
+          "file": "zmm_sto_nachschub_f02.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub_f02.abap:65"
+        }
+      ]
+    },
+    {
+      "id": "BM-040-B16",
+      "text": "Die Ergebnisliste zeigt je Filiale lieferndes Werk, Positionsanzahl, Umlagerungsbestellung, Lieferung, WA-Kennzeichen und Text, Fehler rot, sowie die Zähler.",
+      "anchors": [
+        {
+          "file": "zmm_sto_nachschub_f02.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub_f02.abap:81"
+        },
+        {
+          "file": "zmm_sto_nachschub_f02.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub_f02.abap:88"
+        },
+        {
+          "file": "zmm_sto_nachschub_f02.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub_f02.abap:93"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "in",
+        "type": "start",
+        "anchor": {
+          "file": "zmm_sto_nachschub.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub.abap:20"
+        },
+        "meaning": "Programmstart"
+      },
+      {
+        "id": "ia",
+        "type": "action",
+        "anchor": {
+          "file": "zmm_sto_nachschub.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub.abap:21"
+        },
+        "meaning": "Belieferungstag morgen vorschlagen"
+      },
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "zmm_sto_nachschub.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub.abap:23"
+        },
+        "meaning": "Nachschublauf startet"
+      },
+      {
+        "id": "pla",
+        "type": "call",
+        "anchor": {
+          "file": "zmm_sto_nachschub.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub.abap:24"
+        },
+        "meaning": "Anwendungsprotokoll anlegen"
+      },
+      {
+        "id": "fla",
+        "type": "start",
+        "anchor": {
+          "file": "zmm_sto_nachschub_f02.abap",
+          "line": 5,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub_f02.abap:5"
+        },
+        "meaning": "Routine Protokoll anlegen"
+      },
+      {
+        "id": "balc",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zmm_sto_nachschub_f02.abap",
+          "line": 11,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub_f02.abap:11"
+        },
+        "meaning": "Anwendungsprotokoll ZMM/STO mit 60 Tagen Aufbewahrung anlegen"
+      },
+      {
+        "id": "xla",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_sto_nachschub_f02.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub_f02.abap:18"
+        },
+        "meaning": "LOG_ANLEGEN beendet"
+      },
+      {
+        "id": "pr",
+        "type": "call",
+        "anchor": {
+          "file": "zmm_sto_nachschub.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub.abap:25"
+        },
+        "meaning": "Belieferungsplan lesen"
+      },
+      {
+        "id": "fr",
+        "type": "start",
+        "anchor": {
+          "file": "zmm_sto_nachschub_f01.abap",
+          "line": 5,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub_f01.abap:5"
+        },
+        "meaning": "Planermittlung"
+      },
+      {
+        "id": "dw",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zmm_sto_nachschub_f01.abap",
+          "line": 8,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub_f01.abap:8"
+        },
+        "meaning": "Wochentag des Belieferungstags"
+      },
+      {
+        "id": "qr",
+        "type": "read",
+        "anchor": {
+          "file": "zmm_sto_nachschub_f01.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub_f01.abap:14"
+        },
+        "meaning": "Aktive Belieferungen der Filialen für den Wochentag lesen"
+      },
+      {
+        "id": "g0",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_sto_nachschub.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub.abap:26"
+        },
+        "meaning": "Belieferungen geplant?"
+      },
+      {
+        "id": "plm0",
+        "type": "call",
+        "anchor": {
+          "file": "zmm_sto_nachschub.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub.abap:27"
+        },
+        "meaning": "Warnung „kein Belieferungsplan“ protokollieren"
+      },
+      {
+        "id": "pls0",
+        "type": "call",
+        "anchor": {
+          "file": "zmm_sto_nachschub.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub.abap:28"
+        },
+        "meaning": "Protokoll sichern"
+      },
+      {
+        "id": "r0",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_sto_nachschub.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub.abap:29"
+        },
+        "meaning": "Lauf ohne Nachschub beenden"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "zmm_sto_nachschub.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub.abap:34"
+        },
+        "meaning": "Filialbelieferungen durchlaufen"
+      },
+      {
+        "id": "pb",
+        "type": "call",
+        "anchor": {
+          "file": "zmm_sto_nachschub.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub.abap:35"
+        },
+        "meaning": "Nachschubbedarf ermitteln"
+      },
+      {
+        "id": "fb",
+        "type": "start",
+        "anchor": {
+          "file": "zmm_sto_nachschub_f01.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub_f01.abap:21"
+        },
+        "meaning": "Bedarfsermittlung"
+      },
+      {
+        "id": "qm",
+        "type": "read",
+        "anchor": {
+          "file": "zmm_sto_nachschub_f01.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub_f01.abap:38"
+        },
+        "meaning": "Nachschubrelevante Materialien der Filiale lesen"
+      },
+      {
+        "id": "gm",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_sto_nachschub_f01.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub_f01.abap:45"
+        },
+        "meaning": "Materialien vorhanden?"
+      },
+      {
+        "id": "rm",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_sto_nachschub_f01.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub_f01.abap:46"
+        },
+        "meaning": "Kein Bedarf"
+      },
+      {
+        "id": "rfc",
+        "type": "rfc",
+        "anchor": {
+          "file": "zmm_sto_nachschub_f01.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub_f01.abap:50"
+        },
+        "meaning": "Heutige Abverkäufe aus dem Kassensystem holen"
+      },
+      {
+        "id": "gr",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_sto_nachschub_f01.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub_f01.abap:60"
+        },
+        "meaning": "Kassensystem erreichbar?"
+      },
+      {
+        "id": "plmp",
+        "type": "call",
+        "anchor": {
+          "file": "zmm_sto_nachschub_f01.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub_f01.abap:63"
+        },
+        "meaning": "Warnung „Kassensystem nicht erreichbar“ protokollieren"
+      },
+      {
+        "id": "lm",
+        "type": "loop",
+        "anchor": {
+          "file": "zmm_sto_nachschub_f01.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub_f01.abap:66"
+        },
+        "meaning": "Materialien durchlaufen"
+      },
+      {
+        "id": "qs",
+        "type": "read",
+        "anchor": {
+          "file": "zmm_sto_nachschub_f01.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub_f01.abap:68"
+        },
+        "meaning": "Filialbestand aus Infostruktur S032"
+      },
+      {
+        "id": "qo",
+        "type": "read",
+        "anchor": {
+          "file": "zmm_sto_nachschub_f01.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub_f01.abap:72"
+        },
+        "meaning": "Offene Umlagerungsbestellmenge aus dem Zentrallager"
+      },
+      {
+        "id": "rs",
+        "type": "read",
+        "anchor": {
+          "file": "zmm_sto_nachschub_f01.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub_f01.abap:82"
+        },
+        "meaning": "Heutigen Abverkauf des Materials nachschlagen"
+      },
+      {
+        "id": "av",
+        "type": "action",
+        "anchor": {
+          "file": "zmm_sto_nachschub_f01.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub_f01.abap:86"
+        },
+        "meaning": "Verfügbar = Bestand + offene UB − Abverkauf"
+      },
+      {
+        "id": "gv",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_sto_nachschub_f01.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub_f01.abap:88"
+        },
+        "meaning": "Meldebestand erreicht?"
+      },
+      {
+        "id": "am",
+        "type": "action",
+        "anchor": {
+          "file": "zmm_sto_nachschub_f01.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub_f01.abap:92"
+        },
+        "meaning": "Auffüllmenge bis Höchstbestand"
+      },
+      {
+        "id": "gb",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_sto_nachschub_f01.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub_f01.abap:93"
+        },
+        "meaning": "Rundungswert gepflegt?"
+      },
+      {
+        "id": "ar",
+        "type": "action",
+        "anchor": {
+          "file": "zmm_sto_nachschub_f01.abap",
+          "line": 94,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub_f01.abap:94"
+        },
+        "meaning": "Auf Rundungswert aufrunden"
+      },
+      {
+        "id": "g0m",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_sto_nachschub_f01.abap",
+          "line": 96,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub_f01.abap:96"
+        },
+        "meaning": "Positive Menge?"
+      },
+      {
+        "id": "gn",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_sto_nachschub.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub.abap:36"
+        },
+        "meaning": "Bedarf vorhanden?"
+      },
+      {
+        "id": "pn",
+        "type": "call",
+        "anchor": {
+          "file": "zmm_sto_nachschub.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub.abap:39"
+        },
+        "meaning": "Nachschub anlegen"
+      },
+      {
+        "id": "fn",
+        "type": "start",
+        "anchor": {
+          "file": "zmm_sto_nachschub_f01.abap",
+          "line": 104,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub_f01.abap:104"
+        },
+        "meaning": "Nachschubanlage"
+      },
+      {
+        "id": "cs",
+        "type": "call",
+        "anchor": {
+          "file": "zmm_sto_nachschub_f01.abap",
+          "line": 112,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub_f01.abap:112"
+        },
+        "meaning": "Umlagerungsbestellung anlegen"
+      },
+      {
+        "id": "cs0",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_mm_sto_creator.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_sto_creator.abap:36"
+        },
+        "meaning": "UB-Anlage"
+      },
+      {
+        "id": "cs2",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_mm_sto_creator.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_sto_creator.abap:61"
+        },
+        "meaning": "UB mit liefernden Werk und Filialpositionen anlegen bzw. simulieren"
+      },
+      {
+        "id": "fe0",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_mm_sto_creator.abap",
+          "line": 148,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_sto_creator.abap:148"
+        },
+        "meaning": "Fehlerauswertung"
+      },
+      {
+        "id": "fe1",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_mm_sto_creator.abap",
+          "line": 149,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_sto_creator.abap:149"
+        },
+        "meaning": "Fehler- und Abbruchmeldungen suchen"
+      },
+      {
+        "id": "fe2",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_mm_sto_creator.abap",
+          "line": 152,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_sto_creator.abap:152"
+        },
+        "meaning": "Ersten Fehler merken"
+      },
+      {
+        "id": "cs3",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_mm_sto_creator.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_sto_creator.abap:73"
+        },
+        "meaning": "Fehler bei UB-Anlage?"
+      },
+      {
+        "id": "cs4",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_mm_sto_creator.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_sto_creator.abap:74"
+        },
+        "meaning": "Zurückrollen"
+      },
+      {
+        "id": "cs5",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_mm_sto_creator.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_sto_creator.abap:76"
+        },
+        "meaning": "Ohne UB-Nummer zurück"
+      },
+      {
+        "id": "cs6",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_mm_sto_creator.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_sto_creator.abap:78"
+        },
+        "meaning": "Testlauf?"
+      },
+      {
+        "id": "cs8",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_mm_sto_creator.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_sto_creator.abap:80"
+        },
+        "meaning": "Pseudonummer TEST zurück"
+      },
+      {
+        "id": "cs9",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_mm_sto_creator.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_sto_creator.abap:82"
+        },
+        "meaning": "UB festschreiben"
+      },
+      {
+        "id": "cse",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_mm_sto_creator.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_sto_creator.abap:85"
+        },
+        "meaning": "UB-Nummer zurück"
+      },
+      {
+        "id": "ge",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_sto_nachschub_f01.abap",
+          "line": 113,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub_f01.abap:113"
+        },
+        "meaning": "UB angelegt?"
+      },
+      {
+        "id": "plm1",
+        "type": "call",
+        "anchor": {
+          "file": "zmm_sto_nachschub_f01.abap",
+          "line": 115,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub_f01.abap:115"
+        },
+        "meaning": "UB-Fehler protokollieren"
+      },
+      {
+        "id": "re1",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_sto_nachschub_f01.abap",
+          "line": 117,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub_f01.abap:117"
+        },
+        "meaning": "Fehler protokolliert, Filiale fertig"
+      },
+      {
+        "id": "gt",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_sto_nachschub_f01.abap",
+          "line": 120,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub_f01.abap:120"
+        },
+        "meaning": "Testlauf?"
+      },
+      {
+        "id": "rt",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_sto_nachschub_f01.abap",
+          "line": 123,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub_f01.abap:123"
+        },
+        "meaning": "Nur simuliert"
+      },
+      {
+        "id": "cd",
+        "type": "call",
+        "anchor": {
+          "file": "zmm_sto_nachschub_f01.abap",
+          "line": 126,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub_f01.abap:126"
+        },
+        "meaning": "Auslieferung erzeugen"
+      },
+      {
+        "id": "cd0",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_mm_sto_creator.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_sto_creator.abap:87"
+        },
+        "meaning": "Lieferanlage"
+      },
+      {
+        "id": "cd1",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_mm_sto_creator.abap",
+          "line": 91,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_sto_creator.abap:91"
+        },
+        "meaning": "Positionen der UB lesen"
+      },
+      {
+        "id": "cd2",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_mm_sto_creator.abap",
+          "line": 96,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_sto_creator.abap:96"
+        },
+        "meaning": "Auslieferung zur UB an der Versandstelle anlegen"
+      },
+      {
+        "id": "cd3",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_mm_sto_creator.abap",
+          "line": 105,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_sto_creator.abap:105"
+        },
+        "meaning": "Fehler oder keine Lieferung?"
+      },
+      {
+        "id": "cd4",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_mm_sto_creator.abap",
+          "line": 106,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_sto_creator.abap:106"
+        },
+        "meaning": "Zurückrollen"
+      },
+      {
+        "id": "cd5",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_mm_sto_creator.abap",
+          "line": 108,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_sto_creator.abap:108"
+        },
+        "meaning": "Ohne Lieferung zurück"
+      },
+      {
+        "id": "cd6",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_mm_sto_creator.abap",
+          "line": 110,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_sto_creator.abap:110"
+        },
+        "meaning": "Lieferung festschreiben"
+      },
+      {
+        "id": "cde",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_mm_sto_creator.abap",
+          "line": 113,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_sto_creator.abap:113"
+        },
+        "meaning": "Liefernummer zurück"
+      },
+      {
+        "id": "gd",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_sto_nachschub_f01.abap",
+          "line": 128,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub_f01.abap:128"
+        },
+        "meaning": "Lieferung angelegt?"
+      },
+      {
+        "id": "plm2",
+        "type": "call",
+        "anchor": {
+          "file": "zmm_sto_nachschub_f01.abap",
+          "line": 130,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub_f01.abap:130"
+        },
+        "meaning": "Lieferungsfehler protokollieren"
+      },
+      {
+        "id": "re2",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_sto_nachschub_f01.abap",
+          "line": 132,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub_f01.abap:132"
+        },
+        "meaning": "Fehler protokolliert, Filiale fertig"
+      },
+      {
+        "id": "gw",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_sto_nachschub_f01.abap",
+          "line": 136,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub_f01.abap:136"
+        },
+        "meaning": "Sofort-Warenausgang?"
+      },
+      {
+        "id": "cg",
+        "type": "call",
+        "anchor": {
+          "file": "zmm_sto_nachschub_f01.abap",
+          "line": 137,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub_f01.abap:137"
+        },
+        "meaning": "Warenausgang buchen"
+      },
+      {
+        "id": "pg0",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_mm_sto_creator.abap",
+          "line": 115,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_sto_creator.abap:115"
+        },
+        "meaning": "Warenausgangsbuchung"
+      },
+      {
+        "id": "pg1",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_mm_sto_creator.abap",
+          "line": 124,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_sto_creator.abap:124"
+        },
+        "meaning": "Warenausgang zur Lieferung mit Tagesdatum buchen"
+      },
+      {
+        "id": "pg2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_mm_sto_creator.abap",
+          "line": 133,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_sto_creator.abap:133"
+        },
+        "meaning": "Fehler?"
+      },
+      {
+        "id": "pg3",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_mm_sto_creator.abap",
+          "line": 135,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_sto_creator.abap:135"
+        },
+        "meaning": "Fehlertext merken"
+      },
+      {
+        "id": "pge",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_mm_sto_creator.abap",
+          "line": 142,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_sto_creator.abap:142"
+        },
+        "meaning": "Ergebnis WA zurück"
+      },
+      {
+        "id": "gwa",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_sto_nachschub_f01.abap",
+          "line": 138,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub_f01.abap:138"
+        },
+        "meaning": "WA fehlgeschlagen?"
+      },
+      {
+        "id": "plm3",
+        "type": "call",
+        "anchor": {
+          "file": "zmm_sto_nachschub_f01.abap",
+          "line": 140,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub_f01.abap:140"
+        },
+        "meaning": "WA-Fehler protokollieren"
+      },
+      {
+        "id": "pls",
+        "type": "call",
+        "anchor": {
+          "file": "zmm_sto_nachschub_f01.abap",
+          "line": 145,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub_f01.abap:145"
+        },
+        "meaning": "Erfolg mit UB und Lieferung protokollieren"
+      },
+      {
+        "id": "fne",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_sto_nachschub_f01.abap",
+          "line": 147,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub_f01.abap:147"
+        },
+        "meaning": "Ergebnis der Filiale protokolliert"
+      },
+      {
+        "id": "pu",
+        "type": "call",
+        "anchor": {
+          "file": "zmm_sto_nachschub.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub.abap:43"
+        },
+        "meaning": "Übergabe an Folgejob"
+      },
+      {
+        "id": "pls1",
+        "type": "call",
+        "anchor": {
+          "file": "zmm_sto_nachschub.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub.abap:42"
+        },
+        "meaning": "Protokoll sichern"
+      },
+      {
+        "id": "fu",
+        "type": "start",
+        "anchor": {
+          "file": "zmm_sto_nachschub_f02.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub_f02.abap:54"
+        },
+        "meaning": "Übergabe"
+      },
+      {
+        "id": "gu",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_sto_nachschub_f02.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub_f02.abap:59"
+        },
+        "meaning": "Testlauf?"
+      },
+      {
+        "id": "ru",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_sto_nachschub_f02.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub_f02.abap:60"
+        },
+        "meaning": "Keine Übergabe"
+      },
+      {
+        "id": "du",
+        "type": "action",
+        "anchor": {
+          "file": "zmm_sto_nachschub_f02.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub_f02.abap:62"
+        },
+        "meaning": "Nur Filialen mit Lieferung behalten"
+      },
+      {
+        "id": "ex",
+        "type": "action",
+        "anchor": {
+          "file": "zmm_sto_nachschub_f02.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub_f02.abap:64"
+        },
+        "meaning": "Ergebnis für Avis-Folgejob im INDX ablegen"
+      },
+      {
+        "id": "cm2",
+        "type": "transaction",
+        "anchor": {
+          "file": "zmm_sto_nachschub_f02.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub_f02.abap:65"
+        },
+        "meaning": "Festschreiben"
+      },
+      {
+        "id": "eos",
+        "type": "start",
+        "anchor": {
+          "file": "zmm_sto_nachschub.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub.abap:45"
+        },
+        "meaning": "Listausgabe"
+      },
+      {
+        "id": "pli",
+        "type": "call",
+        "anchor": {
+          "file": "zmm_sto_nachschub.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub.abap:46"
+        },
+        "meaning": "Ergebnisliste"
+      },
+      {
+        "id": "fli",
+        "type": "start",
+        "anchor": {
+          "file": "zmm_sto_nachschub_f02.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub_f02.abap:69"
+        },
+        "meaning": "Liste"
+      },
+      {
+        "id": "lli",
+        "type": "loop",
+        "anchor": {
+          "file": "zmm_sto_nachschub_f02.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub_f02.abap:80"
+        },
+        "meaning": "Ergebnisse durchlaufen"
+      },
+      {
+        "id": "gli",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_sto_nachschub_f02.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub_f02.abap:81"
+        },
+        "meaning": "Fehlerzeile?"
+      },
+      {
+        "id": "wli",
+        "type": "output",
+        "anchor": {
+          "file": "zmm_sto_nachschub_f02.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub_f02.abap:88"
+        },
+        "meaning": "Ergebniszeile rot/grün ausgeben"
+      },
+      {
+        "id": "wsum",
+        "type": "output",
+        "anchor": {
+          "file": "zmm_sto_nachschub_f02.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub_f02.abap:93"
+        },
+        "meaning": "Zähler ok/Fehler ausgeben"
+      },
+      {
+        "id": "xfr",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_sto_nachschub_f01.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub_f01.abap:18"
+        },
+        "meaning": "ROUTE_LESEN beendet"
+      },
+      {
+        "id": "flm",
+        "type": "start",
+        "anchor": {
+          "file": "zmm_sto_nachschub_f02.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub_f02.abap:21"
+        },
+        "meaning": "Routine Protokollmeldung"
+      },
+      {
+        "id": "balm",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zmm_sto_nachschub_f02.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub_f02.abap:30"
+        },
+        "meaning": "Meldung (mit Filiale) ins Anwendungsprotokoll"
+      },
+      {
+        "id": "xlm",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_sto_nachschub_f02.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub_f02.abap:37"
+        },
+        "meaning": "LOG_MELDUNG beendet"
+      },
+      {
+        "id": "fls",
+        "type": "start",
+        "anchor": {
+          "file": "zmm_sto_nachschub_f02.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub_f02.abap:40"
+        },
+        "meaning": "Routine Protokoll sichern"
+      },
+      {
+        "id": "bals",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zmm_sto_nachschub_f02.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub_f02.abap:43"
+        },
+        "meaning": "Anwendungsprotokoll speichern"
+      },
+      {
+        "id": "gls",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_sto_nachschub_f02.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub_f02.abap:48"
+        },
+        "meaning": "Protokoll gespeichert?"
+      },
+      {
+        "id": "cls",
+        "type": "transaction",
+        "anchor": {
+          "file": "zmm_sto_nachschub_f02.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub_f02.abap:49"
+        },
+        "meaning": "Festschreiben"
+      },
+      {
+        "id": "xls",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_sto_nachschub_f02.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub_f02.abap:51"
+        },
+        "meaning": "LOG_SICHERN beendet"
+      },
+      {
+        "id": "xfb",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_sto_nachschub_f01.abap",
+          "line": 101,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub_f01.abap:101"
+        },
+        "meaning": "BEDARF_ERMITTELN beendet, Bedarf steht"
+      },
+      {
+        "id": "xfe",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_mm_sto_creator.abap",
+          "line": 154,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_sto_creator.abap:154"
+        },
+        "meaning": "FIRST_ERROR beendet, kein Fehler gefunden"
+      },
+      {
+        "id": "xfu",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_sto_nachschub_f02.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub_f02.abap:66"
+        },
+        "meaning": "UEBERGABE_FOLGEJOB beendet"
+      },
+      {
+        "id": "eend",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_sto_nachschub.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub.abap:46"
+        },
+        "meaning": "Nachschublauf beendet"
+      },
+      {
+        "id": "xli",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_sto_nachschub_f02.abap",
+          "line": 94,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_sto_nachschub_f02.abap:94"
+        },
+        "meaning": "LISTE_AUSGEBEN beendet"
+      }
+    ],
+    "edges": [
+      {
+        "from": "in",
+        "to": "ia",
+        "condition": "always"
+      },
+      {
+        "from": "ia",
+        "to": "s",
+        "condition": "always"
+      },
+      {
+        "from": "s",
+        "to": "pla",
+        "condition": "always"
+      },
+      {
+        "from": "pr",
+        "to": "fr",
+        "condition": "always"
+      },
+      {
+        "from": "fr",
+        "to": "dw",
+        "condition": "always"
+      },
+      {
+        "from": "dw",
+        "to": "qr",
+        "condition": "always"
+      },
+      {
+        "from": "qr",
+        "to": "xfr",
+        "condition": "always"
+      },
+      {
+        "from": "g0",
+        "to": "plm0",
+        "condition": "gt_route IS INITIAL"
+      },
+      {
+        "from": "r0",
+        "to": "eos",
+        "condition": "always"
+      },
+      {
+        "from": "g0",
+        "to": "l",
+        "condition": "else"
+      },
+      {
+        "from": "l",
+        "to": "pb",
+        "condition": "next row"
+      },
+      {
+        "from": "pb",
+        "to": "fb",
+        "condition": "always"
+      },
+      {
+        "from": "fb",
+        "to": "qm",
+        "condition": "always"
+      },
+      {
+        "from": "qm",
+        "to": "gm",
+        "condition": "always"
+      },
+      {
+        "from": "gm",
+        "to": "rm",
+        "condition": "lt_marc IS INITIAL"
+      },
+      {
+        "from": "rm",
+        "to": "gn",
+        "condition": "always"
+      },
+      {
+        "from": "gm",
+        "to": "rfc",
+        "condition": "else"
+      },
+      {
+        "from": "rfc",
+        "to": "gr",
+        "condition": "always"
+      },
+      {
+        "from": "gr",
+        "to": "plmp",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "gr",
+        "to": "lm",
+        "condition": "else"
+      },
+      {
+        "from": "lm",
+        "to": "qs",
+        "condition": "next row"
+      },
+      {
+        "from": "qs",
+        "to": "qo",
+        "condition": "always"
+      },
+      {
+        "from": "qo",
+        "to": "rs",
+        "condition": "always"
+      },
+      {
+        "from": "rs",
+        "to": "av",
+        "condition": "always"
+      },
+      {
+        "from": "av",
+        "to": "gv",
+        "condition": "always"
+      },
+      {
+        "from": "gv",
+        "to": "lm",
+        "condition": "lv_verf >= ls_marc-minbe"
+      },
+      {
+        "from": "gv",
+        "to": "am",
+        "condition": "else"
+      },
+      {
+        "from": "am",
+        "to": "gb",
+        "condition": "always"
+      },
+      {
+        "from": "gb",
+        "to": "ar",
+        "condition": "ls_marc-bstrf > 0"
+      },
+      {
+        "from": "gb",
+        "to": "g0m",
+        "condition": "else"
+      },
+      {
+        "from": "ar",
+        "to": "g0m",
+        "condition": "always"
+      },
+      {
+        "from": "g0m",
+        "to": "lm",
+        "condition": "lv_menge <= 0"
+      },
+      {
+        "from": "g0m",
+        "to": "lm",
+        "condition": "else"
+      },
+      {
+        "from": "lm",
+        "to": "xfb",
+        "condition": "no more rows"
+      },
+      {
+        "from": "gn",
+        "to": "l",
+        "condition": "gt_need IS INITIAL"
+      },
+      {
+        "from": "gn",
+        "to": "pn",
+        "condition": "else"
+      },
+      {
+        "from": "pn",
+        "to": "fn",
+        "condition": "always"
+      },
+      {
+        "from": "fn",
+        "to": "cs",
+        "condition": "always"
+      },
+      {
+        "from": "cs",
+        "to": "cs0",
+        "condition": "always"
+      },
+      {
+        "from": "cs0",
+        "to": "cs2",
+        "condition": "always"
+      },
+      {
+        "from": "cs2",
+        "to": "fe0",
+        "condition": "always"
+      },
+      {
+        "from": "fe0",
+        "to": "fe1",
+        "condition": "always"
+      },
+      {
+        "from": "fe1",
+        "to": "fe2",
+        "condition": "next row"
+      },
+      {
+        "from": "fe2",
+        "to": "cs3",
+        "condition": "always"
+      },
+      {
+        "from": "fe2",
+        "to": "cd3",
+        "condition": "always"
+      },
+      {
+        "from": "cs3",
+        "to": "cs4",
+        "condition": "first_error( lt_return ) = abap_true"
+      },
+      {
+        "from": "cs4",
+        "to": "cs5",
+        "condition": "always"
+      },
+      {
+        "from": "cs5",
+        "to": "ge",
+        "condition": "always"
+      },
+      {
+        "from": "cs3",
+        "to": "cs6",
+        "condition": "else"
+      },
+      {
+        "from": "cs6",
+        "to": "cs8",
+        "condition": "mv_test = abap_true"
+      },
+      {
+        "from": "cs8",
+        "to": "ge",
+        "condition": "always"
+      },
+      {
+        "from": "cs6",
+        "to": "cs9",
+        "condition": "else"
+      },
+      {
+        "from": "cs9",
+        "to": "cse",
+        "condition": "always"
+      },
+      {
+        "from": "cse",
+        "to": "ge",
+        "condition": "always"
+      },
+      {
+        "from": "ge",
+        "to": "plm1",
+        "condition": "ls_res-ebeln IS INITIAL"
+      },
+      {
+        "from": "re1",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "ge",
+        "to": "gt",
+        "condition": "else"
+      },
+      {
+        "from": "gt",
+        "to": "rt",
+        "condition": "p_test = abap_true"
+      },
+      {
+        "from": "rt",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "gt",
+        "to": "cd",
+        "condition": "else"
+      },
+      {
+        "from": "cd",
+        "to": "cd0",
+        "condition": "always"
+      },
+      {
+        "from": "cd0",
+        "to": "cd1",
+        "condition": "always"
+      },
+      {
+        "from": "cd1",
+        "to": "cd2",
+        "condition": "always"
+      },
+      {
+        "from": "cd2",
+        "to": "fe0",
+        "condition": "always"
+      },
+      {
+        "from": "cd3",
+        "to": "cd4",
+        "condition": "first_error( lt_return ) = abap_true OR rv_vbeln IS INITIAL"
+      },
+      {
+        "from": "cd4",
+        "to": "cd5",
+        "condition": "always"
+      },
+      {
+        "from": "cd5",
+        "to": "gd",
+        "condition": "always"
+      },
+      {
+        "from": "cd3",
+        "to": "cd6",
+        "condition": "else"
+      },
+      {
+        "from": "cd6",
+        "to": "cde",
+        "condition": "always"
+      },
+      {
+        "from": "cde",
+        "to": "gd",
+        "condition": "always"
+      },
+      {
+        "from": "gd",
+        "to": "plm2",
+        "condition": "ls_res-vbeln IS INITIAL"
+      },
+      {
+        "from": "re2",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "gd",
+        "to": "gw",
+        "condition": "else"
+      },
+      {
+        "from": "gw",
+        "to": "cg",
+        "condition": "p_wa = abap_true AND ps_route-sofort_wa = abap_true"
+      },
+      {
+        "from": "gw",
+        "to": "pls",
+        "condition": "else"
+      },
+      {
+        "from": "cg",
+        "to": "pg0",
+        "condition": "always"
+      },
+      {
+        "from": "pg0",
+        "to": "pg1",
+        "condition": "always"
+      },
+      {
+        "from": "pg1",
+        "to": "pg2",
+        "condition": "always"
+      },
+      {
+        "from": "pg2",
+        "to": "pg3",
+        "condition": "lv_error = abap_true"
+      },
+      {
+        "from": "pg2",
+        "to": "pge",
+        "condition": "else"
+      },
+      {
+        "from": "pg3",
+        "to": "pge",
+        "condition": "always"
+      },
+      {
+        "from": "pge",
+        "to": "gwa",
+        "condition": "always"
+      },
+      {
+        "from": "gwa",
+        "to": "plm3",
+        "condition": "ls_res-wa = abap_false"
+      },
+      {
+        "from": "gwa",
+        "to": "pls",
+        "condition": "else"
+      },
+      {
+        "from": "fne",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l",
+        "to": "pls1",
+        "condition": "no more rows"
+      },
+      {
+        "from": "pu",
+        "to": "fu",
+        "condition": "always"
+      },
+      {
+        "from": "fu",
+        "to": "gu",
+        "condition": "always"
+      },
+      {
+        "from": "gu",
+        "to": "ru",
+        "condition": "p_test = abap_true"
+      },
+      {
+        "from": "ru",
+        "to": "eos",
+        "condition": "always"
+      },
+      {
+        "from": "gu",
+        "to": "du",
+        "condition": "else"
+      },
+      {
+        "from": "du",
+        "to": "ex",
+        "condition": "always"
+      },
+      {
+        "from": "ex",
+        "to": "cm2",
+        "condition": "always"
+      },
+      {
+        "from": "cm2",
+        "to": "xfu",
+        "condition": "always"
+      },
+      {
+        "from": "eos",
+        "to": "pli",
+        "condition": "always"
+      },
+      {
+        "from": "pli",
+        "to": "fli",
+        "condition": "always"
+      },
+      {
+        "from": "fli",
+        "to": "lli",
+        "condition": "always"
+      },
+      {
+        "from": "lli",
+        "to": "gli",
+        "condition": "next row"
+      },
+      {
+        "from": "gli",
+        "to": "wli",
+        "condition": "ls_res-ebeln IS INITIAL OR ( p_test = abap_false AND ls_res-vbeln IS INITIAL )"
+      },
+      {
+        "from": "gli",
+        "to": "wli",
+        "condition": "else"
+      },
+      {
+        "from": "wli",
+        "to": "lli",
+        "condition": "next iteration"
+      },
+      {
+        "from": "lli",
+        "to": "wsum",
+        "condition": "no more rows"
+      },
+      {
+        "from": "pla",
+        "to": "fla",
+        "condition": "always"
+      },
+      {
+        "from": "fla",
+        "to": "balc",
+        "condition": "always"
+      },
+      {
+        "from": "balc",
+        "to": "xla",
+        "condition": "always"
+      },
+      {
+        "from": "xla",
+        "to": "pr",
+        "condition": "always"
+      },
+      {
+        "from": "xfr",
+        "to": "g0",
+        "condition": "always"
+      },
+      {
+        "from": "flm",
+        "to": "balm",
+        "condition": "always"
+      },
+      {
+        "from": "balm",
+        "to": "xlm",
+        "condition": "always"
+      },
+      {
+        "from": "fls",
+        "to": "bals",
+        "condition": "always"
+      },
+      {
+        "from": "bals",
+        "to": "gls",
+        "condition": "always"
+      },
+      {
+        "from": "gls",
+        "to": "cls",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "gls",
+        "to": "xls",
+        "condition": "else"
+      },
+      {
+        "from": "cls",
+        "to": "xls",
+        "condition": "always"
+      },
+      {
+        "from": "plm0",
+        "to": "flm",
+        "condition": "always"
+      },
+      {
+        "from": "pls0",
+        "to": "fls",
+        "condition": "always"
+      },
+      {
+        "from": "xlm",
+        "to": "pls0",
+        "condition": "always"
+      },
+      {
+        "from": "xls",
+        "to": "r0",
+        "condition": "always"
+      },
+      {
+        "from": "pls1",
+        "to": "fls",
+        "condition": "always"
+      },
+      {
+        "from": "xls",
+        "to": "pu",
+        "condition": "always"
+      },
+      {
+        "from": "plmp",
+        "to": "flm",
+        "condition": "always"
+      },
+      {
+        "from": "xlm",
+        "to": "lm",
+        "condition": "always"
+      },
+      {
+        "from": "xfb",
+        "to": "gn",
+        "condition": "always"
+      },
+      {
+        "from": "plm1",
+        "to": "flm",
+        "condition": "always"
+      },
+      {
+        "from": "xlm",
+        "to": "re1",
+        "condition": "always"
+      },
+      {
+        "from": "plm2",
+        "to": "flm",
+        "condition": "always"
+      },
+      {
+        "from": "xlm",
+        "to": "re2",
+        "condition": "always"
+      },
+      {
+        "from": "plm3",
+        "to": "flm",
+        "condition": "always"
+      },
+      {
+        "from": "xlm",
+        "to": "pls",
+        "condition": "always"
+      },
+      {
+        "from": "pls",
+        "to": "flm",
+        "condition": "always"
+      },
+      {
+        "from": "xlm",
+        "to": "fne",
+        "condition": "always"
+      },
+      {
+        "from": "fe1",
+        "to": "xfe",
+        "condition": "no more rows"
+      },
+      {
+        "from": "xfe",
+        "to": "cs3",
+        "condition": "always"
+      },
+      {
+        "from": "xfe",
+        "to": "cd3",
+        "condition": "always"
+      },
+      {
+        "from": "xfu",
+        "to": "eos",
+        "condition": "always"
+      },
+      {
+        "from": "xli",
+        "to": "eend",
+        "condition": "always"
+      },
+      {
+        "from": "wsum",
+        "to": "xli",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zmm_sto_nachschub_f02.abap:62 — kein Fachsatz „Die Ergebnisliste zeigt im Echtlauf auch die Filialen, bei denen UB oder Lieferung scheiterten“ (sie werden vor END-OF-SELECTION aus dem Ergebnis gelöscht; nur Filialen mit WA-Fehler bleiben, mit Erfolgstext)",
+    "zmm_sto_nachschub_f01.abap:72 — kein Fachsatz „Bereits teilgelieferte Mengen werden abgezogen“ (es wird die volle Bestellmenge offener Positionen gezählt)",
+    "zmm_sto_nachschub_f01.abap:60 — kein Fachsatz „Ohne Kassendaten wird die Filiale nicht beliefert“ (es wird ohne Abverkäufe weitergerechnet)",
+    "zcl_mm_sto_creator.abap:124 — kein Fachsatz „Der Wareneingang in der Filiale wird gebucht“ (nur der Warenausgang im liefernden Werk)"
+  ],
+  "processDescription": "Täglich früh startet ein Job den Filialnachschub für die gewählten Filialen und einen Belieferungstag (Vorschlag: morgen), mit RFC-Ziel des Kassensystems, Sofort-WA- und Testlauf-Schalter. Er legt ein Anwendungsprotokoll an und liest für den Wochentag die aktiven Belieferungen aus dem Belieferungsplan; ohne Belieferung protokolliert er eine Warnung und endet. Je Filiale liest er die nachschubrelevanten Materialien, holt per RFC die heutigen Kassenabverkäufe (bei Ausfall ohne sie) und berechnet je Material den verfügbaren Bestand aus S032-Bestand, offenen Umlagerungsbestellungen und Abverkauf. Unter dem Meldebestand wird bis zum Höchstbestand aufgefüllt und auf den Rundungswert aufgerundet. Für Filialen mit Bedarf legt eine Hilfsklasse eine Umlagerungsbestellung mit dem liefernden Werk an (im Testlauf nur Simulation), im Echtlauf danach eine Auslieferung und – bei Sofort-WA-Filialen – den Warenausgang; jeder Fehler führt zu Rollback und Protokolleintrag, die Filiale gilt dann als fertig. Nach allen Filialen wird das Protokoll gesichert und im Echtlauf das Ergebnis der Filialen mit Lieferung für den Avis-Folgejob im INDX abgelegt. Zum Schluss wird eine Ergebnisliste mit Zählern ausgegeben, die im Echtlauf wegen der Übergabe nur noch die Filialen mit Lieferung enthält."
+}

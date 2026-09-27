@@ -1,0 +1,630 @@
+{
+  "id": "BM-026",
+  "title": "Freigegebene Bestellanforderungen je Lieferant in Bestellungen umsetzen (BAPI_PO_CREATE1)",
+  "classes": [
+    "K01",
+    "K03"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "EBAN",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 29,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:29"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_PO_CREATE1",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 67,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:67"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_ROLLBACK",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 82,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:82"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_COMMIT",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 90,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:90"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-026-B01",
+      "text": "Es werden die Bestellanforderungen des Werks und der Einkaufsorganisation gelesen, die den gewählten Freigabestand haben, noch nicht bearbeitet, nicht gelöscht und einem festen Lieferanten zugeordnet sind.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:29"
+        }
+      ]
+    },
+    {
+      "id": "BM-026-B02",
+      "text": "Gibt es keine, wird „Keine offenen Banfen“ gemeldet und die Verarbeitung beendet.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:36"
+        },
+        {
+          "file": "source.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:37"
+        },
+        {
+          "file": "source.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:38"
+        }
+      ]
+    },
+    {
+      "id": "BM-026-B03",
+      "text": "Die Banfen werden nach festem Lieferanten gruppiert; je Lieferant entsteht genau eine Bestellung.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:42"
+        },
+        {
+          "file": "source.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:45"
+        }
+      ]
+    },
+    {
+      "id": "BM-026-B04",
+      "text": "Der Bestellkopf erhält Bestellart, Lieferant und Einkaufsorganisation aus der Selektion, Buchungskreis 1000 und Einkäufergruppe 001 fest.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:47"
+        }
+      ]
+    },
+    {
+      "id": "BM-026-B05",
+      "text": "Jede Banf des Lieferanten wird zu einer Bestellposition in Zehnerschritten mit Bezug auf Banf-Nummer und -Position und der Banf-Menge.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:55"
+        },
+        {
+          "file": "source.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:56"
+        }
+      ]
+    },
+    {
+      "id": "BM-026-B06",
+      "text": "Die Bestellung wird über das Standard-BAPI angelegt, im Testlauf nur simuliert.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:67"
+        }
+      ]
+    },
+    {
+      "id": "BM-026-B07",
+      "text": "Enthält die Rückmeldung einen Fehler, wird zurückgerollt, für den Lieferanten „keine Bestellung angelegt“ protokolliert und mit dem nächsten Lieferanten fortgefahren.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:81"
+        },
+        {
+          "file": "source.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:82"
+        },
+        {
+          "file": "source.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:83"
+        }
+      ]
+    },
+    {
+      "id": "BM-026-B08",
+      "text": "Im Testlauf wird nur die Anzahl der Positionen je Lieferant ausgegeben.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:87"
+        },
+        {
+          "file": "source.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:88"
+        }
+      ]
+    },
+    {
+      "id": "BM-026-B09",
+      "text": "Im Echtlauf wird die Bestellung synchron festgeschrieben und die neue Bestellnummer je Lieferant ausgegeben.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:90"
+        },
+        {
+          "file": "source.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:93"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:28"
+        },
+        "meaning": "Reportstart"
+      },
+      {
+        "id": "q",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:29"
+        },
+        "meaning": "Offene, freigegebene Banfen mit festem Lieferanten lesen"
+      },
+      {
+        "id": "g0",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:36"
+        },
+        "meaning": "Banfen vorhanden?"
+      },
+      {
+        "id": "m0",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:37"
+        },
+        "meaning": "Hinweis: keine offenen Banfen"
+      },
+      {
+        "id": "e0",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:38"
+        },
+        "meaning": "Verarbeitung beenden"
+      },
+      {
+        "id": "l1",
+        "type": "loop",
+        "anchor": {
+          "file": "source.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:41"
+        },
+        "meaning": "Banfen durchlaufen"
+      },
+      {
+        "id": "a1",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:42"
+        },
+        "meaning": "Festen Lieferanten als Belegschlüssel sammeln"
+      },
+      {
+        "id": "l2",
+        "type": "loop",
+        "anchor": {
+          "file": "source.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:45"
+        },
+        "meaning": "Je Lieferant eine Bestellung"
+      },
+      {
+        "id": "l3",
+        "type": "loop",
+        "anchor": {
+          "file": "source.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:55"
+        },
+        "meaning": "Banfen des Lieferanten durchlaufen"
+      },
+      {
+        "id": "a3",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:56"
+        },
+        "meaning": "Bestellposition mit Banf-Bezug und Menge bilden"
+      },
+      {
+        "id": "b",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:67"
+        },
+        "meaning": "Bestellung anlegen bzw. simulieren"
+      },
+      {
+        "id": "ge",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:81"
+        },
+        "meaning": "Fehlermeldung im Return?"
+      },
+      {
+        "id": "rb",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:82"
+        },
+        "meaning": "Zurückrollen"
+      },
+      {
+        "id": "we",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:83"
+        },
+        "meaning": "Fehler je Lieferant protokollieren"
+      },
+      {
+        "id": "gt",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:87"
+        },
+        "meaning": "Testlauf?"
+      },
+      {
+        "id": "wt",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:88"
+        },
+        "meaning": "Testlauf-Ergebnis ausgeben"
+      },
+      {
+        "id": "c",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:90"
+        },
+        "meaning": "Bestellung festschreiben"
+      },
+      {
+        "id": "wc",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:93"
+        },
+        "meaning": "Angelegte Bestellnummer ausgeben"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 95,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:95"
+        },
+        "meaning": "Alle Lieferanten verarbeitet"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "q",
+        "condition": "always"
+      },
+      {
+        "from": "q",
+        "to": "g0",
+        "condition": "always"
+      },
+      {
+        "from": "g0",
+        "to": "m0",
+        "condition": "gt_eban IS INITIAL"
+      },
+      {
+        "from": "m0",
+        "to": "e0",
+        "condition": "always"
+      },
+      {
+        "from": "g0",
+        "to": "l1",
+        "condition": "else"
+      },
+      {
+        "from": "l1",
+        "to": "a1",
+        "condition": "next row"
+      },
+      {
+        "from": "a1",
+        "to": "l1",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l1",
+        "to": "l2",
+        "condition": "no more rows"
+      },
+      {
+        "from": "l2",
+        "to": "l3",
+        "condition": "next row"
+      },
+      {
+        "from": "l3",
+        "to": "a3",
+        "condition": "next row"
+      },
+      {
+        "from": "a3",
+        "to": "l3",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l3",
+        "to": "b",
+        "condition": "no more rows"
+      },
+      {
+        "from": "b",
+        "to": "ge",
+        "condition": "always"
+      },
+      {
+        "from": "ge",
+        "to": "rb",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "rb",
+        "to": "we",
+        "condition": "always"
+      },
+      {
+        "from": "we",
+        "to": "l2",
+        "condition": "next iteration"
+      },
+      {
+        "from": "ge",
+        "to": "gt",
+        "condition": "else"
+      },
+      {
+        "from": "gt",
+        "to": "wt",
+        "condition": "p_test = 'X'"
+      },
+      {
+        "from": "wt",
+        "to": "l2",
+        "condition": "next iteration"
+      },
+      {
+        "from": "gt",
+        "to": "c",
+        "condition": "else"
+      },
+      {
+        "from": "c",
+        "to": "wc",
+        "condition": "always"
+      },
+      {
+        "from": "wc",
+        "to": "l2",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l2",
+        "to": "e",
+        "condition": "no more rows"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "source.abap:79 — kein Fachsatz „Auch Abbruchmeldungen (Typ A) verhindern die Bestellung“ (geprüft wird nur Typ E)",
+    "source.abap:47 — kein Fachsatz „Der Buchungskreis wird aus dem Werk abgeleitet“ (fest 1000, nur TODO-Kommentar)",
+    "source.abap:60 — kein Fachsatz „Preis und Lieferdatum werden aus der Banf übernommen“ (nur Banf-Bezug und Menge; Rest leitet der BAPI ab)",
+    "gesamte Scheibe — kein Fachsatz „Der Banf-Status wird vom Report auf bestellt gesetzt“ (der Report schreibt EBAN nicht selbst; das geschieht, wenn überhaupt, im Standard beim Anlegen der Bestellung)"
+  ],
+  "processDescription": "Ein Einkäufer oder ein Hintergrundjob startet den Report mit Werk, Einkaufsorganisation, Bestellart, Freigabekennzeichen und dem Testlauf-Schalter (Vorschlag: an). Der Report liest die offenen, nicht gelöschten und entsprechend freigegebenen Bestellanforderungen mit festem Lieferanten. Gibt es keine, meldet er das und endet. Sonst gruppiert er die Banfen nach Lieferant und baut je Lieferant eine Bestellung mit festem Buchungskreis 1000 und Einkäufergruppe 001, deren Positionen in Zehnerschritten auf die Banfen verweisen und deren Menge übernehmen. Die Bestellung wird über BAPI_PO_CREATE1 angelegt, im Testlauf nur geprüft. Meldet der BAPI einen Fehler, wird zurückgerollt, der Lieferant mit Fehler protokolliert und der nächste Lieferant verarbeitet. Im Testlauf wird nur die Positionsanzahl ausgegeben, im Echtlauf wird synchron festgeschrieben und die neue Bestellnummer ausgegeben."
+}

@@ -1,0 +1,1580 @@
+{
+  "id": "BM-032",
+  "title": "Lieferantenbewertung nach Termin-, Mengentreue und Qualität mit Periodenablage",
+  "classes": [
+    "K01",
+    "K02",
+    "K04"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "EKBE",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zmm_lief_bewertung_f01.abap",
+        "line": 6,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zmm_lief_bewertung_f01.abap:6"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "EKKO",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zmm_lief_bewertung_f01.abap",
+        "line": 6,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zmm_lief_bewertung_f01.abap:6"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "EKET",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zmm_lief_bewertung_f01.abap",
+        "line": 25,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zmm_lief_bewertung_f01.abap:25"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "EKPO",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zmm_lief_bewertung_f01.abap",
+        "line": 69,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zmm_lief_bewertung_f01.abap:69"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "QALS",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zmm_lief_bewertung_f01.abap",
+        "line": 95,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zmm_lief_bewertung_f01.abap:95"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "QAVE",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zmm_lief_bewertung_f01.abap",
+        "line": 102,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zmm_lief_bewertung_f01.abap:102"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZMM_LIEF_SCORE",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "zmm_lief_bewertung_f01.abap",
+        "line": 157,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zmm_lief_bewertung_f01.abap:157"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "CL_SALV_TABLE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zmm_lief_bewertung_f01.abap",
+        "line": 173,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zmm_lief_bewertung_f01.abap:173"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-032-B01",
+      "text": "Es werden die Wareneingänge zu Bestellungen der eingegebenen Einkaufsorganisation und Lieferanten im Buchungszeitraum gelesen; Stornobuchungen werden nicht bewertet.",
+      "anchors": [
+        {
+          "file": "zmm_lief_bewertung_f01.abap",
+          "line": 6,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_lief_bewertung_f01.abap:6"
+        },
+        {
+          "file": "zmm_lief_bewertung_f01.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_lief_bewertung_f01.abap:14"
+        }
+      ]
+    },
+    {
+      "id": "BM-032-B02",
+      "text": "Gibt es keine, wird ein Hinweis ausgegeben und die Bewertung übersprungen; die (leere) Ergebnisliste wird trotzdem angezeigt.",
+      "anchors": [
+        {
+          "file": "zmm_lief_bewertung.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_lief_bewertung.abap:47"
+        },
+        {
+          "file": "zmm_lief_bewertung.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_lief_bewertung.abap:48"
+        },
+        {
+          "file": "zmm_lief_bewertung.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_lief_bewertung.abap:49"
+        },
+        {
+          "file": "zmm_lief_bewertung.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_lief_bewertung.abap:60"
+        }
+      ]
+    },
+    {
+      "id": "BM-032-B03",
+      "text": "Für jeden Wareneingang wird der früheste Liefertermin der Bestellposition gelesen; Positionen ohne Termin gehen nicht in die Termintreue ein.",
+      "anchors": [
+        {
+          "file": "zmm_lief_bewertung_f01.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_lief_bewertung_f01.abap:25"
+        },
+        {
+          "file": "zmm_lief_bewertung_f01.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_lief_bewertung_f01.abap:28"
+        }
+      ]
+    },
+    {
+      "id": "BM-032-B04",
+      "text": "Die Verspätung in Tagen ergibt die Terminpunkte: pünktlich oder früh 100, bis 3 Tage 80, bis 7 Tage 50, darüber 0.",
+      "anchors": [
+        {
+          "file": "zmm_lief_bewertung_f01.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_lief_bewertung_f01.abap:31"
+        },
+        {
+          "file": "zmm_lief_bewertung_f01.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_lief_bewertung_f01.abap:35"
+        }
+      ]
+    },
+    {
+      "id": "BM-032-B05",
+      "text": "Für die Mengentreue werden die Wareneingangsmengen je Bestellposition summiert und nur endgelieferte Positionen mit Bestellmenge bewertet.",
+      "anchors": [
+        {
+          "file": "zmm_lief_bewertung_f01.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_lief_bewertung_f01.abap:65"
+        },
+        {
+          "file": "zmm_lief_bewertung_f01.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_lief_bewertung_f01.abap:69"
+        },
+        {
+          "file": "zmm_lief_bewertung_f01.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_lief_bewertung_f01.abap:73"
+        }
+      ]
+    },
+    {
+      "id": "BM-032-B06",
+      "text": "Die prozentuale Abweichung zwischen gelieferter und bestellter Menge ergibt die Mengenpunkte: 100 minus doppelte Abweichung, mindestens 0.",
+      "anchors": [
+        {
+          "file": "zmm_lief_bewertung_f01.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_lief_bewertung_f01.abap:76"
+        },
+        {
+          "file": "zmm_lief_bewertung_f01.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_lief_bewertung_f01.abap:80"
+        }
+      ]
+    },
+    {
+      "id": "BM-032-B07",
+      "text": "Für die Qualität werden die Wareneingangsprüflose der bewerteten Lieferanten im Zeitraum gelesen und nur Lose mit Verwendungsentscheid gezählt; angenommene Lose zählen als gut.",
+      "anchors": [
+        {
+          "file": "zmm_lief_bewertung_f01.abap",
+          "line": 95,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_lief_bewertung_f01.abap:95"
+        },
+        {
+          "file": "zmm_lief_bewertung_f01.abap",
+          "line": 102,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_lief_bewertung_f01.abap:102"
+        },
+        {
+          "file": "zmm_lief_bewertung_f01.abap",
+          "line": 104,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_lief_bewertung_f01.abap:104"
+        },
+        {
+          "file": "zmm_lief_bewertung_f01.abap",
+          "line": 110,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_lief_bewertung_f01.abap:110"
+        }
+      ]
+    },
+    {
+      "id": "BM-032-B08",
+      "text": "Je Lieferant werden die Durchschnittspunkte für Termin und Menge und die Annahmequote in Prozent gebildet; ohne Prüflose gilt die Qualität als 100.",
+      "anchors": [
+        {
+          "file": "zmm_lief_bewertung_f01.abap",
+          "line": 127,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_lief_bewertung_f01.abap:127"
+        },
+        {
+          "file": "zmm_lief_bewertung_f01.abap",
+          "line": 134,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_lief_bewertung_f01.abap:134"
+        }
+      ]
+    },
+    {
+      "id": "BM-032-B09",
+      "text": "Die Gesamtpunktzahl gewichtet Termintreue mit 40 %, Mengentreue und Qualität mit je 30 %.",
+      "anchors": [
+        {
+          "file": "zmm_lief_bewertung_f01.abap",
+          "line": 143,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_lief_bewertung_f01.abap:143"
+        }
+      ]
+    },
+    {
+      "id": "BM-032-B10",
+      "text": "Ab 90 Punkten erhält der Lieferant die Note A, ab 70 die Note B, sonst C.",
+      "anchors": [
+        {
+          "file": "zmm_lief_bewertung_f01.abap",
+          "line": 144,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_lief_bewertung_f01.abap:144"
+        }
+      ]
+    },
+    {
+      "id": "BM-032-B11",
+      "text": "Nur wenn Speichern gewählt ist, wird die bisherige Bewertung der Einkaufsorganisation und Periode gelöscht und durch die neue ersetzt.",
+      "anchors": [
+        {
+          "file": "zmm_lief_bewertung.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_lief_bewertung.abap:56"
+        },
+        {
+          "file": "zmm_lief_bewertung_f01.abap",
+          "line": 157,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_lief_bewertung_f01.abap:157"
+        },
+        {
+          "file": "zmm_lief_bewertung_f01.abap",
+          "line": 160,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_lief_bewertung_f01.abap:160"
+        }
+      ]
+    },
+    {
+      "id": "BM-032-B12",
+      "text": "Gelingt das Schreiben, wird festgeschrieben und die Anzahl gemeldet; sonst wird zurückgerollt und mit Fehler abgebrochen.",
+      "anchors": [
+        {
+          "file": "zmm_lief_bewertung_f01.abap",
+          "line": 161,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_lief_bewertung_f01.abap:161"
+        },
+        {
+          "file": "zmm_lief_bewertung_f01.abap",
+          "line": 162,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_lief_bewertung_f01.abap:162"
+        },
+        {
+          "file": "zmm_lief_bewertung_f01.abap",
+          "line": 163,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_lief_bewertung_f01.abap:163"
+        },
+        {
+          "file": "zmm_lief_bewertung_f01.abap",
+          "line": 165,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_lief_bewertung_f01.abap:165"
+        },
+        {
+          "file": "zmm_lief_bewertung_f01.abap",
+          "line": 166,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_lief_bewertung_f01.abap:166"
+        }
+      ]
+    },
+    {
+      "id": "BM-032-B13",
+      "text": "Zum Schluss wird die Bewertung je Lieferant mit Einzelpunkten, Gesamtpunkten und Note als ALV angezeigt.",
+      "anchors": [
+        {
+          "file": "zmm_lief_bewertung.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_lief_bewertung.abap:61"
+        },
+        {
+          "file": "zmm_lief_bewertung_f01.abap",
+          "line": 176,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_lief_bewertung_f01.abap:176"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "zmm_lief_bewertung.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_lief_bewertung.abap:45"
+        },
+        "meaning": "Reportstart"
+      },
+      {
+        "id": "p1",
+        "type": "call",
+        "anchor": {
+          "file": "zmm_lief_bewertung.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_lief_bewertung.abap:46"
+        },
+        "meaning": "Wareneingänge lesen"
+      },
+      {
+        "id": "f1",
+        "type": "start",
+        "anchor": {
+          "file": "zmm_lief_bewertung_f01.abap",
+          "line": 5,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_lief_bewertung_f01.abap:5"
+        },
+        "meaning": "Leseroutine Wareneingänge"
+      },
+      {
+        "id": "q1",
+        "type": "read",
+        "anchor": {
+          "file": "zmm_lief_bewertung_f01.abap",
+          "line": 6,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_lief_bewertung_f01.abap:6"
+        },
+        "meaning": "Wareneingänge zu Bestellungen der EKORG im Zeitraum lesen"
+      },
+      {
+        "id": "g0",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_lief_bewertung.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_lief_bewertung.abap:47"
+        },
+        "meaning": "Wareneingänge vorhanden?"
+      },
+      {
+        "id": "m0",
+        "type": "output",
+        "anchor": {
+          "file": "zmm_lief_bewertung.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_lief_bewertung.abap:48"
+        },
+        "meaning": "Hinweis: keine Wareneingänge"
+      },
+      {
+        "id": "r0",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_lief_bewertung.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_lief_bewertung.abap:49"
+        },
+        "meaning": "Bewertungsblock verlassen"
+      },
+      {
+        "id": "p2",
+        "type": "call",
+        "anchor": {
+          "file": "zmm_lief_bewertung.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_lief_bewertung.abap:51"
+        },
+        "meaning": "Termintreue bewerten"
+      },
+      {
+        "id": "f2",
+        "type": "start",
+        "anchor": {
+          "file": "zmm_lief_bewertung_f01.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_lief_bewertung_f01.abap:18"
+        },
+        "meaning": "Routine Termintreue"
+      },
+      {
+        "id": "l2",
+        "type": "loop",
+        "anchor": {
+          "file": "zmm_lief_bewertung_f01.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_lief_bewertung_f01.abap:24"
+        },
+        "meaning": "Wareneingänge durchlaufen"
+      },
+      {
+        "id": "q2",
+        "type": "read",
+        "anchor": {
+          "file": "zmm_lief_bewertung_f01.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_lief_bewertung_f01.abap:25"
+        },
+        "meaning": "Frühesten Liefertermin der Bestellposition lesen"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_lief_bewertung_f01.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_lief_bewertung_f01.abap:28"
+        },
+        "meaning": "Liefertermin vorhanden?"
+      },
+      {
+        "id": "g2b",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_lief_bewertung_f01.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_lief_bewertung_f01.abap:35"
+        },
+        "meaning": "Verspätung in Tagen in Punkte umsetzen"
+      },
+      {
+        "id": "p3",
+        "type": "call",
+        "anchor": {
+          "file": "zmm_lief_bewertung.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_lief_bewertung.abap:52"
+        },
+        "meaning": "Mengentreue bewerten"
+      },
+      {
+        "id": "f3",
+        "type": "start",
+        "anchor": {
+          "file": "zmm_lief_bewertung_f01.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_lief_bewertung_f01.abap:49"
+        },
+        "meaning": "Routine Mengentreue"
+      },
+      {
+        "id": "l3",
+        "type": "loop",
+        "anchor": {
+          "file": "zmm_lief_bewertung_f01.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_lief_bewertung_f01.abap:68"
+        },
+        "meaning": "Bestellpositionen mit Wareneingang durchlaufen"
+      },
+      {
+        "id": "q3",
+        "type": "read",
+        "anchor": {
+          "file": "zmm_lief_bewertung_f01.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_lief_bewertung_f01.abap:69"
+        },
+        "meaning": "Bestellposition lesen"
+      },
+      {
+        "id": "g3",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_lief_bewertung_f01.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_lief_bewertung_f01.abap:73"
+        },
+        "meaning": "Position endgeliefert und bewertbar?"
+      },
+      {
+        "id": "c3",
+        "type": "action",
+        "anchor": {
+          "file": "zmm_lief_bewertung_f01.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_lief_bewertung_f01.abap:80"
+        },
+        "meaning": "Mengenpunkte aus Abweichung berechnen"
+      },
+      {
+        "id": "p4",
+        "type": "call",
+        "anchor": {
+          "file": "zmm_lief_bewertung.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_lief_bewertung.abap:53"
+        },
+        "meaning": "Qualität bewerten"
+      },
+      {
+        "id": "f4",
+        "type": "start",
+        "anchor": {
+          "file": "zmm_lief_bewertung_f01.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_lief_bewertung_f01.abap:86"
+        },
+        "meaning": "Routine Qualität"
+      },
+      {
+        "id": "g4",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_lief_bewertung_f01.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_lief_bewertung_f01.abap:92"
+        },
+        "meaning": "Bewertete Lieferanten vorhanden?"
+      },
+      {
+        "id": "r4",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_lief_bewertung_f01.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_lief_bewertung_f01.abap:93"
+        },
+        "meaning": "Ohne Lieferanten keine Qualitätsbewertung"
+      },
+      {
+        "id": "q4",
+        "type": "read",
+        "anchor": {
+          "file": "zmm_lief_bewertung_f01.abap",
+          "line": 95,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_lief_bewertung_f01.abap:95"
+        },
+        "meaning": "WE-Prüflose der Lieferanten im Zeitraum lesen"
+      },
+      {
+        "id": "l4",
+        "type": "loop",
+        "anchor": {
+          "file": "zmm_lief_bewertung_f01.abap",
+          "line": 101,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_lief_bewertung_f01.abap:101"
+        },
+        "meaning": "Prüflose durchlaufen"
+      },
+      {
+        "id": "q4b",
+        "type": "read",
+        "anchor": {
+          "file": "zmm_lief_bewertung_f01.abap",
+          "line": 102,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_lief_bewertung_f01.abap:102"
+        },
+        "meaning": "Verwendungsentscheid des Prüfloses lesen"
+      },
+      {
+        "id": "g4b",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_lief_bewertung_f01.abap",
+          "line": 104,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_lief_bewertung_f01.abap:104"
+        },
+        "meaning": "Verwendungsentscheid vorhanden?"
+      },
+      {
+        "id": "g4c",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_lief_bewertung_f01.abap",
+          "line": 110,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_lief_bewertung_f01.abap:110"
+        },
+        "meaning": "Los angenommen?"
+      },
+      {
+        "id": "p5",
+        "type": "call",
+        "anchor": {
+          "file": "zmm_lief_bewertung.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_lief_bewertung.abap:54"
+        },
+        "meaning": "Gesamtnote bilden"
+      },
+      {
+        "id": "f5",
+        "type": "start",
+        "anchor": {
+          "file": "zmm_lief_bewertung_f01.abap",
+          "line": 118,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_lief_bewertung_f01.abap:118"
+        },
+        "meaning": "Routine Gesamtnote"
+      },
+      {
+        "id": "l5",
+        "type": "loop",
+        "anchor": {
+          "file": "zmm_lief_bewertung_f01.abap",
+          "line": 125,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_lief_bewertung_f01.abap:125"
+        },
+        "meaning": "Lieferanten durchlaufen"
+      },
+      {
+        "id": "g5q",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_lief_bewertung_f01.abap",
+          "line": 134,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_lief_bewertung_f01.abap:134"
+        },
+        "meaning": "Prüflose vorhanden?"
+      },
+      {
+        "id": "a5",
+        "type": "action",
+        "anchor": {
+          "file": "zmm_lief_bewertung_f01.abap",
+          "line": 143,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_lief_bewertung_f01.abap:143"
+        },
+        "meaning": "Gesamtpunkte gewichtet 40/30/30"
+      },
+      {
+        "id": "g5n",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_lief_bewertung_f01.abap",
+          "line": 144,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_lief_bewertung_f01.abap:144"
+        },
+        "meaning": "Note A/B/C zuordnen"
+      },
+      {
+        "id": "gu",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_lief_bewertung.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_lief_bewertung.abap:56"
+        },
+        "meaning": "Ergebnis speichern?"
+      },
+      {
+        "id": "p6",
+        "type": "call",
+        "anchor": {
+          "file": "zmm_lief_bewertung.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_lief_bewertung.abap:57"
+        },
+        "meaning": "Ergebnis ablegen"
+      },
+      {
+        "id": "f6",
+        "type": "start",
+        "anchor": {
+          "file": "zmm_lief_bewertung_f01.abap",
+          "line": 156,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_lief_bewertung_f01.abap:156"
+        },
+        "meaning": "Routine Speichern"
+      },
+      {
+        "id": "w6a",
+        "type": "write",
+        "anchor": {
+          "file": "zmm_lief_bewertung_f01.abap",
+          "line": 157,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_lief_bewertung_f01.abap:157"
+        },
+        "meaning": "Bisherige Bewertung der Periode löschen"
+      },
+      {
+        "id": "w6b",
+        "type": "write",
+        "anchor": {
+          "file": "zmm_lief_bewertung_f01.abap",
+          "line": 160,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_lief_bewertung_f01.abap:160"
+        },
+        "meaning": "Neue Bewertung schreiben"
+      },
+      {
+        "id": "g6",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_lief_bewertung_f01.abap",
+          "line": 161,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_lief_bewertung_f01.abap:161"
+        },
+        "meaning": "Schreiben erfolgreich?"
+      },
+      {
+        "id": "cm",
+        "type": "transaction",
+        "anchor": {
+          "file": "zmm_lief_bewertung_f01.abap",
+          "line": 162,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_lief_bewertung_f01.abap:162"
+        },
+        "meaning": "Festschreiben"
+      },
+      {
+        "id": "m6s",
+        "type": "output",
+        "anchor": {
+          "file": "zmm_lief_bewertung_f01.abap",
+          "line": 163,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_lief_bewertung_f01.abap:163"
+        },
+        "meaning": "Erfolgsmeldung mit Anzahl gespeicherter Bewertungen"
+      },
+      {
+        "id": "rb",
+        "type": "transaction",
+        "anchor": {
+          "file": "zmm_lief_bewertung_f01.abap",
+          "line": 165,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_lief_bewertung_f01.abap:165"
+        },
+        "meaning": "Zurückrollen und mit Fehler abbrechen"
+      },
+      {
+        "id": "m6e",
+        "type": "output",
+        "anchor": {
+          "file": "zmm_lief_bewertung_f01.abap",
+          "line": 166,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_lief_bewertung_f01.abap:166"
+        },
+        "meaning": "Fehlermeldung, Lauf abgebrochen"
+      },
+      {
+        "id": "xe6",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_lief_bewertung_f01.abap",
+          "line": 166,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_lief_bewertung_f01.abap:166"
+        },
+        "meaning": "Abbruch nach Fehlermeldung"
+      },
+      {
+        "id": "eos",
+        "type": "start",
+        "anchor": {
+          "file": "zmm_lief_bewertung.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_lief_bewertung.abap:60"
+        },
+        "meaning": "Anzeigeblock"
+      },
+      {
+        "id": "p7",
+        "type": "call",
+        "anchor": {
+          "file": "zmm_lief_bewertung.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_lief_bewertung.abap:61"
+        },
+        "meaning": "Ergebnis anzeigen"
+      },
+      {
+        "id": "f7",
+        "type": "start",
+        "anchor": {
+          "file": "zmm_lief_bewertung_f01.abap",
+          "line": 171,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_lief_bewertung_f01.abap:171"
+        },
+        "meaning": "Routine Anzeige"
+      },
+      {
+        "id": "fac",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zmm_lief_bewertung_f01.abap",
+          "line": 173,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_lief_bewertung_f01.abap:173"
+        },
+        "meaning": "ALV-Objekt erzeugen"
+      },
+      {
+        "id": "dsp",
+        "type": "output",
+        "anchor": {
+          "file": "zmm_lief_bewertung_f01.abap",
+          "line": 176,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_lief_bewertung_f01.abap:176"
+        },
+        "meaning": "Bewertung als ALV anzeigen"
+      },
+      {
+        "id": "mi",
+        "type": "output",
+        "anchor": {
+          "file": "zmm_lief_bewertung_f01.abap",
+          "line": 178,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_lief_bewertung_f01.abap:178"
+        },
+        "meaning": "Hinweis: Anzeige nicht möglich"
+      },
+      {
+        "id": "x1",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_lief_bewertung_f01.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_lief_bewertung_f01.abap:15"
+        },
+        "meaning": "LESEN_WARENEINGAENGE beendet"
+      },
+      {
+        "id": "x2",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_lief_bewertung_f01.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_lief_bewertung_f01.abap:46"
+        },
+        "meaning": "TERMINTREUE beendet"
+      },
+      {
+        "id": "x3",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_lief_bewertung_f01.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_lief_bewertung_f01.abap:83"
+        },
+        "meaning": "MENGENTREUE beendet"
+      },
+      {
+        "id": "x4",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_lief_bewertung_f01.abap",
+          "line": 115,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_lief_bewertung_f01.abap:115"
+        },
+        "meaning": "QUALITAET beendet"
+      },
+      {
+        "id": "x5",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_lief_bewertung_f01.abap",
+          "line": 153,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_lief_bewertung_f01.abap:153"
+        },
+        "meaning": "GESAMTNOTE beendet"
+      },
+      {
+        "id": "x6",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_lief_bewertung_f01.abap",
+          "line": 168,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_lief_bewertung_f01.abap:168"
+        },
+        "meaning": "SPEICHERN beendet"
+      },
+      {
+        "id": "x7",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_lief_bewertung_f01.abap",
+          "line": 180,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_lief_bewertung_f01.abap:180"
+        },
+        "meaning": "ANZEIGEN beendet"
+      },
+      {
+        "id": "eend",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_lief_bewertung.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_lief_bewertung.abap:61"
+        },
+        "meaning": "Report beendet"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "p1",
+        "condition": "always"
+      },
+      {
+        "from": "p1",
+        "to": "f1",
+        "condition": "always"
+      },
+      {
+        "from": "f1",
+        "to": "q1",
+        "condition": "always"
+      },
+      {
+        "from": "q1",
+        "to": "x1",
+        "condition": "always"
+      },
+      {
+        "from": "g0",
+        "to": "m0",
+        "condition": "gt_we IS INITIAL"
+      },
+      {
+        "from": "m0",
+        "to": "r0",
+        "condition": "always"
+      },
+      {
+        "from": "r0",
+        "to": "eos",
+        "condition": "always"
+      },
+      {
+        "from": "g0",
+        "to": "p2",
+        "condition": "else"
+      },
+      {
+        "from": "p2",
+        "to": "f2",
+        "condition": "always"
+      },
+      {
+        "from": "f2",
+        "to": "l2",
+        "condition": "always"
+      },
+      {
+        "from": "l2",
+        "to": "q2",
+        "condition": "next row"
+      },
+      {
+        "from": "q2",
+        "to": "g2",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "l2",
+        "condition": "lv_eindt IS INITIAL"
+      },
+      {
+        "from": "g2",
+        "to": "g2b",
+        "condition": "else"
+      },
+      {
+        "from": "g2b",
+        "to": "l2",
+        "condition": "lv_tage <= 0"
+      },
+      {
+        "from": "g2b",
+        "to": "l2",
+        "condition": "lv_tage <= 3"
+      },
+      {
+        "from": "g2b",
+        "to": "l2",
+        "condition": "lv_tage <= 7"
+      },
+      {
+        "from": "g2b",
+        "to": "l2",
+        "condition": "else"
+      },
+      {
+        "from": "l2",
+        "to": "x2",
+        "condition": "no more rows"
+      },
+      {
+        "from": "p3",
+        "to": "f3",
+        "condition": "always"
+      },
+      {
+        "from": "f3",
+        "to": "l3",
+        "condition": "always"
+      },
+      {
+        "from": "l3",
+        "to": "q3",
+        "condition": "next row"
+      },
+      {
+        "from": "q3",
+        "to": "g3",
+        "condition": "always"
+      },
+      {
+        "from": "g3",
+        "to": "l3",
+        "condition": "sy-subrc <> 0 OR ls_ekpo-elikz <> 'X' OR ls_ekpo-menge = 0"
+      },
+      {
+        "from": "g3",
+        "to": "c3",
+        "condition": "else"
+      },
+      {
+        "from": "c3",
+        "to": "l3",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l3",
+        "to": "x3",
+        "condition": "no more rows"
+      },
+      {
+        "from": "p4",
+        "to": "f4",
+        "condition": "always"
+      },
+      {
+        "from": "f4",
+        "to": "g4",
+        "condition": "always"
+      },
+      {
+        "from": "q4",
+        "to": "l4",
+        "condition": "always"
+      },
+      {
+        "from": "l4",
+        "to": "q4b",
+        "condition": "next row"
+      },
+      {
+        "from": "q4b",
+        "to": "g4b",
+        "condition": "always"
+      },
+      {
+        "from": "g4b",
+        "to": "l4",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g4b",
+        "to": "g4c",
+        "condition": "else"
+      },
+      {
+        "from": "g4c",
+        "to": "l4",
+        "condition": "ls_qave-vbewertung = 'A'"
+      },
+      {
+        "from": "g4c",
+        "to": "l4",
+        "condition": "else"
+      },
+      {
+        "from": "l4",
+        "to": "x4",
+        "condition": "no more rows"
+      },
+      {
+        "from": "p5",
+        "to": "f5",
+        "condition": "always"
+      },
+      {
+        "from": "f5",
+        "to": "l5",
+        "condition": "always"
+      },
+      {
+        "from": "l5",
+        "to": "g5q",
+        "condition": "next row"
+      },
+      {
+        "from": "g5q",
+        "to": "a5",
+        "condition": "<ls_acc>-n_los > 0"
+      },
+      {
+        "from": "g5q",
+        "to": "a5",
+        "condition": "else"
+      },
+      {
+        "from": "a5",
+        "to": "g5n",
+        "condition": "always"
+      },
+      {
+        "from": "g5n",
+        "to": "l5",
+        "condition": "ls_score-gesamt >= 90"
+      },
+      {
+        "from": "g5n",
+        "to": "l5",
+        "condition": "ls_score-gesamt >= 70"
+      },
+      {
+        "from": "g5n",
+        "to": "l5",
+        "condition": "else"
+      },
+      {
+        "from": "l5",
+        "to": "x5",
+        "condition": "no more rows"
+      },
+      {
+        "from": "gu",
+        "to": "p6",
+        "condition": "p_upd = 'X'"
+      },
+      {
+        "from": "gu",
+        "to": "eos",
+        "condition": "else"
+      },
+      {
+        "from": "p6",
+        "to": "f6",
+        "condition": "always"
+      },
+      {
+        "from": "f6",
+        "to": "w6a",
+        "condition": "always"
+      },
+      {
+        "from": "w6a",
+        "to": "w6b",
+        "condition": "always"
+      },
+      {
+        "from": "w6b",
+        "to": "g6",
+        "condition": "always"
+      },
+      {
+        "from": "g6",
+        "to": "cm",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "g6",
+        "to": "rb",
+        "condition": "else"
+      },
+      {
+        "from": "cm",
+        "to": "m6s",
+        "condition": "always"
+      },
+      {
+        "from": "eos",
+        "to": "p7",
+        "condition": "always"
+      },
+      {
+        "from": "p7",
+        "to": "f7",
+        "condition": "always"
+      },
+      {
+        "from": "f7",
+        "to": "fac",
+        "condition": "always"
+      },
+      {
+        "from": "x1",
+        "to": "g0",
+        "condition": "always"
+      },
+      {
+        "from": "x2",
+        "to": "p3",
+        "condition": "always"
+      },
+      {
+        "from": "x3",
+        "to": "p4",
+        "condition": "always"
+      },
+      {
+        "from": "g4",
+        "to": "r4",
+        "condition": "gt_acc IS INITIAL"
+      },
+      {
+        "from": "g4",
+        "to": "q4",
+        "condition": "else"
+      },
+      {
+        "from": "r4",
+        "to": "p5",
+        "condition": "always"
+      },
+      {
+        "from": "x4",
+        "to": "p5",
+        "condition": "always"
+      },
+      {
+        "from": "x5",
+        "to": "gu",
+        "condition": "always"
+      },
+      {
+        "from": "rb",
+        "to": "m6e",
+        "condition": "always"
+      },
+      {
+        "from": "m6e",
+        "to": "xe6",
+        "condition": "always"
+      },
+      {
+        "from": "x6",
+        "to": "eos",
+        "condition": "always"
+      },
+      {
+        "from": "m6s",
+        "to": "x6",
+        "condition": "always"
+      },
+      {
+        "from": "fac",
+        "to": "dsp",
+        "condition": "always"
+      },
+      {
+        "from": "fac",
+        "to": "mi",
+        "condition": "CATCH cx_salv_msg"
+      },
+      {
+        "from": "dsp",
+        "to": "x7",
+        "condition": "always"
+      },
+      {
+        "from": "mi",
+        "to": "x7",
+        "condition": "always"
+      },
+      {
+        "from": "x7",
+        "to": "eend",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zmm_lief_bewertung.abap:49 — kein Fachsatz „Ohne Wareneingänge endet der Report ohne Anzeige“ (RETURN verlässt nur START-OF-SELECTION; END-OF-SELECTION zeigt die leere Liste)",
+    "zmm_lief_bewertung_f01.abap:25 — kein Fachsatz „Jeder Wareneingang wird gegen seine eigene Einteilung gemessen“ (immer gegen den frühesten Termin der Position)",
+    "zmm_lief_bewertung_f01.abap:110 — kein Fachsatz „Abgelehnte Lose sperren den Lieferanten“ (sie senken nur die Quote)",
+    "gesamte Scheibe — kein Fachsatz „Die Bewertung wird in den SAP-Standard der Lieferantenbeurteilung (ME61) übernommen“ (Ablage nur in der Z-Tabelle)"
+  ],
+  "processDescription": "Der Einkauf startet den Report mit Einkaufsorganisation, Periode, Buchungszeitraum, optional Lieferanten und dem Speichern-Schalter. Er liest die Wareneingänge zu Bestellungen der Einkaufsorganisation im Zeitraum und lässt Stornobuchungen weg. Gibt es keine, meldet er das und überspringt die Bewertung, zeigt am Ende aber die leere Liste. Für die Termintreue misst er jeden Wareneingang am frühesten Liefertermin der Bestellposition und vergibt 100, 80, 50 oder 0 Punkte nach Verspätung. Für die Mengentreue summiert er die gelieferten Mengen je Position und bewertet nur endgelieferte Positionen mit 100 minus doppelter prozentualer Abweichung, mindestens 0. Für die Qualität zählt er die Wareneingangsprüflose mit Verwendungsentscheid und davon die angenommenen. Je Lieferant bildet er Durchschnittspunkte und Annahmequote (ohne Prüflose 100), gewichtet 40/30/30 zur Gesamtpunktzahl und vergibt die Note A (ab 90), B (ab 70) oder C. Ist Speichern gewählt, ersetzt er die Bewertung der Periode in der Z-Tabelle und schreibt fest, bei Fehler rollt er zurück und bricht ab. Zum Schluss zeigt er das Ergebnis als ALV."
+}

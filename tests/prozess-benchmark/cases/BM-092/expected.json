@@ -1,0 +1,1001 @@
+{
+  "id": "BM-092",
+  "title": "Webshop-Neukunden per Batch-Input XD01 anlegen mit Dublettenprüfung",
+  "classes": [
+    "K17",
+    "K14",
+    "K01",
+    "K04"
+  ],
+  "classic_level": "D",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "ZSD_WEB_CUST",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zsd_webshop_cust.abap",
+        "line": 51,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_webshop_cust.abap:51"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZSD_WEB_CUST",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "zsd_webshop_cust.abap",
+        "line": 82,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_webshop_cust.abap:82"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "XD01",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zsd_webshop_cust.abap",
+        "line": 73,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_webshop_cust.abap:73"
+      },
+      "identity": {
+        "objectType": "TRAN"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "KNA1",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zsd_webshop_cust_f01.abap",
+        "line": 16,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_webshop_cust_f01.abap:16"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ADR6",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zsd_webshop_cust_f01.abap",
+        "line": 26,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_webshop_cust_f01.abap:26"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "FORMAT_MESSAGE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zsd_webshop_cust_f01.abap",
+        "line": 92,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_webshop_cust_f01.abap:92"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-092-B01",
+      "text": "Es werden alle neuen Webshop-Registrierungen des gewählten Erfassungszeitraums gelesen; gibt es keine, endet der Lauf mit einer Meldung.",
+      "anchors": [
+        {
+          "file": "zsd_webshop_cust.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_webshop_cust.abap:51"
+        },
+        {
+          "file": "zsd_webshop_cust.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_webshop_cust.abap:54"
+        },
+        {
+          "file": "zsd_webshop_cust.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_webshop_cust.abap:55"
+        },
+        {
+          "file": "zsd_webshop_cust.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_webshop_cust.abap:56"
+        }
+      ]
+    },
+    {
+      "id": "BM-092-B02",
+      "text": "Für jede Registrierung wird zuerst ein nicht gelöschter Kunde mit gleichem Namen als Suchbegriff, gleicher Postleitzahl und gleichem Land gesucht.",
+      "anchors": [
+        {
+          "file": "zsd_webshop_cust_f01.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_webshop_cust_f01.abap:16"
+        }
+      ]
+    },
+    {
+      "id": "BM-092-B03",
+      "text": "Ohne Treffer und mit angegebener E-Mail-Adresse wird ein nicht gelöschter Kunde mit derselben E-Mail-Adresse gesucht.",
+      "anchors": [
+        {
+          "file": "zsd_webshop_cust_f01.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_webshop_cust_f01.abap:25"
+        },
+        {
+          "file": "zsd_webshop_cust_f01.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_webshop_cust_f01.abap:26"
+        }
+      ]
+    },
+    {
+      "id": "BM-092-B04",
+      "text": "Wird ein vorhandener Kunde gefunden, wird die Registrierung als Dublette mit dessen Kundennummer markiert und nicht angelegt.",
+      "anchors": [
+        {
+          "file": "zsd_webshop_cust.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_webshop_cust.abap:62"
+        },
+        {
+          "file": "zsd_webshop_cust.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_webshop_cust.abap:63"
+        },
+        {
+          "file": "zsd_webshop_cust.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_webshop_cust.abap:67"
+        }
+      ]
+    },
+    {
+      "id": "BM-092-B05",
+      "text": "Sonst wird eine Batch-Input-Mappe mit Kontengruppe, Buchungskreis, Vertriebsbereich, Adresse, E-Mail, Umsatzsteuer-Id, Abstimmkonto, Zahlungsbedingung Vorkasse, Währung EUR und Steuerklassifikation aufgebaut.",
+      "anchors": [
+        {
+          "file": "zsd_webshop_cust.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_webshop_cust.abap:71"
+        },
+        {
+          "file": "zsd_webshop_cust_f01.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_webshop_cust_f01.abap:40"
+        }
+      ]
+    },
+    {
+      "id": "BM-092-B06",
+      "text": "Mit dieser Mappe wird der Debitor über die Transaktion XD01 angelegt.",
+      "anchors": [
+        {
+          "file": "zsd_webshop_cust.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_webshop_cust.abap:73"
+        }
+      ]
+    },
+    {
+      "id": "BM-092-B07",
+      "text": "Bei Erfolg wird die neue Kundennummer aus der Anlagemeldung übernommen und die Registrierung als angelegt markiert.",
+      "anchors": [
+        {
+          "file": "zsd_webshop_cust.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_webshop_cust.abap:77"
+        },
+        {
+          "file": "zsd_webshop_cust.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_webshop_cust.abap:79"
+        },
+        {
+          "file": "zsd_webshop_cust.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_webshop_cust.abap:82"
+        }
+      ]
+    },
+    {
+      "id": "BM-092-B08",
+      "text": "Bei Misserfolg wird die erste Fehlermeldung – ersatzweise die letzte Meldung – als Text ermittelt und die Registrierung mit diesem Text als fehlerhaft markiert.",
+      "anchors": [
+        {
+          "file": "zsd_webshop_cust.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_webshop_cust.abap:87"
+        },
+        {
+          "file": "zsd_webshop_cust_f01.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_webshop_cust_f01.abap:88"
+        },
+        {
+          "file": "zsd_webshop_cust_f01.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_webshop_cust_f01.abap:92"
+        },
+        {
+          "file": "zsd_webshop_cust.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_webshop_cust.abap:88"
+        }
+      ]
+    },
+    {
+      "id": "BM-092-B09",
+      "text": "Der Status jeder Registrierung wird einzeln festgeschrieben.",
+      "anchors": [
+        {
+          "file": "zsd_webshop_cust.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_webshop_cust.abap:93"
+        }
+      ]
+    },
+    {
+      "id": "BM-092-B10",
+      "text": "Zum Schluss werden die Anzahlen angelegter Kunden, Dubletten und Fehler ausgegeben.",
+      "anchors": [
+        {
+          "file": "zsd_webshop_cust.abap",
+          "line": 96,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_webshop_cust.abap:96"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_webshop_cust.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_webshop_cust.abap:50"
+        },
+        "meaning": "Jobstart"
+      },
+      {
+        "id": "rs",
+        "type": "read",
+        "anchor": {
+          "file": "zsd_webshop_cust.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_webshop_cust.abap:51"
+        },
+        "meaning": "Neue Webshop-Registrierungen lesen"
+      },
+      {
+        "id": "g0",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_webshop_cust.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_webshop_cust.abap:54"
+        },
+        "meaning": "Keine neuen Kunden?"
+      },
+      {
+        "id": "m0",
+        "type": "output",
+        "anchor": {
+          "file": "zsd_webshop_cust.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_webshop_cust.abap:55"
+        },
+        "meaning": "Nichts zu tun melden"
+      },
+      {
+        "id": "e0",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_webshop_cust.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_webshop_cust.abap:56"
+        },
+        "meaning": "Lauf beenden"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "zsd_webshop_cust.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_webshop_cust.abap:59"
+        },
+        "meaning": "Registrierungen durchlaufen"
+      },
+      {
+        "id": "cdup",
+        "type": "call",
+        "anchor": {
+          "file": "zsd_webshop_cust.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_webshop_cust.abap:61"
+        },
+        "meaning": "Dublettenprüfung"
+      },
+      {
+        "id": "gdup",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_webshop_cust.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_webshop_cust.abap:62"
+        },
+        "meaning": "Dublette gefunden?"
+      },
+      {
+        "id": "wd",
+        "type": "write",
+        "anchor": {
+          "file": "zsd_webshop_cust.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_webshop_cust.abap:63"
+        },
+        "meaning": "Registrierung als Dublette mit vorhandenem Kunden markieren"
+      },
+      {
+        "id": "cw1",
+        "type": "transaction",
+        "anchor": {
+          "file": "zsd_webshop_cust.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_webshop_cust.abap:67"
+        },
+        "meaning": "Dublettenstatus festschreiben"
+      },
+      {
+        "id": "cb",
+        "type": "call",
+        "anchor": {
+          "file": "zsd_webshop_cust.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_webshop_cust.abap:71"
+        },
+        "meaning": "Batch-Input-Mappe aufbauen"
+      },
+      {
+        "id": "ct",
+        "type": "transaction",
+        "anchor": {
+          "file": "zsd_webshop_cust.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_webshop_cust.abap:73"
+        },
+        "meaning": "Debitor per XD01 anlegen"
+      },
+      {
+        "id": "gct",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_webshop_cust.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_webshop_cust.abap:77"
+        },
+        "meaning": "Anlage erfolgreich?"
+      },
+      {
+        "id": "rm",
+        "type": "read",
+        "anchor": {
+          "file": "zsd_webshop_cust.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_webshop_cust.abap:79"
+        },
+        "meaning": "Neue Kundennummer aus Erfolgsmeldung F2 170 holen"
+      },
+      {
+        "id": "wc",
+        "type": "write",
+        "anchor": {
+          "file": "zsd_webshop_cust.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_webshop_cust.abap:82"
+        },
+        "meaning": "Registrierung als angelegt mit Kundennummer markieren"
+      },
+      {
+        "id": "cerr",
+        "type": "call",
+        "anchor": {
+          "file": "zsd_webshop_cust.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_webshop_cust.abap:87"
+        },
+        "meaning": "Fehlertext ermitteln"
+      },
+      {
+        "id": "we",
+        "type": "write",
+        "anchor": {
+          "file": "zsd_webshop_cust.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_webshop_cust.abap:88"
+        },
+        "meaning": "Registrierung mit Fehlertext als fehlerhaft markieren"
+      },
+      {
+        "id": "cw2",
+        "type": "transaction",
+        "anchor": {
+          "file": "zsd_webshop_cust.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_webshop_cust.abap:93"
+        },
+        "meaning": "Status festschreiben"
+      },
+      {
+        "id": "o",
+        "type": "output",
+        "anchor": {
+          "file": "zsd_webshop_cust.abap",
+          "line": 96,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_webshop_cust.abap:96"
+        },
+        "meaning": "Zähler ausgeben"
+      },
+      {
+        "id": "e_main",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_webshop_cust.abap",
+          "line": 96,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_webshop_cust.abap:96"
+        },
+        "meaning": "Lauf endet nach der Zählerausgabe"
+      },
+      {
+        "id": "s_d",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_webshop_cust_f01.abap",
+          "line": 9,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_webshop_cust_f01.abap:9"
+        },
+        "meaning": "Dublettenprüfung"
+      },
+      {
+        "id": "r1",
+        "type": "read",
+        "anchor": {
+          "file": "zsd_webshop_cust_f01.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_webshop_cust_f01.abap:16"
+        },
+        "meaning": "Kunde mit gleichem Suchbegriff, PLZ und Land suchen"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_webshop_cust_f01.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_webshop_cust_f01.abap:21"
+        },
+        "meaning": "Treffer?"
+      },
+      {
+        "id": "e_d1",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_webshop_cust_f01.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_webshop_cust_f01.abap:22"
+        },
+        "meaning": "Mit Treffer zurück"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_webshop_cust_f01.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_webshop_cust_f01.abap:25"
+        },
+        "meaning": "E-Mail-Adresse angegeben?"
+      },
+      {
+        "id": "r2",
+        "type": "read",
+        "anchor": {
+          "file": "zsd_webshop_cust_f01.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_webshop_cust_f01.abap:26"
+        },
+        "meaning": "Kunde mit gleicher E-Mail-Adresse suchen"
+      },
+      {
+        "id": "e_d2",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_webshop_cust_f01.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_webshop_cust_f01.abap:32"
+        },
+        "meaning": "Ergebnis zurückgeben"
+      },
+      {
+        "id": "s_b",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_webshop_cust_f01.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_webshop_cust_f01.abap:37"
+        },
+        "meaning": "Mappe aufbauen"
+      },
+      {
+        "id": "a_b",
+        "type": "action",
+        "anchor": {
+          "file": "zsd_webshop_cust_f01.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_webshop_cust_f01.abap:40"
+        },
+        "meaning": "Kontengruppe, Buchungskreis, Vertriebsbereich, Adresse, USt-Id, Abstimmkonto, Vorkasse, Währung und Steuer in die Mappe"
+      },
+      {
+        "id": "e_b",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_webshop_cust_f01.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_webshop_cust_f01.abap:81"
+        },
+        "meaning": "Mappe fertig"
+      },
+      {
+        "id": "s_t",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_webshop_cust_f01.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_webshop_cust_f01.abap:86"
+        },
+        "meaning": "Fehlertext"
+      },
+      {
+        "id": "rt1",
+        "type": "read",
+        "anchor": {
+          "file": "zsd_webshop_cust_f01.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_webshop_cust_f01.abap:88"
+        },
+        "meaning": "Erste Fehlermeldung suchen"
+      },
+      {
+        "id": "gt1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_webshop_cust_f01.abap",
+          "line": 89,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_webshop_cust_f01.abap:89"
+        },
+        "meaning": "Keine Fehlermeldung?"
+      },
+      {
+        "id": "rt2",
+        "type": "read",
+        "anchor": {
+          "file": "zsd_webshop_cust_f01.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_webshop_cust_f01.abap:90"
+        },
+        "meaning": "Letzte Meldung nehmen"
+      },
+      {
+        "id": "fm",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zsd_webshop_cust_f01.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_webshop_cust_f01.abap:92"
+        },
+        "meaning": "Meldung in Text umsetzen"
+      },
+      {
+        "id": "e_t",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_webshop_cust_f01.abap",
+          "line": 106,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_webshop_cust_f01.abap:106"
+        },
+        "meaning": "Text zurückgeben"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "rs",
+        "condition": "always"
+      },
+      {
+        "from": "rs",
+        "to": "g0",
+        "condition": "always"
+      },
+      {
+        "from": "g0",
+        "to": "m0",
+        "condition": "gt_web IS INITIAL"
+      },
+      {
+        "from": "m0",
+        "to": "e0",
+        "condition": "always"
+      },
+      {
+        "from": "g0",
+        "to": "l",
+        "condition": "else"
+      },
+      {
+        "from": "l",
+        "to": "cdup",
+        "condition": "next row"
+      },
+      {
+        "from": "cdup",
+        "to": "s_d",
+        "condition": "always"
+      },
+      {
+        "from": "gdup",
+        "to": "wd",
+        "condition": "gv_kunnr IS NOT INITIAL"
+      },
+      {
+        "from": "wd",
+        "to": "cw1",
+        "condition": "always"
+      },
+      {
+        "from": "cw1",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "gdup",
+        "to": "cb",
+        "condition": "else"
+      },
+      {
+        "from": "cb",
+        "to": "s_b",
+        "condition": "always"
+      },
+      {
+        "from": "ct",
+        "to": "gct",
+        "condition": "always"
+      },
+      {
+        "from": "gct",
+        "to": "rm",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "rm",
+        "to": "wc",
+        "condition": "always"
+      },
+      {
+        "from": "wc",
+        "to": "cw2",
+        "condition": "always"
+      },
+      {
+        "from": "gct",
+        "to": "cerr",
+        "condition": "else"
+      },
+      {
+        "from": "cerr",
+        "to": "s_t",
+        "condition": "always"
+      },
+      {
+        "from": "we",
+        "to": "cw2",
+        "condition": "always"
+      },
+      {
+        "from": "cw2",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l",
+        "to": "o",
+        "condition": "no more rows"
+      },
+      {
+        "from": "s_d",
+        "to": "r1",
+        "condition": "always"
+      },
+      {
+        "from": "r1",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "e_d1",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "g1",
+        "to": "g2",
+        "condition": "else"
+      },
+      {
+        "from": "g2",
+        "to": "r2",
+        "condition": "ps_web-smtp_addr IS NOT INITIAL"
+      },
+      {
+        "from": "g2",
+        "to": "e_d2",
+        "condition": "else"
+      },
+      {
+        "from": "r2",
+        "to": "e_d2",
+        "condition": "always"
+      },
+      {
+        "from": "s_b",
+        "to": "a_b",
+        "condition": "always"
+      },
+      {
+        "from": "a_b",
+        "to": "e_b",
+        "condition": "always"
+      },
+      {
+        "from": "s_t",
+        "to": "rt1",
+        "condition": "always"
+      },
+      {
+        "from": "rt1",
+        "to": "gt1",
+        "condition": "always"
+      },
+      {
+        "from": "gt1",
+        "to": "rt2",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "gt1",
+        "to": "fm",
+        "condition": "else"
+      },
+      {
+        "from": "rt2",
+        "to": "fm",
+        "condition": "always"
+      },
+      {
+        "from": "fm",
+        "to": "e_t",
+        "condition": "always"
+      },
+      {
+        "from": "o",
+        "to": "e_main",
+        "condition": "always"
+      },
+      {
+        "from": "e_d1",
+        "to": "gdup",
+        "condition": "always"
+      },
+      {
+        "from": "e_d2",
+        "to": "gdup",
+        "condition": "always"
+      },
+      {
+        "from": "e_b",
+        "to": "ct",
+        "condition": "always"
+      },
+      {
+        "from": "e_t",
+        "to": "we",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zsd_webshop_cust.abap:79 — kein Fachsatz „fehlt die Erfolgsmeldung, wird die Registrierung als Fehler markiert“ (das Ergebnis des Nachschlagens wird nicht geprüft; es kann Status C ohne Kundennummer entstehen).",
+    "zsd_webshop_cust_f01.abap:16 — kein Fachsatz „Dubletten werden zusammengeführt oder aktualisiert“ (nur die Registrierung wird markiert).",
+    "zsd_webshop_cust.abap:73 — kein Fachsatz „Geschäftspartner wird angelegt“ (klassische Debitorenanlage).",
+    "gesamte Scheibe — kein Fachsatz „Kunde erhält eine Bestätigungs-E-Mail“ (nicht im Code)."
+  ],
+  "processDescription": "Ein stündlicher Job übernimmt Neukunden aus dem Webshop. Er liest alle neuen Registrierungen des gewählten Zeitraums aus der Stagingtabelle und endet mit einer Meldung, wenn es keine gibt. Für jede Registrierung sucht er zuerst einen nicht gelöschten Kunden mit gleichem Namen als Suchbegriff, gleicher Postleitzahl und gleichem Land, und – wenn keiner gefunden wird und eine E-Mail-Adresse vorliegt – einen Kunden mit derselben E-Mail-Adresse. Wird ein Kunde gefunden, markiert er die Registrierung als Dublette mit dieser Kundennummer und legt nichts an. Sonst baut er per Makros eine Batch-Input-Mappe für XD01 mit Kontengruppe, Buchungskreis, Vertriebsbereich, Adresse, E-Mail, Umsatzsteuer-Id, Abstimmkonto, Zahlungsbedingung Vorkasse, Währung EUR und Steuerklassifikation und legt damit den Debitor an. Bei Erfolg übernimmt er die neue Kundennummer aus der Anlagemeldung und markiert die Registrierung als angelegt; bei Misserfolg ermittelt er den Fehlertext und markiert sie als fehlerhaft. Jeder Status wird einzeln festgeschrieben, am Ende gibt er die Zähler aus."
+}

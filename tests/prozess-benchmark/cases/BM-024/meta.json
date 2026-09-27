@@ -1,0 +1,18 @@
+{
+  "id": "BM-024",
+  "title": "Gesperrte Lieferanten je Einkaufsorganisation (ALV)",
+  "domain": "MM / Procure-to-Pay, Bestandsführung, Lager (WM/EWM)",
+  "band": "einfach",
+  "loc": 32,
+  "constructs": [
+    "REPORT",
+    "SELECT INNER JOIN",
+    "CL_SALV_TABLE",
+    "TRY/CATCH"
+  ],
+  "scenario": "Audit- und Compliance-Liste im Einkauf; in S/4 betroffen, weil der Lieferantenstamm im Business Partner aufgeht.",
+  "s4_issues": [
+    "Lieferantenstamm LFA1/LFM1 in S/4HANA nur über Business Partner (CVI) gepflegt; Lesen bleibt möglich, Nachfolger I_Supplier / I_SupplierPurchasingOrg",
+    "Sperrlogik in S/4 zusätzlich über BP-Sperren und Zweckbindung (ILM)"
+  ]
+}

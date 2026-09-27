@@ -1,0 +1,27 @@
+{
+  "id": "BM-018",
+  "title": "Kampagnenpreise: Preisfindungs-Exits und Bedingung 905, Neubewertung offener Aufträge per BAPI mit Liefersperre bei großer Abweichung",
+  "domain": "SD / Order-to-Cash",
+  "band": "sehr komplex",
+  "loc": 400,
+  "constructs": [
+    "USEREXIT_PRICING_PREPARE_TKOMK/TKOMP in MV45AFZZ",
+    "Append-Felder in KOMK/KOMP",
+    "VOFM-Bedingung KOBED_905 mit sy-subrc als Ergebnis",
+    "SELECT … UP TO 1 ROWS … ORDER BY … ENDSELECT",
+    "AUTHORITY-CHECK auf Z-Berechtigungsobjekt",
+    "SELECT mit INNER JOIN VBAK/VBUK",
+    "BAPI_SALESORDER_CHANGE mit LOGIC_SWITCH-PRICING und SIMULATION",
+    "SELECT SUM auf KONV",
+    "CALL FUNCTION … IN UPDATE TASK mit Verbuchungsbaustein",
+    "MESSAGE Typ A im Verbucher",
+    "CL_SALV_TABLE"
+  ],
+  "scenario": "Preisprojekt mit Kampagnenrabatten: Exits und eine VOFM-Bedingung versorgen die Konditionsfindung mit Kundenkategorie und Kampagne, ein Report bewertet danach alle offenen Aufträge neu und sperrt Aufträge mit großer Preisänderung zur Prüfung.",
+  "s4_issues": [
+    "KONV ist in S/4 durch PRCD_ELEMENTS ersetzt",
+    "VBUK entfällt für SD-Belege: GBSTK/ABSTK stehen in VBAK, der JOIN liefert keine Aufträge mehr",
+    "MV45AFZZ-Preisfindungsexits und VOFM-Routinen sind Modifikationen bzw. nicht Cloud-fähig; Ziel sind Feldkataloge mit BAdIs der Preisfindung",
+    "Append-Felder in KOMK/KOMP müssen im Feldkatalog und in PRCD_ELEMENTS-Kontext nachgezogen werden"
+  ]
+}

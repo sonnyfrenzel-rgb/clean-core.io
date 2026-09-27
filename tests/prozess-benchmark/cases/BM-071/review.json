@@ -1,0 +1,91 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten fe1",
+      "before": "—",
+      "after": "end lzmes_rmf01.abap:69 „Prüfung bestanden, Rückkehr mit cv_ok = X“",
+      "why": "Konvention: jeder auslaufende FORM hat einen eigenen end-Knoten auf ENDFORM; Rückkehr zum Aufrufer läuft über diesen",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kante aok→g_ok",
+      "before": "aok→g_ok [always]",
+      "after": "aok→fe1 [always]",
+      "why": "Konvention: jeder auslaufende FORM hat einen eigenen end-Knoten auf ENDFORM; Rückkehr zum Aufrufer läuft über diesen",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante fe1→g_ok",
+      "before": "—",
+      "after": "[always]",
+      "why": "Rückkante vom FORM-Ende zum nächsten Schritt nach PERFORM pruefe_auftrag",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten fe2",
+      "before": "—",
+      "after": "end lzmes_rmf01.abap:122 „Rückkehr aus der Buchung mit gesetztem Status“",
+      "why": "Konvention: jeder auslaufende FORM hat einen eigenen end-Knoten auf ENDFORM; Rückkehr zum Aufrufer läuft über diesen",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kante rb→dq2",
+      "before": "rb→dq2 [always]",
+      "after": "rb→fe2 [always]",
+      "why": "Konvention: jeder auslaufende FORM hat einen eigenen end-Knoten auf ENDFORM; Rückkehr zum Aufrufer läuft über diesen",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante cm→dq2",
+      "before": "cm→dq2 [always]",
+      "after": "cm→fe2 [always]",
+      "why": "Konvention: jeder auslaufende FORM hat einen eigenen end-Knoten auf ENDFORM; Rückkehr zum Aufrufer läuft über diesen",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante fe2→dq2",
+      "before": "—",
+      "after": "[always]",
+      "why": "Rückkante vom FORM-Ende zum nächsten Schritt nach PERFORM buche_rueckmeldung",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten fe3",
+      "before": "—",
+      "after": "end lzmes_rmf01.abap:140 „Protokoll geschrieben, Rückkehr zum Aufrufer“",
+      "why": "Konvention: jeder auslaufende FORM hat einen eigenen end-Knoten auf ENDFORM; Rückkehr zum Aufrufer läuft über diesen",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kante cw→e_lk",
+      "before": "cw→e_lk [always]",
+      "after": "fe3→e_lk [always]",
+      "why": "Konvention: jeder auslaufende FORM hat einen eigenen end-Knoten auf ENDFORM; Rückkehr zum Aufrufer läuft über diesen",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante cw→e_ok",
+      "before": "cw→e_ok [always]",
+      "after": "fe3→e_ok [always]",
+      "why": "Konvention: jeder auslaufende FORM hat einen eigenen end-Knoten auf ENDFORM; Rückkehr zum Aufrufer läuft über diesen",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante cw→done",
+      "before": "cw→done [always]",
+      "after": "fe3→done [always]",
+      "why": "Konvention: jeder auslaufende FORM hat einen eigenen end-Knoten auf ENDFORM; Rückkehr zum Aufrufer läuft über diesen",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante cw→fe3",
+      "before": "—",
+      "after": "[always]",
+      "why": "COMMIT WORK ist die letzte Anweisung des FORM",
+      "category": "Kante"
+    }
+  ],
+  "doubts": []
+}

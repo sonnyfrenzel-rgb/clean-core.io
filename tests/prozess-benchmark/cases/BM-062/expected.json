@@ -1,0 +1,302 @@
+{
+  "id": "BM-062",
+  "title": "Freigabeprüfung eines Prüfloses über den Verwendungsentscheid",
+  "classes": [
+    "K01",
+    "K02"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "QALS",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 18,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:18"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "QAVE",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 25,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:25"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-062-B01",
+      "text": "Das übergebene Prüflos wird gelesen; existiert es nicht, endet der Baustein mit der Ausnahme LOS_NICHT_GEFUNDEN.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:18"
+        },
+        {
+          "file": "source.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:20"
+        },
+        {
+          "file": "source.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:21"
+        }
+      ]
+    },
+    {
+      "id": "BM-062-B02",
+      "text": "Zum Prüflos wird der Verwendungsentscheid auf Losebene gelesen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:25"
+        }
+      ]
+    },
+    {
+      "id": "BM-062-B03",
+      "text": "Nur wenn ein Verwendungsentscheid existiert und seine Bewertung „angenommen“ (A) lautet, wird die Freigabe gesetzt und der Entscheidungscode zurückgegeben.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:28"
+        },
+        {
+          "file": "source.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:29"
+        },
+        {
+          "file": "source.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:30"
+        }
+      ]
+    },
+    {
+      "id": "BM-062-B04",
+      "text": "Fehlt der Verwendungsentscheid oder ist er nicht angenommen, kehrt der Baustein ohne Freigabe und ohne Ausnahme zurück.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:28"
+        },
+        {
+          "file": "source.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:33"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 1,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:1"
+        },
+        "meaning": "Einstieg: Freigabeprüfung für ein Prüflos"
+      },
+      {
+        "id": "q1",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:18"
+        },
+        "meaning": "Prüflos lesen"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:20"
+        },
+        "meaning": "Prüflos vorhanden?"
+      },
+      {
+        "id": "e1",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:21"
+        },
+        "meaning": "Ausnahme LOS_NICHT_GEFUNDEN"
+      },
+      {
+        "id": "q2",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:25"
+        },
+        "meaning": "Verwendungsentscheid auf Losebene lesen"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:28"
+        },
+        "meaning": "Entscheid vorhanden und Bewertung angenommen?"
+      },
+      {
+        "id": "a",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:29"
+        },
+        "meaning": "Freigabe setzen und Entscheidungscode zurückgeben"
+      },
+      {
+        "id": "done",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:33"
+        },
+        "meaning": "Rückkehr an den Aufrufer"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "q1",
+        "condition": "always"
+      },
+      {
+        "from": "q1",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "e1",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g1",
+        "to": "q2",
+        "condition": "else"
+      },
+      {
+        "from": "q2",
+        "to": "g2",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "a",
+        "condition": "sy-subrc = 0 AND ls_qave-vbewertung = 'A'"
+      },
+      {
+        "from": "g2",
+        "to": "done",
+        "condition": "else"
+      },
+      {
+        "from": "a",
+        "to": "done",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "source.abap:28 — kein Fachsatz „Ohne Verwendungsentscheid wird eine Ausnahme ausgelöst“ (dieser Fall endet regulär mit leerer Freigabe)",
+    "gesamte Scheibe — kein Fachsatz „Der Bestand wird in den frei verwendbaren Bestand umgebucht“ (der Baustein liest nur, er bucht nichts)",
+    "source.abap:18 — kein Fachsatz „Die Losherkunft oder der Status des Prüfloses wird geprüft“ (QALS wird nur auf Existenz geprüft)"
+  ],
+  "processDescription": "Ein aufrufendes Programm übergibt eine Prüflosnummer und will wissen, ob das Los freigegeben werden darf. Der Baustein liest das Prüflos; gibt es es nicht, bricht er mit der Ausnahme LOS_NICHT_GEFUNDEN ab. Danach liest er den Verwendungsentscheid auf Losebene. Nur wenn ein Entscheid vorliegt und dessen Bewertung „angenommen“ ist, meldet er die Freigabe und liefert den Entscheidungscode mit. In allen anderen Fällen – kein Entscheid oder zurückgewiesen – kehrt er ohne Freigabe zurück. Daten werden nicht verändert."
+}

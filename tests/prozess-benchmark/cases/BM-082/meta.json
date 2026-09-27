@@ -1,0 +1,19 @@
+{
+  "id": "BM-082",
+  "title": "Überstundengrenzen löschen mit Berechtigungsprüfung je Personalbereich",
+  "domain": "Querschnitt — Schnittstellen, Stammdaten, HR, Workflow, technische Jobs",
+  "band": "einfach",
+  "loc": 29,
+  "constructs": [
+    "FUNCTION",
+    "AUTHORITY-CHECK",
+    "RAISE",
+    "DELETE FROM Z-Tabelle",
+    "sy-dbcnt"
+  ],
+  "scenario": "Kundeneigener Funktionsbaustein, den ein Pflegedialog der Personalabteilung aufruft, um veraltete Überstundengrenzen eines Personalbereichs ab einem Stichtag zu entfernen.",
+  "s4_issues": [
+    "Kundeneigenes Berechtigungsobjekt Z_HR_OVT muss im Rollenkonzept nachgezogen werden",
+    "LUW-Steuerung liegt beim Aufrufer (kein COMMIT im Baustein)"
+  ]
+}

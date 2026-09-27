@@ -1,0 +1,8 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "ok",
+  "changes": [],
+  "doubts": [
+    "Die Kopie von RGGBS000 enthält keine FORM GET_EXIT_TITLES (laut Kommentar in einem nicht vorhandenen Include ZRGGBS_TITLES). Für das Skelett ohne Belang, nicht geändert."
+  ]
+}

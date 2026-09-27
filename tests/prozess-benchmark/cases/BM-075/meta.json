@@ -1,0 +1,25 @@
+{
+  "id": "BM-075",
+  "title": "Rückmelde-BAdI: Ausschusstoleranz, Stornosperre und Tagesstatistik",
+  "domain": "PP / PM / QM — Produktion, Instandhaltung, Qualität",
+  "band": "komplex",
+  "loc": 174,
+  "constructs": [
+    "BAdI WORKORDER_CONFIRM (AT_SAVE, AT_CANCEL_CHECK, IN_UPDATE)",
+    "MESSAGE … RAISING error_with_message",
+    "CHECK",
+    "funktionale private Methode",
+    "CALL FUNCTION … IN UPDATE TASK",
+    "Verbuchungsbaustein mit INSERT/UPDATE",
+    "SWE_EVENT_CREATE",
+    "SELECT INNER JOIN AFRU/AFVC",
+    "MODIFY Z-Tabelle in der Verbuchung"
+  ],
+  "scenario": "BAdI-Implementierung zur Fertigungsrückmeldung, mit der die Produktion Ausschussgründe erzwingt, QS per Workflow informiert, Stornos nach Folgerückmeldungen verhindert und eine Schichtstatistik führt; typischer Enhancement-Befund in PP-Readiness-Checks.",
+  "s4_issues": [
+    "Direktzugriff AUFK/AFRU/AFVC statt CDS",
+    "Workflow-Ereignis über SWE_EVENT_CREATE statt freigegebener Event-API",
+    "Z-Tabellen-Fortschreibung in der Verbuchung eines SAP-Standardprozesses",
+    "Auftragsarten PP01/PP02 hart codiert"
+  ]
+}

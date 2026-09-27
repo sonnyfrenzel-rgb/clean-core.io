@@ -1,0 +1,250 @@
+{
+  "id": "BM-004",
+  "title": "Kundensperren ermitteln: zentral vor Vertriebsbereich",
+  "classes": [
+    "K01",
+    "K03"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "KNA1",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 16,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:16"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "KNVV",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 25,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:25"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-004-B01",
+      "text": "Zum Kunden werden die zentrale Auftragssperre, Liefersperre und Fakturasperre gelesen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:16"
+        }
+      ]
+    },
+    {
+      "id": "BM-004-B02",
+      "text": "Ist der Kunde nicht angelegt, bricht die Prüfung mit der Ausnahme CUSTOMER_NOT_FOUND ab.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:19"
+        },
+        {
+          "file": "source.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:20"
+        }
+      ]
+    },
+    {
+      "id": "BM-004-B03",
+      "text": "Nur wenn zentral keine der drei Sperren gesetzt ist, werden die Sperren aus dem angegebenen Vertriebsbereich zurückgegeben.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:24"
+        },
+        {
+          "file": "source.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:25"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 1,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:1"
+        },
+        "meaning": "Sperrabfrage für einen Kunden"
+      },
+      {
+        "id": "q",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:16"
+        },
+        "meaning": "Zentrale Auftrags-, Liefer- und Fakturasperre lesen"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:19"
+        },
+        "meaning": "Kunde vorhanden?"
+      },
+      {
+        "id": "nf",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:20"
+        },
+        "meaning": "Abbruch: Kunde unbekannt"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:24"
+        },
+        "meaning": "Keine zentrale Sperre gesetzt?"
+      },
+      {
+        "id": "q2",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:25"
+        },
+        "meaning": "Sperren im Vertriebsbereich lesen"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:32"
+        },
+        "meaning": "Sperren zurückgeben"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "q",
+        "condition": "always"
+      },
+      {
+        "from": "q",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "nf",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g1",
+        "to": "g2",
+        "condition": "else"
+      },
+      {
+        "from": "g2",
+        "to": "q2",
+        "condition": "ev_aufsd IS INITIAL AND ev_lifsd IS INITIAL AND ev_faksd IS INITIAL"
+      },
+      {
+        "from": "g2",
+        "to": "e",
+        "condition": "else"
+      },
+      {
+        "from": "q2",
+        "to": "e",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "source.abap:25 — kein Fachsatz „zentrale und Vertriebsbereichssperren werden zusammengeführt“: ist zentral eine Sperre gesetzt, wird der Vertriebsbereich gar nicht gelesen",
+    "gesamte Scheibe — kein Fachsatz „der Kunde wird gesperrt“ und keine Entscheidung „Auftrag abgelehnt“: der Baustein liest und liefert nur die Sperrkennzeichen"
+  ],
+  "processDescription": "Der Funktionsbaustein wird mit Kunde und Vertriebsbereich (Verkaufsorganisation, Vertriebsweg, Sparte) aufgerufen. Er liest die zentrale Auftrags-, Liefer- und Fakturasperre des Kunden. Existiert der Kunde nicht, endet er mit der Ausnahme CUSTOMER_NOT_FOUND. Ist zentral mindestens eine Sperre gesetzt, gibt er die zentralen Sperren zurück. Nur wenn zentral alle drei Sperren leer sind, liest er die Sperren des Vertriebsbereichs und gibt diese zurück; fehlt der Vertriebsbereich, bleiben sie leer. Was mit den Sperren geschieht, entscheidet der Aufrufer."
+}

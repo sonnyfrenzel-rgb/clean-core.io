@@ -1,0 +1,26 @@
+{
+  "id": "BM-038",
+  "title": "WM-Kommissionierwelle: Transportaufträge zu Lieferungen, Fixplatz-Quittierung und paralleler TA-Druck",
+  "domain": "MM / Procure-to-Pay, Bestandsführung, Lager (WM/EWM)",
+  "band": "sehr komplex",
+  "loc": 453,
+  "constructs": [
+    "REPORT mit TOP/F01-Includes",
+    "SELECT JOIN LIKP/VBUK",
+    "ENQUEUE/DEQUEUE Lieferung",
+    "L_TO_CREATE_DN / L_TO_CONFIRM mit Ausnahmen",
+    "CALL FUNCTION … STARTING NEW TASK … DESTINATION IN GROUP … PERFORMING … ON END OF TASK",
+    "RECEIVE RESULTS / WAIT UNTIL",
+    "Dynamischer Aufruf CALL FUNCTION lv_fm (Smart Form)",
+    "UPDATE auf SAP-Tabelle LTAK",
+    "Anwendungsprotokoll-Klasse (BAL_*)",
+    "END-OF-SELECTION mit sy-batch-Weiche"
+  ],
+  "scenario": "Kommissioniersteuerung eines Distributionszentrums mit LE-WM als Ersatz für LT42/VL06P; typischer Kandidat bei der Entscheidung EWM (embedded/dezentral) in der S/4-Transformation.",
+  "s4_issues": [
+    "VBUK entfällt in S/4HANA (Status in LIKP/LIPS), der Join liefert nichts mehr bzw. ist syntaktisch über Kompatibilitätsview zu prüfen",
+    "LE-WM (L_TO_CREATE_DN, LTAK/LTAP) nur Kompatibilitätsumfang, Zielbild EWM",
+    "Direktes UPDATE auf LTAK",
+    "aRFC-Druck mit COMMIT in eigener Session"
+  ]
+}

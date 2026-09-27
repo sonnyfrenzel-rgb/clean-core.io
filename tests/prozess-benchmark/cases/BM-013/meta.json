@@ -1,0 +1,25 @@
+{
+  "id": "BM-013",
+  "title": "Eigene Kreditprüfung im Sichern-Exit: Obligo aus S066/S067/BSID gegen KNKK-Limit, Liefersperre oder Ablehnung",
+  "domain": "SD / Order-to-Cash",
+  "band": "komplex",
+  "loc": 182,
+  "constructs": [
+    "User-Exit-FORM USEREXIT_SAVE_DOCUMENT_PREPARE",
+    "CHECK mit YVBAK-Vergleich",
+    "globale Klasse mit Konstruktor",
+    "CASE auf Klassenkonstanten",
+    "SELECT SUM auf Infostrukturen S066/S067",
+    "SELECT … ENDSELECT mit Subquery",
+    "CALL FUNCTION … IN UPDATE TASK",
+    "SWE_EVENT_CREATE",
+    "MESSAGE E/W im Sichern-Exit"
+  ],
+  "scenario": "Kundeneigene Kreditprüfung, die in ECC-Systemen die automatische Kreditkontrolle ersetzt hat: beim Sichern eines Auftrags wird das Obligo gegen das Kreditlimit geprüft und der Auftrag liefergesperrt oder abgelehnt.",
+  "s4_issues": [
+    "SD-Kreditmanagement (KNKK, S066/S067) entfällt in S/4, Nachfolger ist SAP Credit Management (FIN-FSCM-CR, UKM_*)",
+    "BSID ist Kompatibilitätsview auf ACDOCA",
+    "MV45AFZZ ist eine Modifikation, Ziel ist ein BAdI bzw. Credit-Management-Konfiguration",
+    "Infostrukturen S066/S067 werden in S/4 nicht mehr fortgeschrieben"
+  ]
+}

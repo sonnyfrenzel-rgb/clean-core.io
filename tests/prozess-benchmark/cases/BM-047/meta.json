@@ -1,0 +1,25 @@
+{
+  "id": "BM-047",
+  "title": "Periodische Aufwandsabgrenzungen aus Z-Tabelle per BAPI buchen",
+  "domain": "FI/CO / Record-to-Report",
+  "band": "mittel",
+  "loc": 114,
+  "constructs": [
+    "CLASS DEFINITION/IMPLEMENTATION",
+    "METHOD mit RETURNING",
+    "AUTHORITY-CHECK",
+    "VALUE #( )",
+    "BAPI_ACC_DOCUMENT_CHECK",
+    "BAPI_ACC_DOCUMENT_POST",
+    "line_exists",
+    "BAPI_TRANSACTION_COMMIT/ROLLBACK",
+    "CHECK in LOOP",
+    "UPDATE Z-Tabelle"
+  ],
+  "scenario": "Globale Klasse, die ein Abschluss-Cockpit am Periodenende aufruft, um manuell gepflegte Aufwandsabgrenzungen (Beratung, Wartung) als Sachkontenbelege zu buchen und die Belegnummer zurückzuschreiben.",
+  "s4_issues": [
+    "BAPI_ACC_DOCUMENT_POST ist in S/4HANA nutzbar, für ABAP Cloud aber nicht freigegeben (Nachfolger: Journal Entry API)",
+    "Letzter Kalendertag statt Periodenende laut Geschäftsjahresvariante",
+    "Z-Tabelle ZFI_ACCRUAL statt Standard-Abgrenzungsmanagement (Accrual Engine)"
+  ]
+}

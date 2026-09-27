@@ -1,0 +1,84 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten x_dup (neu)",
+      "before": "—",
+      "after": "end zfi_ustva_f01.abap:29 „DOPPELMELDUNG_PRUEFEN beendet, laufende Nummer steht“; umgeleitet: r_lfd->c_les [always]; neu x_dup->c_les [always]",
+      "why": "Brieftabelle: end = Pfadende inkl. „Ende des Blocks“ (implizites Ende auf der letzten Anweisung); in BM-047–055 setzt derselbe Autor end-Knoten auf ENDFORM/ENDMETHOD. Vereinheitlicht: jede auslaufende FORM/Methode endet mit eigenem end-Knoten, Rückkehrkante von dort zum Knoten nach dem Aufruf.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten x_les (neu)",
+      "before": "—",
+      "after": "end zfi_ustva_f01.abap:66 „STEUERZEILEN_LESEN beendet“; umgeleitet: r_bset->c_zuo [always]; neu x_les->c_zuo [always]",
+      "why": "Brieftabelle: end = Pfadende inkl. „Ende des Blocks“ (implizites Ende auf der letzten Anweisung); in BM-047–055 setzt derselbe Autor end-Knoten auf ENDFORM/ENDMETHOD. Vereinheitlicht: jede auslaufende FORM/Methode endet mit eigenem end-Knoten, Rückkehrkante von dort zum Knoten nach dem Aufruf.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten x_zuo (neu)",
+      "before": "—",
+      "after": "end zfi_ustva_f01.abap:123 „KENNZAHLEN_ZUORDNEN beendet“; umgeleitet: l_bset->c_abs [no more rows]; neu x_zuo->c_abs [always]",
+      "why": "Brieftabelle: end = Pfadende inkl. „Ende des Blocks“ (implizites Ende auf der letzten Anweisung); in BM-047–055 setzt derselbe Autor end-Knoten auf ENDFORM/ENDMETHOD. Vereinheitlicht: jede auslaufende FORM/Methode endet mit eigenem end-Knoten, Rückkehrkante von dort zum Knoten nach dem Aufruf.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten x_abs (neu)",
+      "before": "—",
+      "after": "end zfi_ustva_f01.abap:180 „STEUERKONTEN_ABSTIMMEN beendet“; umgeleitet: g_konto->c_rnd [else], l_konto->c_rnd [no more rows]; neu x_abs->c_rnd [always]",
+      "why": "Brieftabelle: end = Pfadende inkl. „Ende des Blocks“ (implizites Ende auf der letzten Anweisung); in BM-047–055 setzt derselbe Autor end-Knoten auf ENDFORM/ENDMETHOD. Vereinheitlicht: jede auslaufende FORM/Methode endet mit eigenem end-Knoten, Rückkehrkante von dort zum Knoten nach dem Aufruf.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten x_rnd (neu)",
+      "before": "—",
+      "after": "end zfi_ustva_f01.abap:210 „RUNDEN_UND_ZAHLLAST beendet“; umgeleitet: a_kz83->g_fehl [always]; neu x_rnd->g_fehl [always]",
+      "why": "Brieftabelle: end = Pfadende inkl. „Ende des Blocks“ (implizites Ende auf der letzten Anweisung); in BM-047–055 setzt derselbe Autor end-Knoten auf ENDFORM/ENDMETHOD. Vereinheitlicht: jede auslaufende FORM/Methode endet mit eigenem end-Knoten, Rückkehrkante von dort zum Knoten nach dem Aufruf.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten x_dat (neu)",
+      "before": "—",
+      "after": "end zfi_ustva_f01.abap:242 „DATEI_SCHREIBEN beendet, Datei liegt vor“; umgeleitet: g_ok->c_prot [else]; neu x_dat->c_prot [always]",
+      "why": "Brieftabelle: end = Pfadende inkl. „Ende des Blocks“ (implizites Ende auf der letzten Anweisung); in BM-047–055 setzt derselbe Autor end-Knoten auf ENDFORM/ENDMETHOD. Vereinheitlicht: jede auslaufende FORM/Methode endet mit eigenem end-Knoten, Rückkehrkante von dort zum Knoten nach dem Aufruf.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten x_prot (neu)",
+      "before": "—",
+      "after": "end zfi_ustva_f01.abap:270 „PROTOKOLL_SCHREIBEN beendet“; umgeleitet: o_prot->c_alv [always], t_cm->c_alv [always]; neu x_prot->c_alv [always]",
+      "why": "Brieftabelle: end = Pfadende inkl. „Ende des Blocks“ (implizites Ende auf der letzten Anweisung); in BM-047–055 setzt derselbe Autor end-Knoten auf ENDFORM/ENDMETHOD. Vereinheitlicht: jede auslaufende FORM/Methode endet mit eigenem end-Knoten, Rückkehrkante von dort zum Knoten nach dem Aufruf.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten x_alv (neu)",
+      "before": "—",
+      "after": "end zfi_ustva_f01.abap:307 „AUSGABE_ALV beendet“; umgeleitet: o_alv->e_main [always]; neu x_alv->e_main [always]",
+      "why": "Brieftabelle: end = Pfadende inkl. „Ende des Blocks“ (implizites Ende auf der letzten Anweisung); in BM-047–055 setzt derselbe Autor end-Knoten auf ENDFORM/ENDMETHOD. Vereinheitlicht: jede auslaufende FORM/Methode endet mit eigenem end-Knoten, Rückkehrkante von dort zum Knoten nach dem Aufruf.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten x_erz (neu)",
+      "before": "—",
+      "after": "end zcl_fi_ustva_xml.abap:69 „ERZEUGEN beendet, XML-Zeilen zurück“; umgeleitet: l_xml->g_zeil [no more rows]; neu x_erz->g_zeil [always]",
+      "why": "Brieftabelle: end = Pfadende inkl. „Ende des Blocks“ (implizites Ende auf der letzten Anweisung); in BM-047–055 setzt derselbe Autor end-Knoten auf ENDFORM/ENDMETHOD. Vereinheitlicht: jede auslaufende FORM/Methode endet mit eigenem end-Knoten, Rückkehrkante von dort zum Knoten nach dem Aufruf.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten x_sch (neu)",
+      "before": "—",
+      "after": "end zcl_fi_ustva_xml.abap:86 „SCHREIBEN beendet, Datei geschrieben (rv_ok = abap_true)“; umgeleitet: o_close->g_ok [always]; neu x_sch->g_ok [always]",
+      "why": "Brieftabelle: end = Pfadende inkl. „Ende des Blocks“ (implizites Ende auf der letzten Anweisung); in BM-047–055 setzt derselbe Autor end-Knoten auf ENDFORM/ENDMETHOD. Vereinheitlicht: jede auslaufende FORM/Methode endet mit eigenem end-Knoten, Rückkehrkante von dort zum Knoten nach dem Aufruf.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten g_test (zfi_ustva.abap:48 ELSEIF)",
+      "before": "gateway g_test auf ELSEIF; g_fehl->g_test [else], g_test->c_dat [p_test = abap_false], g_test->c_alv [else]",
+      "after": "g_test entfernt; g_fehl->c_dat [p_test = abap_false], g_fehl->c_alv [else]",
+      "why": "Brieftabelle: gateway ankert auf der IF/CASE-Zeile; ELSEIF ist ein Zweig desselben IF. Der Autor modelliert ELSEIF sonst überall (BM-042, BM-043, BM-048, BM-056 gret) als Bedingungskante des einen gateway.",
+      "category": "überflüssiger Knoten"
+    }
+  ],
+  "doubts": []
+}

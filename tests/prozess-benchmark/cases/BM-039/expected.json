@@ -1,0 +1,2595 @@
+{
+  "id": "BM-039",
+  "title": "Dynpro-Freigabecockpit für Bestellanforderungen: Freigeben, Ablehnen mit Grund und Workflow",
+  "classes": [
+    "K07",
+    "K01",
+    "K12",
+    "K15",
+    "K17"
+  ],
+  "classic_level": "D",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [
+    "Dynpro-Ablauflogik (PBO/PAI-Reihenfolge der Module, POV für F4) ist nicht Teil der Scheibe; die Zuordnung der Module zu Dynpro 0100/0200 folgt aus Namen und Kommentar.",
+    "Wird BANPR = '08' im Zielrelease vom Standard als abgelehnt ausgewertet?"
+  ],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "ZMM_FRG_USER",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "mzmm_pr_release_f01.abap",
+        "line": 7,
+        "token": null,
+        "expressionPath": null,
+        "raw": "mzmm_pr_release_f01.abap:7"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "EBAN",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "mzmm_pr_release_f01.abap",
+        "line": 24,
+        "token": null,
+        "expressionPath": null,
+        "raw": "mzmm_pr_release_f01.abap:24"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "T16FS",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "mzmm_pr_release_f01.abap",
+        "line": 32,
+        "token": null,
+        "expressionPath": null,
+        "raw": "mzmm_pr_release_f01.abap:32"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ENQUEUE_EMEBANE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "mzmm_pr_release_f01.abap",
+        "line": 86,
+        "token": null,
+        "expressionPath": null,
+        "raw": "mzmm_pr_release_f01.abap:86"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_REQUISITION_RELEASE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "mzmm_pr_release_f01.abap",
+        "line": 100,
+        "token": null,
+        "expressionPath": null,
+        "raw": "mzmm_pr_release_f01.abap:100"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "EBAN",
+      "owner": "SAP",
+      "usage": "write",
+      "anchor": {
+        "file": "mzmm_pr_release_f01.abap",
+        "line": 158,
+        "token": null,
+        "expressionPath": null,
+        "raw": "mzmm_pr_release_f01.abap:158"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZMM_PR_REJECT",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "mzmm_pr_release_f01.abap",
+        "line": 162,
+        "token": null,
+        "expressionPath": null,
+        "raw": "mzmm_pr_release_f01.abap:162"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "SAP_WAPI_CREATE_EVENT",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "mzmm_pr_release_f01.abap",
+        "line": 172,
+        "token": null,
+        "expressionPath": null,
+        "raw": "mzmm_pr_release_f01.abap:172"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ME53N",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "mzmm_pr_release_f01.abap",
+        "line": 207,
+        "token": null,
+        "expressionPath": null,
+        "raw": "mzmm_pr_release_f01.abap:207"
+      },
+      "identity": {
+        "objectType": "TRAN"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZMM_REJECT_TXT",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "mzmm_pr_release_i01.abap",
+        "line": 65,
+        "token": null,
+        "expressionPath": null,
+        "raw": "mzmm_pr_release_i01.abap:65"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-039-B01",
+      "text": "Beim Laden prüft das Programm, ob der Anwender die Transaktion ZME55 ausführen darf, und bricht sonst ab.",
+      "anchors": [
+        {
+          "file": "sapmzmm_pr_release.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzmm_pr_release.abap:22"
+        },
+        {
+          "file": "sapmzmm_pr_release.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzmm_pr_release.abap:24"
+        },
+        {
+          "file": "sapmzmm_pr_release.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzmm_pr_release.abap:25"
+        }
+      ]
+    },
+    {
+      "id": "BM-039-B02",
+      "text": "Beim ersten Aufbau der Liste und nach jedem Auffrischen werden die heute gültigen Freigabecodes des Anwenders je Freigabegruppe mit ihrer Wertgrenze gelesen; hat er keinen, endet das Cockpit mit Fehlermeldung.",
+      "anchors": [
+        {
+          "file": "mzmm_pr_release_o01.abap",
+          "line": 13,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_o01.abap:13"
+        },
+        {
+          "file": "mzmm_pr_release_f01.abap",
+          "line": 7,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_f01.abap:7"
+        },
+        {
+          "file": "mzmm_pr_release_o01.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_o01.abap:15"
+        },
+        {
+          "file": "mzmm_pr_release_o01.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_o01.abap:16"
+        }
+      ]
+    },
+    {
+      "id": "BM-039-B03",
+      "text": "Gelesen werden die zur Freigabe gesperrten, nicht gelöschten und nicht erledigten Banf-Positionen dieser Freigabegruppen.",
+      "anchors": [
+        {
+          "file": "mzmm_pr_release_f01.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_f01.abap:24"
+        }
+      ]
+    },
+    {
+      "id": "BM-039-B04",
+      "text": "Eine Position erscheint nur, wenn ihre Freigabestrategie gepflegt ist, sie noch nicht vollständig freigegeben ist und der nächste fällige Freigabecode einer der Codes des Anwenders ist.",
+      "anchors": [
+        {
+          "file": "mzmm_pr_release_f01.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_f01.abap:32"
+        },
+        {
+          "file": "mzmm_pr_release_f01.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_f01.abap:39"
+        },
+        {
+          "file": "mzmm_pr_release_f01.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_f01.abap:40"
+        },
+        {
+          "file": "mzmm_pr_release_f01.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_f01.abap:47"
+        },
+        {
+          "file": "mzmm_pr_release_f01.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_f01.abap:49"
+        }
+      ]
+    },
+    {
+      "id": "BM-039-B05",
+      "text": "Für jede angezeigte Position wird der Wert aus Preis, Menge und Preiseinheit berechnet; die Liste ist nach Banf und Position sortiert, und ist sie leer, erscheint ein Hinweis.",
+      "anchors": [
+        {
+          "file": "mzmm_pr_release_f01.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_f01.abap:54"
+        },
+        {
+          "file": "mzmm_pr_release_f01.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_f01.abap:57"
+        },
+        {
+          "file": "mzmm_pr_release_o01.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_o01.abap:21"
+        },
+        {
+          "file": "mzmm_pr_release_o01.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_o01.abap:22"
+        }
+      ]
+    },
+    {
+      "id": "BM-039-B06",
+      "text": "Mit Zurück, Beenden oder Abbrechen wird das Programm verlassen.",
+      "anchors": [
+        {
+          "file": "mzmm_pr_release_i01.abap",
+          "line": 6,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_i01.abap:6"
+        },
+        {
+          "file": "mzmm_pr_release_i01.abap",
+          "line": 9,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_i01.abap:9"
+        }
+      ]
+    },
+    {
+      "id": "BM-039-B07",
+      "text": "Beim Freigeben wird jede markierte Position mit dem Code des Anwenders für ihre Freigabegruppe bearbeitet.",
+      "anchors": [
+        {
+          "file": "mzmm_pr_release_i01.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_i01.abap:27"
+        },
+        {
+          "file": "mzmm_pr_release_f01.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_f01.abap:68"
+        },
+        {
+          "file": "mzmm_pr_release_f01.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_f01.abap:69"
+        }
+      ]
+    },
+    {
+      "id": "BM-039-B08",
+      "text": "Liegt der Positionswert über der Wertgrenze des Codes, wird nicht freigegeben (Vier-Augen-Prinzip) und das gemeldet.",
+      "anchors": [
+        {
+          "file": "mzmm_pr_release_f01.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_f01.abap:74"
+        },
+        {
+          "file": "mzmm_pr_release_f01.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_f01.abap:75"
+        }
+      ]
+    },
+    {
+      "id": "BM-039-B09",
+      "text": "Eigene Bestellanforderungen darf der Anwender nicht selbst freigeben.",
+      "anchors": [
+        {
+          "file": "mzmm_pr_release_f01.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_f01.abap:80"
+        },
+        {
+          "file": "mzmm_pr_release_f01.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_f01.abap:81"
+        }
+      ]
+    },
+    {
+      "id": "BM-039-B10",
+      "text": "Ist die Position von jemand anderem gesperrt, wird sie mit Hinweis übersprungen.",
+      "anchors": [
+        {
+          "file": "mzmm_pr_release_f01.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_f01.abap:86"
+        },
+        {
+          "file": "mzmm_pr_release_f01.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_f01.abap:93"
+        },
+        {
+          "file": "mzmm_pr_release_f01.abap",
+          "line": 94,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_f01.abap:94"
+        }
+      ]
+    },
+    {
+      "id": "BM-039-B11",
+      "text": "Sonst wird die Position mit dem Code freigegeben und bei Erfolg festgeschrieben, bei Fehler zurückgerollt; danach wird die Sperre freigegeben.",
+      "anchors": [
+        {
+          "file": "mzmm_pr_release_f01.abap",
+          "line": 100,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_f01.abap:100"
+        },
+        {
+          "file": "mzmm_pr_release_f01.abap",
+          "line": 118,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_f01.abap:118"
+        },
+        {
+          "file": "mzmm_pr_release_f01.abap",
+          "line": 119,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_f01.abap:119"
+        },
+        {
+          "file": "mzmm_pr_release_f01.abap",
+          "line": 124,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_f01.abap:124"
+        },
+        {
+          "file": "mzmm_pr_release_f01.abap",
+          "line": 128,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_f01.abap:128"
+        }
+      ]
+    },
+    {
+      "id": "BM-039-B12",
+      "text": "Am Ende werden die Anzahlen freigegebener und nicht freigegebener Positionen gemeldet und die Liste beim nächsten Aufbau neu gelesen.",
+      "anchors": [
+        {
+          "file": "mzmm_pr_release_f01.abap",
+          "line": 134,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_f01.abap:134"
+        },
+        {
+          "file": "mzmm_pr_release_f01.abap",
+          "line": 135,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_f01.abap:135"
+        }
+      ]
+    },
+    {
+      "id": "BM-039-B13",
+      "text": "Zum Ablehnen muss mindestens eine Position markiert sein; dann wird ein Popup für den Ablehnungsgrund geöffnet, der Pflicht ist.",
+      "anchors": [
+        {
+          "file": "mzmm_pr_release_i01.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_i01.abap:29"
+        },
+        {
+          "file": "mzmm_pr_release_i01.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_i01.abap:30"
+        },
+        {
+          "file": "mzmm_pr_release_i01.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_i01.abap:33"
+        },
+        {
+          "file": "mzmm_pr_release_i01.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_i01.abap:50"
+        },
+        {
+          "file": "mzmm_pr_release_i01.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_i01.abap:51"
+        }
+      ]
+    },
+    {
+      "id": "BM-039-B14",
+      "text": "Für die Wertehilfe zum Grund werden die Vorgabetexte in der Anmeldesprache angeboten.",
+      "anchors": [
+        {
+          "file": "mzmm_pr_release_i01.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_i01.abap:65"
+        },
+        {
+          "file": "mzmm_pr_release_i01.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_i01.abap:69"
+        }
+      ]
+    },
+    {
+      "id": "BM-039-B15",
+      "text": "Jede markierte, nicht fremd gesperrte Position wird abgelehnt, indem ihr Bearbeitungsstatus direkt in der Bestellanforderung auf 08 gesetzt und der Grund mit Anwender und Datum protokolliert wird.",
+      "anchors": [
+        {
+          "file": "mzmm_pr_release_f01.abap",
+          "line": 144,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_f01.abap:144"
+        },
+        {
+          "file": "mzmm_pr_release_f01.abap",
+          "line": 152,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_f01.abap:152"
+        },
+        {
+          "file": "mzmm_pr_release_f01.abap",
+          "line": 158,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_f01.abap:158"
+        },
+        {
+          "file": "mzmm_pr_release_f01.abap",
+          "line": 162,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_f01.abap:162"
+        }
+      ]
+    },
+    {
+      "id": "BM-039-B16",
+      "text": "Der Anforderer wird über das Workflow-Ereignis ZREJECTED der Bestellanforderung mit Grund und Ablehnendem informiert; scheitert das, gibt es einen Hinweis, die Ablehnung bleibt aber bestehen.",
+      "anchors": [
+        {
+          "file": "mzmm_pr_release_f01.abap",
+          "line": 172,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_f01.abap:172"
+        },
+        {
+          "file": "mzmm_pr_release_f01.abap",
+          "line": 182,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_f01.abap:182"
+        },
+        {
+          "file": "mzmm_pr_release_f01.abap",
+          "line": 183,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_f01.abap:183"
+        }
+      ]
+    },
+    {
+      "id": "BM-039-B17",
+      "text": "Jede Ablehnung wird einzeln festgeschrieben und die Sperre freigegeben; danach schließt sich das Popup.",
+      "anchors": [
+        {
+          "file": "mzmm_pr_release_f01.abap",
+          "line": 186,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_f01.abap:186"
+        },
+        {
+          "file": "mzmm_pr_release_f01.abap",
+          "line": 187,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_f01.abap:187"
+        },
+        {
+          "file": "mzmm_pr_release_i01.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_i01.abap:55"
+        }
+      ]
+    },
+    {
+      "id": "BM-039-B18",
+      "text": "Detail öffnet die erste markierte oder die Position unter dem Cursor in der Banf-Anzeige ME53N; ohne Auswahl erscheint ein Hinweis.",
+      "anchors": [
+        {
+          "file": "mzmm_pr_release_f01.abap",
+          "line": 197,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_f01.abap:197"
+        },
+        {
+          "file": "mzmm_pr_release_f01.abap",
+          "line": 201,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_f01.abap:201"
+        },
+        {
+          "file": "mzmm_pr_release_f01.abap",
+          "line": 202,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_f01.abap:202"
+        },
+        {
+          "file": "mzmm_pr_release_f01.abap",
+          "line": 207,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_f01.abap:207"
+        }
+      ]
+    },
+    {
+      "id": "BM-039-B19",
+      "text": "Summe zeigt Anzahl und Gesamtwert der markierten Positionen; Auffrischen lädt die Liste neu.",
+      "anchors": [
+        {
+          "file": "mzmm_pr_release_f01.abap",
+          "line": 215,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_f01.abap:215"
+        },
+        {
+          "file": "mzmm_pr_release_f01.abap",
+          "line": 221,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_f01.abap:221"
+        },
+        {
+          "file": "mzmm_pr_release_i01.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_i01.abap:37"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "lp",
+        "type": "start",
+        "anchor": {
+          "file": "sapmzmm_pr_release.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzmm_pr_release.abap:20"
+        },
+        "meaning": "Programm wird geladen"
+      },
+      {
+        "id": "lac",
+        "type": "action",
+        "anchor": {
+          "file": "sapmzmm_pr_release.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzmm_pr_release.abap:22"
+        },
+        "meaning": "Transaktionsberechtigung ZME55 prüfen"
+      },
+      {
+        "id": "lg",
+        "type": "gateway",
+        "anchor": {
+          "file": "sapmzmm_pr_release.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzmm_pr_release.abap:24"
+        },
+        "meaning": "Berechtigt?"
+      },
+      {
+        "id": "lm",
+        "type": "output",
+        "anchor": {
+          "file": "sapmzmm_pr_release.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzmm_pr_release.abap:25"
+        },
+        "meaning": "Abbruch ohne Berechtigung"
+      },
+      {
+        "id": "xlm",
+        "type": "end",
+        "anchor": {
+          "file": "sapmzmm_pr_release.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "sapmzmm_pr_release.abap:25"
+        },
+        "meaning": "Programm abgebrochen, keine Berechtigung"
+      },
+      {
+        "id": "l0",
+        "type": "start",
+        "anchor": {
+          "file": "mzmm_pr_release_o01.abap",
+          "line": 11,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_o01.abap:11"
+        },
+        "meaning": "PBO Liste"
+      },
+      {
+        "id": "lg1",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzmm_pr_release_o01.abap",
+          "line": 13,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_o01.abap:13"
+        },
+        "meaning": "Liste neu zu laden?"
+      },
+      {
+        "id": "pc",
+        "type": "call",
+        "anchor": {
+          "file": "mzmm_pr_release_o01.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_o01.abap:14"
+        },
+        "meaning": "Freigabecodes des Benutzers lesen"
+      },
+      {
+        "id": "fc",
+        "type": "start",
+        "anchor": {
+          "file": "mzmm_pr_release_f01.abap",
+          "line": 5,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_f01.abap:5"
+        },
+        "meaning": "Codeermittlung"
+      },
+      {
+        "id": "qc",
+        "type": "read",
+        "anchor": {
+          "file": "mzmm_pr_release_f01.abap",
+          "line": 7,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_f01.abap:7"
+        },
+        "meaning": "Heute gültige Freigabecodes des Benutzers mit Wertgrenze lesen"
+      },
+      {
+        "id": "gc",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzmm_pr_release_o01.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_o01.abap:15"
+        },
+        "meaning": "Codes vorhanden?"
+      },
+      {
+        "id": "mc",
+        "type": "output",
+        "anchor": {
+          "file": "mzmm_pr_release_o01.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_o01.abap:16"
+        },
+        "meaning": "Fehler: Benutzer ist kein Freigeber"
+      },
+      {
+        "id": "xmc",
+        "type": "end",
+        "anchor": {
+          "file": "mzmm_pr_release_o01.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_o01.abap:16"
+        },
+        "meaning": "Cockpit mit Fehlermeldung beendet"
+      },
+      {
+        "id": "pb",
+        "type": "call",
+        "anchor": {
+          "file": "mzmm_pr_release_o01.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_o01.abap:18"
+        },
+        "meaning": "Freizugebende Banfen lesen"
+      },
+      {
+        "id": "fb",
+        "type": "start",
+        "anchor": {
+          "file": "mzmm_pr_release_f01.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_f01.abap:14"
+        },
+        "meaning": "Banf-Selektion"
+      },
+      {
+        "id": "qb",
+        "type": "read",
+        "anchor": {
+          "file": "mzmm_pr_release_f01.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_f01.abap:24"
+        },
+        "meaning": "Gesperrte, nicht gelöschte, nicht erledigte Banf-Positionen der Freigabegruppen lesen"
+      },
+      {
+        "id": "lb",
+        "type": "loop",
+        "anchor": {
+          "file": "mzmm_pr_release_f01.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_f01.abap:31"
+        },
+        "meaning": "Banf-Positionen durchlaufen"
+      },
+      {
+        "id": "qs",
+        "type": "read",
+        "anchor": {
+          "file": "mzmm_pr_release_f01.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_f01.abap:32"
+        },
+        "meaning": "Freigabestrategie lesen"
+      },
+      {
+        "id": "gs",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzmm_pr_release_f01.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_f01.abap:35"
+        },
+        "meaning": "Strategie vorhanden?"
+      },
+      {
+        "id": "ap",
+        "type": "action",
+        "anchor": {
+          "file": "mzmm_pr_release_f01.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_f01.abap:39"
+        },
+        "meaning": "Stufe des nächsten Freigabecodes bestimmen"
+      },
+      {
+        "id": "gp",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzmm_pr_release_f01.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_f01.abap:40"
+        },
+        "meaning": "Schon vollständig freigegeben?"
+      },
+      {
+        "id": "rc",
+        "type": "read",
+        "anchor": {
+          "file": "mzmm_pr_release_f01.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_f01.abap:47"
+        },
+        "meaning": "Ist der nächste Code einer des Benutzers?"
+      },
+      {
+        "id": "gr",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzmm_pr_release_f01.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_f01.abap:49"
+        },
+        "meaning": "Nicht mein Code?"
+      },
+      {
+        "id": "aw",
+        "type": "action",
+        "anchor": {
+          "file": "mzmm_pr_release_f01.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_f01.abap:54"
+        },
+        "meaning": "Positionswert berechnen, in Liste aufnehmen"
+      },
+      {
+        "id": "gl0",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzmm_pr_release_o01.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_o01.abap:21"
+        },
+        "meaning": "Liste leer?"
+      },
+      {
+        "id": "ml0",
+        "type": "output",
+        "anchor": {
+          "file": "mzmm_pr_release_o01.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_o01.abap:22"
+        },
+        "meaning": "Hinweis: nichts freizugeben"
+      },
+      {
+        "id": "ex",
+        "type": "start",
+        "anchor": {
+          "file": "mzmm_pr_release_i01.abap",
+          "line": 5,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_i01.abap:5"
+        },
+        "meaning": "Beenden-Funktionen"
+      },
+      {
+        "id": "exc",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzmm_pr_release_i01.abap",
+          "line": 6,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_i01.abap:6"
+        },
+        "meaning": "Zurück/Beenden/Abbrechen?"
+      },
+      {
+        "id": "exl",
+        "type": "end",
+        "anchor": {
+          "file": "mzmm_pr_release_i01.abap",
+          "line": 9,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_i01.abap:9"
+        },
+        "meaning": "Programm verlassen"
+      },
+      {
+        "id": "u0",
+        "type": "start",
+        "anchor": {
+          "file": "mzmm_pr_release_i01.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_i01.abap:21"
+        },
+        "meaning": "PAI Liste"
+      },
+      {
+        "id": "uc",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzmm_pr_release_i01.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_i01.abap:25"
+        },
+        "meaning": "Funktion?"
+      },
+      {
+        "id": "ur",
+        "type": "call",
+        "anchor": {
+          "file": "mzmm_pr_release_i01.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_i01.abap:27"
+        },
+        "meaning": "Markierte freigeben"
+      },
+      {
+        "id": "fr",
+        "type": "start",
+        "anchor": {
+          "file": "mzmm_pr_release_f01.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_f01.abap:61"
+        },
+        "meaning": "Freigabe"
+      },
+      {
+        "id": "lr",
+        "type": "loop",
+        "anchor": {
+          "file": "mzmm_pr_release_f01.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_f01.abap:68"
+        },
+        "meaning": "Markierte Positionen durchlaufen"
+      },
+      {
+        "id": "rcd",
+        "type": "read",
+        "anchor": {
+          "file": "mzmm_pr_release_f01.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_f01.abap:69"
+        },
+        "meaning": "Code und Wertgrenze der Freigabegruppe"
+      },
+      {
+        "id": "gv",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzmm_pr_release_f01.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_f01.abap:74"
+        },
+        "meaning": "Über Wertgrenze?"
+      },
+      {
+        "id": "mv",
+        "type": "output",
+        "anchor": {
+          "file": "mzmm_pr_release_f01.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_f01.abap:75"
+        },
+        "meaning": "Info: Wertgrenze, nicht freigegeben"
+      },
+      {
+        "id": "ge",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzmm_pr_release_f01.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_f01.abap:80"
+        },
+        "meaning": "Eigene Banf?"
+      },
+      {
+        "id": "me",
+        "type": "output",
+        "anchor": {
+          "file": "mzmm_pr_release_f01.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_f01.abap:81"
+        },
+        "meaning": "Info: eigene Banf nicht freigebbar"
+      },
+      {
+        "id": "lk",
+        "type": "lock",
+        "anchor": {
+          "file": "mzmm_pr_release_f01.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_f01.abap:86"
+        },
+        "meaning": "Banf-Position sperren"
+      },
+      {
+        "id": "gk",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzmm_pr_release_f01.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_f01.abap:93"
+        },
+        "meaning": "Gesperrt von anderem?"
+      },
+      {
+        "id": "mk",
+        "type": "output",
+        "anchor": {
+          "file": "mzmm_pr_release_f01.abap",
+          "line": 94,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_f01.abap:94"
+        },
+        "meaning": "Info: Position gesperrt"
+      },
+      {
+        "id": "br",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "mzmm_pr_release_f01.abap",
+          "line": 100,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_f01.abap:100"
+        },
+        "meaning": "Position mit eigenem Code freigeben"
+      },
+      {
+        "id": "gbr",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzmm_pr_release_f01.abap",
+          "line": 118,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_f01.abap:118"
+        },
+        "meaning": "Freigabe erfolgreich?"
+      },
+      {
+        "id": "cm",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "mzmm_pr_release_f01.abap",
+          "line": 119,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_f01.abap:119"
+        },
+        "meaning": "Festschreiben"
+      },
+      {
+        "id": "rb",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "mzmm_pr_release_f01.abap",
+          "line": 124,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_f01.abap:124"
+        },
+        "meaning": "Zurückrollen"
+      },
+      {
+        "id": "dq",
+        "type": "lock",
+        "anchor": {
+          "file": "mzmm_pr_release_f01.abap",
+          "line": 128,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_f01.abap:128"
+        },
+        "meaning": "Sperre freigeben"
+      },
+      {
+        "id": "ms",
+        "type": "output",
+        "anchor": {
+          "file": "mzmm_pr_release_f01.abap",
+          "line": 134,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_f01.abap:134"
+        },
+        "meaning": "Anzahl freigegeben/nicht freigegeben melden"
+      },
+      {
+        "id": "urj",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzmm_pr_release_i01.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_i01.abap:29"
+        },
+        "meaning": "Etwas markiert?"
+      },
+      {
+        "id": "mw",
+        "type": "output",
+        "anchor": {
+          "file": "mzmm_pr_release_i01.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_i01.abap:30"
+        },
+        "meaning": "Warnung: nichts markiert"
+      },
+      {
+        "id": "rw",
+        "type": "end",
+        "anchor": {
+          "file": "mzmm_pr_release_i01.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_i01.abap:31"
+        },
+        "meaning": "Modul verlassen"
+      },
+      {
+        "id": "cs",
+        "type": "output",
+        "anchor": {
+          "file": "mzmm_pr_release_i01.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_i01.abap:33"
+        },
+        "meaning": "Popup Ablehnungsgrund"
+      },
+      {
+        "id": "ud",
+        "type": "call",
+        "anchor": {
+          "file": "mzmm_pr_release_i01.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_i01.abap:35"
+        },
+        "meaning": "Detail anzeigen"
+      },
+      {
+        "id": "fd",
+        "type": "start",
+        "anchor": {
+          "file": "mzmm_pr_release_f01.abap",
+          "line": 196,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_f01.abap:196"
+        },
+        "meaning": "Detailanzeige"
+      },
+      {
+        "id": "gd",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzmm_pr_release_f01.abap",
+          "line": 198,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_f01.abap:198"
+        },
+        "meaning": "Keine markierte Zeile?"
+      },
+      {
+        "id": "gd2",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzmm_pr_release_f01.abap",
+          "line": 201,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_f01.abap:201"
+        },
+        "meaning": "Keine Zeile unter Cursor?"
+      },
+      {
+        "id": "mdd",
+        "type": "output",
+        "anchor": {
+          "file": "mzmm_pr_release_f01.abap",
+          "line": 202,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_f01.abap:202"
+        },
+        "meaning": "Hinweis: nichts ausgewählt"
+      },
+      {
+        "id": "rdd",
+        "type": "end",
+        "anchor": {
+          "file": "mzmm_pr_release_f01.abap",
+          "line": 203,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_f01.abap:203"
+        },
+        "meaning": "Ohne Anzeige zurück"
+      },
+      {
+        "id": "tme",
+        "type": "external_program",
+        "anchor": {
+          "file": "mzmm_pr_release_f01.abap",
+          "line": 207,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_f01.abap:207"
+        },
+        "meaning": "Banf in ME53N anzeigen"
+      },
+      {
+        "id": "urf",
+        "type": "action",
+        "anchor": {
+          "file": "mzmm_pr_release_i01.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_i01.abap:37"
+        },
+        "meaning": "Neuladen der Liste anstoßen"
+      },
+      {
+        "id": "usrt",
+        "type": "action",
+        "anchor": {
+          "file": "mzmm_pr_release_i01.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_i01.abap:39"
+        },
+        "meaning": "Liste nach Positionswert absteigend sortieren"
+      },
+      {
+        "id": "um",
+        "type": "call",
+        "anchor": {
+          "file": "mzmm_pr_release_i01.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_i01.abap:41"
+        },
+        "meaning": "Summe anzeigen"
+      },
+      {
+        "id": "fs",
+        "type": "start",
+        "anchor": {
+          "file": "mzmm_pr_release_f01.abap",
+          "line": 211,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_f01.abap:211"
+        },
+        "meaning": "Summenbildung"
+      },
+      {
+        "id": "ls",
+        "type": "loop",
+        "anchor": {
+          "file": "mzmm_pr_release_f01.abap",
+          "line": 214,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_f01.abap:214"
+        },
+        "meaning": "Markierte durchlaufen"
+      },
+      {
+        "id": "as",
+        "type": "action",
+        "anchor": {
+          "file": "mzmm_pr_release_f01.abap",
+          "line": 215,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_f01.abap:215"
+        },
+        "meaning": "Wert summieren"
+      },
+      {
+        "id": "gsu",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzmm_pr_release_f01.abap",
+          "line": 218,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_f01.abap:218"
+        },
+        "meaning": "Etwas markiert?"
+      },
+      {
+        "id": "ms0",
+        "type": "output",
+        "anchor": {
+          "file": "mzmm_pr_release_f01.abap",
+          "line": 219,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_f01.abap:219"
+        },
+        "meaning": "Hinweis: nichts markiert"
+      },
+      {
+        "id": "msi",
+        "type": "output",
+        "anchor": {
+          "file": "mzmm_pr_release_f01.abap",
+          "line": 221,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_f01.abap:221"
+        },
+        "meaning": "Anzahl und Summenwert anzeigen"
+      },
+      {
+        "id": "u2",
+        "type": "start",
+        "anchor": {
+          "file": "mzmm_pr_release_i01.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_i01.abap:47"
+        },
+        "meaning": "PAI Ablehnungsgrund"
+      },
+      {
+        "id": "u2c",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzmm_pr_release_i01.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_i01.abap:48"
+        },
+        "meaning": "OK oder Abbrechen?"
+      },
+      {
+        "id": "u2g",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzmm_pr_release_i01.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_i01.abap:50"
+        },
+        "meaning": "Grund eingegeben?"
+      },
+      {
+        "id": "u2m",
+        "type": "output",
+        "anchor": {
+          "file": "mzmm_pr_release_i01.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_i01.abap:51"
+        },
+        "meaning": "Fehler: Grund fehlt"
+      },
+      {
+        "id": "xu2m",
+        "type": "end",
+        "anchor": {
+          "file": "mzmm_pr_release_i01.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_i01.abap:51"
+        },
+        "meaning": "Popup bleibt, Grund fehlt"
+      },
+      {
+        "id": "u2p",
+        "type": "call",
+        "anchor": {
+          "file": "mzmm_pr_release_i01.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_i01.abap:54"
+        },
+        "meaning": "Markierte ablehnen"
+      },
+      {
+        "id": "fa",
+        "type": "start",
+        "anchor": {
+          "file": "mzmm_pr_release_f01.abap",
+          "line": 139,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_f01.abap:139"
+        },
+        "meaning": "Ablehnung"
+      },
+      {
+        "id": "la",
+        "type": "loop",
+        "anchor": {
+          "file": "mzmm_pr_release_f01.abap",
+          "line": 144,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_f01.abap:144"
+        },
+        "meaning": "Markierte Positionen durchlaufen"
+      },
+      {
+        "id": "lka",
+        "type": "lock",
+        "anchor": {
+          "file": "mzmm_pr_release_f01.abap",
+          "line": 145,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_f01.abap:145"
+        },
+        "meaning": "Banf-Position sperren"
+      },
+      {
+        "id": "gka",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzmm_pr_release_f01.abap",
+          "line": 152,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_f01.abap:152"
+        },
+        "meaning": "Gesperrt von anderem?"
+      },
+      {
+        "id": "mka",
+        "type": "output",
+        "anchor": {
+          "file": "mzmm_pr_release_f01.abap",
+          "line": 153,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_f01.abap:153"
+        },
+        "meaning": "Info: Position gesperrt"
+      },
+      {
+        "id": "ua",
+        "type": "write",
+        "anchor": {
+          "file": "mzmm_pr_release_f01.abap",
+          "line": 158,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_f01.abap:158"
+        },
+        "meaning": "Bearbeitungsstatus abgelehnt direkt in EBAN setzen"
+      },
+      {
+        "id": "ia",
+        "type": "write",
+        "anchor": {
+          "file": "mzmm_pr_release_f01.abap",
+          "line": 162,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_f01.abap:162"
+        },
+        "meaning": "Ablehnungsgrund protokollieren"
+      },
+      {
+        "id": "ev",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "mzmm_pr_release_f01.abap",
+          "line": 172,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_f01.abap:172"
+        },
+        "meaning": "Workflow-Ereignis ZREJECTED an Anforderer"
+      },
+      {
+        "id": "gev",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzmm_pr_release_f01.abap",
+          "line": 182,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_f01.abap:182"
+        },
+        "meaning": "Ereignis erzeugt?"
+      },
+      {
+        "id": "mev",
+        "type": "output",
+        "anchor": {
+          "file": "mzmm_pr_release_f01.abap",
+          "line": 183,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_f01.abap:183"
+        },
+        "meaning": "Info: Ereignis fehlgeschlagen"
+      },
+      {
+        "id": "ca",
+        "type": "transaction",
+        "anchor": {
+          "file": "mzmm_pr_release_f01.abap",
+          "line": 186,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_f01.abap:186"
+        },
+        "meaning": "Festschreiben je Position"
+      },
+      {
+        "id": "dqa",
+        "type": "lock",
+        "anchor": {
+          "file": "mzmm_pr_release_f01.abap",
+          "line": 187,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_f01.abap:187"
+        },
+        "meaning": "Sperre freigeben"
+      },
+      {
+        "id": "u2l",
+        "type": "end",
+        "anchor": {
+          "file": "mzmm_pr_release_i01.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_i01.abap:55"
+        },
+        "meaning": "Popup schließen"
+      },
+      {
+        "id": "u2x",
+        "type": "end",
+        "anchor": {
+          "file": "mzmm_pr_release_i01.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_i01.abap:58"
+        },
+        "meaning": "Popup ohne Ablehnung schließen"
+      },
+      {
+        "id": "f4",
+        "type": "start",
+        "anchor": {
+          "file": "mzmm_pr_release_i01.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_i01.abap:63"
+        },
+        "meaning": "Wertehilfe Ablehnungsgrund"
+      },
+      {
+        "id": "f4q",
+        "type": "read",
+        "anchor": {
+          "file": "mzmm_pr_release_i01.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_i01.abap:65"
+        },
+        "meaning": "Vorgabetexte in Anmeldesprache lesen"
+      },
+      {
+        "id": "f4c",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "mzmm_pr_release_i01.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_i01.abap:69"
+        },
+        "meaning": "Wertehilfe anzeigen"
+      },
+      {
+        "id": "xl0",
+        "type": "end",
+        "anchor": {
+          "file": "mzmm_pr_release_o01.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_o01.abap:25"
+        },
+        "meaning": "LISTE_LADEN beendet"
+      },
+      {
+        "id": "xfc",
+        "type": "end",
+        "anchor": {
+          "file": "mzmm_pr_release_f01.abap",
+          "line": 11,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_f01.abap:11"
+        },
+        "meaning": "CODES_LESEN beendet"
+      },
+      {
+        "id": "xfb",
+        "type": "end",
+        "anchor": {
+          "file": "mzmm_pr_release_f01.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_f01.abap:58"
+        },
+        "meaning": "BANF_LESEN beendet, Liste sortiert"
+      },
+      {
+        "id": "xex",
+        "type": "end",
+        "anchor": {
+          "file": "mzmm_pr_release_i01.abap",
+          "line": 11,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_i01.abap:11"
+        },
+        "meaning": "EXIT_COMMAND beendet"
+      },
+      {
+        "id": "xu0",
+        "type": "end",
+        "anchor": {
+          "file": "mzmm_pr_release_i01.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_i01.abap:44"
+        },
+        "meaning": "USER_COMMAND_0100 beendet"
+      },
+      {
+        "id": "xfr",
+        "type": "end",
+        "anchor": {
+          "file": "mzmm_pr_release_f01.abap",
+          "line": 136,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_f01.abap:136"
+        },
+        "meaning": "MARKIERTE_FREIGEBEN beendet"
+      },
+      {
+        "id": "xfd",
+        "type": "end",
+        "anchor": {
+          "file": "mzmm_pr_release_f01.abap",
+          "line": 208,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_f01.abap:208"
+        },
+        "meaning": "DETAIL_ANZEIGEN beendet"
+      },
+      {
+        "id": "xfs",
+        "type": "end",
+        "anchor": {
+          "file": "mzmm_pr_release_f01.abap",
+          "line": 223,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_f01.abap:223"
+        },
+        "meaning": "SUMME_ANZEIGEN beendet"
+      },
+      {
+        "id": "xfa",
+        "type": "end",
+        "anchor": {
+          "file": "mzmm_pr_release_f01.abap",
+          "line": 193,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_f01.abap:193"
+        },
+        "meaning": "MARKIERTE_ABLEHNEN beendet"
+      },
+      {
+        "id": "xu2",
+        "type": "end",
+        "anchor": {
+          "file": "mzmm_pr_release_i01.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_i01.abap:60"
+        },
+        "meaning": "USER_COMMAND_0200 beendet ohne Aktion"
+      },
+      {
+        "id": "xf4",
+        "type": "end",
+        "anchor": {
+          "file": "mzmm_pr_release_i01.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzmm_pr_release_i01.abap:80"
+        },
+        "meaning": "F4_GRUND beendet"
+      }
+    ],
+    "edges": [
+      {
+        "from": "lp",
+        "to": "lac",
+        "condition": "always"
+      },
+      {
+        "from": "lac",
+        "to": "lg",
+        "condition": "always"
+      },
+      {
+        "from": "lg",
+        "to": "lm",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "lg",
+        "to": "l0",
+        "condition": "else"
+      },
+      {
+        "from": "l0",
+        "to": "lg1",
+        "condition": "always"
+      },
+      {
+        "from": "lg1",
+        "to": "pc",
+        "condition": "gv_loaded = abap_false"
+      },
+      {
+        "from": "pc",
+        "to": "fc",
+        "condition": "always"
+      },
+      {
+        "from": "fc",
+        "to": "qc",
+        "condition": "always"
+      },
+      {
+        "from": "qc",
+        "to": "xfc",
+        "condition": "always"
+      },
+      {
+        "from": "gc",
+        "to": "mc",
+        "condition": "gt_codes IS INITIAL"
+      },
+      {
+        "from": "gc",
+        "to": "pb",
+        "condition": "else"
+      },
+      {
+        "from": "pb",
+        "to": "fb",
+        "condition": "always"
+      },
+      {
+        "from": "fb",
+        "to": "qb",
+        "condition": "always"
+      },
+      {
+        "from": "qb",
+        "to": "lb",
+        "condition": "always"
+      },
+      {
+        "from": "lb",
+        "to": "qs",
+        "condition": "next row"
+      },
+      {
+        "from": "qs",
+        "to": "gs",
+        "condition": "always"
+      },
+      {
+        "from": "gs",
+        "to": "lb",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "gs",
+        "to": "ap",
+        "condition": "else"
+      },
+      {
+        "from": "ap",
+        "to": "gp",
+        "condition": "always"
+      },
+      {
+        "from": "gp",
+        "to": "lb",
+        "condition": "lv_pos > 8"
+      },
+      {
+        "from": "gp",
+        "to": "rc",
+        "condition": "else"
+      },
+      {
+        "from": "rc",
+        "to": "gr",
+        "condition": "always"
+      },
+      {
+        "from": "gr",
+        "to": "lb",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "gr",
+        "to": "aw",
+        "condition": "else"
+      },
+      {
+        "from": "aw",
+        "to": "lb",
+        "condition": "next iteration"
+      },
+      {
+        "from": "lb",
+        "to": "xfb",
+        "condition": "no more rows"
+      },
+      {
+        "from": "gl0",
+        "to": "ml0",
+        "condition": "gt_line IS INITIAL"
+      },
+      {
+        "from": "ex",
+        "to": "exc",
+        "condition": "always"
+      },
+      {
+        "from": "exc",
+        "to": "exl",
+        "condition": "WHEN 'BACK' OR 'EXIT' OR 'CANC'"
+      },
+      {
+        "from": "u0",
+        "to": "uc",
+        "condition": "always"
+      },
+      {
+        "from": "uc",
+        "to": "ur",
+        "condition": "WHEN 'RELE'"
+      },
+      {
+        "from": "uc",
+        "to": "urj",
+        "condition": "WHEN 'REJE'"
+      },
+      {
+        "from": "uc",
+        "to": "ud",
+        "condition": "WHEN 'DETL'"
+      },
+      {
+        "from": "uc",
+        "to": "urf",
+        "condition": "WHEN 'REFR'"
+      },
+      {
+        "from": "uc",
+        "to": "um",
+        "condition": "WHEN 'SUMM'"
+      },
+      {
+        "from": "ur",
+        "to": "fr",
+        "condition": "always"
+      },
+      {
+        "from": "fr",
+        "to": "lr",
+        "condition": "always"
+      },
+      {
+        "from": "lr",
+        "to": "rcd",
+        "condition": "next row"
+      },
+      {
+        "from": "rcd",
+        "to": "gv",
+        "condition": "always"
+      },
+      {
+        "from": "gv",
+        "to": "mv",
+        "condition": "lv_limit > 0 AND gs_line-wert > lv_limit"
+      },
+      {
+        "from": "mv",
+        "to": "lr",
+        "condition": "next iteration"
+      },
+      {
+        "from": "gv",
+        "to": "ge",
+        "condition": "else"
+      },
+      {
+        "from": "ge",
+        "to": "me",
+        "condition": "gs_line-ernam = sy-uname"
+      },
+      {
+        "from": "me",
+        "to": "lr",
+        "condition": "next iteration"
+      },
+      {
+        "from": "ge",
+        "to": "lk",
+        "condition": "else"
+      },
+      {
+        "from": "lk",
+        "to": "gk",
+        "condition": "always"
+      },
+      {
+        "from": "gk",
+        "to": "mk",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "mk",
+        "to": "lr",
+        "condition": "next iteration"
+      },
+      {
+        "from": "gk",
+        "to": "br",
+        "condition": "else"
+      },
+      {
+        "from": "br",
+        "to": "gbr",
+        "condition": "always"
+      },
+      {
+        "from": "gbr",
+        "to": "cm",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "gbr",
+        "to": "rb",
+        "condition": "else"
+      },
+      {
+        "from": "cm",
+        "to": "dq",
+        "condition": "always"
+      },
+      {
+        "from": "rb",
+        "to": "dq",
+        "condition": "always"
+      },
+      {
+        "from": "dq",
+        "to": "lr",
+        "condition": "next iteration"
+      },
+      {
+        "from": "lr",
+        "to": "ms",
+        "condition": "no more rows"
+      },
+      {
+        "from": "urj",
+        "to": "mw",
+        "condition": "NOT line_exists( gt_line[ mark = 'X' ] )"
+      },
+      {
+        "from": "mw",
+        "to": "rw",
+        "condition": "always"
+      },
+      {
+        "from": "urj",
+        "to": "cs",
+        "condition": "else"
+      },
+      {
+        "from": "cs",
+        "to": "u2",
+        "condition": "always"
+      },
+      {
+        "from": "ud",
+        "to": "fd",
+        "condition": "always"
+      },
+      {
+        "from": "fd",
+        "to": "gd",
+        "condition": "always"
+      },
+      {
+        "from": "gd",
+        "to": "gd2",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "gd",
+        "to": "tme",
+        "condition": "else"
+      },
+      {
+        "from": "gd2",
+        "to": "mdd",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "mdd",
+        "to": "rdd",
+        "condition": "always"
+      },
+      {
+        "from": "gd2",
+        "to": "tme",
+        "condition": "else"
+      },
+      {
+        "from": "um",
+        "to": "fs",
+        "condition": "always"
+      },
+      {
+        "from": "fs",
+        "to": "ls",
+        "condition": "always"
+      },
+      {
+        "from": "ls",
+        "to": "as",
+        "condition": "next row"
+      },
+      {
+        "from": "as",
+        "to": "ls",
+        "condition": "next iteration"
+      },
+      {
+        "from": "ls",
+        "to": "gsu",
+        "condition": "no more rows"
+      },
+      {
+        "from": "gsu",
+        "to": "ms0",
+        "condition": "lv_anz = 0"
+      },
+      {
+        "from": "gsu",
+        "to": "msi",
+        "condition": "else"
+      },
+      {
+        "from": "u2",
+        "to": "u2c",
+        "condition": "always"
+      },
+      {
+        "from": "u2c",
+        "to": "u2g",
+        "condition": "WHEN 'OK'"
+      },
+      {
+        "from": "u2g",
+        "to": "u2m",
+        "condition": "gv_grund IS INITIAL"
+      },
+      {
+        "from": "u2g",
+        "to": "u2p",
+        "condition": "else"
+      },
+      {
+        "from": "u2p",
+        "to": "fa",
+        "condition": "always"
+      },
+      {
+        "from": "fa",
+        "to": "la",
+        "condition": "always"
+      },
+      {
+        "from": "la",
+        "to": "lka",
+        "condition": "next row"
+      },
+      {
+        "from": "lka",
+        "to": "gka",
+        "condition": "always"
+      },
+      {
+        "from": "gka",
+        "to": "mka",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "mka",
+        "to": "la",
+        "condition": "next iteration"
+      },
+      {
+        "from": "gka",
+        "to": "ua",
+        "condition": "else"
+      },
+      {
+        "from": "ua",
+        "to": "ia",
+        "condition": "always"
+      },
+      {
+        "from": "ia",
+        "to": "ev",
+        "condition": "always"
+      },
+      {
+        "from": "ev",
+        "to": "gev",
+        "condition": "always"
+      },
+      {
+        "from": "gev",
+        "to": "mev",
+        "condition": "lv_rc <> 0"
+      },
+      {
+        "from": "gev",
+        "to": "ca",
+        "condition": "else"
+      },
+      {
+        "from": "mev",
+        "to": "ca",
+        "condition": "always"
+      },
+      {
+        "from": "ca",
+        "to": "dqa",
+        "condition": "always"
+      },
+      {
+        "from": "dqa",
+        "to": "la",
+        "condition": "next iteration"
+      },
+      {
+        "from": "la",
+        "to": "xfa",
+        "condition": "no more rows"
+      },
+      {
+        "from": "u2c",
+        "to": "u2x",
+        "condition": "WHEN 'CANC'"
+      },
+      {
+        "from": "f4",
+        "to": "f4q",
+        "condition": "always"
+      },
+      {
+        "from": "f4q",
+        "to": "f4c",
+        "condition": "always"
+      },
+      {
+        "from": "lm",
+        "to": "xlm",
+        "condition": "always"
+      },
+      {
+        "from": "lg1",
+        "to": "xl0",
+        "condition": "else"
+      },
+      {
+        "from": "gl0",
+        "to": "xl0",
+        "condition": "else"
+      },
+      {
+        "from": "ml0",
+        "to": "xl0",
+        "condition": "always"
+      },
+      {
+        "from": "xfc",
+        "to": "gc",
+        "condition": "always"
+      },
+      {
+        "from": "mc",
+        "to": "xmc",
+        "condition": "always"
+      },
+      {
+        "from": "xfb",
+        "to": "gl0",
+        "condition": "always"
+      },
+      {
+        "from": "exc",
+        "to": "xex",
+        "condition": "else"
+      },
+      {
+        "from": "uc",
+        "to": "usrt",
+        "condition": "WHEN 'SORT'"
+      },
+      {
+        "from": "usrt",
+        "to": "xu0",
+        "condition": "always"
+      },
+      {
+        "from": "uc",
+        "to": "xu0",
+        "condition": "WHEN OTHERS"
+      },
+      {
+        "from": "urf",
+        "to": "xu0",
+        "condition": "always"
+      },
+      {
+        "from": "xfr",
+        "to": "xu0",
+        "condition": "always"
+      },
+      {
+        "from": "ms",
+        "to": "xfr",
+        "condition": "always"
+      },
+      {
+        "from": "u2l",
+        "to": "xu0",
+        "condition": "always"
+      },
+      {
+        "from": "u2x",
+        "to": "xu0",
+        "condition": "always"
+      },
+      {
+        "from": "xfd",
+        "to": "xu0",
+        "condition": "always"
+      },
+      {
+        "from": "tme",
+        "to": "xfd",
+        "condition": "always"
+      },
+      {
+        "from": "rdd",
+        "to": "xu0",
+        "condition": "always"
+      },
+      {
+        "from": "xfs",
+        "to": "xu0",
+        "condition": "always"
+      },
+      {
+        "from": "ms0",
+        "to": "xfs",
+        "condition": "always"
+      },
+      {
+        "from": "msi",
+        "to": "xfs",
+        "condition": "always"
+      },
+      {
+        "from": "u2m",
+        "to": "xu2m",
+        "condition": "always"
+      },
+      {
+        "from": "xfa",
+        "to": "u2l",
+        "condition": "always"
+      },
+      {
+        "from": "u2c",
+        "to": "xu2",
+        "condition": "else"
+      },
+      {
+        "from": "f4c",
+        "to": "xf4",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "mzmm_pr_release_f01.abap:158 — kein Fachsatz „Die Ablehnung erfolgt über die Standard-Freigabe (Freigabe zurücknehmen)“ (der Status wird direkt in der Tabelle gesetzt, am Standard vorbei)",
+    "mzmm_pr_release_f01.abap:172 — kein Fachsatz „Der Anforderer erhält eine E-Mail“ (es wird nur ein Workflow-Ereignis erzeugt; was daraus folgt, liegt außerhalb des Codes)",
+    "mzmm_pr_release_f01.abap:74 — kein Fachsatz „Über der Wertgrenze wird die Banf an den nächsten Freigeber weitergeleitet“ (sie wird nur nicht freigegeben)",
+    "mzmm_pr_release_i01.abap:37 — kein Fachsatz „Auffrischen setzt Markierungen oder Freigaben zurück“ (es lädt nur die Liste neu)"
+  ],
+  "processDescription": "Ein Freigeber startet die Transaktion ZME55; das Programm prüft beim Laden die Transaktionsberechtigung. Beim Aufbau der Liste liest es die heute gültigen Freigabecodes des Anwenders mit Wertgrenzen – ohne Code endet es – und die zur Freigabe gesperrten, offenen Banf-Positionen seiner Freigabegruppen. Angezeigt werden nur Positionen mit gepflegter Strategie, bei denen der nächste fällige Code einer des Anwenders ist, mit berechnetem Positionswert. Beim Freigeben wird jede markierte Position geprüft: über der Wertgrenze des Codes oder bei eigener Banf wird nicht freigegeben, fremd gesperrte werden übersprungen, die übrigen werden per BAPI mit dem Code freigegeben und festgeschrieben bzw. zurückgerollt; zum Schluss werden Erfolge und Fehler gemeldet und die Liste neu geladen. Beim Ablehnen muss etwas markiert sein und in einem Popup ein Grund (mit Wertehilfe) eingegeben werden; dann setzt das Programm je Position den Bearbeitungsstatus direkt in EBAN auf abgelehnt, protokolliert den Grund, erzeugt ein Workflow-Ereignis an den Anforderer und schreibt je Position fest. Weitere Funktionen zeigen eine Position in ME53N, sortieren nach Wert, summieren die markierten Werte und laden die Liste neu; Zurück, Beenden und Abbrechen verlassen das Programm."
+}

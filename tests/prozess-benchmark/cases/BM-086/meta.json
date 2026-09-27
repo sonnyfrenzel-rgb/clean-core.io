@@ -1,0 +1,22 @@
+{
+  "id": "BM-086",
+  "title": "IDoc-Eingang Kreditlimit: Segmentschleife schreibt KNKK direkt",
+  "domain": "Querschnitt — Schnittstellen, Stammdaten, HR, Workflow, technische Jobs",
+  "band": "mittel",
+  "loc": 90,
+  "constructs": [
+    "IDOC_INPUT-Schnittstelle",
+    "LOOP EDIDC/EDIDD",
+    "CASE segnam",
+    "SELECT SINGLE KNKK",
+    "UPDATE KNKK",
+    "IDoc-Status 51/53",
+    "workflow_result"
+  ],
+  "scenario": "Kundeneigener IDoc-Eingangsbaustein, über den eine externe Kreditversicherung (Auskunftei) neue Kreditlimits je Kunde und Kreditkontrollbereich ins ECC einspielt.",
+  "s4_issues": [
+    "KNKK ist in S/4 obsolet; Kreditmanagement läuft über SAP Credit Management (FIN-FSCM-CR, UKMBP_CMS_SGM)",
+    "Direktes UPDATE auf SAP-Standardtabelle ohne Sperre",
+    "Teilverbuchung bei Fehler ohne Rollback"
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "id": "BM-088",
+  "title": "Zeitbuchungen aus Zutrittskontrolle per Datei importieren",
+  "domain": "Querschnitt — Schnittstellen, Stammdaten, HR, Workflow, technische Jobs",
+  "band": "mittel",
+  "loc": 73,
+  "constructs": [
+    "OPEN DATASET/READ DATASET/TRANSFER",
+    "DO/EXIT",
+    "SPLIT",
+    "SELECT SINGLE PA0000",
+    "INSERT Z-Tabelle",
+    "DELETE DATASET",
+    "COMMIT WORK"
+  ],
+  "scenario": "Nächtlicher Job, der die Kommen/Gehen-Buchungen eines externen Zutrittskontrollsystems aus einer CSV-Datei auf dem Applikationsserver in eine Z-Tabelle übernimmt, bevor sie an die Zeitwirtschaft weitergehen.",
+  "s4_issues": [
+    "OPEN DATASET ohne logischen Dateinamen/Pfadprüfung (FILE_VALIDATE_NAME)",
+    "Direkter Lesezugriff auf PA0000 ohne HR-Berechtigungsprüfung",
+    "Dateischnittstellen auf dem Applikationsserver in der Cloud nicht zulässig"
+  ]
+}

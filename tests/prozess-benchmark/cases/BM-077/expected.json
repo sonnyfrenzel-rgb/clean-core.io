@@ -1,0 +1,2479 @@
+{
+  "id": "BM-077",
+  "title": "Werkerrückmelde-Terminal: Dynpro-Anwendung mit retrograder Entnahme, Wareneingang und Etikettendruck",
+  "classes": [
+    "K07",
+    "K04",
+    "K03",
+    "K12",
+    "K11"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [
+    "Die Ablauflogik der Dynpros 0100/0200 ist nicht geliefert – die Reihenfolge der PAI-Module ist aus Kommentaren und Namen erschlossen."
+  ],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "PA0001",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "mzpp_werkeri01.abap",
+        "line": 18,
+        "token": null,
+        "expressionPath": null,
+        "raw": "mzpp_werkeri01.abap:18"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "MCHA",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "mzpp_werkeri01.abap",
+        "line": 51,
+        "token": null,
+        "expressionPath": null,
+        "raw": "mzpp_werkeri01.abap:51"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "AFKO",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "mzpp_werkerf01.abap",
+        "line": 23,
+        "token": null,
+        "expressionPath": null,
+        "raw": "mzpp_werkerf01.abap:23"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "AFPO",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "mzpp_werkerf01.abap",
+        "line": 23,
+        "token": null,
+        "expressionPath": null,
+        "raw": "mzpp_werkerf01.abap:23"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "AUFK",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "mzpp_werkerf01.abap",
+        "line": 23,
+        "token": null,
+        "expressionPath": null,
+        "raw": "mzpp_werkerf01.abap:23"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "STATUS_CHECK",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "mzpp_werkerf01.abap",
+        "line": 36,
+        "token": null,
+        "expressionPath": null,
+        "raw": "mzpp_werkerf01.abap:36"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "AFVC",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "mzpp_werkerf01.abap",
+        "line": 48,
+        "token": null,
+        "expressionPath": null,
+        "raw": "mzpp_werkerf01.abap:48"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "AFVV",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "mzpp_werkerf01.abap",
+        "line": 48,
+        "token": null,
+        "expressionPath": null,
+        "raw": "mzpp_werkerf01.abap:48"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "CRHD",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "mzpp_werkerf01.abap",
+        "line": 61,
+        "token": null,
+        "expressionPath": null,
+        "raw": "mzpp_werkerf01.abap:61"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "MAKT",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "mzpp_werkerf01.abap",
+        "line": 64,
+        "token": null,
+        "expressionPath": null,
+        "raw": "mzpp_werkerf01.abap:64"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "RESB",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "mzpp_werkerf01.abap",
+        "line": 82,
+        "token": null,
+        "expressionPath": null,
+        "raw": "mzpp_werkerf01.abap:82"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_PRODORDCONF_CREATE_TT",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "mzpp_werkerf01.abap",
+        "line": 157,
+        "token": null,
+        "expressionPath": null,
+        "raw": "mzpp_werkerf01.abap:157"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_ROLLBACK",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "mzpp_werkerf01.abap",
+        "line": 168,
+        "token": null,
+        "expressionPath": null,
+        "raw": "mzpp_werkerf01.abap:168"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_COMMIT",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "mzpp_werkerf01.abap",
+        "line": 175,
+        "token": null,
+        "expressionPath": null,
+        "raw": "mzpp_werkerf01.abap:175"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "Z_PP_ETIKETT_DRUCKEN",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "mzpp_werkerf01.abap",
+        "line": 186,
+        "token": null,
+        "expressionPath": null,
+        "raw": "mzpp_werkerf01.abap:186"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-077-B01",
+      "text": "Der Werker scannt am Terminal einen Barcode aus Auftragsnummer und Vorgang und gibt seine Personalnummer ein; die Beenden-Funktion verlässt die Transaktion jederzeit.",
+      "anchors": [
+        {
+          "file": "mzpp_werkero01.abap",
+          "line": 8,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkero01.abap:8"
+        },
+        {
+          "file": "mzpp_werkeri01.abap",
+          "line": 9,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkeri01.abap:9"
+        }
+      ]
+    },
+    {
+      "id": "BM-077-B02",
+      "text": "Die Personalnummer muss einen heute gültigen Organisationssatz haben, sonst wird die Eingabe mit Fehler zurückgewiesen.",
+      "anchors": [
+        {
+          "file": "mzpp_werkeri01.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkeri01.abap:18"
+        },
+        {
+          "file": "mzpp_werkeri01.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkeri01.abap:22"
+        },
+        {
+          "file": "mzpp_werkeri01.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkeri01.abap:23"
+        }
+      ]
+    },
+    {
+      "id": "BM-077-B03",
+      "text": "Der Barcode wird in Auftrag und Vorgang zerlegt und beide werden mit führenden Nullen aufgefüllt.",
+      "anchors": [
+        {
+          "file": "mzpp_werkerf01.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkerf01.abap:19"
+        },
+        {
+          "file": "mzpp_werkerf01.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkerf01.abap:20"
+        }
+      ]
+    },
+    {
+      "id": "BM-077-B04",
+      "text": "Zum Auftrag werden Arbeitsplan, Material, Auftragsmenge, Mengeneinheit, Werk, Lagerort und Objektnummer gelesen; fehlt der Auftrag, ist der Scan ungültig.",
+      "anchors": [
+        {
+          "file": "mzpp_werkerf01.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkerf01.abap:23"
+        },
+        {
+          "file": "mzpp_werkerf01.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkerf01.abap:30"
+        }
+      ]
+    },
+    {
+      "id": "BM-077-B05",
+      "text": "Der Auftrag muss freigegeben sein, sonst ist der Scan ungültig.",
+      "anchors": [
+        {
+          "file": "mzpp_werkerf01.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkerf01.abap:36"
+        },
+        {
+          "file": "mzpp_werkerf01.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkerf01.abap:44"
+        }
+      ]
+    },
+    {
+      "id": "BM-077-B06",
+      "text": "Der gescannte Vorgang muss im Arbeitsplan existieren; seine offene Menge ist Vorgangsmenge minus bereits rückgemeldete Gutmenge.",
+      "anchors": [
+        {
+          "file": "mzpp_werkerf01.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkerf01.abap:48"
+        },
+        {
+          "file": "mzpp_werkerf01.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkerf01.abap:54"
+        },
+        {
+          "file": "mzpp_werkerf01.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkerf01.abap:59"
+        }
+      ]
+    },
+    {
+      "id": "BM-077-B07",
+      "text": "Arbeitsplatz und Materialkurztext werden zur Anzeige gelesen.",
+      "anchors": [
+        {
+          "file": "mzpp_werkerf01.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkerf01.abap:61"
+        },
+        {
+          "file": "mzpp_werkerf01.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkerf01.abap:64"
+        }
+      ]
+    },
+    {
+      "id": "BM-077-B08",
+      "text": "Der Vorgang gilt als letzter Vorgang, wenn er die höchste Vorgangsnummer im Arbeitsplan hat.",
+      "anchors": [
+        {
+          "file": "mzpp_werkerf01.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkerf01.abap:69"
+        },
+        {
+          "file": "mzpp_werkerf01.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkerf01.abap:71"
+        }
+      ]
+    },
+    {
+      "id": "BM-077-B09",
+      "text": "Ist der Scan ungültig, wird er mit einer Fehlermeldung zurückgewiesen und das Scanbild bleibt stehen.",
+      "anchors": [
+        {
+          "file": "mzpp_werkeri01.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkeri01.abap:37"
+        },
+        {
+          "file": "mzpp_werkeri01.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkeri01.abap:38"
+        }
+      ]
+    },
+    {
+      "id": "BM-077-B10",
+      "text": "Bei gültigem Scan werden die nicht gelöschten, retrograd zu entnehmenden Komponenten des Vorgangs gelesen und das Mengenbild angezeigt.",
+      "anchors": [
+        {
+          "file": "mzpp_werkeri01.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkeri01.abap:40"
+        },
+        {
+          "file": "mzpp_werkerf01.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkerf01.abap:82"
+        },
+        {
+          "file": "mzpp_werkeri01.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkeri01.abap:41"
+        }
+      ]
+    },
+    {
+      "id": "BM-077-B11",
+      "text": "Das Feld Endrückmeldung ist nur im letzten Vorgang eingabebereit.",
+      "anchors": [
+        {
+          "file": "mzpp_werkero01.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkero01.abap:27"
+        },
+        {
+          "file": "mzpp_werkero01.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkero01.abap:28"
+        },
+        {
+          "file": "mzpp_werkero01.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkero01.abap:33"
+        }
+      ]
+    },
+    {
+      "id": "BM-077-B12",
+      "text": "Erfasst der Werker für eine Komponente eine Charge, muss diese für Material und Werk existieren; die Zeile wird in die Komponentenliste übernommen.",
+      "anchors": [
+        {
+          "file": "mzpp_werkeri01.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkeri01.abap:50"
+        },
+        {
+          "file": "mzpp_werkeri01.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkeri01.abap:51"
+        },
+        {
+          "file": "mzpp_werkeri01.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkeri01.abap:56"
+        },
+        {
+          "file": "mzpp_werkeri01.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkeri01.abap:59"
+        }
+      ]
+    },
+    {
+      "id": "BM-077-B13",
+      "text": "Mindestens Gutmenge oder Ausschuss muss erfasst sein.",
+      "anchors": [
+        {
+          "file": "mzpp_werkeri01.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkeri01.abap:66"
+        },
+        {
+          "file": "mzpp_werkeri01.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkeri01.abap:67"
+        }
+      ]
+    },
+    {
+      "id": "BM-077-B14",
+      "text": "Eine Gutmenge über der offenen Menge wird bis 10 % Überlieferung mit Warnung zugelassen, darüber mit Fehler zurückgewiesen.",
+      "anchors": [
+        {
+          "file": "mzpp_werkeri01.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkeri01.abap:70"
+        },
+        {
+          "file": "mzpp_werkeri01.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkeri01.abap:72"
+        },
+        {
+          "file": "mzpp_werkeri01.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkeri01.abap:73"
+        },
+        {
+          "file": "mzpp_werkeri01.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkeri01.abap:75"
+        }
+      ]
+    },
+    {
+      "id": "BM-077-B15",
+      "text": "Bei Ausschuss ist ein Abweichungsgrund Pflicht.",
+      "anchors": [
+        {
+          "file": "mzpp_werkeri01.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkeri01.abap:79"
+        },
+        {
+          "file": "mzpp_werkeri01.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkeri01.abap:80"
+        }
+      ]
+    },
+    {
+      "id": "BM-077-B16",
+      "text": "Mit „Zurück“ wird ohne Buchung zum Scanbild zurückgekehrt.",
+      "anchors": [
+        {
+          "file": "mzpp_werkeri01.abap",
+          "line": 106,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkeri01.abap:106"
+        }
+      ]
+    },
+    {
+      "id": "BM-077-B17",
+      "text": "Mit „Buchen“ wird eine Vorgangsrückmeldung mit Gutmenge, Ausschuss, Abweichungsgrund, Endrückmeldekennzeichen und Personalnummer aufgebaut.",
+      "anchors": [
+        {
+          "file": "mzpp_werkeri01.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkeri01.abap:93"
+        },
+        {
+          "file": "mzpp_werkerf01.abap",
+          "line": 107,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkerf01.abap:107"
+        }
+      ]
+    },
+    {
+      "id": "BM-077-B18",
+      "text": "Für jede retrograde Komponente wird ein Verbrauch mit Bewegungsart 261 zum Auftrag erzeugt, dessen Menge der Bedarfsmenge anteilig zur rückgemeldeten Gut- plus Ausschussmenge im Verhältnis zur Auftragsmenge entspricht, mit der erfassten Charge.",
+      "anchors": [
+        {
+          "file": "mzpp_werkerf01.abap",
+          "line": 119,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkerf01.abap:119"
+        },
+        {
+          "file": "mzpp_werkerf01.abap",
+          "line": 125,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkerf01.abap:125"
+        },
+        {
+          "file": "mzpp_werkerf01.abap",
+          "line": 130,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkerf01.abap:130"
+        }
+      ]
+    },
+    {
+      "id": "BM-077-B19",
+      "text": "Im letzten Vorgang wird zusätzlich für die Gutmenge ein Wareneingang zum Auftrag mit Bewegungsart 101 in den Lagerort der Auftragsposition erzeugt.",
+      "anchors": [
+        {
+          "file": "mzpp_werkerf01.abap",
+          "line": 140,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkerf01.abap:140"
+        },
+        {
+          "file": "mzpp_werkerf01.abap",
+          "line": 145,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkerf01.abap:145"
+        }
+      ]
+    },
+    {
+      "id": "BM-077-B20",
+      "text": "Rückmeldung und Warenbewegungen werden gemeinsam gebucht und miteinander verknüpft.",
+      "anchors": [
+        {
+          "file": "mzpp_werkerf01.abap",
+          "line": 157,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkerf01.abap:157"
+        }
+      ]
+    },
+    {
+      "id": "BM-077-B21",
+      "text": "Scheitert die Buchung, wird zurückgerollt, der Fehlertext als Popup gezeigt und das Mengenbild bleibt zur Korrektur stehen.",
+      "anchors": [
+        {
+          "file": "mzpp_werkerf01.abap",
+          "line": 167,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkerf01.abap:167"
+        },
+        {
+          "file": "mzpp_werkerf01.abap",
+          "line": 168,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkerf01.abap:168"
+        },
+        {
+          "file": "mzpp_werkerf01.abap",
+          "line": 169,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkerf01.abap:169"
+        },
+        {
+          "file": "mzpp_werkeri01.abap",
+          "line": 94,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkeri01.abap:94"
+        },
+        {
+          "file": "mzpp_werkeri01.abap",
+          "line": 96,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkeri01.abap:96"
+        }
+      ]
+    },
+    {
+      "id": "BM-077-B22",
+      "text": "Gelingt sie, wird mit Warten auf die Verbuchung festgeschrieben und die Rückmeldenummer gemerkt.",
+      "anchors": [
+        {
+          "file": "mzpp_werkerf01.abap",
+          "line": 175,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkerf01.abap:175"
+        },
+        {
+          "file": "mzpp_werkerf01.abap",
+          "line": 178,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkerf01.abap:178"
+        }
+      ]
+    },
+    {
+      "id": "BM-077-B23",
+      "text": "Nach einer Endrückmeldung wird ein Palettenetikett gedruckt; scheitert der Druck, erscheint nur ein Hinweis.",
+      "anchors": [
+        {
+          "file": "mzpp_werkeri01.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkeri01.abap:98"
+        },
+        {
+          "file": "mzpp_werkerf01.abap",
+          "line": 186,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkerf01.abap:186"
+        },
+        {
+          "file": "mzpp_werkerf01.abap",
+          "line": 195,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkerf01.abap:195"
+        }
+      ]
+    },
+    {
+      "id": "BM-077-B24",
+      "text": "Zum Schluss wird die Rückmeldenummer als Erfolgsmeldung angezeigt und das Scanbild für den nächsten Scan geöffnet.",
+      "anchors": [
+        {
+          "file": "mzpp_werkeri01.abap",
+          "line": 101,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkeri01.abap:101"
+        },
+        {
+          "file": "mzpp_werkeri01.abap",
+          "line": 103,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkeri01.abap:103"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s_o100",
+        "type": "start",
+        "anchor": {
+          "file": "mzpp_werkero01.abap",
+          "line": 8,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkero01.abap:8"
+        },
+        "meaning": "Scanbild 0100 aufbauen, Scanfeld leeren"
+      },
+      {
+        "id": "e_o100",
+        "type": "end",
+        "anchor": {
+          "file": "mzpp_werkero01.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkero01.abap:12"
+        },
+        "meaning": "Scanbild 0100 bereit"
+      },
+      {
+        "id": "s_o200",
+        "type": "start",
+        "anchor": {
+          "file": "mzpp_werkero01.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkero01.abap:17"
+        },
+        "meaning": "Mengenbild 0200 mit Auftrag/Vorgang im Titel aufbauen"
+      },
+      {
+        "id": "e_o200",
+        "type": "end",
+        "anchor": {
+          "file": "mzpp_werkero01.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkero01.abap:20"
+        },
+        "meaning": "Mengenbild 0200 bereit"
+      },
+      {
+        "id": "s_mod",
+        "type": "start",
+        "anchor": {
+          "file": "mzpp_werkero01.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkero01.abap:25"
+        },
+        "meaning": "Feldsteuerung Bild 0200"
+      },
+      {
+        "id": "l_scr",
+        "type": "loop",
+        "anchor": {
+          "file": "mzpp_werkero01.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkero01.abap:26"
+        },
+        "meaning": "Je Bildfeld"
+      },
+      {
+        "id": "g_scr",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzpp_werkero01.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkero01.abap:27"
+        },
+        "meaning": "Feld Endrückmeldung?"
+      },
+      {
+        "id": "g_let",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzpp_werkero01.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkero01.abap:28"
+        },
+        "meaning": "Letzter Vorgang?"
+      },
+      {
+        "id": "a_mod",
+        "type": "action",
+        "anchor": {
+          "file": "mzpp_werkero01.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkero01.abap:33"
+        },
+        "meaning": "Endrückmeldung eingabebereit (letzter Vorgang) oder gesperrt"
+      },
+      {
+        "id": "e_mod",
+        "type": "end",
+        "anchor": {
+          "file": "mzpp_werkero01.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkero01.abap:36"
+        },
+        "meaning": "Feldsteuerung fertig"
+      },
+      {
+        "id": "s_exit",
+        "type": "start",
+        "anchor": {
+          "file": "mzpp_werkeri01.abap",
+          "line": 8,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkeri01.abap:8"
+        },
+        "meaning": "Beenden-Funktion"
+      },
+      {
+        "id": "e_exit",
+        "type": "end",
+        "anchor": {
+          "file": "mzpp_werkeri01.abap",
+          "line": 9,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkeri01.abap:9"
+        },
+        "meaning": "Transaktion verlassen"
+      },
+      {
+        "id": "s_pernr",
+        "type": "start",
+        "anchor": {
+          "file": "mzpp_werkeri01.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkeri01.abap:15"
+        },
+        "meaning": "Personalnummer prüfen"
+      },
+      {
+        "id": "q_pernr",
+        "type": "read",
+        "anchor": {
+          "file": "mzpp_werkeri01.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkeri01.abap:18"
+        },
+        "meaning": "Heute gültigen Organisationssatz der Personalnummer suchen"
+      },
+      {
+        "id": "g_pernr",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzpp_werkeri01.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkeri01.abap:22"
+        },
+        "meaning": "Personalnummer gültig?"
+      },
+      {
+        "id": "m_pernr",
+        "type": "output",
+        "anchor": {
+          "file": "mzpp_werkeri01.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkeri01.abap:23"
+        },
+        "meaning": "Fehler: Personalnummer ungültig, Eingabe erneut"
+      },
+      {
+        "id": "e_m_pernr",
+        "type": "end",
+        "anchor": {
+          "file": "mzpp_werkeri01.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkeri01.abap:23"
+        },
+        "meaning": "Dialogschritt abgebrochen, Personalnummer neu eingeben"
+      },
+      {
+        "id": "e_pernr",
+        "type": "end",
+        "anchor": {
+          "file": "mzpp_werkeri01.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkeri01.abap:25"
+        },
+        "meaning": "Personalnummer ok"
+      },
+      {
+        "id": "s_uc1",
+        "type": "start",
+        "anchor": {
+          "file": "mzpp_werkeri01.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkeri01.abap:30"
+        },
+        "meaning": "Scan bestätigt"
+      },
+      {
+        "id": "cs1",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzpp_werkeri01.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkeri01.abap:34"
+        },
+        "meaning": "Funktion Weiter/Enter?"
+      },
+      {
+        "id": "p_auf",
+        "type": "call",
+        "anchor": {
+          "file": "mzpp_werkeri01.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkeri01.abap:36"
+        },
+        "meaning": "Auftrag und Vorgang zum Barcode lesen"
+      },
+      {
+        "id": "g_ok1",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzpp_werkeri01.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkeri01.abap:37"
+        },
+        "meaning": "Auftrag/Vorgang gültig?"
+      },
+      {
+        "id": "m_ok1",
+        "type": "output",
+        "anchor": {
+          "file": "mzpp_werkeri01.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkeri01.abap:38"
+        },
+        "meaning": "Fehler: Barcode ungültig, Scan erneut"
+      },
+      {
+        "id": "e_m_ok1",
+        "type": "end",
+        "anchor": {
+          "file": "mzpp_werkeri01.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkeri01.abap:38"
+        },
+        "meaning": "Dialogschritt abgebrochen, Scanbild bleibt stehen"
+      },
+      {
+        "id": "p_komp",
+        "type": "call",
+        "anchor": {
+          "file": "mzpp_werkeri01.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkeri01.abap:40"
+        },
+        "meaning": "Retrograde Komponenten lesen"
+      },
+      {
+        "id": "lv200",
+        "type": "end",
+        "anchor": {
+          "file": "mzpp_werkeri01.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkeri01.abap:41"
+        },
+        "meaning": "Weiter zum Mengenbild 0200"
+      },
+      {
+        "id": "e_uc1",
+        "type": "end",
+        "anchor": {
+          "file": "mzpp_werkeri01.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkeri01.abap:44"
+        },
+        "meaning": "Keine Aktion"
+      },
+      {
+        "id": "s_tc",
+        "type": "start",
+        "anchor": {
+          "file": "mzpp_werkeri01.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkeri01.abap:49"
+        },
+        "meaning": "Komponentenzeile im Table Control übernehmen"
+      },
+      {
+        "id": "g_ch",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzpp_werkeri01.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkeri01.abap:50"
+        },
+        "meaning": "Charge erfasst?"
+      },
+      {
+        "id": "q_mcha",
+        "type": "read",
+        "anchor": {
+          "file": "mzpp_werkeri01.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkeri01.abap:51"
+        },
+        "meaning": "Charge zu Material und Werk suchen"
+      },
+      {
+        "id": "g_mcha",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzpp_werkeri01.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkeri01.abap:55"
+        },
+        "meaning": "Charge vorhanden?"
+      },
+      {
+        "id": "m_mcha",
+        "type": "output",
+        "anchor": {
+          "file": "mzpp_werkeri01.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkeri01.abap:56"
+        },
+        "meaning": "Fehler: Charge unbekannt"
+      },
+      {
+        "id": "e_m_mcha",
+        "type": "end",
+        "anchor": {
+          "file": "mzpp_werkeri01.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkeri01.abap:56"
+        },
+        "meaning": "Dialogschritt abgebrochen, Charge korrigieren"
+      },
+      {
+        "id": "e_tc",
+        "type": "end",
+        "anchor": {
+          "file": "mzpp_werkeri01.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkeri01.abap:60"
+        },
+        "meaning": "Zeile (mit Charge) in die Komponentenliste übernommen"
+      },
+      {
+        "id": "s_cm",
+        "type": "start",
+        "anchor": {
+          "file": "mzpp_werkeri01.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkeri01.abap:65"
+        },
+        "meaning": "Mengen prüfen"
+      },
+      {
+        "id": "g_m1",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzpp_werkeri01.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkeri01.abap:66"
+        },
+        "meaning": "Weder Gutmenge noch Ausschuss?"
+      },
+      {
+        "id": "m_m1",
+        "type": "output",
+        "anchor": {
+          "file": "mzpp_werkeri01.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkeri01.abap:67"
+        },
+        "meaning": "Fehler: Menge fehlt"
+      },
+      {
+        "id": "e_m_m1",
+        "type": "end",
+        "anchor": {
+          "file": "mzpp_werkeri01.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkeri01.abap:67"
+        },
+        "meaning": "Dialogschritt abgebrochen, Menge erfassen"
+      },
+      {
+        "id": "g_m2",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzpp_werkeri01.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkeri01.abap:70"
+        },
+        "meaning": "Gutmenge über offener Menge?"
+      },
+      {
+        "id": "g_m3",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzpp_werkeri01.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkeri01.abap:72"
+        },
+        "meaning": "Mehr als 10 % Überlieferung?"
+      },
+      {
+        "id": "m_m3",
+        "type": "output",
+        "anchor": {
+          "file": "mzpp_werkeri01.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkeri01.abap:73"
+        },
+        "meaning": "Fehler: Überlieferung zu hoch"
+      },
+      {
+        "id": "e_m_m3",
+        "type": "end",
+        "anchor": {
+          "file": "mzpp_werkeri01.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkeri01.abap:73"
+        },
+        "meaning": "Dialogschritt abgebrochen, Gutmenge korrigieren"
+      },
+      {
+        "id": "m_m4",
+        "type": "output",
+        "anchor": {
+          "file": "mzpp_werkeri01.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkeri01.abap:75"
+        },
+        "meaning": "Warnung: Überlieferung bis 10 %"
+      },
+      {
+        "id": "g_m5",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzpp_werkeri01.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkeri01.abap:79"
+        },
+        "meaning": "Ausschuss ohne Grund?"
+      },
+      {
+        "id": "m_m5",
+        "type": "output",
+        "anchor": {
+          "file": "mzpp_werkeri01.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkeri01.abap:80"
+        },
+        "meaning": "Fehler: Abweichungsgrund Pflicht"
+      },
+      {
+        "id": "e_m_m5",
+        "type": "end",
+        "anchor": {
+          "file": "mzpp_werkeri01.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkeri01.abap:80"
+        },
+        "meaning": "Dialogschritt abgebrochen, Abweichungsgrund erfassen"
+      },
+      {
+        "id": "e_cm",
+        "type": "end",
+        "anchor": {
+          "file": "mzpp_werkeri01.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkeri01.abap:82"
+        },
+        "meaning": "Mengen ok"
+      },
+      {
+        "id": "s_uc2",
+        "type": "start",
+        "anchor": {
+          "file": "mzpp_werkeri01.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkeri01.abap:87"
+        },
+        "meaning": "Funktion im Mengenbild"
+      },
+      {
+        "id": "cs2",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzpp_werkeri01.abap",
+          "line": 91,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkeri01.abap:91"
+        },
+        "meaning": "Buchen, Zurück oder anderes?"
+      },
+      {
+        "id": "p_rm",
+        "type": "call",
+        "anchor": {
+          "file": "mzpp_werkeri01.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkeri01.abap:93"
+        },
+        "meaning": "Rückmeldung buchen"
+      },
+      {
+        "id": "g_ok2",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzpp_werkeri01.abap",
+          "line": 94,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkeri01.abap:94"
+        },
+        "meaning": "Buchung erfolgreich?"
+      },
+      {
+        "id": "e_rm",
+        "type": "end",
+        "anchor": {
+          "file": "mzpp_werkeri01.abap",
+          "line": 96,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkeri01.abap:96"
+        },
+        "meaning": "Im Mengenbild bleiben"
+      },
+      {
+        "id": "g_dr",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzpp_werkeri01.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkeri01.abap:98"
+        },
+        "meaning": "Endrückmeldung mit Druck?"
+      },
+      {
+        "id": "p_et",
+        "type": "call",
+        "anchor": {
+          "file": "mzpp_werkeri01.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkeri01.abap:99"
+        },
+        "meaning": "Palettenetikett drucken"
+      },
+      {
+        "id": "m_s30",
+        "type": "output",
+        "anchor": {
+          "file": "mzpp_werkeri01.abap",
+          "line": 101,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkeri01.abap:101"
+        },
+        "meaning": "Erfolgsmeldung mit Rückmeldenummer"
+      },
+      {
+        "id": "lv100a",
+        "type": "end",
+        "anchor": {
+          "file": "mzpp_werkeri01.abap",
+          "line": 103,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkeri01.abap:103"
+        },
+        "meaning": "Zurück zum Scanbild"
+      },
+      {
+        "id": "lv100b",
+        "type": "end",
+        "anchor": {
+          "file": "mzpp_werkeri01.abap",
+          "line": 106,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkeri01.abap:106"
+        },
+        "meaning": "Ohne Buchung zurück zum Scanbild"
+      },
+      {
+        "id": "e_uc2",
+        "type": "end",
+        "anchor": {
+          "file": "mzpp_werkeri01.abap",
+          "line": 109,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkeri01.abap:109"
+        },
+        "meaning": "Keine Aktion"
+      },
+      {
+        "id": "f_auf",
+        "type": "start",
+        "anchor": {
+          "file": "mzpp_werkerf01.abap",
+          "line": 8,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkerf01.abap:8"
+        },
+        "meaning": "Barcode auswerten"
+      },
+      {
+        "id": "q_auf",
+        "type": "read",
+        "anchor": {
+          "file": "mzpp_werkerf01.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkerf01.abap:23"
+        },
+        "meaning": "Auftragskopf, -position und Objektnummer lesen"
+      },
+      {
+        "id": "g_auf1",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzpp_werkerf01.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkerf01.abap:30"
+        },
+        "meaning": "Auftrag vorhanden?"
+      },
+      {
+        "id": "e_auf1",
+        "type": "end",
+        "anchor": {
+          "file": "mzpp_werkerf01.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkerf01.abap:31"
+        },
+        "meaning": "Ungültig"
+      },
+      {
+        "id": "c_stc",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "mzpp_werkerf01.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkerf01.abap:36"
+        },
+        "meaning": "Status FREI (I0002) prüfen"
+      },
+      {
+        "id": "g_auf2",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzpp_werkerf01.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkerf01.abap:44"
+        },
+        "meaning": "Freigegeben?"
+      },
+      {
+        "id": "e_auf2",
+        "type": "end",
+        "anchor": {
+          "file": "mzpp_werkerf01.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkerf01.abap:45"
+        },
+        "meaning": "Ungültig"
+      },
+      {
+        "id": "q_vg",
+        "type": "read",
+        "anchor": {
+          "file": "mzpp_werkerf01.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkerf01.abap:48"
+        },
+        "meaning": "Vorgang mit Vorgangsmenge und rückgemeldeter Gutmenge lesen"
+      },
+      {
+        "id": "g_auf3",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzpp_werkerf01.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkerf01.abap:54"
+        },
+        "meaning": "Vorgang vorhanden?"
+      },
+      {
+        "id": "e_auf3",
+        "type": "end",
+        "anchor": {
+          "file": "mzpp_werkerf01.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkerf01.abap:55"
+        },
+        "meaning": "Ungültig"
+      },
+      {
+        "id": "a_off",
+        "type": "action",
+        "anchor": {
+          "file": "mzpp_werkerf01.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkerf01.abap:59"
+        },
+        "meaning": "Offene Menge berechnen"
+      },
+      {
+        "id": "q_crhd",
+        "type": "read",
+        "anchor": {
+          "file": "mzpp_werkerf01.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkerf01.abap:61"
+        },
+        "meaning": "Arbeitsplatz lesen"
+      },
+      {
+        "id": "q_makt",
+        "type": "read",
+        "anchor": {
+          "file": "mzpp_werkerf01.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkerf01.abap:64"
+        },
+        "meaning": "Materialkurztext lesen"
+      },
+      {
+        "id": "q_max",
+        "type": "read",
+        "anchor": {
+          "file": "mzpp_werkerf01.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkerf01.abap:69"
+        },
+        "meaning": "Höchste Vorgangsnummer im Plan lesen"
+      },
+      {
+        "id": "a_let",
+        "type": "action",
+        "anchor": {
+          "file": "mzpp_werkerf01.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkerf01.abap:71"
+        },
+        "meaning": "Letzten Vorgang feststellen"
+      },
+      {
+        "id": "a_ok",
+        "type": "action",
+        "anchor": {
+          "file": "mzpp_werkerf01.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkerf01.abap:73"
+        },
+        "meaning": "Auftrag/Vorgang gültig"
+      },
+      {
+        "id": "fe_auf",
+        "type": "end",
+        "anchor": {
+          "file": "mzpp_werkerf01.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkerf01.abap:74"
+        },
+        "meaning": "Auftrag/Vorgang gültig, Rückkehr mit gv_ok = X"
+      },
+      {
+        "id": "f_komp",
+        "type": "start",
+        "anchor": {
+          "file": "mzpp_werkerf01.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkerf01.abap:79"
+        },
+        "meaning": "Komponenten"
+      },
+      {
+        "id": "q_resb",
+        "type": "read",
+        "anchor": {
+          "file": "mzpp_werkerf01.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkerf01.abap:82"
+        },
+        "meaning": "Nicht gelöschte retrograd zu entnehmende Reservierungen des Vorgangs lesen"
+      },
+      {
+        "id": "fe_komp",
+        "type": "end",
+        "anchor": {
+          "file": "mzpp_werkerf01.abap",
+          "line": 89,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkerf01.abap:89"
+        },
+        "meaning": "Komponenten gelesen, Rückkehr"
+      },
+      {
+        "id": "f_rm",
+        "type": "start",
+        "anchor": {
+          "file": "mzpp_werkerf01.abap",
+          "line": 94,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkerf01.abap:94"
+        },
+        "meaning": "Rückmeldung aufbauen"
+      },
+      {
+        "id": "l_gm",
+        "type": "loop",
+        "anchor": {
+          "file": "mzpp_werkerf01.abap",
+          "line": 119,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkerf01.abap:119"
+        },
+        "meaning": "Je Komponente Verbrauch 261 anteilig zur Menge"
+      },
+      {
+        "id": "g_gr",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzpp_werkerf01.abap",
+          "line": 140,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkerf01.abap:140"
+        },
+        "meaning": "Letzter Vorgang mit Gutmenge? – dann Wareneingang 101"
+      },
+      {
+        "id": "c_conf",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "mzpp_werkerf01.abap",
+          "line": 157,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkerf01.abap:157"
+        },
+        "meaning": "Rückmeldung mit Warenbewegungen buchen"
+      },
+      {
+        "id": "g_err",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzpp_werkerf01.abap",
+          "line": 167,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkerf01.abap:167"
+        },
+        "meaning": "Fehler?"
+      },
+      {
+        "id": "rb",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "mzpp_werkerf01.abap",
+          "line": 168,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkerf01.abap:168"
+        },
+        "meaning": "Zurückrollen"
+      },
+      {
+        "id": "m_err",
+        "type": "output",
+        "anchor": {
+          "file": "mzpp_werkerf01.abap",
+          "line": 169,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkerf01.abap:169"
+        },
+        "meaning": "Fehlertext als Popup"
+      },
+      {
+        "id": "e_rm_f",
+        "type": "end",
+        "anchor": {
+          "file": "mzpp_werkerf01.abap",
+          "line": 172,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkerf01.abap:172"
+        },
+        "meaning": "Nicht gebucht"
+      },
+      {
+        "id": "cm",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "mzpp_werkerf01.abap",
+          "line": 175,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkerf01.abap:175"
+        },
+        "meaning": "Festschreiben, Rückmeldenummer merken"
+      },
+      {
+        "id": "fe_rm",
+        "type": "end",
+        "anchor": {
+          "file": "mzpp_werkerf01.abap",
+          "line": 180,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkerf01.abap:180"
+        },
+        "meaning": "Gebucht, Rückkehr mit gv_ok = X"
+      },
+      {
+        "id": "f_et",
+        "type": "start",
+        "anchor": {
+          "file": "mzpp_werkerf01.abap",
+          "line": 185,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkerf01.abap:185"
+        },
+        "meaning": "Etikett"
+      },
+      {
+        "id": "c_et",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "mzpp_werkerf01.abap",
+          "line": 186,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkerf01.abap:186"
+        },
+        "meaning": "Palettenetikett mit Auftrag, Material, Menge drucken (Baustein nicht geliefert)"
+      },
+      {
+        "id": "g_et",
+        "type": "gateway",
+        "anchor": {
+          "file": "mzpp_werkerf01.abap",
+          "line": 194,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkerf01.abap:194"
+        },
+        "meaning": "Druck fehlgeschlagen?"
+      },
+      {
+        "id": "m_et",
+        "type": "output",
+        "anchor": {
+          "file": "mzpp_werkerf01.abap",
+          "line": 195,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkerf01.abap:195"
+        },
+        "meaning": "Hinweis: Etikett nicht gedruckt"
+      },
+      {
+        "id": "fe_et",
+        "type": "end",
+        "anchor": {
+          "file": "mzpp_werkerf01.abap",
+          "line": 197,
+          "token": null,
+          "expressionPath": null,
+          "raw": "mzpp_werkerf01.abap:197"
+        },
+        "meaning": "Druck erledigt, Rückkehr"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s_mod",
+        "to": "l_scr",
+        "condition": "always"
+      },
+      {
+        "from": "l_scr",
+        "to": "g_scr",
+        "condition": "next row"
+      },
+      {
+        "from": "g_scr",
+        "to": "g_let",
+        "condition": "screen-name = 'ZPP_S_RM-ENDRM'"
+      },
+      {
+        "from": "g_scr",
+        "to": "l_scr",
+        "condition": "else"
+      },
+      {
+        "from": "g_let",
+        "to": "a_mod",
+        "condition": "gv_letzter = abap_true"
+      },
+      {
+        "from": "g_let",
+        "to": "a_mod",
+        "condition": "else"
+      },
+      {
+        "from": "a_mod",
+        "to": "l_scr",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l_scr",
+        "to": "e_mod",
+        "condition": "no more rows"
+      },
+      {
+        "from": "s_exit",
+        "to": "e_exit",
+        "condition": "always"
+      },
+      {
+        "from": "s_pernr",
+        "to": "q_pernr",
+        "condition": "always"
+      },
+      {
+        "from": "q_pernr",
+        "to": "g_pernr",
+        "condition": "always"
+      },
+      {
+        "from": "g_pernr",
+        "to": "m_pernr",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g_pernr",
+        "to": "e_pernr",
+        "condition": "else"
+      },
+      {
+        "from": "s_uc1",
+        "to": "cs1",
+        "condition": "always"
+      },
+      {
+        "from": "cs1",
+        "to": "p_auf",
+        "condition": "WHEN 'WEITER' OR space"
+      },
+      {
+        "from": "cs1",
+        "to": "e_uc1",
+        "condition": "WHEN OTHERS"
+      },
+      {
+        "from": "p_auf",
+        "to": "f_auf",
+        "condition": "always"
+      },
+      {
+        "from": "f_auf",
+        "to": "q_auf",
+        "condition": "always"
+      },
+      {
+        "from": "q_auf",
+        "to": "g_auf1",
+        "condition": "always"
+      },
+      {
+        "from": "g_auf1",
+        "to": "e_auf1",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g_auf1",
+        "to": "c_stc",
+        "condition": "else"
+      },
+      {
+        "from": "c_stc",
+        "to": "g_auf2",
+        "condition": "always"
+      },
+      {
+        "from": "g_auf2",
+        "to": "e_auf2",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g_auf2",
+        "to": "q_vg",
+        "condition": "else"
+      },
+      {
+        "from": "q_vg",
+        "to": "g_auf3",
+        "condition": "always"
+      },
+      {
+        "from": "g_auf3",
+        "to": "e_auf3",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g_auf3",
+        "to": "a_off",
+        "condition": "else"
+      },
+      {
+        "from": "a_off",
+        "to": "q_crhd",
+        "condition": "always"
+      },
+      {
+        "from": "q_crhd",
+        "to": "q_makt",
+        "condition": "always"
+      },
+      {
+        "from": "q_makt",
+        "to": "q_max",
+        "condition": "always"
+      },
+      {
+        "from": "q_max",
+        "to": "a_let",
+        "condition": "always"
+      },
+      {
+        "from": "a_let",
+        "to": "a_ok",
+        "condition": "always"
+      },
+      {
+        "from": "e_auf1",
+        "to": "g_ok1",
+        "condition": "always"
+      },
+      {
+        "from": "e_auf2",
+        "to": "g_ok1",
+        "condition": "always"
+      },
+      {
+        "from": "e_auf3",
+        "to": "g_ok1",
+        "condition": "always"
+      },
+      {
+        "from": "a_ok",
+        "to": "fe_auf",
+        "condition": "always"
+      },
+      {
+        "from": "g_ok1",
+        "to": "m_ok1",
+        "condition": "gv_ok = abap_false"
+      },
+      {
+        "from": "g_ok1",
+        "to": "p_komp",
+        "condition": "else"
+      },
+      {
+        "from": "p_komp",
+        "to": "f_komp",
+        "condition": "always"
+      },
+      {
+        "from": "f_komp",
+        "to": "q_resb",
+        "condition": "always"
+      },
+      {
+        "from": "q_resb",
+        "to": "fe_komp",
+        "condition": "always"
+      },
+      {
+        "from": "lv200",
+        "to": "s_o200",
+        "condition": "always"
+      },
+      {
+        "from": "s_tc",
+        "to": "g_ch",
+        "condition": "always"
+      },
+      {
+        "from": "g_ch",
+        "to": "q_mcha",
+        "condition": "gs_komp-charg IS NOT INITIAL"
+      },
+      {
+        "from": "g_ch",
+        "to": "e_tc",
+        "condition": "else"
+      },
+      {
+        "from": "q_mcha",
+        "to": "g_mcha",
+        "condition": "always"
+      },
+      {
+        "from": "g_mcha",
+        "to": "m_mcha",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g_mcha",
+        "to": "e_tc",
+        "condition": "else"
+      },
+      {
+        "from": "s_cm",
+        "to": "g_m1",
+        "condition": "always"
+      },
+      {
+        "from": "g_m1",
+        "to": "m_m1",
+        "condition": "zpp_s_rm-gutmenge <= 0 AND zpp_s_rm-ausschuss <= 0"
+      },
+      {
+        "from": "g_m1",
+        "to": "g_m2",
+        "condition": "else"
+      },
+      {
+        "from": "g_m2",
+        "to": "g_m3",
+        "condition": "zpp_s_rm-gutmenge > zpp_s_rm-offen"
+      },
+      {
+        "from": "g_m2",
+        "to": "g_m5",
+        "condition": "else"
+      },
+      {
+        "from": "g_m3",
+        "to": "m_m3",
+        "condition": "zpp_s_rm-gutmenge > zpp_s_rm-offen * '1.1'"
+      },
+      {
+        "from": "g_m3",
+        "to": "m_m4",
+        "condition": "else"
+      },
+      {
+        "from": "m_m4",
+        "to": "g_m5",
+        "condition": "always"
+      },
+      {
+        "from": "g_m5",
+        "to": "m_m5",
+        "condition": "zpp_s_rm-ausschuss > 0 AND zpp_s_rm-grund IS INITIAL"
+      },
+      {
+        "from": "g_m5",
+        "to": "e_cm",
+        "condition": "else"
+      },
+      {
+        "from": "s_uc2",
+        "to": "cs2",
+        "condition": "always"
+      },
+      {
+        "from": "cs2",
+        "to": "p_rm",
+        "condition": "WHEN 'BUCHEN'"
+      },
+      {
+        "from": "cs2",
+        "to": "lv100b",
+        "condition": "WHEN 'ZURUECK'"
+      },
+      {
+        "from": "cs2",
+        "to": "e_uc2",
+        "condition": "WHEN OTHERS"
+      },
+      {
+        "from": "p_rm",
+        "to": "f_rm",
+        "condition": "always"
+      },
+      {
+        "from": "f_rm",
+        "to": "l_gm",
+        "condition": "always"
+      },
+      {
+        "from": "l_gm",
+        "to": "l_gm",
+        "condition": "next row"
+      },
+      {
+        "from": "l_gm",
+        "to": "g_gr",
+        "condition": "no more rows"
+      },
+      {
+        "from": "g_gr",
+        "to": "c_conf",
+        "condition": "gv_letzter = abap_true AND zpp_s_rm-gutmenge > 0"
+      },
+      {
+        "from": "g_gr",
+        "to": "c_conf",
+        "condition": "else"
+      },
+      {
+        "from": "c_conf",
+        "to": "g_err",
+        "condition": "always"
+      },
+      {
+        "from": "g_err",
+        "to": "rb",
+        "condition": "ls_return-type CA 'EA' OR ls_detail-type CA 'EA'"
+      },
+      {
+        "from": "rb",
+        "to": "m_err",
+        "condition": "always"
+      },
+      {
+        "from": "m_err",
+        "to": "e_rm_f",
+        "condition": "always"
+      },
+      {
+        "from": "g_err",
+        "to": "cm",
+        "condition": "else"
+      },
+      {
+        "from": "e_rm_f",
+        "to": "g_ok2",
+        "condition": "always"
+      },
+      {
+        "from": "cm",
+        "to": "fe_rm",
+        "condition": "always"
+      },
+      {
+        "from": "g_ok2",
+        "to": "e_rm",
+        "condition": "gv_ok = abap_false"
+      },
+      {
+        "from": "g_ok2",
+        "to": "g_dr",
+        "condition": "else"
+      },
+      {
+        "from": "g_dr",
+        "to": "p_et",
+        "condition": "zpp_s_rm-endrm = abap_true AND gv_druck = abap_true"
+      },
+      {
+        "from": "g_dr",
+        "to": "m_s30",
+        "condition": "else"
+      },
+      {
+        "from": "p_et",
+        "to": "f_et",
+        "condition": "always"
+      },
+      {
+        "from": "f_et",
+        "to": "c_et",
+        "condition": "always"
+      },
+      {
+        "from": "c_et",
+        "to": "g_et",
+        "condition": "always"
+      },
+      {
+        "from": "g_et",
+        "to": "m_et",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g_et",
+        "to": "fe_et",
+        "condition": "else"
+      },
+      {
+        "from": "m_et",
+        "to": "fe_et",
+        "condition": "always"
+      },
+      {
+        "from": "m_s30",
+        "to": "lv100a",
+        "condition": "always"
+      },
+      {
+        "from": "lv100a",
+        "to": "s_o100",
+        "condition": "always"
+      },
+      {
+        "from": "lv100b",
+        "to": "s_o100",
+        "condition": "always"
+      },
+      {
+        "from": "m_pernr",
+        "to": "e_m_pernr",
+        "condition": "always"
+      },
+      {
+        "from": "m_ok1",
+        "to": "e_m_ok1",
+        "condition": "always"
+      },
+      {
+        "from": "m_mcha",
+        "to": "e_m_mcha",
+        "condition": "always"
+      },
+      {
+        "from": "m_m1",
+        "to": "e_m_m1",
+        "condition": "always"
+      },
+      {
+        "from": "m_m3",
+        "to": "e_m_m3",
+        "condition": "always"
+      },
+      {
+        "from": "m_m5",
+        "to": "e_m_m5",
+        "condition": "always"
+      },
+      {
+        "from": "s_o100",
+        "to": "e_o100",
+        "condition": "always"
+      },
+      {
+        "from": "s_o200",
+        "to": "e_o200",
+        "condition": "always"
+      },
+      {
+        "from": "fe_auf",
+        "to": "g_ok1",
+        "condition": "always"
+      },
+      {
+        "from": "fe_komp",
+        "to": "lv200",
+        "condition": "always"
+      },
+      {
+        "from": "fe_rm",
+        "to": "g_ok2",
+        "condition": "always"
+      },
+      {
+        "from": "fe_et",
+        "to": "m_s30",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "mzpp_werkerf01.abap:36 — kein Fachsatz „Technisch abgeschlossene Aufträge werden abgewiesen“ (der Kommentar nennt TABG, geprüft wird nur FREI)",
+    "mzpp_werkeri01.abap:59 — kein Fachsatz „Die Charge wird in der Reservierung gespeichert“ (MODIFY wirkt auf die interne Tabelle, nicht auf die Datenbank)",
+    "mzpp_werkerf01.abap:186 — kein Fachsatz „Das Etikett enthält die Charge“ (übergeben werden nur Auftrag, Material, Menge, Einheit; der Baustein selbst ist nicht geliefert)",
+    "mzpp_werkerf01.abap:140 — kein Fachsatz „Der Wareneingang wird nur bei Endrückmeldung gebucht“ (Bedingung ist der letzte Vorgang, nicht das Endrückmeldekennzeichen)"
+  ],
+  "processDescription": "Der Werker startet am Terminal die Rückmeldetransaktion, scannt den Barcode mit Auftrag und Vorgang und gibt seine Personalnummer ein, die heute gültig sein muss. Das Programm liest Auftrag und Vorgang, prüft, dass der Auftrag freigegeben ist und der Vorgang existiert, berechnet die offene Menge und stellt fest, ob es der letzte Vorgang ist; bei ungültigem Scan bleibt das Scanbild mit Fehler stehen. Sonst liest es die retrograd zu entnehmenden Komponenten und zeigt das Mengenbild; das Endrückmeldekennzeichen ist nur im letzten Vorgang eingabebereit, zu Komponenten kann der Werker eine existierende Charge erfassen. Beim Prüfen der Mengen verlangt es Gutmenge oder Ausschuss, lässt bis 10 % Überlieferung mit Warnung zu, lehnt mehr ab und verlangt bei Ausschuss einen Grund. Mit „Buchen“ bucht es die Vorgangsrückmeldung zusammen mit anteiligen Komponentenverbräuchen und – im letzten Vorgang – einem Wareneingang für die Gutmenge; bei Fehler rollt es zurück und zeigt den Text, bei Erfolg schreibt es fest. Nach einer Endrückmeldung druckt es ein Palettenetikett, meldet die Rückmeldenummer und kehrt zum Scanbild zurück. „Zurück“ verwirft die Eingaben ohne Buchung."
+}

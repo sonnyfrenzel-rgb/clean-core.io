@@ -1,0 +1,22 @@
+{
+  "id": "BM-033",
+  "title": "IDoc-Eingang Wareneingang vom Logistikdienstleister mit Bestell- und Dublettenprüfung",
+  "domain": "MM / Procure-to-Pay, Bestandsführung, Lager (WM/EWM)",
+  "band": "komplex",
+  "loc": 222,
+  "constructs": [
+    "IDoc-Eingangsbaustein (EDIDC/EDIDD/BDIDOCSTAT)",
+    "FORM-Routinen mit TABLES-Parametern",
+    "CASE über Segmentnamen",
+    "SELECT SINGLE Prüfkaskade",
+    "BAPI_GOODSMVT_CREATE GM_CODE 01",
+    "INSERT mit VALUE-Konstruktor",
+    "Statussätze 51/53"
+  ],
+  "scenario": "Eingangsschnittstelle eines Kontraktlogistikers (3PL), die ein externes Lager an die Bestandsführung anbindet; typischer Kandidat für die Ablösung durch eine API-basierte Integration.",
+  "s4_issues": [
+    "Eigener IDoc-Basistyp und ALE-Eingang: in S/4 Private Cloud möglich, Clean-Core-Ziel ist die API API_MATERIAL_DOCUMENT_SRV",
+    "EKKO/EKPO-Direktzugriffe",
+    "Rollback bei Massenverarbeitung gefährdet frühere IDocs im Paket"
+  ]
+}

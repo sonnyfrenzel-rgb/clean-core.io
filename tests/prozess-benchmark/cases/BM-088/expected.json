@@ -1,0 +1,660 @@
+{
+  "id": "BM-088",
+  "title": "Zeitbuchungen aus Zutrittskontrolle per Datei importieren",
+  "classes": [
+    "K01"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "PA0000",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 45,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:45"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZHR_TIMEREC",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "source.abap",
+        "line": 57,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:57"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-088-B01",
+      "text": "Die Buchungsdatei des Zutrittskontrollsystems wird vom Applikationsserver gelesen; ist sie nicht lesbar, bricht der Job mit Fehlermeldung ab.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:20"
+        },
+        {
+          "file": "source.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:21"
+        },
+        {
+          "file": "source.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:22"
+        }
+      ]
+    },
+    {
+      "id": "BM-088-B02",
+      "text": "Für abgewiesene Zeilen wird eine Fehlerdatei angelegt.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:24"
+        }
+      ]
+    },
+    {
+      "id": "BM-088-B03",
+      "text": "Jede Zeile wird in Personalnummer, Datum, Uhrzeit und Satzart zerlegt.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:27"
+        },
+        {
+          "file": "source.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:31"
+        }
+      ]
+    },
+    {
+      "id": "BM-088-B04",
+      "text": "Zeilen mit einer anderen Satzart als Kommen (P10) oder Gehen (P20) gehen in die Fehlerdatei.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:38"
+        },
+        {
+          "file": "source.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:39"
+        }
+      ]
+    },
+    {
+      "id": "BM-088-B05",
+      "text": "Ist der Mitarbeiter am Buchungstag nicht aktiv beschäftigt (Status 3), geht die Zeile in die Fehlerdatei.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:45"
+        },
+        {
+          "file": "source.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:49"
+        },
+        {
+          "file": "source.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:50"
+        }
+      ]
+    },
+    {
+      "id": "BM-088-B06",
+      "text": "Gültige Buchungen werden mit Erfassungsdatum und -benutzer gespeichert; bereits vorhandene Buchungen gehen als Dublette in die Fehlerdatei.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:57"
+        },
+        {
+          "file": "source.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:58"
+        },
+        {
+          "file": "source.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:59"
+        }
+      ]
+    },
+    {
+      "id": "BM-088-B07",
+      "text": "Nach dem Dateiende werden die übernommenen Buchungen festgeschrieben.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:68"
+        }
+      ]
+    },
+    {
+      "id": "BM-088-B08",
+      "text": "Nur wenn keine Zeile abgewiesen wurde, wird die Eingangsdatei gelöscht.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:69"
+        },
+        {
+          "file": "source.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:70"
+        }
+      ]
+    },
+    {
+      "id": "BM-088-B09",
+      "text": "Zum Schluss werden die Anzahl übernommener und abgewiesener Zeilen ausgegeben.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:72"
+        },
+        {
+          "file": "source.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:73"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:19"
+        },
+        "meaning": "Jobstart"
+      },
+      {
+        "id": "op1",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:20"
+        },
+        "meaning": "Eingangsdatei öffnen"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:21"
+        },
+        "meaning": "Datei nicht lesbar?"
+      },
+      {
+        "id": "m1",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:22"
+        },
+        "meaning": "Abbruch mit Dateifehler"
+      },
+      {
+        "id": "e1",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:22"
+        },
+        "meaning": "Job bricht mit Dateifehler ab"
+      },
+      {
+        "id": "op2",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:24"
+        },
+        "meaning": "Fehlerdatei anlegen"
+      },
+      {
+        "id": "lp",
+        "type": "loop",
+        "anchor": {
+          "file": "source.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:26"
+        },
+        "meaning": "Dateizeilen lesen"
+      },
+      {
+        "id": "rd",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:27"
+        },
+        "meaning": "Nächste Buchungszeile lesen"
+      },
+      {
+        "id": "geof",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:28"
+        },
+        "meaning": "Dateiende?"
+      },
+      {
+        "id": "gt",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:38"
+        },
+        "meaning": "Unbekannte Satzart?"
+      },
+      {
+        "id": "t1",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:39"
+        },
+        "meaning": "Zeile in Fehlerdatei (Satzart)"
+      },
+      {
+        "id": "rpa",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:45"
+        },
+        "meaning": "Beschäftigungsstatus zum Buchungstag lesen"
+      },
+      {
+        "id": "gact",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:49"
+        },
+        "meaning": "Mitarbeiter nicht aktiv?"
+      },
+      {
+        "id": "t2",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:50"
+        },
+        "meaning": "Zeile in Fehlerdatei (nicht aktiv)"
+      },
+      {
+        "id": "ins",
+        "type": "write",
+        "anchor": {
+          "file": "source.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:57"
+        },
+        "meaning": "Zeitbuchung speichern"
+      },
+      {
+        "id": "gdup",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:58"
+        },
+        "meaning": "Dublette?"
+      },
+      {
+        "id": "t3",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:59"
+        },
+        "meaning": "Zeile in Fehlerdatei (Dublette)"
+      },
+      {
+        "id": "cw",
+        "type": "transaction",
+        "anchor": {
+          "file": "source.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:68"
+        },
+        "meaning": "Übernommene Buchungen festschreiben"
+      },
+      {
+        "id": "gdel",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:69"
+        },
+        "meaning": "Keine Fehler?"
+      },
+      {
+        "id": "del",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:70"
+        },
+        "meaning": "Eingangsdatei löschen"
+      },
+      {
+        "id": "osum",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:72"
+        },
+        "meaning": "Zähler ausgeben"
+      },
+      {
+        "id": "e2",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:73"
+        },
+        "meaning": "Lauf endet nach der Zählerausgabe"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "op1",
+        "condition": "always"
+      },
+      {
+        "from": "op1",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "m1",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g1",
+        "to": "op2",
+        "condition": "else"
+      },
+      {
+        "from": "op2",
+        "to": "lp",
+        "condition": "always"
+      },
+      {
+        "from": "lp",
+        "to": "rd",
+        "condition": "next row"
+      },
+      {
+        "from": "rd",
+        "to": "geof",
+        "condition": "always"
+      },
+      {
+        "from": "geof",
+        "to": "cw",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "geof",
+        "to": "gt",
+        "condition": "else"
+      },
+      {
+        "from": "gt",
+        "to": "t1",
+        "condition": "lv_type <> 'P10' AND lv_type <> 'P20'"
+      },
+      {
+        "from": "t1",
+        "to": "lp",
+        "condition": "next iteration"
+      },
+      {
+        "from": "gt",
+        "to": "rpa",
+        "condition": "else"
+      },
+      {
+        "from": "rpa",
+        "to": "gact",
+        "condition": "always"
+      },
+      {
+        "from": "gact",
+        "to": "t2",
+        "condition": "sy-subrc <> 0 OR lv_stat2 <> '3'"
+      },
+      {
+        "from": "t2",
+        "to": "lp",
+        "condition": "next iteration"
+      },
+      {
+        "from": "gact",
+        "to": "ins",
+        "condition": "else"
+      },
+      {
+        "from": "ins",
+        "to": "gdup",
+        "condition": "always"
+      },
+      {
+        "from": "gdup",
+        "to": "t3",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "t3",
+        "to": "lp",
+        "condition": "next iteration"
+      },
+      {
+        "from": "gdup",
+        "to": "lp",
+        "condition": "else"
+      },
+      {
+        "from": "cw",
+        "to": "gdel",
+        "condition": "always"
+      },
+      {
+        "from": "gdel",
+        "to": "del",
+        "condition": "lv_err = 0"
+      },
+      {
+        "from": "del",
+        "to": "osum",
+        "condition": "always"
+      },
+      {
+        "from": "gdel",
+        "to": "osum",
+        "condition": "else"
+      },
+      {
+        "from": "m1",
+        "to": "e1",
+        "condition": "always"
+      },
+      {
+        "from": "osum",
+        "to": "e2",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "source.abap:57 — kein Fachsatz „Zeitereignisse werden in die Zeitwirtschaft (TEVEN) gebucht“ (Ziel ist nur die Z-Tabelle).",
+    "source.abap:69 — kein Fachsatz „fehlerhafte Zeilen verhindern die Übernahme der Datei“ (gültige Zeilen werden trotzdem gespeichert; nur das Löschen der Datei unterbleibt).",
+    "source.abap:70 — kein Fachsatz „Datei wird archiviert/verschoben“ (sie wird gelöscht).",
+    "source.abap:45 — kein Fachsatz über eine HR-Berechtigungsprüfung (es gibt keine)."
+  ],
+  "processDescription": "Ein nächtlicher Job übernimmt die Kommen/Gehen-Buchungen eines Zutrittskontrollsystems aus einer CSV-Datei auf dem Applikationsserver. Ist die Datei nicht lesbar, bricht er mit Fehlermeldung ab; sonst legt er eine Fehlerdatei an. Zeile für Zeile zerlegt er Personalnummer, Datum, Uhrzeit und Satzart. Andere Satzarten als P10 (Kommen) und P20 (Gehen) schreibt er in die Fehlerdatei. Danach prüft er über den Infotyp 0000, ob der Mitarbeiter am Buchungstag aktiv beschäftigt ist; sonst geht die Zeile ebenfalls in die Fehlerdatei. Gültige Buchungen speichert er mit Erfassungsdatum und -benutzer in einer Z-Tabelle; bereits vorhandene Sätze landen als Dublette in der Fehlerdatei. Am Dateiende schreibt er die Buchungen fest; nur wenn keine Zeile abgewiesen wurde, löscht er die Eingangsdatei. Abschließend gibt er die Zähler aus."
+}

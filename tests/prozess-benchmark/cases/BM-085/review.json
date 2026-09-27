@@ -1,0 +1,14 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten e (neu)",
+      "before": "—",
+      "after": "end source.abap:36 „Lauf endet nach der Meldung“",
+      "why": "Implizites Ende von START-OF-SELECTION fehlte; o1 und o2 hatten keine ausgehende Kante.",
+      "category": "fehlender Knoten"
+    }
+  ],
+  "doubts": []
+}

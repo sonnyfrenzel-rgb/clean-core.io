@@ -1,0 +1,49 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Kante c_read→g_empty",
+      "before": "c_read->g_empty [always]",
+      "after": "entfällt; le->g_empty [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks; Rückkante vom end des Blocks → Folgeschritt; keine Direktkante Aufruf → Folgeschritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante c_save1→e1",
+      "before": "c_save1->e1 [always]",
+      "after": "entfällt; ge->e1 [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks; Rückkante vom end des Blocks → Folgeschritt; keine Direktkante Aufruf → Folgeschritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante c_sam→l",
+      "before": "c_sam->l [next iteration]",
+      "after": "entfällt; e_enq->l [next iteration], se->l [next iteration]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks; Rückkante vom end des Blocks → Folgeschritt; keine Direktkante Aufruf → Folgeschritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante c_erg→c_save2",
+      "before": "c_erg->c_save2 [always]",
+      "after": "entfällt; ee->c_save2 [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks; Rückkante vom end des Blocks → Folgeschritt; keine Direktkante Aufruf → Folgeschritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante c_save2→g_mail",
+      "before": "c_save2->g_mail [always]",
+      "after": "entfällt; ge->g_mail [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks; Rückkante vom end des Blocks → Folgeschritt; keine Direktkante Aufruf → Folgeschritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante c_mail→e",
+      "before": "c_mail->e [always]",
+      "after": "entfällt; me->e [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks; Rückkante vom end des Blocks → Folgeschritt; keine Direktkante Aufruf → Folgeschritt.",
+      "category": "Kante"
+    }
+  ],
+  "doubts": []
+}

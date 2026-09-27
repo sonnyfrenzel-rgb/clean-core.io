@@ -1,0 +1,21 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten xma (neu)",
+      "before": "—",
+      "after": "end zmm_zyklusinventur.abap:27 „Selektionsbild mit Fehlermeldung erneut angezeigt“; neu ma->xma [always]",
+      "why": "MESSAGE vom Typ E/A beendet den Pfad; wie im übrigen Benchmark (z. B. BM-048, BM-051, BM-058) folgt dem output-Knoten ein end-Knoten auf derselben Anweisung. Validator-Warnung „keine ausgehende Kante“.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten xsd (neu)",
+      "before": "—",
+      "after": "end zcl_mm_cycle_count.abap:58 „SELECT_DUE beendet, fällige Materialien zurück“; umgeleitet: l1->gd [no more rows] jetzt l1->xsd; neu xsd->gd [always]",
+      "why": "Vereinheitlichung (wie im Gegencheck FI/CO): jeder auslaufende FORM/METHOD/MODULE/FUNCTION-Block endet mit eigenem end-Knoten auf ENDFORM/ENDMETHOD/ENDMODULE/ENDFUNCTION (Brieftabelle: end auch bei implizitem Blockende); die Rückkante führt von dort zum Knoten nach dem Aufruf.",
+      "category": "fehlender Knoten"
+    }
+  ],
+  "doubts": []
+}

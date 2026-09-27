@@ -1,0 +1,737 @@
+{
+  "id": "BM-069",
+  "title": "Automatischer Verwendungsentscheid für fehlerfreie Prüflose (Hintergrundjob)",
+  "classes": [
+    "K01",
+    "K03",
+    "K12"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "QALS",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 34,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:34"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "QAVE",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 51,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:51"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "QAMR",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 58,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:58"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "QAMV",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 67,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:67"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_INSPLOT_SETUSAGEDECISION",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 86,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:86"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_ROLLBACK",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 95,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:95"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_COMMIT",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 98,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:98"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "CL_SALV_TABLE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 106,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:106"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-069-B01",
+      "text": "Es werden Prüflose des gewählten Werks mit der gewählten Herkunft (Vorschlag 04, Wareneingang aus Produktion) und Entstehungsdatum gelesen, für die noch kein Verwendungsentscheid getroffen ist.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:34"
+        }
+      ]
+    },
+    {
+      "id": "BM-069-B02",
+      "text": "Ohne offene Prüflose wird „Keine offenen Prueflose“ gemeldet und der Lauf beendet.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:39"
+        },
+        {
+          "file": "source.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:40"
+        },
+        {
+          "file": "source.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:41"
+        }
+      ]
+    },
+    {
+      "id": "BM-069-B03",
+      "text": "Hat ein Prüflos inzwischen einen Verwendungsentscheid auf Losebene, wird es ohne Protokolleintrag übersprungen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:51"
+        },
+        {
+          "file": "source.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:54"
+        },
+        {
+          "file": "source.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:55"
+        }
+      ]
+    },
+    {
+      "id": "BM-069-B04",
+      "text": "Ist mindestens ein Merkmal zurückgewiesen, bleibt das Los für einen manuellen Verwendungsentscheid liegen und wird so protokolliert.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:58"
+        },
+        {
+          "file": "source.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:61"
+        },
+        {
+          "file": "source.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:62"
+        }
+      ]
+    },
+    {
+      "id": "BM-069-B05",
+      "text": "Sind weniger Merkmale bewertet als geplant, wird kein Entscheid gesetzt und „Offene Merkmale - kein VE“ protokolliert.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:67"
+        },
+        {
+          "file": "source.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:69"
+        },
+        {
+          "file": "source.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:72"
+        },
+        {
+          "file": "source.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:73"
+        }
+      ]
+    },
+    {
+      "id": "BM-069-B06",
+      "text": "Für vollständig bewertete Lose ohne Zurückweisung wird der Verwendungsentscheid mit dem Code aus dem Parameter (Vorschlag A1) aus der Auswahlmenge ZFREI gesetzt und der Abschluss erzwungen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:79"
+        },
+        {
+          "file": "source.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:86"
+        }
+      ]
+    },
+    {
+      "id": "BM-069-B07",
+      "text": "Scheitert der Entscheid, wird zurückgerollt und der Fehlertext protokolliert; sonst wird festgeschrieben und „VE gesetzt“ protokolliert.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 94,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:94"
+        },
+        {
+          "file": "source.abap",
+          "line": 95,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:95"
+        },
+        {
+          "file": "source.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:98"
+        }
+      ]
+    },
+    {
+      "id": "BM-069-B08",
+      "text": "Das Protokoll aller nicht übersprungenen Lose wird als ALV-Liste angezeigt.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 106,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:106"
+        },
+        {
+          "file": "source.abap",
+          "line": 108,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:108"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:33"
+        },
+        "meaning": "Jobstart"
+      },
+      {
+        "id": "q",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:34"
+        },
+        "meaning": "Prüflose des Werks mit gewählter Herkunft und Entstehungsdatum ohne Verwendungsentscheid lesen"
+      },
+      {
+        "id": "g0",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:39"
+        },
+        "meaning": "Offene Prüflose vorhanden?"
+      },
+      {
+        "id": "m0",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:40"
+        },
+        "meaning": "Meldung: keine offenen Prüflose"
+      },
+      {
+        "id": "e0",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:41"
+        },
+        "meaning": "Ende"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "source.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:44"
+        },
+        "meaning": "Je Prüflos"
+      },
+      {
+        "id": "qve",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:51"
+        },
+        "meaning": "Vorhandenen Verwendungsentscheid auf Losebene suchen"
+      },
+      {
+        "id": "gve",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:54"
+        },
+        "meaning": "Entscheid bereits vorhanden?"
+      },
+      {
+        "id": "qrj",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:58"
+        },
+        "meaning": "Zurückgewiesene Merkmale zählen"
+      },
+      {
+        "id": "grj",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:61"
+        },
+        "meaning": "Mindestens ein Merkmal zurückgewiesen?"
+      },
+      {
+        "id": "qmv",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:67"
+        },
+        "meaning": "Geplante Merkmale zählen"
+      },
+      {
+        "id": "qmr",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:69"
+        },
+        "meaning": "Bewertete Merkmale zählen"
+      },
+      {
+        "id": "gop",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:72"
+        },
+        "meaning": "Merkmale noch offen?"
+      },
+      {
+        "id": "c",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:86"
+        },
+        "meaning": "Verwendungsentscheid mit Code aus Auswahlmenge ZFREI setzen, Abschluss erzwingen"
+      },
+      {
+        "id": "gerr",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 94,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:94"
+        },
+        "meaning": "Fehler beim Verwendungsentscheid?"
+      },
+      {
+        "id": "rb",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 95,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:95"
+        },
+        "meaning": "Zurückrollen, Fehlertext ins Protokoll"
+      },
+      {
+        "id": "cm",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:98"
+        },
+        "meaning": "Festschreiben, „VE gesetzt“ ins Protokoll"
+      },
+      {
+        "id": "fac",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 106,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:106"
+        },
+        "meaning": "ALV-Protokoll erzeugen"
+      },
+      {
+        "id": "disp",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 108,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:108"
+        },
+        "meaning": "Protokoll anzeigen"
+      },
+      {
+        "id": "e_end",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 108,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:108"
+        },
+        "meaning": "Job beendet, Protokoll angezeigt"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "q",
+        "condition": "always"
+      },
+      {
+        "from": "q",
+        "to": "g0",
+        "condition": "always"
+      },
+      {
+        "from": "g0",
+        "to": "m0",
+        "condition": "gt_lose IS INITIAL"
+      },
+      {
+        "from": "m0",
+        "to": "e0",
+        "condition": "always"
+      },
+      {
+        "from": "g0",
+        "to": "l",
+        "condition": "else"
+      },
+      {
+        "from": "l",
+        "to": "qve",
+        "condition": "next row"
+      },
+      {
+        "from": "qve",
+        "to": "gve",
+        "condition": "always"
+      },
+      {
+        "from": "gve",
+        "to": "l",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "gve",
+        "to": "qrj",
+        "condition": "else"
+      },
+      {
+        "from": "qrj",
+        "to": "grj",
+        "condition": "always"
+      },
+      {
+        "from": "grj",
+        "to": "l",
+        "condition": "gv_rej > 0"
+      },
+      {
+        "from": "grj",
+        "to": "qmv",
+        "condition": "else"
+      },
+      {
+        "from": "qmv",
+        "to": "qmr",
+        "condition": "always"
+      },
+      {
+        "from": "qmr",
+        "to": "gop",
+        "condition": "always"
+      },
+      {
+        "from": "gop",
+        "to": "l",
+        "condition": "gv_bew < gv_plan"
+      },
+      {
+        "from": "gop",
+        "to": "c",
+        "condition": "else"
+      },
+      {
+        "from": "c",
+        "to": "gerr",
+        "condition": "always"
+      },
+      {
+        "from": "gerr",
+        "to": "rb",
+        "condition": "gs_ret-type CA 'EA'"
+      },
+      {
+        "from": "gerr",
+        "to": "cm",
+        "condition": "else"
+      },
+      {
+        "from": "rb",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "cm",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l",
+        "to": "fac",
+        "condition": "no more rows"
+      },
+      {
+        "from": "fac",
+        "to": "disp",
+        "condition": "always"
+      },
+      {
+        "from": "disp",
+        "to": "e_end",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "gesamte Scheibe — kein Fachsatz „Der Prüflosbestand wird explizit in den frei verwendbaren Bestand umgebucht“ (der Code übergibt keine Bestandsbuchungsdaten; ob der VE bucht, hängt vom Customizing des VE-Codes ab und ist im Code nicht sichtbar)",
+    "source.abap:54 — kein Fachsatz „Lose mit vorhandenem Entscheid werden protokolliert“ (sie werden ohne Protokolleintrag übersprungen)",
+    "source.abap:61 — kein Fachsatz „Zurückgewiesene Lose werden gesperrt oder abgelehnt“ (sie bleiben nur liegen)"
+  ],
+  "processDescription": "Der Job läuft stündlich je Werk. Er liest alle Prüflose des Werks mit der gewählten Herkunft und dem gewählten Entstehungszeitraum, für die noch kein Verwendungsentscheid vermerkt ist; gibt es keine, meldet er das und endet. Für jedes Los prüft er zuerst, ob inzwischen doch ein Entscheid existiert, und überspringt es dann stillschweigend. Hat das Los ein zurückgewiesenes Merkmal, bleibt es für den Prüfer liegen und wird so protokolliert. Sind noch nicht alle geplanten Merkmale bewertet, wird ebenfalls kein Entscheid gesetzt. Nur vollständig bewertete, fehlerfreie Lose erhalten über die BAPI einen Verwendungsentscheid mit dem vorgegebenen Code aus der Auswahlmenge ZFREI; bei Fehler wird zurückgerollt und der Fehlertext protokolliert, sonst festgeschrieben. Am Ende zeigt der Job das Protokoll als ALV-Liste an."
+}

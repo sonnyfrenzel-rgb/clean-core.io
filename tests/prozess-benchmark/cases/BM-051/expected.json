@@ -1,0 +1,1193 @@
+{
+  "id": "BM-051",
+  "title": "Überweisungsdatei für die Bankensoftware aus einem ausgeführten Zahllauf erzeugen",
+  "classes": [
+    "K01",
+    "K15",
+    "K02"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "REGUV",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zfi_payfile_f01.abap",
+        "line": 16,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zfi_payfile_f01.abap:16"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "REGUH",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zfi_payfile.abap",
+        "line": 36,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zfi_payfile.abap:36"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "REGUP",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zfi_payfile_f01.abap",
+        "line": 53,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zfi_payfile_f01.abap:53"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZFI_PAYFILE_LOG",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "zfi_payfile_f01.abap",
+        "line": 117,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zfi_payfile_f01.abap:117"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-051-B01",
+      "text": "Vor der Dateierzeugung wird geprüft, ob der Anwender für den zahlenden Buchungskreis Zahlungsträger erstellen darf; sonst bricht der Report mit Fehlermeldung ab.",
+      "anchors": [
+        {
+          "file": "zfi_payfile_f01.abap",
+          "line": 9,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_payfile_f01.abap:9"
+        },
+        {
+          "file": "zfi_payfile_f01.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_payfile_f01.abap:12"
+        },
+        {
+          "file": "zfi_payfile_f01.abap",
+          "line": 13,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_payfile_f01.abap:13"
+        }
+      ]
+    },
+    {
+      "id": "BM-051-B02",
+      "text": "Der Zahllauf zu Laufdatum und Identifikation muss existieren und echt ausgeführt sein, sonst bricht der Report ab.",
+      "anchors": [
+        {
+          "file": "zfi_payfile_f01.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_payfile_f01.abap:16"
+        },
+        {
+          "file": "zfi_payfile_f01.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_payfile_f01.abap:19"
+        },
+        {
+          "file": "zfi_payfile_f01.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_payfile_f01.abap:20"
+        }
+      ]
+    },
+    {
+      "id": "BM-051-B03",
+      "text": "Gelesen werden die Zahlungen des Echtlaufs für den zahlenden Buchungskreis und die gewählte Zahlungsmethode (Vorschlag U = Überweisung).",
+      "anchors": [
+        {
+          "file": "zfi_payfile.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_payfile.abap:36"
+        }
+      ]
+    },
+    {
+      "id": "BM-051-B04",
+      "text": "Gibt es keine Zahlungen, erhält der Anwender einen Hinweis und der Report endet.",
+      "anchors": [
+        {
+          "file": "zfi_payfile.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_payfile.abap:42"
+        },
+        {
+          "file": "zfi_payfile.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_payfile.abap:43"
+        },
+        {
+          "file": "zfi_payfile.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_payfile.abap:44"
+        }
+      ]
+    },
+    {
+      "id": "BM-051-B05",
+      "text": "Zahlungen ohne IBAN oder BIC des Empfängers werden nicht in die Datei übernommen, sondern mit Grund in einer Fehlerliste gesammelt.",
+      "anchors": [
+        {
+          "file": "zfi_payfile_f01.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_payfile_f01.abap:43"
+        },
+        {
+          "file": "zfi_payfile_f01.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_payfile_f01.abap:48"
+        }
+      ]
+    },
+    {
+      "id": "BM-051-B06",
+      "text": "Der Verwendungszweck wird aus den Referenznummern der mit der Zahlung beglichenen Rechnungen gebildet und auf 140 Zeichen gekürzt.",
+      "anchors": [
+        {
+          "file": "zfi_payfile_f01.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_payfile_f01.abap:53"
+        },
+        {
+          "file": "zfi_payfile_f01.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_payfile_f01.abap:62"
+        }
+      ]
+    },
+    {
+      "id": "BM-051-B07",
+      "text": "Je Zahlung entsteht ein Einzelsatz mit Zahlungsbelegnummer, Empfängername, IBAN, BIC, Betrag (als positiver Wert), Währung und Verwendungszweck.",
+      "anchors": [
+        {
+          "file": "zfi_payfile_f01.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_payfile_f01.abap:68"
+        },
+        {
+          "file": "zfi_payfile_f01.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_payfile_f01.abap:70"
+        }
+      ]
+    },
+    {
+      "id": "BM-051-B08",
+      "text": "Anzahl und Kontrollsumme der Zahlungen werden fortgeschrieben; die Summe addiert Beträge unabhängig von ihrer Währung.",
+      "anchors": [
+        {
+          "file": "zfi_payfile_f01.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_payfile_f01.abap:74"
+        }
+      ]
+    },
+    {
+      "id": "BM-051-B09",
+      "text": "Nur im Echtlauf wird die Datei auf dem Applikationsserver geschrieben; lässt sie sich nicht öffnen, bricht der Report mit Fehlermeldung ab.",
+      "anchors": [
+        {
+          "file": "zfi_payfile.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_payfile.abap:49"
+        },
+        {
+          "file": "zfi_payfile_f01.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_payfile_f01.abap:84"
+        },
+        {
+          "file": "zfi_payfile_f01.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_payfile_f01.abap:85"
+        },
+        {
+          "file": "zfi_payfile_f01.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_payfile_f01.abap:86"
+        }
+      ]
+    },
+    {
+      "id": "BM-051-B10",
+      "text": "Die Datei besteht aus einem Kopfsatz mit Buchungskreis, Lauf und Erstelldatum, den Einzelsätzen und einem Summensatz mit Anzahl und Kontrollsumme.",
+      "anchors": [
+        {
+          "file": "zfi_payfile_f01.abap",
+          "line": 91,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_payfile_f01.abap:91"
+        },
+        {
+          "file": "zfi_payfile_f01.abap",
+          "line": 94,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_payfile_f01.abap:94"
+        },
+        {
+          "file": "zfi_payfile_f01.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_payfile_f01.abap:98"
+        },
+        {
+          "file": "zfi_payfile_f01.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_payfile_f01.abap:99"
+        }
+      ]
+    },
+    {
+      "id": "BM-051-B11",
+      "text": "Im Echtlauf wird die Dateierzeugung mit Datei, Anzahl, Summe, Benutzer und Zeitpunkt in einer kundeneigenen Protokolltabelle festgehalten.",
+      "anchors": [
+        {
+          "file": "zfi_payfile_f01.abap",
+          "line": 117,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_payfile_f01.abap:117"
+        }
+      ]
+    },
+    {
+      "id": "BM-051-B12",
+      "text": "Existiert für den Lauf bereits ein Protokollsatz, wird nur ein Hinweis ausgegeben; die Datei ist dann trotzdem neu geschrieben.",
+      "anchors": [
+        {
+          "file": "zfi_payfile_f01.abap",
+          "line": 118,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_payfile_f01.abap:118"
+        },
+        {
+          "file": "zfi_payfile_f01.abap",
+          "line": 120,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_payfile_f01.abap:120"
+        }
+      ]
+    },
+    {
+      "id": "BM-051-B13",
+      "text": "Zum Schluss werden Anzahl, Summe, Testlauf-Kennzeichen und alle abgewiesenen Zahlungen mit Grund ausgegeben.",
+      "anchors": [
+        {
+          "file": "zfi_payfile.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_payfile.abap:55"
+        },
+        {
+          "file": "zfi_payfile.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_payfile.abap:57"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "zfi_payfile.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_payfile.abap:32"
+        },
+        "meaning": "Reportstart"
+      },
+      {
+        "id": "c1",
+        "type": "call",
+        "anchor": {
+          "file": "zfi_payfile.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_payfile.abap:33"
+        },
+        "meaning": "Berechtigung und Zahllauf prüfen"
+      },
+      {
+        "id": "s1",
+        "type": "start",
+        "anchor": {
+          "file": "zfi_payfile_f01.abap",
+          "line": 8,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_payfile_f01.abap:8"
+        },
+        "meaning": "Prüfroutine"
+      },
+      {
+        "id": "a1",
+        "type": "action",
+        "anchor": {
+          "file": "zfi_payfile_f01.abap",
+          "line": 9,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_payfile_f01.abap:9"
+        },
+        "meaning": "Berechtigung für Zahlprogramm im zahlenden Buchungskreis prüfen"
+      },
+      {
+        "id": "g11",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_payfile_f01.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_payfile_f01.abap:12"
+        },
+        "meaning": "Berechtigung fehlt?"
+      },
+      {
+        "id": "m11",
+        "type": "output",
+        "anchor": {
+          "file": "zfi_payfile_f01.abap",
+          "line": 13,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_payfile_f01.abap:13"
+        },
+        "meaning": "Fehler: keine Berechtigung"
+      },
+      {
+        "id": "x11",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_payfile_f01.abap",
+          "line": 13,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_payfile_f01.abap:13"
+        },
+        "meaning": "Abbruch"
+      },
+      {
+        "id": "q11",
+        "type": "read",
+        "anchor": {
+          "file": "zfi_payfile_f01.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_payfile_f01.abap:16"
+        },
+        "meaning": "Verwaltungssatz des Zahllaufs lesen"
+      },
+      {
+        "id": "g12",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_payfile_f01.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_payfile_f01.abap:19"
+        },
+        "meaning": "Zahllauf fehlt oder nicht echt ausgeführt?"
+      },
+      {
+        "id": "m12",
+        "type": "output",
+        "anchor": {
+          "file": "zfi_payfile_f01.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_payfile_f01.abap:20"
+        },
+        "meaning": "Fehler: Zahllauf nicht ausgeführt"
+      },
+      {
+        "id": "x12",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_payfile_f01.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_payfile_f01.abap:20"
+        },
+        "meaning": "Abbruch"
+      },
+      {
+        "id": "e1",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_payfile_f01.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_payfile_f01.abap:29"
+        },
+        "meaning": "Prüfung bestanden"
+      },
+      {
+        "id": "q",
+        "type": "read",
+        "anchor": {
+          "file": "zfi_payfile.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_payfile.abap:36"
+        },
+        "meaning": "Zahlungen des Echtlaufs zur Zahlungsmethode lesen"
+      },
+      {
+        "id": "g0",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_payfile.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_payfile.abap:42"
+        },
+        "meaning": "Zahlungen vorhanden?"
+      },
+      {
+        "id": "m0",
+        "type": "output",
+        "anchor": {
+          "file": "zfi_payfile.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_payfile.abap:43"
+        },
+        "meaning": "Hinweis: keine Zahlungen"
+      },
+      {
+        "id": "x0",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_payfile.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_payfile.abap:44"
+        },
+        "meaning": "Verarbeitung beenden"
+      },
+      {
+        "id": "c3",
+        "type": "call",
+        "anchor": {
+          "file": "zfi_payfile.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_payfile.abap:47"
+        },
+        "meaning": "Datensätze aufbauen"
+      },
+      {
+        "id": "s3",
+        "type": "start",
+        "anchor": {
+          "file": "zfi_payfile_f01.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_payfile_f01.abap:34"
+        },
+        "meaning": "Satzaufbau"
+      },
+      {
+        "id": "l3",
+        "type": "loop",
+        "anchor": {
+          "file": "zfi_payfile_f01.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_payfile_f01.abap:42"
+        },
+        "meaning": "Zahlungen durchlaufen"
+      },
+      {
+        "id": "g31",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_payfile_f01.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_payfile_f01.abap:43"
+        },
+        "meaning": "IBAN oder BIC fehlt?"
+      },
+      {
+        "id": "q32",
+        "type": "read",
+        "anchor": {
+          "file": "zfi_payfile_f01.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_payfile_f01.abap:53"
+        },
+        "meaning": "Rechnungsreferenzen der Zahlung lesen"
+      },
+      {
+        "id": "sum",
+        "type": "action",
+        "anchor": {
+          "file": "zfi_payfile_f01.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_payfile_f01.abap:74"
+        },
+        "meaning": "Zahlung zählen und Betrag zur Kontrollsumme addieren"
+      },
+      {
+        "id": "e3",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_payfile_f01.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_payfile_f01.abap:76"
+        },
+        "meaning": "Satzaufbau fertig"
+      },
+      {
+        "id": "gt",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_payfile.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_payfile.abap:49"
+        },
+        "meaning": "Echtlauf?"
+      },
+      {
+        "id": "c4",
+        "type": "call",
+        "anchor": {
+          "file": "zfi_payfile.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_payfile.abap:50"
+        },
+        "meaning": "Datei schreiben"
+      },
+      {
+        "id": "s4",
+        "type": "start",
+        "anchor": {
+          "file": "zfi_payfile_f01.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_payfile_f01.abap:81"
+        },
+        "meaning": "Dateiausgabe"
+      },
+      {
+        "id": "od",
+        "type": "output",
+        "anchor": {
+          "file": "zfi_payfile_f01.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_payfile_f01.abap:84"
+        },
+        "meaning": "Datei auf dem Applikationsserver öffnen"
+      },
+      {
+        "id": "g41",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_payfile_f01.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_payfile_f01.abap:85"
+        },
+        "meaning": "Datei nicht zu öffnen?"
+      },
+      {
+        "id": "m41",
+        "type": "output",
+        "anchor": {
+          "file": "zfi_payfile_f01.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_payfile_f01.abap:86"
+        },
+        "meaning": "Fehler: Datei nicht zu öffnen"
+      },
+      {
+        "id": "x41",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_payfile_f01.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_payfile_f01.abap:86"
+        },
+        "meaning": "Abbruch"
+      },
+      {
+        "id": "t1",
+        "type": "output",
+        "anchor": {
+          "file": "zfi_payfile_f01.abap",
+          "line": 91,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_payfile_f01.abap:91"
+        },
+        "meaning": "Kopfsatz schreiben"
+      },
+      {
+        "id": "l4",
+        "type": "loop",
+        "anchor": {
+          "file": "zfi_payfile_f01.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_payfile_f01.abap:93"
+        },
+        "meaning": "Einzelsätze durchlaufen"
+      },
+      {
+        "id": "t2",
+        "type": "output",
+        "anchor": {
+          "file": "zfi_payfile_f01.abap",
+          "line": 94,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_payfile_f01.abap:94"
+        },
+        "meaning": "Einzelsatz schreiben"
+      },
+      {
+        "id": "t3",
+        "type": "output",
+        "anchor": {
+          "file": "zfi_payfile_f01.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_payfile_f01.abap:98"
+        },
+        "meaning": "Summensatz schreiben"
+      },
+      {
+        "id": "e4",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_payfile_f01.abap",
+          "line": 100,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_payfile_f01.abap:100"
+        },
+        "meaning": "Datei geschlossen"
+      },
+      {
+        "id": "c6",
+        "type": "call",
+        "anchor": {
+          "file": "zfi_payfile.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_payfile.abap:51"
+        },
+        "meaning": "Erzeugung protokollieren"
+      },
+      {
+        "id": "s5",
+        "type": "start",
+        "anchor": {
+          "file": "zfi_payfile_f01.abap",
+          "line": 105,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_payfile_f01.abap:105"
+        },
+        "meaning": "Protokollroutine"
+      },
+      {
+        "id": "w5",
+        "type": "write",
+        "anchor": {
+          "file": "zfi_payfile_f01.abap",
+          "line": 117,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_payfile_f01.abap:117"
+        },
+        "meaning": "Protokollsatz der Dateierzeugung anlegen"
+      },
+      {
+        "id": "g5",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_payfile_f01.abap",
+          "line": 118,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_payfile_f01.abap:118"
+        },
+        "meaning": "Protokollsatz nicht angelegt?"
+      },
+      {
+        "id": "m5",
+        "type": "output",
+        "anchor": {
+          "file": "zfi_payfile_f01.abap",
+          "line": 120,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_payfile_f01.abap:120"
+        },
+        "meaning": "Hinweis: Lauf war schon protokolliert"
+      },
+      {
+        "id": "e5",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_payfile_f01.abap",
+          "line": 122,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_payfile_f01.abap:122"
+        },
+        "meaning": "Protokoll fertig"
+      },
+      {
+        "id": "o1",
+        "type": "output",
+        "anchor": {
+          "file": "zfi_payfile.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_payfile.abap:55"
+        },
+        "meaning": "Anzahl, Summe und Testlauf-Kennzeichen ausgeben"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "zfi_payfile.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_payfile.abap:56"
+        },
+        "meaning": "Abgewiesene Zahlungen durchlaufen"
+      },
+      {
+        "id": "o2",
+        "type": "output",
+        "anchor": {
+          "file": "zfi_payfile.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_payfile.abap:57"
+        },
+        "meaning": "Abgewiesene Zahlung mit Grund ausgeben"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_payfile.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_payfile.abap:58"
+        },
+        "meaning": "Report fertig"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "c1",
+        "condition": "always"
+      },
+      {
+        "from": "c1",
+        "to": "s1",
+        "condition": "always"
+      },
+      {
+        "from": "s1",
+        "to": "a1",
+        "condition": "always"
+      },
+      {
+        "from": "a1",
+        "to": "g11",
+        "condition": "always"
+      },
+      {
+        "from": "g11",
+        "to": "m11",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "m11",
+        "to": "x11",
+        "condition": "always"
+      },
+      {
+        "from": "g11",
+        "to": "q11",
+        "condition": "else"
+      },
+      {
+        "from": "q11",
+        "to": "g12",
+        "condition": "always"
+      },
+      {
+        "from": "g12",
+        "to": "m12",
+        "condition": "sy-subrc <> 0 OR gs_reguv-xecht IS INITIAL"
+      },
+      {
+        "from": "m12",
+        "to": "x12",
+        "condition": "always"
+      },
+      {
+        "from": "g12",
+        "to": "e1",
+        "condition": "else"
+      },
+      {
+        "from": "e1",
+        "to": "q",
+        "condition": "always"
+      },
+      {
+        "from": "q",
+        "to": "g0",
+        "condition": "always"
+      },
+      {
+        "from": "g0",
+        "to": "m0",
+        "condition": "gt_reguh IS INITIAL"
+      },
+      {
+        "from": "m0",
+        "to": "x0",
+        "condition": "always"
+      },
+      {
+        "from": "g0",
+        "to": "c3",
+        "condition": "else"
+      },
+      {
+        "from": "c3",
+        "to": "s3",
+        "condition": "always"
+      },
+      {
+        "from": "s3",
+        "to": "l3",
+        "condition": "always"
+      },
+      {
+        "from": "l3",
+        "to": "g31",
+        "condition": "next row"
+      },
+      {
+        "from": "g31",
+        "to": "l3",
+        "condition": "<ls_reguh>-ziban IS INITIAL OR <ls_reguh>-zswif IS INITIAL"
+      },
+      {
+        "from": "g31",
+        "to": "q32",
+        "condition": "else"
+      },
+      {
+        "from": "q32",
+        "to": "sum",
+        "condition": "always"
+      },
+      {
+        "from": "sum",
+        "to": "l3",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l3",
+        "to": "e3",
+        "condition": "no more rows"
+      },
+      {
+        "from": "e3",
+        "to": "gt",
+        "condition": "always"
+      },
+      {
+        "from": "gt",
+        "to": "c4",
+        "condition": "p_test IS INITIAL"
+      },
+      {
+        "from": "c4",
+        "to": "s4",
+        "condition": "always"
+      },
+      {
+        "from": "s4",
+        "to": "od",
+        "condition": "always"
+      },
+      {
+        "from": "od",
+        "to": "g41",
+        "condition": "always"
+      },
+      {
+        "from": "g41",
+        "to": "m41",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "m41",
+        "to": "x41",
+        "condition": "always"
+      },
+      {
+        "from": "g41",
+        "to": "t1",
+        "condition": "else"
+      },
+      {
+        "from": "t1",
+        "to": "l4",
+        "condition": "always"
+      },
+      {
+        "from": "l4",
+        "to": "t2",
+        "condition": "next row"
+      },
+      {
+        "from": "t2",
+        "to": "l4",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l4",
+        "to": "t3",
+        "condition": "no more rows"
+      },
+      {
+        "from": "t3",
+        "to": "e4",
+        "condition": "always"
+      },
+      {
+        "from": "e4",
+        "to": "c6",
+        "condition": "always"
+      },
+      {
+        "from": "c6",
+        "to": "s5",
+        "condition": "always"
+      },
+      {
+        "from": "s5",
+        "to": "w5",
+        "condition": "always"
+      },
+      {
+        "from": "w5",
+        "to": "g5",
+        "condition": "always"
+      },
+      {
+        "from": "g5",
+        "to": "m5",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "m5",
+        "to": "e5",
+        "condition": "always"
+      },
+      {
+        "from": "g5",
+        "to": "e5",
+        "condition": "else"
+      },
+      {
+        "from": "e5",
+        "to": "o1",
+        "condition": "always"
+      },
+      {
+        "from": "gt",
+        "to": "o1",
+        "condition": "else"
+      },
+      {
+        "from": "o1",
+        "to": "l",
+        "condition": "always"
+      },
+      {
+        "from": "l",
+        "to": "o2",
+        "condition": "next row"
+      },
+      {
+        "from": "o2",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l",
+        "to": "e",
+        "condition": "no more rows"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zfi_payfile_f01.abap:84 — kein Fachsatz „Zahlungen werden an die Bank übertragen“ (es wird nur eine Datei auf dem Applikationsserver geschrieben)",
+    "zfi_payfile_f01.abap:29 — kein Fachsatz „doppelte Dateien werden verhindert“ (die Prüfung ist auskommentiert)",
+    "zfi_payfile_f01.abap:74 — kein Fachsatz „Summen je Währung“ (eine einzige Kontrollsumme über alle Währungen)",
+    "zfi_payfile_f01.abap:43 — kein Fachsatz „Zahlungen ohne IBAN werden storniert oder aus dem Zahllauf entfernt“ (sie fehlen nur in der Datei)"
+  ],
+  "processDescription": "Nach dem Zahllauf startet die Kreditorenbuchhaltung den Report mit Laufdatum, Laufidentifikation, zahlendem Buchungskreis, Zahlungsmethode, Dateipfad und Testlauf-Schalter. Zuerst werden die Berechtigung für das Zahlprogramm und der Status des Laufs geprüft; fehlt eines, bricht der Report ab. Dann werden die Zahlungen des Echtlaufs gelesen; ohne Zahlungen endet der Report mit einem Hinweis. Zahlungen ohne IBAN oder BIC landen in einer Fehlerliste, für alle anderen wird aus den Rechnungsreferenzen ein Verwendungszweck gebildet und ein Einzelsatz aufgebaut; Anzahl und eine währungsübergreifende Summe werden mitgezählt. Nur im Echtlauf wird die Datei mit Kopf-, Einzel- und Summensätzen geschrieben und die Erzeugung in einer Z-Tabelle protokolliert; ein bereits vorhandener Protokollsatz führt nur zu einem Hinweis. Am Ende werden Zähler und abgewiesene Zahlungen ausgegeben. Eine Doppelerzeugungsprüfung gibt es nicht mehr."
+}

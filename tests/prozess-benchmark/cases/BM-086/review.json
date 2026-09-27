@@ -1,0 +1,17 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten hd",
+      "before": "action source.abap:46 „Kunde aus Kopfsegment übernehmen“",
+      "after": "entfernt; überbrückt: c->l2 [WHEN 'ZE1CREDHD']",
+      "why": "Reine Zuweisung des Kopfsegments in eine Struktur (Z. 46) ist laut Autorenbrief kein Knoten; der Inhalt bleibt in Fachsatz B02. Rückkante trägt die WHEN-Bedingung.",
+      "category": "überflüssiger Knoten"
+    }
+  ],
+  "doubts": [],
+  "notes": [
+    "st53 (Z. 73) und st51 (Z. 78) bleiben als action: sie legen das fachliche Ergebnis des IDocs fest (Status 53 gebucht bzw. 51 Fehler mit workflow_result 99999), das die ALE-Folgeverarbeitung steuert (Fehler-Workflow, Nachbearbeitung). Ohne sie hätte das Gateway g4 zwei gleichziele Zweige."
+  ]
+}

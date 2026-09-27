@@ -1,0 +1,1294 @@
+{
+  "id": "BM-054",
+  "title": "Stichtagsbewertung offener Kreditorenposten in Fremdwährung mit Korrekturbuchung je Währung",
+  "classes": [
+    "K01",
+    "K03",
+    "K12"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "T001",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zfi_fxval.abap",
+        "line": 40,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zfi_fxval.abap:40"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ENQUEUE_EZFI_FXVAL",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zfi_fxval.abap",
+        "line": 44,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zfi_fxval.abap:44"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BSIK",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zfi_fxval_f01.abap",
+        "line": 12,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zfi_fxval_f01.abap:12"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BSAK",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zfi_fxval_f01.abap",
+        "line": 19,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zfi_fxval_f01.abap:19"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "CONVERT_TO_LOCAL_CURRENCY",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zfi_fxval_f01.abap",
+        "line": 47,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zfi_fxval_f01.abap:47"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_ACC_DOCUMENT_POST",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zfi_fxval_f01.abap",
+        "line": 120,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zfi_fxval_f01.abap:120"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_ROLLBACK",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zfi_fxval_f01.abap",
+        "line": 132,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zfi_fxval_f01.abap:132"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZFI_FXVAL_LOG",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "zfi_fxval_f01.abap",
+        "line": 143,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zfi_fxval_f01.abap:143"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_COMMIT",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zfi_fxval_f01.abap",
+        "line": 144,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zfi_fxval_f01.abap:144"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "DEQUEUE_EZFI_FXVAL",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zfi_fxval.abap",
+        "line": 68,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zfi_fxval.abap:68"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-054-B01",
+      "text": "Die Hauswährung des Buchungskreises wird ermittelt.",
+      "anchors": [
+        {
+          "file": "zfi_fxval.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_fxval.abap:40"
+        }
+      ]
+    },
+    {
+      "id": "BM-054-B02",
+      "text": "Die Bewertung wird für Buchungskreis und Stichtag gesperrt, damit sie nicht parallel läuft; ist sie schon gesperrt, bricht der Report mit Hinweis auf den Sperrenden ab.",
+      "anchors": [
+        {
+          "file": "zfi_fxval.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_fxval.abap:44"
+        },
+        {
+          "file": "zfi_fxval.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_fxval.abap:52"
+        },
+        {
+          "file": "zfi_fxval.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_fxval.abap:53"
+        }
+      ]
+    },
+    {
+      "id": "BM-054-B03",
+      "text": "Bewertet werden alle Kreditorenposten in Fremdwährung, die bis zum Stichtag gebucht wurden und am Stichtag offen waren: heute noch offene und nach dem Stichtag ausgeglichene.",
+      "anchors": [
+        {
+          "file": "zfi_fxval_f01.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_fxval_f01.abap:12"
+        },
+        {
+          "file": "zfi_fxval_f01.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_fxval_f01.abap:19"
+        },
+        {
+          "file": "zfi_fxval_f01.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_fxval_f01.abap:25"
+        }
+      ]
+    },
+    {
+      "id": "BM-054-B04",
+      "text": "Gibt es keine solchen Posten, wird das gemeldet und der Report endet.",
+      "anchors": [
+        {
+          "file": "zfi_fxval.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_fxval.abap:57"
+        },
+        {
+          "file": "zfi_fxval.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_fxval.abap:58"
+        },
+        {
+          "file": "zfi_fxval.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_fxval.abap:59"
+        }
+      ]
+    },
+    {
+      "id": "BM-054-B05",
+      "text": "Jeder Posten wird vorzeichengerecht (Haben negativ) mit dem Kurstyp der Selektion zum Stichtag in Hauswährung umgerechnet.",
+      "anchors": [
+        {
+          "file": "zfi_fxval_f01.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_fxval_f01.abap:47"
+        }
+      ]
+    },
+    {
+      "id": "BM-054-B06",
+      "text": "Die Differenz zwischen neuem und gebuchtem Hauswährungsbetrag wird je Währung aufsummiert.",
+      "anchors": [
+        {
+          "file": "zfi_fxval_f01.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_fxval_f01.abap:69"
+        }
+      ]
+    },
+    {
+      "id": "BM-054-B07",
+      "text": "Fehlt für eine Währung der Kurs, wird die ganze Währung gemeldet und nicht bewertet.",
+      "anchors": [
+        {
+          "file": "zfi_fxval_f01.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_fxval_f01.abap:61"
+        },
+        {
+          "file": "zfi_fxval_f01.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_fxval_f01.abap:73"
+        },
+        {
+          "file": "zfi_fxval_f01.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_fxval_f01.abap:75"
+        }
+      ]
+    },
+    {
+      "id": "BM-054-B08",
+      "text": "Nur im Echtlauf werden die Differenzen gebucht, und zwar ein Beleg je Währung; Währungen ohne Differenz werden übergangen.",
+      "anchors": [
+        {
+          "file": "zfi_fxval.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_fxval.abap:64"
+        },
+        {
+          "file": "zfi_fxval_f01.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_fxval_f01.abap:92"
+        },
+        {
+          "file": "zfi_fxval_f01.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_fxval_f01.abap:93"
+        }
+      ]
+    },
+    {
+      "id": "BM-054-B09",
+      "text": "Ein Kursverlust wird als Aufwand gegen das Korrekturkonto der Verbindlichkeiten gebucht, ein Kursgewinn vom Korrekturkonto gegen Ertrag, jeweils mit dem Betrag der Differenz in Hauswährung.",
+      "anchors": [
+        {
+          "file": "zfi_fxval_f01.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_fxval_f01.abap:98"
+        },
+        {
+          "file": "zfi_fxval_f01.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_fxval_f01.abap:99"
+        },
+        {
+          "file": "zfi_fxval_f01.abap",
+          "line": 102,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_fxval_f01.abap:102"
+        },
+        {
+          "file": "zfi_fxval_f01.abap",
+          "line": 120,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_fxval_f01.abap:120"
+        }
+      ]
+    },
+    {
+      "id": "BM-054-B10",
+      "text": "Enthält die Rückmeldung der Buchung eine Fehlermeldung, wird zurückgerollt und der Fehlschlag für die Währung gemeldet.",
+      "anchors": [
+        {
+          "file": "zfi_fxval_f01.abap",
+          "line": 130,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_fxval_f01.abap:130"
+        },
+        {
+          "file": "zfi_fxval_f01.abap",
+          "line": 131,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_fxval_f01.abap:131"
+        },
+        {
+          "file": "zfi_fxval_f01.abap",
+          "line": 132,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_fxval_f01.abap:132"
+        },
+        {
+          "file": "zfi_fxval_f01.abap",
+          "line": 133,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_fxval_f01.abap:133"
+        }
+      ]
+    },
+    {
+      "id": "BM-054-B11",
+      "text": "Bei Erfolg wird ein Protokollsatz mit Belegschlüssel und Differenz angelegt, gemeinsam mit dem Beleg festgeschrieben und die Belegnummer gemeldet.",
+      "anchors": [
+        {
+          "file": "zfi_fxval_f01.abap",
+          "line": 143,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_fxval_f01.abap:143"
+        },
+        {
+          "file": "zfi_fxval_f01.abap",
+          "line": 144,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_fxval_f01.abap:144"
+        },
+        {
+          "file": "zfi_fxval_f01.abap",
+          "line": 147,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_fxval_f01.abap:147"
+        }
+      ]
+    },
+    {
+      "id": "BM-054-B12",
+      "text": "Nach der Buchung wird die Sperre freigegeben, und die Differenzen je Währung werden aufgelistet.",
+      "anchors": [
+        {
+          "file": "zfi_fxval.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_fxval.abap:68"
+        },
+        {
+          "file": "zfi_fxval.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_fxval.abap:75"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "zfi_fxval.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_fxval.abap:39"
+        },
+        "meaning": "Reportstart"
+      },
+      {
+        "id": "qh",
+        "type": "read",
+        "anchor": {
+          "file": "zfi_fxval.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_fxval.abap:40"
+        },
+        "meaning": "Hauswährung des Buchungskreises lesen"
+      },
+      {
+        "id": "lk",
+        "type": "lock",
+        "anchor": {
+          "file": "zfi_fxval.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_fxval.abap:44"
+        },
+        "meaning": "Bewertung für Buchungskreis und Stichtag sperren"
+      },
+      {
+        "id": "gl",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_fxval.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_fxval.abap:52"
+        },
+        "meaning": "Bereits gesperrt?"
+      },
+      {
+        "id": "ml",
+        "type": "output",
+        "anchor": {
+          "file": "zfi_fxval.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_fxval.abap:53"
+        },
+        "meaning": "Fehler: Bewertung läuft bereits"
+      },
+      {
+        "id": "xl",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_fxval.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_fxval.abap:53"
+        },
+        "meaning": "Abbruch"
+      },
+      {
+        "id": "cs",
+        "type": "call",
+        "anchor": {
+          "file": "zfi_fxval.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_fxval.abap:56"
+        },
+        "meaning": "Stichtagsoffene Posten selektieren"
+      },
+      {
+        "id": "s1",
+        "type": "start",
+        "anchor": {
+          "file": "zfi_fxval_f01.abap",
+          "line": 8,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_fxval_f01.abap:8"
+        },
+        "meaning": "Selektionsroutine"
+      },
+      {
+        "id": "q1",
+        "type": "read",
+        "anchor": {
+          "file": "zfi_fxval_f01.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_fxval_f01.abap:12"
+        },
+        "meaning": "Offene Fremdwährungsposten bis Stichtag lesen"
+      },
+      {
+        "id": "q2",
+        "type": "read",
+        "anchor": {
+          "file": "zfi_fxval_f01.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_fxval_f01.abap:19"
+        },
+        "meaning": "Nach dem Stichtag ausgeglichene Fremdwährungsposten lesen"
+      },
+      {
+        "id": "e1",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_fxval_f01.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_fxval_f01.abap:26"
+        },
+        "meaning": "Postenliste vollständig"
+      },
+      {
+        "id": "ge",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_fxval.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_fxval.abap:57"
+        },
+        "meaning": "Keine Posten?"
+      },
+      {
+        "id": "me",
+        "type": "output",
+        "anchor": {
+          "file": "zfi_fxval.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_fxval.abap:58"
+        },
+        "meaning": "Hinweis: keine Posten"
+      },
+      {
+        "id": "xe",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_fxval.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_fxval.abap:59"
+        },
+        "meaning": "Verarbeitung beenden"
+      },
+      {
+        "id": "cv",
+        "type": "call",
+        "anchor": {
+          "file": "zfi_fxval.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_fxval.abap:62"
+        },
+        "meaning": "Posten bewerten"
+      },
+      {
+        "id": "s2",
+        "type": "start",
+        "anchor": {
+          "file": "zfi_fxval_f01.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_fxval_f01.abap:31"
+        },
+        "meaning": "Bewertungsroutine"
+      },
+      {
+        "id": "l2",
+        "type": "loop",
+        "anchor": {
+          "file": "zfi_fxval_f01.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_fxval_f01.abap:37"
+        },
+        "meaning": "Posten durchlaufen"
+      },
+      {
+        "id": "cvx",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zfi_fxval_f01.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_fxval_f01.abap:47"
+        },
+        "meaning": "Fremdwährungsbetrag zum Stichtagskurs umrechnen"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_fxval_f01.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_fxval_f01.abap:61"
+        },
+        "meaning": "Kein Kurs gefunden?"
+      },
+      {
+        "id": "diff",
+        "type": "action",
+        "anchor": {
+          "file": "zfi_fxval_f01.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_fxval_f01.abap:69"
+        },
+        "meaning": "Kursdifferenz je Währung aufsummieren"
+      },
+      {
+        "id": "lnr",
+        "type": "loop",
+        "anchor": {
+          "file": "zfi_fxval_f01.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_fxval_f01.abap:73"
+        },
+        "meaning": "Währungen ohne Kurs durchlaufen"
+      },
+      {
+        "id": "onr",
+        "type": "output",
+        "anchor": {
+          "file": "zfi_fxval_f01.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_fxval_f01.abap:75"
+        },
+        "meaning": "Währung ohne Kurs melden (aus Bewertung genommen)"
+      },
+      {
+        "id": "e2",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_fxval_f01.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_fxval_f01.abap:77"
+        },
+        "meaning": "Bewertung fertig"
+      },
+      {
+        "id": "gt",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_fxval.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_fxval.abap:64"
+        },
+        "meaning": "Echtlauf?"
+      },
+      {
+        "id": "cp",
+        "type": "call",
+        "anchor": {
+          "file": "zfi_fxval.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_fxval.abap:65"
+        },
+        "meaning": "Differenzen buchen"
+      },
+      {
+        "id": "s3",
+        "type": "start",
+        "anchor": {
+          "file": "zfi_fxval_f01.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_fxval_f01.abap:82"
+        },
+        "meaning": "Buchungsroutine"
+      },
+      {
+        "id": "l3",
+        "type": "loop",
+        "anchor": {
+          "file": "zfi_fxval_f01.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_fxval_f01.abap:92"
+        },
+        "meaning": "Währungssummen durchlaufen"
+      },
+      {
+        "id": "g31",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_fxval_f01.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_fxval_f01.abap:93"
+        },
+        "meaning": "Keine Differenz?"
+      },
+      {
+        "id": "g32",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_fxval_f01.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_fxval_f01.abap:98"
+        },
+        "meaning": "Kursverlust?"
+      },
+      {
+        "id": "al",
+        "type": "action",
+        "anchor": {
+          "file": "zfi_fxval_f01.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_fxval_f01.abap:99"
+        },
+        "meaning": "Aufwand an Korrekturkonto kontieren"
+      },
+      {
+        "id": "ag",
+        "type": "action",
+        "anchor": {
+          "file": "zfi_fxval_f01.abap",
+          "line": 102,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_fxval_f01.abap:102"
+        },
+        "meaning": "Korrekturkonto an Ertrag kontieren"
+      },
+      {
+        "id": "bapi",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zfi_fxval_f01.abap",
+          "line": 120,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_fxval_f01.abap:120"
+        },
+        "meaning": "Bewertungsbeleg zur Buchung übergeben"
+      },
+      {
+        "id": "r33",
+        "type": "read",
+        "anchor": {
+          "file": "zfi_fxval_f01.abap",
+          "line": 130,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_fxval_f01.abap:130"
+        },
+        "meaning": "Fehlermeldung der Buchung suchen"
+      },
+      {
+        "id": "g33",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_fxval_f01.abap",
+          "line": 131,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_fxval_f01.abap:131"
+        },
+        "meaning": "Fehlermeldung vorhanden?"
+      },
+      {
+        "id": "rb",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zfi_fxval_f01.abap",
+          "line": 132,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_fxval_f01.abap:132"
+        },
+        "meaning": "Buchung zurückrollen"
+      },
+      {
+        "id": "of",
+        "type": "output",
+        "anchor": {
+          "file": "zfi_fxval_f01.abap",
+          "line": 133,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_fxval_f01.abap:133"
+        },
+        "meaning": "Fehlschlag melden"
+      },
+      {
+        "id": "w",
+        "type": "write",
+        "anchor": {
+          "file": "zfi_fxval_f01.abap",
+          "line": 143,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_fxval_f01.abap:143"
+        },
+        "meaning": "Bewertungsprotokoll anlegen"
+      },
+      {
+        "id": "cm",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zfi_fxval_f01.abap",
+          "line": 144,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_fxval_f01.abap:144"
+        },
+        "meaning": "Buchung und Protokoll festschreiben"
+      },
+      {
+        "id": "ob",
+        "type": "output",
+        "anchor": {
+          "file": "zfi_fxval_f01.abap",
+          "line": 147,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_fxval_f01.abap:147"
+        },
+        "meaning": "Belegnummer melden"
+      },
+      {
+        "id": "e3",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_fxval_f01.abap",
+          "line": 149,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_fxval_f01.abap:149"
+        },
+        "meaning": "Buchungen fertig"
+      },
+      {
+        "id": "dq",
+        "type": "lock",
+        "anchor": {
+          "file": "zfi_fxval.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_fxval.abap:68"
+        },
+        "meaning": "Sperre freigeben"
+      },
+      {
+        "id": "lo",
+        "type": "loop",
+        "anchor": {
+          "file": "zfi_fxval.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_fxval.abap:74"
+        },
+        "meaning": "Währungssummen durchlaufen"
+      },
+      {
+        "id": "oo",
+        "type": "output",
+        "anchor": {
+          "file": "zfi_fxval.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_fxval.abap:75"
+        },
+        "meaning": "Differenz je Währung ausgeben"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_fxval.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_fxval.abap:76"
+        },
+        "meaning": "Report fertig"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "qh",
+        "condition": "always"
+      },
+      {
+        "from": "qh",
+        "to": "lk",
+        "condition": "always"
+      },
+      {
+        "from": "lk",
+        "to": "gl",
+        "condition": "always"
+      },
+      {
+        "from": "gl",
+        "to": "ml",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "ml",
+        "to": "xl",
+        "condition": "always"
+      },
+      {
+        "from": "gl",
+        "to": "cs",
+        "condition": "else"
+      },
+      {
+        "from": "cs",
+        "to": "s1",
+        "condition": "always"
+      },
+      {
+        "from": "s1",
+        "to": "q1",
+        "condition": "always"
+      },
+      {
+        "from": "q1",
+        "to": "q2",
+        "condition": "always"
+      },
+      {
+        "from": "q2",
+        "to": "e1",
+        "condition": "always"
+      },
+      {
+        "from": "e1",
+        "to": "ge",
+        "condition": "always"
+      },
+      {
+        "from": "ge",
+        "to": "me",
+        "condition": "gt_items IS INITIAL"
+      },
+      {
+        "from": "me",
+        "to": "xe",
+        "condition": "always"
+      },
+      {
+        "from": "ge",
+        "to": "cv",
+        "condition": "else"
+      },
+      {
+        "from": "cv",
+        "to": "s2",
+        "condition": "always"
+      },
+      {
+        "from": "s2",
+        "to": "l2",
+        "condition": "always"
+      },
+      {
+        "from": "l2",
+        "to": "cvx",
+        "condition": "next row"
+      },
+      {
+        "from": "cvx",
+        "to": "g2",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "l2",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g2",
+        "to": "diff",
+        "condition": "else"
+      },
+      {
+        "from": "diff",
+        "to": "l2",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l2",
+        "to": "lnr",
+        "condition": "no more rows"
+      },
+      {
+        "from": "lnr",
+        "to": "onr",
+        "condition": "next row"
+      },
+      {
+        "from": "onr",
+        "to": "lnr",
+        "condition": "next iteration"
+      },
+      {
+        "from": "lnr",
+        "to": "e2",
+        "condition": "no more rows"
+      },
+      {
+        "from": "e2",
+        "to": "gt",
+        "condition": "always"
+      },
+      {
+        "from": "gt",
+        "to": "cp",
+        "condition": "p_test IS INITIAL"
+      },
+      {
+        "from": "cp",
+        "to": "s3",
+        "condition": "always"
+      },
+      {
+        "from": "s3",
+        "to": "l3",
+        "condition": "always"
+      },
+      {
+        "from": "l3",
+        "to": "g31",
+        "condition": "next row"
+      },
+      {
+        "from": "g31",
+        "to": "l3",
+        "condition": "gs_sum-diff = 0"
+      },
+      {
+        "from": "g31",
+        "to": "g32",
+        "condition": "else"
+      },
+      {
+        "from": "g32",
+        "to": "al",
+        "condition": "gs_sum-diff < 0"
+      },
+      {
+        "from": "g32",
+        "to": "ag",
+        "condition": "else"
+      },
+      {
+        "from": "al",
+        "to": "bapi",
+        "condition": "always"
+      },
+      {
+        "from": "ag",
+        "to": "bapi",
+        "condition": "always"
+      },
+      {
+        "from": "bapi",
+        "to": "r33",
+        "condition": "always"
+      },
+      {
+        "from": "r33",
+        "to": "g33",
+        "condition": "always"
+      },
+      {
+        "from": "g33",
+        "to": "rb",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "rb",
+        "to": "of",
+        "condition": "always"
+      },
+      {
+        "from": "of",
+        "to": "l3",
+        "condition": "next iteration"
+      },
+      {
+        "from": "g33",
+        "to": "w",
+        "condition": "else"
+      },
+      {
+        "from": "w",
+        "to": "cm",
+        "condition": "always"
+      },
+      {
+        "from": "cm",
+        "to": "ob",
+        "condition": "always"
+      },
+      {
+        "from": "ob",
+        "to": "l3",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l3",
+        "to": "e3",
+        "condition": "no more rows"
+      },
+      {
+        "from": "e3",
+        "to": "dq",
+        "condition": "always"
+      },
+      {
+        "from": "gt",
+        "to": "dq",
+        "condition": "else"
+      },
+      {
+        "from": "dq",
+        "to": "lo",
+        "condition": "always"
+      },
+      {
+        "from": "lo",
+        "to": "oo",
+        "condition": "next row"
+      },
+      {
+        "from": "oo",
+        "to": "lo",
+        "condition": "next iteration"
+      },
+      {
+        "from": "lo",
+        "to": "e",
+        "condition": "no more rows"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zfi_fxval_f01.abap:143 — kein Fachsatz „die Bewertung wird zum Folgemonat automatisch storniert“ (nur Protokoll; Auflösung laut Kommentar manuell)",
+    "zfi_fxval_f01.abap:120 — kein Fachsatz „die offenen Posten werden einzeln umbewertet“ (Summenbuchung je Währung auf Sachkonten, Posten bleiben unverändert)",
+    "zfi_fxval.abap:59 — kein Fachsatz „die Sperre wird vor dem Ende freigegeben“ (der RETURN-Pfad erreicht DEQUEUE nicht; die Sperre fällt erst mit Programmende)",
+    "zfi_fxval_f01.abap:130 — kein Fachsatz „Abbruchmeldungen (Typ A) führen zum Rollback“ (gesucht wird nur Typ E)"
+  ],
+  "processDescription": "Die Hauptbuchhaltung startet den Report zum Monatsende mit Buchungskreis, Stichtag, Buchungsdatum, Kurstyp, drei Sachkonten und Testlauf-Schalter. Nach Ermittlung der Hauswährung (ohne Prüfung, ob der Buchungskreis existiert) wird die Bewertung für Buchungskreis und Stichtag gesperrt; läuft sie schon, bricht der Report ab. Selektiert werden alle bis zum Stichtag gebuchten Kreditorenposten in Fremdwährung, die am Stichtag offen waren. Jeder Posten wird zum Stichtagskurs umgerechnet, die Kursdifferenz je Währung summiert; Währungen ohne Kurs werden gemeldet und ausgelassen. Im Echtlauf wird je Währung mit Differenz ein Sachkontenbeleg gebucht, Kursverlust gegen Aufwand, Kursgewinn gegen Ertrag, jeweils gegen das Korrekturkonto; Fehlschläge werden zurückgerollt, Erfolge protokolliert und festgeschrieben. Zum Schluss wird die Sperre freigegeben und die Differenzen je Währung werden ausgegeben."
+}

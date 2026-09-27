@@ -1,0 +1,14 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten g2 (source.abap:21)",
+      "before": "gateway „Freilieferungsauftrag?“ mit g->g2 [else], g2->fd [vbak-auart = 'ZFD'], g2->e [else]",
+      "after": "entfällt; g->fd [vbak-auart = 'ZFD'], g->e [else]",
+      "why": "Vereinheitlichte Konvention: ELSEIF ist eine Bedingungskante des ursprünglichen Gateways, kein eigenes Gateway.",
+      "category": "überflüssiger Knoten"
+    }
+  ],
+  "doubts": []
+}

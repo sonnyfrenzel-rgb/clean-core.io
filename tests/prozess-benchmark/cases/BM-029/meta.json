@@ -1,0 +1,23 @@
+{
+  "id": "BM-029",
+  "title": "Chargen mit abgelaufenem MHD in den gesperrten Bestand umbuchen (344)",
+  "domain": "MM / Procure-to-Pay, Bestandsführung, Lager (WM/EWM)",
+  "band": "mittel",
+  "loc": 100,
+  "constructs": [
+    "REPORT als Hintergrundjob",
+    "FORM-Routinen",
+    "SELECT JOIN MCHB/MCH1",
+    "BAPI_GOODSMVT_CREATE GM_CODE 04",
+    "COMMIT WORK AND WAIT / ROLLBACK WORK",
+    "REUSE_ALV_GRID_DISPLAY",
+    "STOP"
+  ],
+  "scenario": "Lebensmittel- oder Pharmakunde mit MHD-pflichtigen Chargen; der Job ersetzt eine manuelle MB1B-Umbuchung und ist in der Transformation wegen MCHB-Zugriff und ALV-Nutzung im Hintergrund auffällig.",
+  "s4_issues": [
+    "MCHB in S/4 aus MATDOC abgeleitet (Proxy-Objekt), Nachfolger I_BatchStock bzw. I_MaterialStock_2",
+    "REUSE_ALV_GRID_DISPLAY im Hintergrundjob",
+    "ROLLBACK WORK nach BAPI statt BAPI_TRANSACTION_ROLLBACK",
+    "MATNR 40 Zeichen"
+  ]
+}

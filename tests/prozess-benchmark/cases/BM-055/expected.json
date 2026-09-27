@@ -1,0 +1,1180 @@
+{
+  "id": "BM-055",
+  "title": "Leistungsverrechnung aus kundeneigener Zeiterfassung auf Kostenstellen und Innenaufträge",
+  "classes": [
+    "K02",
+    "K03",
+    "K12",
+    "K01"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "ZCO_TIMESHEET",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_co_act_alloc.abap",
+        "line": 164,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_co_act_alloc.abap:164"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "CSKS",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_co_act_alloc.abap",
+        "line": 183,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_co_act_alloc.abap:183"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "CSLA",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_co_act_alloc.abap",
+        "line": 195,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_co_act_alloc.abap:195"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ENQUEUE_EZCO_TIMESHEET",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_co_act_alloc.abap",
+        "line": 61,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_co_act_alloc.abap:61"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_ACC_ACTIVITY_ALLOC_CHECK",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_co_act_alloc.abap",
+        "line": 91,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_co_act_alloc.abap:91"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_ACC_ACTIVITY_ALLOC_POST",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_co_act_alloc.abap",
+        "line": 98,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_co_act_alloc.abap:98"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_ROLLBACK",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_co_act_alloc.abap",
+        "line": 117,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_co_act_alloc.abap:117"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZCO_TIMESHEET",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "zcl_co_act_alloc.abap",
+        "line": 121,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_co_act_alloc.abap:121"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZCO_TIMESHEET",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "zcl_co_act_alloc.abap",
+        "line": 136,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_co_act_alloc.abap:136"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_COMMIT",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_co_act_alloc.abap",
+        "line": 146,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_co_act_alloc.abap:146"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "DEQUEUE_EZCO_TIMESHEET",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_co_act_alloc.abap",
+        "line": 155,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_co_act_alloc.abap:155"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-055-B01",
+      "text": "Der Monatsjob verrechnet für Kostenrechnungskreis, Geschäftsjahr und Periode zum gewählten Buchungsdatum; standardmäßig läuft er als Testlauf.",
+      "anchors": [
+        {
+          "file": "zco_act_alloc.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_act_alloc.abap:18"
+        }
+      ]
+    },
+    {
+      "id": "BM-055-B02",
+      "text": "Gelesen werden nur die vom Vorgesetzten freigegebenen Zeitsätze (Status F) der Periode; gibt es keine, endet der Lauf mit einem Info-Eintrag.",
+      "anchors": [
+        {
+          "file": "zcl_co_act_alloc.abap",
+          "line": 164,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_act_alloc.abap:164"
+        },
+        {
+          "file": "zcl_co_act_alloc.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_act_alloc.abap:53"
+        },
+        {
+          "file": "zcl_co_act_alloc.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_act_alloc.abap:55"
+        }
+      ]
+    },
+    {
+      "id": "BM-055-B03",
+      "text": "Jeder Zeitsatz wird zum Periodenbeginn geprüft: Die Sender-Kostenstelle muss gültig und für sekundäre Istkosten nicht gesperrt sein, die Leistungsart muss existieren; sonst wird der Satz mit Fehlertext protokolliert und nicht verrechnet.",
+      "anchors": [
+        {
+          "file": "zcl_co_act_alloc.abap",
+          "line": 183,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_act_alloc.abap:183"
+        },
+        {
+          "file": "zcl_co_act_alloc.abap",
+          "line": 189,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_act_alloc.abap:189"
+        },
+        {
+          "file": "zcl_co_act_alloc.abap",
+          "line": 195,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_act_alloc.abap:195"
+        },
+        {
+          "file": "zcl_co_act_alloc.abap",
+          "line": 200,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_act_alloc.abap:200"
+        }
+      ]
+    },
+    {
+      "id": "BM-055-B04",
+      "text": "Gültige Zeitsätze werden je Sender-Kostenstelle, Leistungsart, Empfänger-Kostenstelle bzw. Innenauftrag und Einheit zu einer Menge verdichtet.",
+      "anchors": [
+        {
+          "file": "zcl_co_act_alloc.abap",
+          "line": 214,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_act_alloc.abap:214"
+        }
+      ]
+    },
+    {
+      "id": "BM-055-B05",
+      "text": "Vor dem Buchen wird die Periode gegen parallele Verrechnung gesperrt; ist sie schon gesperrt, endet der Lauf mit einem Fehlereintrag.",
+      "anchors": [
+        {
+          "file": "zcl_co_act_alloc.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_act_alloc.abap:61"
+        },
+        {
+          "file": "zcl_co_act_alloc.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_act_alloc.abap:70"
+        },
+        {
+          "file": "zcl_co_act_alloc.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_act_alloc.abap:72"
+        }
+      ]
+    },
+    {
+      "id": "BM-055-B06",
+      "text": "Je verdichteter Position wird eine Leistungsverrechnung von der Sender-Kostenstelle auf die Empfänger-Kostenstelle bzw. den Innenauftrag aufgebaut; im Testlauf wird sie nur geprüft, im Echtlauf zur Buchung übergeben.",
+      "anchors": [
+        {
+          "file": "zcl_co_act_alloc.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_act_alloc.abap:83"
+        },
+        {
+          "file": "zcl_co_act_alloc.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_act_alloc.abap:90"
+        },
+        {
+          "file": "zcl_co_act_alloc.abap",
+          "line": 91,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_act_alloc.abap:91"
+        },
+        {
+          "file": "zcl_co_act_alloc.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_act_alloc.abap:98"
+        }
+      ]
+    },
+    {
+      "id": "BM-055-B07",
+      "text": "Enthält die Rückmeldung eine Fehlermeldung, wird zurückgerollt; im Echtlauf werden die betroffenen Zeitsätze auf Status E gesetzt und festgeschrieben.",
+      "anchors": [
+        {
+          "file": "zcl_co_act_alloc.abap",
+          "line": 115,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_act_alloc.abap:115"
+        },
+        {
+          "file": "zcl_co_act_alloc.abap",
+          "line": 116,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_act_alloc.abap:116"
+        },
+        {
+          "file": "zcl_co_act_alloc.abap",
+          "line": 117,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_act_alloc.abap:117"
+        },
+        {
+          "file": "zcl_co_act_alloc.abap",
+          "line": 120,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_act_alloc.abap:120"
+        },
+        {
+          "file": "zcl_co_act_alloc.abap",
+          "line": 121,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_act_alloc.abap:121"
+        },
+        {
+          "file": "zcl_co_act_alloc.abap",
+          "line": 130,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_act_alloc.abap:130"
+        }
+      ]
+    },
+    {
+      "id": "BM-055-B08",
+      "text": "Im Testlauf ohne Fehler wird die Position nur als geprüft protokolliert.",
+      "anchors": [
+        {
+          "file": "zcl_co_act_alloc.abap",
+          "line": 133,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_act_alloc.abap:133"
+        }
+      ]
+    },
+    {
+      "id": "BM-055-B09",
+      "text": "Im Echtlauf ohne Fehler werden die Zeitsätze mit der CO-Belegnummer auf Status V gesetzt und gemeinsam mit der Verrechnung festgeschrieben.",
+      "anchors": [
+        {
+          "file": "zcl_co_act_alloc.abap",
+          "line": 136,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_act_alloc.abap:136"
+        },
+        {
+          "file": "zcl_co_act_alloc.abap",
+          "line": 146,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_act_alloc.abap:146"
+        }
+      ]
+    },
+    {
+      "id": "BM-055-B10",
+      "text": "Nach allen Positionen wird die Periodensperre freigegeben und das Protokoll mit Sender, Leistungsart, Empfänger, Menge, Status und Text ausgegeben.",
+      "anchors": [
+        {
+          "file": "zcl_co_act_alloc.abap",
+          "line": 155,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_act_alloc.abap:155"
+        },
+        {
+          "file": "zco_act_alloc.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_act_alloc.abap:25"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "zco_act_alloc.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_act_alloc.abap:16"
+        },
+        "meaning": "Monatsjob gestartet"
+      },
+      {
+        "id": "c1",
+        "type": "call",
+        "anchor": {
+          "file": "zco_act_alloc.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_act_alloc.abap:18"
+        },
+        "meaning": "Leistungsverrechnung ausführen"
+      },
+      {
+        "id": "s1",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_co_act_alloc.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_act_alloc.abap:39"
+        },
+        "meaning": "Verrechnungslauf"
+      },
+      {
+        "id": "cl",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_co_act_alloc.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_act_alloc.abap:52"
+        },
+        "meaning": "Freigegebene Zeiten laden"
+      },
+      {
+        "id": "s2",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_co_act_alloc.abap",
+          "line": 162,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_act_alloc.abap:162"
+        },
+        "meaning": "Laderoutine"
+      },
+      {
+        "id": "q2",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_co_act_alloc.abap",
+          "line": 164,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_act_alloc.abap:164"
+        },
+        "meaning": "Freigegebene Zeiten der Periode lesen"
+      },
+      {
+        "id": "e2",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_co_act_alloc.abap",
+          "line": 169,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_act_alloc.abap:169"
+        },
+        "meaning": "Zeiten geladen"
+      },
+      {
+        "id": "ge",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_co_act_alloc.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_act_alloc.abap:53"
+        },
+        "meaning": "Keine freigegebenen Zeiten?"
+      },
+      {
+        "id": "xe",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_co_act_alloc.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_act_alloc.abap:55"
+        },
+        "meaning": "Mit Info zurück"
+      },
+      {
+        "id": "cv",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_co_act_alloc.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_act_alloc.abap:58"
+        },
+        "meaning": "Zeiten prüfen und verdichten"
+      },
+      {
+        "id": "s3",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_co_act_alloc.abap",
+          "line": 171,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_act_alloc.abap:171"
+        },
+        "meaning": "Prüfroutine"
+      },
+      {
+        "id": "l3",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_co_act_alloc.abap",
+          "line": 181,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_act_alloc.abap:181"
+        },
+        "meaning": "Zeitsätze durchlaufen"
+      },
+      {
+        "id": "q3",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_co_act_alloc.abap",
+          "line": 183,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_act_alloc.abap:183"
+        },
+        "meaning": "Sender-Kostenstelle zum Periodenbeginn lesen"
+      },
+      {
+        "id": "g3",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_co_act_alloc.abap",
+          "line": 189,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_act_alloc.abap:189"
+        },
+        "meaning": "Sender ungültig oder gesperrt?"
+      },
+      {
+        "id": "q4",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_co_act_alloc.abap",
+          "line": 195,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_act_alloc.abap:195"
+        },
+        "meaning": "Leistungsart zum Periodenbeginn lesen"
+      },
+      {
+        "id": "g4",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_co_act_alloc.abap",
+          "line": 200,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_act_alloc.abap:200"
+        },
+        "meaning": "Leistungsart unbekannt?"
+      },
+      {
+        "id": "col",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_co_act_alloc.abap",
+          "line": 214,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_act_alloc.abap:214"
+        },
+        "meaning": "Menge je Sender, Leistungsart und Empfänger verdichten"
+      },
+      {
+        "id": "e3",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_co_act_alloc.abap",
+          "line": 216,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_act_alloc.abap:216"
+        },
+        "meaning": "Prüfung fertig"
+      },
+      {
+        "id": "lk",
+        "type": "lock",
+        "anchor": {
+          "file": "zcl_co_act_alloc.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_act_alloc.abap:61"
+        },
+        "meaning": "Periode für Verrechnung sperren"
+      },
+      {
+        "id": "gl",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_co_act_alloc.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_act_alloc.abap:70"
+        },
+        "meaning": "Periode bereits gesperrt?"
+      },
+      {
+        "id": "xl",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_co_act_alloc.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_act_alloc.abap:72"
+        },
+        "meaning": "Mit Fehler zurück"
+      },
+      {
+        "id": "lp",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_co_act_alloc.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_act_alloc.abap:81"
+        },
+        "meaning": "Verdichtete Verrechnungen durchlaufen"
+      },
+      {
+        "id": "gt",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_co_act_alloc.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_act_alloc.abap:90"
+        },
+        "meaning": "Testlauf?"
+      },
+      {
+        "id": "chk",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_co_act_alloc.abap",
+          "line": 91,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_act_alloc.abap:91"
+        },
+        "meaning": "Leistungsverrechnung nur prüfen"
+      },
+      {
+        "id": "post",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_co_act_alloc.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_act_alloc.abap:98"
+        },
+        "meaning": "Leistungsverrechnung zur Buchung übergeben"
+      },
+      {
+        "id": "r",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_co_act_alloc.abap",
+          "line": 115,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_act_alloc.abap:115"
+        },
+        "meaning": "Fehlermeldung suchen"
+      },
+      {
+        "id": "gerr",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_co_act_alloc.abap",
+          "line": 116,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_act_alloc.abap:116"
+        },
+        "meaning": "Fehler, Testlauf oder Erfolg?"
+      },
+      {
+        "id": "rb",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_co_act_alloc.abap",
+          "line": 117,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_act_alloc.abap:117"
+        },
+        "meaning": "Zurückrollen"
+      },
+      {
+        "id": "gt3",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_co_act_alloc.abap",
+          "line": 120,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_act_alloc.abap:120"
+        },
+        "meaning": "Echtlauf?"
+      },
+      {
+        "id": "werr",
+        "type": "write",
+        "anchor": {
+          "file": "zcl_co_act_alloc.abap",
+          "line": 121,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_act_alloc.abap:121"
+        },
+        "meaning": "Zeitsätze auf Status E (Fehler) setzen"
+      },
+      {
+        "id": "cw",
+        "type": "transaction",
+        "anchor": {
+          "file": "zcl_co_act_alloc.abap",
+          "line": 130,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_act_alloc.abap:130"
+        },
+        "meaning": "COMMIT WORK für Fehlerstatus"
+      },
+      {
+        "id": "wok",
+        "type": "write",
+        "anchor": {
+          "file": "zcl_co_act_alloc.abap",
+          "line": 136,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_act_alloc.abap:136"
+        },
+        "meaning": "Zeitsätze auf Status V mit CO-Belegnummer setzen"
+      },
+      {
+        "id": "cm",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_co_act_alloc.abap",
+          "line": 146,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_act_alloc.abap:146"
+        },
+        "meaning": "Verrechnung und Status festschreiben (COMMIT mit Warten)"
+      },
+      {
+        "id": "dq",
+        "type": "lock",
+        "anchor": {
+          "file": "zcl_co_act_alloc.abap",
+          "line": 155,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_act_alloc.abap:155"
+        },
+        "meaning": "Periodensperre freigeben"
+      },
+      {
+        "id": "e1",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_co_act_alloc.abap",
+          "line": 160,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_act_alloc.abap:160"
+        },
+        "meaning": "Protokoll zurück"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "zco_act_alloc.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_act_alloc.abap:24"
+        },
+        "meaning": "Protokollzeilen durchlaufen"
+      },
+      {
+        "id": "o",
+        "type": "output",
+        "anchor": {
+          "file": "zco_act_alloc.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_act_alloc.abap:25"
+        },
+        "meaning": "Protokollzeile ausgeben"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "zco_act_alloc.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zco_act_alloc.abap:27"
+        },
+        "meaning": "Job fertig"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "c1",
+        "condition": "always"
+      },
+      {
+        "from": "c1",
+        "to": "s1",
+        "condition": "always"
+      },
+      {
+        "from": "s1",
+        "to": "cl",
+        "condition": "always"
+      },
+      {
+        "from": "cl",
+        "to": "s2",
+        "condition": "always"
+      },
+      {
+        "from": "s2",
+        "to": "q2",
+        "condition": "always"
+      },
+      {
+        "from": "q2",
+        "to": "e2",
+        "condition": "always"
+      },
+      {
+        "from": "e2",
+        "to": "ge",
+        "condition": "always"
+      },
+      {
+        "from": "ge",
+        "to": "xe",
+        "condition": "mt_ts IS INITIAL"
+      },
+      {
+        "from": "ge",
+        "to": "cv",
+        "condition": "else"
+      },
+      {
+        "from": "cv",
+        "to": "s3",
+        "condition": "always"
+      },
+      {
+        "from": "s3",
+        "to": "l3",
+        "condition": "always"
+      },
+      {
+        "from": "l3",
+        "to": "q3",
+        "condition": "next row"
+      },
+      {
+        "from": "q3",
+        "to": "g3",
+        "condition": "always"
+      },
+      {
+        "from": "g3",
+        "to": "l3",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g3",
+        "to": "q4",
+        "condition": "else"
+      },
+      {
+        "from": "q4",
+        "to": "g4",
+        "condition": "always"
+      },
+      {
+        "from": "g4",
+        "to": "l3",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g4",
+        "to": "col",
+        "condition": "else"
+      },
+      {
+        "from": "col",
+        "to": "l3",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l3",
+        "to": "e3",
+        "condition": "no more rows"
+      },
+      {
+        "from": "e3",
+        "to": "lk",
+        "condition": "always"
+      },
+      {
+        "from": "lk",
+        "to": "gl",
+        "condition": "always"
+      },
+      {
+        "from": "gl",
+        "to": "xl",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "gl",
+        "to": "lp",
+        "condition": "else"
+      },
+      {
+        "from": "lp",
+        "to": "gt",
+        "condition": "next row"
+      },
+      {
+        "from": "gt",
+        "to": "chk",
+        "condition": "iv_test = abap_true"
+      },
+      {
+        "from": "gt",
+        "to": "post",
+        "condition": "else"
+      },
+      {
+        "from": "chk",
+        "to": "r",
+        "condition": "always"
+      },
+      {
+        "from": "post",
+        "to": "r",
+        "condition": "always"
+      },
+      {
+        "from": "r",
+        "to": "gerr",
+        "condition": "always"
+      },
+      {
+        "from": "gerr",
+        "to": "rb",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "rb",
+        "to": "gt3",
+        "condition": "always"
+      },
+      {
+        "from": "gt3",
+        "to": "werr",
+        "condition": "iv_test = abap_false"
+      },
+      {
+        "from": "werr",
+        "to": "cw",
+        "condition": "always"
+      },
+      {
+        "from": "cw",
+        "to": "lp",
+        "condition": "next iteration"
+      },
+      {
+        "from": "gt3",
+        "to": "lp",
+        "condition": "else"
+      },
+      {
+        "from": "gerr",
+        "to": "lp",
+        "condition": "iv_test = abap_true"
+      },
+      {
+        "from": "gerr",
+        "to": "wok",
+        "condition": "else"
+      },
+      {
+        "from": "wok",
+        "to": "cm",
+        "condition": "always"
+      },
+      {
+        "from": "cm",
+        "to": "lp",
+        "condition": "next iteration"
+      },
+      {
+        "from": "lp",
+        "to": "dq",
+        "condition": "no more rows"
+      },
+      {
+        "from": "dq",
+        "to": "e1",
+        "condition": "always"
+      },
+      {
+        "from": "e1",
+        "to": "l",
+        "condition": "always"
+      },
+      {
+        "from": "xe",
+        "to": "l",
+        "condition": "always"
+      },
+      {
+        "from": "xl",
+        "to": "l",
+        "condition": "always"
+      },
+      {
+        "from": "l",
+        "to": "o",
+        "condition": "next row"
+      },
+      {
+        "from": "o",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l",
+        "to": "e",
+        "condition": "no more rows"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zcl_co_act_alloc.abap:189 — kein Fachsatz „ungültige Zeitsätze werden auf Status E gesetzt“ (Prüffehler stehen nur im Protokoll, die Sätze bleiben auf F und kommen im nächsten Lauf wieder)",
+    "zcl_co_act_alloc.abap:183 — kein Fachsatz „der Empfänger wird geprüft“ (nur Sender und Leistungsart)",
+    "zcl_co_act_alloc.abap:98 — kein Fachsatz „Tarif oder Betrag wird im Programm berechnet“ (übergeben wird nur die Menge; die Bewertung erfolgt im Standard)",
+    "zcl_co_act_alloc.abap:72 — kein Fachsatz „der Job bricht mit Fehlermeldung ab“ (die Methode kehrt mit Protokolleintrag zurück, der Report gibt das Protokoll aus)"
+  ],
+  "processDescription": "Der Monatsjob startet den Verrechnungslauf mit Kostenrechnungskreis, Geschäftsjahr, Periode, Buchungsdatum und Testlauf-Schalter. Gelesen werden die freigegebenen Zeitsätze der Periode; ohne solche endet der Lauf mit Info. Jeder Satz wird auf gültige, nicht gesperrte Sender-Kostenstelle und bekannte Leistungsart geprüft, fehlerhafte werden nur protokolliert, gültige je Sender, Leistungsart und Empfänger verdichtet. Dann wird die Periode gesperrt; ist sie schon gesperrt, endet der Lauf mit Fehlereintrag. Je verdichteter Position wird eine Leistungsverrechnung im Testlauf geprüft oder im Echtlauf gebucht. Bei Fehlern wird zurückgerollt und im Echtlauf der Status der Zeitsätze auf E gesetzt; bei Erfolg im Echtlauf erhalten sie Status V und die CO-Belegnummer. Am Ende wird die Sperre freigegeben und das Protokoll ausgegeben."
+}

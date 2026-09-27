@@ -1,0 +1,26 @@
+{
+  "id": "BM-054",
+  "title": "Stichtagsbewertung offener Kreditorenposten in Fremdwährung mit Korrekturbuchung je Währung",
+  "domain": "FI/CO / Record-to-Report",
+  "band": "komplex",
+  "loc": 227,
+  "constructs": [
+    "REPORT mit INCLUDE",
+    "ENQUEUE/DEQUEUE auf Z-Sperrobjekt",
+    "SELECT BSIK und BSAK (Stichtagssicht)",
+    "APPEND LINES OF",
+    "CONVERT_TO_LOCAL_CURRENCY",
+    "COLLECT",
+    "BAPI_ACC_DOCUMENT_POST",
+    "BAPI_TRANSACTION_COMMIT/ROLLBACK",
+    "INSERT Z-Protokoll",
+    "WRITE-Liste"
+  ],
+  "scenario": "Eigenentwicklung aus der Zeit vor FAGL_FCV: Die Hauptbuchhaltung bewertet zum Monatsende offene Fremdwährungsverbindlichkeiten und bucht die Kursdifferenz summarisch je Währung gegen ein Bilanzkorrekturkonto.",
+  "s4_issues": [
+    "BSIK/BSAK sind in S/4HANA Kompatibilitäts-Views auf ACDOCA",
+    "Standard-Fremdwährungsbewertung FAGL_FCV ersetzt den Eigenbau",
+    "BAPI_ACC_DOCUMENT_POST nicht für ABAP Cloud freigegeben",
+    "Z-Sperrobjekt EZFI_FXVAL"
+  ]
+}

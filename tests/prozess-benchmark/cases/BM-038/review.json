@@ -1,0 +1,108 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten xc (neu)",
+      "before": "—",
+      "after": "end zcl_wm_pick_log.abap:36 „CONSTRUCTOR beendet, Protokoll angelegt“; umgeleitet: c1->pl [always] jetzt c1->xc; neu xc->pl [always]",
+      "why": "Vereinheitlichung (wie im Gegencheck FI/CO): jeder auslaufende FORM/METHOD/MODULE/FUNCTION-Block endet mit eigenem end-Knoten auf ENDFORM/ENDMETHOD/ENDMODULE/ENDFUNCTION (Brieftabelle: end auch bei implizitem Blockende); die Rückkante führt von dort zum Knoten nach dem Aufruf.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten x1 (neu)",
+      "before": "—",
+      "after": "end zwm_pick_wave_f01.abap:17 „LIEFERUNGEN_LESEN beendet“; umgeleitet: q1->g0 [always] jetzt q1->x1; neu x1->g0 [always]",
+      "why": "Vereinheitlichung (wie im Gegencheck FI/CO): jeder auslaufende FORM/METHOD/MODULE/FUNCTION-Block endet mit eigenem end-Knoten auf ENDFORM/ENDMETHOD/ENDMODULE/ENDFUNCTION (Brieftabelle: end auch bei implizitem Blockende); die Rückkante führt von dort zum Knoten nach dem Aufruf.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kanten a0->sv0, sv0->m0, sv1->eos, pe1->re, pe2->l",
+      "before": "je Aufruf der geteilten Hilfsroutinen (Methoden add/save, FORM entsperren) zwei Kanten: Aufruf -> Callee-Start und Aufruf -> nächster Schritt",
+      "after": "nur Aufruf -> Callee-Start; Rückkehr über die neuen end-Knoten xca, xsv, xfe",
+      "why": "Vereinheitlichung geteilter Hilfsroutinen: Aufruf -> Callee-Start, Callee-Ende -> nächster Schritt, je Aufrufer eine Rückkante vom Callee-Ende.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten xca (neu)",
+      "before": "—",
+      "after": "end zcl_wm_pick_log.abap:48 „ADD beendet“; neu xca->sv0 [always]; neu ca1->xca [always]; Rückkante für den zweiten Aufrufer adl siehe xdf",
+      "why": "Vereinheitlichung (wie im Gegencheck FI/CO): jeder auslaufende FORM/METHOD/MODULE/FUNCTION-Block endet mit eigenem end-Knoten auf ENDFORM/ENDMETHOD/ENDMODULE/ENDFUNCTION (Brieftabelle: end auch bei implizitem Blockende); die Rückkante führt von dort zum Knoten nach dem Aufruf.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten xsv (neu)",
+      "before": "—",
+      "after": "end zcl_wm_pick_log.abap:79 „SAVE beendet“; neu xsv->m0 [always], xsv->eos [always]; neu svc->xsv [always] (Rückkanten für die Aufrufer sv0 und sv1)",
+      "why": "Vereinheitlichung (wie im Gegencheck FI/CO): jeder auslaufende FORM/METHOD/MODULE/FUNCTION-Block endet mit eigenem end-Knoten auf ENDFORM/ENDMETHOD/ENDMODULE/ENDFUNCTION (Brieftabelle: end auch bei implizitem Blockende); die Rückkante führt von dort zum Knoten nach dem Aufruf.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten xw (neu)",
+      "before": "—",
+      "after": "end zwm_pick_wave_f01.abap:30 „WELLE_BILDEN beendet“; umgeleitet: gw->l [else] jetzt gw->xw; dw->l [always] jetzt dw->xw; neu xw->l [always]",
+      "why": "Vereinheitlichung (wie im Gegencheck FI/CO): jeder auslaufende FORM/METHOD/MODULE/FUNCTION-Block endet mit eigenem end-Knoten auf ENDFORM/ENDMETHOD/ENDMODULE/ENDFUNCTION (Brieftabelle: end auch bei implizitem Blockende); die Rückkante führt von dort zum Knoten nach dem Aufruf.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten xt (neu)",
+      "before": "—",
+      "after": "end zwm_pick_wave_f01.abap:119 „TA_ERZEUGEN beendet“; neu xt->l [next iteration]",
+      "why": "Vereinheitlichung (wie im Gegencheck FI/CO): jeder auslaufende FORM/METHOD/MODULE/FUNCTION-Block endet mit eigenem end-Knoten auf ENDFORM/ENDMETHOD/ENDMODULE/ENDFUNCTION (Brieftabelle: end auch bei implizitem Blockende); die Rückkante führt von dort zum Knoten nach dem Aufruf.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten xfe (neu)",
+      "before": "—",
+      "after": "end zwm_pick_wave_f01.abap:126 „ENTSPERREN beendet“; neu xfe->re [always], xfe->xt [always]; neu dq->xfe [always] (Rückkanten für die Aufrufer pe1 und pe2)",
+      "why": "Vereinheitlichung (wie im Gegencheck FI/CO): jeder auslaufende FORM/METHOD/MODULE/FUNCTION-Block endet mit eigenem end-Knoten auf ENDFORM/ENDMETHOD/ENDMODULE/ENDFUNCTION (Brieftabelle: end auch bei implizitem Blockende); die Rückkante führt von dort zum Knoten nach dem Aufruf.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten xd (neu)",
+      "before": "—",
+      "after": "end zwm_pick_wave_f01.abap:157 „TA_DRUCKEN beendet“; umgeleitet: wa->sv1 [always] jetzt wa->xd; neu xd->sv1 [always]",
+      "why": "Vereinheitlichung (wie im Gegencheck FI/CO): jeder auslaufende FORM/METHOD/MODULE/FUNCTION-Block endet mit eigenem end-Knoten auf ENDFORM/ENDMETHOD/ENDMODULE/ENDFUNCTION (Brieftabelle: end auch bei implizitem Blockende); die Rückkante führt von dort zum Knoten nach dem Aufruf.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten xdf (neu)",
+      "before": "—",
+      "after": "end zwm_pick_wave_f01.abap:177 „DRUCK_FERTIG beendet“; neu gd->xdf [sy-subrc = 0] (Erfolgszweig: Spoolnummer sammeln), xca->xdf [always] (Rückkehr des Aufrufers adl). Kein Ausgang: Rückmelde-Routine läuft ereignisgesteuert während WAIT.",
+      "why": "Vereinheitlichung (wie im Gegencheck FI/CO): jeder auslaufende FORM/METHOD/MODULE/FUNCTION-Block endet mit eigenem end-Knoten auf ENDFORM/ENDMETHOD/ENDMODULE/ENDFUNCTION (Brieftabelle: end auch bei implizitem Blockende); die Rückkante führt von dort zum Knoten nach dem Aufruf.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kante gd->xdf [sy-subrc = 0] (neu)",
+      "before": "gd nur mit Kante [else]",
+      "after": "gd->xdf [sy-subrc = 0]",
+      "why": "Gateway hatte nur den Sonst-Zweig; der Erfolgszweig (APPEND lv_spool, Fachsatz B16) fehlte.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten eend (neu)",
+      "before": "—",
+      "after": "end zwm_pick_wave.abap:46 „Wellenlauf beendet“ (implizites Ende von END-OF-SELECTION)",
+      "why": "Ziel der Rückkanten aus DISPLAY und ZUSAMMENFASSUNG; d1 und wz hatten keine ausgehende Kante.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten xdsp (neu)",
+      "before": "—",
+      "after": "end zcl_wm_pick_log.abap:89 „DISPLAY beendet“; neu xdsp->eend [always]; neu d1->xdsp [always]",
+      "why": "Vereinheitlichung (wie im Gegencheck FI/CO): jeder auslaufende FORM/METHOD/MODULE/FUNCTION-Block endet mit eigenem end-Knoten auf ENDFORM/ENDMETHOD/ENDMODULE/ENDFUNCTION (Brieftabelle: end auch bei implizitem Blockende); die Rückkante führt von dort zum Knoten nach dem Aufruf.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten xz (neu)",
+      "before": "—",
+      "after": "end zwm_pick_wave_f01.abap:196 „ZUSAMMENFASSUNG beendet“; neu xz->eend [always]; neu wz->xz [always]",
+      "why": "Vereinheitlichung (wie im Gegencheck FI/CO): jeder auslaufende FORM/METHOD/MODULE/FUNCTION-Block endet mit eigenem end-Knoten auf ENDFORM/ENDMETHOD/ENDMODULE/ENDFUNCTION (Brieftabelle: end auch bei implizitem Blockende); die Rückkante führt von dort zum Knoten nach dem Aufruf.",
+      "category": "fehlender Knoten"
+    }
+  ],
+  "doubts": [
+    "zwm_pick_wave.abap:23 und zwm_pick_wave_f01.abap:175 sind als Aufrufe der Methode add modelliert, die übrigen add-/add_sy-Aufrufe (zwm_pick_wave_f01.abap:27, 47, 80, 87, 113, 153) sind in die jeweiligen action-Knoten bzw. Zweige eingefaltet. Uneinheitlich, aber die Protokollierung trägt den Prozess nicht; nicht geändert.",
+    "zwm_pick_wave_f01.abap:183: CASE ls_lief-status ohne WHEN OTHERS hat keine Sonst-Kante; jede Lieferung der Welle erhält in TA_ERZEUGEN einen der vier Status, daher ohne Wirkung. Nicht geändert."
+  ]
+}

@@ -1,0 +1,108 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Kante nc→goc",
+      "before": "nc->goc [always]",
+      "after": "entfällt; kce->goc [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks; Rückkante vom end des Blocks → Folgeschritt; keine Direktkante Aufruf → Folgeschritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante goc→no",
+      "before": "goc->no [always]",
+      "after": "entfällt; ge->no [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks; Rückkante vom end des Blocks → Folgeschritt; keine Direktkante Aufruf → Folgeschritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante no→ca",
+      "before": "no->ca [always]",
+      "after": "entfällt; oce->ca [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks; Rückkante vom end des Blocks → Folgeschritt; keine Direktkante Aufruf → Folgeschritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante ca→cp",
+      "before": "ca->cp [always]",
+      "after": "entfällt; ae->cp [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks; Rückkante vom end des Blocks → Folgeschritt; keine Direktkante Aufruf → Folgeschritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante cp→g_cp",
+      "before": "cp->g_cp [always]",
+      "after": "entfällt; pe->g_cp [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks; Rückkante vom end des Blocks → Folgeschritt; keine Direktkante Aufruf → Folgeschritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante cr→upd2",
+      "before": "cr->upd2 [always]",
+      "after": "entfällt; ce->upd2 [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks; Rückkante vom end des Blocks → Folgeschritt; keine Direktkante Aufruf → Folgeschritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante c_find→g_new",
+      "before": "c_find->g_new [always]",
+      "after": "entfällt; fe->g_new [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks; Rückkante vom end des Blocks → Folgeschritt; keine Direktkante Aufruf → Folgeschritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante c_cre→ge",
+      "before": "c_cre->ge [always]",
+      "after": "entfällt; cre->ge [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks; Rückkante vom end des Blocks → Folgeschritt; keine Direktkante Aufruf → Folgeschritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante c_chk→ge",
+      "before": "c_chk->ge [always]",
+      "after": "entfällt; cse->ge [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks; Rückkante vom end des Blocks → Folgeschritt; keine Direktkante Aufruf → Folgeschritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante c_b1→sim",
+      "before": "c_b1->sim [always]",
+      "after": "entfällt; be->sim [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks; Rückkante vom end des Blocks → Folgeschritt; keine Direktkante Aufruf → Folgeschritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante c_b2→bapi",
+      "before": "c_b2->bapi [always]",
+      "after": "entfällt; be->bapi [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks; Rückkante vom end des Blocks → Folgeschritt; keine Direktkante Aufruf → Folgeschritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante goc→rb",
+      "before": "goc->rb [CATCH zcx_sd_webshop INTO lx_web]",
+      "after": "entfällt; x1->rb [CATCH zcx_sd_webshop INTO lx_web], x2->rb [CATCH zcx_sd_webshop INTO lx_web], x_tpl->rb [CATCH zcx_sd_webshop INTO lx_web], x_cma->rb [CATCH zcx_sd_webshop INTO lx_web]",
+      "why": "Die gerufenen Methoden liegen im Fall; die Ausnahme entsteht an deren RAISE-EXCEPTION-Enden und läuft von dort in den CATCH-Zweig — analog zur Rückkante vom end des Blocks, keine Direktkante vom Aufruf.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante ca→rb",
+      "before": "ca->rb [CATCH zcx_sd_webshop INTO lx_web]",
+      "after": "entfällt; x_e->rb [CATCH zcx_sd_webshop INTO lx_web], x_part->rb [CATCH zcx_sd_webshop INTO lx_web]",
+      "why": "Die gerufenen Methoden liegen im Fall; die Ausnahme entsteht an deren RAISE-EXCEPTION-Enden und läuft von dort in den CATCH-Zweig — analog zur Rückkante vom end des Blocks, keine Direktkante vom Aufruf.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante cr→rb",
+      "before": "cr->rb [CATCH zcx_sd_webshop INTO lx_web]",
+      "after": "entfällt; x_c->rb [CATCH zcx_sd_webshop INTO lx_web]",
+      "why": "Die gerufenen Methoden liegen im Fall; die Ausnahme entsteht an deren RAISE-EXCEPTION-Enden und läuft von dort in den CATCH-Zweig — analog zur Rückkante vom end des Blocks, keine Direktkante vom Aufruf.",
+      "category": "Kante"
+    }
+  ],
+  "doubts": [
+    "SELECT … UP TO 1 ROWS … ENDSELECT mit leerem Körper in find_by_email (zcl_sd_webshop_customer.abap:65): Modell l_f->fe [no more rows] ist semantisch richtig (rv_kunnr ist der erste Treffer oder leer); die Validator-Warnung ist beabsichtigt.",
+    "Ob SD_CUSTOMER_MAINTAIN_ALL mit PI_POSTFLAG = X intern festschreibt, ist aus dem Fall nicht belegbar; die Sollantwort (ROLLBACK WORK verwirft auch die Neukundenanlage, verbotener Schluss zu Zeile 70) setzt voraus, dass der Baustein nur anmeldet. Nicht geändert."
+  ]
+}

@@ -1,0 +1,1086 @@
+{
+  "id": "BM-075",
+  "title": "Rückmelde-BAdI: Ausschusstoleranz, Stornosperre und Tagesstatistik",
+  "classes": [
+    "K05",
+    "K12",
+    "K16",
+    "K01"
+  ],
+  "classic_level": "B",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "WORKORDER_CONFIRM",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_im_pp_conf_check.abap",
+        "line": 27,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_im_pp_conf_check.abap:27"
+      },
+      "identity": {
+        "objectType": "BADI"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "AUFK",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_im_pp_conf_check.abap",
+        "line": 33,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_im_pp_conf_check.abap:33"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZPP_AUSS_TOL",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_im_pp_conf_check.abap",
+        "line": 116,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_im_pp_conf_check.abap:116"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "Z_PP_AUSSCHUSS_MELDEN",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_im_pp_conf_check.abap",
+        "line": 51,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_im_pp_conf_check.abap:51"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "AFRU",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_im_pp_conf_check.abap",
+        "line": 69,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_im_pp_conf_check.abap:69"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "AFVC",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_im_pp_conf_check.abap",
+        "line": 69,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_im_pp_conf_check.abap:69"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZPP_CONF_STAT",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "zcl_im_pp_conf_check.abap",
+        "line": 110,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_im_pp_conf_check.abap:110"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZPP_AUSS_LOG",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "z_pp_ausschuss_melden.abap",
+        "line": 27,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_pp_ausschuss_melden.abap:27"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "SWE_EVENT_CREATE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "z_pp_ausschuss_melden.abap",
+        "line": 39,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_pp_ausschuss_melden.abap:39"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-075-B01",
+      "text": "Beim Sichern einer Rückmeldung wird nur für Fertigungsaufträge der Arten PP01 und PP02 geprüft.",
+      "anchors": [
+        {
+          "file": "zcl_im_pp_conf_check.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_pp_conf_check.abap:33"
+        },
+        {
+          "file": "zcl_im_pp_conf_check.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_pp_conf_check.abap:35"
+        },
+        {
+          "file": "zcl_im_pp_conf_check.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_pp_conf_check.abap:36"
+        }
+      ]
+    },
+    {
+      "id": "BM-075-B02",
+      "text": "Geprüft wird nur, wenn überhaupt Menge und Ausschuss rückgemeldet werden; die Ausschussquote ist Ausschuss geteilt durch Gutmenge plus Ausschuss in Prozent.",
+      "anchors": [
+        {
+          "file": "zcl_im_pp_conf_check.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_pp_conf_check.abap:39"
+        },
+        {
+          "file": "zcl_im_pp_conf_check.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_pp_conf_check.abap:40"
+        },
+        {
+          "file": "zcl_im_pp_conf_check.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_pp_conf_check.abap:42"
+        }
+      ]
+    },
+    {
+      "id": "BM-075-B03",
+      "text": "Die zulässige Quote kommt aus der Toleranztabelle je Werk und Arbeitsplatz; ist dort nichts gepflegt, gelten 5 %.",
+      "anchors": [
+        {
+          "file": "zcl_im_pp_conf_check.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_pp_conf_check.abap:43"
+        },
+        {
+          "file": "zcl_im_pp_conf_check.abap",
+          "line": 116,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_pp_conf_check.abap:116"
+        },
+        {
+          "file": "zcl_im_pp_conf_check.abap",
+          "line": 120,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_pp_conf_check.abap:120"
+        }
+      ]
+    },
+    {
+      "id": "BM-075-B04",
+      "text": "Liegt die Quote über der Toleranz und fehlt ein Abweichungsgrund, wird das Sichern mit einer Fehlermeldung abgelehnt.",
+      "anchors": [
+        {
+          "file": "zcl_im_pp_conf_check.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_pp_conf_check.abap:46"
+        },
+        {
+          "file": "zcl_im_pp_conf_check.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_pp_conf_check.abap:47"
+        },
+        {
+          "file": "zcl_im_pp_conf_check.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_pp_conf_check.abap:48"
+        }
+      ]
+    },
+    {
+      "id": "BM-075-B05",
+      "text": "Mit Abweichungsgrund wird eine Ausschussmeldung mit Auftrag, Vorgang, Werk, Menge, Quote und Grund für die Verbuchung registriert; sie läuft erst mit dem Festschreiben der Rückmeldung.",
+      "anchors": [
+        {
+          "file": "zcl_im_pp_conf_check.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_pp_conf_check.abap:51"
+        }
+      ]
+    },
+    {
+      "id": "BM-075-B06",
+      "text": "In der Verbuchung wird die Ausschussmeldung protokolliert; gibt es für Auftrag, Vorgang und Tag schon einen Eintrag, wird nur die Ausschussmenge erhöht und kein Workflow ausgelöst.",
+      "anchors": [
+        {
+          "file": "z_pp_ausschuss_melden.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_pp_ausschuss_melden.abap:27"
+        },
+        {
+          "file": "z_pp_ausschuss_melden.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_pp_ausschuss_melden.abap:28"
+        },
+        {
+          "file": "z_pp_ausschuss_melden.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_pp_ausschuss_melden.abap:30"
+        },
+        {
+          "file": "z_pp_ausschuss_melden.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_pp_ausschuss_melden.abap:34"
+        }
+      ]
+    },
+    {
+      "id": "BM-075-B07",
+      "text": "Bei der ersten Überschreitung am Tag wird das Workflow-Ereignis ZSCRAPEXCEEDED zum Fertigungsauftrag ausgelöst, um die Qualitätssicherung zu informieren.",
+      "anchors": [
+        {
+          "file": "z_pp_ausschuss_melden.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_pp_ausschuss_melden.abap:39"
+        }
+      ]
+    },
+    {
+      "id": "BM-075-B08",
+      "text": "Ein Storno wird abgelehnt, wenn für einen späteren Vorgang desselben Auftrags bereits eine nicht stornierte Rückmeldung existiert.",
+      "anchors": [
+        {
+          "file": "zcl_im_pp_conf_check.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_pp_conf_check.abap:69"
+        },
+        {
+          "file": "zcl_im_pp_conf_check.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_pp_conf_check.abap:77"
+        },
+        {
+          "file": "zcl_im_pp_conf_check.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_pp_conf_check.abap:78"
+        }
+      ]
+    },
+    {
+      "id": "BM-075-B09",
+      "text": "In der Verbuchung wird je Rückmeldung (ohne Stornosätze) die Tagesstatistik je Werk, Arbeitsplatz und Buchungsdatum um Gutmenge, Ausschuss und Anzahl fortgeschrieben; fehlt der Tagessatz, wird er neu angelegt.",
+      "anchors": [
+        {
+          "file": "zcl_im_pp_conf_check.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_pp_conf_check.abap:90"
+        },
+        {
+          "file": "zcl_im_pp_conf_check.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_pp_conf_check.abap:92"
+        },
+        {
+          "file": "zcl_im_pp_conf_check.abap",
+          "line": 96,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_pp_conf_check.abap:96"
+        },
+        {
+          "file": "zcl_im_pp_conf_check.abap",
+          "line": 110,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_pp_conf_check.abap:110"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s1",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_im_pp_conf_check.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_pp_conf_check.abap:27"
+        },
+        "meaning": "Rückmeldung wird gesichert"
+      },
+      {
+        "id": "q1",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_im_pp_conf_check.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_pp_conf_check.abap:33"
+        },
+        "meaning": "Auftragsart lesen"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_im_pp_conf_check.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_pp_conf_check.abap:35"
+        },
+        "meaning": "Auftragsart PP01/PP02?"
+      },
+      {
+        "id": "e1",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_im_pp_conf_check.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_pp_conf_check.abap:36"
+        },
+        "meaning": "Keine Prüfung für andere Auftragsarten"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_im_pp_conf_check.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_pp_conf_check.abap:40"
+        },
+        "meaning": "Menge und Ausschuss rückgemeldet?"
+      },
+      {
+        "id": "a1",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_im_pp_conf_check.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_pp_conf_check.abap:42"
+        },
+        "meaning": "Ausschussquote in Prozent berechnen"
+      },
+      {
+        "id": "c1",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_im_pp_conf_check.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_pp_conf_check.abap:43"
+        },
+        "meaning": "Toleranz des Arbeitsplatzes ermitteln"
+      },
+      {
+        "id": "s4",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_im_pp_conf_check.abap",
+          "line": 115,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_pp_conf_check.abap:115"
+        },
+        "meaning": "Toleranzermittlung"
+      },
+      {
+        "id": "q4",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_im_pp_conf_check.abap",
+          "line": 116,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_pp_conf_check.abap:116"
+        },
+        "meaning": "Toleranz je Werk und Arbeitsplatz lesen"
+      },
+      {
+        "id": "g4",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_im_pp_conf_check.abap",
+          "line": 119,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_pp_conf_check.abap:119"
+        },
+        "meaning": "Toleranz gepflegt?"
+      },
+      {
+        "id": "a4",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_im_pp_conf_check.abap",
+          "line": 120,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_pp_conf_check.abap:120"
+        },
+        "meaning": "Standardtoleranz 5 % verwenden"
+      },
+      {
+        "id": "e4",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_im_pp_conf_check.abap",
+          "line": 122,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_pp_conf_check.abap:122"
+        },
+        "meaning": "Toleranz zurückgeben"
+      },
+      {
+        "id": "g3",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_im_pp_conf_check.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_pp_conf_check.abap:46"
+        },
+        "meaning": "Quote über Toleranz?"
+      },
+      {
+        "id": "g3b",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_im_pp_conf_check.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_pp_conf_check.abap:47"
+        },
+        "meaning": "Abweichungsgrund fehlt?"
+      },
+      {
+        "id": "m3",
+        "type": "output",
+        "anchor": {
+          "file": "zcl_im_pp_conf_check.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_pp_conf_check.abap:48"
+        },
+        "meaning": "Fehler: Abweichungsgrund Pflicht – Sichern wird abgelehnt"
+      },
+      {
+        "id": "em3",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_im_pp_conf_check.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_pp_conf_check.abap:48"
+        },
+        "meaning": "Ausnahme ERROR_WITH_MESSAGE – Sichern abgelehnt"
+      },
+      {
+        "id": "u1",
+        "type": "update_task",
+        "anchor": {
+          "file": "zcl_im_pp_conf_check.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_pp_conf_check.abap:51"
+        },
+        "meaning": "Ausschussmeldung für die Verbuchung registrieren"
+      },
+      {
+        "id": "e_s",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_im_pp_conf_check.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_pp_conf_check.abap:60"
+        },
+        "meaning": "Sichern zulassen"
+      },
+      {
+        "id": "s2",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_im_pp_conf_check.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_pp_conf_check.abap:66"
+        },
+        "meaning": "Rückmeldung soll storniert werden"
+      },
+      {
+        "id": "q2",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_im_pp_conf_check.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_pp_conf_check.abap:69"
+        },
+        "meaning": "Nicht stornierte Rückmeldung eines Folgevorgangs suchen"
+      },
+      {
+        "id": "g5",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_im_pp_conf_check.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_pp_conf_check.abap:77"
+        },
+        "meaning": "Folgevorgang bereits rückgemeldet?"
+      },
+      {
+        "id": "m5",
+        "type": "output",
+        "anchor": {
+          "file": "zcl_im_pp_conf_check.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_pp_conf_check.abap:78"
+        },
+        "meaning": "Fehler: Storno nicht erlaubt"
+      },
+      {
+        "id": "em5",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_im_pp_conf_check.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_pp_conf_check.abap:78"
+        },
+        "meaning": "Ausnahme ERROR_WITH_MESSAGE – Storno abgelehnt"
+      },
+      {
+        "id": "e_c",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_im_pp_conf_check.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_pp_conf_check.abap:80"
+        },
+        "meaning": "Storno zulassen"
+      },
+      {
+        "id": "s3",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_im_pp_conf_check.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_pp_conf_check.abap:87"
+        },
+        "meaning": "Verbuchung der Rückmeldungen"
+      },
+      {
+        "id": "l3",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_im_pp_conf_check.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_pp_conf_check.abap:90"
+        },
+        "meaning": "Je verbuchte Rückmeldung"
+      },
+      {
+        "id": "g6",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_im_pp_conf_check.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_pp_conf_check.abap:92"
+        },
+        "meaning": "Stornosatz?"
+      },
+      {
+        "id": "q6",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_im_pp_conf_check.abap",
+          "line": 96,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_pp_conf_check.abap:96"
+        },
+        "meaning": "Tagesstatistik für Werk, Arbeitsplatz, Buchungsdatum lesen"
+      },
+      {
+        "id": "g7",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_im_pp_conf_check.abap",
+          "line": 100,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_pp_conf_check.abap:100"
+        },
+        "meaning": "Statistiksatz vorhanden?"
+      },
+      {
+        "id": "w7",
+        "type": "write",
+        "anchor": {
+          "file": "zcl_im_pp_conf_check.abap",
+          "line": 110,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_pp_conf_check.abap:110"
+        },
+        "meaning": "Gutmenge, Ausschuss und Anzahl fortschreiben"
+      },
+      {
+        "id": "e_u",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_im_pp_conf_check.abap",
+          "line": 112,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_pp_conf_check.abap:112"
+        },
+        "meaning": "Ende Verbuchungsteil"
+      },
+      {
+        "id": "sf",
+        "type": "start",
+        "anchor": {
+          "file": "z_pp_ausschuss_melden.abap",
+          "line": 1,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_pp_ausschuss_melden.abap:1"
+        },
+        "meaning": "Verbuchung: Ausschussmeldung"
+      },
+      {
+        "id": "wi",
+        "type": "write",
+        "anchor": {
+          "file": "z_pp_ausschuss_melden.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_pp_ausschuss_melden.abap:27"
+        },
+        "meaning": "Ausschussprotokoll anlegen"
+      },
+      {
+        "id": "gi",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_pp_ausschuss_melden.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_pp_ausschuss_melden.abap:28"
+        },
+        "meaning": "Satz für Auftrag/Vorgang/Tag schon vorhanden?"
+      },
+      {
+        "id": "wu",
+        "type": "write",
+        "anchor": {
+          "file": "z_pp_ausschuss_melden.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_pp_ausschuss_melden.abap:30"
+        },
+        "meaning": "Ausschussmenge im vorhandenen Satz erhöhen"
+      },
+      {
+        "id": "ef",
+        "type": "end",
+        "anchor": {
+          "file": "z_pp_ausschuss_melden.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_pp_ausschuss_melden.abap:34"
+        },
+        "meaning": "Ende ohne Workflow"
+      },
+      {
+        "id": "ev",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "z_pp_ausschuss_melden.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_pp_ausschuss_melden.abap:39"
+        },
+        "meaning": "Workflow-Ereignis ZSCRAPEXCEEDED zum Fertigungsauftrag auslösen"
+      },
+      {
+        "id": "ee",
+        "type": "end",
+        "anchor": {
+          "file": "z_pp_ausschuss_melden.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_pp_ausschuss_melden.abap:50"
+        },
+        "meaning": "Ende"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s1",
+        "to": "q1",
+        "condition": "always"
+      },
+      {
+        "from": "q1",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "e1",
+        "condition": "lv_auart <> 'PP01' AND lv_auart <> 'PP02'"
+      },
+      {
+        "from": "g1",
+        "to": "g2",
+        "condition": "else"
+      },
+      {
+        "from": "g2",
+        "to": "a1",
+        "condition": "lv_menge > 0 AND is_confirmation-xmnga > 0"
+      },
+      {
+        "from": "g2",
+        "to": "e_s",
+        "condition": "else"
+      },
+      {
+        "from": "a1",
+        "to": "c1",
+        "condition": "always"
+      },
+      {
+        "from": "c1",
+        "to": "s4",
+        "condition": "always"
+      },
+      {
+        "from": "s4",
+        "to": "q4",
+        "condition": "always"
+      },
+      {
+        "from": "q4",
+        "to": "g4",
+        "condition": "always"
+      },
+      {
+        "from": "g4",
+        "to": "a4",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g4",
+        "to": "e4",
+        "condition": "else"
+      },
+      {
+        "from": "a4",
+        "to": "e4",
+        "condition": "always"
+      },
+      {
+        "from": "e4",
+        "to": "g3",
+        "condition": "always"
+      },
+      {
+        "from": "g3",
+        "to": "g3b",
+        "condition": "lv_quote > lv_tol"
+      },
+      {
+        "from": "g3",
+        "to": "e_s",
+        "condition": "else"
+      },
+      {
+        "from": "g3b",
+        "to": "m3",
+        "condition": "is_confirmation-grund IS INITIAL"
+      },
+      {
+        "from": "g3b",
+        "to": "u1",
+        "condition": "else"
+      },
+      {
+        "from": "u1",
+        "to": "e_s",
+        "condition": "always"
+      },
+      {
+        "from": "s2",
+        "to": "q2",
+        "condition": "always"
+      },
+      {
+        "from": "q2",
+        "to": "g5",
+        "condition": "always"
+      },
+      {
+        "from": "g5",
+        "to": "m5",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "g5",
+        "to": "e_c",
+        "condition": "else"
+      },
+      {
+        "from": "s3",
+        "to": "l3",
+        "condition": "always"
+      },
+      {
+        "from": "l3",
+        "to": "g6",
+        "condition": "next row"
+      },
+      {
+        "from": "g6",
+        "to": "l3",
+        "condition": "ls_conf-stokz = abap_true"
+      },
+      {
+        "from": "g6",
+        "to": "q6",
+        "condition": "else"
+      },
+      {
+        "from": "q6",
+        "to": "g7",
+        "condition": "always"
+      },
+      {
+        "from": "g7",
+        "to": "w7",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g7",
+        "to": "w7",
+        "condition": "else"
+      },
+      {
+        "from": "w7",
+        "to": "l3",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l3",
+        "to": "e_u",
+        "condition": "no more rows"
+      },
+      {
+        "from": "sf",
+        "to": "wi",
+        "condition": "always"
+      },
+      {
+        "from": "wi",
+        "to": "gi",
+        "condition": "always"
+      },
+      {
+        "from": "gi",
+        "to": "wu",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "wu",
+        "to": "ef",
+        "condition": "always"
+      },
+      {
+        "from": "gi",
+        "to": "ev",
+        "condition": "else"
+      },
+      {
+        "from": "ev",
+        "to": "ee",
+        "condition": "always"
+      },
+      {
+        "from": "m3",
+        "to": "em3",
+        "condition": "always"
+      },
+      {
+        "from": "m5",
+        "to": "em5",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zcl_im_pp_conf_check.abap:51 — kein Fachsatz „Die QS wird beim Sichern sofort informiert“ (der Baustein ist nur für die Verbuchung registriert und läuft erst nach dem Commit; ohne Commit nie)",
+    "zcl_im_pp_conf_check.abap:92 — kein Fachsatz „Stornos mindern die Tagesstatistik“ (Stornosätze werden übersprungen, laut Kommentar eine Altlast)",
+    "zcl_im_pp_conf_check.abap:48 — kein Fachsatz „Eine Überschreitung der Toleranz blockiert immer“ (mit Abweichungsgrund wird gesichert)",
+    "gesamte Scheibe — kein Fachsatz „Es wird eine Qualitätsmeldung angelegt“ (es gibt nur einen Protokollsatz und ein Workflow-Ereignis)"
+  ],
+  "processDescription": "Die Implementierung hängt sich in die Rückmeldung von Fertigungsaufträgen. Beim Sichern prüft sie für Aufträge der Arten PP01 und PP02 mit rückgemeldetem Ausschuss die Ausschussquote gegen die Toleranz des Arbeitsplatzes, ersatzweise 5 %. Liegt die Quote darüber und fehlt ein Abweichungsgrund, lehnt sie das Sichern mit einer Fehlermeldung ab; mit Grund registriert sie eine Ausschussmeldung für die Verbuchung. In der Verbuchung legt diese einen Protokollsatz an und löst beim ersten Mal am Tag ein Workflow-Ereignis für die Qualitätssicherung aus; weitere Überschreitungen erhöhen nur die Menge. Beim Stornieren prüft sie, ob ein späterer Vorgang desselben Auftrags schon rückgemeldet ist, und lehnt den Storno dann ab. Außerdem schreibt sie in der Verbuchung für jede nicht stornierte Rückmeldung die Tagesstatistik je Werk und Arbeitsplatz fort."
+}

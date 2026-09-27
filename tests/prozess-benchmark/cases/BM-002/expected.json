@@ -1,0 +1,257 @@
+{
+  "id": "BM-002",
+  "title": "MV45AFZZ: Versandbedingung für Key Accounts beim Anlegen vorbelegen",
+  "classes": [
+    "K16",
+    "K01"
+  ],
+  "classic_level": "D",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "KNVV",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 13,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:13"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-002-B01",
+      "text": "Der Exit wirkt nur beim Anlegen eines Kundenauftrags, nicht beim Ändern oder Anzeigen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 11,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:11"
+        }
+      ]
+    },
+    {
+      "id": "BM-002-B02",
+      "text": "Die Kundengruppe des Auftraggebers wird für Verkaufsorganisation, Vertriebsweg und Sparte des Auftrags nachgelesen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 13,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:13"
+        }
+      ]
+    },
+    {
+      "id": "BM-002-B03",
+      "text": "Ist der Auftraggeber ein Key Account (Kundengruppe KA), erhält der Auftrag die Versandbedingung Express (10) und das Key-Account-Kennzeichen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:18"
+        },
+        {
+          "file": "source.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:19"
+        }
+      ]
+    },
+    {
+      "id": "BM-002-B04",
+      "text": "Andernfalls erhält ein Freilieferungsauftrag (Auftragsart ZFD) den Auftragsgrund Z01.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:21"
+        },
+        {
+          "file": "source.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:22"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 7,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:7"
+        },
+        "meaning": "Exit beim Übernehmen der Kopffelder"
+      },
+      {
+        "id": "chk",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 11,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:11"
+        },
+        "meaning": "Nur beim Anlegen des Auftrags weiter"
+      },
+      {
+        "id": "q",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 13,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:13"
+        },
+        "meaning": "Kundengruppe des Auftraggebers im Vertriebsbereich lesen"
+      },
+      {
+        "id": "g",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:18"
+        },
+        "meaning": "Key-Account-Kunde?"
+      },
+      {
+        "id": "ka",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:19"
+        },
+        "meaning": "Versandbedingung Express und Key-Account-Kennzeichen setzen"
+      },
+      {
+        "id": "fd",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:22"
+        },
+        "meaning": "Auftragsgrund Z01 vorbelegen"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:25"
+        },
+        "meaning": "Exit beendet"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "chk",
+        "condition": "always"
+      },
+      {
+        "from": "chk",
+        "to": "q",
+        "condition": "t180-trtyp = 'H'"
+      },
+      {
+        "from": "chk",
+        "to": "e",
+        "condition": "else"
+      },
+      {
+        "from": "q",
+        "to": "g",
+        "condition": "always"
+      },
+      {
+        "from": "g",
+        "to": "ka",
+        "condition": "sy-subrc = 0 AND lv_kdgrp = 'KA'"
+      },
+      {
+        "from": "ka",
+        "to": "e",
+        "condition": "always"
+      },
+      {
+        "from": "fd",
+        "to": "e",
+        "condition": "always"
+      },
+      {
+        "from": "g",
+        "to": "fd",
+        "condition": "vbak-auart = 'ZFD'"
+      },
+      {
+        "from": "g",
+        "to": "e",
+        "condition": "else"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "source.abap:25 — kein Fachsatz „Auftrag erhält eine Liefersperre“: die Zuweisung von LIFSK ist auskommentiert",
+    "source.abap:19 — kein write-Knoten auf VBAK: der Exit füllt nur den Arbeitsbereich, gespeichert wird später vom Standard-Auftrag",
+    "source.abap:21 — kein Fachsatz „Key Accounts mit Auftragsart ZFD erhalten Auftragsgrund Z01“: der ELSEIF-Zweig greift nur, wenn der Kunde kein Key Account ist"
+  ],
+  "processDescription": "Der Exit wird vom Standard-Kundenauftrag (VA01/VA02) beim Übernehmen der Kopffelder aufgerufen. Er wirkt nur beim Anlegen (Transaktionstyp H); beim Ändern endet er sofort. Beim Anlegen liest er die Kundengruppe des Auftraggebers im Vertriebsbereich des Auftrags. Ist der Kunde ein Key Account (Kundengruppe KA), werden die Versandbedingung Express und das kundeneigene Key-Account-Kennzeichen im Auftragskopf gesetzt. Ist er es nicht oder fehlt der Vertriebsbereichssatz, erhält nur ein Freilieferungsauftrag (ZFD) den Auftragsgrund Z01. Die frühere Vorbelegung einer Liefersperre ist auskommentiert. Gespeichert werden die Werte erst mit dem Auftrag durch den Standard."
+}

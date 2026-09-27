@@ -1,0 +1,25 @@
+{
+  "id": "BM-100",
+  "title": "Kundenstamm-Replikation an Alt-CRM über Änderungszeiger mit paralleler RFC-Verarbeitung",
+  "domain": "Querschnitt — Schnittstellen, Stammdaten, HR, Workflow, technische Jobs",
+  "band": "sehr komplex",
+  "loc": 442,
+  "constructs": [
+    "CHANGE_POINTERS_READ/CHANGE_POINTERS_STATUS_WRITE",
+    "FOR ALL ENTRIES mit Leermengenschutz",
+    "CVI_CUST_LINK/BUT000",
+    "SPBT_INITIALIZE",
+    "CALL FUNCTION STARTING NEW TASK DESTINATION IN GROUP PERFORMING ON END OF TASK",
+    "RECEIVE RESULTS",
+    "WAIT UNTIL … UP TO",
+    "BAL_LOG_CREATE/BAL_LOG_MSG_ADD_FREE_TEXT/BAL_DB_SAVE",
+    "SUBMIT AND RETURN",
+    "String-Templates mit Formatoptionen"
+  ],
+  "scenario": "Stündlicher Replikationsjob, der geänderte Kunden paketweise und parallel an ein Alt-CRM überträgt und nur für erfolgreich übertragene Kunden die Änderungszeiger schließt; typischer Ablösekandidat bei der BP-Umstellung.",
+  "s4_issues": [
+    "Kundenstamm in S/4 über Geschäftspartner; Replikation per BP-Standard (DRF/SOA) statt Eigenbau",
+    "Direkte Lesezugriffe auf KNA1/KNVV/ADR6/BUT000",
+    "Änderungszeiger des Objekts ADRESSE tragen die Adressnummer, nicht die Kundennummer"
+  ]
+}

@@ -1,0 +1,233 @@
+{
+  "id": "BM-022",
+  "title": "Gesperrter und QM-Bestand eines Materials im Werk (Funktionsbaustein)",
+  "classes": [
+    "K01"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "MARD",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 20,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:20"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-022-B01",
+      "text": "Für das übergebene Material und Werk werden die nicht zum Löschen vorgemerkten Lagerortbestände gelesen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:20"
+        }
+      ]
+    },
+    {
+      "id": "BM-022-B02",
+      "text": "Existiert kein solcher Lagerort, endet der Baustein mit der Ausnahme NOT_FOUND.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:24"
+        },
+        {
+          "file": "source.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:25"
+        }
+      ]
+    },
+    {
+      "id": "BM-022-B03",
+      "text": "Über alle Lagerorte werden der gesperrte Bestand und der Bestand in Qualitätsprüfung je für sich aufsummiert und zurückgegeben.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:29"
+        },
+        {
+          "file": "source.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:30"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 1,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:1"
+        },
+        "meaning": "Baustein-Einstieg mit Material und Werk"
+      },
+      {
+        "id": "q",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:20"
+        },
+        "meaning": "Lagerortbestände des Materials im Werk lesen"
+      },
+      {
+        "id": "g",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:24"
+        },
+        "meaning": "Lagerortsegmente vorhanden?"
+      },
+      {
+        "id": "x",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:25"
+        },
+        "meaning": "Ausnahme NOT_FOUND"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "source.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:28"
+        },
+        "meaning": "Lagerorte durchlaufen"
+      },
+      {
+        "id": "a",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:29"
+        },
+        "meaning": "Gesperrten Bestand und Qualitätsprüfbestand aufsummieren"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:33"
+        },
+        "meaning": "Summen zurückgeben"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "q",
+        "condition": "always"
+      },
+      {
+        "from": "q",
+        "to": "g",
+        "condition": "always"
+      },
+      {
+        "from": "g",
+        "to": "x",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g",
+        "to": "l",
+        "condition": "else"
+      },
+      {
+        "from": "l",
+        "to": "a",
+        "condition": "next row"
+      },
+      {
+        "from": "a",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l",
+        "to": "e",
+        "condition": "no more rows"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "source.abap:20 — kein Fachsatz „Frei verwendbarer Bestand wird ermittelt“ (LABST wird nur als Typ verwendet, summiert werden SPEME und INSME)",
+    "source.abap:25 — kein Fachsatz „Das Material existiert nicht“ (die Ausnahme sagt nur, dass im Werk kein nicht gelöschter Lagerort gefunden wurde)",
+    "gesamte Scheibe — kein Fachsatz „Bestand wird umgebucht oder gesperrt“ (nur Lesen und Summieren)"
+  ],
+  "processDescription": "Das Dispositions-Cockpit ruft den Baustein mit Material und Werk auf. Er liest alle nicht zum Löschen vorgemerkten Lagerortsegmente des Materials im Werk. Gibt es keines, endet er mit der Ausnahme NOT_FOUND. Andernfalls summiert er über alle Lagerorte den gesperrten Bestand und den Qualitätsprüfbestand getrennt auf und gibt beide Summen zurück. Der frei verwendbare Bestand wird nicht ermittelt, und es wird nichts gebucht."
+}

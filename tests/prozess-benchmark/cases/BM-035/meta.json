@@ -1,0 +1,25 @@
+{
+  "id": "BM-035",
+  "title": "Zyklische ABC-Inventur: fällige Materialien, Belege anlegen, Differenzen bis Wertgrenze buchen",
+  "domain": "MM / Procure-to-Pay, Bestandsführung, Lager (WM/EWM)",
+  "band": "komplex",
+  "loc": 214,
+  "constructs": [
+    "REPORT mit globaler Klasse",
+    "INITIALIZATION / AT SELECTION-SCREEN / START-OF-SELECTION",
+    "AUTHORITY-CHECK (einmal ohne Auswertung)",
+    "RADIOBUTTON-Modus mit CASE abap_true",
+    "SELECT mit JOIN über drei Tabellen",
+    "SELECT SINGLE CASE",
+    "LOOP AT … GROUP BY",
+    "line_exists",
+    "BAPI_MATPHYSINV_CREATE_MULT / POSTDIFF",
+    "INSERT Z-Tabelle mit VALUE"
+  ],
+  "scenario": "Zyklische Inventur nach ABC-Kennzeichen mit einer Wertgrenze für automatisches Ausbuchen; typisch bei Kunden mit permanenter Inventur, die die Standardtransaktionen MICN/MI07 zusammenfassen.",
+  "s4_issues": [
+    "MARD/MBEW in S/4HANA: MARD aus MATDOC abgeleitet, MBEW-Preise mit Material Ledger (ACDOCA/CKMLCR) führend",
+    "Direktzugriffe MARC/T159C/ISEG",
+    "INITIALIZATION-Berechtigungsprüfung ohne Wirkung"
+  ]
+}

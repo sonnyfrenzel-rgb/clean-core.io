@@ -1,0 +1,28 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten xa (neu)",
+      "before": "—",
+      "after": "end source.abap:29 „Report ohne Berechtigung abgebrochen“; neu ma->xa [always]",
+      "why": "MESSAGE vom Typ E/A beendet den Pfad; wie im übrigen Benchmark (z. B. BM-048, BM-051, BM-058) folgt dem output-Knoten ein end-Knoten auf derselben Anweisung. Validator-Warnung „keine ausgehende Kante“.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten e (neu)",
+      "before": "—",
+      "after": "end source.abap:85 „Lauf beendet“; neu ws->e [always]",
+      "why": "Pfadende ohne end-Knoten (Validator-Warnung „keine ausgehende Kante“); Brieftabelle: end bei implizitem Blockende auf der letzten Anweisung. Letzte Anweisung von START-OF-SELECTION ist die Summenzeile.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "verbotener Schluss 4",
+      "before": "gesamte Scheibe — kein Fachsatz „Die Freigabe erfolgt ohne Commit“ (BAPI_PO_RELEASE schreibt ohne NO_COMMIT_WORK selbst fest)",
+      "after": "gesamte Scheibe — kein Fachsatz „Die Freigabe erfolgt ohne Commit“ (BAPI_PO_RELEASE schreibt selbst fest, solange NO_COMMIT nicht gesetzt ist; der Aufruf übergibt NO_COMMIT nicht)",
+      "why": "Der Parameter von BAPI_PO_RELEASE heißt NO_COMMIT, nicht NO_COMMIT_WORK.",
+      "category": "verbotener Schluss"
+    }
+  ],
+  "doubts": []
+}

@@ -1,0 +1,2473 @@
+{
+  "id": "BM-037",
+  "title": "Niederstwertprüfung zum Bilanzstichtag mit Gängigkeitsabschlag und Preisänderung per MR21-Batch-Input",
+  "classes": [
+    "K01",
+    "K04",
+    "K14",
+    "K15",
+    "K17",
+    "K18"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [
+    "Dynpro- und Feldnamen der MR21-Mappe (SAPRCKM_MR21 0201, CKI_MR21_0250-*) im Zielrelease aufzeichnen und prüfen.",
+    "Verbrauch aus MSEG ohne Stornos: gewollte Vereinfachung oder Fehler?"
+  ],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "T001W",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zmm_niederstwert_f01.abap",
+        "line": 17,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zmm_niederstwert_f01.abap:17"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "T001K",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zmm_niederstwert_f01.abap",
+        "line": 17,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zmm_niederstwert_f01.abap:17"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "MBEW",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zmm_niederstwert_f01.abap",
+        "line": 27,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zmm_niederstwert_f01.abap:27"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "MARA",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zmm_niederstwert_f01.abap",
+        "line": 27,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zmm_niederstwert_f01.abap:27"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "EKPO",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zmm_niederstwert_f01.abap",
+        "line": 56,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zmm_niederstwert_f01.abap:56"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "EKKO",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zmm_niederstwert_f01.abap",
+        "line": 56,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zmm_niederstwert_f01.abap:56"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "MSEG",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zmm_niederstwert_f01.abap",
+        "line": 89,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zmm_niederstwert_f01.abap:89"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "MKPF",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zmm_niederstwert_f01.abap",
+        "line": 89,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zmm_niederstwert_f01.abap:89"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ENQUEUE_EMMBEWE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zmm_niederstwert_f02.abap",
+        "line": 40,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zmm_niederstwert_f02.abap:40"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "MR21",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zmm_niederstwert_f02.abap",
+        "line": 70,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zmm_niederstwert_f02.abap:70"
+      },
+      "identity": {
+        "objectType": "TRAN"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZMM_NSW_HIST",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "zmm_niederstwert_f02.abap",
+        "line": 104,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zmm_niederstwert_f02.abap:104"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "REUSE_ALV_GRID_DISPLAY",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zmm_niederstwert_f02.abap",
+        "line": 133,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zmm_niederstwert_f02.abap:133"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "MM03",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zmm_niederstwert_f02.abap",
+        "line": 175,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zmm_niederstwert_f02.abap:175"
+      },
+      "identity": {
+        "objectType": "TRAN"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-037-B01",
+      "text": "Als Stichtag wird der 31.12. des Vorjahres vorgeschlagen.",
+      "anchors": [
+        {
+          "file": "zmm_niederstwert.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert.abap:22"
+        },
+        {
+          "file": "zmm_niederstwert.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert.abap:23"
+        },
+        {
+          "file": "zmm_niederstwert.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert.abap:24"
+        }
+      ]
+    },
+    {
+      "id": "BM-037-B02",
+      "text": "Am Selektionsbild wird geprüft, ob der Anwender im Buchungskreis Materialbewertungen ändern darf; sonst wird die Eingabe zurückgewiesen.",
+      "anchors": [
+        {
+          "file": "zmm_niederstwert_f01.abap",
+          "line": 6,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f01.abap:6"
+        },
+        {
+          "file": "zmm_niederstwert_f01.abap",
+          "line": 9,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f01.abap:9"
+        },
+        {
+          "file": "zmm_niederstwert_f01.abap",
+          "line": 10,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f01.abap:10"
+        }
+      ]
+    },
+    {
+      "id": "BM-037-B03",
+      "text": "Es werden die Werke ermittelt, deren Bewertungskreis zum Buchungskreis gehört; ohne Werk bricht der Lauf ab.",
+      "anchors": [
+        {
+          "file": "zmm_niederstwert_f01.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f01.abap:17"
+        },
+        {
+          "file": "zmm_niederstwert.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert.abap:31"
+        },
+        {
+          "file": "zmm_niederstwert.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert.abap:32"
+        }
+      ]
+    },
+    {
+      "id": "BM-037-B04",
+      "text": "Gelesen werden die nicht getrennt bewerteten Materialien der gewählten Materialarten mit positivem Gesamtbestand samt Bestandswert und Preiseinheit.",
+      "anchors": [
+        {
+          "file": "zmm_niederstwert_f01.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f01.abap:27"
+        }
+      ]
+    },
+    {
+      "id": "BM-037-B05",
+      "text": "Buchpreis ist bei Preissteuerung S der Standardpreis, bei V der gleitende Durchschnittspreis.",
+      "anchors": [
+        {
+          "file": "zmm_niederstwert_f01.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f01.abap:27"
+        },
+        {
+          "file": "zmm_niederstwert_f01.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f01.abap:39"
+        },
+        {
+          "file": "zmm_niederstwert_f01.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f01.abap:40"
+        }
+      ]
+    },
+    {
+      "id": "BM-037-B06",
+      "text": "Ohne Bestände wird ein Hinweis ausgegeben und die Bewertung übersprungen.",
+      "anchors": [
+        {
+          "file": "zmm_niederstwert.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert.abap:36"
+        },
+        {
+          "file": "zmm_niederstwert.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert.abap:37"
+        },
+        {
+          "file": "zmm_niederstwert.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert.abap:38"
+        }
+      ]
+    },
+    {
+      "id": "BM-037-B07",
+      "text": "Marktpreis ist der Nettopreis der jüngsten nicht gelöschten Bestellung des Materials im Werk aus den letzten 183 Tagen vor dem Stichtag, umgerechnet auf die Preiseinheit des Materials; ohne solche Bestellung gilt der Buchpreis.",
+      "anchors": [
+        {
+          "file": "zmm_niederstwert_f01.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f01.abap:53"
+        },
+        {
+          "file": "zmm_niederstwert_f01.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f01.abap:56"
+        },
+        {
+          "file": "zmm_niederstwert_f01.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f01.abap:66"
+        },
+        {
+          "file": "zmm_niederstwert_f01.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f01.abap:68"
+        },
+        {
+          "file": "zmm_niederstwert_f01.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f01.abap:70"
+        }
+      ]
+    },
+    {
+      "id": "BM-037-B08",
+      "text": "Der Verbrauch ist die Summe der Mengen der Bewegungsarten 261, 201 und 601 im Jahr vor dem Stichtag.",
+      "anchors": [
+        {
+          "file": "zmm_niederstwert_f01.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f01.abap:82"
+        },
+        {
+          "file": "zmm_niederstwert_f01.abap",
+          "line": 89,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f01.abap:89"
+        }
+      ]
+    },
+    {
+      "id": "BM-037-B09",
+      "text": "Ohne Verbrauch erhält das Material einen Gängigkeitsabschlag von 80 %.",
+      "anchors": [
+        {
+          "file": "zmm_niederstwert_f01.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f01.abap:98"
+        },
+        {
+          "file": "zmm_niederstwert_f01.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f01.abap:99"
+        }
+      ]
+    },
+    {
+      "id": "BM-037-B10",
+      "text": "Sonst wird die Reichweite als Bestand durch Monatsverbrauch berechnet: über 24 Monate 50 % Abschlag, über 12 Monate 20 %, sonst keiner.",
+      "anchors": [
+        {
+          "file": "zmm_niederstwert_f01.abap",
+          "line": 102,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f01.abap:102"
+        },
+        {
+          "file": "zmm_niederstwert_f01.abap",
+          "line": 103,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f01.abap:103"
+        }
+      ]
+    },
+    {
+      "id": "BM-037-B11",
+      "text": "Der neue Preis ist der niedrigere aus Buch- und Marktpreis, vermindert um den Gängigkeitsabschlag.",
+      "anchors": [
+        {
+          "file": "zmm_niederstwert_f01.abap",
+          "line": 118,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f01.abap:118"
+        },
+        {
+          "file": "zmm_niederstwert_f01.abap",
+          "line": 119,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f01.abap:119"
+        }
+      ]
+    },
+    {
+      "id": "BM-037-B12",
+      "text": "Daraus werden die Abwertung in Prozent des Buchpreises und der Abwertungsbetrag über den Gesamtbestand berechnet.",
+      "anchors": [
+        {
+          "file": "zmm_niederstwert_f01.abap",
+          "line": 121,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f01.abap:121"
+        },
+        {
+          "file": "zmm_niederstwert_f01.abap",
+          "line": 123,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f01.abap:123"
+        }
+      ]
+    },
+    {
+      "id": "BM-037-B13",
+      "text": "Ein Material ist Abwertungskandidat, wenn die prozentuale Abwertung die Schwelle und der Abwertungsbetrag den Mindestwert erreichen.",
+      "anchors": [
+        {
+          "file": "zmm_niederstwert_f01.abap",
+          "line": 124,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f01.abap:124"
+        },
+        {
+          "file": "zmm_niederstwert_f01.abap",
+          "line": 125,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f01.abap:125"
+        }
+      ]
+    },
+    {
+      "id": "BM-037-B14",
+      "text": "Nur im Echtlauf werden Preise geändert und die Historie geschrieben; im Testlauf wird nur ausgewertet.",
+      "anchors": [
+        {
+          "file": "zmm_niederstwert.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert.abap:45"
+        }
+      ]
+    },
+    {
+      "id": "BM-037-B15",
+      "text": "Kandidaten mit gleitendem Durchschnittspreis werden nicht gebucht, sondern für eine manuelle Abwertung vermerkt.",
+      "anchors": [
+        {
+          "file": "zmm_niederstwert_f02.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f02.abap:34"
+        },
+        {
+          "file": "zmm_niederstwert_f02.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f02.abap:36"
+        }
+      ]
+    },
+    {
+      "id": "BM-037-B16",
+      "text": "Ist die Materialbewertung gerade von jemand anderem gesperrt, wird der Kandidat mit Hinweis übersprungen; die Sperre selbst wird nur geprüft und sofort wieder freigegeben.",
+      "anchors": [
+        {
+          "file": "zmm_niederstwert_f02.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f02.abap:40"
+        },
+        {
+          "file": "zmm_niederstwert_f02.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f02.abap:48"
+        },
+        {
+          "file": "zmm_niederstwert_f02.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f02.abap:53"
+        }
+      ]
+    },
+    {
+      "id": "BM-037-B17",
+      "text": "Für jeden Standardpreis-Kandidaten wird der neue Preis zum Stichtag per Batch-Input über die Preisänderung MR21 im Werk gebucht.",
+      "anchors": [
+        {
+          "file": "zmm_niederstwert_f02.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f02.abap:60"
+        },
+        {
+          "file": "zmm_niederstwert_f02.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f02.abap:67"
+        },
+        {
+          "file": "zmm_niederstwert_f02.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f02.abap:70"
+        }
+      ]
+    },
+    {
+      "id": "BM-037-B18",
+      "text": "Meldet MR21 einen Fehler, wird dessen Text beim Material vermerkt, sonst „Preis geändert“.",
+      "anchors": [
+        {
+          "file": "zmm_niederstwert_f02.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f02.abap:74"
+        },
+        {
+          "file": "zmm_niederstwert_f02.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f02.abap:75"
+        },
+        {
+          "file": "zmm_niederstwert_f02.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f02.abap:77"
+        },
+        {
+          "file": "zmm_niederstwert_f02.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f02.abap:82"
+        }
+      ]
+    },
+    {
+      "id": "BM-037-B19",
+      "text": "Alle Kandidaten werden mit Buchungskreis, Stichtag, Benutzer und dem Kennzeichen, ob gebucht wurde, in die Historie geschrieben und festgeschrieben.",
+      "anchors": [
+        {
+          "file": "zmm_niederstwert_f02.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f02.abap:98"
+        },
+        {
+          "file": "zmm_niederstwert_f02.abap",
+          "line": 104,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f02.abap:104"
+        },
+        {
+          "file": "zmm_niederstwert_f02.abap",
+          "line": 105,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f02.abap:105"
+        }
+      ]
+    },
+    {
+      "id": "BM-037-B20",
+      "text": "Im Hintergrund wird nur ein Summenprotokoll mit Anzahl Materialien, Kandidaten, geänderten Preisen und Abwertungsbetrag ausgegeben.",
+      "anchors": [
+        {
+          "file": "zmm_niederstwert_f02.abap",
+          "line": 118,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f02.abap:118"
+        },
+        {
+          "file": "zmm_niederstwert_f02.abap",
+          "line": 159,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f02.abap:159"
+        },
+        {
+          "file": "zmm_niederstwert_f02.abap",
+          "line": 163,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f02.abap:163"
+        }
+      ]
+    },
+    {
+      "id": "BM-037-B21",
+      "text": "Im Dialog wird die Ergebnisliste nach Abwertungsbetrag absteigend als ALV angezeigt; ein Doppelklick öffnet den Materialstamm.",
+      "anchors": [
+        {
+          "file": "zmm_niederstwert_f02.abap",
+          "line": 116,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f02.abap:116"
+        },
+        {
+          "file": "zmm_niederstwert_f02.abap",
+          "line": 133,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f02.abap:133"
+        },
+        {
+          "file": "zmm_niederstwert_f02.abap",
+          "line": 175,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f02.abap:175"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "in",
+        "type": "start",
+        "anchor": {
+          "file": "zmm_niederstwert.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert.abap:21"
+        },
+        "meaning": "Programmstart"
+      },
+      {
+        "id": "ia",
+        "type": "action",
+        "anchor": {
+          "file": "zmm_niederstwert.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert.abap:22"
+        },
+        "meaning": "Stichtag 31.12. des Vorjahres vorschlagen"
+      },
+      {
+        "id": "as",
+        "type": "start",
+        "anchor": {
+          "file": "zmm_niederstwert.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert.abap:26"
+        },
+        "meaning": "Eingabeprüfung"
+      },
+      {
+        "id": "pa",
+        "type": "call",
+        "anchor": {
+          "file": "zmm_niederstwert.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert.abap:27"
+        },
+        "meaning": "Berechtigung prüfen"
+      },
+      {
+        "id": "fa",
+        "type": "start",
+        "anchor": {
+          "file": "zmm_niederstwert_f01.abap",
+          "line": 5,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f01.abap:5"
+        },
+        "meaning": "Berechtigungsroutine"
+      },
+      {
+        "id": "aa",
+        "type": "action",
+        "anchor": {
+          "file": "zmm_niederstwert_f01.abap",
+          "line": 6,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f01.abap:6"
+        },
+        "meaning": "Berechtigung Materialbewertung ändern im Buchungskreis prüfen"
+      },
+      {
+        "id": "ga",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_niederstwert_f01.abap",
+          "line": 9,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f01.abap:9"
+        },
+        "meaning": "Berechtigt?"
+      },
+      {
+        "id": "ma",
+        "type": "output",
+        "anchor": {
+          "file": "zmm_niederstwert_f01.abap",
+          "line": 10,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f01.abap:10"
+        },
+        "meaning": "Fehler: keine Berechtigung"
+      },
+      {
+        "id": "xma",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_niederstwert_f01.abap",
+          "line": 10,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f01.abap:10"
+        },
+        "meaning": "Eingabe zurückgewiesen, Selektionsbild erneut"
+      },
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "zmm_niederstwert.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert.abap:29"
+        },
+        "meaning": "Verarbeitung"
+      },
+      {
+        "id": "pw",
+        "type": "call",
+        "anchor": {
+          "file": "zmm_niederstwert.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert.abap:30"
+        },
+        "meaning": "Werke des Buchungskreises ermitteln"
+      },
+      {
+        "id": "fw",
+        "type": "start",
+        "anchor": {
+          "file": "zmm_niederstwert_f01.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f01.abap:15"
+        },
+        "meaning": "Werksermittlung"
+      },
+      {
+        "id": "qw",
+        "type": "read",
+        "anchor": {
+          "file": "zmm_niederstwert_f01.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f01.abap:17"
+        },
+        "meaning": "Werke über Bewertungskreise des Buchungskreises lesen"
+      },
+      {
+        "id": "gw",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_niederstwert.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert.abap:31"
+        },
+        "meaning": "Werke gefunden?"
+      },
+      {
+        "id": "mw",
+        "type": "output",
+        "anchor": {
+          "file": "zmm_niederstwert.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert.abap:32"
+        },
+        "meaning": "Abbruch: keine Werke"
+      },
+      {
+        "id": "xmw",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_niederstwert.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert.abap:32"
+        },
+        "meaning": "Lauf abgebrochen, keine Werke"
+      },
+      {
+        "id": "pb",
+        "type": "call",
+        "anchor": {
+          "file": "zmm_niederstwert.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert.abap:35"
+        },
+        "meaning": "Bewertete Bestände lesen"
+      },
+      {
+        "id": "fb",
+        "type": "start",
+        "anchor": {
+          "file": "zmm_niederstwert_f01.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f01.abap:24"
+        },
+        "meaning": "Bestandsselektion"
+      },
+      {
+        "id": "qb",
+        "type": "read",
+        "anchor": {
+          "file": "zmm_niederstwert_f01.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f01.abap:27"
+        },
+        "meaning": "Materialien mit Bestand, Wert und Standardpreis lesen"
+      },
+      {
+        "id": "lb",
+        "type": "loop",
+        "anchor": {
+          "file": "zmm_niederstwert_f01.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f01.abap:39"
+        },
+        "meaning": "Materialien mit V-Preis durchlaufen"
+      },
+      {
+        "id": "qv",
+        "type": "read",
+        "anchor": {
+          "file": "zmm_niederstwert_f01.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f01.abap:40"
+        },
+        "meaning": "Gleitenden Durchschnittspreis als Buchpreis lesen"
+      },
+      {
+        "id": "gb",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_niederstwert.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert.abap:36"
+        },
+        "meaning": "Bestände vorhanden?"
+      },
+      {
+        "id": "mb",
+        "type": "output",
+        "anchor": {
+          "file": "zmm_niederstwert.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert.abap:37"
+        },
+        "meaning": "Hinweis: keine Bestände"
+      },
+      {
+        "id": "rb",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_niederstwert.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert.abap:38"
+        },
+        "meaning": "Verarbeitung verlassen"
+      },
+      {
+        "id": "pm",
+        "type": "call",
+        "anchor": {
+          "file": "zmm_niederstwert.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert.abap:41"
+        },
+        "meaning": "Marktpreise ermitteln"
+      },
+      {
+        "id": "fm",
+        "type": "start",
+        "anchor": {
+          "file": "zmm_niederstwert_f01.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f01.abap:48"
+        },
+        "meaning": "Marktpreisroutine"
+      },
+      {
+        "id": "lm",
+        "type": "loop",
+        "anchor": {
+          "file": "zmm_niederstwert_f01.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f01.abap:54"
+        },
+        "meaning": "Materialien durchlaufen"
+      },
+      {
+        "id": "qm",
+        "type": "loop",
+        "anchor": {
+          "file": "zmm_niederstwert_f01.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f01.abap:56"
+        },
+        "meaning": "Letzten Bestellpreis der letzten 6 Monate lesen"
+      },
+      {
+        "id": "gm",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_niederstwert_f01.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f01.abap:66"
+        },
+        "meaning": "Bestellpreis gefunden?"
+      },
+      {
+        "id": "am1",
+        "type": "action",
+        "anchor": {
+          "file": "zmm_niederstwert_f01.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f01.abap:68"
+        },
+        "meaning": "Marktpreis = letzter Bestellpreis je Preiseinheit"
+      },
+      {
+        "id": "am2",
+        "type": "action",
+        "anchor": {
+          "file": "zmm_niederstwert_f01.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f01.abap:70"
+        },
+        "meaning": "Marktpreis = Buchpreis"
+      },
+      {
+        "id": "pg",
+        "type": "call",
+        "anchor": {
+          "file": "zmm_niederstwert.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert.abap:42"
+        },
+        "meaning": "Gängigkeit ermitteln"
+      },
+      {
+        "id": "fg",
+        "type": "start",
+        "anchor": {
+          "file": "zmm_niederstwert_f01.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f01.abap:76"
+        },
+        "meaning": "Gängigkeitsroutine"
+      },
+      {
+        "id": "lg",
+        "type": "loop",
+        "anchor": {
+          "file": "zmm_niederstwert_f01.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f01.abap:87"
+        },
+        "meaning": "Materialien durchlaufen"
+      },
+      {
+        "id": "qg",
+        "type": "read",
+        "anchor": {
+          "file": "zmm_niederstwert_f01.abap",
+          "line": 89,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f01.abap:89"
+        },
+        "meaning": "Verbrauch der letzten 12 Monate summieren"
+      },
+      {
+        "id": "gg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_niederstwert_f01.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f01.abap:98"
+        },
+        "meaning": "Kein Verbrauch?"
+      },
+      {
+        "id": "ag0",
+        "type": "action",
+        "anchor": {
+          "file": "zmm_niederstwert_f01.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f01.abap:99"
+        },
+        "meaning": "Abschlag 80 % (Ladenhüter)"
+      },
+      {
+        "id": "ar",
+        "type": "action",
+        "anchor": {
+          "file": "zmm_niederstwert_f01.abap",
+          "line": 102,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f01.abap:102"
+        },
+        "meaning": "Reichweite in Monaten"
+      },
+      {
+        "id": "gr",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_niederstwert_f01.abap",
+          "line": 103,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f01.abap:103"
+        },
+        "meaning": "Reichweite über 24 / über 12 Monate?"
+      },
+      {
+        "id": "pc",
+        "type": "call",
+        "anchor": {
+          "file": "zmm_niederstwert.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert.abap:43"
+        },
+        "meaning": "Abwertung berechnen"
+      },
+      {
+        "id": "fc",
+        "type": "start",
+        "anchor": {
+          "file": "zmm_niederstwert_f01.abap",
+          "line": 114,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f01.abap:114"
+        },
+        "meaning": "Abwertungsroutine"
+      },
+      {
+        "id": "lc",
+        "type": "loop",
+        "anchor": {
+          "file": "zmm_niederstwert_f01.abap",
+          "line": 117,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f01.abap:117"
+        },
+        "meaning": "Materialien durchlaufen"
+      },
+      {
+        "id": "ac",
+        "type": "action",
+        "anchor": {
+          "file": "zmm_niederstwert_f01.abap",
+          "line": 118,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f01.abap:118"
+        },
+        "meaning": "Neuer Preis = niedrigerer aus Buch- und Marktpreis, abzüglich Abschlag"
+      },
+      {
+        "id": "aw",
+        "type": "action",
+        "anchor": {
+          "file": "zmm_niederstwert_f01.abap",
+          "line": 123,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f01.abap:123"
+        },
+        "meaning": "Abwertung in Prozent und Wert"
+      },
+      {
+        "id": "gk",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_niederstwert_f01.abap",
+          "line": 124,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f01.abap:124"
+        },
+        "meaning": "Schwelle und Mindestwert erreicht?"
+      },
+      {
+        "id": "ak",
+        "type": "action",
+        "anchor": {
+          "file": "zmm_niederstwert_f01.abap",
+          "line": 125,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f01.abap:125"
+        },
+        "meaning": "Als Abwertungskandidat markieren"
+      },
+      {
+        "id": "gt",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_niederstwert.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert.abap:45"
+        },
+        "meaning": "Echtlauf?"
+      },
+      {
+        "id": "pp",
+        "type": "call",
+        "anchor": {
+          "file": "zmm_niederstwert.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert.abap:46"
+        },
+        "meaning": "Preise ändern"
+      },
+      {
+        "id": "fp",
+        "type": "start",
+        "anchor": {
+          "file": "zmm_niederstwert_f02.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f02.abap:20"
+        },
+        "meaning": "Preisänderungsroutine"
+      },
+      {
+        "id": "lp",
+        "type": "loop",
+        "anchor": {
+          "file": "zmm_niederstwert_f02.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f02.abap:32"
+        },
+        "meaning": "Kandidaten durchlaufen"
+      },
+      {
+        "id": "gv",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_niederstwert_f02.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f02.abap:34"
+        },
+        "meaning": "Standardpreis?"
+      },
+      {
+        "id": "av",
+        "type": "action",
+        "anchor": {
+          "file": "zmm_niederstwert_f02.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f02.abap:36"
+        },
+        "meaning": "V-Preis: manuelle Abwertung vermerken"
+      },
+      {
+        "id": "lk",
+        "type": "lock",
+        "anchor": {
+          "file": "zmm_niederstwert_f02.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f02.abap:40"
+        },
+        "meaning": "Sperrprobe Materialbewertung"
+      },
+      {
+        "id": "gl",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_niederstwert_f02.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f02.abap:48"
+        },
+        "meaning": "Material gesperrt?"
+      },
+      {
+        "id": "al",
+        "type": "action",
+        "anchor": {
+          "file": "zmm_niederstwert_f02.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f02.abap:50"
+        },
+        "meaning": "Sperre vermerken"
+      },
+      {
+        "id": "dq",
+        "type": "lock",
+        "anchor": {
+          "file": "zmm_niederstwert_f02.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f02.abap:53"
+        },
+        "meaning": "Sperre sofort wieder freigeben"
+      },
+      {
+        "id": "bd",
+        "type": "action",
+        "anchor": {
+          "file": "zmm_niederstwert_f02.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f02.abap:60"
+        },
+        "meaning": "Batch-Input für MR21 mit Stichtag, Werk, Material und neuem Preis aufbauen"
+      },
+      {
+        "id": "ct",
+        "type": "transaction",
+        "anchor": {
+          "file": "zmm_niederstwert_f02.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f02.abap:70"
+        },
+        "meaning": "Preisänderung per Batch-Input ausführen"
+      },
+      {
+        "id": "ge",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_niederstwert_f02.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f02.abap:75"
+        },
+        "meaning": "Fehlermeldung aus MR21?"
+      },
+      {
+        "id": "ae",
+        "type": "action",
+        "anchor": {
+          "file": "zmm_niederstwert_f02.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f02.abap:77"
+        },
+        "meaning": "Fehlertext übernehmen"
+      },
+      {
+        "id": "ao",
+        "type": "action",
+        "anchor": {
+          "file": "zmm_niederstwert_f02.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f02.abap:82"
+        },
+        "meaning": "Preisänderung vermerken"
+      },
+      {
+        "id": "ph",
+        "type": "call",
+        "anchor": {
+          "file": "zmm_niederstwert.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert.abap:47"
+        },
+        "meaning": "Historie schreiben"
+      },
+      {
+        "id": "fh",
+        "type": "start",
+        "anchor": {
+          "file": "zmm_niederstwert_f02.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f02.abap:88"
+        },
+        "meaning": "Historienroutine"
+      },
+      {
+        "id": "lh",
+        "type": "loop",
+        "anchor": {
+          "file": "zmm_niederstwert_f02.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f02.abap:92"
+        },
+        "meaning": "Kandidaten sammeln"
+      },
+      {
+        "id": "gh",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_niederstwert_f02.abap",
+          "line": 101,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f02.abap:101"
+        },
+        "meaning": "Kandidaten vorhanden?"
+      },
+      {
+        "id": "rh",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_niederstwert_f02.abap",
+          "line": 102,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f02.abap:102"
+        },
+        "meaning": "Keine Historie"
+      },
+      {
+        "id": "wh",
+        "type": "write",
+        "anchor": {
+          "file": "zmm_niederstwert_f02.abap",
+          "line": 104,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f02.abap:104"
+        },
+        "meaning": "Historie der Kandidaten schreiben"
+      },
+      {
+        "id": "ch",
+        "type": "transaction",
+        "anchor": {
+          "file": "zmm_niederstwert_f02.abap",
+          "line": 105,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f02.abap:105"
+        },
+        "meaning": "Festschreiben"
+      },
+      {
+        "id": "eos",
+        "type": "start",
+        "anchor": {
+          "file": "zmm_niederstwert.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert.abap:50"
+        },
+        "meaning": "Ausgabeblock"
+      },
+      {
+        "id": "po",
+        "type": "call",
+        "anchor": {
+          "file": "zmm_niederstwert.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert.abap:51"
+        },
+        "meaning": "Ergebnis ausgeben"
+      },
+      {
+        "id": "fo",
+        "type": "start",
+        "anchor": {
+          "file": "zmm_niederstwert_f02.abap",
+          "line": 109,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f02.abap:109"
+        },
+        "meaning": "Ausgaberoutine"
+      },
+      {
+        "id": "go",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_niederstwert_f02.abap",
+          "line": 113,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f02.abap:113"
+        },
+        "meaning": "Daten vorhanden?"
+      },
+      {
+        "id": "ro",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_niederstwert_f02.abap",
+          "line": 114,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f02.abap:114"
+        },
+        "meaning": "Keine Ausgabe"
+      },
+      {
+        "id": "gbt",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_niederstwert_f02.abap",
+          "line": 118,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f02.abap:118"
+        },
+        "meaning": "Hintergrundlauf?"
+      },
+      {
+        "id": "ppb",
+        "type": "call",
+        "anchor": {
+          "file": "zmm_niederstwert_f02.abap",
+          "line": 119,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f02.abap:119"
+        },
+        "meaning": "Summenprotokoll"
+      },
+      {
+        "id": "fpb",
+        "type": "start",
+        "anchor": {
+          "file": "zmm_niederstwert_f02.abap",
+          "line": 147,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f02.abap:147"
+        },
+        "meaning": "Protokollroutine"
+      },
+      {
+        "id": "wpb",
+        "type": "output",
+        "anchor": {
+          "file": "zmm_niederstwert_f02.abap",
+          "line": 159,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f02.abap:159"
+        },
+        "meaning": "Summen ins Spool schreiben"
+      },
+      {
+        "id": "rbt",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_niederstwert_f02.abap",
+          "line": 120,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f02.abap:120"
+        },
+        "meaning": "Ausgabe fertig"
+      },
+      {
+        "id": "alv",
+        "type": "output",
+        "anchor": {
+          "file": "zmm_niederstwert_f02.abap",
+          "line": 133,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f02.abap:133"
+        },
+        "meaning": "Ergebnisliste als ALV sortiert nach Abwertungswert"
+      },
+      {
+        "id": "fu",
+        "type": "start",
+        "anchor": {
+          "file": "zmm_niederstwert_f02.abap",
+          "line": 167,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f02.abap:167"
+        },
+        "meaning": "Doppelklick in der Liste"
+      },
+      {
+        "id": "cu",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_niederstwert_f02.abap",
+          "line": 171,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f02.abap:171"
+        },
+        "meaning": "Funktionscode?"
+      },
+      {
+        "id": "tm",
+        "type": "external_program",
+        "anchor": {
+          "file": "zmm_niederstwert_f02.abap",
+          "line": 175,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f02.abap:175"
+        },
+        "meaning": "Materialstamm anzeigen"
+      },
+      {
+        "id": "x_fa",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_niederstwert_f01.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f01.abap:12"
+        },
+        "meaning": "BERECHTIGUNG_PRUEFEN beendet"
+      },
+      {
+        "id": "x_fw",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_niederstwert_f01.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f01.abap:21"
+        },
+        "meaning": "WERKE_ERMITTELN beendet"
+      },
+      {
+        "id": "x_fb",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_niederstwert_f01.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f01.abap:45"
+        },
+        "meaning": "BESTAND_LESEN beendet"
+      },
+      {
+        "id": "x_fm",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_niederstwert_f01.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f01.abap:73"
+        },
+        "meaning": "MARKTPREIS_ERMITTELN beendet"
+      },
+      {
+        "id": "x_fg",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_niederstwert_f01.abap",
+          "line": 111,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f01.abap:111"
+        },
+        "meaning": "GAENGIGKEIT_ERMITTELN beendet"
+      },
+      {
+        "id": "x_fc",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_niederstwert_f01.abap",
+          "line": 131,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f01.abap:131"
+        },
+        "meaning": "ABWERTUNG_BERECHNEN beendet"
+      },
+      {
+        "id": "x_fp",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_niederstwert_f02.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f02.abap:85"
+        },
+        "meaning": "PREISE_AENDERN beendet"
+      },
+      {
+        "id": "x_fh",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_niederstwert_f02.abap",
+          "line": 106,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f02.abap:106"
+        },
+        "meaning": "HISTORIE_SCHREIBEN beendet"
+      },
+      {
+        "id": "eend",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_niederstwert.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert.abap:51"
+        },
+        "meaning": "Report beendet"
+      },
+      {
+        "id": "x_pb",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_niederstwert_f02.abap",
+          "line": 164,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f02.abap:164"
+        },
+        "meaning": "PROTOKOLL_BATCH beendet"
+      },
+      {
+        "id": "x_fu",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_niederstwert_f02.abap",
+          "line": 177,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f02.abap:177"
+        },
+        "meaning": "USER_COMMAND beendet"
+      },
+      {
+        "id": "x_fo",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_niederstwert_f02.abap",
+          "line": 144,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_niederstwert_f02.abap:144"
+        },
+        "meaning": "AUSGABE beendet (ALV verlassen)"
+      }
+    ],
+    "edges": [
+      {
+        "from": "in",
+        "to": "ia",
+        "condition": "always"
+      },
+      {
+        "from": "ia",
+        "to": "as",
+        "condition": "always"
+      },
+      {
+        "from": "as",
+        "to": "pa",
+        "condition": "always"
+      },
+      {
+        "from": "pa",
+        "to": "fa",
+        "condition": "always"
+      },
+      {
+        "from": "fa",
+        "to": "aa",
+        "condition": "always"
+      },
+      {
+        "from": "aa",
+        "to": "ga",
+        "condition": "always"
+      },
+      {
+        "from": "ga",
+        "to": "ma",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "ga",
+        "to": "x_fa",
+        "condition": "else"
+      },
+      {
+        "from": "s",
+        "to": "pw",
+        "condition": "always"
+      },
+      {
+        "from": "pw",
+        "to": "fw",
+        "condition": "always"
+      },
+      {
+        "from": "fw",
+        "to": "qw",
+        "condition": "always"
+      },
+      {
+        "from": "qw",
+        "to": "x_fw",
+        "condition": "always"
+      },
+      {
+        "from": "gw",
+        "to": "mw",
+        "condition": "gt_werks IS INITIAL"
+      },
+      {
+        "from": "gw",
+        "to": "pb",
+        "condition": "else"
+      },
+      {
+        "from": "pb",
+        "to": "fb",
+        "condition": "always"
+      },
+      {
+        "from": "fb",
+        "to": "qb",
+        "condition": "always"
+      },
+      {
+        "from": "qb",
+        "to": "lb",
+        "condition": "always"
+      },
+      {
+        "from": "lb",
+        "to": "qv",
+        "condition": "next row"
+      },
+      {
+        "from": "qv",
+        "to": "lb",
+        "condition": "next iteration"
+      },
+      {
+        "from": "lb",
+        "to": "x_fb",
+        "condition": "no more rows"
+      },
+      {
+        "from": "gb",
+        "to": "mb",
+        "condition": "gt_bew IS INITIAL"
+      },
+      {
+        "from": "mb",
+        "to": "rb",
+        "condition": "always"
+      },
+      {
+        "from": "rb",
+        "to": "eos",
+        "condition": "always"
+      },
+      {
+        "from": "gb",
+        "to": "pm",
+        "condition": "else"
+      },
+      {
+        "from": "pm",
+        "to": "fm",
+        "condition": "always"
+      },
+      {
+        "from": "fm",
+        "to": "lm",
+        "condition": "always"
+      },
+      {
+        "from": "lm",
+        "to": "qm",
+        "condition": "next row"
+      },
+      {
+        "from": "qm",
+        "to": "gm",
+        "condition": "no more rows"
+      },
+      {
+        "from": "gm",
+        "to": "am1",
+        "condition": "sy-subrc = 0 AND lv_peinh > 0 AND <ls_bew>-peinh > 0"
+      },
+      {
+        "from": "gm",
+        "to": "am2",
+        "condition": "else"
+      },
+      {
+        "from": "am1",
+        "to": "lm",
+        "condition": "next iteration"
+      },
+      {
+        "from": "am2",
+        "to": "lm",
+        "condition": "next iteration"
+      },
+      {
+        "from": "lm",
+        "to": "x_fm",
+        "condition": "no more rows"
+      },
+      {
+        "from": "pg",
+        "to": "fg",
+        "condition": "always"
+      },
+      {
+        "from": "fg",
+        "to": "lg",
+        "condition": "always"
+      },
+      {
+        "from": "lg",
+        "to": "qg",
+        "condition": "next row"
+      },
+      {
+        "from": "qg",
+        "to": "gg",
+        "condition": "always"
+      },
+      {
+        "from": "gg",
+        "to": "ag0",
+        "condition": "lv_verbr <= 0"
+      },
+      {
+        "from": "ag0",
+        "to": "lg",
+        "condition": "next iteration"
+      },
+      {
+        "from": "gg",
+        "to": "ar",
+        "condition": "else"
+      },
+      {
+        "from": "ar",
+        "to": "gr",
+        "condition": "always"
+      },
+      {
+        "from": "gr",
+        "to": "lg",
+        "condition": "<ls_bew>-reichw > 24"
+      },
+      {
+        "from": "gr",
+        "to": "lg",
+        "condition": "<ls_bew>-reichw > 12"
+      },
+      {
+        "from": "gr",
+        "to": "lg",
+        "condition": "else"
+      },
+      {
+        "from": "lg",
+        "to": "x_fg",
+        "condition": "no more rows"
+      },
+      {
+        "from": "pc",
+        "to": "fc",
+        "condition": "always"
+      },
+      {
+        "from": "fc",
+        "to": "lc",
+        "condition": "always"
+      },
+      {
+        "from": "lc",
+        "to": "ac",
+        "condition": "next row"
+      },
+      {
+        "from": "ac",
+        "to": "aw",
+        "condition": "always"
+      },
+      {
+        "from": "aw",
+        "to": "gk",
+        "condition": "always"
+      },
+      {
+        "from": "gk",
+        "to": "ak",
+        "condition": "<ls_bew>-abw_pct >= p_schw AND <ls_bew>-abw_wert >= p_minw"
+      },
+      {
+        "from": "ak",
+        "to": "lc",
+        "condition": "next iteration"
+      },
+      {
+        "from": "gk",
+        "to": "lc",
+        "condition": "else"
+      },
+      {
+        "from": "lc",
+        "to": "x_fc",
+        "condition": "no more rows"
+      },
+      {
+        "from": "gt",
+        "to": "pp",
+        "condition": "p_test = abap_false"
+      },
+      {
+        "from": "gt",
+        "to": "eos",
+        "condition": "else"
+      },
+      {
+        "from": "pp",
+        "to": "fp",
+        "condition": "always"
+      },
+      {
+        "from": "fp",
+        "to": "lp",
+        "condition": "always"
+      },
+      {
+        "from": "lp",
+        "to": "gv",
+        "condition": "next row"
+      },
+      {
+        "from": "gv",
+        "to": "av",
+        "condition": "<ls_bew>-vprsv <> 'S'"
+      },
+      {
+        "from": "av",
+        "to": "lp",
+        "condition": "next iteration"
+      },
+      {
+        "from": "gv",
+        "to": "lk",
+        "condition": "else"
+      },
+      {
+        "from": "lk",
+        "to": "gl",
+        "condition": "always"
+      },
+      {
+        "from": "gl",
+        "to": "al",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "al",
+        "to": "lp",
+        "condition": "next iteration"
+      },
+      {
+        "from": "gl",
+        "to": "dq",
+        "condition": "else"
+      },
+      {
+        "from": "dq",
+        "to": "bd",
+        "condition": "always"
+      },
+      {
+        "from": "bd",
+        "to": "ct",
+        "condition": "always"
+      },
+      {
+        "from": "ct",
+        "to": "ge",
+        "condition": "always"
+      },
+      {
+        "from": "ge",
+        "to": "ae",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "ge",
+        "to": "ao",
+        "condition": "else"
+      },
+      {
+        "from": "ae",
+        "to": "lp",
+        "condition": "next iteration"
+      },
+      {
+        "from": "ao",
+        "to": "lp",
+        "condition": "next iteration"
+      },
+      {
+        "from": "lp",
+        "to": "x_fp",
+        "condition": "no more rows"
+      },
+      {
+        "from": "ph",
+        "to": "fh",
+        "condition": "always"
+      },
+      {
+        "from": "fh",
+        "to": "lh",
+        "condition": "always"
+      },
+      {
+        "from": "lh",
+        "to": "gh",
+        "condition": "no more rows"
+      },
+      {
+        "from": "gh",
+        "to": "rh",
+        "condition": "lt_hist IS INITIAL"
+      },
+      {
+        "from": "rh",
+        "to": "eos",
+        "condition": "always"
+      },
+      {
+        "from": "gh",
+        "to": "wh",
+        "condition": "else"
+      },
+      {
+        "from": "wh",
+        "to": "ch",
+        "condition": "always"
+      },
+      {
+        "from": "ch",
+        "to": "x_fh",
+        "condition": "always"
+      },
+      {
+        "from": "eos",
+        "to": "po",
+        "condition": "always"
+      },
+      {
+        "from": "po",
+        "to": "fo",
+        "condition": "always"
+      },
+      {
+        "from": "fo",
+        "to": "go",
+        "condition": "always"
+      },
+      {
+        "from": "go",
+        "to": "ro",
+        "condition": "gt_bew IS INITIAL"
+      },
+      {
+        "from": "go",
+        "to": "gbt",
+        "condition": "else"
+      },
+      {
+        "from": "gbt",
+        "to": "ppb",
+        "condition": "sy-batch = abap_true"
+      },
+      {
+        "from": "ppb",
+        "to": "fpb",
+        "condition": "always"
+      },
+      {
+        "from": "fpb",
+        "to": "wpb",
+        "condition": "always"
+      },
+      {
+        "from": "wpb",
+        "to": "x_pb",
+        "condition": "always"
+      },
+      {
+        "from": "gbt",
+        "to": "alv",
+        "condition": "else"
+      },
+      {
+        "from": "alv",
+        "to": "fu",
+        "condition": "always"
+      },
+      {
+        "from": "fu",
+        "to": "cu",
+        "condition": "always"
+      },
+      {
+        "from": "cu",
+        "to": "tm",
+        "condition": "WHEN '&IC1'"
+      },
+      {
+        "from": "ma",
+        "to": "xma",
+        "condition": "always"
+      },
+      {
+        "from": "x_fa",
+        "to": "s",
+        "condition": "always"
+      },
+      {
+        "from": "x_fw",
+        "to": "gw",
+        "condition": "always"
+      },
+      {
+        "from": "mw",
+        "to": "xmw",
+        "condition": "always"
+      },
+      {
+        "from": "x_fb",
+        "to": "gb",
+        "condition": "always"
+      },
+      {
+        "from": "x_fm",
+        "to": "pg",
+        "condition": "always"
+      },
+      {
+        "from": "x_fg",
+        "to": "pc",
+        "condition": "always"
+      },
+      {
+        "from": "x_fc",
+        "to": "gt",
+        "condition": "always"
+      },
+      {
+        "from": "x_fp",
+        "to": "ph",
+        "condition": "always"
+      },
+      {
+        "from": "x_fh",
+        "to": "eos",
+        "condition": "always"
+      },
+      {
+        "from": "ro",
+        "to": "eend",
+        "condition": "always"
+      },
+      {
+        "from": "rbt",
+        "to": "eend",
+        "condition": "always"
+      },
+      {
+        "from": "x_pb",
+        "to": "rbt",
+        "condition": "always"
+      },
+      {
+        "from": "tm",
+        "to": "x_fu",
+        "condition": "always"
+      },
+      {
+        "from": "cu",
+        "to": "x_fu",
+        "condition": "else"
+      },
+      {
+        "from": "x_fo",
+        "to": "eend",
+        "condition": "always"
+      },
+      {
+        "from": "x_fu",
+        "to": "x_fo",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zmm_niederstwert_f01.abap:89 — kein Fachsatz „Stornos von Verbräuchen werden gegengerechnet“ (262/202/602 sind nicht in der Bewegungsartenliste)",
+    "zmm_niederstwert_f02.abap:40 — kein Fachsatz „Das Material bleibt während der Preisänderung gesperrt“ (die Sperre wird vor MR21 wieder freigegeben)",
+    "zmm_niederstwert_f01.abap:118 — kein Fachsatz „Werterhöhungen (Zuschreibungen) werden gebucht“ (der neue Preis ist nie höher als der Buchpreis)",
+    "zmm_niederstwert_f02.abap:34 — kein Fachsatz „V-Preis-Materialien werden über den Material-Ledger-Abschluss abgewertet“ (der Code vermerkt nur, dass manuell abzuwerten ist)"
+  ],
+  "processDescription": "Zum Jahresabschluss startet die Bestandsbewertung den Report für einen Buchungskreis; als Stichtag wird der 31.12. des Vorjahres vorgeschlagen, dazu Materialarten, Abwertungsschwelle, Mindestwert, Testlauf und Batch-Input-Modus. Am Selektionsbild wird die Berechtigung zum Ändern der Materialbewertung geprüft. Der Report ermittelt die Werke des Buchungskreises und liest die Materialien mit Bestand samt Wert und Buchpreis (Standard- bzw. gleitender Preis); ohne Werke bricht er ab, ohne Bestände überspringt er die Bewertung. Als Marktpreis dient der jüngste Bestellpreis der letzten 183 Tage, sonst der Buchpreis. Aus dem Verbrauch der letzten 12 Monate (261, 201, 601) ergibt sich die Reichweite und daraus ein Gängigkeitsabschlag von 0, 20, 50 oder – ohne Verbrauch – 80 %. Der neue Preis ist der niedrigere aus Buch- und Marktpreis abzüglich Abschlag; Materialien, deren Abwertung Schwelle und Mindestwert erreicht, sind Kandidaten. Im Echtlauf werden nur Standardpreis-Kandidaten, deren Bewertung nicht gerade gesperrt ist, per Batch-Input über MR21 zum Stichtag umgewertet, V-Preis-Kandidaten werden zur manuellen Abwertung vermerkt; danach werden alle Kandidaten mit Buchungskennzeichen in die Historie geschrieben. Zum Schluss erscheint im Hintergrund ein Summenprotokoll, im Dialog eine ALV-Liste nach Abwertungsbetrag, aus der sich der Materialstamm öffnen lässt."
+}

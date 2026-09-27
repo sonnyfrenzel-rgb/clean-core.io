@@ -1,0 +1,26 @@
+{
+  "id": "BM-074",
+  "title": "IDoc-Eingang Prüfergebnisse aus dem LIMS mit optionaler Qualitätsmeldung",
+  "domain": "PP / PM / QM — Produktion, Instandhaltung, Qualität",
+  "band": "komplex",
+  "loc": 240,
+  "constructs": [
+    "IDoc-Eingangsbaustein IDOC_INPUT_*",
+    "LOOP AT idoc_contrl / idoc_data WHERE docnum",
+    "CASE segnam",
+    "Strukturzuweisung aus SDATA",
+    "FORM mit TABLES-Parameter",
+    "SELECT SINGLE QALS/QAVE/QAPO",
+    "BAPI_INSPOPER_RECORDRESULTS",
+    "BAPI_QUALNOT_CREATE/SAVE",
+    "ROLLBACK WORK im IDoc-Paket",
+    "Statussätze 51/53, workflow_result"
+  ],
+  "scenario": "Eingangsverarbeitung für Prüfergebnisse, die ein Labor-Informationssystem als IDoc ZQMRES schickt; bei der Transformation zu klären, ob sie durch die freigegebene Ergebniserfassungs-API oder eine Integration-Suite-Anbindung ersetzt wird.",
+  "s4_issues": [
+    "Kundeneigener IDoc-Typ und Eingangsbaustein – kein Standardmapping",
+    "Direktzugriff QALS/QAVE/QAPO statt CDS",
+    "ROLLBACK WORK bei Massenverarbeitung verwirft auch Vorgänger-IDocs desselben Pakets",
+    "BAPI_QUALNOT_SAVE-Ergebnis wird nicht geprüft"
+  ]
+}

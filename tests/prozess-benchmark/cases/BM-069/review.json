@@ -1,0 +1,23 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten e_end",
+      "before": "—",
+      "after": "end source.abap:108 „Job beendet, Protokoll angezeigt“",
+      "why": "Pfadende des Ereignisblocks START-OF-SELECTION fehlte (Validator-Warnung); nach Autorenbrief bei implizitem Ende end auf der letzten Anweisung",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kante disp→e_end",
+      "before": "—",
+      "after": "[always]",
+      "why": "Ende des Ereignisblocks",
+      "category": "Kante"
+    }
+  ],
+  "doubts": [
+    "source.abap:90 — Der Parameter LANGUAGE von BAPI_INSPLOT_SETUSAGEDECISION ist nach meiner Erinnerung als Struktur (BAPI2045LA) typisiert; die Übergabe von sy-langu wäre dann ein Typkonflikt. Nicht sicher verifizierbar, Skelett unberührt — nicht geändert."
+  ]
+}

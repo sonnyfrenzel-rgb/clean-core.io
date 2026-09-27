@@ -1,0 +1,19 @@
+{
+  "id": "BM-081",
+  "title": "Monitoring-Job: Rückstau offener Änderungszeiger je Nachrichtentyp",
+  "domain": "Querschnitt — Schnittstellen, Stammdaten, HR, Workflow, technische Jobs",
+  "band": "einfach",
+  "loc": 20,
+  "constructs": [
+    "REPORT",
+    "SELECT COUNT(*)",
+    "BDCP2",
+    "MESSAGE Typ E im Batch",
+    "RETURN"
+  ],
+  "scenario": "Täglicher Hintergrundjob in der ALE-Überwachung, der bei zu vielen unverarbeiteten Änderungszeigern für den Materialstamm-Versand abbricht und so einen Job-Alarm auslöst.",
+  "s4_issues": [
+    "Direkter Lesezugriff auf BDCP2 statt freigegebener Schnittstelle",
+    "Abbruch per MESSAGE Typ E als Alarmmechanismus im Batch"
+  ]
+}

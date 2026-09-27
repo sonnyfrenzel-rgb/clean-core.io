@@ -1,0 +1,2285 @@
+{
+  "id": "BM-016",
+  "title": "Massenänderung Kundenaufträge per Batch-Input VA02: Datei, Zeilenprüfung, CALL TRANSACTION, Protokoll",
+  "classes": [
+    "K17",
+    "K14",
+    "K15",
+    "K01",
+    "K12",
+    "K18"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "GUI_UPLOAD",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zsd_mass_va02_f01.abap",
+        "line": 31,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_mass_va02_f01.abap:31"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAL_LOG_CREATE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zsd_mass_va02_f01.abap",
+        "line": 69,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_mass_va02_f01.abap:69"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAL_DB_SAVE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zsd_mass_va02_f01.abap",
+        "line": 87,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_mass_va02_f01.abap:87"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "VBAK",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zsd_mass_va02_f02.abap",
+        "line": 26,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_mass_va02_f02.abap:26"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "VBUP",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zsd_mass_va02_f02.abap",
+        "line": 52,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_mass_va02_f02.abap:52"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAL_LOG_MSG_ADD",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zsd_mass_va02_f02.abap",
+        "line": 85,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_mass_va02_f02.abap:85"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ENQUEUE_EVVBAKE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zsd_mass_va02_f03.abap",
+        "line": 27,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_mass_va02_f03.abap:27"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "DEQUEUE_EVVBAKE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zsd_mass_va02_f03.abap",
+        "line": 39,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_mass_va02_f03.abap:39"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "VA02",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zsd_mass_va02_f03.abap",
+        "line": 46,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_mass_va02_f03.abap:46"
+      },
+      "identity": {
+        "objectType": "TRAN"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "SAPMV45A",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zsd_mass_va02_f03.abap",
+        "line": 79,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_mass_va02_f03.abap:79"
+      },
+      "identity": {
+        "objectType": "PROG"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "CL_SALV_TABLE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zsd_mass_va02_f03.abap",
+        "line": 121,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_mass_va02_f03.abap:121"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-016-B01",
+      "text": "Soll eine Datei vom Applikationsserver gelesen werden, muss ihr Pfad absolut sein, sonst bleibt der Benutzer mit Fehler 600 auf dem Selektionsbild.",
+      "anchors": [
+        {
+          "file": "zsd_mass_va02.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02.abap:25"
+        },
+        {
+          "file": "zsd_mass_va02.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02.abap:26"
+        }
+      ]
+    },
+    {
+      "id": "BM-016-B02",
+      "text": "Eine Serverdatei wird zeilenweise gelesen; lässt sie sich nicht öffnen, erscheint Hinweis 602 und es wird nichts verarbeitet.",
+      "anchors": [
+        {
+          "file": "zsd_mass_va02_f01.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f01.abap:17"
+        },
+        {
+          "file": "zsd_mass_va02_f01.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f01.abap:18"
+        },
+        {
+          "file": "zsd_mass_va02_f01.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f01.abap:22"
+        },
+        {
+          "file": "zsd_mass_va02_f01.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f01.abap:24"
+        }
+      ]
+    },
+    {
+      "id": "BM-016-B03",
+      "text": "Eine Arbeitsplatzdatei wird hochgeladen; scheitert der Upload, erscheint Hinweis 602 und es wird nichts verarbeitet.",
+      "anchors": [
+        {
+          "file": "zsd_mass_va02_f01.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f01.abap:31"
+        },
+        {
+          "file": "zsd_mass_va02_f01.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f01.abap:39"
+        }
+      ]
+    },
+    {
+      "id": "BM-016-B04",
+      "text": "Die erste Zeile gilt als Überschrift; jede weitere Zeile wird in Auftragsnummer, Positionsnummer, Feldname und neuen Wert zerlegt, Nummern werden mit führenden Nullen aufgefüllt.",
+      "anchors": [
+        {
+          "file": "zsd_mass_va02_f01.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f01.abap:49"
+        }
+      ]
+    },
+    {
+      "id": "BM-016-B05",
+      "text": "Enthält die Datei keine Datenzeilen, endet der Report mit Hinweis 601.",
+      "anchors": [
+        {
+          "file": "zsd_mass_va02.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02.abap:31"
+        },
+        {
+          "file": "zsd_mass_va02.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02.abap:32"
+        }
+      ]
+    },
+    {
+      "id": "BM-016-B06",
+      "text": "Für den Lauf wird ein Anwendungsprotokoll ZSD/MASSVA02 mit dem Dateinamen als externer Nummer angelegt.",
+      "anchors": [
+        {
+          "file": "zsd_mass_va02_f01.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f01.abap:69"
+        }
+      ]
+    },
+    {
+      "id": "BM-016-B07",
+      "text": "Jede Zeile ist zunächst grün; eine Zeile, deren Auftrag nicht existiert, wird rot markiert.",
+      "anchors": [
+        {
+          "file": "zsd_mass_va02_f02.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f02.abap:16"
+        },
+        {
+          "file": "zsd_mass_va02_f02.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f02.abap:26"
+        },
+        {
+          "file": "zsd_mass_va02_f02.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f02.abap:27"
+        }
+      ]
+    },
+    {
+      "id": "BM-016-B08",
+      "text": "Fehlt dem Benutzer die Änderungsberechtigung für Verkaufsorganisation, Vertriebsweg und Sparte des Auftrags, wird die Zeile rot markiert.",
+      "anchors": [
+        {
+          "file": "zsd_mass_va02_f02.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f02.abap:33"
+        },
+        {
+          "file": "zsd_mass_va02_f02.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f02.abap:38"
+        }
+      ]
+    },
+    {
+      "id": "BM-016-B09",
+      "text": "Eine Liefersperre darf nur ohne Positionsnummer angegeben werden.",
+      "anchors": [
+        {
+          "file": "zsd_mass_va02_f02.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f02.abap:44"
+        },
+        {
+          "file": "zsd_mass_va02_f02.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f02.abap:47"
+        }
+      ]
+    },
+    {
+      "id": "BM-016-B10",
+      "text": "Für Menge, Absagegrund und Liefertermin muss die Position existieren und darf nicht vollständig erledigt sein.",
+      "anchors": [
+        {
+          "file": "zsd_mass_va02_f02.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f02.abap:52"
+        },
+        {
+          "file": "zsd_mass_va02_f02.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f02.abap:55"
+        },
+        {
+          "file": "zsd_mass_va02_f02.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f02.abap:58"
+        }
+      ]
+    },
+    {
+      "id": "BM-016-B11",
+      "text": "Andere Feldnamen werden als nicht unterstützt abgelehnt.",
+      "anchors": [
+        {
+          "file": "zsd_mass_va02_f02.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f02.abap:63"
+        }
+      ]
+    },
+    {
+      "id": "BM-016-B12",
+      "text": "Jeder Zeilenfehler färbt die Zeile rot, erhöht den Fehlerzähler und landet mit Zeile, Auftrag und Position im Anwendungsprotokoll.",
+      "anchors": [
+        {
+          "file": "zsd_mass_va02_f02.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f02.abap:78"
+        },
+        {
+          "file": "zsd_mass_va02_f02.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f02.abap:85"
+        }
+      ]
+    },
+    {
+      "id": "BM-016-B13",
+      "text": "Nur grüne Zeilen werden ausgeführt; im Testlauf werden sie gelb als „geprüft, nicht geändert“ markiert.",
+      "anchors": [
+        {
+          "file": "zsd_mass_va02_f03.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f03.abap:17"
+        },
+        {
+          "file": "zsd_mass_va02_f03.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f03.abap:20"
+        }
+      ]
+    },
+    {
+      "id": "BM-016-B14",
+      "text": "Im Echtlauf wird vorab geprüft, ob der Auftrag gerade bearbeitet wird; dann wird die Zeile rot markiert, sonst die Probesperre sofort wieder gelöst.",
+      "anchors": [
+        {
+          "file": "zsd_mass_va02_f03.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f03.abap:27"
+        },
+        {
+          "file": "zsd_mass_va02_f03.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f03.abap:34"
+        },
+        {
+          "file": "zsd_mass_va02_f03.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f03.abap:39"
+        }
+      ]
+    },
+    {
+      "id": "BM-016-B15",
+      "text": "Für die Zeile wird eine VA02-Bildfolge erzeugt: bei Liefersperre über das Kopfbild Versand, sonst über „Position suchen“ und dann Menge, Absagegrund oder Liefertermin der ersten Positionszeile, jeweils mit Sichern.",
+      "anchors": [
+        {
+          "file": "zsd_mass_va02_f03.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f03.abap:43"
+        },
+        {
+          "file": "zsd_mass_va02_f03.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f03.abap:83"
+        },
+        {
+          "file": "zsd_mass_va02_f03.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f03.abap:98"
+        }
+      ]
+    },
+    {
+      "id": "BM-016-B16",
+      "text": "Der Auftrag wird per VA02 im gewählten Anzeigemodus mit synchroner Verbuchung geändert.",
+      "anchors": [
+        {
+          "file": "zsd_mass_va02_f03.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f03.abap:46"
+        }
+      ]
+    },
+    {
+      "id": "BM-016-B17",
+      "text": "Liefert die Transaktion eine Fehlermeldung, wird die Zeile mit deren Text rot markiert.",
+      "anchors": [
+        {
+          "file": "zsd_mass_va02_f03.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f03.abap:50"
+        },
+        {
+          "file": "zsd_mass_va02_f03.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f03.abap:51"
+        },
+        {
+          "file": "zsd_mass_va02_f03.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f03.abap:55"
+        }
+      ]
+    },
+    {
+      "id": "BM-016-B18",
+      "text": "Nur mit der Sicherungsmeldung V1 311 gilt die Zeile als geändert und wird gezählt; fehlt sie, wird die Zeile rot markiert.",
+      "anchors": [
+        {
+          "file": "zsd_mass_va02_f03.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f03.abap:58"
+        },
+        {
+          "file": "zsd_mass_va02_f03.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f03.abap:60"
+        },
+        {
+          "file": "zsd_mass_va02_f03.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f03.abap:61"
+        },
+        {
+          "file": "zsd_mass_va02_f03.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f03.abap:64"
+        }
+      ]
+    },
+    {
+      "id": "BM-016-B19",
+      "text": "Das Anwendungsprotokoll wird nur im Echtlauf gesichert und festgeschrieben.",
+      "anchors": [
+        {
+          "file": "zsd_mass_va02_f01.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f01.abap:84"
+        },
+        {
+          "file": "zsd_mass_va02_f01.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f01.abap:87"
+        },
+        {
+          "file": "zsd_mass_va02_f01.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f01.abap:92"
+        }
+      ]
+    },
+    {
+      "id": "BM-016-B20",
+      "text": "Am Ende erscheinen eine Summenmeldung mit Zeilen, Änderungen und Fehlern und eine ALV-Liste aller Zeilen mit Ampel und Text.",
+      "anchors": [
+        {
+          "file": "zsd_mass_va02_f03.abap",
+          "line": 118,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f03.abap:118"
+        },
+        {
+          "file": "zsd_mass_va02_f03.abap",
+          "line": 121,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f03.abap:121"
+        },
+        {
+          "file": "zsd_mass_va02_f03.abap",
+          "line": 131,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f03.abap:131"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "as",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_mass_va02.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02.abap:23"
+        },
+        "meaning": "Prüfung des Selektionsbilds"
+      },
+      {
+        "id": "g_path",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_mass_va02.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02.abap:25"
+        },
+        "meaning": "Serverdatei ohne absoluten Pfad?"
+      },
+      {
+        "id": "m600",
+        "type": "output",
+        "anchor": {
+          "file": "zsd_mass_va02.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02.abap:26"
+        },
+        "meaning": "Fehler: absoluter Pfad nötig"
+      },
+      {
+        "id": "x600",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_mass_va02.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02.abap:26"
+        },
+        "meaning": "Zurück auf das Selektionsbild"
+      },
+      {
+        "id": "sos",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_mass_va02.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02.abap:29"
+        },
+        "meaning": "Verarbeitung starten"
+      },
+      {
+        "id": "c_read",
+        "type": "call",
+        "anchor": {
+          "file": "zsd_mass_va02.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02.abap:30"
+        },
+        "meaning": "Datei einlesen"
+      },
+      {
+        "id": "g_empty",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_mass_va02.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02.abap:31"
+        },
+        "meaning": "Zeilen gelesen?"
+      },
+      {
+        "id": "m601",
+        "type": "output",
+        "anchor": {
+          "file": "zsd_mass_va02.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02.abap:32"
+        },
+        "meaning": "Hinweis: keine Daten"
+      },
+      {
+        "id": "e_ret",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_mass_va02.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02.abap:33"
+        },
+        "meaning": "Abbruch ohne Daten"
+      },
+      {
+        "id": "c_logc",
+        "type": "call",
+        "anchor": {
+          "file": "zsd_mass_va02.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02.abap:36"
+        },
+        "meaning": "Anwendungsprotokoll anlegen"
+      },
+      {
+        "id": "c_chk",
+        "type": "call",
+        "anchor": {
+          "file": "zsd_mass_va02.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02.abap:37"
+        },
+        "meaning": "Zeilen prüfen"
+      },
+      {
+        "id": "c_exe",
+        "type": "call",
+        "anchor": {
+          "file": "zsd_mass_va02.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02.abap:38"
+        },
+        "meaning": "Änderungen ausführen"
+      },
+      {
+        "id": "c_logs",
+        "type": "call",
+        "anchor": {
+          "file": "zsd_mass_va02.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02.abap:39"
+        },
+        "meaning": "Protokoll sichern"
+      },
+      {
+        "id": "c_show",
+        "type": "call",
+        "anchor": {
+          "file": "zsd_mass_va02.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02.abap:40"
+        },
+        "meaning": "Ergebnis anzeigen"
+      },
+      {
+        "id": "e_end",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_mass_va02.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02.abap:40"
+        },
+        "meaning": "Report beendet"
+      },
+      {
+        "id": "ds",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_mass_va02_f01.abap",
+          "line": 8,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f01.abap:8"
+        },
+        "meaning": "Datei lesen"
+      },
+      {
+        "id": "g_appl",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_mass_va02_f01.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f01.abap:16"
+        },
+        "meaning": "Datei auf dem Applikationsserver?"
+      },
+      {
+        "id": "open",
+        "type": "output",
+        "anchor": {
+          "file": "zsd_mass_va02_f01.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f01.abap:17"
+        },
+        "meaning": "Serverdatei zum Lesen öffnen"
+      },
+      {
+        "id": "g_open",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_mass_va02_f01.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f01.abap:18"
+        },
+        "meaning": "Datei geöffnet?"
+      },
+      {
+        "id": "m602a",
+        "type": "output",
+        "anchor": {
+          "file": "zsd_mass_va02_f01.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f01.abap:19"
+        },
+        "meaning": "Hinweis: Datei nicht lesbar"
+      },
+      {
+        "id": "e_open",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_mass_va02_f01.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f01.abap:20"
+        },
+        "meaning": "Lesen ohne Daten beenden"
+      },
+      {
+        "id": "do",
+        "type": "loop",
+        "anchor": {
+          "file": "zsd_mass_va02_f01.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f01.abap:22"
+        },
+        "meaning": "Serverdatei zeilenweise lesen"
+      },
+      {
+        "id": "g_eof",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_mass_va02_f01.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f01.abap:24"
+        },
+        "meaning": "Dateiende erreicht?"
+      },
+      {
+        "id": "upl",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zsd_mass_va02_f01.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f01.abap:31"
+        },
+        "meaning": "Datei vom Arbeitsplatz hochladen"
+      },
+      {
+        "id": "g_upl",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_mass_va02_f01.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f01.abap:39"
+        },
+        "meaning": "Upload gescheitert?"
+      },
+      {
+        "id": "m602b",
+        "type": "output",
+        "anchor": {
+          "file": "zsd_mass_va02_f01.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f01.abap:40"
+        },
+        "meaning": "Hinweis: Datei nicht lesbar"
+      },
+      {
+        "id": "e_upl",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_mass_va02_f01.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f01.abap:41"
+        },
+        "meaning": "Lesen ohne Daten beenden"
+      },
+      {
+        "id": "lp",
+        "type": "loop",
+        "anchor": {
+          "file": "zsd_mass_va02_f01.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f01.abap:47"
+        },
+        "meaning": "Datenzeilen ohne Überschrift"
+      },
+      {
+        "id": "split",
+        "type": "action",
+        "anchor": {
+          "file": "zsd_mass_va02_f01.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f01.abap:49"
+        },
+        "meaning": "Zeile in Auftrag, Position, Feld und Wert zerlegen und normieren"
+      },
+      {
+        "id": "de",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_mass_va02_f01.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f01.abap:55"
+        },
+        "meaning": "Datei gelesen"
+      },
+      {
+        "id": "lcs",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_mass_va02_f01.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f01.abap:60"
+        },
+        "meaning": "Protokoll anlegen"
+      },
+      {
+        "id": "balc",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zsd_mass_va02_f01.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f01.abap:69"
+        },
+        "meaning": "Anwendungsprotokoll ZSD/MASSVA02 zur Datei anlegen"
+      },
+      {
+        "id": "lce",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_mass_va02_f01.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f01.abap:76"
+        },
+        "meaning": "Protokoll bereit"
+      },
+      {
+        "id": "lss",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_mass_va02_f01.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f01.abap:81"
+        },
+        "meaning": "Protokoll sichern"
+      },
+      {
+        "id": "chk",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_mass_va02_f01.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f01.abap:84"
+        },
+        "meaning": "Echtlauf?"
+      },
+      {
+        "id": "bals",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zsd_mass_va02_f01.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f01.abap:87"
+        },
+        "meaning": "Protokoll auf der Datenbank sichern"
+      },
+      {
+        "id": "cm",
+        "type": "transaction",
+        "anchor": {
+          "file": "zsd_mass_va02_f01.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f01.abap:92"
+        },
+        "meaning": "Protokoll festschreiben"
+      },
+      {
+        "id": "lse",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_mass_va02_f01.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f01.abap:93"
+        },
+        "meaning": "Sichern beendet"
+      },
+      {
+        "id": "zs",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_mass_va02_f02.abap",
+          "line": 11,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f02.abap:11"
+        },
+        "meaning": "Zeilenprüfung"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "zsd_mass_va02_f02.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f02.abap:16"
+        },
+        "meaning": "Je Dateizeile (zunächst grün)"
+      },
+      {
+        "id": "q_vbak",
+        "type": "read",
+        "anchor": {
+          "file": "zsd_mass_va02_f02.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f02.abap:26"
+        },
+        "meaning": "Auftragskopf lesen"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_mass_va02_f02.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f02.abap:27"
+        },
+        "meaning": "Auftrag vorhanden?"
+      },
+      {
+        "id": "ce01",
+        "type": "call",
+        "anchor": {
+          "file": "zsd_mass_va02_f02.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f02.abap:28"
+        },
+        "meaning": "Fehler: Auftrag nicht vorhanden"
+      },
+      {
+        "id": "auth",
+        "type": "action",
+        "anchor": {
+          "file": "zsd_mass_va02_f02.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f02.abap:33"
+        },
+        "meaning": "Änderungsberechtigung für den Vertriebsbereich prüfen"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_mass_va02_f02.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f02.abap:38"
+        },
+        "meaning": "Berechtigung fehlt?"
+      },
+      {
+        "id": "ce02",
+        "type": "call",
+        "anchor": {
+          "file": "zsd_mass_va02_f02.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f02.abap:39"
+        },
+        "meaning": "Fehler: keine Änderungsberechtigung"
+      },
+      {
+        "id": "cs",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_mass_va02_f02.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f02.abap:44"
+        },
+        "meaning": "Welches Feld soll geändert werden?"
+      },
+      {
+        "id": "g_kopf",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_mass_va02_f02.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f02.abap:47"
+        },
+        "meaning": "Positionsnummer bei Kopffeld angegeben?"
+      },
+      {
+        "id": "ce03",
+        "type": "call",
+        "anchor": {
+          "file": "zsd_mass_va02_f02.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f02.abap:48"
+        },
+        "meaning": "Fehler: Liefersperre nur auf Kopfebene"
+      },
+      {
+        "id": "q_vbup",
+        "type": "read",
+        "anchor": {
+          "file": "zsd_mass_va02_f02.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f02.abap:52"
+        },
+        "meaning": "Gesamtstatus der Position lesen"
+      },
+      {
+        "id": "g3",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_mass_va02_f02.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f02.abap:55"
+        },
+        "meaning": "Position vorhanden?"
+      },
+      {
+        "id": "ce04",
+        "type": "call",
+        "anchor": {
+          "file": "zsd_mass_va02_f02.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f02.abap:56"
+        },
+        "meaning": "Fehler: Position nicht vorhanden"
+      },
+      {
+        "id": "ce05",
+        "type": "call",
+        "anchor": {
+          "file": "zsd_mass_va02_f02.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f02.abap:59"
+        },
+        "meaning": "Fehler: Position bereits erledigt"
+      },
+      {
+        "id": "ce06",
+        "type": "call",
+        "anchor": {
+          "file": "zsd_mass_va02_f02.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f02.abap:63"
+        },
+        "meaning": "Fehler: Feld nicht unterstützt"
+      },
+      {
+        "id": "ze",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_mass_va02_f02.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f02.abap:67"
+        },
+        "meaning": "Prüfung beendet"
+      },
+      {
+        "id": "fs",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_mass_va02_f02.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f02.abap:74"
+        },
+        "meaning": "Zeilenfehler"
+      },
+      {
+        "id": "mark",
+        "type": "action",
+        "anchor": {
+          "file": "zsd_mass_va02_f02.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f02.abap:78"
+        },
+        "meaning": "Zeile rot markieren und Fehler zählen"
+      },
+      {
+        "id": "bal_add",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zsd_mass_va02_f02.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f02.abap:85"
+        },
+        "meaning": "Fehler mit Zeile, Auftrag und Position ins Protokoll"
+      },
+      {
+        "id": "fe",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_mass_va02_f02.abap",
+          "line": 91,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f02.abap:91"
+        },
+        "meaning": "Fehler vermerkt"
+      },
+      {
+        "id": "xs",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_mass_va02_f03.abap",
+          "line": 8,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f03.abap:8"
+        },
+        "meaning": "Ausführung"
+      },
+      {
+        "id": "l2",
+        "type": "loop",
+        "anchor": {
+          "file": "zsd_mass_va02_f03.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f03.abap:17"
+        },
+        "meaning": "Je grüner Zeile"
+      },
+      {
+        "id": "g_test",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_mass_va02_f03.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f03.abap:20"
+        },
+        "meaning": "Testlauf?"
+      },
+      {
+        "id": "enq",
+        "type": "lock",
+        "anchor": {
+          "file": "zsd_mass_va02_f03.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f03.abap:27"
+        },
+        "meaning": "Probesperre auf den Auftrag"
+      },
+      {
+        "id": "g_enq",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_mass_va02_f03.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f03.abap:34"
+        },
+        "meaning": "Auftrag in Bearbeitung?"
+      },
+      {
+        "id": "ce07",
+        "type": "call",
+        "anchor": {
+          "file": "zsd_mass_va02_f03.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f03.abap:35"
+        },
+        "meaning": "Fehler: Auftrag in Bearbeitung"
+      },
+      {
+        "id": "deq",
+        "type": "lock",
+        "anchor": {
+          "file": "zsd_mass_va02_f03.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f03.abap:39"
+        },
+        "meaning": "Probesperre sofort wieder lösen"
+      },
+      {
+        "id": "c_bdc",
+        "type": "call",
+        "anchor": {
+          "file": "zsd_mass_va02_f03.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f03.abap:43"
+        },
+        "meaning": "Bildfolge für VA02 aufbauen"
+      },
+      {
+        "id": "ct",
+        "type": "transaction",
+        "anchor": {
+          "file": "zsd_mass_va02_f03.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f03.abap:46"
+        },
+        "meaning": "Auftrag per VA02 im gewählten Anzeigemodus synchron ändern"
+      },
+      {
+        "id": "rd1",
+        "type": "read",
+        "anchor": {
+          "file": "zsd_mass_va02_f03.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f03.abap:50"
+        },
+        "meaning": "Fehlermeldung der Transaktion suchen"
+      },
+      {
+        "id": "g_err",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_mass_va02_f03.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f03.abap:51"
+        },
+        "meaning": "Fehlermeldung vorhanden?"
+      },
+      {
+        "id": "cz",
+        "type": "call",
+        "anchor": {
+          "file": "zsd_mass_va02_f03.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f03.abap:55"
+        },
+        "meaning": "Transaktionsfehler vermerken"
+      },
+      {
+        "id": "rd2",
+        "type": "read",
+        "anchor": {
+          "file": "zsd_mass_va02_f03.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f03.abap:58"
+        },
+        "meaning": "Sicherungsmeldung V1 311 suchen"
+      },
+      {
+        "id": "g_sav",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_mass_va02_f03.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f03.abap:60"
+        },
+        "meaning": "Beleg gesichert?"
+      },
+      {
+        "id": "ok",
+        "type": "action",
+        "anchor": {
+          "file": "zsd_mass_va02_f03.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f03.abap:61"
+        },
+        "meaning": "Zeile als geändert zählen"
+      },
+      {
+        "id": "ce08",
+        "type": "call",
+        "anchor": {
+          "file": "zsd_mass_va02_f03.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f03.abap:64"
+        },
+        "meaning": "Fehler: keine Sicherungsmeldung"
+      },
+      {
+        "id": "xe",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_mass_va02_f03.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f03.abap:69"
+        },
+        "meaning": "Ausführung beendet"
+      },
+      {
+        "id": "bs0",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_mass_va02_f03.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f03.abap:76"
+        },
+        "meaning": "Bildfolge aufbauen"
+      },
+      {
+        "id": "cs1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_mass_va02_f03.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f03.abap:83"
+        },
+        "meaning": "Kopf- oder Positionsänderung?"
+      },
+      {
+        "id": "cs2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_mass_va02_f03.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f03.abap:98"
+        },
+        "meaning": "Welches Positionsfeld?"
+      },
+      {
+        "id": "be",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_mass_va02_f03.abap",
+          "line": 109,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f03.abap:109"
+        },
+        "meaning": "Bildfolge mit Sichern abgeschlossen"
+      },
+      {
+        "id": "rs",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_mass_va02_f03.abap",
+          "line": 114,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f03.abap:114"
+        },
+        "meaning": "Ergebnisanzeige"
+      },
+      {
+        "id": "msum",
+        "type": "output",
+        "anchor": {
+          "file": "zsd_mass_va02_f03.abap",
+          "line": 118,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f03.abap:118"
+        },
+        "meaning": "Summenmeldung: Zeilen, geändert, fehlerhaft"
+      },
+      {
+        "id": "salv",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zsd_mass_va02_f03.abap",
+          "line": 121,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f03.abap:121"
+        },
+        "meaning": "Ergebnisliste erzeugen"
+      },
+      {
+        "id": "merr",
+        "type": "output",
+        "anchor": {
+          "file": "zsd_mass_va02_f03.abap",
+          "line": 125,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f03.abap:125"
+        },
+        "meaning": "ALV-Fehler melden"
+      },
+      {
+        "id": "e_alv",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_mass_va02_f03.abap",
+          "line": 126,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f03.abap:126"
+        },
+        "meaning": "Ohne Liste beenden"
+      },
+      {
+        "id": "disp",
+        "type": "output",
+        "anchor": {
+          "file": "zsd_mass_va02_f03.abap",
+          "line": 131,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f03.abap:131"
+        },
+        "meaning": "Ergebnis je Zeile mit Ampel und Text anzeigen"
+      },
+      {
+        "id": "re",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_mass_va02_f03.abap",
+          "line": 132,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_mass_va02_f03.abap:132"
+        },
+        "meaning": "Anzeige beendet"
+      }
+    ],
+    "edges": [
+      {
+        "from": "as",
+        "to": "g_path",
+        "condition": "always"
+      },
+      {
+        "from": "g_path",
+        "to": "m600",
+        "condition": "p_appl = abap_true AND p_file(1) <> '/'"
+      },
+      {
+        "from": "m600",
+        "to": "x600",
+        "condition": "always"
+      },
+      {
+        "from": "g_path",
+        "to": "sos",
+        "condition": "else"
+      },
+      {
+        "from": "sos",
+        "to": "c_read",
+        "condition": "always"
+      },
+      {
+        "from": "c_read",
+        "to": "ds",
+        "condition": "always"
+      },
+      {
+        "from": "g_empty",
+        "to": "m601",
+        "condition": "gt_upload IS INITIAL"
+      },
+      {
+        "from": "m601",
+        "to": "e_ret",
+        "condition": "always"
+      },
+      {
+        "from": "g_empty",
+        "to": "c_logc",
+        "condition": "else"
+      },
+      {
+        "from": "c_logc",
+        "to": "lcs",
+        "condition": "always"
+      },
+      {
+        "from": "c_chk",
+        "to": "zs",
+        "condition": "always"
+      },
+      {
+        "from": "c_exe",
+        "to": "xs",
+        "condition": "always"
+      },
+      {
+        "from": "c_logs",
+        "to": "lss",
+        "condition": "always"
+      },
+      {
+        "from": "c_show",
+        "to": "rs",
+        "condition": "always"
+      },
+      {
+        "from": "ds",
+        "to": "g_appl",
+        "condition": "always"
+      },
+      {
+        "from": "g_appl",
+        "to": "open",
+        "condition": "p_appl = abap_true"
+      },
+      {
+        "from": "open",
+        "to": "g_open",
+        "condition": "always"
+      },
+      {
+        "from": "g_open",
+        "to": "m602a",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "m602a",
+        "to": "e_open",
+        "condition": "always"
+      },
+      {
+        "from": "g_open",
+        "to": "do",
+        "condition": "else"
+      },
+      {
+        "from": "do",
+        "to": "g_eof",
+        "condition": "next row"
+      },
+      {
+        "from": "g_eof",
+        "to": "lp",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g_eof",
+        "to": "do",
+        "condition": "else"
+      },
+      {
+        "from": "g_appl",
+        "to": "upl",
+        "condition": "else"
+      },
+      {
+        "from": "upl",
+        "to": "g_upl",
+        "condition": "always"
+      },
+      {
+        "from": "g_upl",
+        "to": "m602b",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "m602b",
+        "to": "e_upl",
+        "condition": "always"
+      },
+      {
+        "from": "g_upl",
+        "to": "lp",
+        "condition": "else"
+      },
+      {
+        "from": "lp",
+        "to": "split",
+        "condition": "next row"
+      },
+      {
+        "from": "split",
+        "to": "lp",
+        "condition": "next iteration"
+      },
+      {
+        "from": "lp",
+        "to": "de",
+        "condition": "no more rows"
+      },
+      {
+        "from": "lcs",
+        "to": "balc",
+        "condition": "always"
+      },
+      {
+        "from": "balc",
+        "to": "lce",
+        "condition": "always"
+      },
+      {
+        "from": "lss",
+        "to": "chk",
+        "condition": "always"
+      },
+      {
+        "from": "chk",
+        "to": "bals",
+        "condition": "p_test = abap_false"
+      },
+      {
+        "from": "chk",
+        "to": "lse",
+        "condition": "else"
+      },
+      {
+        "from": "bals",
+        "to": "cm",
+        "condition": "always"
+      },
+      {
+        "from": "cm",
+        "to": "lse",
+        "condition": "always"
+      },
+      {
+        "from": "zs",
+        "to": "l",
+        "condition": "always"
+      },
+      {
+        "from": "l",
+        "to": "q_vbak",
+        "condition": "next row"
+      },
+      {
+        "from": "q_vbak",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "ce01",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "ce01",
+        "to": "fs",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "auth",
+        "condition": "else"
+      },
+      {
+        "from": "auth",
+        "to": "g2",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "ce02",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "ce02",
+        "to": "fs",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "cs",
+        "condition": "else"
+      },
+      {
+        "from": "cs",
+        "to": "g_kopf",
+        "condition": "WHEN gc_lifsk"
+      },
+      {
+        "from": "g_kopf",
+        "to": "ce03",
+        "condition": "ls_up-posnr IS NOT INITIAL"
+      },
+      {
+        "from": "ce03",
+        "to": "fs",
+        "condition": "always"
+      },
+      {
+        "from": "g_kopf",
+        "to": "l",
+        "condition": "else"
+      },
+      {
+        "from": "cs",
+        "to": "q_vbup",
+        "condition": "WHEN gc_menge OR gc_abgru OR gc_edatu"
+      },
+      {
+        "from": "q_vbup",
+        "to": "g3",
+        "condition": "always"
+      },
+      {
+        "from": "g3",
+        "to": "ce04",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "ce04",
+        "to": "fs",
+        "condition": "always"
+      },
+      {
+        "from": "ce05",
+        "to": "fs",
+        "condition": "always"
+      },
+      {
+        "from": "cs",
+        "to": "ce06",
+        "condition": "WHEN OTHERS"
+      },
+      {
+        "from": "ce06",
+        "to": "fs",
+        "condition": "always"
+      },
+      {
+        "from": "l",
+        "to": "ze",
+        "condition": "no more rows"
+      },
+      {
+        "from": "fs",
+        "to": "mark",
+        "condition": "always"
+      },
+      {
+        "from": "mark",
+        "to": "bal_add",
+        "condition": "always"
+      },
+      {
+        "from": "bal_add",
+        "to": "fe",
+        "condition": "always"
+      },
+      {
+        "from": "xs",
+        "to": "l2",
+        "condition": "always"
+      },
+      {
+        "from": "l2",
+        "to": "g_test",
+        "condition": "next row"
+      },
+      {
+        "from": "g_test",
+        "to": "l2",
+        "condition": "p_test = abap_true"
+      },
+      {
+        "from": "g_test",
+        "to": "enq",
+        "condition": "else"
+      },
+      {
+        "from": "enq",
+        "to": "g_enq",
+        "condition": "always"
+      },
+      {
+        "from": "g_enq",
+        "to": "ce07",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "ce07",
+        "to": "fs",
+        "condition": "always"
+      },
+      {
+        "from": "g_enq",
+        "to": "deq",
+        "condition": "else"
+      },
+      {
+        "from": "deq",
+        "to": "c_bdc",
+        "condition": "always"
+      },
+      {
+        "from": "c_bdc",
+        "to": "bs0",
+        "condition": "always"
+      },
+      {
+        "from": "ct",
+        "to": "rd1",
+        "condition": "always"
+      },
+      {
+        "from": "rd1",
+        "to": "g_err",
+        "condition": "always"
+      },
+      {
+        "from": "g_err",
+        "to": "cz",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "cz",
+        "to": "fs",
+        "condition": "always"
+      },
+      {
+        "from": "g_err",
+        "to": "rd2",
+        "condition": "else"
+      },
+      {
+        "from": "rd2",
+        "to": "g_sav",
+        "condition": "always"
+      },
+      {
+        "from": "g_sav",
+        "to": "ok",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "ok",
+        "to": "l2",
+        "condition": "next iteration"
+      },
+      {
+        "from": "g_sav",
+        "to": "ce08",
+        "condition": "else"
+      },
+      {
+        "from": "ce08",
+        "to": "fs",
+        "condition": "always"
+      },
+      {
+        "from": "l2",
+        "to": "xe",
+        "condition": "no more rows"
+      },
+      {
+        "from": "bs0",
+        "to": "cs1",
+        "condition": "always"
+      },
+      {
+        "from": "cs1",
+        "to": "be",
+        "condition": "WHEN gc_lifsk"
+      },
+      {
+        "from": "cs1",
+        "to": "cs2",
+        "condition": "WHEN OTHERS"
+      },
+      {
+        "from": "cs2",
+        "to": "be",
+        "condition": "WHEN gc_menge"
+      },
+      {
+        "from": "cs2",
+        "to": "be",
+        "condition": "WHEN gc_abgru"
+      },
+      {
+        "from": "cs2",
+        "to": "be",
+        "condition": "WHEN gc_edatu"
+      },
+      {
+        "from": "cs2",
+        "to": "be",
+        "condition": "else"
+      },
+      {
+        "from": "rs",
+        "to": "msum",
+        "condition": "always"
+      },
+      {
+        "from": "msum",
+        "to": "salv",
+        "condition": "always"
+      },
+      {
+        "from": "salv",
+        "to": "merr",
+        "condition": "CATCH cx_salv_msg INTO lx_alv"
+      },
+      {
+        "from": "merr",
+        "to": "e_alv",
+        "condition": "always"
+      },
+      {
+        "from": "salv",
+        "to": "disp",
+        "condition": "always"
+      },
+      {
+        "from": "disp",
+        "to": "re",
+        "condition": "always"
+      },
+      {
+        "from": "g3",
+        "to": "ce05",
+        "condition": "lv_gbsta = 'C'"
+      },
+      {
+        "from": "g3",
+        "to": "l",
+        "condition": "else"
+      },
+      {
+        "from": "e_open",
+        "to": "g_empty",
+        "condition": "always"
+      },
+      {
+        "from": "e_upl",
+        "to": "g_empty",
+        "condition": "always"
+      },
+      {
+        "from": "de",
+        "to": "g_empty",
+        "condition": "always"
+      },
+      {
+        "from": "lce",
+        "to": "c_chk",
+        "condition": "always"
+      },
+      {
+        "from": "ze",
+        "to": "c_exe",
+        "condition": "always"
+      },
+      {
+        "from": "xe",
+        "to": "c_logs",
+        "condition": "always"
+      },
+      {
+        "from": "lse",
+        "to": "c_show",
+        "condition": "always"
+      },
+      {
+        "from": "e_alv",
+        "to": "e_end",
+        "condition": "always"
+      },
+      {
+        "from": "re",
+        "to": "e_end",
+        "condition": "always"
+      },
+      {
+        "from": "be",
+        "to": "ct",
+        "condition": "always"
+      },
+      {
+        "from": "fe",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "fe",
+        "to": "l2",
+        "condition": "next iteration"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zsd_mass_va02_f03.abap:39 — kein Fachsatz „der Auftrag bleibt bis zur Änderung gesperrt“: die Sperre wird sofort wieder gelöst, zwischen Prüfung und VA02 kann ein anderer Benutzer zugreifen",
+    "zsd_mass_va02_f03.abap:50 — kein Fachsatz „Warnungen verhindern die Änderung“: ausgewertet wird nur Meldungstyp E und die Sicherungsmeldung",
+    "zsd_mass_va02_f01.abap:84 — kein Fachsatz „auch der Testlauf hinterlässt ein Protokoll“: im Testlauf wird das Anwendungsprotokoll nicht gesichert",
+    "zsd_mass_va02_f03.abap:89 — kein Fachsatz „leere Werte werden ignoriert“: ein leerer Wert in der Datei löscht die Liefersperre"
+  ],
+  "processDescription": "Der Report wird vom Innendienst im Dialog oder als Job mit einer CSV-Datei (Auftrag; Position; Feld; Wert) gestartet, die entweder am Arbeitsplatz oder auf dem Applikationsserver liegt; für Serverdateien wird ein absoluter Pfad erzwungen. Er liest die Datei, überspringt die Überschrift und zerlegt jede Zeile; ist die Datei unlesbar oder leer, endet er mit einem Hinweis. Für den Lauf legt er ein Anwendungsprotokoll an. Jede Zeile wird geprüft: Der Auftrag muss existieren, der Benutzer braucht die Änderungsberechtigung für den Vertriebsbereich, eine Liefersperre darf nur ohne Position kommen, und für Menge, Absagegrund und Liefertermin muss die Position existieren und darf nicht erledigt sein; andere Felder werden abgelehnt. Fehlerhafte Zeilen werden rot markiert, gezählt und protokolliert. Im Testlauf werden die übrigen Zeilen nur gelb markiert. Im Echtlauf prüft der Report mit einer sofort wieder gelösten Probesperre, ob der Auftrag bearbeitet wird, baut eine VA02-Bildfolge für das jeweilige Feld und führt sie synchron aus. Eine Fehlermeldung oder eine fehlende Sicherungsmeldung macht die Zeile rot, sonst wird sie als geändert gezählt. Nur im Echtlauf wird das Protokoll gesichert. Am Ende zeigt er eine Summenmeldung und die Ergebnisliste."
+}

@@ -1,0 +1,22 @@
+{
+  "id": "BM-087",
+  "title": "Kreditorenversand per Änderungszeiger und MASTER_IDOC_DISTRIBUTE",
+  "domain": "Querschnitt — Schnittstellen, Stammdaten, HR, Workflow, technische Jobs",
+  "band": "mittel",
+  "loc": 99,
+  "constructs": [
+    "CHANGE_POINTERS_READ",
+    "SORTED TABLE Verdichtung",
+    "SELECT SINGLE LFA1",
+    "MASTER_IDOC_DISTRIBUTE",
+    "CHANGE_POINTERS_STATUS_WRITE",
+    "COMMIT WORK",
+    "Testmodus"
+  ],
+  "scenario": "Stündlicher Job, der geänderte Kreditoren als kundeneigenen IDoc-Typ an ein Alt-Kreditorenbuchhaltungssystem (Tochtergesellschaft) versendet.",
+  "s4_issues": [
+    "Kreditorenstamm wird in S/4 über den Geschäftspartner gepflegt; Änderungszeiger/Objekt KRED über CVI prüfen",
+    "Direkter Lesezugriff auf LFA1",
+    "Kundeneigener IDoc-Typ ZVENDOR01 statt CREMAS/BP-Replikation"
+  ]
+}

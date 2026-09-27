@@ -1,0 +1,33 @@
+{
+  "id": "BM-060",
+  "title": "IDoc-Eingang Anlagenzugänge aus dem Investitionssystem: prüfen, Anlage anlegen, Zugang buchen, IDoc-Status setzen",
+  "domain": "FI/CO / Record-to-Report",
+  "band": "sehr komplex",
+  "loc": 560,
+  "constructs": [
+    "FUNCTION (IDoc-Eingangsschnittstelle)",
+    "LOOP AT idoc_contrl / idoc_data WHERE",
+    "CASE segnam",
+    "MOVE sdata",
+    "RAISE wrong_function_called",
+    "PERFORM TABLES/USING/CHANGING",
+    "SELECT SINGLE",
+    "CHECK",
+    "CALL METHOD (funktional)",
+    "CALL FUNCTION lv_exit_fb (dynamisch)",
+    "FUNCTION_EXISTS",
+    "BAPI_FIXEDASSET_CREATE1",
+    "BAPI_ASSET_ACQUISITION_POST",
+    "BAPI_TRANSACTION_COMMIT/ROLLBACK",
+    "INSERT Z-Tabelle in derselben LUW",
+    "IDOC_STATUS / RETURN_VARIABLES / WORKFLOW_RESULT",
+    "COND #"
+  ],
+  "scenario": "Typische ALE-Eingangsschnittstelle der Anlagenbuchhaltung: ein externes Investitions-/Projektsystem schickt aktivierte Maßnahmen als IDoc, SAP legt die Anlage an und bucht den Zugang gegen Verrechnungskonto. Solche Funktionsgruppen stehen in vielen ECC-Systemen und müssen bei der S/4-Transformation auf die neue Anlagenbuchhaltung umgestellt werden.",
+  "s4_issues": [
+    "BAPI_ASSET_ACQUISITION_POST und Bewegungsart 100 ohne Kreditor müssen gegen die neue Anlagenbuchhaltung (ACDOCA, parallele Bewertungsbereiche) geprüft werden",
+    "CSKS/TKA02-Direktzugriffe statt freigegebener CDS-Views (I_CostCenter)",
+    "Dynamischer Kunden-Exit über Customizingtabelle ist statisch nicht auflösbar und in ABAP Cloud nicht erlaubt",
+    "Kundeneigene IDoc-Eingangsverarbeitung statt freigegebener API (z. B. SOAP-/OData-Service für Anlagenzugang)"
+  ]
+}

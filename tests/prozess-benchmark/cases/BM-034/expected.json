@@ -1,0 +1,1452 @@
+{
+  "id": "BM-034",
+  "title": "Monatliche Konsignationsabrechnung mit Entnahmeaufstellung und Anstoß von RMVKON00",
+  "classes": [
+    "K01",
+    "K02",
+    "K17"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [
+    "Die Namen im Selektionsbild von RMVKON00 (BUKRS, LIFNR, XABRE) sind laut Kommentar aus EHP7; im Zielrelease prüfen."
+  ],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "ZMM_KONSI_LIEF",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zmm_konsi_abrechnung_f01.abap",
+        "line": 21,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zmm_konsi_abrechnung_f01.abap:21"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "RKWA",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zmm_konsi_abrechnung_f01.abap",
+        "line": 24,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zmm_konsi_abrechnung_f01.abap:24"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "RMVKON00",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zmm_konsi_abrechnung_f01.abap",
+        "line": 117,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zmm_konsi_abrechnung_f01.abap:117"
+      },
+      "identity": {
+        "objectType": "PROG"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAL_LOG_CREATE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zmm_konsi_abrechnung_f01.abap",
+        "line": 10,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zmm_konsi_abrechnung_f01.abap:10"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAL_LOG_MSG_ADD",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zmm_konsi_abrechnung_f01.abap",
+        "line": 145,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zmm_konsi_abrechnung_f01.abap:145"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAL_DB_SAVE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zmm_konsi_abrechnung_f01.abap",
+        "line": 157,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zmm_konsi_abrechnung_f01.abap:157"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-034-B01",
+      "text": "Zu Beginn wird ein Anwendungsprotokoll für die Konsignationsabrechnung mit 90 Tagen Aufbewahrung angelegt.",
+      "anchors": [
+        {
+          "file": "zmm_konsi_abrechnung.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_konsi_abrechnung.abap:40"
+        },
+        {
+          "file": "zmm_konsi_abrechnung_f01.abap",
+          "line": 10,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_konsi_abrechnung_f01.abap:10"
+        }
+      ]
+    },
+    {
+      "id": "BM-034-B02",
+      "text": "Es werden die Lieferanten mit aktiver Konsignationsvereinbarung und die noch nicht abgerechneten Konsignationsentnahmen der gewählten Buchungskreise, Lieferanten und Buchungsdaten gelesen.",
+      "anchors": [
+        {
+          "file": "zmm_konsi_abrechnung_f01.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_konsi_abrechnung_f01.abap:21"
+        },
+        {
+          "file": "zmm_konsi_abrechnung_f01.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_konsi_abrechnung_f01.abap:24"
+        }
+      ]
+    },
+    {
+      "id": "BM-034-B03",
+      "text": "Entnahmen von Lieferanten ohne aktive Vereinbarung werden verworfen.",
+      "anchors": [
+        {
+          "file": "zmm_konsi_abrechnung_f01.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_konsi_abrechnung_f01.abap:34"
+        },
+        {
+          "file": "zmm_konsi_abrechnung_f01.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_konsi_abrechnung_f01.abap:36"
+        },
+        {
+          "file": "zmm_konsi_abrechnung_f01.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_konsi_abrechnung_f01.abap:37"
+        }
+      ]
+    },
+    {
+      "id": "BM-034-B04",
+      "text": "Bleibt nichts übrig, wird gemeldet, dass nichts abzurechnen ist, eine Warnung protokolliert, das Protokoll gesichert und der Lauf beendet.",
+      "anchors": [
+        {
+          "file": "zmm_konsi_abrechnung.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_konsi_abrechnung.abap:42"
+        },
+        {
+          "file": "zmm_konsi_abrechnung.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_konsi_abrechnung.abap:43"
+        },
+        {
+          "file": "zmm_konsi_abrechnung.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_konsi_abrechnung.abap:44"
+        },
+        {
+          "file": "zmm_konsi_abrechnung.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_konsi_abrechnung.abap:45"
+        },
+        {
+          "file": "zmm_konsi_abrechnung.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_konsi_abrechnung.abap:46"
+        }
+      ]
+    },
+    {
+      "id": "BM-034-B05",
+      "text": "Die Entnahmen werden je Lieferant und Buchungskreis gruppiert und ihr Wert summiert.",
+      "anchors": [
+        {
+          "file": "zmm_konsi_abrechnung_f01.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_konsi_abrechnung_f01.abap:50"
+        },
+        {
+          "file": "zmm_konsi_abrechnung_f01.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_konsi_abrechnung_f01.abap:56"
+        }
+      ]
+    },
+    {
+      "id": "BM-034-B06",
+      "text": "Liegt die Summe unter dem vereinbarten Mindestbetrag des Lieferanten, wird die Abrechnung verschoben und das protokolliert.",
+      "anchors": [
+        {
+          "file": "zmm_konsi_abrechnung_f01.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_konsi_abrechnung_f01.abap:62"
+        },
+        {
+          "file": "zmm_konsi_abrechnung_f01.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_konsi_abrechnung_f01.abap:63"
+        }
+      ]
+    },
+    {
+      "id": "BM-034-B07",
+      "text": "Sonst wird je Lieferant eine CSV-Entnahmeaufstellung mit Datum, Materialbeleg, Material, Menge, Einheit, Wert und Währung für das Lieferantenportal geschrieben.",
+      "anchors": [
+        {
+          "file": "zmm_konsi_abrechnung_f01.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_konsi_abrechnung_f01.abap:92"
+        },
+        {
+          "file": "zmm_konsi_abrechnung_f01.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_konsi_abrechnung_f01.abap:99"
+        }
+      ]
+    },
+    {
+      "id": "BM-034-B08",
+      "text": "Lässt sich die Datei nicht öffnen, wird der Lieferant mit Fehler protokolliert und nicht abgerechnet.",
+      "anchors": [
+        {
+          "file": "zmm_konsi_abrechnung_f01.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_konsi_abrechnung_f01.abap:93"
+        },
+        {
+          "file": "zmm_konsi_abrechnung_f01.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_konsi_abrechnung_f01.abap:69"
+        },
+        {
+          "file": "zmm_konsi_abrechnung_f01.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_konsi_abrechnung_f01.abap:70"
+        }
+      ]
+    },
+    {
+      "id": "BM-034-B09",
+      "text": "Ist Abrechnen gewählt und kein Testlauf, wird die Standard-Konsignationsabrechnung für Buchungskreis und Lieferant gestartet.",
+      "anchors": [
+        {
+          "file": "zmm_konsi_abrechnung_f01.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_konsi_abrechnung_f01.abap:74"
+        },
+        {
+          "file": "zmm_konsi_abrechnung_f01.abap",
+          "line": 117,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_konsi_abrechnung_f01.abap:117"
+        }
+      ]
+    },
+    {
+      "id": "BM-034-B10",
+      "text": "Danach wird gezählt, wie viele Entnahmen im Zeitraum noch offen sind: keine bedeutet erfolgreich abgerechnet, sonst wird die Zahl offener von den übergebenen Entnahmen als Fehler protokolliert.",
+      "anchors": [
+        {
+          "file": "zmm_konsi_abrechnung_f01.abap",
+          "line": 122,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_konsi_abrechnung_f01.abap:122"
+        },
+        {
+          "file": "zmm_konsi_abrechnung_f01.abap",
+          "line": 127,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_konsi_abrechnung_f01.abap:127"
+        },
+        {
+          "file": "zmm_konsi_abrechnung_f01.abap",
+          "line": 128,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_konsi_abrechnung_f01.abap:128"
+        },
+        {
+          "file": "zmm_konsi_abrechnung_f01.abap",
+          "line": 131,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_konsi_abrechnung_f01.abap:131"
+        }
+      ]
+    },
+    {
+      "id": "BM-034-B11",
+      "text": "Ohne Abrechnung oder im Testlauf wird nur protokolliert, dass die Aufstellung erzeugt wurde.",
+      "anchors": [
+        {
+          "file": "zmm_konsi_abrechnung_f01.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_konsi_abrechnung_f01.abap:78"
+        }
+      ]
+    },
+    {
+      "id": "BM-034-B12",
+      "text": "Alle Meldungen landen im Anwendungsprotokoll, das am Ende gespeichert und festgeschrieben wird.",
+      "anchors": [
+        {
+          "file": "zmm_konsi_abrechnung_f01.abap",
+          "line": 145,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_konsi_abrechnung_f01.abap:145"
+        },
+        {
+          "file": "zmm_konsi_abrechnung_f01.abap",
+          "line": 157,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_konsi_abrechnung_f01.abap:157"
+        },
+        {
+          "file": "zmm_konsi_abrechnung_f01.abap",
+          "line": 162,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_konsi_abrechnung_f01.abap:162"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "zmm_konsi_abrechnung.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_konsi_abrechnung.abap:39"
+        },
+        "meaning": "Abrechnungslauf startet"
+      },
+      {
+        "id": "p0",
+        "type": "call",
+        "anchor": {
+          "file": "zmm_konsi_abrechnung.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_konsi_abrechnung.abap:40"
+        },
+        "meaning": "Anwendungsprotokoll anlegen"
+      },
+      {
+        "id": "fla",
+        "type": "start",
+        "anchor": {
+          "file": "zmm_konsi_abrechnung_f01.abap",
+          "line": 5,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_konsi_abrechnung_f01.abap:5"
+        },
+        "meaning": "Routine Protokoll anlegen"
+      },
+      {
+        "id": "balc",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zmm_konsi_abrechnung_f01.abap",
+          "line": 10,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_konsi_abrechnung_f01.abap:10"
+        },
+        "meaning": "Anwendungsprotokoll ZMM/KONSI mit 90 Tagen Aufbewahrung anlegen"
+      },
+      {
+        "id": "xla",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_konsi_abrechnung_f01.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_konsi_abrechnung_f01.abap:17"
+        },
+        "meaning": "LOG_ANLEGEN beendet"
+      },
+      {
+        "id": "p1",
+        "type": "call",
+        "anchor": {
+          "file": "zmm_konsi_abrechnung.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_konsi_abrechnung.abap:41"
+        },
+        "meaning": "Offene Entnahmen lesen"
+      },
+      {
+        "id": "f1",
+        "type": "start",
+        "anchor": {
+          "file": "zmm_konsi_abrechnung_f01.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_konsi_abrechnung_f01.abap:20"
+        },
+        "meaning": "Leseroutine"
+      },
+      {
+        "id": "q1",
+        "type": "read",
+        "anchor": {
+          "file": "zmm_konsi_abrechnung_f01.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_konsi_abrechnung_f01.abap:21"
+        },
+        "meaning": "Lieferanten mit aktiver Abrechnungsvereinbarung lesen"
+      },
+      {
+        "id": "q2",
+        "type": "read",
+        "anchor": {
+          "file": "zmm_konsi_abrechnung_f01.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_konsi_abrechnung_f01.abap:24"
+        },
+        "meaning": "Nicht abgerechnete Konsignationsentnahmen lesen"
+      },
+      {
+        "id": "l1",
+        "type": "loop",
+        "anchor": {
+          "file": "zmm_konsi_abrechnung_f01.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_konsi_abrechnung_f01.abap:33"
+        },
+        "meaning": "Entnahmen durchlaufen"
+      },
+      {
+        "id": "r1",
+        "type": "read",
+        "anchor": {
+          "file": "zmm_konsi_abrechnung_f01.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_konsi_abrechnung_f01.abap:34"
+        },
+        "meaning": "Vereinbarung des Lieferanten nachschlagen"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_konsi_abrechnung_f01.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_konsi_abrechnung_f01.abap:36"
+        },
+        "meaning": "Vereinbarung vorhanden?"
+      },
+      {
+        "id": "d1",
+        "type": "action",
+        "anchor": {
+          "file": "zmm_konsi_abrechnung_f01.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_konsi_abrechnung_f01.abap:37"
+        },
+        "meaning": "Entnahme ohne Vereinbarung verwerfen"
+      },
+      {
+        "id": "g0",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_konsi_abrechnung.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_konsi_abrechnung.abap:42"
+        },
+        "meaning": "Offene Entnahmen vorhanden?"
+      },
+      {
+        "id": "m0",
+        "type": "output",
+        "anchor": {
+          "file": "zmm_konsi_abrechnung.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_konsi_abrechnung.abap:43"
+        },
+        "meaning": "Hinweis: nichts abzurechnen"
+      },
+      {
+        "id": "plm0",
+        "type": "call",
+        "anchor": {
+          "file": "zmm_konsi_abrechnung.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_konsi_abrechnung.abap:44"
+        },
+        "meaning": "Warnung ins Protokoll"
+      },
+      {
+        "id": "ps0",
+        "type": "call",
+        "anchor": {
+          "file": "zmm_konsi_abrechnung.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_konsi_abrechnung.abap:45"
+        },
+        "meaning": "Protokoll sichern"
+      },
+      {
+        "id": "r0",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_konsi_abrechnung.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_konsi_abrechnung.abap:46"
+        },
+        "meaning": "Lauf beenden"
+      },
+      {
+        "id": "p2",
+        "type": "call",
+        "anchor": {
+          "file": "zmm_konsi_abrechnung.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_konsi_abrechnung.abap:48"
+        },
+        "meaning": "Je Lieferant abrechnen"
+      },
+      {
+        "id": "f2",
+        "type": "start",
+        "anchor": {
+          "file": "zmm_konsi_abrechnung_f01.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_konsi_abrechnung_f01.abap:44"
+        },
+        "meaning": "Lieferantenschleife"
+      },
+      {
+        "id": "lg",
+        "type": "loop",
+        "anchor": {
+          "file": "zmm_konsi_abrechnung_f01.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_konsi_abrechnung_f01.abap:50"
+        },
+        "meaning": "Entnahmen je Lieferant und Buchungskreis gruppieren"
+      },
+      {
+        "id": "lm",
+        "type": "loop",
+        "anchor": {
+          "file": "zmm_konsi_abrechnung_f01.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_konsi_abrechnung_f01.abap:54"
+        },
+        "meaning": "Entnahmen der Gruppe durchlaufen"
+      },
+      {
+        "id": "as",
+        "type": "action",
+        "anchor": {
+          "file": "zmm_konsi_abrechnung_f01.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_konsi_abrechnung_f01.abap:56"
+        },
+        "meaning": "Entnahmewert summieren"
+      },
+      {
+        "id": "gmin",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_konsi_abrechnung_f01.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_konsi_abrechnung_f01.abap:62"
+        },
+        "meaning": "Mindestbetrag erreicht?"
+      },
+      {
+        "id": "plm1",
+        "type": "call",
+        "anchor": {
+          "file": "zmm_konsi_abrechnung_f01.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_konsi_abrechnung_f01.abap:63"
+        },
+        "meaning": "Verschiebung protokollieren"
+      },
+      {
+        "id": "pd",
+        "type": "call",
+        "anchor": {
+          "file": "zmm_konsi_abrechnung_f01.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_konsi_abrechnung_f01.abap:67"
+        },
+        "meaning": "Entnahmeaufstellung schreiben"
+      },
+      {
+        "id": "fd",
+        "type": "start",
+        "anchor": {
+          "file": "zmm_konsi_abrechnung_f01.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_konsi_abrechnung_f01.abap:84"
+        },
+        "meaning": "Dateiroutine"
+      },
+      {
+        "id": "od",
+        "type": "output",
+        "anchor": {
+          "file": "zmm_konsi_abrechnung_f01.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_konsi_abrechnung_f01.abap:92"
+        },
+        "meaning": "Aufstellungsdatei je Lieferant öffnen"
+      },
+      {
+        "id": "gd",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_konsi_abrechnung_f01.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_konsi_abrechnung_f01.abap:93"
+        },
+        "meaning": "Datei geöffnet?"
+      },
+      {
+        "id": "rd",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_konsi_abrechnung_f01.abap",
+          "line": 94,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_konsi_abrechnung_f01.abap:94"
+        },
+        "meaning": "Ohne Datei zurück"
+      },
+      {
+        "id": "ld",
+        "type": "loop",
+        "anchor": {
+          "file": "zmm_konsi_abrechnung_f01.abap",
+          "line": 96,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_konsi_abrechnung_f01.abap:96"
+        },
+        "meaning": "Entnahmen des Lieferanten durchlaufen"
+      },
+      {
+        "id": "td",
+        "type": "output",
+        "anchor": {
+          "file": "zmm_konsi_abrechnung_f01.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_konsi_abrechnung_f01.abap:99"
+        },
+        "meaning": "Entnahmezeile schreiben"
+      },
+      {
+        "id": "gok",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_konsi_abrechnung_f01.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_konsi_abrechnung_f01.abap:69"
+        },
+        "meaning": "Datei geschrieben?"
+      },
+      {
+        "id": "plm2",
+        "type": "call",
+        "anchor": {
+          "file": "zmm_konsi_abrechnung_f01.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_konsi_abrechnung_f01.abap:70"
+        },
+        "meaning": "Dateifehler protokollieren"
+      },
+      {
+        "id": "gab",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_konsi_abrechnung_f01.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_konsi_abrechnung_f01.abap:74"
+        },
+        "meaning": "Abrechnen und kein Testlauf?"
+      },
+      {
+        "id": "pa",
+        "type": "call",
+        "anchor": {
+          "file": "zmm_konsi_abrechnung_f01.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_konsi_abrechnung_f01.abap:76"
+        },
+        "meaning": "Abrechnung anstoßen"
+      },
+      {
+        "id": "fa",
+        "type": "start",
+        "anchor": {
+          "file": "zmm_konsi_abrechnung_f01.abap",
+          "line": 106,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_konsi_abrechnung_f01.abap:106"
+        },
+        "meaning": "Abrechnungsroutine"
+      },
+      {
+        "id": "sub",
+        "type": "external_program",
+        "anchor": {
+          "file": "zmm_konsi_abrechnung_f01.abap",
+          "line": 117,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_konsi_abrechnung_f01.abap:117"
+        },
+        "meaning": "Standard-Konsignationsabrechnung für Lieferant starten"
+      },
+      {
+        "id": "qc",
+        "type": "read",
+        "anchor": {
+          "file": "zmm_konsi_abrechnung_f01.abap",
+          "line": 122,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_konsi_abrechnung_f01.abap:122"
+        },
+        "meaning": "Noch offene Entnahmen zählen"
+      },
+      {
+        "id": "gc",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_konsi_abrechnung_f01.abap",
+          "line": 127,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_konsi_abrechnung_f01.abap:127"
+        },
+        "meaning": "Alles abgerechnet?"
+      },
+      {
+        "id": "plm3",
+        "type": "call",
+        "anchor": {
+          "file": "zmm_konsi_abrechnung_f01.abap",
+          "line": 128,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_konsi_abrechnung_f01.abap:128"
+        },
+        "meaning": "Erfolg protokollieren"
+      },
+      {
+        "id": "plm4",
+        "type": "call",
+        "anchor": {
+          "file": "zmm_konsi_abrechnung_f01.abap",
+          "line": 131,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_konsi_abrechnung_f01.abap:131"
+        },
+        "meaning": "Restposten protokollieren"
+      },
+      {
+        "id": "plm5",
+        "type": "call",
+        "anchor": {
+          "file": "zmm_konsi_abrechnung_f01.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_konsi_abrechnung_f01.abap:78"
+        },
+        "meaning": "Nur Aufstellung protokollieren"
+      },
+      {
+        "id": "flm",
+        "type": "start",
+        "anchor": {
+          "file": "zmm_konsi_abrechnung_f01.abap",
+          "line": 136,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_konsi_abrechnung_f01.abap:136"
+        },
+        "meaning": "Protokollroutine"
+      },
+      {
+        "id": "balm",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zmm_konsi_abrechnung_f01.abap",
+          "line": 145,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_konsi_abrechnung_f01.abap:145"
+        },
+        "meaning": "Meldung ins Anwendungsprotokoll"
+      },
+      {
+        "id": "ps1",
+        "type": "call",
+        "anchor": {
+          "file": "zmm_konsi_abrechnung.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_konsi_abrechnung.abap:49"
+        },
+        "meaning": "Protokoll sichern"
+      },
+      {
+        "id": "fs",
+        "type": "start",
+        "anchor": {
+          "file": "zmm_konsi_abrechnung_f01.abap",
+          "line": 154,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_konsi_abrechnung_f01.abap:154"
+        },
+        "meaning": "Sicherungsroutine"
+      },
+      {
+        "id": "bals",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zmm_konsi_abrechnung_f01.abap",
+          "line": 157,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_konsi_abrechnung_f01.abap:157"
+        },
+        "meaning": "Anwendungsprotokoll speichern"
+      },
+      {
+        "id": "cm",
+        "type": "transaction",
+        "anchor": {
+          "file": "zmm_konsi_abrechnung_f01.abap",
+          "line": 162,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_konsi_abrechnung_f01.abap:162"
+        },
+        "meaning": "Festschreiben"
+      },
+      {
+        "id": "x1",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_konsi_abrechnung_f01.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_konsi_abrechnung_f01.abap:41"
+        },
+        "meaning": "DATEN_LESEN beendet"
+      },
+      {
+        "id": "xlm",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_konsi_abrechnung_f01.abap",
+          "line": 151,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_konsi_abrechnung_f01.abap:151"
+        },
+        "meaning": "LOG_MELDUNG beendet"
+      },
+      {
+        "id": "xa",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_konsi_abrechnung_f01.abap",
+          "line": 133,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_konsi_abrechnung_f01.abap:133"
+        },
+        "meaning": "ABRECHNEN beendet"
+      },
+      {
+        "id": "xd",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_konsi_abrechnung_f01.abap",
+          "line": 103,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_konsi_abrechnung_f01.abap:103"
+        },
+        "meaning": "DATEI_SCHREIBEN beendet, Datei geschrieben"
+      },
+      {
+        "id": "x2",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_konsi_abrechnung_f01.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_konsi_abrechnung_f01.abap:81"
+        },
+        "meaning": "JE_LIEFERANT beendet"
+      },
+      {
+        "id": "xs",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_konsi_abrechnung_f01.abap",
+          "line": 163,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_konsi_abrechnung_f01.abap:163"
+        },
+        "meaning": "LOG_SICHERN beendet"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_konsi_abrechnung.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_konsi_abrechnung.abap:49"
+        },
+        "meaning": "Abrechnungslauf beendet"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "p0",
+        "condition": "always"
+      },
+      {
+        "from": "p1",
+        "to": "f1",
+        "condition": "always"
+      },
+      {
+        "from": "f1",
+        "to": "q1",
+        "condition": "always"
+      },
+      {
+        "from": "q1",
+        "to": "q2",
+        "condition": "always"
+      },
+      {
+        "from": "q2",
+        "to": "l1",
+        "condition": "always"
+      },
+      {
+        "from": "l1",
+        "to": "r1",
+        "condition": "next row"
+      },
+      {
+        "from": "r1",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "d1",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "d1",
+        "to": "l1",
+        "condition": "next iteration"
+      },
+      {
+        "from": "g1",
+        "to": "l1",
+        "condition": "else"
+      },
+      {
+        "from": "l1",
+        "to": "x1",
+        "condition": "no more rows"
+      },
+      {
+        "from": "g0",
+        "to": "m0",
+        "condition": "gt_rkwa IS INITIAL"
+      },
+      {
+        "from": "m0",
+        "to": "plm0",
+        "condition": "always"
+      },
+      {
+        "from": "plm0",
+        "to": "flm",
+        "condition": "always"
+      },
+      {
+        "from": "ps0",
+        "to": "fs",
+        "condition": "always"
+      },
+      {
+        "from": "g0",
+        "to": "p2",
+        "condition": "else"
+      },
+      {
+        "from": "p2",
+        "to": "f2",
+        "condition": "always"
+      },
+      {
+        "from": "f2",
+        "to": "lg",
+        "condition": "always"
+      },
+      {
+        "from": "lg",
+        "to": "lm",
+        "condition": "next row"
+      },
+      {
+        "from": "lm",
+        "to": "as",
+        "condition": "next row"
+      },
+      {
+        "from": "as",
+        "to": "lm",
+        "condition": "next iteration"
+      },
+      {
+        "from": "lm",
+        "to": "gmin",
+        "condition": "no more rows"
+      },
+      {
+        "from": "gmin",
+        "to": "plm1",
+        "condition": "lv_summe < ls_konsi-min_betrag"
+      },
+      {
+        "from": "plm1",
+        "to": "flm",
+        "condition": "always"
+      },
+      {
+        "from": "gmin",
+        "to": "pd",
+        "condition": "else"
+      },
+      {
+        "from": "pd",
+        "to": "fd",
+        "condition": "always"
+      },
+      {
+        "from": "fd",
+        "to": "od",
+        "condition": "always"
+      },
+      {
+        "from": "od",
+        "to": "gd",
+        "condition": "always"
+      },
+      {
+        "from": "gd",
+        "to": "rd",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "rd",
+        "to": "gok",
+        "condition": "always"
+      },
+      {
+        "from": "gd",
+        "to": "ld",
+        "condition": "else"
+      },
+      {
+        "from": "ld",
+        "to": "td",
+        "condition": "next row"
+      },
+      {
+        "from": "td",
+        "to": "ld",
+        "condition": "next iteration"
+      },
+      {
+        "from": "ld",
+        "to": "xd",
+        "condition": "no more rows"
+      },
+      {
+        "from": "gok",
+        "to": "plm2",
+        "condition": "lv_ok = abap_false"
+      },
+      {
+        "from": "plm2",
+        "to": "flm",
+        "condition": "always"
+      },
+      {
+        "from": "gok",
+        "to": "gab",
+        "condition": "else"
+      },
+      {
+        "from": "gab",
+        "to": "pa",
+        "condition": "p_abr = 'X' AND p_test = space"
+      },
+      {
+        "from": "pa",
+        "to": "fa",
+        "condition": "always"
+      },
+      {
+        "from": "fa",
+        "to": "sub",
+        "condition": "always"
+      },
+      {
+        "from": "sub",
+        "to": "qc",
+        "condition": "always"
+      },
+      {
+        "from": "qc",
+        "to": "gc",
+        "condition": "always"
+      },
+      {
+        "from": "gc",
+        "to": "plm3",
+        "condition": "lv_offen = 0"
+      },
+      {
+        "from": "gc",
+        "to": "plm4",
+        "condition": "else"
+      },
+      {
+        "from": "plm3",
+        "to": "flm",
+        "condition": "always"
+      },
+      {
+        "from": "plm4",
+        "to": "flm",
+        "condition": "always"
+      },
+      {
+        "from": "gab",
+        "to": "plm5",
+        "condition": "else"
+      },
+      {
+        "from": "plm5",
+        "to": "flm",
+        "condition": "always"
+      },
+      {
+        "from": "flm",
+        "to": "balm",
+        "condition": "always"
+      },
+      {
+        "from": "lg",
+        "to": "x2",
+        "condition": "no more rows"
+      },
+      {
+        "from": "ps1",
+        "to": "fs",
+        "condition": "always"
+      },
+      {
+        "from": "fs",
+        "to": "bals",
+        "condition": "always"
+      },
+      {
+        "from": "bals",
+        "to": "cm",
+        "condition": "always"
+      },
+      {
+        "from": "p0",
+        "to": "fla",
+        "condition": "always"
+      },
+      {
+        "from": "fla",
+        "to": "balc",
+        "condition": "always"
+      },
+      {
+        "from": "balc",
+        "to": "xla",
+        "condition": "always"
+      },
+      {
+        "from": "xla",
+        "to": "p1",
+        "condition": "always"
+      },
+      {
+        "from": "x1",
+        "to": "g0",
+        "condition": "always"
+      },
+      {
+        "from": "xlm",
+        "to": "ps0",
+        "condition": "always"
+      },
+      {
+        "from": "xlm",
+        "to": "lg",
+        "condition": "next iteration"
+      },
+      {
+        "from": "balm",
+        "to": "xlm",
+        "condition": "always"
+      },
+      {
+        "from": "xa",
+        "to": "lg",
+        "condition": "next iteration"
+      },
+      {
+        "from": "xlm",
+        "to": "xa",
+        "condition": "always"
+      },
+      {
+        "from": "xd",
+        "to": "gok",
+        "condition": "always"
+      },
+      {
+        "from": "x2",
+        "to": "ps1",
+        "condition": "always"
+      },
+      {
+        "from": "xs",
+        "to": "r0",
+        "condition": "always"
+      },
+      {
+        "from": "cm",
+        "to": "xs",
+        "condition": "always"
+      },
+      {
+        "from": "xs",
+        "to": "e",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zmm_konsi_abrechnung_f01.abap:117 — kein Fachsatz „Der Report bucht die Verbindlichkeit selbst“ (das erledigt der Standardreport; der Z-Report prüft nur danach)",
+    "zmm_konsi_abrechnung_f01.abap:99 — kein Fachsatz „Die Aufstellung wird an den Lieferanten gemailt“ (sie wird nur als Datei abgelegt)",
+    "zmm_konsi_abrechnung_f01.abap:62 — kein Fachsatz „Kleinbeträge werden ausgebucht“ (sie bleiben offen bis zum nächsten Lauf)",
+    "zmm_konsi_abrechnung_f01.abap:122 — kein Fachsatz „Der Erfolg wird aus der Liste von RMVKON00 gelesen“ (die Liste geht in den Speicher und wird nicht ausgewertet)"
+  ],
+  "processDescription": "Einmal im Monat startet die Kreditorenbuchhaltung oder ein Job den Report mit Buchungskreisen, optional Lieferanten und Buchungszeitraum, einem Ablageverzeichnis, dem Abrechnungs- und dem Testlauf-Schalter. Er legt ein Anwendungsprotokoll an, liest die Lieferanten mit aktiver Konsignationsvereinbarung sowie alle noch nicht abgerechneten Konsignationsentnahmen und verwirft Entnahmen von Lieferanten ohne Vereinbarung. Bleibt nichts, meldet er das, protokolliert eine Warnung und endet. Sonst gruppiert er die Entnahmen je Lieferant und Buchungskreis und summiert ihren Wert; unter dem vereinbarten Mindestbetrag wird die Abrechnung auf den nächsten Lauf verschoben. Für die übrigen schreibt er je Lieferant eine CSV-Entnahmeaufstellung; scheitert das, wird der Lieferant mit Fehler protokolliert. Ist Abrechnen gewählt und kein Testlauf, startet er die Standardabrechnung RMVKON00 für den Lieferanten und zählt anschließend die noch offenen Entnahmen: keine heißt Erfolg, sonst wird die Restzahl als Fehler protokolliert. Andernfalls wird nur die Erzeugung der Aufstellung protokolliert. Zum Schluss wird das Protokoll gespeichert und festgeschrieben."
+}

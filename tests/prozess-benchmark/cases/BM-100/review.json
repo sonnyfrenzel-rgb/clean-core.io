@@ -1,0 +1,144 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten cc_a",
+      "before": "action zsd_cust_repl_f01.abap:19 „Objektschlüssel des Zeigers einmalig als Kunde vormerken“",
+      "after": "entfernt; überbrückt: ",
+      "why": "INSERT … INTO TABLE gt_kunnr (f01:19) sammelt nur Kundennummern in einer internen Tabelle; laut Autorenbrief kein Knoten. Die Verdichtung bleibt in Fachsatz B03; die Schleife cc_l führt ohne Körperknoten per no more rows weiter.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Knoten bp_ad",
+      "before": "action zsd_cust_repl_f01.abap:114 „Aktion D (Löschen im CRM)“",
+      "after": "entfernt; überbrückt: bp_g2->bp_g3 [<ls_kna1>-loevm = 'X']",
+      "why": "Reine Zuweisung ls_rec-action = D (f01:114); steuert keinen weiteren Fluss im Fall, laut Autorenbrief kein Knoten. Inhalt bleibt in Fachsatz B09.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Knoten bp_au",
+      "before": "action zsd_cust_repl_f01.abap:116 „Aktion U (Anlegen/Ändern im CRM)“",
+      "after": "entfernt; überbrückt: bp_g2->bp_g3 [else]",
+      "why": "Reine Zuweisung ls_rec-action = U (f01:116); steuert keinen weiteren Fluss im Fall, laut Autorenbrief kein Knoten. Inhalt bleibt in Fachsatz B09.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Knoten bp_a2",
+      "before": "action zsd_cust_repl_f01.abap:123 „Paket abschließen, nächstes beginnen“",
+      "after": "entfernt; überbrückt: bp_g3->bp_l [lines( gs_pack-recs ) >= p_pack]",
+      "why": "APPEND gs_pack TO gt_pack, CLEAR und Zählerzeile (f01:121–123) sind Einfügen in eine interne Tabelle und Zuweisungen; laut Autorenbrief kein Knoten. Inhalt bleibt in Fachsatz B10 (Anker 120/123/127).",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Knoten e_main (neu)",
+      "before": "—",
+      "after": "end zsd_cust_repl.abap:73 „Lauf beendet“",
+      "why": "Implizites Ende von START-OF-SELECTION fehlte; sub hatte keine ausgehende Kante und der Sonst-Fall von grg (keine Reorganisation) keinen Ausgang.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kante grg -> e_main",
+      "before": "—",
+      "after": "grg -> e_main [else]",
+      "why": "IF p_reorg ohne ELSE: ohne Reorganisation endet der Lauf.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten ccol",
+      "before": "ccol->crd [always]",
+      "after": "cc_e->crd [always]",
+      "why": "Konvention Aufrufe im Fall: Aufruf → Start des Ziels, end des Ziels → nächster Schritt (je Aufrufer eine Rückkante); die Direktkante Aufruf → Folgeknoten entfällt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten crd",
+      "before": "crd->cbd [always]",
+      "after": "rd_e1->cbd [always], rd_e2->cbd [always], rd_e->cbd [always]",
+      "why": "Konvention Aufrufe im Fall: Aufruf → Start des Ziels, end des Ziels → nächster Schritt (je Aufrufer eine Rückkante); die Direktkante Aufruf → Folgeknoten entfällt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten cbd",
+      "before": "cbd->gpar [always]",
+      "after": "bp_e->gpar [always]",
+      "why": "Konvention Aufrufe im Fall: Aufruf → Start des Ziels, end des Ziels → nächster Schritt (je Aufrufer eine Rückkante); die Direktkante Aufruf → Folgeknoten entfällt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten cpar",
+      "before": "cpar->cst [always]",
+      "after": "sp_e1->cst [always], sp_e->cst [always]",
+      "why": "Konvention Aufrufe im Fall: Aufruf → Start des Ziels, end des Ziels → nächster Schritt (je Aufrufer eine Rückkante); die Direktkante Aufruf → Folgeknoten entfällt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten cser",
+      "before": "cser->cst [always]",
+      "after": "ss_e->cst [always]",
+      "why": "Konvention Aufrufe im Fall: Aufruf → Start des Ziels, end des Ziels → nächster Schritt (je Aufrufer eine Rückkante); die Direktkante Aufruf → Folgeknoten entfällt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten cst",
+      "before": "cst->ls [always]",
+      "after": "ws_e1->ls [always], ws_e->ls [always]",
+      "why": "Konvention Aufrufe im Fall: Aufruf → Start des Ziels, end des Ziels → nächster Schritt (je Aufrufer eine Rückkante); die Direktkante Aufruf → Folgeknoten entfällt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten sp_la1",
+      "before": "sp_la1->sp_ser [always]",
+      "after": "la_e->sp_ser [always]",
+      "why": "Konvention Aufrufe im Fall: Aufruf → Start des Ziels, end des Ziels → nächster Schritt (je Aufrufer eine Rückkante); die Direktkante Aufruf → Folgeknoten entfällt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten sp_ser",
+      "before": "sp_ser->sp_e1 [always]",
+      "after": "ss_e->sp_e1 [always]",
+      "why": "Konvention Aufrufe im Fall: Aufruf → Start des Ziels, end des Ziels → nächster Schritt (je Aufrufer eine Rückkante); die Direktkante Aufruf → Folgeknoten entfällt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten sp_la2",
+      "before": "sp_la2->sp_l [next iteration]",
+      "after": "la_e->sp_l [next iteration]",
+      "why": "Konvention Aufrufe im Fall: Aufruf → Start des Ziels, end des Ziels → nächster Schritt (je Aufrufer eine Rückkante); die Direktkante Aufruf → Folgeknoten entfällt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten sp_la3",
+      "before": "sp_la3->sp_e [always]",
+      "after": "la_e->sp_e [always]",
+      "why": "Konvention Aufrufe im Fall: Aufruf → Start des Ziels, end des Ziels → nächster Schritt (je Aufrufer eine Rückkante); die Direktkante Aufruf → Folgeknoten entfällt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten rr_la1",
+      "before": "rr_la1->rr_e1 [always]",
+      "after": "la_e->rr_e1 [always]",
+      "why": "Konvention Aufrufe im Fall: Aufruf → Start des Ziels, end des Ziels → nächster Schritt (je Aufrufer eine Rückkante); die Direktkante Aufruf → Folgeknoten entfällt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten rr_la2",
+      "before": "rr_la2->rr_l [next iteration]",
+      "after": "la_e->rr_l [next iteration]",
+      "why": "Konvention Aufrufe im Fall: Aufruf → Start des Ziels, end des Ziels → nächster Schritt (je Aufrufer eine Rückkante); die Direktkante Aufruf → Folgeknoten entfällt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten ss_la",
+      "before": "ss_la->ss_l [next iteration]",
+      "after": "la_e->ss_l [next iteration]",
+      "why": "Konvention Aufrufe im Fall: Aufruf → Start des Ziels, end des Ziels → nächster Schritt (je Aufrufer eine Rückkante); die Direktkante Aufruf → Folgeknoten entfällt.",
+      "category": "Kante"
+    }
+  ],
+  "doubts": [],
+  "notes": [
+    "bp_a1 (f01:88), rr_a (f02:88) und ss_a (f02:116) bleiben als action, obwohl sie INSERT … INTO TABLE gt_done sind: sie legen fachlich fest, dass der Kunde erledigt ist, und steuern in WRITE_POINTER_STATUS (ws_r/ws_g1), welche Änderungszeiger geschlossen werden.",
+    "sp_t -> rr_s bleibt als Auslösekante des asynchronen Rückrufs ohne Rückkante: RECEIVE_RESULT läuft ON END OF TASK beim nächsten WAIT und kehrt nicht an eine feste Stelle zurück; die Aufrufkonvention betrifft call-Knoten."
+  ]
+}

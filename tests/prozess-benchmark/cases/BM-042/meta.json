@@ -1,0 +1,21 @@
+{
+  "id": "BM-042",
+  "title": "Substitutions-Exit: Zuordnung aus Referenz oder Belegkopftext bei Zahlungsbelegen",
+  "domain": "FI/CO / Record-to-Report",
+  "band": "einfach",
+  "loc": 25,
+  "constructs": [
+    "PROGRAM (Substitutions-Exitpool)",
+    "FORM-Exit",
+    "TABLES",
+    "CHECK",
+    "IF/ELSEIF",
+    "SELECT SINGLE"
+  ],
+  "scenario": "Kopie von RGGBS000 mit Substitutions-Exits (GGB1), mit denen die Buchhaltung das Zuordnungsfeld für den späteren Ausgleich vorbelegt; typischer Fund bei FI-Konversionen.",
+  "s4_issues": [
+    "Substitutions-Exits über GGB1/RGGBS000 sind in S/4HANA Cloud nicht verfügbar (Nachfolger: Fiori-App Substitution/Validation mit BAdI)",
+    "Direkter Lesezugriff auf SKB1",
+    "Abschneiden von BKTXT (25 Zeichen) auf ZUONR (18 Zeichen)"
+  ]
+}

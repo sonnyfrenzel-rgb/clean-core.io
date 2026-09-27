@@ -1,0 +1,19 @@
+{
+  "id": "BM-030",
+  "title": "WM-Nachschub für Kommissionier-Fixplätze per Transportauftrag (L_TO_CREATE_SINGLE)",
+  "domain": "MM / Procure-to-Pay, Bestandsführung, Lager (WM/EWM)",
+  "band": "mittel",
+  "loc": 96,
+  "constructs": [
+    "FUNCTION mit TABLES/EXCEPTIONS",
+    "ENQUEUE/DEQUEUE eigenes Sperrobjekt",
+    "SELECT SUM",
+    "L_TO_CREATE_SINGLE mit I_COMMIT_WORK",
+    "String-Templates"
+  ],
+  "scenario": "Klassische WM-Nachschubsteuerung für Fixplätze, typisch in Distributionszentren vor der EWM-Einführung; in S/4 ist LE-WM nur noch im Kompatibilitätsumfang.",
+  "s4_issues": [
+    "LE-WM (MLGT, LQUA, L_TO_CREATE_SINGLE) ist in S/4HANA Kompatibilitätsumfang ohne Weiterentwicklung; Zielbild EWM (Nachschub per /SCWM/)",
+    "MATNR 40 Zeichen im Protokolltext"
+  ]
+}

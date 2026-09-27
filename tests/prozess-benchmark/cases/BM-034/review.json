@@ -1,0 +1,79 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten p0, fla, balc, xla (neu)",
+      "before": "s->p1 [always]",
+      "after": "call M:40 PERFORM log_anlegen, start F:5, opaque_call F:10 BAL_LOG_CREATE, end F:17; s->p0->fla->balc->xla->p1",
+      "why": "Der erste Schritt des Laufs (Anlegen des Anwendungsprotokolls) fehlte im Skelett, obwohl Fachsatz B01 ihn auf Z. 40 und F:10 verankert.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten x1 (neu)",
+      "before": "—",
+      "after": "end zmm_konsi_abrechnung_f01.abap:41 „DATEN_LESEN beendet“; umgeleitet: l1->g0 [no more rows] jetzt l1->x1; neu x1->g0 [always]",
+      "why": "Vereinheitlichung (wie im Gegencheck FI/CO): jeder auslaufende FORM/METHOD/MODULE/FUNCTION-Block endet mit eigenem end-Knoten auf ENDFORM/ENDMETHOD/ENDMODULE/ENDFUNCTION (Brieftabelle: end auch bei implizitem Blockende); die Rückkante führt von dort zum Knoten nach dem Aufruf.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kanten plm0->ps0, plm1/plm2/plm3/plm4/plm5->lg, ps0->r0",
+      "before": "je Aufruf zwei Kanten: Aufruf -> Callee-Start und Aufruf -> nächster Schritt",
+      "after": "nur Aufruf -> Callee-Start; Rückkehr über die neuen end-Knoten xlm bzw. xs",
+      "why": "Doppelte Modellierung geteilter Hilfs-FORMs vereinheitlicht: Aufruf -> Callee-Start, Callee-Ende -> nächster Schritt; je Rücksprungziel eine Rückkante vom Callee-Ende.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten xlm (neu)",
+      "before": "—",
+      "after": "end zmm_konsi_abrechnung_f01.abap:151 „LOG_MELDUNG beendet“; neu xlm->ps0 [always], xlm->lg [next iteration]; neu balm->xlm [always]; Rückkante zu xa siehe dort",
+      "why": "Vereinheitlichung (wie im Gegencheck FI/CO): jeder auslaufende FORM/METHOD/MODULE/FUNCTION-Block endet mit eigenem end-Knoten auf ENDFORM/ENDMETHOD/ENDMODULE/ENDFUNCTION (Brieftabelle: end auch bei implizitem Blockende); die Rückkante führt von dort zum Knoten nach dem Aufruf.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten xa (neu)",
+      "before": "—",
+      "after": "end zmm_konsi_abrechnung_f01.abap:133 „ABRECHNEN beendet“; neu xa->lg [next iteration]; neu xlm->xa [always] (Rückkehr von plm3/plm4 an das Ende von ABRECHNEN)",
+      "why": "Vereinheitlichung (wie im Gegencheck FI/CO): jeder auslaufende FORM/METHOD/MODULE/FUNCTION-Block endet mit eigenem end-Knoten auf ENDFORM/ENDMETHOD/ENDMODULE/ENDFUNCTION (Brieftabelle: end auch bei implizitem Blockende); die Rückkante führt von dort zum Knoten nach dem Aufruf.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten xd (neu)",
+      "before": "—",
+      "after": "end zmm_konsi_abrechnung_f01.abap:103 „DATEI_SCHREIBEN beendet, Datei geschrieben“; umgeleitet: ld->gok [no more rows] jetzt ld->xd; neu xd->gok [always]",
+      "why": "Vereinheitlichung (wie im Gegencheck FI/CO): jeder auslaufende FORM/METHOD/MODULE/FUNCTION-Block endet mit eigenem end-Knoten auf ENDFORM/ENDMETHOD/ENDMODULE/ENDFUNCTION (Brieftabelle: end auch bei implizitem Blockende); die Rückkante führt von dort zum Knoten nach dem Aufruf.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten x2 (neu)",
+      "before": "—",
+      "after": "end zmm_konsi_abrechnung_f01.abap:81 „JE_LIEFERANT beendet“; umgeleitet: lg->ps1 [no more rows] jetzt lg->x2; neu x2->ps1 [always]",
+      "why": "Vereinheitlichung (wie im Gegencheck FI/CO): jeder auslaufende FORM/METHOD/MODULE/FUNCTION-Block endet mit eigenem end-Knoten auf ENDFORM/ENDMETHOD/ENDMODULE/ENDFUNCTION (Brieftabelle: end auch bei implizitem Blockende); die Rückkante führt von dort zum Knoten nach dem Aufruf.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten xs (neu)",
+      "before": "—",
+      "after": "end zmm_konsi_abrechnung_f01.abap:163 „LOG_SICHERN beendet“; neu xs->r0 [always]; neu cm->xs [always]",
+      "why": "Vereinheitlichung (wie im Gegencheck FI/CO): jeder auslaufende FORM/METHOD/MODULE/FUNCTION-Block endet mit eigenem end-Knoten auf ENDFORM/ENDMETHOD/ENDMODULE/ENDFUNCTION (Brieftabelle: end auch bei implizitem Blockende); die Rückkante führt von dort zum Knoten nach dem Aufruf.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten e (neu)",
+      "before": "—",
+      "after": "end M:49 „Abrechnungslauf beendet“; neu xs->e [always]",
+      "why": "START-OF-SELECTION endet implizit mit PERFORM log_sichern (Z. 49); Rückkante des zweiten Aufrufs von LOG_SICHERN braucht ein Ziel.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Fachsatz BM-034-B04, Anker",
+      "before": "42, 43, 44, 46",
+      "after": "42, 43, 44, 45, 46",
+      "why": "Der Satz sagt „das Protokoll gesichert“; das geschieht in Z. 45 (PERFORM log_sichern).",
+      "category": "Anker"
+    }
+  ],
+  "doubts": [
+    "zmm_konsi_abrechnung_f01.abap:114–116: Die Selektionsnamen BUKRS/LIFNR/XABRE für RMVKON00 kann ich ohne System nicht bestätigen (der Code-Kommentar verweist selbst auf ein Release). Für Skelett und Fachsätze ohne Belang; nicht geändert."
+  ]
+}

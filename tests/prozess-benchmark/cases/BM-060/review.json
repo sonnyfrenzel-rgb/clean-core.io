@@ -1,0 +1,16 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "est -> lc",
+      "before": "always",
+      "after": "next iteration",
+      "why": "est (Ende FILL_STATUS) ist auf jedem Pfad der letzte Knoten des Schleifenkörpers von LOOP AT idoc_contrl; nach dem Aufruf folgt CONTINUE bzw. ENDLOOP. Brief: Rückkante vom letzten Körperknoten = „next iteration“.",
+      "category": "Kante"
+    }
+  ],
+  "doubts": [
+    "z_fi_aa_create_and_post.abap:79–83: Betrag, Währung, Menge und Mengeneinheit werden in BAPIFAPO_ADD_INFO (FURTHERPOSTINGDATA) übergeben. Die Parameternamen des Bausteins (GENERALPOSTINGDATA, FURTHERPOSTINGDATA, DOCUMENTREFERENCE, RETURN) und die Felder von BAPIFAPO_GEN_INFO sind plausibel; ob der Zugangsbetrag tatsächlich in BAPIFAPO_ADD_INFO-AMOUNT liegt oder in einem eigenen Parameter, kann ich ohne System nicht belegen. Nicht offensichtlich falsch, daher nicht geändert; das Skelett hängt davon nicht ab."
+  ]
+}

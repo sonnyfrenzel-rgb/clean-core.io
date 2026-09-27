@@ -1,0 +1,20 @@
+{
+  "id": "BM-064",
+  "title": "Freigabesperre für Fertigungsaufträge ohne Prüfplan (BAdI WORKORDER_UPDATE)",
+  "domain": "PP / PM / QM — Produktion, Instandhaltung, Qualität",
+  "band": "einfach",
+  "loc": 25,
+  "constructs": [
+    "BAdI-Methode AT_RELEASE",
+    "CHECK",
+    "SELECT SINGLE MAPL",
+    "MESSAGE WITH",
+    "RAISE klassische Ausnahme"
+  ],
+  "scenario": "BAdI-Implementierung, mit der QM die Auftragsfreigabe in CO02/COHV an einen vorhandenen Prüfplan bindet; bei jeder Transformation zu prüfen, ob der BAdI in S/4 noch mit dieser Schnittstelle aufgerufen wird.",
+  "s4_issues": [
+    "Direktzugriff MAPL statt CDS für Plan-Materialzuordnung",
+    "Werke hart codiert",
+    "MESSAGE im BAdI-Kontext der Massenfreigabe (COHV) nicht dialogfähig"
+  ]
+}

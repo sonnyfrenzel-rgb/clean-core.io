@@ -1,0 +1,22 @@
+{
+  "id": "BM-001",
+  "title": "Offene Kundenaufträge: VBAK lesen, Gesamtstatus je Beleg aus VBUK",
+  "domain": "SD / Order-to-Cash",
+  "band": "einfach",
+  "loc": 27,
+  "constructs": [
+    "REPORT",
+    "SELECT-OPTIONS",
+    "SELECT INTO TABLE",
+    "LOOP AT",
+    "SELECT SINGLE in Schleife",
+    "CONTINUE",
+    "WRITE-Liste"
+  ],
+  "scenario": "Klassischer Innendienst-Report aus ECC-Zeiten, der offene Aufträge einer Verkaufsorganisation listet und dafür den Belegstatus aus VBUK nachliest.",
+  "s4_issues": [
+    "VBUK entfällt für SD-Belege: Gesamtstatus GBSTK steht in S/4 in VBAK",
+    "SELECT SINGLE je Auftrag in der Schleife (N+1-Zugriff)",
+    "direkter Lesezugriff auf VBAK statt freigegebenem CDS-View (I_SalesDocument)"
+  ]
+}

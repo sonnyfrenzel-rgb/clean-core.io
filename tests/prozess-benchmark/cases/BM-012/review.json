@@ -1,0 +1,44 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Kante c_seg→g1",
+      "before": "c_seg->g1 [always]",
+      "after": "entfällt; se->g1 [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks; Rückkante vom end des Blocks → Folgeschritt; keine Direktkante Aufruf → Folgeschritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante c_ag→g2",
+      "before": "c_ag->g2 [always]",
+      "after": "entfällt; e_map->g2 [always], ae->g2 [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks; Rückkante vom end des Blocks → Folgeschritt; keine Direktkante Aufruf → Folgeschritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante c_mat→g3",
+      "before": "c_mat->g3 [always]",
+      "after": "entfällt; me->g3 [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks; Rückkante vom end des Blocks → Folgeschritt; keine Direktkante Aufruf → Folgeschritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante c_auf→c_st",
+      "before": "c_auf->c_st [always]",
+      "after": "entfällt; e_dup->c_st [always], aae->c_st [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks; Rückkante vom end des Blocks → Folgeschritt; keine Direktkante Aufruf → Folgeschritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante c_st→l",
+      "before": "c_st->l [next iteration]",
+      "after": "entfällt; ste->l [next iteration]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks; Rückkante vom end des Blocks → Folgeschritt; keine Direktkante Aufruf → Folgeschritt.",
+      "category": "Kante"
+    }
+  ],
+  "doubts": [
+    "MESSAGE … INTO (Zeilen 57, 73, 85, 104, 141, 175) ohne output-Knoten ist korrekt: die Anweisung füllt nur gv_msg und sy-msg*, die status_setzen in den IDoc-Status übernimmt; kein Abbruch."
+  ]
+}

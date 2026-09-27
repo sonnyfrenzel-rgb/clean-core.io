@@ -1,0 +1,16 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten xm (neu)",
+      "before": "—",
+      "after": "end source.abap:13 „Buchung mit Fehlermeldung abgebrochen“; neu m->xm [always]",
+      "why": "MESSAGE vom Typ E/A beendet den Pfad; wie im übrigen Benchmark (z. B. BM-048, BM-051, BM-058) folgt dem output-Knoten ein end-Knoten auf derselben Anweisung. Validator-Warnung „keine ausgehende Kante“.",
+      "category": "fehlender Knoten"
+    }
+  ],
+  "doubts": [
+    "source.abap:13: SAP rät, in MB_DOCUMENT_BEFORE_UPDATE keine Meldungen auszugeben (Prüfungen gehören in MB_CHECK_LINE_BADI); ob MESSAGE e001 hier sauber abbricht oder einen Abbruch in der Buchung erzeugt, kann ich nicht sicher entscheiden. Fachsatz B03 („Buchung abgebrochen“) trifft in beiden Fällen im Ergebnis zu; nicht geändert."
+  ]
+}

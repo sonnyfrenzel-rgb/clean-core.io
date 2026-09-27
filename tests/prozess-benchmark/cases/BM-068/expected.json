@@ -1,0 +1,587 @@
+{
+  "id": "BM-068",
+  "title": "Chargenbewertung über Klassifizierungsmerkmale Reinheit und Verfallsdatum",
+  "classes": [
+    "K01",
+    "K02"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "INOB",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 35,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:35"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "CABN",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 44,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:44"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "AUSP",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 49,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:49"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-068-B01",
+      "text": "Aus Material und Charge wird der Objektschlüssel der Chargenklassifizierung gebildet und das Klassifizierungsobjekt der Klassenart 023 gesucht.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:32"
+        },
+        {
+          "file": "source.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:35"
+        }
+      ]
+    },
+    {
+      "id": "BM-068-B02",
+      "text": "Ist die Charge nicht klassifiziert, endet der Baustein mit der Ausnahme KEINE_KLASSIFIZIERUNG.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:39"
+        },
+        {
+          "file": "source.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:40"
+        }
+      ]
+    },
+    {
+      "id": "BM-068-B03",
+      "text": "Die Merkmale Reinheit (Z_REINHEIT) und Verfallsdatum werden auf ihre internen Merkmalsnummern aufgelöst und die Merkmalwerte der Charge gelesen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:44"
+        },
+        {
+          "file": "source.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:46"
+        },
+        {
+          "file": "source.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:49"
+        }
+      ]
+    },
+    {
+      "id": "BM-068-B04",
+      "text": "Fehlt ein Reinheitswert, wird der Status P (manuell prüfen) zurückgegeben.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:54"
+        },
+        {
+          "file": "source.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:55"
+        },
+        {
+          "file": "source.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:56"
+        },
+        {
+          "file": "source.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:57"
+        }
+      ]
+    },
+    {
+      "id": "BM-068-B05",
+      "text": "Der Reinheitswert wird zurückgegeben; ein vorhandenes Verfallsdatum wird aus dem Merkmalwert übernommen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:59"
+        },
+        {
+          "file": "source.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:61"
+        },
+        {
+          "file": "source.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:62"
+        }
+      ]
+    },
+    {
+      "id": "BM-068-B06",
+      "text": "Eine verfallene Charge erhält den Status S (sperren), unabhängig von der Reinheit.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:67"
+        },
+        {
+          "file": "source.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:68"
+        }
+      ]
+    },
+    {
+      "id": "BM-068-B07",
+      "text": "Sonst wird die Charge mit Status F freigegeben, wenn die Reinheit mindestens den übergebenen Grenzwert (Vorschlag 99,5) erreicht, andernfalls mit Status S gesperrt.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:69"
+        },
+        {
+          "file": "source.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:70"
+        },
+        {
+          "file": "source.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:72"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 1,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:1"
+        },
+        "meaning": "Einstieg: Charge bewerten"
+      },
+      {
+        "id": "q1",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:35"
+        },
+        "meaning": "Klassifizierungsobjekt der Charge (Klassenart 023) suchen"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:39"
+        },
+        "meaning": "Charge klassifiziert?"
+      },
+      {
+        "id": "e1",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:40"
+        },
+        "meaning": "Ausnahme KEINE_KLASSIFIZIERUNG"
+      },
+      {
+        "id": "q2",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:44"
+        },
+        "meaning": "Internes Merkmal Z_REINHEIT ermitteln"
+      },
+      {
+        "id": "q3",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:46"
+        },
+        "meaning": "Internes Merkmal Verfallsdatum ermitteln"
+      },
+      {
+        "id": "q4",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:49"
+        },
+        "meaning": "Merkmalwerte der Charge lesen"
+      },
+      {
+        "id": "r1",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:54"
+        },
+        "meaning": "Reinheitswert nachschlagen"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:55"
+        },
+        "meaning": "Reinheitswert vorhanden?"
+      },
+      {
+        "id": "aP",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:56"
+        },
+        "meaning": "Status P (manuell prüfen)"
+      },
+      {
+        "id": "e2",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:57"
+        },
+        "meaning": "Rückkehr mit Status P"
+      },
+      {
+        "id": "r2",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:61"
+        },
+        "meaning": "Verfallsdatum nachschlagen"
+      },
+      {
+        "id": "g3",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:62"
+        },
+        "meaning": "Verfallsdatum vorhanden?"
+      },
+      {
+        "id": "g4",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:67"
+        },
+        "meaning": "Charge verfallen?"
+      },
+      {
+        "id": "aS1",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:68"
+        },
+        "meaning": "Status S (sperren) wegen Verfall"
+      },
+      {
+        "id": "aF",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:70"
+        },
+        "meaning": "Status F (freigeben)"
+      },
+      {
+        "id": "aS2",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:72"
+        },
+        "meaning": "Status S (sperren) wegen Reinheit"
+      },
+      {
+        "id": "done",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:75"
+        },
+        "meaning": "Rückkehr mit Status und Reinheit"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "q1",
+        "condition": "always"
+      },
+      {
+        "from": "q1",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "e1",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g1",
+        "to": "q2",
+        "condition": "else"
+      },
+      {
+        "from": "q2",
+        "to": "q3",
+        "condition": "always"
+      },
+      {
+        "from": "q3",
+        "to": "q4",
+        "condition": "always"
+      },
+      {
+        "from": "q4",
+        "to": "r1",
+        "condition": "always"
+      },
+      {
+        "from": "r1",
+        "to": "g2",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "aP",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "aP",
+        "to": "e2",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "r2",
+        "condition": "else"
+      },
+      {
+        "from": "r2",
+        "to": "g3",
+        "condition": "always"
+      },
+      {
+        "from": "g3",
+        "to": "g4",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "g3",
+        "to": "g4",
+        "condition": "else"
+      },
+      {
+        "from": "g4",
+        "to": "aS1",
+        "condition": "lv_vfdat IS NOT INITIAL AND lv_vfdat < sy-datum"
+      },
+      {
+        "from": "aS1",
+        "to": "done",
+        "condition": "always"
+      },
+      {
+        "from": "aF",
+        "to": "done",
+        "condition": "always"
+      },
+      {
+        "from": "aS2",
+        "to": "done",
+        "condition": "always"
+      },
+      {
+        "from": "g4",
+        "to": "aF",
+        "condition": "ev_reinheit >= iv_min_reinheit"
+      },
+      {
+        "from": "g4",
+        "to": "aS2",
+        "condition": "else"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "gesamte Scheibe — kein Fachsatz „Die Charge wird im System gesperrt oder freigegeben“ (der Baustein liefert nur einen Status zurück, er ändert weder Chargenzustand noch Bestand)",
+    "source.abap:49 — kein Fachsatz „Nur Originalwerte werden gelesen“ (die MAFID-Bedingung ist auskommentiert)",
+    "source.abap:67 — kein Fachsatz „Chargen ohne Verfallsdatum werden gesperrt“ (ohne Verfallsdatum entscheidet allein die Reinheit)"
+  ],
+  "processDescription": "Ein aufrufendes Programm übergibt Material, Charge und optional einen Mindestwert für die Reinheit. Der Baustein bildet den Objektschlüssel der Charge und sucht deren Klassifizierung in Klassenart 023; ohne Klassifizierung endet er mit einer Ausnahme. Er löst die Merkmale Reinheit und Verfallsdatum auf und liest alle Merkmalwerte der Charge. Fehlt der Reinheitswert, gibt er den Status P zur manuellen Prüfung zurück. Sonst übernimmt er Reinheit und gegebenenfalls Verfallsdatum. Eine verfallene Charge wird mit S (sperren) bewertet; andernfalls entscheidet die Reinheit: ab dem Grenzwert F (freigeben), darunter S. Der Baustein ändert keine Daten; die Konsequenz zieht der Aufrufer."
+}

@@ -1,0 +1,255 @@
+{
+  "id": "BM-001",
+  "title": "Offene Kundenaufträge: VBAK lesen, Gesamtstatus je Beleg aus VBUK",
+  "classes": [
+    "K01",
+    "K18"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "VBAK",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 14,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:14"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "VBUK",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 19,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:19"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-001-B01",
+      "text": "Es werden Kundenaufträge (Belegtyp C) der eingegebenen Verkaufsorganisationen und Erfassungsdaten selektiert.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:14"
+        }
+      ]
+    },
+    {
+      "id": "BM-001-B02",
+      "text": "Für jeden Auftrag wird der Gesamtbearbeitungsstatus aus dem Belegstatus nachgelesen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:19"
+        }
+      ]
+    },
+    {
+      "id": "BM-001-B03",
+      "text": "Vollständig erledigte Aufträge (Gesamtstatus C) werden übersprungen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:22"
+        }
+      ]
+    },
+    {
+      "id": "BM-001-B04",
+      "text": "Alle übrigen Aufträge werden mit Auftragsnummer, Auftraggeber, Nettowert, Währung und Status als Liste ausgegeben.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:25"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 13,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:13"
+        },
+        "meaning": "Reportstart"
+      },
+      {
+        "id": "q",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:14"
+        },
+        "meaning": "Kundenaufträge der Selektion lesen"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "source.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:18"
+        },
+        "meaning": "Aufträge einzeln durchgehen"
+      },
+      {
+        "id": "st",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:19"
+        },
+        "meaning": "Gesamtstatus des Auftrags nachlesen"
+      },
+      {
+        "id": "g",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:22"
+        },
+        "meaning": "Auftrag vollständig erledigt?"
+      },
+      {
+        "id": "o",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:25"
+        },
+        "meaning": "Offenen Auftrag mit Kunde, Nettowert und Status listen"
+      },
+      {
+        "id": "done",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:27"
+        },
+        "meaning": "Liste fertig"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "q",
+        "condition": "always"
+      },
+      {
+        "from": "q",
+        "to": "l",
+        "condition": "always"
+      },
+      {
+        "from": "l",
+        "to": "st",
+        "condition": "next row"
+      },
+      {
+        "from": "st",
+        "to": "g",
+        "condition": "always"
+      },
+      {
+        "from": "g",
+        "to": "l",
+        "condition": "gv_gbstk = 'C'"
+      },
+      {
+        "from": "g",
+        "to": "o",
+        "condition": "else"
+      },
+      {
+        "from": "o",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l",
+        "to": "done",
+        "condition": "no more rows"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "source.abap:22 — kein Fachsatz „nur vollständig unbearbeitete Aufträge werden gelistet“: teilweise bearbeitete Aufträge (Status B) bleiben in der Liste, der strengere CHECK ist auskommentiert",
+    "source.abap:19 — kein Fachsatz „Aufträge ohne Statussatz gelten als offen“: gv_gbstk wird nicht zurückgesetzt, ohne VBUK-Treffer wirkt der Status des vorigen Auftrags weiter",
+    "gesamte Scheibe — kein Fachsatz „offene Aufträge werden abgeschlossen oder geändert“: der Report liest und listet nur"
+  ],
+  "processDescription": "Der Report wird im Dialog oder als Job mit Verkaufsorganisationen (Pflicht) und einem optionalen Erfassungsdatumsbereich gestartet. Er liest alle Kundenaufträge (Belegtyp C) dieser Selektion aus dem Auftragskopf. Für jeden Auftrag liest er einzeln den Gesamtbearbeitungsstatus aus der Statustabelle VBUK. Ist der Auftrag vollständig erledigt (Status C), wird er übersprungen. Alle anderen Aufträge, also offene und teilweise bearbeitete, erscheinen mit Auftragsnummer, Auftraggeber, Nettowert, Währung und Status in einer Liste. Findet die Statuslesung keinen Satz, bleibt der Status des vorher gelesenen Auftrags stehen, sodass die Filterung dann auf einem fremden Wert beruht. Es wird nichts geschrieben."
+}

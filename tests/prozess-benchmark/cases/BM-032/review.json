@@ -1,0 +1,84 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten x1 (neu)",
+      "before": "—",
+      "after": "end zmm_lief_bewertung_f01.abap:15 „LESEN_WARENEINGAENGE beendet“; umgeleitet: q1->g0 [always] jetzt q1->x1; neu x1->g0 [always]",
+      "why": "Vereinheitlichung (wie im Gegencheck FI/CO): jeder auslaufende FORM/METHOD/MODULE/FUNCTION-Block endet mit eigenem end-Knoten auf ENDFORM/ENDMETHOD/ENDMODULE/ENDFUNCTION (Brieftabelle: end auch bei implizitem Blockende); die Rückkante führt von dort zum Knoten nach dem Aufruf.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten x2 (neu)",
+      "before": "—",
+      "after": "end zmm_lief_bewertung_f01.abap:46 „TERMINTREUE beendet“; umgeleitet: l2->p3 [no more rows] jetzt l2->x2; neu x2->p3 [always]",
+      "why": "Vereinheitlichung (wie im Gegencheck FI/CO): jeder auslaufende FORM/METHOD/MODULE/FUNCTION-Block endet mit eigenem end-Knoten auf ENDFORM/ENDMETHOD/ENDMODULE/ENDFUNCTION (Brieftabelle: end auch bei implizitem Blockende); die Rückkante führt von dort zum Knoten nach dem Aufruf.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten x3 (neu)",
+      "before": "—",
+      "after": "end zmm_lief_bewertung_f01.abap:83 „MENGENTREUE beendet“; umgeleitet: l3->p4 [no more rows] jetzt l3->x3; neu x3->p4 [always]",
+      "why": "Vereinheitlichung (wie im Gegencheck FI/CO): jeder auslaufende FORM/METHOD/MODULE/FUNCTION-Block endet mit eigenem end-Knoten auf ENDFORM/ENDMETHOD/ENDMODULE/ENDFUNCTION (Brieftabelle: end auch bei implizitem Blockende); die Rückkante führt von dort zum Knoten nach dem Aufruf.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten g4, r4 (neu)",
+      "before": "f4->q4 [always]",
+      "after": "gateway zmm_lief_bewertung_f01.abap:92 „Bewertete Lieferanten vorhanden?“, end :93 RETURN; f4->g4 [always], g4->r4 [gt_acc IS INITIAL], g4->q4 [else], r4->p5 [always]",
+      "why": "Die Verzweigung IF gt_acc IS INITIAL / RETURN fehlte. Sie trägt: ohne sie liefe das SELECT … FOR ALL ENTRIES mit leerer Tabelle ohne Lieferanteneinschränkung. gt_acc kann leer sein, wenn keine Position einen Liefertermin hat und keine endgeliefert ist.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten x4 (neu)",
+      "before": "—",
+      "after": "end zmm_lief_bewertung_f01.abap:115 „QUALITAET beendet“; umgeleitet: l4->p5 [no more rows] jetzt l4->x4; neu x4->p5 [always]",
+      "why": "Vereinheitlichung (wie im Gegencheck FI/CO): jeder auslaufende FORM/METHOD/MODULE/FUNCTION-Block endet mit eigenem end-Knoten auf ENDFORM/ENDMETHOD/ENDMODULE/ENDFUNCTION (Brieftabelle: end auch bei implizitem Blockende); die Rückkante führt von dort zum Knoten nach dem Aufruf.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten x5 (neu)",
+      "before": "—",
+      "after": "end zmm_lief_bewertung_f01.abap:153 „GESAMTNOTE beendet“; umgeleitet: l5->gu [no more rows] jetzt l5->x5; neu x5->gu [always]",
+      "why": "Vereinheitlichung (wie im Gegencheck FI/CO): jeder auslaufende FORM/METHOD/MODULE/FUNCTION-Block endet mit eigenem end-Knoten auf ENDFORM/ENDMETHOD/ENDMODULE/ENDFUNCTION (Brieftabelle: end auch bei implizitem Blockende); die Rückkante führt von dort zum Knoten nach dem Aufruf.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten m6s, m6e, xe6 (neu)",
+      "before": "cm->eos [always]; rb ohne ausgehende Kante",
+      "after": "output :163 MESSAGE s003, output :166 MESSAGE e004 + end :166; cm->m6s, rb->m6e, m6e->xe6",
+      "why": "Die beiden Meldungen tragen den Prozess (Erfolgsmeldung mit Anzahl laut B12; E-Meldung beendet den Lauf) und fehlten als output-Knoten; rb hatte keine ausgehende Kante.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten x6 (neu)",
+      "before": "—",
+      "after": "end zmm_lief_bewertung_f01.abap:168 „SPEICHERN beendet“; neu x6->eos [always]; neu m6s->x6 [always]",
+      "why": "Vereinheitlichung (wie im Gegencheck FI/CO): jeder auslaufende FORM/METHOD/MODULE/FUNCTION-Block endet mit eigenem end-Knoten auf ENDFORM/ENDMETHOD/ENDMODULE/ENDFUNCTION (Brieftabelle: end auch bei implizitem Blockende); die Rückkante führt von dort zum Knoten nach dem Aufruf.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten fac, mi (neu)",
+      "before": "f7->dsp [always]",
+      "after": "opaque_call :173 cl_salv_table=>factory, output :178 MESSAGE TYPE 'I'; f7->fac, fac->dsp [always], fac->mi [CATCH cx_salv_msg]",
+      "why": "Erzeugung der ALV-Liste und der Fehlerzweig fehlten; in BM-024 modelliert derselbe Autor factory als opaque_call mit CATCH-Kante.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten x7 (neu)",
+      "before": "—",
+      "after": "end zmm_lief_bewertung_f01.abap:180 „ANZEIGEN beendet“; neu dsp->x7, mi->x7 [always]",
+      "why": "Vereinheitlichung (wie im Gegencheck FI/CO): jeder auslaufende FORM/METHOD/MODULE/FUNCTION-Block endet mit eigenem end-Knoten auf ENDFORM/ENDMETHOD/ENDMODULE/ENDFUNCTION (Brieftabelle: end auch bei implizitem Blockende); die Rückkante führt von dort zum Knoten nach dem Aufruf.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten eend (neu)",
+      "before": "—",
+      "after": "end zmm_lief_bewertung.abap:61 „Report beendet“; neu x7->eend [always]",
+      "why": "END-OF-SELECTION endet implizit mit PERFORM anzeigen; ohne diesen Knoten hatte dsp keine ausgehende Kante (Validator-Warnung).",
+      "category": "fehlender Knoten"
+    }
+  ],
+  "doubts": []
+}

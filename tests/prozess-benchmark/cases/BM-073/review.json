@@ -1,0 +1,21 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten e_disp",
+      "before": "—",
+      "after": "end zpm_wp_freigabe_cl.abap:150 „Anzeige beendet, Rückkehr“",
+      "why": "Konvention: jede auslaufende METHOD hat einen eigenen end-Knoten auf ENDMETHOD",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kante disp→e_disp",
+      "before": "—",
+      "after": "[always]",
+      "why": "display( ) ist die letzte Anweisung der Methode",
+      "category": "Kante"
+    }
+  ],
+  "doubts": []
+}

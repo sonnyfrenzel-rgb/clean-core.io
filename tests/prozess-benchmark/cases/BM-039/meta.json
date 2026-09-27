@@ -1,0 +1,27 @@
+{
+  "id": "BM-039",
+  "title": "Dynpro-Freigabecockpit für Bestellanforderungen: Freigeben, Ablehnen mit Grund und Workflow",
+  "domain": "MM / Procure-to-Pay, Bestandsführung, Lager (WM/EWM)",
+  "band": "sehr komplex",
+  "loc": 404,
+  "constructs": [
+    "Modulpool (PROGRAM) mit TOP/O01/I01/F01",
+    "LOAD-OF-PROGRAM mit AUTHORITY-CHECK S_TCODE",
+    "PBO/PAI-Module, Table Control",
+    "CALL SCREEN … STARTING AT (Popup)",
+    "POV-Modul mit F4IF_INT_TABLE_VALUE_REQUEST",
+    "ASSIGN COMPONENT dynamisch",
+    "ENQUEUE/DEQUEUE EMEBANE",
+    "BAPI_REQUISITION_RELEASE",
+    "UPDATE auf SAP-Tabelle EBAN",
+    "SAP_WAPI_CREATE_EVENT",
+    "CALL TRANSACTION … AND SKIP FIRST SCREEN"
+  ],
+  "scenario": "Eigenes Freigabecockpit aus der 4.6C-Zeit, das ME55 ersetzt und Vier-Augen- und Wertgrenzenregeln ergänzt; in S/4 steht dem der flexible Workflow für Bestellanforderungen und die Fiori-App gegenüber.",
+  "s4_issues": [
+    "Dynpro-Modulpool ist in S/4 lauffähig, aber nicht Clean Core (Fiori „Bestellanforderungen genehmigen“ als Ersatz)",
+    "Direktes UPDATE EBAN-BANPR am Standard vorbei",
+    "Klassische Freigabestrategie vs. Flexible Workflow",
+    "EBAN-Direktzugriffe"
+  ]
+}

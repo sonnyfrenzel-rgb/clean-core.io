@@ -1,0 +1,23 @@
+{
+  "id": "BM-092",
+  "title": "Webshop-Neukunden per Batch-Input XD01 anlegen mit Dublettenprüfung",
+  "domain": "Querschnitt — Schnittstellen, Stammdaten, HR, Workflow, technische Jobs",
+  "band": "komplex",
+  "loc": 204,
+  "constructs": [
+    "CALL TRANSACTION USING bdcdata MESSAGES INTO",
+    "BDC-Makros",
+    "SELECT SINGLE KNA1 über MCOD1",
+    "INNER JOIN KNA1/ADR6",
+    "READ TABLE Meldungstabelle",
+    "FORMAT_MESSAGE",
+    "UPDATE Z-Staging",
+    "COMMIT WORK je Satz"
+  ],
+  "scenario": "Stündlicher Job eines B2B-Webshops: registrierte Neukunden aus einer Stagingtabelle werden nach Dublettenprüfung per Batch-Input als Debitoren mit Vorkasse angelegt.",
+  "s4_issues": [
+    "XD01 ist in S/4 durch den Geschäftspartner (BP) ersetzt; Batch-Input auf SAPMF02D läuft nicht mehr",
+    "Kundenanlage muss über BP/CVI-API erfolgen",
+    "Direkter Lesezugriff auf KNA1/ADR6"
+  ]
+}

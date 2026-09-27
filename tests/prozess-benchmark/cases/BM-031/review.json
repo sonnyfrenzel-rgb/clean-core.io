@@ -1,0 +1,28 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten xh (neu)",
+      "before": "—",
+      "after": "end zcl_im_invoice_update.abap:73 „Sichern verhindert (Ausnahme ERROR_WITH_MESSAGE)“; neu mh->xh [always]",
+      "why": "MESSAGE vom Typ E/A beendet den Pfad; wie im übrigen Benchmark (z. B. BM-048, BM-051, BM-058) folgt dem output-Knoten ein end-Knoten auf derselben Anweisung. Validator-Warnung „keine ausgehende Kante“.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten xa (neu)",
+      "before": "—",
+      "after": "end z_mm_iv_log_write.abap:14 „Verbuchung abgebrochen“; neu fa->xa [always]",
+      "why": "MESSAGE vom Typ E/A beendet den Pfad; wie im übrigen Benchmark (z. B. BM-048, BM-051, BM-058) folgt dem output-Knoten ein end-Knoten auf derselben Anweisung. Validator-Warnung „keine ausgehende Kante“.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kante ut->f0",
+      "before": "ut->f0 [always]",
+      "after": "entfernt (ut->me [always] bleibt)",
+      "why": "Vereinheitlichte Konvention (Brief, Nachtrag): Aufrufe IN UPDATE TASK behalten die Direktkante zum nächsten Schritt, weil der Aufrufer nicht wartet; beim Verbucher gibt es keine Kante in den Zielbaustein (er läuft erst beim COMMIT WORK im Verbuchungsprozess).",
+      "category": "Kante"
+    }
+  ],
+  "doubts": []
+}

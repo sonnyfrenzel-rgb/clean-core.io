@@ -1,0 +1,95 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten fe1",
+      "before": "—",
+      "after": "end lzqm_limsf01.abap:44 „Prüfung bestanden, Rückkehr mit cv_ok = X“",
+      "why": "Konvention: jeder auslaufende FORM hat einen eigenen end-Knoten auf ENDFORM; Rückkehr zum Aufrufer läuft über diesen",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kante a1→gok",
+      "before": "a1→gok [always]",
+      "after": "a1→fe1 [always]",
+      "why": "Konvention: jeder auslaufende FORM hat einen eigenen end-Knoten auf ENDFORM; Rückkehr zum Aufrufer läuft über diesen",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante fe1→gok",
+      "before": "—",
+      "after": "[always]",
+      "why": "Rückkante vom FORM-Ende nach PERFORM pruefe_los",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten fe2",
+      "before": "—",
+      "after": "end lzqm_limsf01.abap:88 „Erfassung erfolgreich, Rückkehr mit cv_ok = X“",
+      "why": "Konvention: jeder auslaufende FORM hat einen eigenen end-Knoten auf ENDFORM; Rückkehr zum Aufrufer läuft über diesen",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kante a2→gok2",
+      "before": "a2→gok2 [always]",
+      "after": "a2→fe2 [always]",
+      "why": "Konvention: jeder auslaufende FORM hat einen eigenen end-Knoten auf ENDFORM; Rückkehr zum Aufrufer läuft über diesen",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante fe2→gok2",
+      "before": "—",
+      "after": "[always]",
+      "why": "Rückkante vom FORM-Ende nach PERFORM ergebnisse_buchen",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten fe3",
+      "before": "—",
+      "after": "end lzqm_limsf01.abap:121 „Meldung gesichert, Nummer im Statustext, Rückkehr“",
+      "why": "Konvention: jeder auslaufende FORM hat einen eigenen end-Knoten auf ENDFORM; Rückkehr zum Aufrufer läuft über diesen",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kante sq→st3",
+      "before": "sq→st3 [always]",
+      "after": "fe3→st3 [always]",
+      "why": "Konvention: jeder auslaufende FORM hat einen eigenen end-Knoten auf ENDFORM; Rückkehr zum Aufrufer läuft über diesen",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante sq→fe3",
+      "before": "—",
+      "after": "[always]",
+      "why": "nach dem Sichern läuft der FORM bis ENDFORM aus",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten fe4",
+      "before": "—",
+      "after": "end lzqm_limsf01.abap:140 „Statussatz angehängt, Rückkehr“",
+      "why": "Konvention: jeder auslaufende FORM hat einen eigenen end-Knoten auf ENDFORM; Rückkehr zum Aufrufer läuft über diesen",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kante f4→l",
+      "before": "f4→l [next iteration]",
+      "after": "fe4→l [next iteration]",
+      "why": "Konvention: jeder auslaufende FORM hat einen eigenen end-Knoten auf ENDFORM; Rückkehr zum Aufrufer läuft über diesen",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante f4→fe4",
+      "before": "—",
+      "after": "[always]",
+      "why": "FORM status_setzen hat keine Verzweigung, läuft bis ENDFORM aus",
+      "category": "Kante"
+    }
+  ],
+  "doubts": [
+    "lzqm_limsf01.abap:53/76 — Der IMPORTING-Parameter RETURN von BAPI_INSPOPER_RECORDRESULTS ist nach meiner Erinnerung als BAPIRETURN1 typisiert, hier wird eine BAPIRET2-Struktur übergeben (möglicher CALL_FUNCTION_CONFLICT_TYPE). Nicht sicher, nicht geändert.",
+    "lzqm_limsf01.abap:98 — Feld BAPI2078_NOTHDRI-INSP_LOT (vom Autor selbst als unverifiziert gemeldet) nicht sicher bestätigbar; Skelett unberührt.",
+    "lzqm_limsf01.abap:58 — Die Schleife lp hat eine Selbstkante [next row] ohne Körperknoten (Körper besteht nur aus Strukturaufbau); fachlich vertretbar, aber formal ungewöhnlich — belassen."
+  ]
+}

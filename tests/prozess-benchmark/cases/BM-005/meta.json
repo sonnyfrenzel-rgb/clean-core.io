@@ -1,0 +1,19 @@
+{
+  "id": "BM-005",
+  "title": "Sichern-Exit: Streckenauftrag ohne Bestellnummer abweisen, Großmengen melden",
+  "domain": "SD / Order-to-Cash",
+  "band": "einfach",
+  "loc": 16,
+  "constructs": [
+    "User-Exit-FORM USEREXIT_SAVE_DOCUMENT_PREPARE",
+    "MESSAGE Typ E als Sicherungsabbruch",
+    "LOOP AT xvbap WHERE updkz",
+    "MESSAGE Typ W"
+  ],
+  "scenario": "Plausibilitätsprüfung vor dem Sichern eines Kundenauftrags in MV45AFZZ; kommt in fast jedem SD-System vor und wird bei der S/4-Umstellung als Modifikation bewertet.",
+  "s4_issues": [
+    "MV45AFZZ ist eine Modifikation, Ziel ist BAdI SD_SLS_CHECK_BEFORE_SAVE / Cloud-BAdI für Kundenaufträge",
+    "MESSAGE E im Sichern-Exit wirkt in BAPI- und IDoc-Verarbeitung anders als im Dialog",
+    "globale Tabellen XVBAP/VBKD aus SAPMV45A sind keine stabile Schnittstelle"
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten xo (neu)",
+      "before": "—",
+      "after": "end source.abap:38 „Lauf abgebrochen, Datei nicht lesbar“; neu mo->xo [always]",
+      "why": "MESSAGE vom Typ E/A beendet den Pfad; wie im übrigen Benchmark (z. B. BM-048, BM-051, BM-058) folgt dem output-Knoten ein end-Knoten auf derselben Anweisung. Validator-Warnung „keine ausgehende Kante“.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten wb",
+      "before": "source.abap:61",
+      "after": "source.abap:60",
+      "why": "Die WRITE-Anweisung beginnt in Zeile 60; Zeile 61 ist die Fortsetzung der Kettenliste.",
+      "category": "Anker"
+    },
+    {
+      "where": "Fachsatz BM-028-B04, Anker",
+      "before": "source.abap:61",
+      "after": "source.abap:60",
+      "why": "Erste Zeile der WRITE-Anweisung ist 60.",
+      "category": "Anker"
+    }
+  ],
+  "doubts": []
+}

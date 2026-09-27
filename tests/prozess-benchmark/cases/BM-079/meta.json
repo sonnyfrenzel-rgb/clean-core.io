@@ -1,0 +1,31 @@
+{
+  "id": "BM-079",
+  "title": "Störmeldung zu Instandhaltungsauftrag: Ereignisempfänger, Klasse, CMMS-RFC und TECO-Lauf",
+  "domain": "PP / PM / QM — Produktion, Instandhaltung, Qualität",
+  "band": "sehr komplex",
+  "loc": 473,
+  "constructs": [
+    "Workflow-Ereignisempfänger-Baustein (BUS2038 CREATED)",
+    "TEMP_ERROR/ANY_ERROR",
+    "Globale Klasse mit privaten Methoden",
+    "Ausnahmeklasse (cx_static_check)",
+    "TRY/CATCH/RAISE EXCEPTION",
+    "ENQUEUE_EIQMEL/DEQUEUE_EIQMEL",
+    "SELECT JOIN QMEL/QMIH, EQUZ/ILOA, AUFK/AFIH",
+    "neue Open-SQL-Syntax mit @",
+    "BAPI_ALM_ORDER_MAINTAIN (CREATE, RELEASE, TECHNICALCOMPLETE)",
+    "BAPI_TRANSACTION_COMMIT/ROLLBACK",
+    "synchroner RFC mit DESTINATION und MESSAGE-Ausnahmen",
+    "Nachversand-Queue (INSERT + COMMIT WORK)",
+    "SAP_WAPI_CREATE_EVENT",
+    "Report mit Radiobuttons und WRITE AS ICON"
+  ],
+  "scenario": "Automatisierung der Störungsbearbeitung: Sobald eine sehr dringende Störmeldung angelegt wird, erzeugt ein Ereignisempfänger den IH-Auftrag, gibt ihn bei kritischen Anlagen frei und meldet ihn an das CMMS des Anlagenlieferanten; ein Report verarbeitet Liegengebliebenes nach und schließt rückgemeldete Aufträge ab.",
+  "s4_issues": [
+    "Workflow-Ereignisempfänger über SWETYPV – in S/4 auf Business Events/Flexible Workflow prüfen",
+    "Direktzugriffe QMEL/QMIH/EQUZ/ILOA/AUFK/AFIH/JEST statt CDS",
+    "Synchroner RFC an Fremdsystem aus der Buchungslogik",
+    "Systemstatus I0009/I0045 hart codiert",
+    "Mehrfaches COMMIT innerhalb einer Verarbeitung"
+  ]
+}

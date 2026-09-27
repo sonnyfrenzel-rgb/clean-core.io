@@ -1,0 +1,2609 @@
+{
+  "id": "BM-058",
+  "title": "Umsatzsteuer-Voranmeldung mit Kennzahlzuordnung, Kontenabstimmung und Datei auf dem Applikationsserver",
+  "classes": [
+    "K01"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "BKPF",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zfi_ustva_f01.abap",
+        "line": 38,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zfi_ustva_f01.abap:38"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BSET",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zfi_ustva_f01.abap",
+        "line": 58,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zfi_ustva_f01.abap:58"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BSIS",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zfi_ustva_f01.abap",
+        "line": 147,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zfi_ustva_f01.abap:147"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZFI_USTVA_MAP",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zfi_ustva_f01.abap",
+        "line": 76,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zfi_ustva_f01.abap:76"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZFI_USTVA_PROT",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zfi_ustva_f01.abap",
+        "line": 12,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zfi_ustva_f01.abap:12"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZFI_USTVA_PROT",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "zfi_ustva_f01.abap",
+        "line": 263,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zfi_ustva_f01.abap:263"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZFI_USTVA_STNR",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_fi_ustva_xml.abap",
+        "line": 47,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_fi_ustva_xml.abap:47"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZCL_FI_USTVA_XML",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zfi_ustva_f01.abap",
+        "line": 225,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zfi_ustva_f01.abap:225"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "REUSE_ALV_GRID_DISPLAY",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zfi_ustva_f01.abap",
+        "line": 296,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zfi_ustva_f01.abap:296"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-058-B01",
+      "text": "Vor jeder Verarbeitung wird geprüft, ob der Anwender Belege des eingegebenen Buchungskreises anzeigen darf; ohne diese Berechtigung bricht der Report mit einer Fehlermeldung ab.",
+      "anchors": [
+        {
+          "file": "zfi_ustva.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva.abap:20"
+        },
+        {
+          "file": "zfi_ustva.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva.abap:23"
+        },
+        {
+          "file": "zfi_ustva.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva.abap:24"
+        }
+      ]
+    },
+    {
+      "id": "BM-058-B02",
+      "text": "Der Meldezeitraum ist der gewählte Kalendermonat vom ersten bis zum letzten Tag, abgegrenzt über das Buchungsdatum.",
+      "anchors": [
+        {
+          "file": "zfi_ustva.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva.abap:28"
+        },
+        {
+          "file": "zfi_ustva.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva.abap:29"
+        }
+      ]
+    },
+    {
+      "id": "BM-058-B03",
+      "text": "Im Meldeprotokoll wird gesucht, ob für Buchungskreis, Geschäftsjahr und Monat bereits eine Meldung mit Status S protokolliert ist.",
+      "anchors": [
+        {
+          "file": "zfi_ustva_f01.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:12"
+        }
+      ]
+    },
+    {
+      "id": "BM-058-B04",
+      "text": "Liegt eine solche Meldung vor und ist weder Berichtigung noch Testlauf gewählt, bricht der Report mit einer Fehlermeldung zur Doppelmeldung ab.",
+      "anchors": [
+        {
+          "file": "zfi_ustva_f01.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:17"
+        },
+        {
+          "file": "zfi_ustva_f01.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:19"
+        }
+      ]
+    },
+    {
+      "id": "BM-058-B05",
+      "text": "Die laufende Nummer der neuen Meldung ist die höchste bisher für den Monat protokollierte Nummer plus eins.",
+      "anchors": [
+        {
+          "file": "zfi_ustva_f01.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:24"
+        },
+        {
+          "file": "zfi_ustva_f01.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:28"
+        }
+      ]
+    },
+    {
+      "id": "BM-058-B06",
+      "text": "Es werden die Belegköpfe des Buchungskreises mit Buchungsdatum im Meldemonat und leerem Belegstatus gelesen.",
+      "anchors": [
+        {
+          "file": "zfi_ustva_f01.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:38"
+        }
+      ]
+    },
+    {
+      "id": "BM-058-B07",
+      "text": "Gibt es im Meldemonat keine Belege, wird ein Hinweis ausgegeben und zum Selektionsbild zurückgekehrt.",
+      "anchors": [
+        {
+          "file": "zfi_ustva_f01.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:45"
+        },
+        {
+          "file": "zfi_ustva_f01.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:46"
+        },
+        {
+          "file": "zfi_ustva_f01.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:47"
+        }
+      ]
+    },
+    {
+      "id": "BM-058-B08",
+      "text": "Zu diesen Belegen werden die Steuerzeilen mit Steuerkennzeichen, Soll/Haben-Kennzeichen, Bemessungsgrundlage, Steuerbetrag und Steuerkonto gelesen.",
+      "anchors": [
+        {
+          "file": "zfi_ustva_f01.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:58"
+        }
+      ]
+    },
+    {
+      "id": "BM-058-B09",
+      "text": "Die Zuordnung der Steuerkennzeichen zu den Kennzahlen der Voranmeldung wird für Deutschland aus der Kunden-Mappingtabelle gelesen.",
+      "anchors": [
+        {
+          "file": "zfi_ustva_f01.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:76"
+        }
+      ]
+    },
+    {
+      "id": "BM-058-B10",
+      "text": "Für jede Steuerzeile wird die Kennzahlzuordnung ihres Steuerkennzeichens nachgeschlagen.",
+      "anchors": [
+        {
+          "file": "zfi_ustva_f01.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:80"
+        },
+        {
+          "file": "zfi_ustva_f01.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:81"
+        }
+      ]
+    },
+    {
+      "id": "BM-058-B11",
+      "text": "Ein Steuerkennzeichen ohne Zuordnung wird als Fehler gesammelt, die Steuerzeile bleibt unberücksichtigt, und die Meldung gilt als gesperrt.",
+      "anchors": [
+        {
+          "file": "zfi_ustva_f01.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:84"
+        },
+        {
+          "file": "zfi_ustva_f01.abap",
+          "line": 91,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:91"
+        }
+      ]
+    },
+    {
+      "id": "BM-058-B12",
+      "text": "Beträge aus Sollzeilen (Vorsteuer) werden negativ, Beträge aus Habenzeilen (Umsatzsteuer) positiv gewertet.",
+      "anchors": [
+        {
+          "file": "zfi_ustva_f01.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:98"
+        },
+        {
+          "file": "zfi_ustva_f01.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:99"
+        }
+      ]
+    },
+    {
+      "id": "BM-058-B13",
+      "text": "Die vorzeichengerechten Steuerbeträge werden zur Zahllast aufsummiert und je Steuerkonto für die Abstimmung gesammelt.",
+      "anchors": [
+        {
+          "file": "zfi_ustva_f01.abap",
+          "line": 104,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:104"
+        },
+        {
+          "file": "zfi_ustva_f01.abap",
+          "line": 108,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:108"
+        }
+      ]
+    },
+    {
+      "id": "BM-058-B14",
+      "text": "Ist für das Steuerkennzeichen eine Vorzeichenumkehr gepflegt, werden Bemessungsgrundlage und Steuer für die Meldung mit umgekehrtem Vorzeichen geführt.",
+      "anchors": [
+        {
+          "file": "zfi_ustva_f01.abap",
+          "line": 111,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:111"
+        },
+        {
+          "file": "zfi_ustva_f01.abap",
+          "line": 112,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:112"
+        }
+      ]
+    },
+    {
+      "id": "BM-058-B15",
+      "text": "Die Bemessungsgrundlage wird auf die Bemessungs-Kennzahl und der Steuerbetrag auf die Steuer-Kennzahl kumuliert, jeweils nur wenn die Kennzahl gepflegt ist.",
+      "anchors": [
+        {
+          "file": "zfi_ustva_f01.abap",
+          "line": 116,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:116"
+        },
+        {
+          "file": "zfi_ustva_f01.abap",
+          "line": 117,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:117"
+        },
+        {
+          "file": "zfi_ustva_f01.abap",
+          "line": 119,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:119"
+        },
+        {
+          "file": "zfi_ustva_f01.abap",
+          "line": 120,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:120"
+        }
+      ]
+    },
+    {
+      "id": "BM-058-B16",
+      "text": "Für die betroffenen Steuerkonten werden die Buchungen des Meldemonats im Geschäftsjahr gelesen und vorzeichengerecht (Haben positiv) zu einem Saldo je Konto summiert.",
+      "anchors": [
+        {
+          "file": "zfi_ustva_f01.abap",
+          "line": 147,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:147"
+        },
+        {
+          "file": "zfi_ustva_f01.abap",
+          "line": 158,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:158"
+        }
+      ]
+    },
+    {
+      "id": "BM-058-B17",
+      "text": "Je Steuerkonto wird die Differenz zwischen der Summe der Steuerzeilen und dem Kontensaldo gebildet.",
+      "anchors": [
+        {
+          "file": "zfi_ustva_f01.abap",
+          "line": 169,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:169"
+        }
+      ]
+    },
+    {
+      "id": "BM-058-B18",
+      "text": "Übersteigt der Betrag der Differenz die eingegebene Toleranz, wird für das Konto eine Warnung gesammelt; die Meldung wird dadurch nicht gesperrt.",
+      "anchors": [
+        {
+          "file": "zfi_ustva_f01.abap",
+          "line": 170,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:170"
+        },
+        {
+          "file": "zfi_ustva_f01.abap",
+          "line": 177,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:177"
+        }
+      ]
+    },
+    {
+      "id": "BM-058-B19",
+      "text": "Nur in der Dezember-Meldung wird eine eingegebene Sondervorauszahlung als Kennzahl 39 angesetzt und von der Zahllast abgezogen.",
+      "anchors": [
+        {
+          "file": "zfi_ustva_f01.abap",
+          "line": 189,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:189"
+        },
+        {
+          "file": "zfi_ustva_f01.abap",
+          "line": 190,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:190"
+        },
+        {
+          "file": "zfi_ustva_f01.abap",
+          "line": 191,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:191"
+        }
+      ]
+    },
+    {
+      "id": "BM-058-B20",
+      "text": "Bemessungsgrundlagen werden durch Abschneiden der Cent auf volle Euro gebracht, Steuerbeträge bleiben centgenau.",
+      "anchors": [
+        {
+          "file": "zfi_ustva_f01.abap",
+          "line": 197,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:197"
+        },
+        {
+          "file": "zfi_ustva_f01.abap",
+          "line": 198,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:198"
+        }
+      ]
+    },
+    {
+      "id": "BM-058-B21",
+      "text": "Die verbleibende Zahllast wird als Kennzahl 83 angefügt.",
+      "anchors": [
+        {
+          "file": "zfi_ustva_f01.abap",
+          "line": 207,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:207"
+        }
+      ]
+    },
+    {
+      "id": "BM-058-B22",
+      "text": "Sind Steuerkennzeichen ohne Zuordnung aufgetreten, wird ein Hinweis ausgegeben und weder Datei noch Protokolleintrag erzeugt.",
+      "anchors": [
+        {
+          "file": "zfi_ustva.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva.abap:46"
+        },
+        {
+          "file": "zfi_ustva.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva.abap:47"
+        }
+      ]
+    },
+    {
+      "id": "BM-058-B23",
+      "text": "Im Testlauf werden weder Datei noch Protokolleintrag erzeugt; es wird nur die Liste angezeigt.",
+      "anchors": [
+        {
+          "file": "zfi_ustva.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva.abap:48"
+        }
+      ]
+    },
+    {
+      "id": "BM-058-B24",
+      "text": "Für die Datei wird die Steuernummer des Buchungskreises gelesen; fehlt sie, entsteht kein Dateiinhalt und der Report bricht mit einer Fehlermeldung ab.",
+      "anchors": [
+        {
+          "file": "zcl_fi_ustva_xml.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_ustva_xml.abap:47"
+        },
+        {
+          "file": "zcl_fi_ustva_xml.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_ustva_xml.abap:49"
+        },
+        {
+          "file": "zfi_ustva_f01.abap",
+          "line": 233,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:233"
+        },
+        {
+          "file": "zfi_ustva_f01.abap",
+          "line": 235,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:235"
+        }
+      ]
+    },
+    {
+      "id": "BM-058-B25",
+      "text": "Der Dateiinhalt enthält Jahr, Monat, Steuernummer und je Kennzahl mit einem von null verschiedenen Meldebetrag ein Element.",
+      "anchors": [
+        {
+          "file": "zcl_fi_ustva_xml.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_ustva_xml.abap:59"
+        },
+        {
+          "file": "zcl_fi_ustva_xml.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_ustva_xml.abap:61"
+        },
+        {
+          "file": "zcl_fi_ustva_xml.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_ustva_xml.abap:64"
+        }
+      ]
+    },
+    {
+      "id": "BM-058-B26",
+      "text": "Die Zeilen werden als UTF-8-Textdatei unter einem aus Pfad, Buchungskreis, Jahr und Monat gebildeten Namen auf den Applikationsserver geschrieben.",
+      "anchors": [
+        {
+          "file": "zfi_ustva_f01.abap",
+          "line": 238,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:238"
+        },
+        {
+          "file": "zcl_fi_ustva_xml.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_ustva_xml.abap:76"
+        },
+        {
+          "file": "zcl_fi_ustva_xml.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_ustva_xml.abap:82"
+        },
+        {
+          "file": "zcl_fi_ustva_xml.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_ustva_xml.abap:84"
+        }
+      ]
+    },
+    {
+      "id": "BM-058-B27",
+      "text": "Lässt sich die Datei nicht öffnen, bricht der Report mit einer Fehlermeldung ab.",
+      "anchors": [
+        {
+          "file": "zcl_fi_ustva_xml.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_ustva_xml.abap:77"
+        },
+        {
+          "file": "zcl_fi_ustva_xml.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_ustva_xml.abap:78"
+        },
+        {
+          "file": "zfi_ustva_f01.abap",
+          "line": 239,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:239"
+        },
+        {
+          "file": "zfi_ustva_f01.abap",
+          "line": 240,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:240"
+        }
+      ]
+    },
+    {
+      "id": "BM-058-B28",
+      "text": "Nach geschriebener Datei wird ein Protokolleintrag mit laufender Nummer, Status S, Berichtigungskennzeichen, Zahllast, Dateiname, Warnkennzeichen und Ersteller angelegt und festgeschrieben.",
+      "anchors": [
+        {
+          "file": "zfi_ustva_f01.abap",
+          "line": 263,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:263"
+        },
+        {
+          "file": "zfi_ustva_f01.abap",
+          "line": 268,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:268"
+        }
+      ]
+    },
+    {
+      "id": "BM-058-B29",
+      "text": "Scheitert das Anlegen des Protokolleintrags, wird nur ein Hinweis ausgegeben; die Datei bleibt bestehen.",
+      "anchors": [
+        {
+          "file": "zfi_ustva_f01.abap",
+          "line": 264,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:264"
+        },
+        {
+          "file": "zfi_ustva_f01.abap",
+          "line": 266,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:266"
+        }
+      ]
+    },
+    {
+      "id": "BM-058-B30",
+      "text": "Abschließend werden Kennzahlen mit Betrag und Meldebetrag sowie die gesammelten Fehler und Warnungen in einer ALV-Liste angezeigt.",
+      "anchors": [
+        {
+          "file": "zfi_ustva_f01.abap",
+          "line": 296,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:296"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s_main",
+        "type": "start",
+        "anchor": {
+          "file": "zfi_ustva.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva.abap:18"
+        },
+        "meaning": "Reportstart (START-OF-SELECTION)"
+      },
+      {
+        "id": "auth",
+        "type": "action",
+        "anchor": {
+          "file": "zfi_ustva.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva.abap:20"
+        },
+        "meaning": "Berechtigung für den Buchungskreis prüfen (F_BKPF_BUK, Anzeigen)"
+      },
+      {
+        "id": "g_auth",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_ustva.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva.abap:23"
+        },
+        "meaning": "Berechtigung vorhanden?"
+      },
+      {
+        "id": "o_auth",
+        "type": "output",
+        "anchor": {
+          "file": "zfi_ustva.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva.abap:24"
+        },
+        "meaning": "Fehlermeldung fehlende Berechtigung"
+      },
+      {
+        "id": "e_auth",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_ustva.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva.abap:24"
+        },
+        "meaning": "Abbruch mangels Berechtigung"
+      },
+      {
+        "id": "a_per",
+        "type": "action",
+        "anchor": {
+          "file": "zfi_ustva.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva.abap:28"
+        },
+        "meaning": "Meldezeitraum als Buchungsdatumsintervall des Kalendermonats festlegen"
+      },
+      {
+        "id": "c_dup",
+        "type": "call",
+        "anchor": {
+          "file": "zfi_ustva.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva.abap:39"
+        },
+        "meaning": "Doppelmeldung prüfen und laufende Nummer ermitteln"
+      },
+      {
+        "id": "c_les",
+        "type": "call",
+        "anchor": {
+          "file": "zfi_ustva.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva.abap:40"
+        },
+        "meaning": "Belegköpfe und Steuerzeilen lesen"
+      },
+      {
+        "id": "c_zuo",
+        "type": "call",
+        "anchor": {
+          "file": "zfi_ustva.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva.abap:41"
+        },
+        "meaning": "Steuerkennzeichen den Kennzahlen zuordnen und summieren"
+      },
+      {
+        "id": "c_abs",
+        "type": "call",
+        "anchor": {
+          "file": "zfi_ustva.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva.abap:42"
+        },
+        "meaning": "Steuerzeilen gegen Steuerkonten abstimmen"
+      },
+      {
+        "id": "c_rnd",
+        "type": "call",
+        "anchor": {
+          "file": "zfi_ustva.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva.abap:43"
+        },
+        "meaning": "Sondervorauszahlung, Rundung und Zahllast"
+      },
+      {
+        "id": "g_fehl",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_ustva.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva.abap:46"
+        },
+        "meaning": "Nicht zugeordnete Steuerkennzeichen aufgetreten?"
+      },
+      {
+        "id": "o_sperr",
+        "type": "output",
+        "anchor": {
+          "file": "zfi_ustva.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva.abap:47"
+        },
+        "meaning": "Hinweis: keine Datei wegen nicht zugeordneter Steuerkennzeichen"
+      },
+      {
+        "id": "c_dat",
+        "type": "call",
+        "anchor": {
+          "file": "zfi_ustva.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva.abap:50"
+        },
+        "meaning": "Datei erzeugen und schreiben"
+      },
+      {
+        "id": "c_prot",
+        "type": "call",
+        "anchor": {
+          "file": "zfi_ustva.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva.abap:51"
+        },
+        "meaning": "Meldung protokollieren"
+      },
+      {
+        "id": "c_alv",
+        "type": "call",
+        "anchor": {
+          "file": "zfi_ustva.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva.abap:54"
+        },
+        "meaning": "Ergebnisliste ausgeben"
+      },
+      {
+        "id": "e_main",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_ustva.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva.abap:54"
+        },
+        "meaning": "Reportende"
+      },
+      {
+        "id": "s_dup",
+        "type": "start",
+        "anchor": {
+          "file": "zfi_ustva_f01.abap",
+          "line": 9,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:9"
+        },
+        "meaning": "FORM doppelmeldung_pruefen"
+      },
+      {
+        "id": "r_dup",
+        "type": "read",
+        "anchor": {
+          "file": "zfi_ustva_f01.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:12"
+        },
+        "meaning": "Bereits gesendete Meldung für Buchungskreis/Jahr/Monat im Protokoll suchen"
+      },
+      {
+        "id": "g_dup",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_ustva_f01.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:17"
+        },
+        "meaning": "Schon gemeldet und weder Berichtigung noch Testlauf?"
+      },
+      {
+        "id": "o_dup",
+        "type": "output",
+        "anchor": {
+          "file": "zfi_ustva_f01.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:19"
+        },
+        "meaning": "Fehlermeldung Doppelmeldung"
+      },
+      {
+        "id": "e_dup",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_ustva_f01.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:19"
+        },
+        "meaning": "Abbruch wegen Doppelmeldung"
+      },
+      {
+        "id": "r_lfd",
+        "type": "read",
+        "anchor": {
+          "file": "zfi_ustva_f01.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:24"
+        },
+        "meaning": "Höchste laufende Nummer des Monats aus dem Protokoll lesen"
+      },
+      {
+        "id": "x_dup",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_ustva_f01.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:29"
+        },
+        "meaning": "DOPPELMELDUNG_PRUEFEN beendet, laufende Nummer steht"
+      },
+      {
+        "id": "s_les",
+        "type": "start",
+        "anchor": {
+          "file": "zfi_ustva_f01.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:35"
+        },
+        "meaning": "FORM steuerzeilen_lesen"
+      },
+      {
+        "id": "r_bkpf",
+        "type": "read",
+        "anchor": {
+          "file": "zfi_ustva_f01.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:38"
+        },
+        "meaning": "Belegköpfe des Buchungskreises im Meldemonat lesen"
+      },
+      {
+        "id": "g_bkpf",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_ustva_f01.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:45"
+        },
+        "meaning": "Belege gefunden?"
+      },
+      {
+        "id": "o_bkpf",
+        "type": "output",
+        "anchor": {
+          "file": "zfi_ustva_f01.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:46"
+        },
+        "meaning": "Meldung: keine Belege im Meldezeitraum"
+      },
+      {
+        "id": "e_bkpf",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_ustva_f01.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:47"
+        },
+        "meaning": "Zurück zum Selektionsbild"
+      },
+      {
+        "id": "r_bset",
+        "type": "read",
+        "anchor": {
+          "file": "zfi_ustva_f01.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:58"
+        },
+        "meaning": "Steuerzeilen (BSET) zu den Belegen lesen"
+      },
+      {
+        "id": "x_les",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_ustva_f01.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:66"
+        },
+        "meaning": "STEUERZEILEN_LESEN beendet"
+      },
+      {
+        "id": "s_zuo",
+        "type": "start",
+        "anchor": {
+          "file": "zfi_ustva_f01.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:72"
+        },
+        "meaning": "FORM kennzahlen_zuordnen"
+      },
+      {
+        "id": "r_map",
+        "type": "read",
+        "anchor": {
+          "file": "zfi_ustva_f01.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:76"
+        },
+        "meaning": "Zuordnung Steuerkennzeichen → Kennzahl für DE lesen"
+      },
+      {
+        "id": "l_bset",
+        "type": "loop",
+        "anchor": {
+          "file": "zfi_ustva_f01.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:80"
+        },
+        "meaning": "Steuerzeilen durchlaufen"
+      },
+      {
+        "id": "r_mwskz",
+        "type": "read",
+        "anchor": {
+          "file": "zfi_ustva_f01.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:81"
+        },
+        "meaning": "Kennzahlzuordnung zum Steuerkennzeichen nachschlagen"
+      },
+      {
+        "id": "g_map",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_ustva_f01.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:84"
+        },
+        "meaning": "Zuordnung vorhanden?"
+      },
+      {
+        "id": "a_fehl",
+        "type": "action",
+        "anchor": {
+          "file": "zfi_ustva_f01.abap",
+          "line": 91,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:91"
+        },
+        "meaning": "Fehler 'Steuerkennzeichen ohne Zuordnung' sammeln, Meldung sperren, Zeile überspringen"
+      },
+      {
+        "id": "g_shkzg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_ustva_f01.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:98"
+        },
+        "meaning": "Sollzeile?"
+      },
+      {
+        "id": "a_soll",
+        "type": "action",
+        "anchor": {
+          "file": "zfi_ustva_f01.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:99"
+        },
+        "meaning": "Bemessungsgrundlage und Steuer negativ werten"
+      },
+      {
+        "id": "a_zl",
+        "type": "action",
+        "anchor": {
+          "file": "zfi_ustva_f01.abap",
+          "line": 104,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:104"
+        },
+        "meaning": "Steuerbetrag zur Zahllast und zur Summe je Steuerkonto addieren"
+      },
+      {
+        "id": "g_umk",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_ustva_f01.abap",
+          "line": 111,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:111"
+        },
+        "meaning": "Vorzeichenumkehr für die Meldung gepflegt?"
+      },
+      {
+        "id": "a_umk",
+        "type": "action",
+        "anchor": {
+          "file": "zfi_ustva_f01.abap",
+          "line": 112,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:112"
+        },
+        "meaning": "Vorzeichen von Bemessungsgrundlage und Steuer umkehren"
+      },
+      {
+        "id": "g_kzb",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_ustva_f01.abap",
+          "line": 116,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:116"
+        },
+        "meaning": "Kennzahl für Bemessungsgrundlage gepflegt?"
+      },
+      {
+        "id": "a_kzb",
+        "type": "action",
+        "anchor": {
+          "file": "zfi_ustva_f01.abap",
+          "line": 117,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:117"
+        },
+        "meaning": "Bemessungsgrundlage auf Kennzahl kumulieren"
+      },
+      {
+        "id": "g_kzs",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_ustva_f01.abap",
+          "line": 119,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:119"
+        },
+        "meaning": "Kennzahl für Steuer gepflegt?"
+      },
+      {
+        "id": "a_kzs",
+        "type": "action",
+        "anchor": {
+          "file": "zfi_ustva_f01.abap",
+          "line": 120,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:120"
+        },
+        "meaning": "Steuerbetrag auf Kennzahl kumulieren"
+      },
+      {
+        "id": "x_zuo",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_ustva_f01.abap",
+          "line": 123,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:123"
+        },
+        "meaning": "KENNZAHLEN_ZUORDNEN beendet"
+      },
+      {
+        "id": "s_abs",
+        "type": "start",
+        "anchor": {
+          "file": "zfi_ustva_f01.abap",
+          "line": 129,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:129"
+        },
+        "meaning": "FORM steuerkonten_abstimmen"
+      },
+      {
+        "id": "g_konto",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_ustva_f01.abap",
+          "line": 141,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:141"
+        },
+        "meaning": "Steuerkonten vorhanden? (CHECK)"
+      },
+      {
+        "id": "r_bsis",
+        "type": "read",
+        "anchor": {
+          "file": "zfi_ustva_f01.abap",
+          "line": 147,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:147"
+        },
+        "meaning": "Buchungen der Steuerkonten im Meldemonat lesen (BSIS)"
+      },
+      {
+        "id": "l_bsis",
+        "type": "loop",
+        "anchor": {
+          "file": "zfi_ustva_f01.abap",
+          "line": 155,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:155"
+        },
+        "meaning": "Kontobuchungen durchlaufen"
+      },
+      {
+        "id": "a_saldo",
+        "type": "action",
+        "anchor": {
+          "file": "zfi_ustva_f01.abap",
+          "line": 158,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:158"
+        },
+        "meaning": "Vorzeichengerechten Betrag zum Kontensaldo addieren"
+      },
+      {
+        "id": "l_konto",
+        "type": "loop",
+        "anchor": {
+          "file": "zfi_ustva_f01.abap",
+          "line": 164,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:164"
+        },
+        "meaning": "Steuerkonten durchlaufen"
+      },
+      {
+        "id": "g_diff",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_ustva_f01.abap",
+          "line": 170,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:170"
+        },
+        "meaning": "Differenz Steuerzeilen zu Kontensaldo über Toleranz?"
+      },
+      {
+        "id": "a_warn",
+        "type": "action",
+        "anchor": {
+          "file": "zfi_ustva_f01.abap",
+          "line": 177,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:177"
+        },
+        "meaning": "Warnung für das Konto sammeln"
+      },
+      {
+        "id": "x_abs",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_ustva_f01.abap",
+          "line": 180,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:180"
+        },
+        "meaning": "STEUERKONTEN_ABSTIMMEN beendet"
+      },
+      {
+        "id": "s_rnd",
+        "type": "start",
+        "anchor": {
+          "file": "zfi_ustva_f01.abap",
+          "line": 185,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:185"
+        },
+        "meaning": "FORM runden_und_zahllast"
+      },
+      {
+        "id": "g_sovz",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_ustva_f01.abap",
+          "line": 189,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:189"
+        },
+        "meaning": "Dezember und Sondervorauszahlung eingegeben?"
+      },
+      {
+        "id": "a_kz39",
+        "type": "action",
+        "anchor": {
+          "file": "zfi_ustva_f01.abap",
+          "line": 190,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:190"
+        },
+        "meaning": "Sondervorauszahlung als Kz39 ansetzen und von der Zahllast abziehen"
+      },
+      {
+        "id": "l_kz",
+        "type": "loop",
+        "anchor": {
+          "file": "zfi_ustva_f01.abap",
+          "line": 194,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:194"
+        },
+        "meaning": "Kennzahlen durchlaufen"
+      },
+      {
+        "id": "g_art",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_ustva_f01.abap",
+          "line": 197,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:197"
+        },
+        "meaning": "Bemessungsgrundlage?"
+      },
+      {
+        "id": "a_trunc",
+        "type": "action",
+        "anchor": {
+          "file": "zfi_ustva_f01.abap",
+          "line": 198,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:198"
+        },
+        "meaning": "Cent abschneiden (volle Euro)"
+      },
+      {
+        "id": "a_kz83",
+        "type": "action",
+        "anchor": {
+          "file": "zfi_ustva_f01.abap",
+          "line": 207,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:207"
+        },
+        "meaning": "Zahllast als Kz83 ansetzen"
+      },
+      {
+        "id": "x_rnd",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_ustva_f01.abap",
+          "line": 210,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:210"
+        },
+        "meaning": "RUNDEN_UND_ZAHLLAST beendet"
+      },
+      {
+        "id": "s_dat",
+        "type": "start",
+        "anchor": {
+          "file": "zfi_ustva_f01.abap",
+          "line": 216,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:216"
+        },
+        "meaning": "FORM datei_schreiben"
+      },
+      {
+        "id": "c_erz",
+        "type": "call",
+        "anchor": {
+          "file": "zfi_ustva_f01.abap",
+          "line": 225,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:225"
+        },
+        "meaning": "Dateiinhalt über ZCL_FI_USTVA_XML=>ERZEUGEN aufbauen"
+      },
+      {
+        "id": "g_zeil",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_ustva_f01.abap",
+          "line": 233,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:233"
+        },
+        "meaning": "Dateiinhalt leer?"
+      },
+      {
+        "id": "o_zeil",
+        "type": "output",
+        "anchor": {
+          "file": "zfi_ustva_f01.abap",
+          "line": 235,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:235"
+        },
+        "meaning": "Fehlermeldung fehlende Steuernummer"
+      },
+      {
+        "id": "e_zeil",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_ustva_f01.abap",
+          "line": 235,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:235"
+        },
+        "meaning": "Abbruch ohne Steuernummer"
+      },
+      {
+        "id": "c_sch",
+        "type": "call",
+        "anchor": {
+          "file": "zfi_ustva_f01.abap",
+          "line": 238,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:238"
+        },
+        "meaning": "Datei über ZCL_FI_USTVA_XML=>SCHREIBEN ablegen"
+      },
+      {
+        "id": "g_ok",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_ustva_f01.abap",
+          "line": 239,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:239"
+        },
+        "meaning": "Datei geschrieben?"
+      },
+      {
+        "id": "o_ok",
+        "type": "output",
+        "anchor": {
+          "file": "zfi_ustva_f01.abap",
+          "line": 240,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:240"
+        },
+        "meaning": "Fehlermeldung Datei nicht schreibbar"
+      },
+      {
+        "id": "e_ok",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_ustva_f01.abap",
+          "line": 240,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:240"
+        },
+        "meaning": "Abbruch ohne Datei"
+      },
+      {
+        "id": "x_dat",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_ustva_f01.abap",
+          "line": 242,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:242"
+        },
+        "meaning": "DATEI_SCHREIBEN beendet, Datei liegt vor"
+      },
+      {
+        "id": "s_prot",
+        "type": "start",
+        "anchor": {
+          "file": "zfi_ustva_f01.abap",
+          "line": 247,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:247"
+        },
+        "meaning": "FORM protokoll_schreiben"
+      },
+      {
+        "id": "w_prot",
+        "type": "write",
+        "anchor": {
+          "file": "zfi_ustva_f01.abap",
+          "line": 263,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:263"
+        },
+        "meaning": "Protokolleintrag der Meldung anlegen"
+      },
+      {
+        "id": "g_prot",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_ustva_f01.abap",
+          "line": 264,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:264"
+        },
+        "meaning": "Eintrag angelegt?"
+      },
+      {
+        "id": "o_prot",
+        "type": "output",
+        "anchor": {
+          "file": "zfi_ustva_f01.abap",
+          "line": 266,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:266"
+        },
+        "meaning": "Hinweis: Protokolleintrag existiert bereits"
+      },
+      {
+        "id": "t_cm",
+        "type": "transaction",
+        "anchor": {
+          "file": "zfi_ustva_f01.abap",
+          "line": 268,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:268"
+        },
+        "meaning": "Protokolleintrag festschreiben"
+      },
+      {
+        "id": "x_prot",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_ustva_f01.abap",
+          "line": 270,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:270"
+        },
+        "meaning": "PROTOKOLL_SCHREIBEN beendet"
+      },
+      {
+        "id": "s_alv",
+        "type": "start",
+        "anchor": {
+          "file": "zfi_ustva_f01.abap",
+          "line": 275,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:275"
+        },
+        "meaning": "FORM ausgabe_alv"
+      },
+      {
+        "id": "o_alv",
+        "type": "output",
+        "anchor": {
+          "file": "zfi_ustva_f01.abap",
+          "line": 296,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:296"
+        },
+        "meaning": "Kennzahlen, Fehler und Warnungen als ALV-Liste anzeigen"
+      },
+      {
+        "id": "x_alv",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_ustva_f01.abap",
+          "line": 307,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ustva_f01.abap:307"
+        },
+        "meaning": "AUSGABE_ALV beendet"
+      },
+      {
+        "id": "s_erz",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_fi_ustva_xml.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_ustva_xml.abap:41"
+        },
+        "meaning": "METHOD erzeugen"
+      },
+      {
+        "id": "r_stnr",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_fi_ustva_xml.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_ustva_xml.abap:47"
+        },
+        "meaning": "Steuernummer des Buchungskreises lesen"
+      },
+      {
+        "id": "g_stnr",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_fi_ustva_xml.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_ustva_xml.abap:49"
+        },
+        "meaning": "Steuernummer gepflegt?"
+      },
+      {
+        "id": "e_stnr",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_fi_ustva_xml.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_ustva_xml.abap:50"
+        },
+        "meaning": "Ohne Steuernummer leer zurück"
+      },
+      {
+        "id": "l_xml",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_fi_ustva_xml.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_ustva_xml.abap:59"
+        },
+        "meaning": "Kennzahlen durchlaufen"
+      },
+      {
+        "id": "g_null",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_fi_ustva_xml.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_ustva_xml.abap:61"
+        },
+        "meaning": "Meldebetrag null?"
+      },
+      {
+        "id": "a_xml",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_fi_ustva_xml.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_ustva_xml.abap:64"
+        },
+        "meaning": "Meldebetrag als Kennzahl-Element aufbereiten"
+      },
+      {
+        "id": "x_erz",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_fi_ustva_xml.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_ustva_xml.abap:69"
+        },
+        "meaning": "ERZEUGEN beendet, XML-Zeilen zurück"
+      },
+      {
+        "id": "s_sch",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_fi_ustva_xml.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_ustva_xml.abap:72"
+        },
+        "meaning": "METHOD schreiben"
+      },
+      {
+        "id": "o_open",
+        "type": "output",
+        "anchor": {
+          "file": "zcl_fi_ustva_xml.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_ustva_xml.abap:76"
+        },
+        "meaning": "Datei auf dem Applikationsserver zum Schreiben öffnen"
+      },
+      {
+        "id": "g_open",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_fi_ustva_xml.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_ustva_xml.abap:77"
+        },
+        "meaning": "Datei geöffnet?"
+      },
+      {
+        "id": "e_open",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_fi_ustva_xml.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_ustva_xml.abap:78"
+        },
+        "meaning": "Ohne Datei mit Misserfolg zurück"
+      },
+      {
+        "id": "l_trf",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_fi_ustva_xml.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_ustva_xml.abap:81"
+        },
+        "meaning": "Dateizeilen durchlaufen"
+      },
+      {
+        "id": "o_trf",
+        "type": "output",
+        "anchor": {
+          "file": "zcl_fi_ustva_xml.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_ustva_xml.abap:82"
+        },
+        "meaning": "Zeile in die Datei schreiben"
+      },
+      {
+        "id": "o_close",
+        "type": "output",
+        "anchor": {
+          "file": "zcl_fi_ustva_xml.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_ustva_xml.abap:84"
+        },
+        "meaning": "Datei schließen"
+      },
+      {
+        "id": "x_sch",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_fi_ustva_xml.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_ustva_xml.abap:86"
+        },
+        "meaning": "SCHREIBEN beendet, Datei geschrieben (rv_ok = abap_true)"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s_main",
+        "to": "auth",
+        "condition": "always"
+      },
+      {
+        "from": "auth",
+        "to": "g_auth",
+        "condition": "always"
+      },
+      {
+        "from": "g_auth",
+        "to": "o_auth",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "o_auth",
+        "to": "e_auth",
+        "condition": "always"
+      },
+      {
+        "from": "g_auth",
+        "to": "a_per",
+        "condition": "else"
+      },
+      {
+        "from": "a_per",
+        "to": "c_dup",
+        "condition": "always"
+      },
+      {
+        "from": "c_dup",
+        "to": "s_dup",
+        "condition": "always"
+      },
+      {
+        "from": "s_dup",
+        "to": "r_dup",
+        "condition": "always"
+      },
+      {
+        "from": "r_dup",
+        "to": "g_dup",
+        "condition": "always"
+      },
+      {
+        "from": "g_dup",
+        "to": "o_dup",
+        "condition": "sy-subrc = 0 AND p_korr = abap_false AND p_test = abap_false"
+      },
+      {
+        "from": "g_dup",
+        "to": "r_lfd",
+        "condition": "else"
+      },
+      {
+        "from": "o_dup",
+        "to": "e_dup",
+        "condition": "always"
+      },
+      {
+        "from": "r_lfd",
+        "to": "x_dup",
+        "condition": "always"
+      },
+      {
+        "from": "c_les",
+        "to": "s_les",
+        "condition": "always"
+      },
+      {
+        "from": "s_les",
+        "to": "r_bkpf",
+        "condition": "always"
+      },
+      {
+        "from": "r_bkpf",
+        "to": "g_bkpf",
+        "condition": "always"
+      },
+      {
+        "from": "g_bkpf",
+        "to": "o_bkpf",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "o_bkpf",
+        "to": "e_bkpf",
+        "condition": "always"
+      },
+      {
+        "from": "g_bkpf",
+        "to": "r_bset",
+        "condition": "else"
+      },
+      {
+        "from": "r_bset",
+        "to": "x_les",
+        "condition": "always"
+      },
+      {
+        "from": "c_zuo",
+        "to": "s_zuo",
+        "condition": "always"
+      },
+      {
+        "from": "s_zuo",
+        "to": "r_map",
+        "condition": "always"
+      },
+      {
+        "from": "r_map",
+        "to": "l_bset",
+        "condition": "always"
+      },
+      {
+        "from": "l_bset",
+        "to": "r_mwskz",
+        "condition": "next row"
+      },
+      {
+        "from": "r_mwskz",
+        "to": "g_map",
+        "condition": "always"
+      },
+      {
+        "from": "g_map",
+        "to": "a_fehl",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "a_fehl",
+        "to": "l_bset",
+        "condition": "next iteration"
+      },
+      {
+        "from": "g_map",
+        "to": "g_shkzg",
+        "condition": "else"
+      },
+      {
+        "from": "g_shkzg",
+        "to": "a_soll",
+        "condition": "gs_bset-shkzg = 'S'"
+      },
+      {
+        "from": "g_shkzg",
+        "to": "a_zl",
+        "condition": "else"
+      },
+      {
+        "from": "a_soll",
+        "to": "a_zl",
+        "condition": "always"
+      },
+      {
+        "from": "a_zl",
+        "to": "g_umk",
+        "condition": "always"
+      },
+      {
+        "from": "g_umk",
+        "to": "a_umk",
+        "condition": "gs_map-umkehr = abap_true"
+      },
+      {
+        "from": "g_umk",
+        "to": "g_kzb",
+        "condition": "else"
+      },
+      {
+        "from": "a_umk",
+        "to": "g_kzb",
+        "condition": "always"
+      },
+      {
+        "from": "g_kzb",
+        "to": "a_kzb",
+        "condition": "gs_map-kz_bmg IS NOT INITIAL"
+      },
+      {
+        "from": "g_kzb",
+        "to": "g_kzs",
+        "condition": "else"
+      },
+      {
+        "from": "a_kzb",
+        "to": "g_kzs",
+        "condition": "always"
+      },
+      {
+        "from": "g_kzs",
+        "to": "a_kzs",
+        "condition": "gs_map-kz_st IS NOT INITIAL"
+      },
+      {
+        "from": "g_kzs",
+        "to": "l_bset",
+        "condition": "else"
+      },
+      {
+        "from": "a_kzs",
+        "to": "l_bset",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l_bset",
+        "to": "x_zuo",
+        "condition": "no more rows"
+      },
+      {
+        "from": "c_abs",
+        "to": "s_abs",
+        "condition": "always"
+      },
+      {
+        "from": "s_abs",
+        "to": "g_konto",
+        "condition": "always"
+      },
+      {
+        "from": "g_konto",
+        "to": "r_bsis",
+        "condition": "gt_konto IS NOT INITIAL"
+      },
+      {
+        "from": "g_konto",
+        "to": "x_abs",
+        "condition": "else"
+      },
+      {
+        "from": "r_bsis",
+        "to": "l_bsis",
+        "condition": "always"
+      },
+      {
+        "from": "l_bsis",
+        "to": "a_saldo",
+        "condition": "next row"
+      },
+      {
+        "from": "a_saldo",
+        "to": "l_bsis",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l_bsis",
+        "to": "l_konto",
+        "condition": "no more rows"
+      },
+      {
+        "from": "l_konto",
+        "to": "g_diff",
+        "condition": "next row"
+      },
+      {
+        "from": "g_diff",
+        "to": "a_warn",
+        "condition": "abs( <ls_konto>-differenz ) > p_toler"
+      },
+      {
+        "from": "g_diff",
+        "to": "l_konto",
+        "condition": "else"
+      },
+      {
+        "from": "a_warn",
+        "to": "l_konto",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l_konto",
+        "to": "x_abs",
+        "condition": "no more rows"
+      },
+      {
+        "from": "c_rnd",
+        "to": "s_rnd",
+        "condition": "always"
+      },
+      {
+        "from": "s_rnd",
+        "to": "g_sovz",
+        "condition": "always"
+      },
+      {
+        "from": "g_sovz",
+        "to": "a_kz39",
+        "condition": "p_monat = 12 AND p_sovz IS NOT INITIAL"
+      },
+      {
+        "from": "g_sovz",
+        "to": "l_kz",
+        "condition": "else"
+      },
+      {
+        "from": "a_kz39",
+        "to": "l_kz",
+        "condition": "always"
+      },
+      {
+        "from": "l_kz",
+        "to": "g_art",
+        "condition": "next row"
+      },
+      {
+        "from": "g_art",
+        "to": "a_trunc",
+        "condition": "<ls_kz>-art = 'B'"
+      },
+      {
+        "from": "g_art",
+        "to": "l_kz",
+        "condition": "else"
+      },
+      {
+        "from": "a_trunc",
+        "to": "l_kz",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l_kz",
+        "to": "a_kz83",
+        "condition": "no more rows"
+      },
+      {
+        "from": "a_kz83",
+        "to": "x_rnd",
+        "condition": "always"
+      },
+      {
+        "from": "g_fehl",
+        "to": "o_sperr",
+        "condition": "gv_fehler = abap_true"
+      },
+      {
+        "from": "o_sperr",
+        "to": "c_alv",
+        "condition": "always"
+      },
+      {
+        "from": "g_fehl",
+        "to": "c_dat",
+        "condition": "p_test = abap_false"
+      },
+      {
+        "from": "g_fehl",
+        "to": "c_alv",
+        "condition": "else"
+      },
+      {
+        "from": "c_dat",
+        "to": "s_dat",
+        "condition": "always"
+      },
+      {
+        "from": "s_dat",
+        "to": "c_erz",
+        "condition": "always"
+      },
+      {
+        "from": "c_erz",
+        "to": "s_erz",
+        "condition": "always"
+      },
+      {
+        "from": "s_erz",
+        "to": "r_stnr",
+        "condition": "always"
+      },
+      {
+        "from": "r_stnr",
+        "to": "g_stnr",
+        "condition": "always"
+      },
+      {
+        "from": "g_stnr",
+        "to": "e_stnr",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g_stnr",
+        "to": "l_xml",
+        "condition": "else"
+      },
+      {
+        "from": "l_xml",
+        "to": "g_null",
+        "condition": "next row"
+      },
+      {
+        "from": "g_null",
+        "to": "l_xml",
+        "condition": "ls_kz-betrag_rund = 0"
+      },
+      {
+        "from": "g_null",
+        "to": "a_xml",
+        "condition": "else"
+      },
+      {
+        "from": "a_xml",
+        "to": "l_xml",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l_xml",
+        "to": "x_erz",
+        "condition": "no more rows"
+      },
+      {
+        "from": "e_stnr",
+        "to": "g_zeil",
+        "condition": "always"
+      },
+      {
+        "from": "g_zeil",
+        "to": "o_zeil",
+        "condition": "lt_zeilen IS INITIAL"
+      },
+      {
+        "from": "g_zeil",
+        "to": "c_sch",
+        "condition": "else"
+      },
+      {
+        "from": "o_zeil",
+        "to": "e_zeil",
+        "condition": "always"
+      },
+      {
+        "from": "c_sch",
+        "to": "s_sch",
+        "condition": "always"
+      },
+      {
+        "from": "s_sch",
+        "to": "o_open",
+        "condition": "always"
+      },
+      {
+        "from": "o_open",
+        "to": "g_open",
+        "condition": "always"
+      },
+      {
+        "from": "g_open",
+        "to": "e_open",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g_open",
+        "to": "l_trf",
+        "condition": "else"
+      },
+      {
+        "from": "l_trf",
+        "to": "o_trf",
+        "condition": "next row"
+      },
+      {
+        "from": "o_trf",
+        "to": "l_trf",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l_trf",
+        "to": "o_close",
+        "condition": "no more rows"
+      },
+      {
+        "from": "o_close",
+        "to": "x_sch",
+        "condition": "always"
+      },
+      {
+        "from": "e_open",
+        "to": "g_ok",
+        "condition": "always"
+      },
+      {
+        "from": "g_ok",
+        "to": "o_ok",
+        "condition": "lv_ok = abap_false"
+      },
+      {
+        "from": "g_ok",
+        "to": "x_dat",
+        "condition": "else"
+      },
+      {
+        "from": "o_ok",
+        "to": "e_ok",
+        "condition": "always"
+      },
+      {
+        "from": "c_prot",
+        "to": "s_prot",
+        "condition": "always"
+      },
+      {
+        "from": "s_prot",
+        "to": "w_prot",
+        "condition": "always"
+      },
+      {
+        "from": "w_prot",
+        "to": "g_prot",
+        "condition": "always"
+      },
+      {
+        "from": "g_prot",
+        "to": "o_prot",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g_prot",
+        "to": "t_cm",
+        "condition": "else"
+      },
+      {
+        "from": "o_prot",
+        "to": "x_prot",
+        "condition": "always"
+      },
+      {
+        "from": "t_cm",
+        "to": "x_prot",
+        "condition": "always"
+      },
+      {
+        "from": "c_alv",
+        "to": "s_alv",
+        "condition": "always"
+      },
+      {
+        "from": "s_alv",
+        "to": "o_alv",
+        "condition": "always"
+      },
+      {
+        "from": "o_alv",
+        "to": "x_alv",
+        "condition": "always"
+      },
+      {
+        "from": "x_dup",
+        "to": "c_les",
+        "condition": "always"
+      },
+      {
+        "from": "x_les",
+        "to": "c_zuo",
+        "condition": "always"
+      },
+      {
+        "from": "x_zuo",
+        "to": "c_abs",
+        "condition": "always"
+      },
+      {
+        "from": "x_abs",
+        "to": "c_rnd",
+        "condition": "always"
+      },
+      {
+        "from": "x_rnd",
+        "to": "g_fehl",
+        "condition": "always"
+      },
+      {
+        "from": "x_dat",
+        "to": "c_prot",
+        "condition": "always"
+      },
+      {
+        "from": "x_prot",
+        "to": "c_alv",
+        "condition": "always"
+      },
+      {
+        "from": "x_alv",
+        "to": "e_main",
+        "condition": "always"
+      },
+      {
+        "from": "x_erz",
+        "to": "g_zeil",
+        "condition": "always"
+      },
+      {
+        "from": "x_sch",
+        "to": "g_ok",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zcl_fi_ustva_xml.abap:82 — kein Fachsatz „die Voranmeldung wird an das Finanzamt (ELSTER) übermittelt“ (es wird nur eine Datei auf dem Applikationsserver geschrieben; der Kommentar „nicht uebermittelt“ in der Klasse beschreibt nur den Dateiinhalt)",
+    "zfi_ustva_f01.abap:38 — kein Fachsatz „maßgeblich ist das Steuermeldedatum bzw. Leistungsdatum“ (selektiert wird nach Buchungsdatum BUDAT)",
+    "zfi_ustva_f01.abap:147 — kein Fachsatz „Salden werden aus FAGLFLEXT/Summentabellen gelesen“ (nur auskommentiert) und kein Fachsatz „jede Einzelbuchung geht in den Saldo ein“ (FOR ALL ENTRIES ohne Belegnummer/Position fasst gleiche Zeilen zusammen)",
+    "zfi_ustva_f01.abap:198 — kein Fachsatz „Beträge werden kaufmännisch gerundet“ (TRUNC schneidet die Cent ab, ROUND ist auskommentiert; Steuerbeträge bleiben centgenau)"
+  ],
+  "processDescription": "Die Steuerabteilung startet den Report monatlich mit Buchungskreis, Geschäftsjahr, Monat, Abstimmtoleranz und optional Sondervorauszahlung, Berichtigungs- und Testlaufkennzeichen. Nach der Berechtigungsprüfung für den Buchungskreis wird der Meldemonat als Buchungsdatumsintervall bestimmt und im Kundenprotokoll geprüft, ob der Monat schon gemeldet wurde; eine erneute Echtmeldung ohne Berichtigungskennzeichen wird mit einer Fehlermeldung abgebrochen. Anschließend liest der Report die Belegköpfe des Monats und deren Steuerzeilen; ohne Belege kehrt er zum Selektionsbild zurück. Jede Steuerzeile wird über eine Kunden-Mappingtabelle einer Bemessungs- und/oder Steuer-Kennzahl zugeordnet, vorzeichengerecht nach Soll/Haben summiert und gegebenenfalls für die Meldung im Vorzeichen umgekehrt; Steuerkennzeichen ohne Zuordnung werden als Fehler gesammelt und sperren die Meldung. Die Steuerbeträge je Konto werden gegen die Salden der Steuerkonten aus BSIS abgestimmt, Differenzen über der Toleranz erscheinen nur als Warnung. Im Dezember wird die Sondervorauszahlung als Kennzahl 39 angesetzt und von der Zahllast abgezogen, Bemessungsgrundlagen werden auf volle Euro abgeschnitten, und die Zahllast wird als Kennzahl 83 angefügt. Nur im Echtlauf ohne Zuordnungsfehler baut die Kundenklasse mit der Steuernummer des Buchungskreises eine XML-Datei auf und schreibt sie auf den Applikationsserver; fehlende Steuernummer oder eine nicht zu öffnende Datei brechen mit Fehlermeldung ab. Danach wird ein Protokolleintrag angelegt und festgeschrieben, ein bereits vorhandener Eintrag führt nur zu einem Hinweis. Zum Schluss zeigt eine ALV-Liste Kennzahlen, Fehler und Warnungen. Eine Übermittlung an das Finanzamt findet im Report nicht statt."
+}

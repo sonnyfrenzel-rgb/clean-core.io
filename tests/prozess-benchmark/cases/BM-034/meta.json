@@ -1,0 +1,23 @@
+{
+  "id": "BM-034",
+  "title": "Monatliche Konsignationsabrechnung mit Entnahmeaufstellung und Anstoß von RMVKON00",
+  "domain": "MM / Procure-to-Pay, Bestandsführung, Lager (WM/EWM)",
+  "band": "komplex",
+  "loc": 212,
+  "constructs": [
+    "REPORT mit INCLUDE",
+    "FORM-Routinen",
+    "LOOP AT … GROUP BY / LOOP AT GROUP",
+    "OPEN/TRANSFER/CLOSE DATASET",
+    "SUBMIT … WITH SELECTION-TABLE … AND RETURN",
+    "SELECT COUNT(*)",
+    "Anwendungsprotokoll BAL_*",
+    "VALUE-Konstruktor für RSPARAMS"
+  ],
+  "scenario": "Konsignationsabwicklung mit Lieferantenportal im Handel oder in der Fertigung; der Report umhüllt MRKO und ergänzt Mindestbeträge und Dateiaufstellung.",
+  "s4_issues": [
+    "RKWA bleibt in S/4HANA, aber Direktzugriff und SUBMIT eines Standardreports mit festen Selektionsnamen sind nicht Clean-Core-konform",
+    "Dateiablage auf Applikationsserver",
+    "MATNR 40 Zeichen im Dateiformat"
+  ]
+}

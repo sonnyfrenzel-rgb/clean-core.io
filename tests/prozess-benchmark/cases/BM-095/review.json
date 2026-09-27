@@ -1,0 +1,52 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten e_con (neu)",
+      "before": "—",
+      "after": "end zmm_wms_recon.abap:48 „Lauf bricht ohne WMS-Verbindung ab“",
+      "why": "MESSAGE e020 in START-OF-SELECTION beendet den Lauf; Konvention output + end auf derselben Zeile. mcon hatte keine ausgehende Kante.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten e_main (neu)",
+      "before": "—",
+      "after": "end zmm_wms_recon.abap:116 „Lauf endet nach der Differenzliste“",
+      "why": "Implizites Ende von START-OF-SELECTION fehlte (letzte Anweisung ENDLOOP Z. 116); l2 hatte keinen Ausgang no more rows.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kante l2 -> e_main",
+      "before": "—",
+      "after": "l2 -> e_main [no more rows]",
+      "why": "Die Ausgabeschleife hatte keinen Ausgang; nach der letzten Differenz endet der Lauf.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten cadd",
+      "before": "cadd->l [next iteration]",
+      "after": "e_a->l [next iteration]",
+      "why": "Konvention Aufrufe im Fall: Aufruf → Start des Ziels, end des Ziels → nächster Schritt (je Aufrufer eine Rückkante); die Direktkante Aufruf → Folgeknoten entfällt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten cp1",
+      "before": "cp1->cp2 [always]",
+      "after": "e_p1->cp2 [always], e_p2->cp2 [always]",
+      "why": "Konvention Aufrufe im Fall: Aufruf → Start des Ziels, end des Ziels → nächster Schritt (je Aufrufer eine Rückkante); die Direktkante Aufruf → Folgeknoten entfällt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten cp2",
+      "before": "cp2->l2 [always]",
+      "after": "e_p1->l2 [always], e_p2->l2 [always]",
+      "why": "Konvention Aufrufe im Fall: Aufruf → Start des Ziels, end des Ziels → nächster Schritt (je Aufrufer eine Rückkante); die Direktkante Aufruf → Folgeknoten entfällt.",
+      "category": "Kante"
+    }
+  ],
+  "doubts": [],
+  "notes": [
+    "a_in (f01:16) und a_out (f01:20) bleiben als action: sie legen fachlich Bewegungsart und Menge fest (Zugang Z11 bzw. Abgang Z12) und damit, in welchem der beiden Materialbelege die Differenz gebucht wird. adiff (Z. 96) bleibt als Berechnung, die das Ergebnis Differenz/Toleranz festlegt, auf das gtol verzweigt."
+  ]
+}

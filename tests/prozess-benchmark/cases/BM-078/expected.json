@@ -1,0 +1,2473 @@
+{
+  "id": "BM-078",
+  "title": "MES-Dateischnittstelle: Auftragsexport, Rückmelde- und Wareneingangsimport mit Dublettenprüfung",
+  "classes": [
+    "K01",
+    "K04",
+    "K03",
+    "K12",
+    "K14"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [
+    "Soll eine Datei auch dann archiviert werden, wenn einzelne Sätze fehlerhaft waren?"
+  ],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "AUFK",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zpp_mes_file_f01.abap",
+        "line": 31,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpp_mes_file_f01.abap:31"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "AFKO",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zpp_mes_file_f01.abap",
+        "line": 31,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpp_mes_file_f01.abap:31"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "AFPO",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zpp_mes_file_f01.abap",
+        "line": 31,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpp_mes_file_f01.abap:31"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "STATUS_CHECK",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zpp_mes_file_f01.abap",
+        "line": 46,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpp_mes_file_f01.abap:46"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZMES_EXPORT",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zpp_mes_file_f01.abap",
+        "line": 59,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpp_mes_file_f01.abap:59"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "AFVC",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zpp_mes_file_f01.abap",
+        "line": 69,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpp_mes_file_f01.abap:69"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "RESB",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zpp_mes_file_f01.abap",
+        "line": 76,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpp_mes_file_f01.abap:76"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZMES_EXPORT",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "zpp_mes_file_f01.abap",
+        "line": 106,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpp_mes_file_f01.abap:106"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "AFRU",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zpp_mes_file_f02.abap",
+        "line": 61,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpp_mes_file_f02.abap:61"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_PRODORDCONF_CREATE_TT",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zpp_mes_file_f02.abap",
+        "line": 80,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpp_mes_file_f02.abap:80"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "MKPF",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zpp_mes_file_f02.abap",
+        "line": 113,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpp_mes_file_f02.abap:113"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "MSEG",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zpp_mes_file_f02.abap",
+        "line": 113,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpp_mes_file_f02.abap:113"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_GOODSMVT_CREATE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zpp_mes_file_f02.abap",
+        "line": 141,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpp_mes_file_f02.abap:141"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_COMMIT",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zpp_mes_file_f02.abap",
+        "line": 92,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpp_mes_file_f02.abap:92"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_ROLLBACK",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zpp_mes_file_f02.abap",
+        "line": 88,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpp_mes_file_f02.abap:88"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAL_LOG_CREATE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zpp_mes_file_f03.abap",
+        "line": 12,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpp_mes_file_f03.abap:12"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAL_LOG_MSG_ADD_FREE_TEXT",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zpp_mes_file_f03.abap",
+        "line": 34,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpp_mes_file_f03.abap:34"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAL_DB_SAVE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zpp_mes_file_f03.abap",
+        "line": 44,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpp_mes_file_f03.abap:44"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-078-B01",
+      "text": "Zu Beginn jedes Laufs wird ein Anwendungs-Log ZPP/MESFILE mit 30 Tagen Aufbewahrung angelegt; gelingt das nicht, läuft die Schnittstelle ohne Log weiter.",
+      "anchors": [
+        {
+          "file": "zpp_mes_file.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file.abap:20"
+        },
+        {
+          "file": "zpp_mes_file_f03.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f03.abap:12"
+        },
+        {
+          "file": "zpp_mes_file_f03.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f03.abap:19"
+        }
+      ]
+    },
+    {
+      "id": "BM-078-B02",
+      "text": "Export und Import laufen jeweils nur, wenn sie im Selektionsbild gewählt sind (Vorschlag: beide).",
+      "anchors": [
+        {
+          "file": "zpp_mes_file.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file.abap:22"
+        },
+        {
+          "file": "zpp_mes_file.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file.abap:26"
+        }
+      ]
+    },
+    {
+      "id": "BM-078-B03",
+      "text": "Für den Export werden Fertigungsaufträge des Werks gelesen, deren Eckstart bis heute plus der gewählten Tage (Vorschlag 2) reicht; ohne Treffer wird das informativ protokolliert.",
+      "anchors": [
+        {
+          "file": "zpp_mes_file_f01.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f01.abap:29"
+        },
+        {
+          "file": "zpp_mes_file_f01.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f01.abap:31"
+        },
+        {
+          "file": "zpp_mes_file_f01.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f01.abap:39"
+        },
+        {
+          "file": "zpp_mes_file_f01.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f01.abap:40"
+        }
+      ]
+    },
+    {
+      "id": "BM-078-B04",
+      "text": "Exportiert werden nur freigegebene Aufträge, die noch nicht exportiert wurden.",
+      "anchors": [
+        {
+          "file": "zpp_mes_file_f01.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f01.abap:46"
+        },
+        {
+          "file": "zpp_mes_file_f01.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f01.abap:54"
+        },
+        {
+          "file": "zpp_mes_file_f01.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f01.abap:59"
+        },
+        {
+          "file": "zpp_mes_file_f01.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f01.abap:61"
+        }
+      ]
+    },
+    {
+      "id": "BM-078-B05",
+      "text": "Je Auftrag entsteht ein Kopfsatz H mit Material, Menge, Einheit, Eckstart und Eckende, je Vorgang ein Satz O mit Vorgangstext und Arbeitsplatz-ID und je nicht gelöschter Komponente ein Satz C mit Material, Bedarfsmenge, Einheit und Lagerort.",
+      "anchors": [
+        {
+          "file": "zpp_mes_file_f01.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f01.abap:65"
+        },
+        {
+          "file": "zpp_mes_file_f01.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f01.abap:69"
+        },
+        {
+          "file": "zpp_mes_file_f01.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f01.abap:76"
+        }
+      ]
+    },
+    {
+      "id": "BM-078-B06",
+      "text": "Gibt es keine neuen Aufträge, wird das informativ protokolliert und keine Datei erzeugt.",
+      "anchors": [
+        {
+          "file": "zpp_mes_file_f01.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f01.abap:88"
+        },
+        {
+          "file": "zpp_mes_file_f01.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f01.abap:90"
+        }
+      ]
+    },
+    {
+      "id": "BM-078-B07",
+      "text": "Die Sätze werden in eine neue Exportdatei mit Werk und Zeitstempel im Ausgangsverzeichnis geschrieben; ist die Datei nicht schreibbar, wird ein Fehler protokolliert und der Export beendet.",
+      "anchors": [
+        {
+          "file": "zpp_mes_file_f01.abap",
+          "line": 94,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f01.abap:94"
+        },
+        {
+          "file": "zpp_mes_file_f01.abap",
+          "line": 95,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f01.abap:95"
+        },
+        {
+          "file": "zpp_mes_file_f01.abap",
+          "line": 102,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f01.abap:102"
+        },
+        {
+          "file": "zpp_mes_file_f01.abap",
+          "line": 104,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f01.abap:104"
+        }
+      ]
+    },
+    {
+      "id": "BM-078-B08",
+      "text": "Nach dem Schreiben werden die exportierten Aufträge als exportiert vermerkt und festgeschrieben; die Anzahl wird protokolliert.",
+      "anchors": [
+        {
+          "file": "zpp_mes_file_f01.abap",
+          "line": 106,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f01.abap:106"
+        },
+        {
+          "file": "zpp_mes_file_f01.abap",
+          "line": 107,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f01.abap:107"
+        },
+        {
+          "file": "zpp_mes_file_f01.abap",
+          "line": 110,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f01.abap:110"
+        }
+      ]
+    },
+    {
+      "id": "BM-078-B09",
+      "text": "Für den Import wird die Eingangsdatei RM_<Werk>.csv geöffnet; fehlt sie, wird das informativ protokolliert.",
+      "anchors": [
+        {
+          "file": "zpp_mes_file_f02.abap",
+          "line": 11,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f02.abap:11"
+        },
+        {
+          "file": "zpp_mes_file_f02.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f02.abap:12"
+        },
+        {
+          "file": "zpp_mes_file_f02.abap",
+          "line": 13,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f02.abap:13"
+        }
+      ]
+    },
+    {
+      "id": "BM-078-B10",
+      "text": "Die Datei wird vollständig eingelesen und geschlossen; jede Zeile wird in Satzart, MES-ID, Auftrag, Vorgang, Menge, Ausschuss, Einheit, Lagerort, Charge und Endrückmeldekennzeichen zerlegt.",
+      "anchors": [
+        {
+          "file": "zpp_mes_file_f02.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f02.abap:17"
+        },
+        {
+          "file": "zpp_mes_file_f02.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f02.abap:24"
+        },
+        {
+          "file": "zpp_mes_file_f02.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f02.abap:28"
+        }
+      ]
+    },
+    {
+      "id": "BM-078-B11",
+      "text": "Satzart R wird als Rückmeldung, Satzart G als Wareneingang verarbeitet; unbekannte Satzarten werden als Fehler protokolliert.",
+      "anchors": [
+        {
+          "file": "zpp_mes_file_f02.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f02.abap:33"
+        },
+        {
+          "file": "zpp_mes_file_f02.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f02.abap:35"
+        },
+        {
+          "file": "zpp_mes_file_f02.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f02.abap:37"
+        },
+        {
+          "file": "zpp_mes_file_f02.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f02.abap:40"
+        }
+      ]
+    },
+    {
+      "id": "BM-078-B12",
+      "text": "Existiert zum Auftrag bereits eine nicht stornierte Rückmeldung mit dem Text „MES <ID>“, wird die Rückmeldung als bereits gebucht (Warnung) übersprungen.",
+      "anchors": [
+        {
+          "file": "zpp_mes_file_f02.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f02.abap:61"
+        },
+        {
+          "file": "zpp_mes_file_f02.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f02.abap:65"
+        }
+      ]
+    },
+    {
+      "id": "BM-078-B13",
+      "text": "Sonst wird eine Vorgangsrückmeldung mit Gutmenge, Ausschuss, Einheit, Endrückmeldekennzeichen und dem Text „MES <ID>“ gebucht; bei Fehler zurückgerollt und als Fehler protokolliert, sonst festgeschrieben und als Erfolg protokolliert.",
+      "anchors": [
+        {
+          "file": "zpp_mes_file_f02.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f02.abap:80"
+        },
+        {
+          "file": "zpp_mes_file_f02.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f02.abap:87"
+        },
+        {
+          "file": "zpp_mes_file_f02.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f02.abap:88"
+        },
+        {
+          "file": "zpp_mes_file_f02.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f02.abap:92"
+        }
+      ]
+    },
+    {
+      "id": "BM-078-B14",
+      "text": "Gibt es zum Auftrag bereits einen Materialbeleg mit Bewegungsart 101 und der MES-ID als Referenz, wird der Wareneingang als bereits gebucht (Warnung) übersprungen.",
+      "anchors": [
+        {
+          "file": "zpp_mes_file_f02.abap",
+          "line": 113,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f02.abap:113"
+        },
+        {
+          "file": "zpp_mes_file_f02.abap",
+          "line": 120,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f02.abap:120"
+        }
+      ]
+    },
+    {
+      "id": "BM-078-B15",
+      "text": "Sonst wird ein Wareneingang zum Fertigungsauftrag (Bewegungsart 101) mit Lagerort, Charge, Menge und der MES-ID als Referenzbeleg im Werk gebucht.",
+      "anchors": [
+        {
+          "file": "zpp_mes_file_f02.abap",
+          "line": 129,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f02.abap:129"
+        },
+        {
+          "file": "zpp_mes_file_f02.abap",
+          "line": 141,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f02.abap:141"
+        }
+      ]
+    },
+    {
+      "id": "BM-078-B16",
+      "text": "Entsteht kein Materialbeleg, wird zurückgerollt und der erste Fehlertext protokolliert; sonst wird festgeschrieben und der Materialbeleg protokolliert.",
+      "anchors": [
+        {
+          "file": "zpp_mes_file_f02.abap",
+          "line": 152,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f02.abap:152"
+        },
+        {
+          "file": "zpp_mes_file_f02.abap",
+          "line": 153,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f02.abap:153"
+        },
+        {
+          "file": "zpp_mes_file_f02.abap",
+          "line": 158,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f02.abap:158"
+        }
+      ]
+    },
+    {
+      "id": "BM-078-B17",
+      "text": "Nach der Verarbeitung aller Sätze wird die Eingangsdatei vollständig in eine Archivdatei mit Zeitstempel kopiert und danach gelöscht; ist das Archiv nicht schreibbar, bleibt die Eingangsdatei mit Fehlerprotokoll liegen, scheitert das Löschen, wird gewarnt.",
+      "anchors": [
+        {
+          "file": "zpp_mes_file_f02.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f02.abap:44"
+        },
+        {
+          "file": "zpp_mes_file_f02.abap",
+          "line": 175,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f02.abap:175"
+        },
+        {
+          "file": "zpp_mes_file_f02.abap",
+          "line": 176,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f02.abap:176"
+        },
+        {
+          "file": "zpp_mes_file_f02.abap",
+          "line": 182,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f02.abap:182"
+        },
+        {
+          "file": "zpp_mes_file_f02.abap",
+          "line": 186,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f02.abap:186"
+        },
+        {
+          "file": "zpp_mes_file_f02.abap",
+          "line": 187,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f02.abap:187"
+        }
+      ]
+    },
+    {
+      "id": "BM-078-B18",
+      "text": "Zum Schluss werden alle Protokollzeilen ins Anwendungs-Log geschrieben, gesichert und festgeschrieben.",
+      "anchors": [
+        {
+          "file": "zpp_mes_file_f03.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f03.abap:33"
+        },
+        {
+          "file": "zpp_mes_file_f03.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f03.abap:34"
+        },
+        {
+          "file": "zpp_mes_file_f03.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f03.abap:44"
+        },
+        {
+          "file": "zpp_mes_file_f03.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f03.abap:49"
+        }
+      ]
+    },
+    {
+      "id": "BM-078-B19",
+      "text": "Gab es im Hintergrundlauf Fehler, endet der Job mit einer Fehlermeldung samt Fehleranzahl, damit die Leitstelle ihn als abgebrochen sieht.",
+      "anchors": [
+        {
+          "file": "zpp_mes_file_f03.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f03.abap:52"
+        },
+        {
+          "file": "zpp_mes_file_f03.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f03.abap:53"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "zpp_mes_file.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file.abap:19"
+        },
+        "meaning": "Jobstart"
+      },
+      {
+        "id": "p_la",
+        "type": "call",
+        "anchor": {
+          "file": "zpp_mes_file.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file.abap:20"
+        },
+        "meaning": "Anwendungs-Log anlegen"
+      },
+      {
+        "id": "f_la",
+        "type": "start",
+        "anchor": {
+          "file": "zpp_mes_file_f03.abap",
+          "line": 4,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f03.abap:4"
+        },
+        "meaning": "Log anlegen"
+      },
+      {
+        "id": "c_bal",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zpp_mes_file_f03.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f03.abap:12"
+        },
+        "meaning": "Log ZPP/MESFILE mit 30 Tagen Aufbewahrung anlegen"
+      },
+      {
+        "id": "g_bal",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpp_mes_file_f03.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f03.abap:19"
+        },
+        "meaning": "Log angelegt? – sonst ohne Log weiter"
+      },
+      {
+        "id": "fe_la",
+        "type": "end",
+        "anchor": {
+          "file": "zpp_mes_file_f03.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f03.abap:23"
+        },
+        "meaning": "Log angelegt (oder ohne Log), Rückkehr"
+      },
+      {
+        "id": "g_exp",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpp_mes_file.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file.abap:22"
+        },
+        "meaning": "Export gewählt?"
+      },
+      {
+        "id": "p_exp",
+        "type": "call",
+        "anchor": {
+          "file": "zpp_mes_file.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file.abap:23"
+        },
+        "meaning": "Aufträge exportieren"
+      },
+      {
+        "id": "g_imp",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpp_mes_file.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file.abap:26"
+        },
+        "meaning": "Import gewählt?"
+      },
+      {
+        "id": "p_imp",
+        "type": "call",
+        "anchor": {
+          "file": "zpp_mes_file.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file.abap:27"
+        },
+        "meaning": "Rückmeldungen importieren"
+      },
+      {
+        "id": "p_ls",
+        "type": "call",
+        "anchor": {
+          "file": "zpp_mes_file.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file.abap:30"
+        },
+        "meaning": "Log sichern"
+      },
+      {
+        "id": "f_ex",
+        "type": "start",
+        "anchor": {
+          "file": "zpp_mes_file_f01.abap",
+          "line": 4,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f01.abap:4"
+        },
+        "meaning": "Export"
+      },
+      {
+        "id": "q_auf",
+        "type": "read",
+        "anchor": {
+          "file": "zpp_mes_file_f01.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f01.abap:31"
+        },
+        "meaning": "Fertigungsaufträge des Werks mit Eckstart bis heute plus Tage lesen"
+      },
+      {
+        "id": "g_q",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpp_mes_file_f01.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f01.abap:39"
+        },
+        "meaning": "Aufträge im Horizont?"
+      },
+      {
+        "id": "e_q",
+        "type": "end",
+        "anchor": {
+          "file": "zpp_mes_file_f01.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f01.abap:41"
+        },
+        "meaning": "Export ohne Aufträge beendet"
+      },
+      {
+        "id": "l_auf",
+        "type": "loop",
+        "anchor": {
+          "file": "zpp_mes_file_f01.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f01.abap:44"
+        },
+        "meaning": "Je Auftrag"
+      },
+      {
+        "id": "c_st",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zpp_mes_file_f01.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f01.abap:46"
+        },
+        "meaning": "Status FREI prüfen"
+      },
+      {
+        "id": "g_st",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpp_mes_file_f01.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f01.abap:54"
+        },
+        "meaning": "Freigegeben?"
+      },
+      {
+        "id": "q_exp",
+        "type": "read",
+        "anchor": {
+          "file": "zpp_mes_file_f01.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f01.abap:59"
+        },
+        "meaning": "Exportmerker des Auftrags suchen"
+      },
+      {
+        "id": "g_exp2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpp_mes_file_f01.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f01.abap:61"
+        },
+        "meaning": "Bereits exportiert?"
+      },
+      {
+        "id": "q_vg",
+        "type": "read",
+        "anchor": {
+          "file": "zpp_mes_file_f01.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f01.abap:69"
+        },
+        "meaning": "Vorgänge lesen"
+      },
+      {
+        "id": "l_vg",
+        "type": "loop",
+        "anchor": {
+          "file": "zpp_mes_file_f01.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f01.abap:71"
+        },
+        "meaning": "Vorgangssätze O bilden"
+      },
+      {
+        "id": "q_komp",
+        "type": "read",
+        "anchor": {
+          "file": "zpp_mes_file_f01.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f01.abap:76"
+        },
+        "meaning": "Nicht gelöschte Komponenten lesen"
+      },
+      {
+        "id": "l_komp",
+        "type": "loop",
+        "anchor": {
+          "file": "zpp_mes_file_f01.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f01.abap:79"
+        },
+        "meaning": "Komponentensätze C bilden"
+      },
+      {
+        "id": "g_out",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpp_mes_file_f01.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f01.abap:88"
+        },
+        "meaning": "Neue Aufträge für den Export?"
+      },
+      {
+        "id": "e_out",
+        "type": "end",
+        "anchor": {
+          "file": "zpp_mes_file_f01.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f01.abap:90"
+        },
+        "meaning": "Export ohne neue Aufträge beendet"
+      },
+      {
+        "id": "od",
+        "type": "output",
+        "anchor": {
+          "file": "zpp_mes_file_f01.abap",
+          "line": 94,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f01.abap:94"
+        },
+        "meaning": "Exportdatei AUF_<Werk>_<Zeitstempel>.csv anlegen"
+      },
+      {
+        "id": "g_od",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpp_mes_file_f01.abap",
+          "line": 95,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f01.abap:95"
+        },
+        "meaning": "Datei schreibbar?"
+      },
+      {
+        "id": "e_od",
+        "type": "end",
+        "anchor": {
+          "file": "zpp_mes_file_f01.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f01.abap:98"
+        },
+        "meaning": "Export mit Fehler beendet"
+      },
+      {
+        "id": "l_tr",
+        "type": "loop",
+        "anchor": {
+          "file": "zpp_mes_file_f01.abap",
+          "line": 101,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f01.abap:101"
+        },
+        "meaning": "Je Exportzeile"
+      },
+      {
+        "id": "tr",
+        "type": "output",
+        "anchor": {
+          "file": "zpp_mes_file_f01.abap",
+          "line": 102,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f01.abap:102"
+        },
+        "meaning": "Zeile in die Datei schreiben"
+      },
+      {
+        "id": "cl",
+        "type": "output",
+        "anchor": {
+          "file": "zpp_mes_file_f01.abap",
+          "line": 104,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f01.abap:104"
+        },
+        "meaning": "Exportdatei schließen"
+      },
+      {
+        "id": "w_ins",
+        "type": "write",
+        "anchor": {
+          "file": "zpp_mes_file_f01.abap",
+          "line": 106,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f01.abap:106"
+        },
+        "meaning": "Exportmerker für die exportierten Aufträge schreiben"
+      },
+      {
+        "id": "cw1",
+        "type": "transaction",
+        "anchor": {
+          "file": "zpp_mes_file_f01.abap",
+          "line": 107,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f01.abap:107"
+        },
+        "meaning": "Exportmerker festschreiben"
+      },
+      {
+        "id": "e_ex",
+        "type": "end",
+        "anchor": {
+          "file": "zpp_mes_file_f01.abap",
+          "line": 111,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f01.abap:111"
+        },
+        "meaning": "Export fertig, Anzahl protokolliert"
+      },
+      {
+        "id": "f_im",
+        "type": "start",
+        "anchor": {
+          "file": "zpp_mes_file_f02.abap",
+          "line": 4,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f02.abap:4"
+        },
+        "meaning": "Import"
+      },
+      {
+        "id": "od2",
+        "type": "output",
+        "anchor": {
+          "file": "zpp_mes_file_f02.abap",
+          "line": 11,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f02.abap:11"
+        },
+        "meaning": "Eingangsdatei RM_<Werk>.csv öffnen"
+      },
+      {
+        "id": "g_od2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpp_mes_file_f02.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f02.abap:12"
+        },
+        "meaning": "Datei vorhanden?"
+      },
+      {
+        "id": "e_od2",
+        "type": "end",
+        "anchor": {
+          "file": "zpp_mes_file_f02.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f02.abap:14"
+        },
+        "meaning": "Kein Import"
+      },
+      {
+        "id": "do",
+        "type": "loop",
+        "anchor": {
+          "file": "zpp_mes_file_f02.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f02.abap:17"
+        },
+        "meaning": "Datei zeilenweise lesen"
+      },
+      {
+        "id": "g_rd",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpp_mes_file_f02.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f02.abap:19"
+        },
+        "meaning": "Dateiende?"
+      },
+      {
+        "id": "cl2",
+        "type": "output",
+        "anchor": {
+          "file": "zpp_mes_file_f02.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f02.abap:24"
+        },
+        "meaning": "Eingangsdatei schließen"
+      },
+      {
+        "id": "l_in",
+        "type": "loop",
+        "anchor": {
+          "file": "zpp_mes_file_f02.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f02.abap:26"
+        },
+        "meaning": "Je Eingangssatz"
+      },
+      {
+        "id": "cs",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpp_mes_file_f02.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f02.abap:33"
+        },
+        "meaning": "Satzart R, G oder unbekannt?"
+      },
+      {
+        "id": "p_r",
+        "type": "call",
+        "anchor": {
+          "file": "zpp_mes_file_f02.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f02.abap:35"
+        },
+        "meaning": "Rückmeldung verarbeiten"
+      },
+      {
+        "id": "p_g",
+        "type": "call",
+        "anchor": {
+          "file": "zpp_mes_file_f02.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f02.abap:37"
+        },
+        "meaning": "Wareneingang verarbeiten"
+      },
+      {
+        "id": "p_ar",
+        "type": "call",
+        "anchor": {
+          "file": "zpp_mes_file_f02.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f02.abap:44"
+        },
+        "meaning": "Eingangsdatei archivieren"
+      },
+      {
+        "id": "f_r",
+        "type": "start",
+        "anchor": {
+          "file": "zpp_mes_file_f02.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f02.abap:50"
+        },
+        "meaning": "Satzart R"
+      },
+      {
+        "id": "q_afru",
+        "type": "read",
+        "anchor": {
+          "file": "zpp_mes_file_f02.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f02.abap:61"
+        },
+        "meaning": "Nicht stornierte Rückmeldung mit Text „MES <ID>“ zum Auftrag suchen"
+      },
+      {
+        "id": "g_dup",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpp_mes_file_f02.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f02.abap:65"
+        },
+        "meaning": "Bereits gebucht?"
+      },
+      {
+        "id": "e_dup",
+        "type": "end",
+        "anchor": {
+          "file": "zpp_mes_file_f02.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f02.abap:68"
+        },
+        "meaning": "Als Dublette (Warnung) protokolliert"
+      },
+      {
+        "id": "c_conf",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zpp_mes_file_f02.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f02.abap:80"
+        },
+        "meaning": "Vorgangsrückmeldung mit Gut-, Ausschussmenge und MES-ID buchen"
+      },
+      {
+        "id": "g_cerr",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpp_mes_file_f02.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f02.abap:87"
+        },
+        "meaning": "Fehler?"
+      },
+      {
+        "id": "rb1",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zpp_mes_file_f02.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f02.abap:88"
+        },
+        "meaning": "Zurückrollen, Fehler protokollieren"
+      },
+      {
+        "id": "cm1",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zpp_mes_file_f02.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f02.abap:92"
+        },
+        "meaning": "Festschreiben, Erfolg protokollieren"
+      },
+      {
+        "id": "fe_r",
+        "type": "end",
+        "anchor": {
+          "file": "zpp_mes_file_f02.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f02.abap:98"
+        },
+        "meaning": "Rückmeldesatz verarbeitet, Rückkehr"
+      },
+      {
+        "id": "f_g",
+        "type": "start",
+        "anchor": {
+          "file": "zpp_mes_file_f02.abap",
+          "line": 103,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f02.abap:103"
+        },
+        "meaning": "Satzart G"
+      },
+      {
+        "id": "q_mkpf",
+        "type": "read",
+        "anchor": {
+          "file": "zpp_mes_file_f02.abap",
+          "line": 113,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f02.abap:113"
+        },
+        "meaning": "Materialbeleg 101 zum Auftrag mit Referenz = MES-ID suchen"
+      },
+      {
+        "id": "g_dup2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpp_mes_file_f02.abap",
+          "line": 120,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f02.abap:120"
+        },
+        "meaning": "Bereits gebucht?"
+      },
+      {
+        "id": "e_dup2",
+        "type": "end",
+        "anchor": {
+          "file": "zpp_mes_file_f02.abap",
+          "line": 123,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f02.abap:123"
+        },
+        "meaning": "Als Dublette (Warnung) protokolliert"
+      },
+      {
+        "id": "c_gm",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zpp_mes_file_f02.abap",
+          "line": 141,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f02.abap:141"
+        },
+        "meaning": "Wareneingang 101 zum Fertigungsauftrag mit Lagerort, Charge, Menge und MES-ID als Referenz buchen"
+      },
+      {
+        "id": "g_gerr",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpp_mes_file_f02.abap",
+          "line": 152,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f02.abap:152"
+        },
+        "meaning": "Kein Materialbeleg erzeugt?"
+      },
+      {
+        "id": "rb2",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zpp_mes_file_f02.abap",
+          "line": 153,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f02.abap:153"
+        },
+        "meaning": "Zurückrollen, Fehler protokollieren"
+      },
+      {
+        "id": "cm2",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zpp_mes_file_f02.abap",
+          "line": 158,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f02.abap:158"
+        },
+        "meaning": "Festschreiben, Materialbeleg protokollieren"
+      },
+      {
+        "id": "fe_g",
+        "type": "end",
+        "anchor": {
+          "file": "zpp_mes_file_f02.abap",
+          "line": 164,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f02.abap:164"
+        },
+        "meaning": "Wareneingangssatz verarbeitet, Rückkehr"
+      },
+      {
+        "id": "f_ar",
+        "type": "start",
+        "anchor": {
+          "file": "zpp_mes_file_f02.abap",
+          "line": 169,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f02.abap:169"
+        },
+        "meaning": "Archivierung"
+      },
+      {
+        "id": "od3",
+        "type": "output",
+        "anchor": {
+          "file": "zpp_mes_file_f02.abap",
+          "line": 175,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f02.abap:175"
+        },
+        "meaning": "Archivdatei mit Zeitstempel anlegen"
+      },
+      {
+        "id": "g_od3",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpp_mes_file_f02.abap",
+          "line": 176,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f02.abap:176"
+        },
+        "meaning": "Archiv schreibbar?"
+      },
+      {
+        "id": "e_od3",
+        "type": "end",
+        "anchor": {
+          "file": "zpp_mes_file_f02.abap",
+          "line": 178,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f02.abap:178"
+        },
+        "meaning": "Eingangsdatei bleibt liegen, Fehler protokolliert"
+      },
+      {
+        "id": "l_ar",
+        "type": "loop",
+        "anchor": {
+          "file": "zpp_mes_file_f02.abap",
+          "line": 181,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f02.abap:181"
+        },
+        "meaning": "Je Eingangszeile"
+      },
+      {
+        "id": "tr2",
+        "type": "output",
+        "anchor": {
+          "file": "zpp_mes_file_f02.abap",
+          "line": 182,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f02.abap:182"
+        },
+        "meaning": "Zeile ins Archiv schreiben"
+      },
+      {
+        "id": "cl3",
+        "type": "output",
+        "anchor": {
+          "file": "zpp_mes_file_f02.abap",
+          "line": 184,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f02.abap:184"
+        },
+        "meaning": "Archivdatei schließen"
+      },
+      {
+        "id": "del",
+        "type": "output",
+        "anchor": {
+          "file": "zpp_mes_file_f02.abap",
+          "line": 186,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f02.abap:186"
+        },
+        "meaning": "Eingangsdatei löschen"
+      },
+      {
+        "id": "g_del",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpp_mes_file_f02.abap",
+          "line": 187,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f02.abap:187"
+        },
+        "meaning": "Gelöscht? – sonst Warnung"
+      },
+      {
+        "id": "e_ar",
+        "type": "end",
+        "anchor": {
+          "file": "zpp_mes_file_f02.abap",
+          "line": 190,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f02.abap:190"
+        },
+        "meaning": "Archivierung fertig"
+      },
+      {
+        "id": "f_ls",
+        "type": "start",
+        "anchor": {
+          "file": "zpp_mes_file_f03.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f03.abap:25"
+        },
+        "meaning": "Log sichern"
+      },
+      {
+        "id": "g_h",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpp_mes_file_f03.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f03.abap:29"
+        },
+        "meaning": "Log vorhanden?"
+      },
+      {
+        "id": "e_h",
+        "type": "end",
+        "anchor": {
+          "file": "zpp_mes_file_f03.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f03.abap:30"
+        },
+        "meaning": "Ende ohne Log"
+      },
+      {
+        "id": "l_log",
+        "type": "loop",
+        "anchor": {
+          "file": "zpp_mes_file_f03.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f03.abap:33"
+        },
+        "meaning": "Je Protokollzeile"
+      },
+      {
+        "id": "c_add",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zpp_mes_file_f03.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f03.abap:34"
+        },
+        "meaning": "Freitextmeldung ins Log"
+      },
+      {
+        "id": "c_save",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zpp_mes_file_f03.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f03.abap:44"
+        },
+        "meaning": "Log sichern"
+      },
+      {
+        "id": "cw",
+        "type": "transaction",
+        "anchor": {
+          "file": "zpp_mes_file_f03.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f03.abap:49"
+        },
+        "meaning": "Log festschreiben"
+      },
+      {
+        "id": "g_f",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpp_mes_file_f03.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f03.abap:52"
+        },
+        "meaning": "Fehler im Hintergrundlauf?"
+      },
+      {
+        "id": "m_f",
+        "type": "output",
+        "anchor": {
+          "file": "zpp_mes_file_f03.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f03.abap:53"
+        },
+        "meaning": "Fehlermeldung mit Fehleranzahl – Job bricht ab (rot)"
+      },
+      {
+        "id": "e_m_f",
+        "type": "end",
+        "anchor": {
+          "file": "zpp_mes_file_f03.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f03.abap:53"
+        },
+        "meaning": "Job bricht mit Fehlermeldung ab (rot)"
+      },
+      {
+        "id": "e_ls",
+        "type": "end",
+        "anchor": {
+          "file": "zpp_mes_file_f03.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_mes_file_f03.abap:55"
+        },
+        "meaning": "Jobende"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "p_la",
+        "condition": "always"
+      },
+      {
+        "from": "p_la",
+        "to": "f_la",
+        "condition": "always"
+      },
+      {
+        "from": "f_la",
+        "to": "c_bal",
+        "condition": "always"
+      },
+      {
+        "from": "c_bal",
+        "to": "g_bal",
+        "condition": "always"
+      },
+      {
+        "from": "g_bal",
+        "to": "fe_la",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g_bal",
+        "to": "fe_la",
+        "condition": "else"
+      },
+      {
+        "from": "g_exp",
+        "to": "p_exp",
+        "condition": "p_exp = abap_true"
+      },
+      {
+        "from": "g_exp",
+        "to": "g_imp",
+        "condition": "else"
+      },
+      {
+        "from": "p_exp",
+        "to": "f_ex",
+        "condition": "always"
+      },
+      {
+        "from": "f_ex",
+        "to": "q_auf",
+        "condition": "always"
+      },
+      {
+        "from": "q_auf",
+        "to": "g_q",
+        "condition": "always"
+      },
+      {
+        "from": "g_q",
+        "to": "e_q",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g_q",
+        "to": "l_auf",
+        "condition": "else"
+      },
+      {
+        "from": "l_auf",
+        "to": "c_st",
+        "condition": "next row"
+      },
+      {
+        "from": "c_st",
+        "to": "g_st",
+        "condition": "always"
+      },
+      {
+        "from": "g_st",
+        "to": "l_auf",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g_st",
+        "to": "q_exp",
+        "condition": "else"
+      },
+      {
+        "from": "q_exp",
+        "to": "g_exp2",
+        "condition": "always"
+      },
+      {
+        "from": "g_exp2",
+        "to": "l_auf",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "g_exp2",
+        "to": "q_vg",
+        "condition": "else"
+      },
+      {
+        "from": "q_vg",
+        "to": "l_vg",
+        "condition": "always"
+      },
+      {
+        "from": "l_vg",
+        "to": "l_vg",
+        "condition": "next row"
+      },
+      {
+        "from": "l_vg",
+        "to": "q_komp",
+        "condition": "no more rows"
+      },
+      {
+        "from": "q_komp",
+        "to": "l_komp",
+        "condition": "always"
+      },
+      {
+        "from": "l_komp",
+        "to": "l_komp",
+        "condition": "next row"
+      },
+      {
+        "from": "l_komp",
+        "to": "l_auf",
+        "condition": "no more rows"
+      },
+      {
+        "from": "l_auf",
+        "to": "g_out",
+        "condition": "no more rows"
+      },
+      {
+        "from": "g_out",
+        "to": "e_out",
+        "condition": "lt_out IS INITIAL"
+      },
+      {
+        "from": "g_out",
+        "to": "od",
+        "condition": "else"
+      },
+      {
+        "from": "od",
+        "to": "g_od",
+        "condition": "always"
+      },
+      {
+        "from": "g_od",
+        "to": "e_od",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g_od",
+        "to": "l_tr",
+        "condition": "else"
+      },
+      {
+        "from": "l_tr",
+        "to": "tr",
+        "condition": "next row"
+      },
+      {
+        "from": "tr",
+        "to": "l_tr",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l_tr",
+        "to": "cl",
+        "condition": "no more rows"
+      },
+      {
+        "from": "cl",
+        "to": "w_ins",
+        "condition": "always"
+      },
+      {
+        "from": "w_ins",
+        "to": "cw1",
+        "condition": "always"
+      },
+      {
+        "from": "cw1",
+        "to": "e_ex",
+        "condition": "always"
+      },
+      {
+        "from": "e_q",
+        "to": "g_imp",
+        "condition": "always"
+      },
+      {
+        "from": "e_out",
+        "to": "g_imp",
+        "condition": "always"
+      },
+      {
+        "from": "e_od",
+        "to": "g_imp",
+        "condition": "always"
+      },
+      {
+        "from": "e_ex",
+        "to": "g_imp",
+        "condition": "always"
+      },
+      {
+        "from": "g_imp",
+        "to": "p_imp",
+        "condition": "p_imp = abap_true"
+      },
+      {
+        "from": "g_imp",
+        "to": "p_ls",
+        "condition": "else"
+      },
+      {
+        "from": "p_imp",
+        "to": "f_im",
+        "condition": "always"
+      },
+      {
+        "from": "f_im",
+        "to": "od2",
+        "condition": "always"
+      },
+      {
+        "from": "od2",
+        "to": "g_od2",
+        "condition": "always"
+      },
+      {
+        "from": "g_od2",
+        "to": "e_od2",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g_od2",
+        "to": "do",
+        "condition": "else"
+      },
+      {
+        "from": "do",
+        "to": "g_rd",
+        "condition": "next row"
+      },
+      {
+        "from": "g_rd",
+        "to": "cl2",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g_rd",
+        "to": "do",
+        "condition": "else"
+      },
+      {
+        "from": "cl2",
+        "to": "l_in",
+        "condition": "always"
+      },
+      {
+        "from": "l_in",
+        "to": "cs",
+        "condition": "next row"
+      },
+      {
+        "from": "cs",
+        "to": "p_r",
+        "condition": "WHEN 'R'"
+      },
+      {
+        "from": "cs",
+        "to": "p_g",
+        "condition": "WHEN 'G'"
+      },
+      {
+        "from": "cs",
+        "to": "l_in",
+        "condition": "WHEN OTHERS"
+      },
+      {
+        "from": "p_r",
+        "to": "f_r",
+        "condition": "always"
+      },
+      {
+        "from": "f_r",
+        "to": "q_afru",
+        "condition": "always"
+      },
+      {
+        "from": "q_afru",
+        "to": "g_dup",
+        "condition": "always"
+      },
+      {
+        "from": "g_dup",
+        "to": "e_dup",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "g_dup",
+        "to": "c_conf",
+        "condition": "else"
+      },
+      {
+        "from": "c_conf",
+        "to": "g_cerr",
+        "condition": "always"
+      },
+      {
+        "from": "g_cerr",
+        "to": "rb1",
+        "condition": "ls_return-type CA 'EA' OR line_exists( lt_detail[ type = 'E' ] )"
+      },
+      {
+        "from": "g_cerr",
+        "to": "cm1",
+        "condition": "else"
+      },
+      {
+        "from": "e_dup",
+        "to": "l_in",
+        "condition": "next iteration"
+      },
+      {
+        "from": "rb1",
+        "to": "fe_r",
+        "condition": "next iteration"
+      },
+      {
+        "from": "cm1",
+        "to": "fe_r",
+        "condition": "next iteration"
+      },
+      {
+        "from": "p_g",
+        "to": "f_g",
+        "condition": "always"
+      },
+      {
+        "from": "f_g",
+        "to": "q_mkpf",
+        "condition": "always"
+      },
+      {
+        "from": "q_mkpf",
+        "to": "g_dup2",
+        "condition": "always"
+      },
+      {
+        "from": "g_dup2",
+        "to": "e_dup2",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "g_dup2",
+        "to": "c_gm",
+        "condition": "else"
+      },
+      {
+        "from": "c_gm",
+        "to": "g_gerr",
+        "condition": "always"
+      },
+      {
+        "from": "g_gerr",
+        "to": "rb2",
+        "condition": "lv_mblnr IS INITIAL"
+      },
+      {
+        "from": "g_gerr",
+        "to": "cm2",
+        "condition": "else"
+      },
+      {
+        "from": "e_dup2",
+        "to": "l_in",
+        "condition": "next iteration"
+      },
+      {
+        "from": "rb2",
+        "to": "fe_g",
+        "condition": "next iteration"
+      },
+      {
+        "from": "cm2",
+        "to": "fe_g",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l_in",
+        "to": "p_ar",
+        "condition": "no more rows"
+      },
+      {
+        "from": "p_ar",
+        "to": "f_ar",
+        "condition": "always"
+      },
+      {
+        "from": "f_ar",
+        "to": "od3",
+        "condition": "always"
+      },
+      {
+        "from": "od3",
+        "to": "g_od3",
+        "condition": "always"
+      },
+      {
+        "from": "g_od3",
+        "to": "e_od3",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g_od3",
+        "to": "l_ar",
+        "condition": "else"
+      },
+      {
+        "from": "l_ar",
+        "to": "tr2",
+        "condition": "next row"
+      },
+      {
+        "from": "tr2",
+        "to": "l_ar",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l_ar",
+        "to": "cl3",
+        "condition": "no more rows"
+      },
+      {
+        "from": "cl3",
+        "to": "del",
+        "condition": "always"
+      },
+      {
+        "from": "del",
+        "to": "g_del",
+        "condition": "always"
+      },
+      {
+        "from": "g_del",
+        "to": "e_ar",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g_del",
+        "to": "e_ar",
+        "condition": "else"
+      },
+      {
+        "from": "e_od2",
+        "to": "p_ls",
+        "condition": "always"
+      },
+      {
+        "from": "e_od3",
+        "to": "p_ls",
+        "condition": "always"
+      },
+      {
+        "from": "e_ar",
+        "to": "p_ls",
+        "condition": "always"
+      },
+      {
+        "from": "p_ls",
+        "to": "f_ls",
+        "condition": "always"
+      },
+      {
+        "from": "f_ls",
+        "to": "g_h",
+        "condition": "always"
+      },
+      {
+        "from": "g_h",
+        "to": "e_h",
+        "condition": "gv_handle IS INITIAL"
+      },
+      {
+        "from": "g_h",
+        "to": "l_log",
+        "condition": "else"
+      },
+      {
+        "from": "l_log",
+        "to": "c_add",
+        "condition": "next row"
+      },
+      {
+        "from": "c_add",
+        "to": "l_log",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l_log",
+        "to": "c_save",
+        "condition": "no more rows"
+      },
+      {
+        "from": "c_save",
+        "to": "cw",
+        "condition": "always"
+      },
+      {
+        "from": "cw",
+        "to": "g_f",
+        "condition": "always"
+      },
+      {
+        "from": "g_f",
+        "to": "m_f",
+        "condition": "gv_fehler > 0 AND sy-batch = abap_true"
+      },
+      {
+        "from": "g_f",
+        "to": "e_ls",
+        "condition": "else"
+      },
+      {
+        "from": "fe_la",
+        "to": "g_exp",
+        "condition": "always"
+      },
+      {
+        "from": "fe_r",
+        "to": "l_in",
+        "condition": "next iteration"
+      },
+      {
+        "from": "fe_g",
+        "to": "l_in",
+        "condition": "next iteration"
+      },
+      {
+        "from": "m_f",
+        "to": "e_m_f",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zpp_mes_file_f01.abap:59 — kein Fachsatz „Geänderte Aufträge werden erneut exportiert“ (ein einmal exportierter Auftrag geht laut Code und Kommentar nie wieder raus)",
+    "zpp_mes_file_f02.abap:44 — kein Fachsatz „Fehlerhafte Sätze bleiben zur Wiederholung liegen“ (die ganze Datei wird archiviert und gelöscht, auch fehlerhafte Sätze)",
+    "zpp_mes_file_f02.abap:152 — kein Fachsatz „Warnungen der Warenbewegung führen zum Rollback“ (entscheidend ist nur, ob ein Materialbeleg entstand)",
+    "gesamte Scheibe — kein Fachsatz „Komponenten werden im Import verbraucht“ (Satzart G bucht nur den Wareneingang 101, Komponentenverbrauch 261 kommt im Code nicht vor)"
+  ],
+  "processDescription": "Ein Job läuft alle 15 Minuten je Werk. Er legt ein Anwendungs-Log an und führt je nach Auswahl Export und Import aus. Beim Export liest er die Fertigungsaufträge mit Eckstart im Horizont, behält freigegebene, noch nicht exportierte und schreibt je Auftrag Kopf-, Vorgangs- und Komponentensätze in eine neue CSV-Datei im Ausgangsverzeichnis; danach merkt er die Aufträge als exportiert und schreibt fest. Beim Import liest er die Eingangsdatei des Werks vollständig ein. Rückmeldesätze bucht er als Vorgangsrückmeldung, sofern nicht schon eine Rückmeldung mit derselben MES-ID existiert; Wareneingangssätze bucht er als Wareneingang zum Fertigungsauftrag, sofern nicht schon ein Materialbeleg mit derselben Referenz existiert. Fehler führen zum Rollback des einzelnen Satzes und zu einem Protokolleintrag. Danach kopiert er die Eingangsdatei ins Archiv und löscht sie; ist das Archiv nicht schreibbar, bleibt sie liegen. Zum Schluss schreibt er alle Protokollzeilen ins Anwendungs-Log und lässt den Job bei Fehlern mit einer Fehlermeldung abbrechen."
+}

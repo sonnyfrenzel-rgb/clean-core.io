@@ -1,0 +1,17 @@
+{
+  "id": "BM-023",
+  "title": "Verschrottung über Wertgrenze nur mit Grund und Kostenstelle (MB_DOCUMENT_BADI)",
+  "domain": "MM / Procure-to-Pay, Bestandsführung, Lager (WM/EWM)",
+  "band": "einfach",
+  "loc": 20,
+  "constructs": [
+    "BAdI-Implementierung (MB_DOCUMENT_BADI)",
+    "CHECK im LOOP",
+    "MESSAGE Typ E im Verbuchungsvorlauf"
+  ],
+  "scenario": "Controlling-Anforderung an die Bestandsführung, im ECC per klassischem BAdI umgesetzt; bei der S/4-Umstellung fällt die Fehlermeldung vor der Verbuchung als Risiko auf.",
+  "s4_issues": [
+    "MB_DOCUMENT_BADI ist in S/4HANA weiter vorhanden, aber MESSAGE Typ E in MB_DOCUMENT_BEFORE_UPDATE ist nicht zulässig (Prüfung gehört in MB_CHECK_LINE_BADI bzw. Validierung)",
+    "Hauswährungsbetrag DMBTR in MATDOC-Kontext prüfen"
+  ]
+}

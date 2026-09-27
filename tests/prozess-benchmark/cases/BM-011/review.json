@@ -1,0 +1,53 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Kante c_rl→g_leer",
+      "before": "c_rl->g_leer [always]",
+      "after": "entfällt; re->g_leer [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks; Rückkante vom end des Blocks → Folgeschritt; keine Direktkante Aufruf → Folgeschritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante c_vt→eos",
+      "before": "c_vt->eos [always]",
+      "after": "entfällt; ve->eos [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks; Rückkante vom end des Blocks → Folgeschritt; keine Direktkante Aufruf → Folgeschritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante c_pa→e_end",
+      "before": "c_pa->e_end [always]",
+      "after": "entfällt; pe->e_end [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks; Rückkante vom end des Blocks → Folgeschritt; keine Direktkante Aufruf → Folgeschritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante c_ein→l3",
+      "before": "c_ein->l3 [next iteration]",
+      "after": "entfällt; ne->l3 [next iteration], e_enq->l3 [next iteration]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks; Rückkante vom end des Blocks → Folgeschritt; keine Direktkante Aufruf → Folgeschritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten rb",
+      "before": "transaction",
+      "after": "opaque_call",
+      "why": "Vereinheitlichte Konvention: BAPI_TRANSACTION_COMMIT/_ROLLBACK sind opaque_call.",
+      "category": "Knotenart"
+    },
+    {
+      "where": "Knoten cm",
+      "before": "transaction",
+      "after": "opaque_call",
+      "why": "Vereinheitlichte Konvention: BAPI_TRANSACTION_COMMIT/_ROLLBACK sind opaque_call.",
+      "category": "Knotenart"
+    }
+  ],
+  "doubts": [
+    "RETURN in START-OF-SELECTION (e_sos, zsd_backorder.abap:21) ist korrekt als end des Ereignisblocks mit Kante e_sos->eos modelliert: RETURN verlässt nur den Verarbeitungsblock START-OF-SELECTION, die Laufzeit löst danach END-OF-SELECTION aus (anders als LEAVE PROGRAM). Das Protokoll wird also auch ohne Rückstände (leer) angezeigt — BM-011-B06 stimmt.",
+    "Rückkanten aus auftrag_neu_einplanen (ne, e_enq) führen zurück in die Schleife l3 und heißen deshalb „next iteration“ statt „always“ (wie in den übrigen Gegenchecks).",
+    "INITIALIZATION p_datum = sy-datum ist eine reine Vorbelegung des Selektionsbilds und bleibt wie vom Autor ohne Knoten."
+  ]
+}

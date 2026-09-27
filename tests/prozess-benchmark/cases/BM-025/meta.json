@@ -1,0 +1,19 @@
+{
+  "id": "BM-025",
+  "title": "Offene Inventurdifferenzen je Werk und Lagerort",
+  "domain": "MM / Procure-to-Pay, Bestandsführung, Lager (WM/EWM)",
+  "band": "einfach",
+  "loc": 31,
+  "constructs": [
+    "REPORT",
+    "SELECT *",
+    "DELETE auf interner Tabelle",
+    "FORMAT COLOR",
+    "WRITE-Liste"
+  ],
+  "scenario": "Vorbereitungsliste vor MI07 in der Stichtags- oder permanenten Inventur, typischerweise von der Lagerleitung genutzt.",
+  "s4_issues": [
+    "ISEG bleibt in S/4HANA bestehen; Buchbestand BUCHM und MATNR-Länge (40) prüfen",
+    "Nachfolger-Lesemodell I_PhysInvtryDocItem prüfen"
+  ]
+}

@@ -1,0 +1,101 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Kante c_ps→l",
+      "before": "c_ps->l [next iteration]",
+      "after": "entfällt; pe->l [next iteration]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks; Rückkante vom end des Blocks → Folgeschritt; keine Direktkante Aufruf → Folgeschritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante c_la→e_end",
+      "before": "c_la->e_end [always]",
+      "after": "entfällt; lse->e_end [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks; Rückkante vom end des Blocks → Folgeschritt; keine Direktkante Aufruf → Folgeschritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante c_lok→pe",
+      "before": "c_lok->pe [always]",
+      "after": "entfällt; ple->pe [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks; Rückkante vom end des Blocks → Folgeschritt; keine Direktkante Aufruf → Folgeschritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante sync→ple",
+      "before": "sync->ple [always]",
+      "after": "entfällt; fe->ple [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks; Rückkante vom end des Blocks → Folgeschritt; keine Direktkante Aufruf → Folgeschritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante ds→g_split",
+      "before": "ds->g_split [always]",
+      "after": "entfällt; dse->g_split [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks; Rückkante vom end des Blocks → Folgeschritt; keine Direktkante Aufruf → Folgeschritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante rm→pk",
+      "before": "rm->pk [always]",
+      "after": "entfällt; rme->pk [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks; Rückkante vom end des Blocks → Folgeschritt; keine Direktkante Aufruf → Folgeschritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante pk→g_res",
+      "before": "pk->g_res [always]",
+      "after": "entfällt; e_empty->g_res [always], e_test->g_res [always], pke->g_res [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks; Rückkante vom end des Blocks → Folgeschritt; keine Direktkante Aufruf → Folgeschritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante new→ds",
+      "before": "new->ds [always]",
+      "after": "entfällt; ce->ds [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks; Rückkante vom end des Blocks → Folgeschritt; keine Direktkante Aufruf → Folgeschritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante new→deq1",
+      "before": "new->deq1 [CATCH zcx_sd_pick INTO DATA(lx_pick)]",
+      "after": "entfällt; x_nf->deq1 [CATCH zcx_sd_pick INTO DATA(lx_pick)], x_conv->deq1 [CATCH zcx_sd_pick INTO DATA(lx_pick)]",
+      "why": "Der Konstruktor liegt im Fall; die Ausnahme entsteht an den RAISE-EXCEPTION-Enden x_nf/x_conv und läuft von dort in den CATCH-Zweig — analog zur Rückkante vom end des Blocks.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante task→fs",
+      "before": "—",
+      "after": "task->fs [always]",
+      "why": "Der asynchron gestartete Baustein Z_SD_PICK_SPLIT_RFC liegt im Fall (fs); Konvention: Aufruf → Start des Blocks. Die Direktkante task->cs bleibt, weil der aRFC-Aufrufer nicht auf das Ende wartet; die Rückmeldung läuft über die Callback-Kante task->es.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten g_res2 (z_sd_pick_split_rfc.abap:82)",
+      "before": "gateway „Split nur im Testlauf erkannt?“ mit g_res->g_res2 [else], g_res2->deq3 [lt_split IS NOT INITIAL], g_res2->deq3 [else]",
+      "after": "entfällt; g_res->deq3 [lt_split IS NOT INITIAL], g_res->deq3 [else]",
+      "why": "Vereinheitlichte Konvention: ELSEIF ist eine Bedingungskante des ursprünglichen Gateways.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Knoten rb",
+      "before": "transaction",
+      "after": "opaque_call",
+      "why": "Vereinheitlichte Konvention: BAPI_TRANSACTION_COMMIT/_ROLLBACK sind opaque_call.",
+      "category": "Knotenart"
+    },
+    {
+      "where": "Knoten cm",
+      "before": "transaction",
+      "after": "opaque_call",
+      "why": "Vereinheitlichte Konvention: BAPI_TRANSACTION_COMMIT/_ROLLBACK sind opaque_call.",
+      "category": "Knotenart"
+    }
+  ],
+  "doubts": [
+    "DO in paket_starten (zsd_pick_split.abap:80) wird nur über EXIT verlassen (WHEN 0 nach cnt, WHEN OTHERS nach paket_lokal); die Ausgangskanten cnt->pe und ple->pe führen zum ENDFORM — semantisch richtig, die Validator-Warnung ist beabsichtigt.",
+    "fs (Z_SD_PICK_SPLIT_RFC) hat einen asynchronen (task) und einen synchronen Aufrufer (sync); die Rückkante fe->ple gilt nur für den synchronen Aufruf. Der kontextfreie Graph kann das nicht ausdrücken."
+  ]
+}

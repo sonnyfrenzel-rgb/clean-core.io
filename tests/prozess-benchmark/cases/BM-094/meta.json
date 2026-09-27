@@ -1,0 +1,23 @@
+{
+  "id": "BM-094",
+  "title": "Generischer Schnittstellen-Eingangsverteiler mit dynamischem CALL FUNCTION, PERFORM und SUBMIT",
+  "domain": "Querschnitt — Schnittstellen, Stammdaten, HR, Workflow, technische Jobs",
+  "band": "komplex",
+  "loc": 192,
+  "constructs": [
+    "CALL FUNCTION lv_fm",
+    "PERFORM (lv_form) IN PROGRAM (lv_prog) IF FOUND",
+    "SUBMIT (lv_prog) AND RETURN",
+    "ENQUEUE/DEQUEUE",
+    "COMMIT/ROLLBACK WORK",
+    "BAL_LOG_CREATE/BAL_LOG_MSG_ADD/BAL_DB_SAVE",
+    "String-Templates",
+    "UP TO n ROWS"
+  ],
+  "scenario": "Kundeneigenes Middleware-Gerüst im ERP: externe Nachrichten landen in einer Inbox-Tabelle, ein alle fünf Minuten eingeplanter Job verteilt sie nach Konfigurationstabelle an Bausteine, FORM-Routinen oder Reports.",
+  "s4_issues": [
+    "Dynamische Aufrufe verhindern die statische Verwendungsanalyse; Ziele stehen nur in ZIF_ROUTING",
+    "Nicht vorhandene Bausteine führen zum Laufzeitabbruch",
+    "Kundeneigene Integrationsschicht statt SAP Integration Suite / AIF"
+  ]
+}

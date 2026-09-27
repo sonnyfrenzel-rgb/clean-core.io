@@ -1,0 +1,26 @@
+{
+  "id": "BM-036",
+  "title": "Bestell-BAdI ME_PROCESS_PO_CUST: Lieferantensperre, Infosatzpreis, Gefahrgut, Kostenstelle, Budget und Workflow",
+  "domain": "MM / Procure-to-Pay, Bestandsführung, Lager (WM/EWM)",
+  "band": "sehr komplex",
+  "loc": 413,
+  "constructs": [
+    "BAdI ME_PROCESS_PO_CUST mit mehreren Methoden",
+    "Regelklasse mit RETURNING-Methoden",
+    "Makros (DEFINE) und Standard-Makros MM_MESSAGES_MAC",
+    "INCLUDE in METHOD",
+    "SELECT JOIN EINA/EINE mit UP TO 1 ROWS",
+    "Pufferung in HASHED TABLE",
+    "COLLECT",
+    "CALL FUNCTION IN UPDATE TASK",
+    "SELECT … FOR UPDATE im Verbuchungsbaustein",
+    "Workflow-Ereignis in Verbuchung"
+  ],
+  "scenario": "Über Jahre gewachsene Bestell-BAdI-Implementierung eines Industriekunden, die Einkaufs-, Logistik- und Controllingregeln bündelt; in der S/4-Transformation zentraler Kandidat für Aufteilung und Ersatz durch Standard (Budget, Freigabe-Workflow).",
+  "s4_issues": [
+    "ME_PROCESS_PO_CUST in S/4 weiter unterstützt, aber nur Classic-API; Cloud-Ersatz über BAdI MM_PUR_S4_PO_*",
+    "Lieferantenstamm LFA1/LFM1 über Business Partner",
+    "Z-Budgetlogik neben PS/FM-Budget; Doppelzählung bei Änderungen",
+    "SWE_EVENT_CREATE statt Flexible Workflow"
+  ]
+}

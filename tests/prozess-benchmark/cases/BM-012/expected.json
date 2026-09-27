@@ -1,0 +1,1347 @@
+{
+  "id": "BM-012",
+  "title": "IDoc-Eingang ORDERS05: Bestellung prüfen, Kunde und Material umschlüsseln, Auftrag per BAPI anlegen, Status 51/53",
+  "classes": [
+    "K03",
+    "K01",
+    "K04",
+    "K12"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "ZSD_EDI_KUNDE",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "lzsd_edi_ordf01.abap",
+        "line": 68,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzsd_edi_ordf01.abap:68"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "KNA1",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "lzsd_edi_ordf01.abap",
+        "line": 82,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzsd_edi_ordf01.abap:82"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "KNMT",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "lzsd_edi_ordf01.abap",
+        "line": 97,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzsd_edi_ordf01.abap:97"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "CONVERSION_EXIT_MATN1_INPUT",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "lzsd_edi_ordf01.abap",
+        "line": 108,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzsd_edi_ordf01.abap:108"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "VBAK",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "lzsd_edi_ordf01.abap",
+        "line": 134,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzsd_edi_ordf01.abap:134"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "VBKD",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "lzsd_edi_ordf01.abap",
+        "line": 134,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzsd_edi_ordf01.abap:134"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_SALESORDER_CREATEFROMDAT2",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "lzsd_edi_ordf01.abap",
+        "line": 162,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzsd_edi_ordf01.abap:162"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-012-B01",
+      "text": "Jedes IDoc des Eingangspakets wird für sich verarbeitet; ein Fehler in einem Schritt überspringt die folgenden Schritte dieses IDocs.",
+      "anchors": [
+        {
+          "file": "z_idoc_input_zorders.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zorders.abap:26"
+        },
+        {
+          "file": "z_idoc_input_zorders.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zorders.abap:30"
+        },
+        {
+          "file": "z_idoc_input_zorders.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zorders.abap:33"
+        },
+        {
+          "file": "z_idoc_input_zorders.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zorders.abap:36"
+        }
+      ]
+    },
+    {
+      "id": "BM-012-B02",
+      "text": "Aus dem Kopfsegment werden Bestellart und Währung übernommen.",
+      "anchors": [
+        {
+          "file": "lzsd_edi_ordf01.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_edi_ordf01.abap:18"
+        }
+      ]
+    },
+    {
+      "id": "BM-012-B03",
+      "text": "Aus den Referenzsegmenten wird nur die Kundenbestellnummer mit Bestelldatum (Qualifier 001) übernommen.",
+      "anchors": [
+        {
+          "file": "lzsd_edi_ordf01.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_edi_ordf01.abap:25"
+        }
+      ]
+    },
+    {
+      "id": "BM-012-B04",
+      "text": "Aus den Partnersegmenten wird nur der Auftraggeber (AG) übernommen.",
+      "anchors": [
+        {
+          "file": "lzsd_edi_ordf01.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_edi_ordf01.abap:31"
+        }
+      ]
+    },
+    {
+      "id": "BM-012-B05",
+      "text": "Jedes Positionssegment ergibt eine Bestellposition mit Menge und Einheit; die Objektidentifikation liefert dazu Kundenmaterial (001) oder eigene Materialnummer (002).",
+      "anchors": [
+        {
+          "file": "lzsd_edi_ordf01.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_edi_ordf01.abap:18"
+        },
+        {
+          "file": "lzsd_edi_ordf01.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_edi_ordf01.abap:45"
+        }
+      ]
+    },
+    {
+      "id": "BM-012-B06",
+      "text": "Fehlen Positionen oder die Kundenbestellnummer, wird das IDoc mit Fehler 110 abgelehnt.",
+      "anchors": [
+        {
+          "file": "lzsd_edi_ordf01.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_edi_ordf01.abap:55"
+        }
+      ]
+    },
+    {
+      "id": "BM-012-B07",
+      "text": "Händler und Auftraggeber-GLN werden über eine Zuordnungstabelle auf Debitor, Vertriebsbereich und Auftragsart abgebildet; ohne Zuordnung wird mit Fehler 111 abgelehnt.",
+      "anchors": [
+        {
+          "file": "lzsd_edi_ordf01.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_edi_ordf01.abap:68"
+        },
+        {
+          "file": "lzsd_edi_ordf01.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_edi_ordf01.abap:71"
+        },
+        {
+          "file": "lzsd_edi_ordf01.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_edi_ordf01.abap:74"
+        }
+      ]
+    },
+    {
+      "id": "BM-012-B08",
+      "text": "Hat der Debitor eine zentrale Auftragssperre, wird das IDoc mit Fehler 112 abgelehnt.",
+      "anchors": [
+        {
+          "file": "lzsd_edi_ordf01.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_edi_ordf01.abap:82"
+        },
+        {
+          "file": "lzsd_edi_ordf01.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_edi_ordf01.abap:83"
+        }
+      ]
+    },
+    {
+      "id": "BM-012-B09",
+      "text": "Kundenmaterialnummern werden über die Kunden-Material-Info in eigene Materialnummern umgeschlüsselt; ein unbekanntes Kundenmaterial lehnt das IDoc mit Fehler 113 ab und beendet die Umschlüsselung.",
+      "anchors": [
+        {
+          "file": "lzsd_edi_ordf01.abap",
+          "line": 96,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_edi_ordf01.abap:96"
+        },
+        {
+          "file": "lzsd_edi_ordf01.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_edi_ordf01.abap:97"
+        },
+        {
+          "file": "lzsd_edi_ordf01.abap",
+          "line": 102,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_edi_ordf01.abap:102"
+        }
+      ]
+    },
+    {
+      "id": "BM-012-B10",
+      "text": "Ohne Kundenmaterial wird die gelieferte eigene Materialnummer ins interne Format gewandelt, ohne das Ergebnis zu prüfen.",
+      "anchors": [
+        {
+          "file": "lzsd_edi_ordf01.abap",
+          "line": 108,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_edi_ordf01.abap:108"
+        }
+      ]
+    },
+    {
+      "id": "BM-012-B11",
+      "text": "Existiert beim selben Auftraggeber bereits ein Auftrag mit dieser Kundenbestellnummer, wird das IDoc als Dublette mit Fehler 114 abgelehnt.",
+      "anchors": [
+        {
+          "file": "lzsd_edi_ordf01.abap",
+          "line": 134,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_edi_ordf01.abap:134"
+        },
+        {
+          "file": "lzsd_edi_ordf01.abap",
+          "line": 139,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_edi_ordf01.abap:139"
+        },
+        {
+          "file": "lzsd_edi_ordf01.abap",
+          "line": 142,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_edi_ordf01.abap:142"
+        }
+      ]
+    },
+    {
+      "id": "BM-012-B12",
+      "text": "Andernfalls wird ein Kundenauftrag der zugeordneten Auftragsart mit Auftraggeber, Bestelldaten und je Bestellposition einer Position (Nummern 10, 20, …) und Einteilung angelegt.",
+      "anchors": [
+        {
+          "file": "lzsd_edi_ordf01.abap",
+          "line": 162,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_edi_ordf01.abap:162"
+        }
+      ]
+    },
+    {
+      "id": "BM-012-B13",
+      "text": "Meldet die Anlage einen Fehler oder Abbruch, wird das IDoc mit der ersten dieser Meldungen als fehlerhaft markiert.",
+      "anchors": [
+        {
+          "file": "lzsd_edi_ordf01.abap",
+          "line": 173,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_edi_ordf01.abap:173"
+        },
+        {
+          "file": "lzsd_edi_ordf01.abap",
+          "line": 174,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_edi_ordf01.abap:174"
+        }
+      ]
+    },
+    {
+      "id": "BM-012-B14",
+      "text": "Fehlerhafte IDocs erhalten Status 51 mit der Fehlermeldung, erfolgreiche Status 53 mit der neuen Auftragsnummer als Anwendungsobjekt.",
+      "anchors": [
+        {
+          "file": "lzsd_edi_ordf01.abap",
+          "line": 197,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_edi_ordf01.abap:197"
+        },
+        {
+          "file": "lzsd_edi_ordf01.abap",
+          "line": 198,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_edi_ordf01.abap:198"
+        },
+        {
+          "file": "lzsd_edi_ordf01.abap",
+          "line": 203,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_edi_ordf01.abap:203"
+        }
+      ]
+    },
+    {
+      "id": "BM-012-B15",
+      "text": "Ist mindestens ein IDoc des Pakets fehlerhaft, meldet der Baustein dem Workflow ein Fehlerergebnis.",
+      "anchors": [
+        {
+          "file": "z_idoc_input_zorders.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zorders.abap:43"
+        },
+        {
+          "file": "z_idoc_input_zorders.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zorders.abap:44"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "fs",
+        "type": "start",
+        "anchor": {
+          "file": "z_idoc_input_zorders.abap",
+          "line": 1,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zorders.abap:1"
+        },
+        "meaning": "IDoc-Eingang ZORD vom ALE-Eingang aufgerufen"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "z_idoc_input_zorders.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zorders.abap:26"
+        },
+        "meaning": "Je IDoc des Pakets"
+      },
+      {
+        "id": "c_seg",
+        "type": "call",
+        "anchor": {
+          "file": "z_idoc_input_zorders.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zorders.abap:29"
+        },
+        "meaning": "Segmente in Kopf und Positionen übernehmen"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_idoc_input_zorders.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zorders.abap:30"
+        },
+        "meaning": "Bisher fehlerfrei?"
+      },
+      {
+        "id": "c_ag",
+        "type": "call",
+        "anchor": {
+          "file": "z_idoc_input_zorders.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zorders.abap:31"
+        },
+        "meaning": "Auftraggeber ermitteln"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_idoc_input_zorders.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zorders.abap:33"
+        },
+        "meaning": "Bisher fehlerfrei?"
+      },
+      {
+        "id": "c_mat",
+        "type": "call",
+        "anchor": {
+          "file": "z_idoc_input_zorders.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zorders.abap:34"
+        },
+        "meaning": "Materialnummern ermitteln"
+      },
+      {
+        "id": "g3",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_idoc_input_zorders.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zorders.abap:36"
+        },
+        "meaning": "Bisher fehlerfrei?"
+      },
+      {
+        "id": "c_auf",
+        "type": "call",
+        "anchor": {
+          "file": "z_idoc_input_zorders.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zorders.abap:37"
+        },
+        "meaning": "Kundenauftrag anlegen"
+      },
+      {
+        "id": "c_st",
+        "type": "call",
+        "anchor": {
+          "file": "z_idoc_input_zorders.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zorders.abap:40"
+        },
+        "meaning": "IDoc-Status setzen"
+      },
+      {
+        "id": "g_wf",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_idoc_input_zorders.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zorders.abap:43"
+        },
+        "meaning": "Mindestens ein IDoc fehlerhaft?"
+      },
+      {
+        "id": "fe",
+        "type": "end",
+        "anchor": {
+          "file": "z_idoc_input_zorders.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zorders.abap:48"
+        },
+        "meaning": "Workflow-Ergebnis an ALE zurück"
+      },
+      {
+        "id": "ss",
+        "type": "start",
+        "anchor": {
+          "file": "lzsd_edi_ordf01.abap",
+          "line": 8,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_edi_ordf01.abap:8"
+        },
+        "meaning": "Segmentauswertung"
+      },
+      {
+        "id": "sl",
+        "type": "loop",
+        "anchor": {
+          "file": "lzsd_edi_ordf01.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_edi_ordf01.abap:17"
+        },
+        "meaning": "Datensätze des IDocs"
+      },
+      {
+        "id": "cs",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzsd_edi_ordf01.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_edi_ordf01.abap:18"
+        },
+        "meaning": "Segmenttyp?"
+      },
+      {
+        "id": "gk02",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzsd_edi_ordf01.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_edi_ordf01.abap:25"
+        },
+        "meaning": "Referenz ist die Kundenbestellung?"
+      },
+      {
+        "id": "gka1",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzsd_edi_ordf01.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_edi_ordf01.abap:31"
+        },
+        "meaning": "Partner ist der Auftraggeber?"
+      },
+      {
+        "id": "cs19",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzsd_edi_ordf01.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_edi_ordf01.abap:45"
+        },
+        "meaning": "Art der Objektidentifikation?"
+      },
+      {
+        "id": "g_items",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzsd_edi_ordf01.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_edi_ordf01.abap:55"
+        },
+        "meaning": "Positionen und Bestellnummer vorhanden?"
+      },
+      {
+        "id": "se",
+        "type": "end",
+        "anchor": {
+          "file": "lzsd_edi_ordf01.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_edi_ordf01.abap:59"
+        },
+        "meaning": "Segmente übernommen"
+      },
+      {
+        "id": "as",
+        "type": "start",
+        "anchor": {
+          "file": "lzsd_edi_ordf01.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_edi_ordf01.abap:64"
+        },
+        "meaning": "Auftraggeberermittlung"
+      },
+      {
+        "id": "q_map",
+        "type": "read",
+        "anchor": {
+          "file": "lzsd_edi_ordf01.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_edi_ordf01.abap:68"
+        },
+        "meaning": "Händler und GLN auf Debitor, Vertriebsbereich und Auftragsart abbilden"
+      },
+      {
+        "id": "g_map",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzsd_edi_ordf01.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_edi_ordf01.abap:71"
+        },
+        "meaning": "Zuordnung gepflegt?"
+      },
+      {
+        "id": "e_map",
+        "type": "end",
+        "anchor": {
+          "file": "lzsd_edi_ordf01.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_edi_ordf01.abap:74"
+        },
+        "meaning": "Fehler 111: Auftraggeber nicht zugeordnet"
+      },
+      {
+        "id": "q_kna1",
+        "type": "read",
+        "anchor": {
+          "file": "lzsd_edi_ordf01.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_edi_ordf01.abap:82"
+        },
+        "meaning": "Zentrale Auftragssperre des Debitors lesen"
+      },
+      {
+        "id": "g_sperre",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzsd_edi_ordf01.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_edi_ordf01.abap:83"
+        },
+        "meaning": "Debitor für Aufträge gesperrt?"
+      },
+      {
+        "id": "ae",
+        "type": "end",
+        "anchor": {
+          "file": "lzsd_edi_ordf01.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_edi_ordf01.abap:87"
+        },
+        "meaning": "Auftraggeber ermittelt"
+      },
+      {
+        "id": "ms",
+        "type": "start",
+        "anchor": {
+          "file": "lzsd_edi_ordf01.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_edi_ordf01.abap:92"
+        },
+        "meaning": "Materialumschlüsselung"
+      },
+      {
+        "id": "ml",
+        "type": "loop",
+        "anchor": {
+          "file": "lzsd_edi_ordf01.abap",
+          "line": 95,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_edi_ordf01.abap:95"
+        },
+        "meaning": "Je Bestellposition"
+      },
+      {
+        "id": "g_kd",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzsd_edi_ordf01.abap",
+          "line": 96,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_edi_ordf01.abap:96"
+        },
+        "meaning": "Kundenmaterialnummer geliefert?"
+      },
+      {
+        "id": "q_knmt",
+        "type": "read",
+        "anchor": {
+          "file": "lzsd_edi_ordf01.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_edi_ordf01.abap:97"
+        },
+        "meaning": "Materialnummer aus Kunden-Material-Info lesen"
+      },
+      {
+        "id": "g_knmt",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzsd_edi_ordf01.abap",
+          "line": 102,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_edi_ordf01.abap:102"
+        },
+        "meaning": "Kundenmaterial bekannt?"
+      },
+      {
+        "id": "conv",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "lzsd_edi_ordf01.abap",
+          "line": 108,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_edi_ordf01.abap:108"
+        },
+        "meaning": "Gelieferte eigene Materialnummer ins interne Format wandeln"
+      },
+      {
+        "id": "me",
+        "type": "end",
+        "anchor": {
+          "file": "lzsd_edi_ordf01.abap",
+          "line": 118,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_edi_ordf01.abap:118"
+        },
+        "meaning": "Materialien ermittelt"
+      },
+      {
+        "id": "aas",
+        "type": "start",
+        "anchor": {
+          "file": "lzsd_edi_ordf01.abap",
+          "line": 123,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_edi_ordf01.abap:123"
+        },
+        "meaning": "Auftragsanlage"
+      },
+      {
+        "id": "q_dup",
+        "type": "read",
+        "anchor": {
+          "file": "lzsd_edi_ordf01.abap",
+          "line": 134,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_edi_ordf01.abap:134"
+        },
+        "meaning": "Vorhandenen Auftrag mit gleicher Bestellnummer beim Auftraggeber suchen"
+      },
+      {
+        "id": "g_dup",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzsd_edi_ordf01.abap",
+          "line": 139,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_edi_ordf01.abap:139"
+        },
+        "meaning": "Dublette?"
+      },
+      {
+        "id": "e_dup",
+        "type": "end",
+        "anchor": {
+          "file": "lzsd_edi_ordf01.abap",
+          "line": 142,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_edi_ordf01.abap:142"
+        },
+        "meaning": "Fehler 114: Bestellung bereits erfasst"
+      },
+      {
+        "id": "bapi",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "lzsd_edi_ordf01.abap",
+          "line": 162,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_edi_ordf01.abap:162"
+        },
+        "meaning": "Kundenauftrag mit Positionen und Einteilungen anlegen"
+      },
+      {
+        "id": "l_ret",
+        "type": "loop",
+        "anchor": {
+          "file": "lzsd_edi_ordf01.abap",
+          "line": 173,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_edi_ordf01.abap:173"
+        },
+        "meaning": "Fehler- und Abbruchmeldungen des BAPI"
+      },
+      {
+        "id": "err",
+        "type": "action",
+        "anchor": {
+          "file": "lzsd_edi_ordf01.abap",
+          "line": 174,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_edi_ordf01.abap:174"
+        },
+        "meaning": "Anlage als fehlerhaft markieren (erste Meldung übernehmen)"
+      },
+      {
+        "id": "aae",
+        "type": "end",
+        "anchor": {
+          "file": "lzsd_edi_ordf01.abap",
+          "line": 180,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_edi_ordf01.abap:180"
+        },
+        "meaning": "Anlage beendet"
+      },
+      {
+        "id": "sts",
+        "type": "start",
+        "anchor": {
+          "file": "lzsd_edi_ordf01.abap",
+          "line": 185,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_edi_ordf01.abap:185"
+        },
+        "meaning": "Statusfortschreibung"
+      },
+      {
+        "id": "g_st",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzsd_edi_ordf01.abap",
+          "line": 197,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_edi_ordf01.abap:197"
+        },
+        "meaning": "IDoc fehlerhaft?"
+      },
+      {
+        "id": "ste",
+        "type": "end",
+        "anchor": {
+          "file": "lzsd_edi_ordf01.abap",
+          "line": 214,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzsd_edi_ordf01.abap:214"
+        },
+        "meaning": "Statussatz angehängt"
+      }
+    ],
+    "edges": [
+      {
+        "from": "fs",
+        "to": "l",
+        "condition": "always"
+      },
+      {
+        "from": "l",
+        "to": "c_seg",
+        "condition": "next row"
+      },
+      {
+        "from": "c_seg",
+        "to": "ss",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "c_ag",
+        "condition": "gv_error = abap_false"
+      },
+      {
+        "from": "g1",
+        "to": "g2",
+        "condition": "else"
+      },
+      {
+        "from": "c_ag",
+        "to": "as",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "c_mat",
+        "condition": "gv_error = abap_false"
+      },
+      {
+        "from": "g2",
+        "to": "g3",
+        "condition": "else"
+      },
+      {
+        "from": "c_mat",
+        "to": "ms",
+        "condition": "always"
+      },
+      {
+        "from": "g3",
+        "to": "c_auf",
+        "condition": "gv_error = abap_false"
+      },
+      {
+        "from": "g3",
+        "to": "c_st",
+        "condition": "else"
+      },
+      {
+        "from": "c_auf",
+        "to": "aas",
+        "condition": "always"
+      },
+      {
+        "from": "c_st",
+        "to": "sts",
+        "condition": "always"
+      },
+      {
+        "from": "l",
+        "to": "g_wf",
+        "condition": "no more rows"
+      },
+      {
+        "from": "g_wf",
+        "to": "fe",
+        "condition": "gv_anyerr = abap_true"
+      },
+      {
+        "from": "g_wf",
+        "to": "fe",
+        "condition": "else"
+      },
+      {
+        "from": "ss",
+        "to": "sl",
+        "condition": "always"
+      },
+      {
+        "from": "sl",
+        "to": "cs",
+        "condition": "next row"
+      },
+      {
+        "from": "cs",
+        "to": "sl",
+        "condition": "WHEN 'E1EDK01'"
+      },
+      {
+        "from": "cs",
+        "to": "gk02",
+        "condition": "WHEN 'E1EDK02'"
+      },
+      {
+        "from": "gk02",
+        "to": "sl",
+        "condition": "ls_k02-qualf = '001'"
+      },
+      {
+        "from": "gk02",
+        "to": "sl",
+        "condition": "else"
+      },
+      {
+        "from": "cs",
+        "to": "gka1",
+        "condition": "WHEN 'E1EDKA1'"
+      },
+      {
+        "from": "gka1",
+        "to": "sl",
+        "condition": "ls_ka1-parvw = 'AG'"
+      },
+      {
+        "from": "gka1",
+        "to": "sl",
+        "condition": "else"
+      },
+      {
+        "from": "cs",
+        "to": "sl",
+        "condition": "WHEN 'E1EDP01'"
+      },
+      {
+        "from": "cs",
+        "to": "cs19",
+        "condition": "WHEN 'E1EDP19'"
+      },
+      {
+        "from": "cs19",
+        "to": "sl",
+        "condition": "WHEN '001'"
+      },
+      {
+        "from": "cs19",
+        "to": "sl",
+        "condition": "WHEN '002'"
+      },
+      {
+        "from": "cs19",
+        "to": "sl",
+        "condition": "else"
+      },
+      {
+        "from": "cs",
+        "to": "sl",
+        "condition": "WHEN OTHERS"
+      },
+      {
+        "from": "sl",
+        "to": "g_items",
+        "condition": "no more rows"
+      },
+      {
+        "from": "g_items",
+        "to": "se",
+        "condition": "gt_items IS INITIAL OR gs_head-bstkd IS INITIAL"
+      },
+      {
+        "from": "g_items",
+        "to": "se",
+        "condition": "else"
+      },
+      {
+        "from": "as",
+        "to": "q_map",
+        "condition": "always"
+      },
+      {
+        "from": "q_map",
+        "to": "g_map",
+        "condition": "always"
+      },
+      {
+        "from": "g_map",
+        "to": "e_map",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g_map",
+        "to": "q_kna1",
+        "condition": "else"
+      },
+      {
+        "from": "q_kna1",
+        "to": "g_sperre",
+        "condition": "always"
+      },
+      {
+        "from": "g_sperre",
+        "to": "ae",
+        "condition": "lv_aufsd IS NOT INITIAL"
+      },
+      {
+        "from": "g_sperre",
+        "to": "ae",
+        "condition": "else"
+      },
+      {
+        "from": "ms",
+        "to": "ml",
+        "condition": "always"
+      },
+      {
+        "from": "ml",
+        "to": "g_kd",
+        "condition": "next row"
+      },
+      {
+        "from": "g_kd",
+        "to": "q_knmt",
+        "condition": "<ls_item>-kdmat IS NOT INITIAL"
+      },
+      {
+        "from": "g_kd",
+        "to": "conv",
+        "condition": "else"
+      },
+      {
+        "from": "q_knmt",
+        "to": "g_knmt",
+        "condition": "always"
+      },
+      {
+        "from": "g_knmt",
+        "to": "me",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g_knmt",
+        "to": "ml",
+        "condition": "else"
+      },
+      {
+        "from": "conv",
+        "to": "ml",
+        "condition": "next iteration"
+      },
+      {
+        "from": "ml",
+        "to": "me",
+        "condition": "no more rows"
+      },
+      {
+        "from": "aas",
+        "to": "q_dup",
+        "condition": "always"
+      },
+      {
+        "from": "q_dup",
+        "to": "g_dup",
+        "condition": "always"
+      },
+      {
+        "from": "g_dup",
+        "to": "e_dup",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "g_dup",
+        "to": "bapi",
+        "condition": "else"
+      },
+      {
+        "from": "bapi",
+        "to": "l_ret",
+        "condition": "always"
+      },
+      {
+        "from": "l_ret",
+        "to": "err",
+        "condition": "next row"
+      },
+      {
+        "from": "err",
+        "to": "aae",
+        "condition": "always"
+      },
+      {
+        "from": "l_ret",
+        "to": "aae",
+        "condition": "no more rows"
+      },
+      {
+        "from": "sts",
+        "to": "g_st",
+        "condition": "always"
+      },
+      {
+        "from": "g_st",
+        "to": "ste",
+        "condition": "gv_error = abap_true"
+      },
+      {
+        "from": "g_st",
+        "to": "ste",
+        "condition": "else"
+      },
+      {
+        "from": "se",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "e_map",
+        "to": "g2",
+        "condition": "always"
+      },
+      {
+        "from": "ae",
+        "to": "g2",
+        "condition": "always"
+      },
+      {
+        "from": "me",
+        "to": "g3",
+        "condition": "always"
+      },
+      {
+        "from": "e_dup",
+        "to": "c_st",
+        "condition": "always"
+      },
+      {
+        "from": "aae",
+        "to": "c_st",
+        "condition": "always"
+      },
+      {
+        "from": "ste",
+        "to": "l",
+        "condition": "next iteration"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "lzsd_edi_ordf01.abap:162 — kein Fachsatz „der Auftrag ist damit gespeichert“: der Baustein ruft kein COMMIT WORK, festgeschrieben wird erst durch die ALE-Eingangsschicht",
+    "lzsd_edi_ordf01.abap:57 — kein output-Knoten und kein Abbruch: MESSAGE … INTO füllt nur Meldungsvariablen für den IDoc-Status",
+    "lzsd_edi_ordf01.abap:108 — kein Fachsatz „ungültige Materialnummern werden abgelehnt“: sy-subrc wird nicht ausgewertet",
+    "lzsd_edi_ordf01.abap:83 — kein Fachsatz „Liefer- oder Fakturasperren verhindern den Auftrag“: geprüft wird nur die zentrale Auftragssperre"
+  ],
+  "processDescription": "Der Baustein wird von der ALE-Eingangsverarbeitung mit einem Paket von ORDERS05-IDocs eines Händlers aufgerufen. Für jedes IDoc übernimmt er Bestellart, Währung, Kundenbestellnummer mit Datum, den Auftraggeber (GLN) sowie die Positionen mit Menge, Einheit und Materialidentifikation; fehlen Positionen oder Bestellnummer, lehnt er das IDoc ab. Dann bildet er Händler und GLN über eine Zuordnungstabelle auf Debitor, Vertriebsbereich und Auftragsart ab und lehnt ab, wenn keine Zuordnung existiert oder der Debitor zentral für Aufträge gesperrt ist. Kundenmaterialnummern schlüsselt er über die Kunden-Material-Info um; ein unbekanntes Kundenmaterial führt zur Ablehnung, eigene Materialnummern werden ungeprüft ins interne Format gewandelt. Vor der Anlage prüft er, ob beim Auftraggeber bereits ein Auftrag mit derselben Kundenbestellnummer existiert, und lehnt Dubletten ab. Dann legt er den Kundenauftrag per BAPI an; eine Fehler- oder Abbruchmeldung macht das IDoc fehlerhaft. Jedes IDoc erhält Status 51 mit Fehlermeldung oder Status 53 mit der Auftragsnummer. Enthält das Paket mindestens einen Fehler, meldet er dem Workflow ein Fehlerergebnis. Der Baustein selbst schreibt nichts fest; das COMMIT setzt die aufrufende ALE-Schicht."
+}

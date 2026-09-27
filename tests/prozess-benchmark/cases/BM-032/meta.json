@@ -1,0 +1,25 @@
+{
+  "id": "BM-032",
+  "title": "Lieferantenbewertung nach Termin-, Mengentreue und Qualität mit Periodenablage",
+  "domain": "MM / Procure-to-Pay, Bestandsführung, Lager (WM/EWM)",
+  "band": "komplex",
+  "loc": 241,
+  "constructs": [
+    "REPORT mit INCLUDE",
+    "FORM-Routinen",
+    "SELECT JOIN EKBE/EKKO",
+    "SELECT MIN/SELECT SINGLE im LOOP",
+    "FOR ALL ENTRIES",
+    "COLLECT in HASHED TABLE",
+    "DELETE/INSERT Z-Tabelle mit COMMIT/ROLLBACK",
+    "END-OF-SELECTION",
+    "CL_SALV_TABLE"
+  ],
+  "scenario": "Eigene Lieferantenbewertung neben oder statt ME61/ME65, wie sie Einkaufsabteilungen für Jahresgespräche nutzen; in S/4 steht dem die Supplier Evaluation gegenüber.",
+  "s4_issues": [
+    "EKBE/EKET/EKPO-Direktzugriffe, Nachfolger I_PurchaseOrderHistoryAPI01, I_PurOrdScheduleLineAPI01",
+    "QALS/QAVE-Direktzugriff",
+    "In S/4 Standard-Lieferantenbewertung (Supplier Evaluation) als Alternative",
+    "SELECT im LOOP (Performance)"
+  ]
+}

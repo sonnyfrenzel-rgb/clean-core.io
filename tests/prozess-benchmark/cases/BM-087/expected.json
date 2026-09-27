@@ -1,0 +1,630 @@
+{
+  "id": "BM-087",
+  "title": "Kreditorenversand per Änderungszeiger und MASTER_IDOC_DISTRIBUTE",
+  "classes": [
+    "K01",
+    "K03",
+    "K12"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "CHANGE_POINTERS_READ",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 22,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:22"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "LFA1",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 46,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:46"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "MASTER_IDOC_DISTRIBUTE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 72,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:72"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "CHANGE_POINTERS_STATUS_WRITE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 92,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:92"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-087-B01",
+      "text": "Es werden die noch nicht verarbeiteten Änderungszeiger des Nachrichtentyps gelesen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:22"
+        }
+      ]
+    },
+    {
+      "id": "BM-087-B02",
+      "text": "Gibt es keine, wird das gemeldet und der Lauf beendet.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:32"
+        },
+        {
+          "file": "source.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:33"
+        },
+        {
+          "file": "source.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:34"
+        }
+      ]
+    },
+    {
+      "id": "BM-087-B03",
+      "text": "Mehrere Änderungszeiger desselben Kreditors werden zu einem Versand verdichtet.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:38"
+        },
+        {
+          "file": "source.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:40"
+        }
+      ]
+    },
+    {
+      "id": "BM-087-B04",
+      "text": "Je Kreditor wird der Stammsatz gelesen; fehlende oder zum Löschen vorgemerkte Kreditoren werden nicht gesendet.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:46"
+        },
+        {
+          "file": "source.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:47"
+        }
+      ]
+    },
+    {
+      "id": "BM-087-B05",
+      "text": "Im Testmodus wird der Kreditor nur aufgelistet und nichts gesendet.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:62"
+        },
+        {
+          "file": "source.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:63"
+        }
+      ]
+    },
+    {
+      "id": "BM-087-B06",
+      "text": "Im Echtlauf werden Name, Anschrift und USt-Id des Kreditors als IDoc ZVENDOR01 an das Alt-System adressiert.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:72"
+        }
+      ]
+    },
+    {
+      "id": "BM-087-B07",
+      "text": "Schlägt das Erzeugen fehl, wird ein Sendefehler mit Kreditornummer ausgegeben.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:84"
+        },
+        {
+          "file": "source.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:87"
+        }
+      ]
+    },
+    {
+      "id": "BM-087-B08",
+      "text": "Im Echtlauf werden danach alle gelesenen Änderungszeiger als verarbeitet markiert und festgeschrieben.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 91,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:91"
+        },
+        {
+          "file": "source.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:92"
+        },
+        {
+          "file": "source.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:97"
+        }
+      ]
+    },
+    {
+      "id": "BM-087-B09",
+      "text": "Zum Schluss wird die Anzahl gesendeter Kreditoren ausgegeben.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:99"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:21"
+        },
+        "meaning": "Jobstart"
+      },
+      {
+        "id": "cp",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:22"
+        },
+        "meaning": "Offene Änderungszeiger lesen"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:32"
+        },
+        "meaning": "Keine Änderungen?"
+      },
+      {
+        "id": "m1",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:33"
+        },
+        "meaning": "Keine Änderungen melden"
+      },
+      {
+        "id": "e1",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:34"
+        },
+        "meaning": "Lauf beenden"
+      },
+      {
+        "id": "l1",
+        "type": "loop",
+        "anchor": {
+          "file": "source.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:38"
+        },
+        "meaning": "Änderungszeiger durchlaufen"
+      },
+      {
+        "id": "l2",
+        "type": "loop",
+        "anchor": {
+          "file": "source.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:45"
+        },
+        "meaning": "Vorgemerkte Kreditoren durchlaufen"
+      },
+      {
+        "id": "r",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:46"
+        },
+        "meaning": "Kreditorenstamm lesen"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:47"
+        },
+        "meaning": "Kreditor fehlt oder zum Löschen vorgemerkt?"
+      },
+      {
+        "id": "g3",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:62"
+        },
+        "meaning": "Testmodus?"
+      },
+      {
+        "id": "ot",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:63"
+        },
+        "meaning": "Kreditor im Test nur auflisten"
+      },
+      {
+        "id": "mid",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:72"
+        },
+        "meaning": "Stammdaten-IDoc ZVENDOR01 an Alt-System erzeugen"
+      },
+      {
+        "id": "g4",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:84"
+        },
+        "meaning": "IDoc erzeugt?"
+      },
+      {
+        "id": "oerr",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:87"
+        },
+        "meaning": "Sendefehler ausgeben"
+      },
+      {
+        "id": "g5",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 91,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:91"
+        },
+        "meaning": "Echtlauf?"
+      },
+      {
+        "id": "sw",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:92"
+        },
+        "meaning": "Alle gelesenen Zeiger als verarbeitet markieren"
+      },
+      {
+        "id": "cw",
+        "type": "transaction",
+        "anchor": {
+          "file": "source.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:97"
+        },
+        "meaning": "IDocs und Zeigerstatus festschreiben"
+      },
+      {
+        "id": "osum",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:99"
+        },
+        "meaning": "Anzahl gesendeter Kreditoren ausgeben"
+      },
+      {
+        "id": "e2",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:99"
+        },
+        "meaning": "Lauf endet nach der Summenausgabe"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "cp",
+        "condition": "always"
+      },
+      {
+        "from": "cp",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "m1",
+        "condition": "sy-subrc <> 0 OR lt_cp IS INITIAL"
+      },
+      {
+        "from": "m1",
+        "to": "e1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "l1",
+        "condition": "else"
+      },
+      {
+        "from": "l1",
+        "to": "l2",
+        "condition": "no more rows"
+      },
+      {
+        "from": "l2",
+        "to": "r",
+        "condition": "next row"
+      },
+      {
+        "from": "r",
+        "to": "g2",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "l2",
+        "condition": "sy-subrc <> 0 OR ls_lfa1-loevm = 'X'"
+      },
+      {
+        "from": "g2",
+        "to": "g3",
+        "condition": "else"
+      },
+      {
+        "from": "g3",
+        "to": "ot",
+        "condition": "p_test = 'X'"
+      },
+      {
+        "from": "ot",
+        "to": "l2",
+        "condition": "next iteration"
+      },
+      {
+        "from": "g3",
+        "to": "mid",
+        "condition": "else"
+      },
+      {
+        "from": "mid",
+        "to": "g4",
+        "condition": "always"
+      },
+      {
+        "from": "g4",
+        "to": "l2",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "g4",
+        "to": "oerr",
+        "condition": "else"
+      },
+      {
+        "from": "oerr",
+        "to": "l2",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l2",
+        "to": "g5",
+        "condition": "no more rows"
+      },
+      {
+        "from": "g5",
+        "to": "sw",
+        "condition": "p_test IS INITIAL"
+      },
+      {
+        "from": "sw",
+        "to": "cw",
+        "condition": "always"
+      },
+      {
+        "from": "cw",
+        "to": "osum",
+        "condition": "always"
+      },
+      {
+        "from": "g5",
+        "to": "osum",
+        "condition": "else"
+      },
+      {
+        "from": "osum",
+        "to": "e2",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "source.abap:92 — kein Fachsatz „Zeiger fehlerhaft gesendeter oder gelöschter Kreditoren bleiben offen“ (alle gelesenen Zeiger werden als verarbeitet markiert).",
+    "source.abap:72 — kein Fachsatz „nur geänderte Felder werden übertragen“ (es wird immer der vollständige Segmentinhalt gesendet).",
+    "source.abap:72 — kein Fachsatz „Alt-System hat die Daten erhalten“ (erzeugt wird nur das Ausgangs-IDoc; der Versand ist nicht Teil des Falls)."
+  ],
+  "processDescription": "Ein Job versendet geänderte Kreditoren an ein Alt-Kreditorenbuchhaltungssystem. Er liest die offenen Änderungszeiger des Nachrichtentyps (Vorschlag ZCREMAS); gibt es keine, meldet er das und endet. Mehrere Zeiger desselben Kreditors verdichtet er zu einem Versand. Je Kreditor liest er den Stammsatz und überspringt fehlende oder zum Löschen vorgemerkte Kreditoren. Im Testmodus listet er den Kreditor nur auf. Im Echtlauf baut er ein Segment mit Name, Anschrift und USt-Id und erzeugt über die ALE-Verteilung ein IDoc ZVENDOR01 an den Empfänger; ein Fehler dabei wird ausgegeben. Nach der Schleife markiert er im Echtlauf alle gelesenen Zeiger als verarbeitet – auch die übersprungener oder fehlerhafter Kreditoren – und schreibt mit COMMIT WORK fest. Zum Schluss gibt er die Anzahl gesendeter Kreditoren aus."
+}

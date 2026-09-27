@@ -1,0 +1,29 @@
+{
+  "id": "BM-011",
+  "title": "Rückstandsbearbeitung: Werksbestand nach Lieferpriorität zuteilen und Aufträge per BAPI neu einplanen",
+  "domain": "SD / Order-to-Cash",
+  "band": "komplex",
+  "loc": 246,
+  "constructs": [
+    "REPORT mit TOP-/F01-Include",
+    "INITIALIZATION/START-OF-SELECTION/END-OF-SELECTION",
+    "SELECT mit zwei INNER JOINs",
+    "FOR ALL ENTRIES",
+    "geschachtelte LOOP … WHERE",
+    "DELETE/MODIFY auf interner Tabelle in der Schleife",
+    "AT NEW",
+    "SELECT SUM",
+    "nmin( )",
+    "ENQUEUE_EVVBAKE/DEQUEUE_EVVBAKE",
+    "BAPI_SALESORDER_CHANGE mit Einteilungen",
+    "BAPI_TRANSACTION_COMMIT/ROLLBACK",
+    "REUSE_ALV_GRID_DISPLAY"
+  ],
+  "scenario": "Werksnaher Ersatz der Standard-Rückstandsbearbeitung: ein Disponent verteilt knappen Bestand nach Lieferpriorität auf überfällige, unbestätigte Auftragspositionen und stößt die Neueinplanung an.",
+  "s4_issues": [
+    "VBUP entfällt für SD-Belege: der JOIN auf VBUP liefert in S/4 keine Positionen mehr (LFSTA liegt in VBAP)",
+    "MARD ist in S/4 eine Kompatibilitätssicht auf MATDOC; Bestandsermittlung besser über freigegebene Views",
+    "Rückstandsbearbeitung in S/4 über aATP Backorder Processing (BOP) statt Eigenbau",
+    "REUSE_ALV_GRID_DISPLAY und direkte Tabellenzugriffe nicht Clean Core"
+  ]
+}

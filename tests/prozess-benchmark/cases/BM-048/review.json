@@ -1,0 +1,21 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "BM-048-B03",
+      "before": "Je Anlage werden der Anschaffungswert (Stand plus Zugänge des Jahres), die kumulierte AfA (normal, Sonder- und außerplanmäßig) und daraus der Restbuchwert berechnet.",
+      "after": "Je Anlage werden der Anschaffungswert (kumulierter Stand plus wertmäßige Bewegungen des Jahres), die kumulierte AfA (normal, Sonder- und außerplanmäßig) und daraus der Restbuchwert berechnet.",
+      "why": "ANLC-ANSWL sind alle anschaffungswertwirksamen Bewegungen des Geschäftsjahrs (Zugänge, Abgänge, Umbuchungen), nicht nur Zugänge.",
+      "category": "Fachsatz"
+    },
+    {
+      "where": "forbiddenConclusions[2]",
+      "before": "source.abap:72 — kein Fachsatz „Aufwertungen oder Zuschreibungen fließen in den Restbuchwert ein“ (nur Anschaffungswert, Zugänge und die sechs AfA-Felder)",
+      "after": "source.abap:72 — kein Fachsatz „Aufwertungen oder Zuschreibungen fließen in den Restbuchwert ein“ (nur Anschaffungswert, Jahresbewegungen und die sechs AfA-Felder)",
+      "why": "ANSWL umfasst alle Jahresbewegungen, nicht nur Zugänge.",
+      "category": "verbotener Schluss"
+    }
+  ],
+  "doubts": []
+}

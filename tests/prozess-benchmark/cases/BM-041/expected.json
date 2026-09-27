@@ -1,0 +1,281 @@
+{
+  "id": "BM-041",
+  "title": "Überfällige offene Debitorenposten zum Stichtag summieren",
+  "classes": [
+    "K01"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "BSID",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 15,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:15"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-041-B01",
+      "text": "Es werden alle offenen Debitorenposten des eingegebenen Kunden im eingegebenen Buchungskreis gelesen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:15"
+        }
+      ]
+    },
+    {
+      "id": "BM-041-B02",
+      "text": "Für jeden Posten wird die Nettofälligkeit als Basisdatum plus Tage des ersten Zahlungsziels bestimmt.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:21"
+        }
+      ]
+    },
+    {
+      "id": "BM-041-B03",
+      "text": "Nur Posten, deren Nettofälligkeit vor dem Stichtag liegt, gelten als überfällig; Habenposten gehen mit negativem Vorzeichen in die Summe ein.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:22"
+        },
+        {
+          "file": "source.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:23"
+        },
+        {
+          "file": "source.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:25"
+        }
+      ]
+    },
+    {
+      "id": "BM-041-B04",
+      "text": "Jeder überfällige Posten wird mit Belegnummer, Geschäftsjahr, Fälligkeit und Betrag gelistet.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:26"
+        }
+      ]
+    },
+    {
+      "id": "BM-041-B05",
+      "text": "Am Ende wird die Summe der überfälligen Beträge in Hauswährung ausgegeben.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:31"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:14"
+        },
+        "meaning": "Reportstart"
+      },
+      {
+        "id": "q",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:15"
+        },
+        "meaning": "Offene Posten des Kunden im Buchungskreis lesen"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "source.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:19"
+        },
+        "meaning": "Offene Posten durchlaufen"
+      },
+      {
+        "id": "g",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:22"
+        },
+        "meaning": "Nettofälligkeit vor Stichtag?"
+      },
+      {
+        "id": "sum",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:25"
+        },
+        "meaning": "Vorzeichengerechten Betrag zur Überfälligkeitssumme addieren"
+      },
+      {
+        "id": "o1",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:26"
+        },
+        "meaning": "Überfälligen Posten listen"
+      },
+      {
+        "id": "o2",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:31"
+        },
+        "meaning": "Summe überfällig ausgeben"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:31"
+        },
+        "meaning": "Liste fertig"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "q",
+        "condition": "always"
+      },
+      {
+        "from": "q",
+        "to": "l",
+        "condition": "always"
+      },
+      {
+        "from": "l",
+        "to": "g",
+        "condition": "next row"
+      },
+      {
+        "from": "g",
+        "to": "sum",
+        "condition": "lv_faell < p_stich"
+      },
+      {
+        "from": "sum",
+        "to": "o1",
+        "condition": "always"
+      },
+      {
+        "from": "o1",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "g",
+        "to": "l",
+        "condition": "else"
+      },
+      {
+        "from": "l",
+        "to": "o2",
+        "condition": "no more rows"
+      },
+      {
+        "from": "o2",
+        "to": "e",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "source.abap:21 — kein Fachsatz „Skontofristen bzw. Zahlungsziel 2 und 3 werden berücksichtigt“ (nur ZBD1T wird addiert)",
+    "source.abap:15 — kein Fachsatz „ausgeglichene Posten werden einbezogen“ (BSID enthält nur offene Posten, BSAD wird nicht gelesen)",
+    "source.abap:31 — kein Fachsatz „Kunde wird gemahnt oder gesperrt“ (der Report gibt nur eine Liste aus)"
+  ],
+  "processDescription": "Der Report wird vom Debitorenbuchhalter mit Buchungskreis, Kundennummer und Stichtag gestartet. Er liest alle offenen Posten dieses Kunden und bestimmt je Posten die Nettofälligkeit aus Basisdatum und erstem Zahlungsziel. Posten, die vor dem Stichtag fällig waren, werden gelistet und vorzeichengerecht (Haben negativ) aufsummiert. Nicht überfällige Posten werden übergangen. Zum Schluss wird die Summe der überfälligen Beträge ausgegeben. Es gibt keinen Fehlerpfad: ohne offene Posten erscheint nur die Summenzeile mit null."
+}

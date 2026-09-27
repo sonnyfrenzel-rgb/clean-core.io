@@ -1,0 +1,26 @@
+{
+  "id": "BM-051",
+  "title": "Überweisungsdatei für die Bankensoftware aus einem ausgeführten Zahllauf erzeugen",
+  "domain": "FI/CO / Record-to-Report",
+  "band": "komplex",
+  "loc": 182,
+  "constructs": [
+    "REPORT MESSAGE-ID",
+    "INCLUDE mit FORMs",
+    "AUTHORITY-CHECK",
+    "SELECT SINGLE / SELECT INTO TABLE",
+    "MESSAGE TYPE E aus FORM",
+    "CONCATENATE LINES OF",
+    "String-Templates",
+    "OPEN DATASET / TRANSFER / CLOSE DATASET",
+    "INSERT Z-Tabelle",
+    "auskommentierte Prüfung"
+  ],
+  "scenario": "Nach dem Zahllauf F110 erzeugt die Kreditorenbuchhaltung mit diesem Report statt des Standard-Zahlungsträgerprogramms eine CSV-Datei für den Import in die Bankensoftware (MultiCash); typischer Altbestand aus der DTAUS/SEPA-Umstellung.",
+  "s4_issues": [
+    "Dateiablage auf dem Applikationsserver per OPEN DATASET (in S/4HANA Cloud nicht möglich; DMEE/Payment Medium Workbench bzw. Bank Communication Management als Standard)",
+    "Direkte Lesezugriffe auf REGUV/REGUH/REGUP",
+    "Dateipfad als Parameter ohne logischen Dateinamen (FILE_VALIDATE_NAME)",
+    "Kontrollsumme über Währungen hinweg"
+  ]
+}

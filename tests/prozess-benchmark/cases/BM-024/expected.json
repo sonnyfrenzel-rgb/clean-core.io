@@ -1,0 +1,333 @@
+{
+  "id": "BM-024",
+  "title": "Gesperrte Lieferanten je Einkaufsorganisation (ALV)",
+  "classes": [
+    "K01"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "LFA1",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 16,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:16"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "LFM1",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 16,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:16"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "CL_SALV_TABLE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 27,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:27"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-024-B01",
+      "text": "Es werden die Lieferanten der eingegebenen Einkaufsorganisation gelesen, die dort für den Einkauf gesperrt oder zentral gebucht gesperrt sind.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:16"
+        }
+      ]
+    },
+    {
+      "id": "BM-024-B02",
+      "text": "Gibt es keine, wird „Keine gesperrten Lieferanten“ ausgegeben und der Report endet.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:21"
+        },
+        {
+          "file": "source.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:22"
+        },
+        {
+          "file": "source.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:23"
+        }
+      ]
+    },
+    {
+      "id": "BM-024-B03",
+      "text": "Sonst werden Lieferantennummer, Name, Land und beide Sperrkennzeichen als ALV-Liste angezeigt.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:27"
+        },
+        {
+          "file": "source.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:29"
+        }
+      ]
+    },
+    {
+      "id": "BM-024-B04",
+      "text": "Lässt sich die Liste nicht erzeugen, bricht der Report mit einer Fehlermeldung ab.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:31"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:15"
+        },
+        "meaning": "Reportstart"
+      },
+      {
+        "id": "q",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:16"
+        },
+        "meaning": "Gesperrte Lieferanten der Einkaufsorganisation lesen"
+      },
+      {
+        "id": "g",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:21"
+        },
+        "meaning": "Treffer vorhanden?"
+      },
+      {
+        "id": "w",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:22"
+        },
+        "meaning": "Hinweis: keine gesperrten Lieferanten"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:23"
+        },
+        "meaning": "Report beenden"
+      },
+      {
+        "id": "f",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:27"
+        },
+        "meaning": "ALV-Liste erzeugen"
+      },
+      {
+        "id": "d",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:29"
+        },
+        "meaning": "Sperrliste anzeigen"
+      },
+      {
+        "id": "ed",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:32"
+        },
+        "meaning": "Liste angezeigt, Report endet"
+      },
+      {
+        "id": "x",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:31"
+        },
+        "meaning": "Fehler: ALV nicht erzeugbar"
+      },
+      {
+        "id": "xx",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:31"
+        },
+        "meaning": "Report mit Fehler abgebrochen"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "q",
+        "condition": "always"
+      },
+      {
+        "from": "q",
+        "to": "g",
+        "condition": "always"
+      },
+      {
+        "from": "g",
+        "to": "w",
+        "condition": "gt_lief IS INITIAL"
+      },
+      {
+        "from": "w",
+        "to": "e",
+        "condition": "always"
+      },
+      {
+        "from": "g",
+        "to": "f",
+        "condition": "else"
+      },
+      {
+        "from": "f",
+        "to": "d",
+        "condition": "always"
+      },
+      {
+        "from": "f",
+        "to": "x",
+        "condition": "CATCH cx_salv_msg"
+      },
+      {
+        "from": "x",
+        "to": "xx",
+        "condition": "always"
+      },
+      {
+        "from": "d",
+        "to": "ed",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "source.abap:16 — kein Fachsatz „Lieferanten mit Löschvormerkung werden gelistet“ (LOEVM wird nicht gelesen)",
+    "source.abap:29 — kein Fachsatz „Die Sperre kann aus der Liste aufgehoben werden“ (reine Anzeige, keine Funktionen)",
+    "source.abap:16 — kein Fachsatz „Nur Lieferanten mit beiden Sperren“ (die Bedingung ist ODER)"
+  ],
+  "processDescription": "Für ein Audit startet ein Einkäufer den Report mit einer Einkaufsorganisation. Der Report liest alle Lieferanten, die in dieser Einkaufsorganisation eine Einkaufssperre haben oder zentral zur Buchung gesperrt sind. Gibt es keine, gibt er einen entsprechenden Hinweis aus und endet. Sonst zeigt er Nummer, Name, Land und die beiden Sperrkennzeichen in einer ALV-Liste an. Scheitert die Erzeugung der Liste, bricht er mit einer Fehlermeldung ab. Am Lieferantenstamm wird nichts geändert."
+}

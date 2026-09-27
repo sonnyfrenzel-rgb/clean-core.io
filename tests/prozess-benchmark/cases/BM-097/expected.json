@@ -1,0 +1,2310 @@
+{
+  "id": "BM-097",
+  "title": "Export Personalstammdaten an Payroll-Provider (Datei) und Zeiterfassung (RFC), Delta seit letztem Lauf",
+  "classes": [
+    "K01",
+    "K03",
+    "K12",
+    "K15"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "ENQUEUE_EZHR_EXPORT",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zhr_emp_export.abap",
+        "line": 27,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zhr_emp_export.abap:27"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZHR_EXPORT_LOG",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zhr_emp_export_f01.abap",
+        "line": 9,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zhr_emp_export_f01.abap:9"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "PA0001",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zhr_emp_export_f01.abap",
+        "line": 23,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zhr_emp_export_f01.abap:23"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "PA0000",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zhr_emp_export_f01.abap",
+        "line": 40,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zhr_emp_export_f01.abap:40"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "PA0002",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zhr_emp_export_f01.abap",
+        "line": 48,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zhr_emp_export_f01.abap:48"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "PA0006",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zhr_emp_export_f01.abap",
+        "line": 52,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zhr_emp_export_f01.abap:52"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "HR_CHECK_AUTHORITY_INFTY",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zhr_emp_export_f01.abap",
+        "line": 80,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zhr_emp_export_f01.abap:80"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "HR_READ_INFOTYPE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zhr_emp_export_f01.abap",
+        "line": 100,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zhr_emp_export_f01.abap:100"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "CL_SALV_TABLE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zhr_emp_export_f02.abap",
+        "line": 12,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zhr_emp_export_f02.abap:12"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "Z_TIME_EMP_SYNC",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zhr_emp_export_f02.abap",
+        "line": 64,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zhr_emp_export_f02.abap:64"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZHR_EXPORT_LOG",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "zhr_emp_export_f03.abap",
+        "line": 22,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zhr_emp_export_f03.abap:22"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "SO_NEW_DOCUMENT_SEND_API1",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zhr_emp_export_f03.abap",
+        "line": 47,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zhr_emp_export_f03.abap:47"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-097-B01",
+      "text": "Beim Aufruf wird als Exportdatei ein Dateiname mit dem Tagesdatum vorgeschlagen.",
+      "anchors": [
+        {
+          "file": "zhr_emp_export.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export.abap:23"
+        }
+      ]
+    },
+    {
+      "id": "BM-097-B02",
+      "text": "Es darf nur ein Exportlauf gleichzeitig laufen; ist bereits einer aktiv, bricht der Lauf ab.",
+      "anchors": [
+        {
+          "file": "zhr_emp_export.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export.abap:27"
+        },
+        {
+          "file": "zhr_emp_export.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export.abap:34"
+        },
+        {
+          "file": "zhr_emp_export.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export.abap:35"
+        }
+      ]
+    },
+    {
+      "id": "BM-097-B03",
+      "text": "Ohne Vollabzug wird das Datum des letzten erfolgreichen Laufs als Stichtag ermittelt; gab es noch keinen, wird alles exportiert.",
+      "anchors": [
+        {
+          "file": "zhr_emp_export.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export.abap:38"
+        },
+        {
+          "file": "zhr_emp_export_f01.abap",
+          "line": 9,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export_f01.abap:9"
+        }
+      ]
+    },
+    {
+      "id": "BM-097-B04",
+      "text": "Es werden alle Mitarbeiter gelesen, die heute einem der gewählten Buchungskreise und Mitarbeitergruppen zugeordnet sind.",
+      "anchors": [
+        {
+          "file": "zhr_emp_export_f01.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export_f01.abap:23"
+        }
+      ]
+    },
+    {
+      "id": "BM-097-B05",
+      "text": "Beim Vollabzug werden alle diese Mitarbeiter exportiert.",
+      "anchors": [
+        {
+          "file": "zhr_emp_export_f01.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export_f01.abap:34"
+        },
+        {
+          "file": "zhr_emp_export_f01.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export_f01.abap:35"
+        }
+      ]
+    },
+    {
+      "id": "BM-097-B06",
+      "text": "Beim Delta werden nur Mitarbeiter exportiert, deren Maßnahmen, organisatorische Zuordnung, Personaldaten oder ständige Anschrift seit dem Stichtag geändert wurden.",
+      "anchors": [
+        {
+          "file": "zhr_emp_export_f01.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export_f01.abap:40"
+        },
+        {
+          "file": "zhr_emp_export_f01.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export_f01.abap:44"
+        },
+        {
+          "file": "zhr_emp_export_f01.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export_f01.abap:48"
+        },
+        {
+          "file": "zhr_emp_export_f01.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export_f01.abap:52"
+        },
+        {
+          "file": "zhr_emp_export_f01.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export_f01.abap:59"
+        }
+      ]
+    },
+    {
+      "id": "BM-097-B07",
+      "text": "Gibt es keine zu exportierenden Mitarbeiter, wird das gemeldet und der Lauf beendet.",
+      "anchors": [
+        {
+          "file": "zhr_emp_export.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export.abap:43"
+        },
+        {
+          "file": "zhr_emp_export.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export.abap:44"
+        }
+      ]
+    },
+    {
+      "id": "BM-097-B08",
+      "text": "Mitarbeiter, deren Personaldaten der Benutzer nicht lesen darf, werden mit einem Fehlervermerk übersprungen.",
+      "anchors": [
+        {
+          "file": "zhr_emp_export_f01.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export_f01.abap:80"
+        },
+        {
+          "file": "zhr_emp_export_f01.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export_f01.abap:93"
+        },
+        {
+          "file": "zhr_emp_export_f01.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export_f01.abap:97"
+        }
+      ]
+    },
+    {
+      "id": "BM-097-B09",
+      "text": "Je Mitarbeiter werden zum heutigen Tag Maßnahmen, organisatorische Zuordnung, Daten zur Person, ständige Anschrift und dienstliche E-Mail-Adresse gelesen.",
+      "anchors": [
+        {
+          "file": "zhr_emp_export_f01.abap",
+          "line": 100,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export_f01.abap:100"
+        },
+        {
+          "file": "zhr_emp_export_f01.abap",
+          "line": 110,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export_f01.abap:110"
+        },
+        {
+          "file": "zhr_emp_export_f01.abap",
+          "line": 120,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export_f01.abap:120"
+        },
+        {
+          "file": "zhr_emp_export_f01.abap",
+          "line": 130,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export_f01.abap:130"
+        },
+        {
+          "file": "zhr_emp_export_f01.abap",
+          "line": 141,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export_f01.abap:141"
+        }
+      ]
+    },
+    {
+      "id": "BM-097-B10",
+      "text": "Ausgetretene Mitarbeiter erhalten die Satzart D, alle anderen die Satzart U.",
+      "anchors": [
+        {
+          "file": "zhr_emp_export_f01.abap",
+          "line": 154,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export_f01.abap:154"
+        },
+        {
+          "file": "zhr_emp_export_f01.abap",
+          "line": 155,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export_f01.abap:155"
+        },
+        {
+          "file": "zhr_emp_export_f01.abap",
+          "line": 157,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export_f01.abap:157"
+        }
+      ]
+    },
+    {
+      "id": "BM-097-B11",
+      "text": "Ein nicht ausgetretener Mitarbeiter ohne ständige Anschrift wird mit einem Fehlervermerk übersprungen.",
+      "anchors": [
+        {
+          "file": "zhr_emp_export_f01.abap",
+          "line": 171,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export_f01.abap:171"
+        },
+        {
+          "file": "zhr_emp_export_f01.abap",
+          "line": 175,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export_f01.abap:175"
+        }
+      ]
+    },
+    {
+      "id": "BM-097-B12",
+      "text": "Der Exportsatz enthält Personalnummer, Name, Geburtsdatum, Buchungskreis, Kostenstelle, Organisationseinheit, Anschrift und E-Mail-Adresse.",
+      "anchors": [
+        {
+          "file": "zhr_emp_export_f01.abap",
+          "line": 163,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export_f01.abap:163"
+        },
+        {
+          "file": "zhr_emp_export_f01.abap",
+          "line": 177,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export_f01.abap:177"
+        },
+        {
+          "file": "zhr_emp_export_f01.abap",
+          "line": 182,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export_f01.abap:182"
+        }
+      ]
+    },
+    {
+      "id": "BM-097-B13",
+      "text": "Für die Zeiterfassung wird je Mitarbeiter ein Satz mit Name und Kostenstelle gebildet; ausgetretene Mitarbeiter werden dort deaktiviert, nicht gelöscht.",
+      "anchors": [
+        {
+          "file": "zhr_emp_export_f01.abap",
+          "line": 186,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export_f01.abap:186"
+        },
+        {
+          "file": "zhr_emp_export_f01.abap",
+          "line": 189,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export_f01.abap:189"
+        }
+      ]
+    },
+    {
+      "id": "BM-097-B14",
+      "text": "Im Testlauf werden die Exportsätze nur als Liste angezeigt; nichts wird geschrieben oder gesendet.",
+      "anchors": [
+        {
+          "file": "zhr_emp_export.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export.abap:52"
+        },
+        {
+          "file": "zhr_emp_export_f02.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export_f02.abap:17"
+        },
+        {
+          "file": "zhr_emp_export.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export.abap:54"
+        }
+      ]
+    },
+    {
+      "id": "BM-097-B15",
+      "text": "Im Echtlauf wird eine UTF-8-Datei mit Kopfzeile und je Mitarbeiter einer semikolongetrennten Zeile auf dem Applikationsserver geschrieben; ist sie nicht beschreibbar, wird ein Fehler vermerkt.",
+      "anchors": [
+        {
+          "file": "zhr_emp_export_f02.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export_f02.abap:32"
+        },
+        {
+          "file": "zhr_emp_export_f02.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export_f02.abap:33"
+        },
+        {
+          "file": "zhr_emp_export_f02.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export_f02.abap:39"
+        },
+        {
+          "file": "zhr_emp_export_f02.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export_f02.abap:47"
+        }
+      ]
+    },
+    {
+      "id": "BM-097-B16",
+      "text": "Das Geburtsdatum wird in der Datei im Format TT/MM/JJJJ ausgegeben.",
+      "anchors": [
+        {
+          "file": "zhr_emp_export_f02.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export_f02.abap:42"
+        }
+      ]
+    },
+    {
+      "id": "BM-097-B17",
+      "text": "Die Zeitsätze werden per RFC an das Zeiterfassungssystem übertragen; ein Kommunikations- oder Systemfehler wird mit seinem Text vermerkt.",
+      "anchors": [
+        {
+          "file": "zhr_emp_export_f02.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export_f02.abap:64"
+        },
+        {
+          "file": "zhr_emp_export_f02.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export_f02.abap:72"
+        }
+      ]
+    },
+    {
+      "id": "BM-097-B18",
+      "text": "Der Lauf wird mit Datum, Uhrzeit, Vollabzugskennzeichen und den Anzahlen von Sätzen und Fehlern protokolliert.",
+      "anchors": [
+        {
+          "file": "zhr_emp_export_f03.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export_f03.abap:22"
+        }
+      ]
+    },
+    {
+      "id": "BM-097-B19",
+      "text": "Der Lauf gilt als erfolgreich, wenn Datei und RFC-Übertragung gelungen sind – auch wenn einzelne Mitarbeiter übersprungen wurden.",
+      "anchors": [
+        {
+          "file": "zhr_emp_export_f03.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export_f03.abap:17"
+        },
+        {
+          "file": "zhr_emp_export_f03.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export_f03.abap:18"
+        },
+        {
+          "file": "zhr_emp_export_f03.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export_f03.abap:20"
+        }
+      ]
+    },
+    {
+      "id": "BM-097-B20",
+      "text": "Gab es Fehler, erhält die HR-IT-Verteilerliste eine Mail mit der Fehleranzahl; scheitert der Versand, erscheint eine Warnung.",
+      "anchors": [
+        {
+          "file": "zhr_emp_export.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export.abap:60"
+        },
+        {
+          "file": "zhr_emp_export_f03.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export_f03.abap:47"
+        },
+        {
+          "file": "zhr_emp_export_f03.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export_f03.abap:58"
+        }
+      ]
+    },
+    {
+      "id": "BM-097-B21",
+      "text": "Protokoll und Mail werden festgeschrieben und die Laufsperre freigegeben.",
+      "anchors": [
+        {
+          "file": "zhr_emp_export.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export.abap:63"
+        },
+        {
+          "file": "zhr_emp_export.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export.abap:65"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "si",
+        "type": "start",
+        "anchor": {
+          "file": "zhr_emp_export.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export.abap:22"
+        },
+        "meaning": "Selektionsbild vorbelegen"
+      },
+      {
+        "id": "e_si",
+        "type": "end",
+        "anchor": {
+          "file": "zhr_emp_export.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export.abap:23"
+        },
+        "meaning": "Selektionsbild vorbelegt"
+      },
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "zhr_emp_export.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export.abap:25"
+        },
+        "meaning": "Exportlauf starten"
+      },
+      {
+        "id": "enq",
+        "type": "lock",
+        "anchor": {
+          "file": "zhr_emp_export.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export.abap:27"
+        },
+        "meaning": "Laufsperre setzen"
+      },
+      {
+        "id": "genq",
+        "type": "gateway",
+        "anchor": {
+          "file": "zhr_emp_export.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export.abap:34"
+        },
+        "meaning": "Läuft bereits ein Export?"
+      },
+      {
+        "id": "menq",
+        "type": "output",
+        "anchor": {
+          "file": "zhr_emp_export.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export.abap:35"
+        },
+        "meaning": "Abbruch: Export läuft bereits"
+      },
+      {
+        "id": "e_menq",
+        "type": "end",
+        "anchor": {
+          "file": "zhr_emp_export.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export.abap:35"
+        },
+        "meaning": "Lauf bricht ab, weil ein Export läuft"
+      },
+      {
+        "id": "gfull",
+        "type": "gateway",
+        "anchor": {
+          "file": "zhr_emp_export.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export.abap:38"
+        },
+        "meaning": "Deltalauf?"
+      },
+      {
+        "id": "clast",
+        "type": "call",
+        "anchor": {
+          "file": "zhr_emp_export.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export.abap:39"
+        },
+        "meaning": "Letzten erfolgreichen Lauf ermitteln"
+      },
+      {
+        "id": "csel",
+        "type": "call",
+        "anchor": {
+          "file": "zhr_emp_export.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export.abap:42"
+        },
+        "meaning": "Mitarbeiter selektieren"
+      },
+      {
+        "id": "gemp",
+        "type": "gateway",
+        "anchor": {
+          "file": "zhr_emp_export.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export.abap:43"
+        },
+        "meaning": "Keine Mitarbeiter?"
+      },
+      {
+        "id": "memp",
+        "type": "output",
+        "anchor": {
+          "file": "zhr_emp_export.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export.abap:44"
+        },
+        "meaning": "Nichts zu exportieren melden"
+      },
+      {
+        "id": "eemp",
+        "type": "end",
+        "anchor": {
+          "file": "zhr_emp_export.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export.abap:45"
+        },
+        "meaning": "Lauf beenden"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "zhr_emp_export.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export.abap:48"
+        },
+        "meaning": "Mitarbeiter durchlaufen"
+      },
+      {
+        "id": "cread",
+        "type": "call",
+        "anchor": {
+          "file": "zhr_emp_export.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export.abap:49"
+        },
+        "meaning": "Mitarbeiterdaten lesen und Sätze bilden"
+      },
+      {
+        "id": "gtest",
+        "type": "gateway",
+        "anchor": {
+          "file": "zhr_emp_export.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export.abap:52"
+        },
+        "meaning": "Testlauf?"
+      },
+      {
+        "id": "cprev",
+        "type": "call",
+        "anchor": {
+          "file": "zhr_emp_export.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export.abap:53"
+        },
+        "meaning": "Vorschau anzeigen"
+      },
+      {
+        "id": "etest",
+        "type": "end",
+        "anchor": {
+          "file": "zhr_emp_export.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export.abap:54"
+        },
+        "meaning": "Testlauf beenden"
+      },
+      {
+        "id": "cfile",
+        "type": "call",
+        "anchor": {
+          "file": "zhr_emp_export.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export.abap:57"
+        },
+        "meaning": "CSV-Datei schreiben"
+      },
+      {
+        "id": "crfc",
+        "type": "call",
+        "anchor": {
+          "file": "zhr_emp_export.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export.abap:58"
+        },
+        "meaning": "Zeiterfassung versorgen"
+      },
+      {
+        "id": "clog",
+        "type": "call",
+        "anchor": {
+          "file": "zhr_emp_export.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export.abap:59"
+        },
+        "meaning": "Laufprotokoll schreiben"
+      },
+      {
+        "id": "gerr",
+        "type": "gateway",
+        "anchor": {
+          "file": "zhr_emp_export.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export.abap:60"
+        },
+        "meaning": "Fehler aufgetreten?"
+      },
+      {
+        "id": "cmail",
+        "type": "call",
+        "anchor": {
+          "file": "zhr_emp_export.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export.abap:61"
+        },
+        "meaning": "Fehlerhinweis mailen"
+      },
+      {
+        "id": "cw",
+        "type": "transaction",
+        "anchor": {
+          "file": "zhr_emp_export.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export.abap:63"
+        },
+        "meaning": "Protokoll und Mail festschreiben"
+      },
+      {
+        "id": "deq",
+        "type": "lock",
+        "anchor": {
+          "file": "zhr_emp_export.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export.abap:65"
+        },
+        "meaning": "Laufsperre freigeben"
+      },
+      {
+        "id": "e_main",
+        "type": "end",
+        "anchor": {
+          "file": "zhr_emp_export.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export.abap:65"
+        },
+        "meaning": "Lauf endet nach Freigabe der Sperre"
+      },
+      {
+        "id": "s_lr",
+        "type": "start",
+        "anchor": {
+          "file": "zhr_emp_export_f01.abap",
+          "line": 8,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export_f01.abap:8"
+        },
+        "meaning": "Letzter Lauf"
+      },
+      {
+        "id": "r_lr",
+        "type": "read",
+        "anchor": {
+          "file": "zhr_emp_export_f01.abap",
+          "line": 9,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export_f01.abap:9"
+        },
+        "meaning": "Datum des letzten erfolgreichen Laufs lesen"
+      },
+      {
+        "id": "e_lr",
+        "type": "end",
+        "anchor": {
+          "file": "zhr_emp_export_f01.abap",
+          "line": 13,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export_f01.abap:13"
+        },
+        "meaning": "Stichtag zurückgeben"
+      },
+      {
+        "id": "s_se",
+        "type": "start",
+        "anchor": {
+          "file": "zhr_emp_export_f01.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export_f01.abap:18"
+        },
+        "meaning": "Mitarbeiterselektion"
+      },
+      {
+        "id": "r1",
+        "type": "read",
+        "anchor": {
+          "file": "zhr_emp_export_f01.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export_f01.abap:23"
+        },
+        "meaning": "Heute zugeordnete Mitarbeiter der Buchungskreise und Mitarbeitergruppen lesen"
+      },
+      {
+        "id": "g_se1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zhr_emp_export_f01.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export_f01.abap:28"
+        },
+        "meaning": "Keine Mitarbeiter?"
+      },
+      {
+        "id": "e_se1",
+        "type": "end",
+        "anchor": {
+          "file": "zhr_emp_export_f01.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export_f01.abap:29"
+        },
+        "meaning": "Leer zurück"
+      },
+      {
+        "id": "g_se2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zhr_emp_export_f01.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export_f01.abap:34"
+        },
+        "meaning": "Vollabzug?"
+      },
+      {
+        "id": "e_se2",
+        "type": "end",
+        "anchor": {
+          "file": "zhr_emp_export_f01.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export_f01.abap:36"
+        },
+        "meaning": "Vollabzug zurück"
+      },
+      {
+        "id": "r2",
+        "type": "read",
+        "anchor": {
+          "file": "zhr_emp_export_f01.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export_f01.abap:40"
+        },
+        "meaning": "Seit Stichtag geänderte Maßnahmen"
+      },
+      {
+        "id": "r3",
+        "type": "read",
+        "anchor": {
+          "file": "zhr_emp_export_f01.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export_f01.abap:44"
+        },
+        "meaning": "Seit Stichtag geänderte Org-Zuordnungen"
+      },
+      {
+        "id": "r4",
+        "type": "read",
+        "anchor": {
+          "file": "zhr_emp_export_f01.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export_f01.abap:48"
+        },
+        "meaning": "Seit Stichtag geänderte Personaldaten"
+      },
+      {
+        "id": "r5",
+        "type": "read",
+        "anchor": {
+          "file": "zhr_emp_export_f01.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export_f01.abap:52"
+        },
+        "meaning": "Seit Stichtag geänderte ständige Anschriften"
+      },
+      {
+        "id": "e_se",
+        "type": "end",
+        "anchor": {
+          "file": "zhr_emp_export_f01.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export_f01.abap:60"
+        },
+        "meaning": "Selektion fertig"
+      },
+      {
+        "id": "s_re",
+        "type": "start",
+        "anchor": {
+          "file": "zhr_emp_export_f01.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export_f01.abap:65"
+        },
+        "meaning": "Mitarbeiter lesen"
+      },
+      {
+        "id": "au",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zhr_emp_export_f01.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export_f01.abap:80"
+        },
+        "meaning": "Leseberechtigung Personaldaten prüfen"
+      },
+      {
+        "id": "g_au",
+        "type": "gateway",
+        "anchor": {
+          "file": "zhr_emp_export_f01.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export_f01.abap:93"
+        },
+        "meaning": "Keine Berechtigung?"
+      },
+      {
+        "id": "e_au",
+        "type": "end",
+        "anchor": {
+          "file": "zhr_emp_export_f01.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export_f01.abap:97"
+        },
+        "meaning": "Mitarbeiter mit Fehler überspringen"
+      },
+      {
+        "id": "h0",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zhr_emp_export_f01.abap",
+          "line": 100,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export_f01.abap:100"
+        },
+        "meaning": "Maßnahmen (IT0000) lesen"
+      },
+      {
+        "id": "h1",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zhr_emp_export_f01.abap",
+          "line": 110,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export_f01.abap:110"
+        },
+        "meaning": "Organisatorische Zuordnung (IT0001) lesen"
+      },
+      {
+        "id": "h2",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zhr_emp_export_f01.abap",
+          "line": 120,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export_f01.abap:120"
+        },
+        "meaning": "Daten zur Person (IT0002) lesen"
+      },
+      {
+        "id": "h6",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zhr_emp_export_f01.abap",
+          "line": 130,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export_f01.abap:130"
+        },
+        "meaning": "Anschriften (IT0006) lesen"
+      },
+      {
+        "id": "h105",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zhr_emp_export_f01.abap",
+          "line": 141,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export_f01.abap:141"
+        },
+        "meaning": "Kommunikation (IT0105) lesen"
+      },
+      {
+        "id": "g_st",
+        "type": "gateway",
+        "anchor": {
+          "file": "zhr_emp_export_f01.abap",
+          "line": 154,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export_f01.abap:154"
+        },
+        "meaning": "Ausgetreten?"
+      },
+      {
+        "id": "a_d",
+        "type": "action",
+        "anchor": {
+          "file": "zhr_emp_export_f01.abap",
+          "line": 155,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export_f01.abap:155"
+        },
+        "meaning": "Satzart D (Austritt)"
+      },
+      {
+        "id": "a_u",
+        "type": "action",
+        "anchor": {
+          "file": "zhr_emp_export_f01.abap",
+          "line": 157,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export_f01.abap:157"
+        },
+        "meaning": "Satzart U (Änderung)"
+      },
+      {
+        "id": "r_adr",
+        "type": "read",
+        "anchor": {
+          "file": "zhr_emp_export_f01.abap",
+          "line": 170,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export_f01.abap:170"
+        },
+        "meaning": "Ständige Anschrift nachschlagen"
+      },
+      {
+        "id": "g_adr",
+        "type": "gateway",
+        "anchor": {
+          "file": "zhr_emp_export_f01.abap",
+          "line": 171,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export_f01.abap:171"
+        },
+        "meaning": "Aktiver Mitarbeiter ohne ständige Anschrift?"
+      },
+      {
+        "id": "e_adr",
+        "type": "end",
+        "anchor": {
+          "file": "zhr_emp_export_f01.abap",
+          "line": 175,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export_f01.abap:175"
+        },
+        "meaning": "Mitarbeiter mit Fehler überspringen"
+      },
+      {
+        "id": "e_re",
+        "type": "end",
+        "anchor": {
+          "file": "zhr_emp_export_f01.abap",
+          "line": 191,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export_f01.abap:191"
+        },
+        "meaning": "Export- und Zeitsatz gebildet"
+      },
+      {
+        "id": "s_pv",
+        "type": "start",
+        "anchor": {
+          "file": "zhr_emp_export_f02.abap",
+          "line": 8,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export_f02.abap:8"
+        },
+        "meaning": "Vorschau"
+      },
+      {
+        "id": "pv_f",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zhr_emp_export_f02.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export_f02.abap:12"
+        },
+        "meaning": "ALV für Exportsätze erzeugen"
+      },
+      {
+        "id": "pv_d",
+        "type": "output",
+        "anchor": {
+          "file": "zhr_emp_export_f02.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export_f02.abap:17"
+        },
+        "meaning": "Exportsätze anzeigen"
+      },
+      {
+        "id": "pv_m",
+        "type": "output",
+        "anchor": {
+          "file": "zhr_emp_export_f02.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export_f02.abap:19"
+        },
+        "meaning": "Hinweis bei ALV-Fehler"
+      },
+      {
+        "id": "e_pv",
+        "type": "end",
+        "anchor": {
+          "file": "zhr_emp_export_f02.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export_f02.abap:21"
+        },
+        "meaning": "Vorschau beendet"
+      },
+      {
+        "id": "s_wf",
+        "type": "start",
+        "anchor": {
+          "file": "zhr_emp_export_f02.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export_f02.abap:26"
+        },
+        "meaning": "Datei schreiben"
+      },
+      {
+        "id": "op",
+        "type": "output",
+        "anchor": {
+          "file": "zhr_emp_export_f02.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export_f02.abap:32"
+        },
+        "meaning": "Exportdatei anlegen"
+      },
+      {
+        "id": "g_op",
+        "type": "gateway",
+        "anchor": {
+          "file": "zhr_emp_export_f02.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export_f02.abap:33"
+        },
+        "meaning": "Datei nicht beschreibbar?"
+      },
+      {
+        "id": "e_op",
+        "type": "end",
+        "anchor": {
+          "file": "zhr_emp_export_f02.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export_f02.abap:36"
+        },
+        "meaning": "Fehler vermerkt, ohne Datei zurück"
+      },
+      {
+        "id": "th",
+        "type": "output",
+        "anchor": {
+          "file": "zhr_emp_export_f02.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export_f02.abap:39"
+        },
+        "meaning": "Kopfzeile schreiben"
+      },
+      {
+        "id": "l_wf",
+        "type": "loop",
+        "anchor": {
+          "file": "zhr_emp_export_f02.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export_f02.abap:41"
+        },
+        "meaning": "Exportsätze durchlaufen"
+      },
+      {
+        "id": "tl",
+        "type": "output",
+        "anchor": {
+          "file": "zhr_emp_export_f02.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export_f02.abap:47"
+        },
+        "meaning": "Semikolon-getrennte Zeile schreiben"
+      },
+      {
+        "id": "a_fok",
+        "type": "action",
+        "anchor": {
+          "file": "zhr_emp_export_f02.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export_f02.abap:50"
+        },
+        "meaning": "Datei als erfolgreich markieren"
+      },
+      {
+        "id": "e_wf",
+        "type": "end",
+        "anchor": {
+          "file": "zhr_emp_export_f02.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export_f02.abap:51"
+        },
+        "meaning": "Datei fertig"
+      },
+      {
+        "id": "s_ts",
+        "type": "start",
+        "anchor": {
+          "file": "zhr_emp_export_f02.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export_f02.abap:56"
+        },
+        "meaning": "Zeiterfassung versorgen"
+      },
+      {
+        "id": "g_ts0",
+        "type": "gateway",
+        "anchor": {
+          "file": "zhr_emp_export_f02.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export_f02.abap:60"
+        },
+        "meaning": "Keine Zeitsätze?"
+      },
+      {
+        "id": "e_ts0",
+        "type": "end",
+        "anchor": {
+          "file": "zhr_emp_export_f02.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export_f02.abap:61"
+        },
+        "meaning": "Nichts senden"
+      },
+      {
+        "id": "rfc",
+        "type": "rfc",
+        "anchor": {
+          "file": "zhr_emp_export_f02.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export_f02.abap:64"
+        },
+        "meaning": "Mitarbeiter an Zeiterfassungssystem übertragen"
+      },
+      {
+        "id": "g_ts",
+        "type": "gateway",
+        "anchor": {
+          "file": "zhr_emp_export_f02.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export_f02.abap:72"
+        },
+        "meaning": "Übertragung fehlgeschlagen?"
+      },
+      {
+        "id": "a_rok",
+        "type": "action",
+        "anchor": {
+          "file": "zhr_emp_export_f02.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export_f02.abap:76"
+        },
+        "meaning": "Übertragung als erfolgreich markieren"
+      },
+      {
+        "id": "e_ts",
+        "type": "end",
+        "anchor": {
+          "file": "zhr_emp_export_f02.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export_f02.abap:78"
+        },
+        "meaning": "Fertig"
+      },
+      {
+        "id": "s_wl",
+        "type": "start",
+        "anchor": {
+          "file": "zhr_emp_export_f03.abap",
+          "line": 8,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export_f03.abap:8"
+        },
+        "meaning": "Protokoll"
+      },
+      {
+        "id": "g_wl",
+        "type": "gateway",
+        "anchor": {
+          "file": "zhr_emp_export_f03.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export_f03.abap:17"
+        },
+        "meaning": "Datei und RFC erfolgreich?"
+      },
+      {
+        "id": "a_s",
+        "type": "action",
+        "anchor": {
+          "file": "zhr_emp_export_f03.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export_f03.abap:18"
+        },
+        "meaning": "Laufstatus S"
+      },
+      {
+        "id": "a_e",
+        "type": "action",
+        "anchor": {
+          "file": "zhr_emp_export_f03.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export_f03.abap:20"
+        },
+        "meaning": "Laufstatus E"
+      },
+      {
+        "id": "w_log",
+        "type": "write",
+        "anchor": {
+          "file": "zhr_emp_export_f03.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export_f03.abap:22"
+        },
+        "meaning": "Lauf mit Zählern und Status protokollieren"
+      },
+      {
+        "id": "e_wl",
+        "type": "end",
+        "anchor": {
+          "file": "zhr_emp_export_f03.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export_f03.abap:23"
+        },
+        "meaning": "Fertig"
+      },
+      {
+        "id": "s_ml",
+        "type": "start",
+        "anchor": {
+          "file": "zhr_emp_export_f03.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export_f03.abap:28"
+        },
+        "meaning": "Fehlerhinweis"
+      },
+      {
+        "id": "ml",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zhr_emp_export_f03.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export_f03.abap:47"
+        },
+        "meaning": "Mail mit Fehleranzahl an HR-IT-Verteiler"
+      },
+      {
+        "id": "g_ml",
+        "type": "gateway",
+        "anchor": {
+          "file": "zhr_emp_export_f03.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export_f03.abap:57"
+        },
+        "meaning": "Mail nicht versendbar?"
+      },
+      {
+        "id": "m_ml",
+        "type": "output",
+        "anchor": {
+          "file": "zhr_emp_export_f03.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export_f03.abap:58"
+        },
+        "meaning": "Warnung ausgeben"
+      },
+      {
+        "id": "e_ml",
+        "type": "end",
+        "anchor": {
+          "file": "zhr_emp_export_f03.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_emp_export_f03.abap:60"
+        },
+        "meaning": "Fertig"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "enq",
+        "condition": "always"
+      },
+      {
+        "from": "enq",
+        "to": "genq",
+        "condition": "always"
+      },
+      {
+        "from": "genq",
+        "to": "menq",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "genq",
+        "to": "gfull",
+        "condition": "else"
+      },
+      {
+        "from": "gfull",
+        "to": "clast",
+        "condition": "p_full IS INITIAL"
+      },
+      {
+        "from": "gfull",
+        "to": "csel",
+        "condition": "else"
+      },
+      {
+        "from": "clast",
+        "to": "s_lr",
+        "condition": "always"
+      },
+      {
+        "from": "csel",
+        "to": "s_se",
+        "condition": "always"
+      },
+      {
+        "from": "gemp",
+        "to": "memp",
+        "condition": "gt_pernr IS INITIAL"
+      },
+      {
+        "from": "memp",
+        "to": "eemp",
+        "condition": "always"
+      },
+      {
+        "from": "gemp",
+        "to": "l",
+        "condition": "else"
+      },
+      {
+        "from": "l",
+        "to": "cread",
+        "condition": "next row"
+      },
+      {
+        "from": "cread",
+        "to": "s_re",
+        "condition": "always"
+      },
+      {
+        "from": "l",
+        "to": "gtest",
+        "condition": "no more rows"
+      },
+      {
+        "from": "gtest",
+        "to": "cprev",
+        "condition": "p_test = 'X'"
+      },
+      {
+        "from": "cprev",
+        "to": "s_pv",
+        "condition": "always"
+      },
+      {
+        "from": "gtest",
+        "to": "cfile",
+        "condition": "else"
+      },
+      {
+        "from": "cfile",
+        "to": "s_wf",
+        "condition": "always"
+      },
+      {
+        "from": "crfc",
+        "to": "s_ts",
+        "condition": "always"
+      },
+      {
+        "from": "clog",
+        "to": "s_wl",
+        "condition": "always"
+      },
+      {
+        "from": "gerr",
+        "to": "cmail",
+        "condition": "gt_error IS NOT INITIAL"
+      },
+      {
+        "from": "gerr",
+        "to": "cw",
+        "condition": "else"
+      },
+      {
+        "from": "cmail",
+        "to": "s_ml",
+        "condition": "always"
+      },
+      {
+        "from": "cw",
+        "to": "deq",
+        "condition": "always"
+      },
+      {
+        "from": "s_lr",
+        "to": "r_lr",
+        "condition": "always"
+      },
+      {
+        "from": "r_lr",
+        "to": "e_lr",
+        "condition": "always"
+      },
+      {
+        "from": "s_se",
+        "to": "r1",
+        "condition": "always"
+      },
+      {
+        "from": "r1",
+        "to": "g_se1",
+        "condition": "always"
+      },
+      {
+        "from": "g_se1",
+        "to": "e_se1",
+        "condition": "lt_tmp IS INITIAL"
+      },
+      {
+        "from": "g_se1",
+        "to": "g_se2",
+        "condition": "else"
+      },
+      {
+        "from": "g_se2",
+        "to": "r2",
+        "condition": "else"
+      },
+      {
+        "from": "r2",
+        "to": "r3",
+        "condition": "always"
+      },
+      {
+        "from": "r3",
+        "to": "r4",
+        "condition": "always"
+      },
+      {
+        "from": "r4",
+        "to": "r5",
+        "condition": "always"
+      },
+      {
+        "from": "s_re",
+        "to": "au",
+        "condition": "always"
+      },
+      {
+        "from": "au",
+        "to": "g_au",
+        "condition": "always"
+      },
+      {
+        "from": "g_au",
+        "to": "e_au",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g_au",
+        "to": "h0",
+        "condition": "else"
+      },
+      {
+        "from": "h0",
+        "to": "h1",
+        "condition": "always"
+      },
+      {
+        "from": "h1",
+        "to": "h2",
+        "condition": "always"
+      },
+      {
+        "from": "h2",
+        "to": "h6",
+        "condition": "always"
+      },
+      {
+        "from": "h6",
+        "to": "h105",
+        "condition": "always"
+      },
+      {
+        "from": "h105",
+        "to": "g_st",
+        "condition": "always"
+      },
+      {
+        "from": "g_st",
+        "to": "a_d",
+        "condition": "ls_p0000-stat2 = '0'"
+      },
+      {
+        "from": "g_st",
+        "to": "a_u",
+        "condition": "else"
+      },
+      {
+        "from": "g_adr",
+        "to": "e_adr",
+        "condition": "sy-subrc <> 0 AND ls_rec-satzart = 'U'"
+      },
+      {
+        "from": "g_adr",
+        "to": "e_re",
+        "condition": "else"
+      },
+      {
+        "from": "s_pv",
+        "to": "pv_f",
+        "condition": "always"
+      },
+      {
+        "from": "pv_f",
+        "to": "pv_d",
+        "condition": "always"
+      },
+      {
+        "from": "pv_f",
+        "to": "pv_m",
+        "condition": "CATCH cx_salv_msg"
+      },
+      {
+        "from": "pv_d",
+        "to": "e_pv",
+        "condition": "always"
+      },
+      {
+        "from": "pv_m",
+        "to": "e_pv",
+        "condition": "always"
+      },
+      {
+        "from": "s_wf",
+        "to": "op",
+        "condition": "always"
+      },
+      {
+        "from": "op",
+        "to": "g_op",
+        "condition": "always"
+      },
+      {
+        "from": "g_op",
+        "to": "e_op",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g_op",
+        "to": "th",
+        "condition": "else"
+      },
+      {
+        "from": "th",
+        "to": "l_wf",
+        "condition": "always"
+      },
+      {
+        "from": "l_wf",
+        "to": "tl",
+        "condition": "next row"
+      },
+      {
+        "from": "tl",
+        "to": "l_wf",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l_wf",
+        "to": "a_fok",
+        "condition": "no more rows"
+      },
+      {
+        "from": "a_fok",
+        "to": "e_wf",
+        "condition": "always"
+      },
+      {
+        "from": "s_ts",
+        "to": "g_ts0",
+        "condition": "always"
+      },
+      {
+        "from": "g_ts0",
+        "to": "e_ts0",
+        "condition": "gt_time IS INITIAL"
+      },
+      {
+        "from": "g_ts0",
+        "to": "rfc",
+        "condition": "else"
+      },
+      {
+        "from": "rfc",
+        "to": "g_ts",
+        "condition": "always"
+      },
+      {
+        "from": "g_ts",
+        "to": "e_ts",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g_ts",
+        "to": "a_rok",
+        "condition": "else"
+      },
+      {
+        "from": "a_rok",
+        "to": "e_ts",
+        "condition": "always"
+      },
+      {
+        "from": "s_wl",
+        "to": "g_wl",
+        "condition": "always"
+      },
+      {
+        "from": "g_wl",
+        "to": "a_s",
+        "condition": "gv_file_ok = 'X' AND gv_rfc_ok = 'X'"
+      },
+      {
+        "from": "g_wl",
+        "to": "a_e",
+        "condition": "else"
+      },
+      {
+        "from": "a_s",
+        "to": "w_log",
+        "condition": "always"
+      },
+      {
+        "from": "a_e",
+        "to": "w_log",
+        "condition": "always"
+      },
+      {
+        "from": "w_log",
+        "to": "e_wl",
+        "condition": "always"
+      },
+      {
+        "from": "s_ml",
+        "to": "ml",
+        "condition": "always"
+      },
+      {
+        "from": "ml",
+        "to": "g_ml",
+        "condition": "always"
+      },
+      {
+        "from": "g_ml",
+        "to": "m_ml",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g_ml",
+        "to": "e_ml",
+        "condition": "else"
+      },
+      {
+        "from": "m_ml",
+        "to": "e_ml",
+        "condition": "always"
+      },
+      {
+        "from": "si",
+        "to": "e_si",
+        "condition": "always"
+      },
+      {
+        "from": "g_se2",
+        "to": "e_se2",
+        "condition": "gv_last_run IS INITIAL"
+      },
+      {
+        "from": "r5",
+        "to": "e_se",
+        "condition": "always"
+      },
+      {
+        "from": "menq",
+        "to": "e_menq",
+        "condition": "always"
+      },
+      {
+        "from": "deq",
+        "to": "e_main",
+        "condition": "always"
+      },
+      {
+        "from": "a_d",
+        "to": "r_adr",
+        "condition": "always"
+      },
+      {
+        "from": "a_u",
+        "to": "r_adr",
+        "condition": "always"
+      },
+      {
+        "from": "r_adr",
+        "to": "g_adr",
+        "condition": "always"
+      },
+      {
+        "from": "e_lr",
+        "to": "csel",
+        "condition": "always"
+      },
+      {
+        "from": "e_se1",
+        "to": "gemp",
+        "condition": "always"
+      },
+      {
+        "from": "e_se2",
+        "to": "gemp",
+        "condition": "always"
+      },
+      {
+        "from": "e_se",
+        "to": "gemp",
+        "condition": "always"
+      },
+      {
+        "from": "e_au",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "e_adr",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "e_re",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "e_pv",
+        "to": "etest",
+        "condition": "always"
+      },
+      {
+        "from": "e_op",
+        "to": "crfc",
+        "condition": "always"
+      },
+      {
+        "from": "e_wf",
+        "to": "crfc",
+        "condition": "always"
+      },
+      {
+        "from": "e_ts0",
+        "to": "clog",
+        "condition": "always"
+      },
+      {
+        "from": "e_ts",
+        "to": "clog",
+        "condition": "always"
+      },
+      {
+        "from": "e_wl",
+        "to": "gerr",
+        "condition": "always"
+      },
+      {
+        "from": "e_ml",
+        "to": "cw",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zhr_emp_export_f03.abap:18 — kein Fachsatz „übersprungene Mitarbeiter werden im nächsten Lauf erneut exportiert“ (der Lauf gilt trotzdem als erfolgreich; der nächste Delta-Stichtag schließt sie aus, sofern sie nicht erneut geändert werden).",
+    "zhr_emp_export_f03.abap:47 — kein Fachsatz „Fehlerdetails je Mitarbeiter werden gemailt oder protokolliert“ (nur die Anzahl; die Einzelfehler werden nirgends ausgegeben).",
+    "zhr_emp_export_f02.abap:42 — kein output-Knoten (WRITE TO formatiert nur in eine Variable).",
+    "gesamte Scheibe — kein Fachsatz „die Datei wird an den Provider übertragen“ (die Übertragung per SFTP liegt außerhalb des Programms)."
+  ],
+  "processDescription": "Ein nächtlicher Job versorgt einen externen Payroll-Provider und das Zeiterfassungssystem mit Personalstammdaten. Beim Aufruf wird ein Dateiname mit Tagesdatum vorgeschlagen. Der Lauf setzt eine Sperre, damit nur ein Export gleichzeitig läuft. Ohne Vollabzug ermittelt er den letzten erfolgreichen Lauf als Stichtag. Er liest die heute zugeordneten Mitarbeiter der gewählten Buchungskreise und Mitarbeitergruppen und beschränkt sie im Delta auf solche mit Änderungen an Maßnahmen, organisatorischer Zuordnung, Personaldaten oder ständiger Anschrift seit dem Stichtag. Je Mitarbeiter prüft er die Leseberechtigung, liest fünf Infotypen und bildet einen Exportsatz (Satzart D für Ausgetretene, sonst U) sowie einen Zeitsatz; ohne Berechtigung oder ohne Anschrift bei Aktiven wird der Mitarbeiter mit Fehlervermerk übersprungen. Im Testlauf zeigt er die Sätze nur an. Im Echtlauf schreibt er die CSV-Datei, überträgt die Zeitsätze per RFC, protokolliert den Lauf – erfolgreich, wenn Datei und RFC gelungen sind – und mailt bei Fehlern die Fehleranzahl an einen Verteiler. Zum Schluss schreibt er fest und gibt die Sperre frei."
+}

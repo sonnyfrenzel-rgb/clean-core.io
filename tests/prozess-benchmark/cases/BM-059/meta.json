@@ -1,0 +1,41 @@
+{
+  "id": "BM-059",
+  "title": "Zahlungsfreigabe im Vier-Augen-Prinzip vor dem Zahllauf (Dynpro-Modulpool)",
+  "domain": "FI/CO / Record-to-Report",
+  "band": "sehr komplex",
+  "loc": 618,
+  "constructs": [
+    "PROGRAM (Modulpool)",
+    "INCLUDE",
+    "MODULE OUTPUT/INPUT",
+    "CONTROLS TABLEVIEW",
+    "SET PF-STATUS EXCLUDING",
+    "CASE ok_code",
+    "LEAVE TO SCREEN",
+    "LEAVE PROGRAM",
+    "AUTHORITY-CHECK",
+    "ENQUEUE/DEQUEUE",
+    "SELECT SINGLE",
+    "SELECT INTO TABLE",
+    "READ TABLE WITH TABLE KEY",
+    "REDUCE",
+    "POPUP_TO_CONFIRM",
+    "POPUP_GET_VALUES",
+    "CALL FUNCTION IN UPDATE TASK",
+    "SWE_EVENT_CREATE IN UPDATE TASK",
+    "COMMIT WORK",
+    "DEFINE (Makro)",
+    "CALL TRANSACTION USING bdcdata",
+    "MODIFY dbtab",
+    "INSERT FROM TABLE ACCEPTING DUPLICATE KEYS",
+    "MESSAGE TYPE A im Verbucher"
+  ],
+  "scenario": "Kundeneigene Freigabetransaktion der Kreditorenbuchhaltung, in der ein zweiter Mitarbeiter den Zahlungsvorschlag aus F110 prüft, Zahlungen je nach Betragsgrenze allein oder mit Zweitfreigabe freigibt und danach den Zahllauf per Batch-Input einplant; typisch für ECC-Systeme mit Revisionsauflagen zum Zahlungsverkehr.",
+  "s4_issues": [
+    "Direktzugriff auf REGUH/REGUP statt freigegebener API; in S/4 Private Cloud nicht released",
+    "Batch-Input auf F110 (SAPF110V) hängt an Dynpro-Feldnamen und bricht bei Oberflächenänderungen",
+    "Konkurriert mit dem S/4-Standard der Zahlungsfreigabe (Flexible Workflow, Bank Communication Management)",
+    "Workflow über BOR-Objekt ZPAYRUN mit SWE_EVENT_CREATE statt Business Events",
+    "Dynpro-Modulpool ist nicht Clean-Core-fähig (kein Fiori, kein RAP)"
+  ]
+}

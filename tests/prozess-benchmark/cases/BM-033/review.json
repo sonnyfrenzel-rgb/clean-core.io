@@ -1,0 +1,70 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten x1 (neu)",
+      "before": "—",
+      "after": "end lz_idoc_zwegr_f01.abap:29 „SEGMENTE_LESEN beendet“; umgeleitet: g1->g2 [else] jetzt g1->x1; e1->g2 [always] jetzt e1->x1; neu x1->g2 [always]",
+      "why": "Vereinheitlichung (wie im Gegencheck FI/CO): jeder auslaufende FORM/METHOD/MODULE/FUNCTION-Block endet mit eigenem end-Knoten auf ENDFORM/ENDMETHOD/ENDMODULE/ENDFUNCTION (Brieftabelle: end auch bei implizitem Blockende); die Rückkante führt von dort zum Knoten nach dem Aufruf.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten x2 (neu)",
+      "before": "—",
+      "after": "end lz_idoc_zwegr_f01.abap:58 „PRUEFEN_BESTELLUNG beendet, alle Positionen offen“; umgeleitet: l2->g3 [no more rows] jetzt l2->x2; neu x2->g3 [always]",
+      "why": "Vereinheitlichung (wie im Gegencheck FI/CO): jeder auslaufende FORM/METHOD/MODULE/FUNCTION-Block endet mit eigenem end-Knoten auf ENDFORM/ENDMETHOD/ENDMODULE/ENDFUNCTION (Brieftabelle: end auch bei implizitem Blockende); die Rückkante führt von dort zum Knoten nach dem Aufruf.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten x3 (neu)",
+      "before": "—",
+      "after": "end lz_idoc_zwegr_f01.abap:71 „PRUEFEN_DUBLETTE beendet“; umgeleitet: g3a->g4 [else] jetzt g3a->x3; e3->g4 [always] jetzt e3->x3; neu x3->g4 [always]",
+      "why": "Vereinheitlichung (wie im Gegencheck FI/CO): jeder auslaufende FORM/METHOD/MODULE/FUNCTION-Block endet mit eigenem end-Knoten auf ENDFORM/ENDMETHOD/ENDMODULE/ENDFUNCTION (Brieftabelle: end auch bei implizitem Blockende); die Rückkante führt von dort zum Knoten nach dem Aufruf.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten x4 (neu)",
+      "before": "—",
+      "after": "end lz_idoc_zwegr_f01.abap:122 „BUCHEN_WE beendet“; umgeleitet: g4a->g5 [else] jetzt g4a->x4; rb4->g5 [always] jetzt rb4->x4; neu x4->g5 [always]",
+      "why": "Vereinheitlichung (wie im Gegencheck FI/CO): jeder auslaufende FORM/METHOD/MODULE/FUNCTION-Block endet mit eigenem end-Knoten auf ENDFORM/ENDMETHOD/ENDMODULE/ENDFUNCTION (Brieftabelle: end auch bei implizitem Blockende); die Rückkante führt von dort zum Knoten nach dem Aufruf.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten x5 (neu)",
+      "before": "a5->l [next iteration]",
+      "after": "end lz_idoc_zwegr_f01.abap:138 „STATUS_SETZEN beendet“; a5->x5 [always]; x5->l [next iteration] (beide Aufrufer p5e und p5s kehren über ENDIF/ENDLOOP zur IDoc-Schleife zurück, daher eine Rückkante)",
+      "why": "Vereinheitlichung (wie im Gegencheck FI/CO): jeder auslaufende FORM/METHOD/MODULE/FUNCTION-Block endet mit eigenem end-Knoten auf ENDFORM/ENDMETHOD/ENDMODULE/ENDFUNCTION (Brieftabelle: end auch bei implizitem Blockende); die Rückkante führt von dort zum Knoten nach dem Aufruf.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten e1",
+      "before": "lz_idoc_zwegr_f01.abap:27",
+      "after": "lz_idoc_zwegr_f01.abap:26",
+      "why": "Der Knoten steht für „IDoc fehlerhaft“; die wirksame Anweisung ist das Setzen von pv_error = abap_true (Z. 26, erste Anweisung des Zweigs), auf das die Gateways g2–g5 im Aufrufer reagieren. Z. 27 setzt nur den Meldungstext.",
+      "category": "Anker"
+    },
+    {
+      "where": "Fachsatz BM-033-B04, Anker",
+      "before": "—",
+      "after": "zusätzlich lz_idoc_zwegr_f01.abap:26",
+      "why": "Das Fehlerkennzeichen, das den Satz trägt, steht in dieser Zeile.",
+      "category": "Anker"
+    },
+    {
+      "where": "Knoten e3",
+      "before": "lz_idoc_zwegr_f01.abap:69",
+      "after": "lz_idoc_zwegr_f01.abap:68",
+      "why": "Der Knoten steht für „IDoc fehlerhaft“; die wirksame Anweisung ist das Setzen von pv_error = abap_true (Z. 68, erste Anweisung des Zweigs), auf das die Gateways g2–g5 im Aufrufer reagieren. Z. 69 setzt nur den Meldungstext.",
+      "category": "Anker"
+    },
+    {
+      "where": "Fachsatz BM-033-B07, Anker",
+      "before": "—",
+      "after": "zusätzlich lz_idoc_zwegr_f01.abap:68",
+      "why": "Das Fehlerkennzeichen, das den Satz trägt, steht in dieser Zeile.",
+      "category": "Anker"
+    }
+  ],
+  "doubts": []
+}

@@ -1,0 +1,28 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten e1 (neu)",
+      "before": "—",
+      "after": "end source.abap:24 „Lauf bricht ohne Berechtigung ab“",
+      "why": "MESSAGE e010 in START-OF-SELECTION beendet den Lauf; Konvention output + end auf derselben Zeile. m1 hatte keine ausgehende Kante.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten e3 (neu)",
+      "before": "—",
+      "after": "end source.abap:73 „Lauf bricht mit Protokoll-ID ab“",
+      "why": "MESSAGE e012 beendet den Lauf mitten in der Schleife; Konvention output + end auf derselben Zeile. m3 hatte keine ausgehende Kante.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten e4 (neu)",
+      "before": "—",
+      "after": "end source.abap:82 „Lauf endet nach der Ausgabe“",
+      "why": "Implizites Ende von START-OF-SELECTION fehlte (letzte Anweisung Z. 82); o hatte keine ausgehende Kante.",
+      "category": "fehlender Knoten"
+    }
+  ],
+  "doubts": []
+}

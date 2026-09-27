@@ -1,0 +1,244 @@
+{
+  "id": "BM-003",
+  "title": "Preisformel 901: Mindermengenzuschlag je Warengruppe",
+  "classes": [
+    "K01",
+    "K02"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "ZSD_MINMENGE",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 12,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:12"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-003-B01",
+      "text": "Der Mindermengenzuschlag ist zunächst null.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 10,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:10"
+        }
+      ]
+    },
+    {
+      "id": "BM-003-B02",
+      "text": "Für Verkaufsorganisation und Warengruppe der Position wird die gepflegte Mindestmenge mit ihrem Zuschlag gesucht.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:12"
+        }
+      ]
+    },
+    {
+      "id": "BM-003-B03",
+      "text": "Ist keine Mindestmengenregel gepflegt, bleibt der Zuschlag null.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:15"
+        }
+      ]
+    },
+    {
+      "id": "BM-003-B04",
+      "text": "Liegt die Positionsmenge unter der Mindestmenge, wird der feste Zuschlagsbetrag als Konditionswert übernommen, unabhängig von der Menge.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:17"
+        },
+        {
+          "file": "source.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:18"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 5,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:5"
+        },
+        "meaning": "Wertformel bei der Konditionsbewertung"
+      },
+      {
+        "id": "init",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 10,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:10"
+        },
+        "meaning": "Konditionswert zunächst auf null setzen"
+      },
+      {
+        "id": "q",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:12"
+        },
+        "meaning": "Mindestmenge und Zuschlag der Warengruppe lesen"
+      },
+      {
+        "id": "chk",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:15"
+        },
+        "meaning": "Mindestmengenregel vorhanden?"
+      },
+      {
+        "id": "g",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:17"
+        },
+        "meaning": "Positionsmenge unter Mindestmenge?"
+      },
+      {
+        "id": "z",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:18"
+        },
+        "meaning": "Festen Zuschlag als Konditionswert setzen"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:21"
+        },
+        "meaning": "Formel beendet, Wert an die Preisfindung zurück"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "init",
+        "condition": "always"
+      },
+      {
+        "from": "init",
+        "to": "q",
+        "condition": "always"
+      },
+      {
+        "from": "q",
+        "to": "chk",
+        "condition": "always"
+      },
+      {
+        "from": "chk",
+        "to": "g",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "chk",
+        "to": "e",
+        "condition": "else"
+      },
+      {
+        "from": "g",
+        "to": "z",
+        "condition": "komp-mglme < ls_minm-minmenge"
+      },
+      {
+        "from": "g",
+        "to": "e",
+        "condition": "else"
+      },
+      {
+        "from": "z",
+        "to": "e",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "source.abap:18 — kein Fachsatz „der Zuschlag wird je Mengeneinheit berechnet“: die mengenabhängige Variante ist auskommentiert, der Zuschlag ist ein Festbetrag",
+    "gesamte Scheibe — kein Fachsatz „der Zuschlag wird in KONV gespeichert“: die Formel liefert nur den Wert, Speichern ist Sache der Preisfindung"
+  ],
+  "processDescription": "Die Formel wird von der Preisfindung beim Bewerten der zugeordneten Zuschlagskondition für jede Auftragsposition aufgerufen. Zuerst setzt sie den Konditionswert auf null. Dann sucht sie für die Verkaufsorganisation des Belegs und die Warengruppe der Position die gepflegte Mindestmenge. Fehlt eine Regel, endet die Formel und der Zuschlag bleibt null. Liegt die Positionsmenge in Lagermengeneinheit unter der Mindestmenge, wird der gepflegte feste Zuschlag als Konditionswert gesetzt, sonst bleibt er null. Die frühere mengenabhängige Berechnung ist auskommentiert."
+}

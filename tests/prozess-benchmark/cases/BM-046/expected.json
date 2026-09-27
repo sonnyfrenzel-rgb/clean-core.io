@@ -1,0 +1,641 @@
+{
+  "id": "BM-046",
+  "title": "Mahnsperre auf offene Posten mit offenem Klärungsfall setzen",
+  "classes": [
+    "K01",
+    "K03",
+    "K12"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "BSID",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 37,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:37"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZFI_KLAERFALL",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 47,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:47"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZFI_KLAERFALL",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "source.abap",
+        "line": 94,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:94"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "FI_ITEMS_MASS_CHANGE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 81,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:81"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-046-B01",
+      "text": "Es werden die offenen Debitorenposten der gewählten Buchungskreise und Kunden gelesen, die noch keine Mahnsperre tragen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:37"
+        }
+      ]
+    },
+    {
+      "id": "BM-046-B02",
+      "text": "Gibt es keine solchen Posten, erhält der Anwender einen Hinweis und der Lauf endet.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:42"
+        },
+        {
+          "file": "source.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:43"
+        },
+        {
+          "file": "source.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:44"
+        }
+      ]
+    },
+    {
+      "id": "BM-046-B03",
+      "text": "Zu diesen Belegen werden die offenen Klärungsfälle (Status O) aus der kundeneigenen Klärungsfalltabelle gelesen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:47"
+        }
+      ]
+    },
+    {
+      "id": "BM-046-B04",
+      "text": "Posten ohne offenen Klärungsfall werden übersprungen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:59"
+        },
+        {
+          "file": "source.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:64"
+        }
+      ]
+    },
+    {
+      "id": "BM-046-B05",
+      "text": "Im Testlauf werden die betroffenen Posten nur als „würde gesperrt“ gelistet; es wird nichts geändert.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:68"
+        },
+        {
+          "file": "source.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:69"
+        }
+      ]
+    },
+    {
+      "id": "BM-046-B06",
+      "text": "Im Echtlauf wird am Posten die gewählte Mahnsperre (Vorschlag R) über die Standard-Massenänderung für Belegpositionen gesetzt.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:81"
+        }
+      ]
+    },
+    {
+      "id": "BM-046-B07",
+      "text": "Gelingt die Sperre, wird der Klärungsfall auf Status S gesetzt und der Erfolg gemeldet; sonst wird ein Fehler gemeldet und der Fehlerzähler erhöht.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:92"
+        },
+        {
+          "file": "source.abap",
+          "line": 94,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:94"
+        },
+        {
+          "file": "source.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:98"
+        },
+        {
+          "file": "source.abap",
+          "line": 101,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:101"
+        }
+      ]
+    },
+    {
+      "id": "BM-046-B08",
+      "text": "Nach allen Posten wird im Echtlauf COMMIT WORK ausgelöst, und die Zähler für gesperrte und fehlerhafte Posten werden ausgegeben.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 105,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:105"
+        },
+        {
+          "file": "source.abap",
+          "line": 106,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:106"
+        },
+        {
+          "file": "source.abap",
+          "line": 109,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:109"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:35"
+        },
+        "meaning": "Reportstart"
+      },
+      {
+        "id": "q1",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:37"
+        },
+        "meaning": "Ungesperrte offene Debitorenposten lesen"
+      },
+      {
+        "id": "g0",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:42"
+        },
+        "meaning": "Posten gefunden?"
+      },
+      {
+        "id": "m0",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:43"
+        },
+        "meaning": "Hinweis: keine Posten"
+      },
+      {
+        "id": "x0",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:44"
+        },
+        "meaning": "Verarbeitung beenden"
+      },
+      {
+        "id": "q2",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:47"
+        },
+        "meaning": "Offene Klärungsfälle zu den Belegen lesen"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "source.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:58"
+        },
+        "meaning": "Offene Posten durchlaufen"
+      },
+      {
+        "id": "r",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:59"
+        },
+        "meaning": "Klärungsfall zum Beleg nachschlagen"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:64"
+        },
+        "meaning": "Kein offener Klärungsfall?"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:68"
+        },
+        "meaning": "Testlauf?"
+      },
+      {
+        "id": "ot",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:69"
+        },
+        "meaning": "Posten als 'würde gesperrt' listen"
+      },
+      {
+        "id": "c",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:81"
+        },
+        "meaning": "Mahnsperre im Beleg per Massenänderung setzen"
+      },
+      {
+        "id": "g3",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:92"
+        },
+        "meaning": "Massenänderung erfolgreich?"
+      },
+      {
+        "id": "w",
+        "type": "write",
+        "anchor": {
+          "file": "source.abap",
+          "line": 94,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:94"
+        },
+        "meaning": "Klärungsfall auf Status S (gesperrt) setzen"
+      },
+      {
+        "id": "ook",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:98"
+        },
+        "meaning": "Erfolg melden"
+      },
+      {
+        "id": "oerr",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 101,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:101"
+        },
+        "meaning": "Fehler melden"
+      },
+      {
+        "id": "g4",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 105,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:105"
+        },
+        "meaning": "Echtlauf?"
+      },
+      {
+        "id": "cw",
+        "type": "transaction",
+        "anchor": {
+          "file": "source.abap",
+          "line": 106,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:106"
+        },
+        "meaning": "COMMIT WORK"
+      },
+      {
+        "id": "osum",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 109,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:109"
+        },
+        "meaning": "Zähler gesperrt/Fehler ausgeben"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 109,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:109"
+        },
+        "meaning": "Report fertig"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "q1",
+        "condition": "always"
+      },
+      {
+        "from": "q1",
+        "to": "g0",
+        "condition": "always"
+      },
+      {
+        "from": "g0",
+        "to": "m0",
+        "condition": "lt_op IS INITIAL"
+      },
+      {
+        "from": "m0",
+        "to": "x0",
+        "condition": "always"
+      },
+      {
+        "from": "g0",
+        "to": "q2",
+        "condition": "else"
+      },
+      {
+        "from": "q2",
+        "to": "l",
+        "condition": "always"
+      },
+      {
+        "from": "l",
+        "to": "r",
+        "condition": "next row"
+      },
+      {
+        "from": "r",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "l",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g1",
+        "to": "g2",
+        "condition": "else"
+      },
+      {
+        "from": "g2",
+        "to": "ot",
+        "condition": "p_test = 'X'"
+      },
+      {
+        "from": "ot",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "g2",
+        "to": "c",
+        "condition": "else"
+      },
+      {
+        "from": "c",
+        "to": "g3",
+        "condition": "always"
+      },
+      {
+        "from": "g3",
+        "to": "w",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "w",
+        "to": "ook",
+        "condition": "always"
+      },
+      {
+        "from": "ook",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "g3",
+        "to": "oerr",
+        "condition": "else"
+      },
+      {
+        "from": "oerr",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l",
+        "to": "g4",
+        "condition": "no more rows"
+      },
+      {
+        "from": "g4",
+        "to": "cw",
+        "condition": "p_test IS INITIAL"
+      },
+      {
+        "from": "g4",
+        "to": "osum",
+        "condition": "else"
+      },
+      {
+        "from": "cw",
+        "to": "osum",
+        "condition": "always"
+      },
+      {
+        "from": "osum",
+        "to": "e",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "source.abap:81 — kein Fachsatz „Kunde wird gemahnt“ oder „Mahnlauf wird gestartet“ (es wird nur die Mahnsperre gesetzt)",
+    "source.abap:64 — kein Fachsatz „Posten ohne Klärungsfall werden entsperrt“ (sie werden nur übersprungen)",
+    "source.abap:106 — kein Fachsatz „erst dieser COMMIT schreibt die Mahnsperre fest“ (die Massenänderung sichert den Beleg selbst; der COMMIT betrifft die Statusänderung der Klärungsfälle)"
+  ],
+  "processDescription": "Die Debitorenbuchhaltung startet den Report vor dem Mahnlauf für Buchungskreise und Kunden, standardmäßig als Testlauf. Gelesen werden die offenen Posten ohne Mahnsperre; gibt es keine, endet der Lauf mit einem Hinweis. Zu den Belegen werden offene Klärungsfälle aus einer Z-Tabelle gelesen, und nur Posten mit offenem Klärungsfall werden weiter betrachtet. Im Testlauf werden sie lediglich gelistet. Im Echtlauf wird die gewählte Mahnsperre über die Standard-Massenänderung am Posten gesetzt; bei Erfolg wird der Klärungsfall auf Status S gesetzt, bei Fehler wird gezählt und gemeldet. Am Ende folgt im Echtlauf ein COMMIT WORK und eine Zählerzeile."
+}

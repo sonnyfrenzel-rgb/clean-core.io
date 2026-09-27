@@ -1,0 +1,656 @@
+{
+  "id": "BM-029",
+  "title": "Chargen mit abgelaufenem MHD in den gesperrten Bestand umbuchen (344)",
+  "classes": [
+    "K01",
+    "K03",
+    "K12"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "MCHB",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 39,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:39"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "MCH1",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 39,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:39"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_GOODSMVT_CREATE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 71,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:71"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "REUSE_ALV_GRID_DISPLAY",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 93,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:93"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-029-B01",
+      "text": "Der Verfallsstichtag ist das Tagesdatum plus der eingegebenen Vorlaufzeit in Tagen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:26"
+        }
+      ]
+    },
+    {
+      "id": "BM-029-B02",
+      "text": "Es werden Chargen in den gewählten Werken und Lagerorten mit frei verwendbarem Bestand gelesen, deren Mindesthaltbarkeits- bzw. Verfallsdatum gepflegt ist und spätestens am Stichtag liegt.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:39"
+        }
+      ]
+    },
+    {
+      "id": "BM-029-B03",
+      "text": "Gibt es keine, wird „Keine Chargen mit Verfall“ ausgegeben und der Lauf beendet.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:28"
+        },
+        {
+          "file": "source.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:29"
+        },
+        {
+          "file": "source.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:30"
+        }
+      ]
+    },
+    {
+      "id": "BM-029-B04",
+      "text": "Nur wenn Buchen angekreuzt ist, wird je Charge der gesamte frei verwendbare Chargenbestand mit Bewegungsart 344 in den gesperrten Bestand umgebucht.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:32"
+        },
+        {
+          "file": "source.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:68"
+        },
+        {
+          "file": "source.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:71"
+        }
+      ]
+    },
+    {
+      "id": "BM-029-B05",
+      "text": "Entsteht kein Materialbeleg, wird zurückgerollt und die erste Rückmeldung als Ergebnistext zur Charge vermerkt.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:80"
+        },
+        {
+          "file": "source.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:81"
+        },
+        {
+          "file": "source.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:83"
+        }
+      ]
+    },
+    {
+      "id": "BM-029-B06",
+      "text": "Entsteht ein Materialbeleg, wird er je Charge sofort festgeschrieben und die Charge als in den Sperrbestand umgebucht markiert.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:86"
+        },
+        {
+          "file": "source.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:85"
+        }
+      ]
+    },
+    {
+      "id": "BM-029-B07",
+      "text": "Am Ende wird die Liste der betroffenen Chargen mit Verfallsdatum, Bestand, Materialbeleg und Ergebnis als ALV angezeigt.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:93"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:25"
+        },
+        "meaning": "Jobstart"
+      },
+      {
+        "id": "a0",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:26"
+        },
+        "meaning": "Stichtag Verfall = heute plus Vorlauf"
+      },
+      {
+        "id": "p1",
+        "type": "call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:27"
+        },
+        "meaning": "Verfallene Chargen selektieren"
+      },
+      {
+        "id": "f1",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:38"
+        },
+        "meaning": "Selektionsroutine"
+      },
+      {
+        "id": "q",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:39"
+        },
+        "meaning": "Chargenbestände mit MHD bis Stichtag lesen"
+      },
+      {
+        "id": "g0",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:28"
+        },
+        "meaning": "Chargen gefunden?"
+      },
+      {
+        "id": "w0",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:29"
+        },
+        "meaning": "Hinweis: keine Chargen mit Verfall"
+      },
+      {
+        "id": "st",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:30"
+        },
+        "meaning": "Verarbeitung beenden"
+      },
+      {
+        "id": "gp",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:32"
+        },
+        "meaning": "Buchen angekreuzt?"
+      },
+      {
+        "id": "p2",
+        "type": "call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:33"
+        },
+        "meaning": "Umbuchung ausführen"
+      },
+      {
+        "id": "f2",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:51"
+        },
+        "meaning": "Umbuchungsroutine"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "source.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:62"
+        },
+        "meaning": "Chargen durchlaufen"
+      },
+      {
+        "id": "b",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:71"
+        },
+        "meaning": "Umbuchung frei an gesperrt (344) buchen"
+      },
+      {
+        "id": "gb",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:80"
+        },
+        "meaning": "Materialbeleg entstanden?"
+      },
+      {
+        "id": "rb",
+        "type": "transaction",
+        "anchor": {
+          "file": "source.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:83"
+        },
+        "meaning": "Zurückrollen, erste Meldung übernehmen"
+      },
+      {
+        "id": "cm",
+        "type": "transaction",
+        "anchor": {
+          "file": "source.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:86"
+        },
+        "meaning": "Umbuchung festschreiben"
+      },
+      {
+        "id": "e2",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 89,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:89"
+        },
+        "meaning": "Umbuchungen abgeschlossen"
+      },
+      {
+        "id": "p3",
+        "type": "call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:35"
+        },
+        "meaning": "Ergebnis anzeigen"
+      },
+      {
+        "id": "f3",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:92"
+        },
+        "meaning": "Anzeigeroutine"
+      },
+      {
+        "id": "alv",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:93"
+        },
+        "meaning": "Chargenliste mit Ergebnis als ALV ausgeben"
+      },
+      {
+        "id": "x1",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:48"
+        },
+        "meaning": "SELECT_CHARGEN beendet"
+      },
+      {
+        "id": "x3",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 100,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:100"
+        },
+        "meaning": "ANZEIGEN beendet"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:35"
+        },
+        "meaning": "Job beendet"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "a0",
+        "condition": "always"
+      },
+      {
+        "from": "a0",
+        "to": "p1",
+        "condition": "always"
+      },
+      {
+        "from": "p1",
+        "to": "f1",
+        "condition": "always"
+      },
+      {
+        "from": "f1",
+        "to": "q",
+        "condition": "always"
+      },
+      {
+        "from": "q",
+        "to": "x1",
+        "condition": "always"
+      },
+      {
+        "from": "g0",
+        "to": "w0",
+        "condition": "gt_out IS INITIAL"
+      },
+      {
+        "from": "w0",
+        "to": "st",
+        "condition": "always"
+      },
+      {
+        "from": "g0",
+        "to": "gp",
+        "condition": "else"
+      },
+      {
+        "from": "gp",
+        "to": "p2",
+        "condition": "p_post = 'X'"
+      },
+      {
+        "from": "p2",
+        "to": "f2",
+        "condition": "always"
+      },
+      {
+        "from": "f2",
+        "to": "l",
+        "condition": "always"
+      },
+      {
+        "from": "l",
+        "to": "b",
+        "condition": "next row"
+      },
+      {
+        "from": "b",
+        "to": "gb",
+        "condition": "always"
+      },
+      {
+        "from": "gb",
+        "to": "rb",
+        "condition": "<ls_out>-mblnr IS INITIAL"
+      },
+      {
+        "from": "gb",
+        "to": "cm",
+        "condition": "else"
+      },
+      {
+        "from": "rb",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "cm",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l",
+        "to": "e2",
+        "condition": "no more rows"
+      },
+      {
+        "from": "e2",
+        "to": "p3",
+        "condition": "always"
+      },
+      {
+        "from": "gp",
+        "to": "p3",
+        "condition": "else"
+      },
+      {
+        "from": "p3",
+        "to": "f3",
+        "condition": "always"
+      },
+      {
+        "from": "f3",
+        "to": "alv",
+        "condition": "always"
+      },
+      {
+        "from": "x1",
+        "to": "g0",
+        "condition": "always"
+      },
+      {
+        "from": "alv",
+        "to": "x3",
+        "condition": "always"
+      },
+      {
+        "from": "x3",
+        "to": "e",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "source.abap:39 — kein Fachsatz „Auch Qualitätsprüfbestand wird gesperrt“ (nur frei verwendbarer Chargenbestand CLABS)",
+    "source.abap:83 — kein Fachsatz „Bei einem Fehler wird der gesamte Lauf zurückgenommen“ (jede Charge hat ihre eigene LUW; bereits festgeschriebene bleiben)",
+    "source.abap:32 — kein Fachsatz „Der Job bucht immer“ (ohne Häkchen nur Liste)",
+    "gesamte Scheibe — kein Fachsatz „Die Charge wird im Chargenstamm als gesperrt gekennzeichnet“ (es wird Bestand umgebucht, der Chargenzustand wird nicht geändert)"
+  ],
+  "processDescription": "Der tägliche Job startet den Report mit Werken, optional Lagerorten, einer Vorlaufzeit in Tagen und dem Buchungsschalter. Der Stichtag ist heute plus Vorlauf. Der Report liest alle Chargen mit frei verwendbarem Bestand, deren Verfallsdatum gepflegt ist und spätestens am Stichtag liegt. Gibt es keine, meldet er das und stoppt. Ist Buchen angekreuzt, bucht er je Charge den gesamten freien Chargenbestand mit Bewegungsart 344 in den gesperrten Bestand; entsteht ein Materialbeleg, wird sofort festgeschrieben, sonst zurückgerollt und die erste Rückmeldung als Ergebnis vermerkt. Jede Charge ist eine eigene LUW. Zum Schluss zeigt er alle betroffenen Chargen mit Verfallsdatum, Bestand, Beleg und Ergebnistext als ALV-Liste an."
+}

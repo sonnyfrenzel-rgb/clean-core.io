@@ -1,0 +1,621 @@
+{
+  "id": "BM-066",
+  "title": "Massenrückmeldung von Fertigungsaufträgen aus einer MES-Datei",
+  "classes": [
+    "K03",
+    "K12"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "BAPI_PRODORDCONF_CREATE_TT",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 66,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:66"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_ROLLBACK",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 77,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:77"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_COMMIT",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 82,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:82"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-066-B01",
+      "text": "Die vom MES bereitgestellte Rückmeldedatei wird auf dem Applikationsserver geöffnet; gelingt das nicht, wird „Datei kann nicht geoeffnet werden“ gemeldet und abgebrochen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:33"
+        },
+        {
+          "file": "source.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:34"
+        },
+        {
+          "file": "source.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:35"
+        },
+        {
+          "file": "source.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:36"
+        }
+      ]
+    },
+    {
+      "id": "BM-066-B02",
+      "text": "Die Datei wird bis zum Ende zeilenweise gelesen; jede Zeile liefert Auftrag, Vorgang, Gutmenge, Ausschuss, Mengeneinheit und Endrückmeldekennzeichen, die Auftragsnummer wird mit führenden Nullen aufgefüllt.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:39"
+        },
+        {
+          "file": "source.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:40"
+        },
+        {
+          "file": "source.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:45"
+        },
+        {
+          "file": "source.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:47"
+        }
+      ]
+    },
+    {
+      "id": "BM-066-B03",
+      "text": "Nach dem Einlesen wird die Datei geschlossen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:50"
+        }
+      ]
+    },
+    {
+      "id": "BM-066-B04",
+      "text": "Je Zeile wird eine Vorgangsrückmeldung mit Gutmenge und Ausschuss gebildet; ist das Kennzeichen gesetzt, als Endrückmeldung, sonst als Teilrückmeldung.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:52"
+        },
+        {
+          "file": "source.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:59"
+        }
+      ]
+    },
+    {
+      "id": "BM-066-B05",
+      "text": "Die Rückmeldung wird einzeln an die Rückmelde-BAPI übergeben, im Testlauf nur simuliert.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:66"
+        }
+      ]
+    },
+    {
+      "id": "BM-066-B06",
+      "text": "Meldet die BAPI einen Fehler, wird die Zeile zurückgerollt und mit „FEHLER“ und Meldungstext protokolliert.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:76"
+        },
+        {
+          "file": "source.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:77"
+        },
+        {
+          "file": "source.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:79"
+        }
+      ]
+    },
+    {
+      "id": "BM-066-B07",
+      "text": "Fehlerfreie Zeilen werden im Echtlauf mit Warten auf die Verbuchung festgeschrieben und mit „OK“ protokolliert; im Testlauf wird nur „OK“ protokolliert.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:81"
+        },
+        {
+          "file": "source.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:82"
+        },
+        {
+          "file": "source.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:87"
+        }
+      ]
+    },
+    {
+      "id": "BM-066-B08",
+      "text": "Am Ende werden die Anzahl erfolgreicher und fehlerhafter Zeilen ausgegeben.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:92"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:32"
+        },
+        "meaning": "Reportstart"
+      },
+      {
+        "id": "od",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:33"
+        },
+        "meaning": "Rückmeldedatei auf dem Applikationsserver zum Lesen öffnen"
+      },
+      {
+        "id": "g0",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:34"
+        },
+        "meaning": "Datei geöffnet?"
+      },
+      {
+        "id": "m0",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:35"
+        },
+        "meaning": "Meldung: Datei kann nicht geöffnet werden"
+      },
+      {
+        "id": "e0",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:36"
+        },
+        "meaning": "Abbruch"
+      },
+      {
+        "id": "do",
+        "type": "loop",
+        "anchor": {
+          "file": "source.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:39"
+        },
+        "meaning": "Datei zeilenweise lesen"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:41"
+        },
+        "meaning": "Dateiende erreicht?"
+      },
+      {
+        "id": "cl",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:50"
+        },
+        "meaning": "Datei schließen"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "source.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:52"
+        },
+        "meaning": "Je Dateizeile eine Rückmeldung"
+      },
+      {
+        "id": "gf",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:59"
+        },
+        "meaning": "Endrückmeldung gekennzeichnet?"
+      },
+      {
+        "id": "c",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:66"
+        },
+        "meaning": "Vorgangsrückmeldung Gutmenge/Ausschuss buchen (oder im Testlauf simulieren)"
+      },
+      {
+        "id": "gerr",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:76"
+        },
+        "meaning": "Fehler bei der Rückmeldung?"
+      },
+      {
+        "id": "rb",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:77"
+        },
+        "meaning": "Rückmeldung zurückrollen"
+      },
+      {
+        "id": "werr",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:79"
+        },
+        "meaning": "Zeile als FEHLER mit Meldungstext protokollieren"
+      },
+      {
+        "id": "gt",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:81"
+        },
+        "meaning": "Echtlauf?"
+      },
+      {
+        "id": "cm",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:82"
+        },
+        "meaning": "Rückmeldung festschreiben"
+      },
+      {
+        "id": "wok",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:87"
+        },
+        "meaning": "Zeile als OK protokollieren"
+      },
+      {
+        "id": "sum",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:92"
+        },
+        "meaning": "Summen erfolgreich/fehlerhaft ausgeben"
+      },
+      {
+        "id": "e_end",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:92"
+        },
+        "meaning": "Report beendet"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "od",
+        "condition": "always"
+      },
+      {
+        "from": "od",
+        "to": "g0",
+        "condition": "always"
+      },
+      {
+        "from": "g0",
+        "to": "m0",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "m0",
+        "to": "e0",
+        "condition": "always"
+      },
+      {
+        "from": "g0",
+        "to": "do",
+        "condition": "else"
+      },
+      {
+        "from": "do",
+        "to": "g1",
+        "condition": "next row"
+      },
+      {
+        "from": "g1",
+        "to": "cl",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g1",
+        "to": "do",
+        "condition": "else"
+      },
+      {
+        "from": "cl",
+        "to": "l",
+        "condition": "always"
+      },
+      {
+        "from": "l",
+        "to": "gf",
+        "condition": "next row"
+      },
+      {
+        "from": "gf",
+        "to": "c",
+        "condition": "gs_zeile-endrm = 'X'"
+      },
+      {
+        "from": "gf",
+        "to": "c",
+        "condition": "else"
+      },
+      {
+        "from": "c",
+        "to": "gerr",
+        "condition": "always"
+      },
+      {
+        "from": "gerr",
+        "to": "rb",
+        "condition": "sy-subrc = 0 OR gs_return-type CA 'EA'"
+      },
+      {
+        "from": "rb",
+        "to": "werr",
+        "condition": "always"
+      },
+      {
+        "from": "werr",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "gerr",
+        "to": "gt",
+        "condition": "else"
+      },
+      {
+        "from": "gt",
+        "to": "cm",
+        "condition": "p_test IS INITIAL"
+      },
+      {
+        "from": "gt",
+        "to": "wok",
+        "condition": "else"
+      },
+      {
+        "from": "cm",
+        "to": "wok",
+        "condition": "always"
+      },
+      {
+        "from": "wok",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l",
+        "to": "sum",
+        "condition": "no more rows"
+      },
+      {
+        "from": "sum",
+        "to": "e_end",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "gesamte Scheibe — kein Fachsatz „Bereits verarbeitete Dateien bzw. doppelte Rückmeldungen werden erkannt“ (es gibt keine Dublettenprüfung, die Datei wird auch nicht verschoben oder gelöscht)",
+    "source.abap:66 — kein Fachsatz „Alle Zeilen werden gemeinsam gebucht oder gemeinsam verworfen“ (jede Zeile hat eine eigene LUW)",
+    "source.abap:62 — kein Fachsatz „Der Auftrag wird technisch abgeschlossen“ (das Endrückmeldekennzeichen betrifft die Vorgangsrückmeldung, kein TECO)",
+    "gesamte Scheibe — kein Fachsatz „Warenbewegungen (Komponentenverbrauch, Wareneingang) werden explizit übergeben“ (es werden keine GOODSMOVEMENTS übergeben; ob das System retrograd entnimmt, ist Customizing und nicht im Code)"
+  ],
+  "processDescription": "Der Report liest eine vom MES auf dem Applikationsserver abgelegte, semikolongetrennte Rückmeldedatei. Kann die Datei nicht geöffnet werden, meldet er das und bricht ab. Er liest alle Zeilen ein und schließt die Datei. Für jede Zeile bildet er eine Vorgangsrückmeldung mit Gutmenge und Ausschuss – je nach Kennzeichen als End- oder Teilrückmeldung – und übergibt sie einzeln an die Rückmelde-BAPI, im Testlauf nur zur Simulation. Meldet die BAPI einen Fehler, wird die Zeile zurückgerollt und als FEHLER mit Meldungstext protokolliert. Fehlerfreie Zeilen werden im Echtlauf sofort festgeschrieben und als OK protokolliert. Zum Schluss gibt der Report die Zahl der erfolgreichen und fehlerhaften Zeilen aus. Eine Dublettenprüfung oder ein Archivieren der Datei findet nicht statt."
+}

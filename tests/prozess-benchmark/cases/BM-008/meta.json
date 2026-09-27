@@ -1,0 +1,22 @@
+{
+  "id": "BM-008",
+  "title": "Lieferung zum Auftrag per BAPI: Sperr- und Kreditprüfung, Commit nur ohne Fehler und außerhalb des Testlaufs",
+  "domain": "SD / Order-to-Cash",
+  "band": "mittel",
+  "loc": 84,
+  "constructs": [
+    "FUNCTION mit TABLES-Parameter",
+    "SELECT SINGLE",
+    "APPEND VALUE #( ) TO bapiret2",
+    "VALUE #( FOR … )",
+    "BAPI_OUTB_DELIVERY_CREATE_SLS",
+    "BAPI_TRANSACTION_COMMIT/ROLLBACK",
+    "READ TABLE … WITH KEY"
+  ],
+  "scenario": "Kundeneigener Wrapper, mit dem Leitstand und Nachtjob Auslieferungen zu Kundenaufträgen anlegen; vorher werden Liefersperre und Kreditstatus geprüft.",
+  "s4_issues": [
+    "VBUK entfällt für SD-Belege: Kreditstatus CMGST steht in S/4 in VBAK, das Lesen aus VBUK findet nichts und die Kreditprüfung greift nie",
+    "in S/4 mit FSCM-Kreditmanagement ist CMGST anders befüllt",
+    "direkte Tabellenzugriffe VBAK/VBAP statt freigegebener Views"
+  ]
+}

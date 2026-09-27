@@ -1,0 +1,21 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten col",
+      "before": "action source.abap:40 „Kreditor einmalig vormerken“",
+      "after": "entfernt; überbrückt: ",
+      "why": "INSERT … INTO TABLE in eine interne Tabelle (Z. 40) ist laut Autorenbrief kein Knoten; die Verdichtung bleibt als Fachsatz B03 (Anker 38/40) erhalten. Die Schleife l1 hat damit keinen Körperknoten mehr und führt nur noch per no more rows weiter.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Knoten e2 (neu)",
+      "before": "—",
+      "after": "end source.abap:99 „Lauf endet nach der Summenausgabe“",
+      "why": "Implizites Ende von START-OF-SELECTION fehlte; osum hatte keine ausgehende Kante.",
+      "category": "fehlender Knoten"
+    }
+  ],
+  "doubts": []
+}

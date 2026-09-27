@@ -1,0 +1,1371 @@
+{
+  "id": "BM-072",
+  "title": "Planaufträge mit Material- und Fehlteilprüfung in Fertigungsaufträge umsetzen",
+  "classes": [
+    "K01",
+    "K03",
+    "K12",
+    "K15",
+    "K18"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [
+    "Ist das Summieren über alle Lagerorte (auch gesperrte/entfernte Lagerorte) fachlich gewollt?"
+  ],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "PLAF",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zpp_plaf_umsetzen_f01.abap",
+        "line": 9,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpp_plaf_umsetzen_f01.abap:9"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "MARC",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zpp_plaf_umsetzen_f01.abap",
+        "line": 33,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpp_plaf_umsetzen_f01.abap:33"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "RESB",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zpp_plaf_umsetzen_f01.abap",
+        "line": 63,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpp_plaf_umsetzen_f01.abap:63"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "MARD",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zpp_plaf_umsetzen_f01.abap",
+        "line": 70,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpp_plaf_umsetzen_f01.abap:70"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_PRODORD_CREATE_FROM_PLORD",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zpp_plaf_umsetzen_f01.abap",
+        "line": 92,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpp_plaf_umsetzen_f01.abap:92"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_PRODORD_RELEASE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zpp_plaf_umsetzen_f01.abap",
+        "line": 115,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpp_plaf_umsetzen_f01.abap:115"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_COMMIT",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zpp_plaf_umsetzen_f01.abap",
+        "line": 107,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpp_plaf_umsetzen_f01.abap:107"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_ROLLBACK",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zpp_plaf_umsetzen_f01.abap",
+        "line": 101,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpp_plaf_umsetzen_f01.abap:101"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "REUSE_ALV_GRID_DISPLAY",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zpp_plaf_umsetzen_f01.abap",
+        "line": 147,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpp_plaf_umsetzen_f01.abap:147"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-072-B01",
+      "text": "Beim Ausführen wird geprüft, ob der Benutzer für Werk und Auftragsart berechtigt ist; ohne Berechtigung bleibt er mit einer Fehlermeldung im Selektionsbild.",
+      "anchors": [
+        {
+          "file": "zpp_plaf_umsetzen.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_plaf_umsetzen.abap:14"
+        },
+        {
+          "file": "zpp_plaf_umsetzen.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_plaf_umsetzen.abap:17"
+        },
+        {
+          "file": "zpp_plaf_umsetzen.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_plaf_umsetzen.abap:18"
+        }
+      ]
+    },
+    {
+      "id": "BM-072-B02",
+      "text": "Es werden Planaufträge des Werks zu den gewählten Disponenten und Materialien selektiert, deren Eckstarttermin bis zum Horizont reicht und die Lageraufträge (LA) für Eigenfertigung (E) sind.",
+      "anchors": [
+        {
+          "file": "zpp_plaf_umsetzen_f01.abap",
+          "line": 9,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_plaf_umsetzen_f01.abap:9"
+        }
+      ]
+    },
+    {
+      "id": "BM-072-B03",
+      "text": "Ist der Schalter „nur fixierte“ gesetzt (Vorschlag), werden nicht fixierte Planaufträge verworfen; die übrigen werden nach Eckstarttermin sortiert.",
+      "anchors": [
+        {
+          "file": "zpp_plaf_umsetzen_f01.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_plaf_umsetzen_f01.abap:19"
+        },
+        {
+          "file": "zpp_plaf_umsetzen_f01.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_plaf_umsetzen_f01.abap:20"
+        },
+        {
+          "file": "zpp_plaf_umsetzen_f01.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_plaf_umsetzen_f01.abap:22"
+        }
+      ]
+    },
+    {
+      "id": "BM-072-B04",
+      "text": "Bleibt kein Planauftrag übrig, wird ein Hinweis ausgegeben und der Lauf beendet.",
+      "anchors": [
+        {
+          "file": "zpp_plaf_umsetzen.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_plaf_umsetzen.abap:23"
+        },
+        {
+          "file": "zpp_plaf_umsetzen.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_plaf_umsetzen.abap:24"
+        },
+        {
+          "file": "zpp_plaf_umsetzen.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_plaf_umsetzen.abap:25"
+        }
+      ]
+    },
+    {
+      "id": "BM-072-B05",
+      "text": "Ist das Material im Werk für die Fertigung gesperrt (Status Z1), wird der Planauftrag rot protokolliert und nicht umgesetzt.",
+      "anchors": [
+        {
+          "file": "zpp_plaf_umsetzen_f01.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_plaf_umsetzen_f01.abap:33"
+        },
+        {
+          "file": "zpp_plaf_umsetzen_f01.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_plaf_umsetzen_f01.abap:37"
+        },
+        {
+          "file": "zpp_plaf_umsetzen.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_plaf_umsetzen.abap:30"
+        }
+      ]
+    },
+    {
+      "id": "BM-072-B06",
+      "text": "Für jeden nicht gelöschten Sekundärbedarf des Planauftrags wird der frei verwendbare Bestand der Komponente über alle Lagerorte des Werks summiert.",
+      "anchors": [
+        {
+          "file": "zpp_plaf_umsetzen_f01.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_plaf_umsetzen_f01.abap:63"
+        },
+        {
+          "file": "zpp_plaf_umsetzen_f01.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_plaf_umsetzen_f01.abap:68"
+        },
+        {
+          "file": "zpp_plaf_umsetzen_f01.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_plaf_umsetzen_f01.abap:70"
+        }
+      ]
+    },
+    {
+      "id": "BM-072-B07",
+      "text": "Reicht der Bestand einer Komponente nicht für den Bedarf, wird der Planauftrag gelb mit „Fehlteil“ und der Komponente protokolliert, die Prüfung abgebrochen und nicht umgesetzt.",
+      "anchors": [
+        {
+          "file": "zpp_plaf_umsetzen_f01.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_plaf_umsetzen_f01.abap:73"
+        },
+        {
+          "file": "zpp_plaf_umsetzen_f01.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_plaf_umsetzen_f01.abap:77"
+        },
+        {
+          "file": "zpp_plaf_umsetzen.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_plaf_umsetzen.abap:35"
+        }
+      ]
+    },
+    {
+      "id": "BM-072-B08",
+      "text": "Sonst wird aus dem Planauftrag ein Fertigungsauftrag der gewählten Auftragsart erzeugt.",
+      "anchors": [
+        {
+          "file": "zpp_plaf_umsetzen.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_plaf_umsetzen.abap:39"
+        },
+        {
+          "file": "zpp_plaf_umsetzen_f01.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_plaf_umsetzen_f01.abap:92"
+        }
+      ]
+    },
+    {
+      "id": "BM-072-B09",
+      "text": "Scheitert die Umsetzung, wird zurückgerollt und der Planauftrag rot mit dem Fehlertext protokolliert.",
+      "anchors": [
+        {
+          "file": "zpp_plaf_umsetzen_f01.abap",
+          "line": 100,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_plaf_umsetzen_f01.abap:100"
+        },
+        {
+          "file": "zpp_plaf_umsetzen_f01.abap",
+          "line": 101,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_plaf_umsetzen_f01.abap:101"
+        }
+      ]
+    },
+    {
+      "id": "BM-072-B10",
+      "text": "Gelingt sie, wird festgeschrieben und der Planauftrag mit der neuen Auftragsnummer grün als „umgesetzt“ protokolliert.",
+      "anchors": [
+        {
+          "file": "zpp_plaf_umsetzen_f01.abap",
+          "line": 107,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_plaf_umsetzen_f01.abap:107"
+        }
+      ]
+    },
+    {
+      "id": "BM-072-B11",
+      "text": "Ist Sofortfreigabe gewählt, wird der neue Fertigungsauftrag freigegeben; scheitert die Freigabe, wird sie zurückgerollt und „umgesetzt, Freigabe fehlgeschlagen“ gelb protokolliert, sonst festgeschrieben.",
+      "anchors": [
+        {
+          "file": "zpp_plaf_umsetzen_f01.abap",
+          "line": 113,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_plaf_umsetzen_f01.abap:113"
+        },
+        {
+          "file": "zpp_plaf_umsetzen_f01.abap",
+          "line": 115,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_plaf_umsetzen_f01.abap:115"
+        },
+        {
+          "file": "zpp_plaf_umsetzen_f01.abap",
+          "line": 121,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_plaf_umsetzen_f01.abap:121"
+        },
+        {
+          "file": "zpp_plaf_umsetzen_f01.abap",
+          "line": 122,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_plaf_umsetzen_f01.abap:122"
+        },
+        {
+          "file": "zpp_plaf_umsetzen_f01.abap",
+          "line": 126,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_plaf_umsetzen_f01.abap:126"
+        }
+      ]
+    },
+    {
+      "id": "BM-072-B12",
+      "text": "Am Ende wird das Protokoll mit Ampel, Planauftrag, Material, Auftrag und Ergebnistext als ALV-Liste ausgegeben.",
+      "anchors": [
+        {
+          "file": "zpp_plaf_umsetzen.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_plaf_umsetzen.abap:43"
+        },
+        {
+          "file": "zpp_plaf_umsetzen_f01.abap",
+          "line": 147,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_plaf_umsetzen_f01.abap:147"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "ass",
+        "type": "start",
+        "anchor": {
+          "file": "zpp_plaf_umsetzen.abap",
+          "line": 13,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_plaf_umsetzen.abap:13"
+        },
+        "meaning": "Prüfung des Selektionsbilds"
+      },
+      {
+        "id": "auth",
+        "type": "action",
+        "anchor": {
+          "file": "zpp_plaf_umsetzen.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_plaf_umsetzen.abap:14"
+        },
+        "meaning": "Berechtigung für Werk und Auftragsart prüfen"
+      },
+      {
+        "id": "gauth",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpp_plaf_umsetzen.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_plaf_umsetzen.abap:17"
+        },
+        "meaning": "Berechtigt?"
+      },
+      {
+        "id": "mauth",
+        "type": "output",
+        "anchor": {
+          "file": "zpp_plaf_umsetzen.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_plaf_umsetzen.abap:18"
+        },
+        "meaning": "Fehlermeldung, zurück ins Selektionsbild"
+      },
+      {
+        "id": "emauth",
+        "type": "end",
+        "anchor": {
+          "file": "zpp_plaf_umsetzen.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_plaf_umsetzen.abap:18"
+        },
+        "meaning": "Dialogschritt abgebrochen, Benutzer bleibt im Selektionsbild"
+      },
+      {
+        "id": "sos",
+        "type": "start",
+        "anchor": {
+          "file": "zpp_plaf_umsetzen.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_plaf_umsetzen.abap:21"
+        },
+        "meaning": "Verarbeitung starten"
+      },
+      {
+        "id": "p1",
+        "type": "call",
+        "anchor": {
+          "file": "zpp_plaf_umsetzen.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_plaf_umsetzen.abap:22"
+        },
+        "meaning": "Planaufträge selektieren"
+      },
+      {
+        "id": "f1",
+        "type": "start",
+        "anchor": {
+          "file": "zpp_plaf_umsetzen_f01.abap",
+          "line": 8,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_plaf_umsetzen_f01.abap:8"
+        },
+        "meaning": "Selektion"
+      },
+      {
+        "id": "q1",
+        "type": "read",
+        "anchor": {
+          "file": "zpp_plaf_umsetzen_f01.abap",
+          "line": 9,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_plaf_umsetzen_f01.abap:9"
+        },
+        "meaning": "Eigengefertigte Lager-Planaufträge des Werks bis zum Horizont lesen"
+      },
+      {
+        "id": "gfix",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpp_plaf_umsetzen_f01.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_plaf_umsetzen_f01.abap:19"
+        },
+        "meaning": "Nur fixierte Planaufträge?"
+      },
+      {
+        "id": "fe1",
+        "type": "end",
+        "anchor": {
+          "file": "zpp_plaf_umsetzen_f01.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_plaf_umsetzen_f01.abap:23"
+        },
+        "meaning": "Planaufträge selektiert und sortiert, Rückkehr"
+      },
+      {
+        "id": "g0",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpp_plaf_umsetzen.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_plaf_umsetzen.abap:23"
+        },
+        "meaning": "Planaufträge gefunden?"
+      },
+      {
+        "id": "m0",
+        "type": "output",
+        "anchor": {
+          "file": "zpp_plaf_umsetzen.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_plaf_umsetzen.abap:24"
+        },
+        "meaning": "Hinweis: nichts umzusetzen"
+      },
+      {
+        "id": "e0",
+        "type": "end",
+        "anchor": {
+          "file": "zpp_plaf_umsetzen.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_plaf_umsetzen.abap:25"
+        },
+        "meaning": "Ende"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "zpp_plaf_umsetzen.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_plaf_umsetzen.abap:28"
+        },
+        "meaning": "Je Planauftrag nach Eckstart"
+      },
+      {
+        "id": "p2",
+        "type": "call",
+        "anchor": {
+          "file": "zpp_plaf_umsetzen.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_plaf_umsetzen.abap:29"
+        },
+        "meaning": "Material prüfen"
+      },
+      {
+        "id": "f2",
+        "type": "start",
+        "anchor": {
+          "file": "zpp_plaf_umsetzen_f01.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_plaf_umsetzen_f01.abap:28"
+        },
+        "meaning": "Materialprüfung"
+      },
+      {
+        "id": "q2",
+        "type": "read",
+        "anchor": {
+          "file": "zpp_plaf_umsetzen_f01.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_plaf_umsetzen_f01.abap:33"
+        },
+        "meaning": "Werksspezifischen Materialstatus lesen"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpp_plaf_umsetzen_f01.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_plaf_umsetzen_f01.abap:37"
+        },
+        "meaning": "Status Z1 (Fertigung gesperrt)?"
+      },
+      {
+        "id": "e2",
+        "type": "end",
+        "anchor": {
+          "file": "zpp_plaf_umsetzen_f01.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_plaf_umsetzen_f01.abap:40"
+        },
+        "meaning": "Nicht ok, rot protokolliert"
+      },
+      {
+        "id": "a2",
+        "type": "action",
+        "anchor": {
+          "file": "zpp_plaf_umsetzen_f01.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_plaf_umsetzen_f01.abap:43"
+        },
+        "meaning": "Material ok"
+      },
+      {
+        "id": "fe2",
+        "type": "end",
+        "anchor": {
+          "file": "zpp_plaf_umsetzen_f01.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_plaf_umsetzen_f01.abap:44"
+        },
+        "meaning": "Material ok, Rückkehr mit cv_ok = X"
+      },
+      {
+        "id": "gok1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpp_plaf_umsetzen.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_plaf_umsetzen.abap:30"
+        },
+        "meaning": "Materialprüfung bestanden?"
+      },
+      {
+        "id": "p3",
+        "type": "call",
+        "anchor": {
+          "file": "zpp_plaf_umsetzen.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_plaf_umsetzen.abap:34"
+        },
+        "meaning": "Komponenten prüfen"
+      },
+      {
+        "id": "f3",
+        "type": "start",
+        "anchor": {
+          "file": "zpp_plaf_umsetzen_f01.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_plaf_umsetzen_f01.abap:50"
+        },
+        "meaning": "Fehlteilprüfung"
+      },
+      {
+        "id": "q3",
+        "type": "read",
+        "anchor": {
+          "file": "zpp_plaf_umsetzen_f01.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_plaf_umsetzen_f01.abap:63"
+        },
+        "meaning": "Nicht gelöschte Sekundärbedarfe des Planauftrags lesen"
+      },
+      {
+        "id": "l3",
+        "type": "loop",
+        "anchor": {
+          "file": "zpp_plaf_umsetzen_f01.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_plaf_umsetzen_f01.abap:68"
+        },
+        "meaning": "Je Komponente"
+      },
+      {
+        "id": "q4",
+        "type": "read",
+        "anchor": {
+          "file": "zpp_plaf_umsetzen_f01.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_plaf_umsetzen_f01.abap:70"
+        },
+        "meaning": "Frei verwendbaren Bestand über alle Lagerorte des Werks summieren"
+      },
+      {
+        "id": "g3",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpp_plaf_umsetzen_f01.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_plaf_umsetzen_f01.abap:73"
+        },
+        "meaning": "Bestand kleiner als Bedarf?"
+      },
+      {
+        "id": "e3",
+        "type": "end",
+        "anchor": {
+          "file": "zpp_plaf_umsetzen_f01.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_plaf_umsetzen_f01.abap:80"
+        },
+        "meaning": "Ende Fehlteilprüfung"
+      },
+      {
+        "id": "gok2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpp_plaf_umsetzen.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_plaf_umsetzen.abap:35"
+        },
+        "meaning": "Komponentenprüfung bestanden?"
+      },
+      {
+        "id": "p4",
+        "type": "call",
+        "anchor": {
+          "file": "zpp_plaf_umsetzen.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_plaf_umsetzen.abap:39"
+        },
+        "meaning": "Umsetzen"
+      },
+      {
+        "id": "f4",
+        "type": "start",
+        "anchor": {
+          "file": "zpp_plaf_umsetzen_f01.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_plaf_umsetzen_f01.abap:85"
+        },
+        "meaning": "Umsetzung"
+      },
+      {
+        "id": "c1",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zpp_plaf_umsetzen_f01.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_plaf_umsetzen_f01.abap:92"
+        },
+        "meaning": "Fertigungsauftrag der gewählten Auftragsart aus Planauftrag erzeugen"
+      },
+      {
+        "id": "gc",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpp_plaf_umsetzen_f01.abap",
+          "line": 100,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_plaf_umsetzen_f01.abap:100"
+        },
+        "meaning": "Umsetzung fehlgeschlagen?"
+      },
+      {
+        "id": "rb1",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zpp_plaf_umsetzen_f01.abap",
+          "line": 101,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_plaf_umsetzen_f01.abap:101"
+        },
+        "meaning": "Zurückrollen, rot protokollieren"
+      },
+      {
+        "id": "ec",
+        "type": "end",
+        "anchor": {
+          "file": "zpp_plaf_umsetzen_f01.abap",
+          "line": 104,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_plaf_umsetzen_f01.abap:104"
+        },
+        "meaning": "Ende Umsetzung (Fehler)"
+      },
+      {
+        "id": "cm1",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zpp_plaf_umsetzen_f01.abap",
+          "line": 107,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_plaf_umsetzen_f01.abap:107"
+        },
+        "meaning": "Festschreiben, grün „umgesetzt“ protokollieren"
+      },
+      {
+        "id": "gfr",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpp_plaf_umsetzen_f01.abap",
+          "line": 113,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_plaf_umsetzen_f01.abap:113"
+        },
+        "meaning": "Sofort freigeben?"
+      },
+      {
+        "id": "c2",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zpp_plaf_umsetzen_f01.abap",
+          "line": 115,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_plaf_umsetzen_f01.abap:115"
+        },
+        "meaning": "Neuen Fertigungsauftrag freigeben"
+      },
+      {
+        "id": "gr",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpp_plaf_umsetzen_f01.abap",
+          "line": 121,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_plaf_umsetzen_f01.abap:121"
+        },
+        "meaning": "Freigabe fehlgeschlagen?"
+      },
+      {
+        "id": "rb2",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zpp_plaf_umsetzen_f01.abap",
+          "line": 122,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_plaf_umsetzen_f01.abap:122"
+        },
+        "meaning": "Freigabe zurückrollen, gelb protokollieren"
+      },
+      {
+        "id": "cm2",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zpp_plaf_umsetzen_f01.abap",
+          "line": 126,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_plaf_umsetzen_f01.abap:126"
+        },
+        "meaning": "Freigabe festschreiben"
+      },
+      {
+        "id": "e4",
+        "type": "end",
+        "anchor": {
+          "file": "zpp_plaf_umsetzen_f01.abap",
+          "line": 131,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_plaf_umsetzen_f01.abap:131"
+        },
+        "meaning": "Ende Umsetzung"
+      },
+      {
+        "id": "eos",
+        "type": "start",
+        "anchor": {
+          "file": "zpp_plaf_umsetzen.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_plaf_umsetzen.abap:42"
+        },
+        "meaning": "Ausgabe"
+      },
+      {
+        "id": "p5",
+        "type": "call",
+        "anchor": {
+          "file": "zpp_plaf_umsetzen.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_plaf_umsetzen.abap:43"
+        },
+        "meaning": "Protokoll ausgeben"
+      },
+      {
+        "id": "f5",
+        "type": "start",
+        "anchor": {
+          "file": "zpp_plaf_umsetzen_f01.abap",
+          "line": 136,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_plaf_umsetzen_f01.abap:136"
+        },
+        "meaning": "Protokollausgabe"
+      },
+      {
+        "id": "alv",
+        "type": "output",
+        "anchor": {
+          "file": "zpp_plaf_umsetzen_f01.abap",
+          "line": 147,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_plaf_umsetzen_f01.abap:147"
+        },
+        "meaning": "Protokoll mit Ampel als ALV-Grid anzeigen"
+      },
+      {
+        "id": "fe5",
+        "type": "end",
+        "anchor": {
+          "file": "zpp_plaf_umsetzen_f01.abap",
+          "line": 155,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpp_plaf_umsetzen_f01.abap:155"
+        },
+        "meaning": "Protokoll angezeigt, Ende"
+      }
+    ],
+    "edges": [
+      {
+        "from": "ass",
+        "to": "auth",
+        "condition": "always"
+      },
+      {
+        "from": "auth",
+        "to": "gauth",
+        "condition": "always"
+      },
+      {
+        "from": "gauth",
+        "to": "mauth",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "gauth",
+        "to": "sos",
+        "condition": "else"
+      },
+      {
+        "from": "sos",
+        "to": "p1",
+        "condition": "always"
+      },
+      {
+        "from": "p1",
+        "to": "f1",
+        "condition": "always"
+      },
+      {
+        "from": "f1",
+        "to": "q1",
+        "condition": "always"
+      },
+      {
+        "from": "q1",
+        "to": "gfix",
+        "condition": "always"
+      },
+      {
+        "from": "gfix",
+        "to": "fe1",
+        "condition": "p_fix = abap_true"
+      },
+      {
+        "from": "gfix",
+        "to": "fe1",
+        "condition": "else"
+      },
+      {
+        "from": "g0",
+        "to": "m0",
+        "condition": "gt_plaf IS INITIAL"
+      },
+      {
+        "from": "m0",
+        "to": "e0",
+        "condition": "always"
+      },
+      {
+        "from": "g0",
+        "to": "l",
+        "condition": "else"
+      },
+      {
+        "from": "l",
+        "to": "p2",
+        "condition": "next row"
+      },
+      {
+        "from": "p2",
+        "to": "f2",
+        "condition": "always"
+      },
+      {
+        "from": "f2",
+        "to": "q2",
+        "condition": "always"
+      },
+      {
+        "from": "q2",
+        "to": "g2",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "e2",
+        "condition": "lv_mmsta = 'Z1'"
+      },
+      {
+        "from": "g2",
+        "to": "a2",
+        "condition": "else"
+      },
+      {
+        "from": "e2",
+        "to": "gok1",
+        "condition": "always"
+      },
+      {
+        "from": "a2",
+        "to": "fe2",
+        "condition": "always"
+      },
+      {
+        "from": "gok1",
+        "to": "l",
+        "condition": "gv_ok = abap_false"
+      },
+      {
+        "from": "gok1",
+        "to": "p3",
+        "condition": "else"
+      },
+      {
+        "from": "p3",
+        "to": "f3",
+        "condition": "always"
+      },
+      {
+        "from": "f3",
+        "to": "q3",
+        "condition": "always"
+      },
+      {
+        "from": "q3",
+        "to": "l3",
+        "condition": "always"
+      },
+      {
+        "from": "l3",
+        "to": "q4",
+        "condition": "next row"
+      },
+      {
+        "from": "q4",
+        "to": "g3",
+        "condition": "always"
+      },
+      {
+        "from": "g3",
+        "to": "e3",
+        "condition": "lv_bestand < ls_resb-bdmng"
+      },
+      {
+        "from": "g3",
+        "to": "l3",
+        "condition": "else"
+      },
+      {
+        "from": "l3",
+        "to": "e3",
+        "condition": "no more rows"
+      },
+      {
+        "from": "e3",
+        "to": "gok2",
+        "condition": "always"
+      },
+      {
+        "from": "gok2",
+        "to": "l",
+        "condition": "gv_ok = abap_false"
+      },
+      {
+        "from": "gok2",
+        "to": "p4",
+        "condition": "else"
+      },
+      {
+        "from": "p4",
+        "to": "f4",
+        "condition": "always"
+      },
+      {
+        "from": "f4",
+        "to": "c1",
+        "condition": "always"
+      },
+      {
+        "from": "c1",
+        "to": "gc",
+        "condition": "always"
+      },
+      {
+        "from": "gc",
+        "to": "rb1",
+        "condition": "ls_return-type CA 'EAX' OR lv_aufnr IS INITIAL"
+      },
+      {
+        "from": "rb1",
+        "to": "ec",
+        "condition": "always"
+      },
+      {
+        "from": "gc",
+        "to": "cm1",
+        "condition": "else"
+      },
+      {
+        "from": "cm1",
+        "to": "gfr",
+        "condition": "always"
+      },
+      {
+        "from": "gfr",
+        "to": "c2",
+        "condition": "p_frei = abap_true"
+      },
+      {
+        "from": "gfr",
+        "to": "e4",
+        "condition": "else"
+      },
+      {
+        "from": "c2",
+        "to": "gr",
+        "condition": "always"
+      },
+      {
+        "from": "gr",
+        "to": "rb2",
+        "condition": "ls_ret_fr-type CA 'EA'"
+      },
+      {
+        "from": "gr",
+        "to": "cm2",
+        "condition": "else"
+      },
+      {
+        "from": "rb2",
+        "to": "e4",
+        "condition": "always"
+      },
+      {
+        "from": "cm2",
+        "to": "e4",
+        "condition": "always"
+      },
+      {
+        "from": "ec",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "e4",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l",
+        "to": "eos",
+        "condition": "no more rows"
+      },
+      {
+        "from": "eos",
+        "to": "p5",
+        "condition": "always"
+      },
+      {
+        "from": "p5",
+        "to": "f5",
+        "condition": "always"
+      },
+      {
+        "from": "f5",
+        "to": "alv",
+        "condition": "always"
+      },
+      {
+        "from": "mauth",
+        "to": "emauth",
+        "condition": "always"
+      },
+      {
+        "from": "fe1",
+        "to": "g0",
+        "condition": "always"
+      },
+      {
+        "from": "fe2",
+        "to": "gok1",
+        "condition": "always"
+      },
+      {
+        "from": "alv",
+        "to": "fe5",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zpp_plaf_umsetzen_f01.abap:33 — kein Fachsatz „Planaufträge für Materialien ohne Werksdaten werden abgelehnt“ (der Kopfkommentar sagt „vorhanden“, aber sy-subrc wird nicht geprüft; ohne Treffer ist der Status leer und die Prüfung besteht)",
+    "zpp_plaf_umsetzen_f01.abap:70 — kein Fachsatz „Die Verfügbarkeit wird per ATP geprüft“ (nur Summe des frei verwendbaren Lagerbestands, ohne Reservierungen anderer Aufträge)",
+    "zpp_plaf_umsetzen_f01.abap:37 — kein Fachsatz „Auslaufmaterial (Z2) wird nicht umgesetzt“ (laut Kommentar und Code ist nur Z1 gesperrt)",
+    "gesamte Scheibe — kein Fachsatz „Es gibt einen Testlauf“ (jede Umsetzung wird sofort gebucht)"
+  ],
+  "processDescription": "Der Report läuft täglich als Job je Werk und ersetzt die Sammelumsetzung CO41. Beim Start prüft er die Berechtigung für Werk und Auftragsart. Er liest die eigengefertigten Lager-Planaufträge des Werks bis zum Horizont, verwirft auf Wunsch nicht fixierte und sortiert nach Eckstart; gibt es keine, endet er mit einem Hinweis. Für jeden Planauftrag prüft er zuerst den werksspezifischen Materialstatus – Z1 heißt Fertigung gesperrt, der Planauftrag wird rot protokolliert und übersprungen. Dann vergleicht er jeden Sekundärbedarf mit dem frei verwendbaren Lagerbestand der Komponente im Werk; beim ersten Fehlteil protokolliert er gelb und überspringt den Planauftrag. Besteht der Planauftrag beide Prüfungen, setzt er ihn in einen Fertigungsauftrag der gewählten Art um, rollt bei Fehler zurück oder schreibt fest und protokolliert das Ergebnis. Auf Wunsch gibt er den neuen Auftrag sofort frei; eine gescheiterte Freigabe wird zurückgerollt und gelb vermerkt. Zum Schluss zeigt er das Protokoll mit Ampeln als ALV-Liste."
+}

@@ -1,0 +1,105 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten fe_la",
+      "before": "—",
+      "after": "end zpp_mes_file_f03.abap:23 „Log angelegt (oder ohne Log), Rückkehr“",
+      "why": "Konvention: jeder auslaufende FORM hat einen eigenen end-Knoten auf ENDFORM; Rückkehr zum Aufrufer läuft über diesen",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kante g_bal→g_exp",
+      "before": "g_bal→g_exp [sy-subrc <> 0]",
+      "after": "g_bal→fe_la [sy-subrc <> 0]",
+      "why": "Konvention: jeder auslaufende FORM hat einen eigenen end-Knoten auf ENDFORM; Rückkehr zum Aufrufer läuft über diesen",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante g_bal→g_exp",
+      "before": "g_bal→g_exp [else]",
+      "after": "g_bal→fe_la [else]",
+      "why": "Konvention: jeder auslaufende FORM hat einen eigenen end-Knoten auf ENDFORM; Rückkehr zum Aufrufer läuft über diesen",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante fe_la→g_exp",
+      "before": "—",
+      "after": "[always]",
+      "why": "Rückkante vom FORM-Ende nach PERFORM log_anlegen",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten fe_r",
+      "before": "—",
+      "after": "end zpp_mes_file_f02.abap:98 „Rückmeldesatz verarbeitet, Rückkehr“",
+      "why": "Konvention: jeder auslaufende FORM hat einen eigenen end-Knoten auf ENDFORM; Rückkehr zum Aufrufer läuft über diesen",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kante rb1→l_in",
+      "before": "rb1→l_in [next iteration]",
+      "after": "rb1→fe_r [next iteration]",
+      "why": "Konvention: jeder auslaufende FORM hat einen eigenen end-Knoten auf ENDFORM; Rückkehr zum Aufrufer läuft über diesen",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante cm1→l_in",
+      "before": "cm1→l_in [next iteration]",
+      "after": "cm1→fe_r [next iteration]",
+      "why": "Konvention: jeder auslaufende FORM hat einen eigenen end-Knoten auf ENDFORM; Rückkehr zum Aufrufer läuft über diesen",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante fe_r→l_in",
+      "before": "—",
+      "after": "[next iteration]",
+      "why": "Rückkehr aus FORM rueckmeldung, danach nächster Eingangssatz",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten fe_g",
+      "before": "—",
+      "after": "end zpp_mes_file_f02.abap:164 „Wareneingangssatz verarbeitet, Rückkehr“",
+      "why": "Konvention: jeder auslaufende FORM hat einen eigenen end-Knoten auf ENDFORM; Rückkehr zum Aufrufer läuft über diesen",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kante rb2→l_in",
+      "before": "rb2→l_in [next iteration]",
+      "after": "rb2→fe_g [next iteration]",
+      "why": "Konvention: jeder auslaufende FORM hat einen eigenen end-Knoten auf ENDFORM; Rückkehr zum Aufrufer läuft über diesen",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante cm2→l_in",
+      "before": "cm2→l_in [next iteration]",
+      "after": "cm2→fe_g [next iteration]",
+      "why": "Konvention: jeder auslaufende FORM hat einen eigenen end-Knoten auf ENDFORM; Rückkehr zum Aufrufer läuft über diesen",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante fe_g→l_in",
+      "before": "—",
+      "after": "[next iteration]",
+      "why": "Rückkehr aus FORM wareneingang, danach nächster Eingangssatz",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten e_m_f",
+      "before": "—",
+      "after": "end zpp_mes_file_f03.abap:53 „Job bricht mit Fehlermeldung ab (rot)“",
+      "why": "MESSAGE TYPE E im Hintergrund beendet den Job; Konvention: output + end auf derselben Zeile",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kante m_f→e_m_f",
+      "before": "—",
+      "after": "[always]",
+      "why": "Pfadende nach Fehlermeldung",
+      "category": "Kante"
+    }
+  ],
+  "doubts": []
+}

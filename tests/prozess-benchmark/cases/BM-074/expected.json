@@ -1,0 +1,1261 @@
+{
+  "id": "BM-074",
+  "title": "IDoc-Eingang Prüfergebnisse aus dem LIMS mit optionaler Qualitätsmeldung",
+  "classes": [
+    "K03",
+    "K12",
+    "K16",
+    "K01"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [
+    "Soll im Fehlerfall wirklich ROLLBACK WORK laufen, obwohl die Massenverarbeitung mehrere IDocs in einer LUW bündelt?"
+  ],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "QALS",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "lzqm_limsf01.abap",
+        "line": 19,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzqm_limsf01.abap:19"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "QAVE",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "lzqm_limsf01.abap",
+        "line": 27,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzqm_limsf01.abap:27"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "QAPO",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "lzqm_limsf01.abap",
+        "line": 35,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzqm_limsf01.abap:35"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_INSPOPER_RECORDRESULTS",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "lzqm_limsf01.abap",
+        "line": 71,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzqm_limsf01.abap:71"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_QUALNOT_CREATE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "lzqm_limsf01.abap",
+        "line": 101,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzqm_limsf01.abap:101"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_QUALNOT_SAVE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "lzqm_limsf01.abap",
+        "line": 115,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzqm_limsf01.abap:115"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-074-B01",
+      "text": "Die Eingangsverarbeitung erhält ein Paket von LIMS-IDocs und verarbeitet sie einzeln; ein IDoc eines anderen Nachrichtentyps bricht die Verarbeitung mit der Ausnahme WRONG_FUNCTION_CALLED ab.",
+      "anchors": [
+        {
+          "file": "idoc_input_zqmres.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "idoc_input_zqmres.abap:28"
+        },
+        {
+          "file": "idoc_input_zqmres.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "idoc_input_zqmres.abap:29"
+        },
+        {
+          "file": "idoc_input_zqmres.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "idoc_input_zqmres.abap:30"
+        }
+      ]
+    },
+    {
+      "id": "BM-074-B02",
+      "text": "Aus den Segmenten werden der Kopf (Prüflos, Vorgang, Labor, Meldungswunsch) und die Merkmalsergebnisse (Merkmalnummer, Mittelwert, Bewertung) übernommen; unbekannte Segmente werden ignoriert.",
+      "anchors": [
+        {
+          "file": "idoc_input_zqmres.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "idoc_input_zqmres.abap:35"
+        },
+        {
+          "file": "idoc_input_zqmres.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "idoc_input_zqmres.abap:36"
+        }
+      ]
+    },
+    {
+      "id": "BM-074-B03",
+      "text": "Fehlen Kopf oder Merkmale, gilt das IDoc als unvollständig.",
+      "anchors": [
+        {
+          "file": "lzqm_limsf01.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzqm_limsf01.abap:14"
+        }
+      ]
+    },
+    {
+      "id": "BM-074-B04",
+      "text": "Ein unbekanntes Prüflos wird mit „Prueflos … unbekannt“ abgelehnt.",
+      "anchors": [
+        {
+          "file": "lzqm_limsf01.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzqm_limsf01.abap:19"
+        },
+        {
+          "file": "lzqm_limsf01.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzqm_limsf01.abap:21"
+        }
+      ]
+    },
+    {
+      "id": "BM-074-B05",
+      "text": "Hat das Prüflos bereits einen Verwendungsentscheid, werden keine Ergebnisse mehr angenommen.",
+      "anchors": [
+        {
+          "file": "lzqm_limsf01.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzqm_limsf01.abap:27"
+        },
+        {
+          "file": "lzqm_limsf01.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzqm_limsf01.abap:30"
+        }
+      ]
+    },
+    {
+      "id": "BM-074-B06",
+      "text": "Der gemeldete Vorgang muss zum Prüflos gehören, sonst wird das IDoc abgelehnt.",
+      "anchors": [
+        {
+          "file": "lzqm_limsf01.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzqm_limsf01.abap:35"
+        },
+        {
+          "file": "lzqm_limsf01.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzqm_limsf01.abap:38"
+        }
+      ]
+    },
+    {
+      "id": "BM-074-B07",
+      "text": "Ein abgelehntes IDoc erhält Status 51 mit dem Ablehnungsgrund und das Paketergebnis wird auf Fehler gesetzt; es geht mit dem nächsten IDoc weiter.",
+      "anchors": [
+        {
+          "file": "idoc_input_zqmres.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "idoc_input_zqmres.abap:48"
+        },
+        {
+          "file": "idoc_input_zqmres.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "idoc_input_zqmres.abap:49"
+        },
+        {
+          "file": "idoc_input_zqmres.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "idoc_input_zqmres.abap:51"
+        }
+      ]
+    },
+    {
+      "id": "BM-074-B08",
+      "text": "Die Merkmalsergebnisse werden mit Mittelwert und Bewertung als abgeschlossen und bewertet zum Prüflosvorgang erfasst, mit einem Vermerk des Labors.",
+      "anchors": [
+        {
+          "file": "idoc_input_zqmres.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "idoc_input_zqmres.abap:55"
+        },
+        {
+          "file": "lzqm_limsf01.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzqm_limsf01.abap:58"
+        },
+        {
+          "file": "lzqm_limsf01.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzqm_limsf01.abap:71"
+        }
+      ]
+    },
+    {
+      "id": "BM-074-B09",
+      "text": "Scheitert die Erfassung, wird die offene Datenbank-LUW zurückgerollt und das IDoc erhält Status 51 mit dem BAPI-Fehlertext.",
+      "anchors": [
+        {
+          "file": "lzqm_limsf01.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzqm_limsf01.abap:81"
+        },
+        {
+          "file": "idoc_input_zqmres.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "idoc_input_zqmres.abap:56"
+        },
+        {
+          "file": "idoc_input_zqmres.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "idoc_input_zqmres.abap:57"
+        },
+        {
+          "file": "idoc_input_zqmres.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "idoc_input_zqmres.abap:58"
+        }
+      ]
+    },
+    {
+      "id": "BM-074-B10",
+      "text": "Wünscht das LIMS eine Meldung und ist mindestens ein Merkmal zurückgewiesen, wird zum Prüflos eine Qualitätsmeldung der Art Z3 angelegt und gesichert; scheitert das Anlegen, bleibt das IDoc trotzdem erfolgreich.",
+      "anchors": [
+        {
+          "file": "idoc_input_zqmres.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "idoc_input_zqmres.abap:64"
+        },
+        {
+          "file": "lzqm_limsf01.abap",
+          "line": 101,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzqm_limsf01.abap:101"
+        },
+        {
+          "file": "lzqm_limsf01.abap",
+          "line": 110,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzqm_limsf01.abap:110"
+        },
+        {
+          "file": "lzqm_limsf01.abap",
+          "line": 115,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzqm_limsf01.abap:115"
+        }
+      ]
+    },
+    {
+      "id": "BM-074-B11",
+      "text": "Erfolgreich verarbeitete IDocs erhalten Status 53 mit der Anzahl erfasster Ergebnisse und gegebenenfalls der Meldungsnummer.",
+      "anchors": [
+        {
+          "file": "idoc_input_zqmres.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "idoc_input_zqmres.abap:68"
+        },
+        {
+          "file": "lzqm_limsf01.abap",
+          "line": 126,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzqm_limsf01.abap:126"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "idoc_input_zqmres.abap",
+          "line": 1,
+          "token": null,
+          "expressionPath": null,
+          "raw": "idoc_input_zqmres.abap:1"
+        },
+        "meaning": "ALE übergibt ein Paket LIMS-Ergebnis-IDocs"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "idoc_input_zqmres.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "idoc_input_zqmres.abap:28"
+        },
+        "meaning": "Je IDoc"
+      },
+      {
+        "id": "gm",
+        "type": "gateway",
+        "anchor": {
+          "file": "idoc_input_zqmres.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "idoc_input_zqmres.abap:29"
+        },
+        "meaning": "Falscher Nachrichtentyp?"
+      },
+      {
+        "id": "x",
+        "type": "end",
+        "anchor": {
+          "file": "idoc_input_zqmres.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "idoc_input_zqmres.abap:30"
+        },
+        "meaning": "Ausnahme WRONG_FUNCTION_CALLED"
+      },
+      {
+        "id": "ld",
+        "type": "loop",
+        "anchor": {
+          "file": "idoc_input_zqmres.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "idoc_input_zqmres.abap:35"
+        },
+        "meaning": "Segmente des IDocs lesen"
+      },
+      {
+        "id": "cs",
+        "type": "gateway",
+        "anchor": {
+          "file": "idoc_input_zqmres.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "idoc_input_zqmres.abap:36"
+        },
+        "meaning": "Kopf- oder Merkmalsegment?"
+      },
+      {
+        "id": "p1",
+        "type": "call",
+        "anchor": {
+          "file": "idoc_input_zqmres.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "idoc_input_zqmres.abap:47"
+        },
+        "meaning": "Prüflos prüfen"
+      },
+      {
+        "id": "f1",
+        "type": "start",
+        "anchor": {
+          "file": "lzqm_limsf01.abap",
+          "line": 8,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzqm_limsf01.abap:8"
+        },
+        "meaning": "Prüflosprüfung"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzqm_limsf01.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzqm_limsf01.abap:14"
+        },
+        "meaning": "Kopf und Merkmale vorhanden?"
+      },
+      {
+        "id": "e1",
+        "type": "end",
+        "anchor": {
+          "file": "lzqm_limsf01.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzqm_limsf01.abap:16"
+        },
+        "meaning": "Nicht ok: IDoc unvollständig"
+      },
+      {
+        "id": "q1",
+        "type": "read",
+        "anchor": {
+          "file": "lzqm_limsf01.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzqm_limsf01.abap:19"
+        },
+        "meaning": "Prüflos lesen"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzqm_limsf01.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzqm_limsf01.abap:21"
+        },
+        "meaning": "Prüflos bekannt?"
+      },
+      {
+        "id": "e2",
+        "type": "end",
+        "anchor": {
+          "file": "lzqm_limsf01.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzqm_limsf01.abap:23"
+        },
+        "meaning": "Nicht ok: Prüflos unbekannt"
+      },
+      {
+        "id": "q2",
+        "type": "read",
+        "anchor": {
+          "file": "lzqm_limsf01.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzqm_limsf01.abap:27"
+        },
+        "meaning": "Verwendungsentscheid auf Losebene suchen"
+      },
+      {
+        "id": "g3",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzqm_limsf01.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzqm_limsf01.abap:30"
+        },
+        "meaning": "VE bereits getroffen?"
+      },
+      {
+        "id": "e3",
+        "type": "end",
+        "anchor": {
+          "file": "lzqm_limsf01.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzqm_limsf01.abap:32"
+        },
+        "meaning": "Nicht ok: VE vorhanden"
+      },
+      {
+        "id": "q3",
+        "type": "read",
+        "anchor": {
+          "file": "lzqm_limsf01.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzqm_limsf01.abap:35"
+        },
+        "meaning": "Vorgang im Prüflos suchen"
+      },
+      {
+        "id": "g4",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzqm_limsf01.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzqm_limsf01.abap:38"
+        },
+        "meaning": "Vorgang vorhanden?"
+      },
+      {
+        "id": "e4",
+        "type": "end",
+        "anchor": {
+          "file": "lzqm_limsf01.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzqm_limsf01.abap:40"
+        },
+        "meaning": "Nicht ok: Vorgang fehlt"
+      },
+      {
+        "id": "a1",
+        "type": "action",
+        "anchor": {
+          "file": "lzqm_limsf01.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzqm_limsf01.abap:43"
+        },
+        "meaning": "Prüfung bestanden"
+      },
+      {
+        "id": "fe1",
+        "type": "end",
+        "anchor": {
+          "file": "lzqm_limsf01.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzqm_limsf01.abap:44"
+        },
+        "meaning": "Prüfung bestanden, Rückkehr mit cv_ok = X"
+      },
+      {
+        "id": "gok",
+        "type": "gateway",
+        "anchor": {
+          "file": "idoc_input_zqmres.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "idoc_input_zqmres.abap:48"
+        },
+        "meaning": "Prüfung bestanden?"
+      },
+      {
+        "id": "st1",
+        "type": "call",
+        "anchor": {
+          "file": "idoc_input_zqmres.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "idoc_input_zqmres.abap:49"
+        },
+        "meaning": "Status 51 mit Prüftext setzen, nächstes IDoc"
+      },
+      {
+        "id": "p2",
+        "type": "call",
+        "anchor": {
+          "file": "idoc_input_zqmres.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "idoc_input_zqmres.abap:55"
+        },
+        "meaning": "Ergebnisse erfassen"
+      },
+      {
+        "id": "f2",
+        "type": "start",
+        "anchor": {
+          "file": "lzqm_limsf01.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzqm_limsf01.abap:49"
+        },
+        "meaning": "Ergebniserfassung"
+      },
+      {
+        "id": "lp",
+        "type": "loop",
+        "anchor": {
+          "file": "lzqm_limsf01.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzqm_limsf01.abap:58"
+        },
+        "meaning": "Merkmalsergebnisse aufbauen (Mittelwert, Bewertung, abgeschlossen, Laborvermerk)"
+      },
+      {
+        "id": "cb",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "lzqm_limsf01.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzqm_limsf01.abap:71"
+        },
+        "meaning": "Merkmalsergebnisse zum Prüflosvorgang erfassen"
+      },
+      {
+        "id": "gb",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzqm_limsf01.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzqm_limsf01.abap:81"
+        },
+        "meaning": "Erfassung fehlgeschlagen?"
+      },
+      {
+        "id": "eb",
+        "type": "end",
+        "anchor": {
+          "file": "lzqm_limsf01.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzqm_limsf01.abap:83"
+        },
+        "meaning": "Nicht ok: BAPI-Fehlertext"
+      },
+      {
+        "id": "a2",
+        "type": "action",
+        "anchor": {
+          "file": "lzqm_limsf01.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzqm_limsf01.abap:87"
+        },
+        "meaning": "Erfassung erfolgreich, Anzahl im Text"
+      },
+      {
+        "id": "fe2",
+        "type": "end",
+        "anchor": {
+          "file": "lzqm_limsf01.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzqm_limsf01.abap:88"
+        },
+        "meaning": "Erfassung erfolgreich, Rückkehr mit cv_ok = X"
+      },
+      {
+        "id": "gok2",
+        "type": "gateway",
+        "anchor": {
+          "file": "idoc_input_zqmres.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "idoc_input_zqmres.abap:56"
+        },
+        "meaning": "Erfassung erfolgreich?"
+      },
+      {
+        "id": "rb",
+        "type": "transaction",
+        "anchor": {
+          "file": "idoc_input_zqmres.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "idoc_input_zqmres.abap:57"
+        },
+        "meaning": "Gesamte offene LUW zurückrollen"
+      },
+      {
+        "id": "st2",
+        "type": "call",
+        "anchor": {
+          "file": "idoc_input_zqmres.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "idoc_input_zqmres.abap:58"
+        },
+        "meaning": "Status 51 mit Fehlertext setzen, nächstes IDoc"
+      },
+      {
+        "id": "gq",
+        "type": "gateway",
+        "anchor": {
+          "file": "idoc_input_zqmres.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "idoc_input_zqmres.abap:64"
+        },
+        "meaning": "Meldung gewünscht und Merkmal zurückgewiesen?"
+      },
+      {
+        "id": "p3",
+        "type": "call",
+        "anchor": {
+          "file": "idoc_input_zqmres.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "idoc_input_zqmres.abap:65"
+        },
+        "meaning": "Qualitätsmeldung anlegen"
+      },
+      {
+        "id": "f3",
+        "type": "start",
+        "anchor": {
+          "file": "lzqm_limsf01.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzqm_limsf01.abap:93"
+        },
+        "meaning": "Qualitätsmeldung"
+      },
+      {
+        "id": "cq",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "lzqm_limsf01.abap",
+          "line": 101,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzqm_limsf01.abap:101"
+        },
+        "meaning": "Qualitätsmeldung Art Z3 zum Prüflos anlegen"
+      },
+      {
+        "id": "gq2",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzqm_limsf01.abap",
+          "line": 110,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzqm_limsf01.abap:110"
+        },
+        "meaning": "Fehler beim Anlegen?"
+      },
+      {
+        "id": "eq",
+        "type": "end",
+        "anchor": {
+          "file": "lzqm_limsf01.abap",
+          "line": 112,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzqm_limsf01.abap:112"
+        },
+        "meaning": "Ohne Meldung weiter"
+      },
+      {
+        "id": "sq",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "lzqm_limsf01.abap",
+          "line": 115,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzqm_limsf01.abap:115"
+        },
+        "meaning": "Meldung sichern, Nummer an Statustext anhängen"
+      },
+      {
+        "id": "fe3",
+        "type": "end",
+        "anchor": {
+          "file": "lzqm_limsf01.abap",
+          "line": 121,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzqm_limsf01.abap:121"
+        },
+        "meaning": "Meldung gesichert, Nummer im Statustext, Rückkehr"
+      },
+      {
+        "id": "st3",
+        "type": "call",
+        "anchor": {
+          "file": "idoc_input_zqmres.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "idoc_input_zqmres.abap:68"
+        },
+        "meaning": "Status 53 setzen"
+      },
+      {
+        "id": "f4",
+        "type": "start",
+        "anchor": {
+          "file": "lzqm_limsf01.abap",
+          "line": 126,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzqm_limsf01.abap:126"
+        },
+        "meaning": "Statussatz mit Text an die IDoc-Statustabelle anhängen"
+      },
+      {
+        "id": "fe4",
+        "type": "end",
+        "anchor": {
+          "file": "lzqm_limsf01.abap",
+          "line": 140,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzqm_limsf01.abap:140"
+        },
+        "meaning": "Statussatz angehängt, Rückkehr"
+      },
+      {
+        "id": "done",
+        "type": "end",
+        "anchor": {
+          "file": "idoc_input_zqmres.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "idoc_input_zqmres.abap:72"
+        },
+        "meaning": "Rückgabe der Statussätze an ALE"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "l",
+        "condition": "always"
+      },
+      {
+        "from": "l",
+        "to": "gm",
+        "condition": "next row"
+      },
+      {
+        "from": "gm",
+        "to": "x",
+        "condition": "idoc_contrl-mestyp <> 'ZQMRES'"
+      },
+      {
+        "from": "gm",
+        "to": "ld",
+        "condition": "else"
+      },
+      {
+        "from": "ld",
+        "to": "cs",
+        "condition": "next row"
+      },
+      {
+        "from": "cs",
+        "to": "ld",
+        "condition": "WHEN 'Z1QMRESH'"
+      },
+      {
+        "from": "cs",
+        "to": "ld",
+        "condition": "WHEN 'Z1QMRESI'"
+      },
+      {
+        "from": "cs",
+        "to": "ld",
+        "condition": "WHEN OTHERS"
+      },
+      {
+        "from": "ld",
+        "to": "p1",
+        "condition": "no more rows"
+      },
+      {
+        "from": "p1",
+        "to": "f1",
+        "condition": "always"
+      },
+      {
+        "from": "f1",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "e1",
+        "condition": "gs_kopf-prueflos IS INITIAL OR gt_pos IS INITIAL"
+      },
+      {
+        "from": "g1",
+        "to": "q1",
+        "condition": "else"
+      },
+      {
+        "from": "q1",
+        "to": "g2",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "e2",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g2",
+        "to": "q2",
+        "condition": "else"
+      },
+      {
+        "from": "q2",
+        "to": "g3",
+        "condition": "always"
+      },
+      {
+        "from": "g3",
+        "to": "e3",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "g3",
+        "to": "q3",
+        "condition": "else"
+      },
+      {
+        "from": "q3",
+        "to": "g4",
+        "condition": "always"
+      },
+      {
+        "from": "g4",
+        "to": "e4",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g4",
+        "to": "a1",
+        "condition": "else"
+      },
+      {
+        "from": "e1",
+        "to": "gok",
+        "condition": "always"
+      },
+      {
+        "from": "e2",
+        "to": "gok",
+        "condition": "always"
+      },
+      {
+        "from": "e3",
+        "to": "gok",
+        "condition": "always"
+      },
+      {
+        "from": "e4",
+        "to": "gok",
+        "condition": "always"
+      },
+      {
+        "from": "a1",
+        "to": "fe1",
+        "condition": "always"
+      },
+      {
+        "from": "gok",
+        "to": "st1",
+        "condition": "lv_ok = abap_false"
+      },
+      {
+        "from": "st1",
+        "to": "f4",
+        "condition": "always"
+      },
+      {
+        "from": "gok",
+        "to": "p2",
+        "condition": "else"
+      },
+      {
+        "from": "p2",
+        "to": "f2",
+        "condition": "always"
+      },
+      {
+        "from": "f2",
+        "to": "lp",
+        "condition": "always"
+      },
+      {
+        "from": "lp",
+        "to": "lp",
+        "condition": "next row"
+      },
+      {
+        "from": "lp",
+        "to": "cb",
+        "condition": "no more rows"
+      },
+      {
+        "from": "cb",
+        "to": "gb",
+        "condition": "always"
+      },
+      {
+        "from": "gb",
+        "to": "eb",
+        "condition": "ls_return-type CA 'EA'"
+      },
+      {
+        "from": "gb",
+        "to": "a2",
+        "condition": "else"
+      },
+      {
+        "from": "eb",
+        "to": "gok2",
+        "condition": "always"
+      },
+      {
+        "from": "a2",
+        "to": "fe2",
+        "condition": "always"
+      },
+      {
+        "from": "gok2",
+        "to": "rb",
+        "condition": "lv_ok = abap_false"
+      },
+      {
+        "from": "rb",
+        "to": "st2",
+        "condition": "always"
+      },
+      {
+        "from": "st2",
+        "to": "f4",
+        "condition": "always"
+      },
+      {
+        "from": "gok2",
+        "to": "gq",
+        "condition": "else"
+      },
+      {
+        "from": "gq",
+        "to": "p3",
+        "condition": "gs_kopf-meldung = 'X' AND line_exists( gt_pos[ bewertung = 'R' ] )"
+      },
+      {
+        "from": "gq",
+        "to": "st3",
+        "condition": "else"
+      },
+      {
+        "from": "p3",
+        "to": "f3",
+        "condition": "always"
+      },
+      {
+        "from": "f3",
+        "to": "cq",
+        "condition": "always"
+      },
+      {
+        "from": "cq",
+        "to": "gq2",
+        "condition": "always"
+      },
+      {
+        "from": "gq2",
+        "to": "eq",
+        "condition": "line_exists( lt_return[ type = 'E' ] )"
+      },
+      {
+        "from": "gq2",
+        "to": "sq",
+        "condition": "else"
+      },
+      {
+        "from": "eq",
+        "to": "st3",
+        "condition": "always"
+      },
+      {
+        "from": "fe3",
+        "to": "st3",
+        "condition": "always"
+      },
+      {
+        "from": "st3",
+        "to": "f4",
+        "condition": "always"
+      },
+      {
+        "from": "fe4",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l",
+        "to": "done",
+        "condition": "no more rows"
+      },
+      {
+        "from": "fe1",
+        "to": "gok",
+        "condition": "always"
+      },
+      {
+        "from": "fe2",
+        "to": "gok2",
+        "condition": "always"
+      },
+      {
+        "from": "sq",
+        "to": "fe3",
+        "condition": "always"
+      },
+      {
+        "from": "f4",
+        "to": "fe4",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "idoc_input_zqmres.abap:57 — kein Fachsatz „Ein Fehler betrifft nur das eigene IDoc“ (ROLLBACK WORK verwirft bei Massenverarbeitung auch noch nicht festgeschriebene Änderungen vorheriger IDocs desselben Pakets, deren Status bereits 53 ist)",
+    "gesamte Scheibe — kein Fachsatz „Der Verwendungsentscheid wird gesetzt“ (es werden nur Ergebnisse erfasst)",
+    "lzqm_limsf01.abap:115 — kein Fachsatz „Die Qualitätsmeldung ist nachweislich gesichert“ (das RETURN des Sicherns wird nicht geprüft)",
+    "lzqm_limsf01.abap:35 — kein Fachsatz „Die interne Vorgangsnummer wird an die BAPI übergeben“ (sie wird nur zur Existenzprüfung gelesen; übergeben wird die Vorgangsnummer aus dem IDoc)"
+  ],
+  "processDescription": "Das Labor-Informationssystem schickt Prüfergebnisse als IDoc; ALE ruft die Eingangsverarbeitung mit einem Paket von IDocs auf. Für jedes IDoc liest sie Kopf und Merkmalsergebnisse aus den Segmenten; ein fremder Nachrichtentyp bricht mit Ausnahme ab. Sie prüft, ob Kopf und Merkmale vorhanden sind, ob das Prüflos existiert, ob noch kein Verwendungsentscheid vorliegt und ob der Vorgang zum Prüflos gehört. Scheitert eine Prüfung, erhält das IDoc Status 51 mit dem Grund und die Verarbeitung geht mit dem nächsten weiter. Sonst erfasst sie die Merkmalsergebnisse mit Mittelwert und Bewertung über die BAPI. Scheitert das, rollt sie die offene LUW zurück und setzt Status 51. Hat das LIMS eine Meldung angefordert und ist ein Merkmal zurückgewiesen, legt sie zum Prüflos eine Qualitätsmeldung an und sichert sie; ein Fehler dabei ändert am Erfolg des IDocs nichts. Erfolgreiche IDocs erhalten Status 53; die Statussätze gehen an ALE zurück, die das Festschreiben übernimmt."
+}

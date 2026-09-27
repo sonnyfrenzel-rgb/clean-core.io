@@ -1,0 +1,40 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten e_main (neu)",
+      "before": "—",
+      "after": "end zsd_webshop_cust.abap:96 „Lauf endet nach der Zählerausgabe“",
+      "why": "Implizites Ende von START-OF-SELECTION fehlte; o hatte keine ausgehende Kante.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kanten cdup",
+      "before": "cdup->gdup [always]",
+      "after": "e_d1->gdup [always], e_d2->gdup [always]",
+      "why": "Konvention Aufrufe im Fall: Aufruf → Start des Ziels, end des Ziels → nächster Schritt (je Aufrufer eine Rückkante); die Direktkante Aufruf → Folgeknoten entfällt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten cb",
+      "before": "cb->ct [always]",
+      "after": "e_b->ct [always]",
+      "why": "Konvention Aufrufe im Fall: Aufruf → Start des Ziels, end des Ziels → nächster Schritt (je Aufrufer eine Rückkante); die Direktkante Aufruf → Folgeknoten entfällt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten cerr",
+      "before": "cerr->we [always]",
+      "after": "e_t->we [always]",
+      "why": "Konvention Aufrufe im Fall: Aufruf → Start des Ziels, end des Ziels → nächster Schritt (je Aufrufer eine Rückkante); die Direktkante Aufruf → Folgeknoten entfällt.",
+      "category": "Kante"
+    }
+  ],
+  "doubts": [
+    "rm (Z. 79) und rt2 (f01:90) sind READ TABLE ohne nachfolgende Entscheidung (Brief: READ TABLE nur bei Nachschlage-Entscheidung). Belassen, weil rm die Kundennummer festlegt, die geschrieben wird, und rt2 den Ersatztext wählt; die Grenze ist Auslegung."
+  ],
+  "notes": [
+    "a_b (f01:40) bleibt als action: die Mappe legt fachlich fest, mit welchen Daten der Debitor angelegt wird (Kontengruppe, Abstimmkonto, Zahlungsbedingung Vorkasse, Währung, Steuer) — das ist das Ergebnis, das CALL TRANSACTION XD01 steuert; ohne den Knoten wäre BUILD_BDC leer."
+  ]
+}

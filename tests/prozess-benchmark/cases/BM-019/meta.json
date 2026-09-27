@@ -1,0 +1,27 @@
+{
+  "id": "BM-019",
+  "title": "Webshop-Bestellung per RFC: Dublettenschutz, Kunde finden oder anlegen, Verfügbarkeit, Preisabgleich, Auftragsanlage mit Protokoll und Ereignis",
+  "domain": "SD / Order-to-Cash",
+  "band": "sehr komplex",
+  "loc": 457,
+  "constructs": [
+    "remotefähiger Funktionsbaustein als Schnittstelle",
+    "zwei globale Klassen mit Konstruktor und privaten Methoden",
+    "TRY/CATCH mit klassenbasierter Ausnahme und ROLLBACK WORK",
+    "SELECT … UP TO 1 ROWS … ENDSELECT mit INNER JOIN KNA1/ADR6",
+    "SD_CUSTOMER_MAINTAIN_ALL",
+    "BAPI_MATERIAL_AVAILABILITY (MATERIAL_LONG)",
+    "BAPI_SALESORDER_SIMULATE",
+    "BAPI_SALESORDER_CREATEFROMDAT2 ohne eigenes Commit",
+    "CALL FUNCTION … IN UPDATE TASK",
+    "SWE_EVENT_CREATE",
+    "READ-ONLY-Attribute"
+  ],
+  "scenario": "Schnittstelle zwischen Webshop-Middleware und SD: jede Shopbestellung wird per RFC übergeben, der Baustein ermittelt oder legt den Kunden an, prüft Verfügbarkeit und Shoppreise gegen die SAP-Preisfindung und legt den Kundenauftrag an.",
+  "s4_issues": [
+    "SD_CUSTOMER_MAINTAIN_ALL legt in S/4 keinen Business Partner an und ist mit CVI nicht zulässig; Nachfolger Business-Partner-API (API_BUSINESS_PARTNER, CL_MD_BP_MAINTAIN)",
+    "direkter Lesezugriff auf KNA1/KNB1/KNVV/ADR6",
+    "Suche über ADR6-SMTP_SRCH (20 Zeichen) ist in S/4 unverändert unscharf",
+    "RFC-Schnittstelle besser als OData-/SOAP-Service (API_SALES_ORDER_SRV)"
+  ]
+}

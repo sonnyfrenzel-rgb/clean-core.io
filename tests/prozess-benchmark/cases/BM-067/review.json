@@ -1,0 +1,44 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten fend",
+      "before": "—",
+      "after": "end source.abap:102 „Batch-Input-Mappe aufgebaut, Rückkehr zum Aufrufer“",
+      "why": "Konvention: jeder auslaufende FORM hat einen end-Knoten auf ENDFORM",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kante f→ct",
+      "before": "f→ct [always]",
+      "after": "fend→ct [always]",
+      "why": "Rückkehr aus dem FORM läuft über dessen end-Knoten, nicht direkt vom Start",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante f→fend",
+      "before": "—",
+      "after": "[always]",
+      "why": "FORM-Körper (nur Aufbau der BDC-Tabelle) läuft bis ENDFORM",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten e_end",
+      "before": "—",
+      "after": "end source.abap:86 „Report beendet“",
+      "why": "Pfadende des Ereignisblocks START-OF-SELECTION fehlte (Validator-Warnung); nach Autorenbrief bei implizitem Ende end auf der letzten Anweisung",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kante sum→e_end",
+      "before": "—",
+      "after": "[always]",
+      "why": "Ende des Ereignisblocks",
+      "category": "Kante"
+    }
+  ],
+  "doubts": [
+    "source.abap:95 — Ob das IW31-Einstiegsbild SAPLCOIH 0100 ein Feld RIWO00-QMNUM anbietet (Meldungsbezug bei Auftragsanlage läuft sonst eher über IW34), ist nicht verifiziert; Skelett und Fachsätze hängen nicht daran."
+  ]
+}

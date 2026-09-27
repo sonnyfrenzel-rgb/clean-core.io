@@ -1,0 +1,1317 @@
+{
+  "id": "BM-093",
+  "title": "Überstundenmonitor: Ist gegen Soll je Monat mit Workflow-Alarm an die Führungskraft",
+  "classes": [
+    "K01",
+    "K02",
+    "K03",
+    "K15"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "PA0001",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zhr_ot_eval.abap",
+        "line": 42,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zhr_ot_eval.abap:42"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "HR_CHECK_AUTHORITY_INFTY",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zhr_ot_eval.abap",
+        "line": 55,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zhr_ot_eval.abap:55"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "REUSE_ALV_GRID_DISPLAY",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zhr_ot_eval.abap",
+        "line": 84,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zhr_ot_eval.abap:84"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZCL_HR_OVERTIME",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zhr_ot_eval.abap",
+        "line": 37,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zhr_ot_eval.abap:37"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZHR_OT_LIMIT",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_hr_overtime.abap",
+        "line": 36,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_hr_overtime.abap:36"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "HR_READ_INFOTYPE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_hr_overtime.abap",
+        "line": 56,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_hr_overtime.abap:56"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "PA2002",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_hr_overtime.abap",
+        "line": 90,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_hr_overtime.abap:90"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "PA2005",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_hr_overtime.abap",
+        "line": 95,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_hr_overtime.abap:95"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZHR_OT_ALERT",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_hr_overtime.abap",
+        "line": 126,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_hr_overtime.abap:126"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZHR_OT_ALERT",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "zcl_hr_overtime.abap",
+        "line": 140,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_hr_overtime.abap:140"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "SWE_EVENT_CREATE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_hr_overtime.abap",
+        "line": 143,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_hr_overtime.abap:143"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-093-B01",
+      "text": "Zu Beginn werden die Überstundengrenzen je Personalbereich geladen, die im gewählten Monat gelten.",
+      "anchors": [
+        {
+          "file": "zhr_ot_eval.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ot_eval.abap:37"
+        },
+        {
+          "file": "zcl_hr_overtime.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_overtime.abap:36"
+        }
+      ]
+    },
+    {
+      "id": "BM-093-B02",
+      "text": "Es werden alle Mitarbeiter gelesen, die im Monat einer der gewählten Organisationseinheiten und Personalbereiche zugeordnet sind; ohne Treffer endet der Lauf mit einer Meldung.",
+      "anchors": [
+        {
+          "file": "zhr_ot_eval.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ot_eval.abap:42"
+        },
+        {
+          "file": "zhr_ot_eval.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ot_eval.abap:48"
+        },
+        {
+          "file": "zhr_ot_eval.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ot_eval.abap:49"
+        }
+      ]
+    },
+    {
+      "id": "BM-093-B03",
+      "text": "Mitarbeiter, deren Anwesenheiten der Benutzer nicht lesen darf, werden übersprungen.",
+      "anchors": [
+        {
+          "file": "zhr_ot_eval.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ot_eval.abap:55"
+        },
+        {
+          "file": "zhr_ot_eval.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ot_eval.abap:68"
+        }
+      ]
+    },
+    {
+      "id": "BM-093-B04",
+      "text": "Ohne Sollarbeitszeit zum Monatsende erhält der Mitarbeiter den Status E mit Hinweistext und wird nicht weiter bewertet.",
+      "anchors": [
+        {
+          "file": "zcl_hr_overtime.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_overtime.abap:56"
+        },
+        {
+          "file": "zcl_hr_overtime.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_overtime.abap:67"
+        },
+        {
+          "file": "zcl_hr_overtime.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_overtime.abap:68"
+        }
+      ]
+    },
+    {
+      "id": "BM-093-B05",
+      "text": "Personalbereich und Organisationseinheit werden aus der organisatorischen Zuordnung zum Monatsende übernommen.",
+      "anchors": [
+        {
+          "file": "zcl_hr_overtime.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_overtime.abap:74"
+        },
+        {
+          "file": "zcl_hr_overtime.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_overtime.abap:86"
+        }
+      ]
+    },
+    {
+      "id": "BM-093-B06",
+      "text": "Die Ist-Stunden ergeben sich aus den Anwesenheiten plus der erfassten Mehrarbeit des Monats, jeweils ohne gesperrte Sätze.",
+      "anchors": [
+        {
+          "file": "zcl_hr_overtime.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_overtime.abap:90"
+        },
+        {
+          "file": "zcl_hr_overtime.abap",
+          "line": 95,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_overtime.abap:95"
+        }
+      ]
+    },
+    {
+      "id": "BM-093-B07",
+      "text": "Das Soll wird vereinfacht aus den Wochenstunden geteilt durch fünf mal der Zahl der Arbeitstage (fünf Siebtel der Kalendertage) berechnet, ohne Feiertage.",
+      "anchors": [
+        {
+          "file": "zcl_hr_overtime.abap",
+          "line": 101,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_overtime.abap:101"
+        },
+        {
+          "file": "zcl_hr_overtime.abap",
+          "line": 102,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_overtime.abap:102"
+        }
+      ]
+    },
+    {
+      "id": "BM-093-B08",
+      "text": "Die Überstunden sind Ist plus Mehrarbeit minus Soll.",
+      "anchors": [
+        {
+          "file": "zcl_hr_overtime.abap",
+          "line": 103,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_overtime.abap:103"
+        }
+      ]
+    },
+    {
+      "id": "BM-093-B09",
+      "text": "Als Grenze gilt die des Personalbereichs; ist keine hinterlegt, gelten 20 Stunden.",
+      "anchors": [
+        {
+          "file": "zcl_hr_overtime.abap",
+          "line": 105,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_overtime.abap:105"
+        },
+        {
+          "file": "zcl_hr_overtime.abap",
+          "line": 107,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_overtime.abap:107"
+        },
+        {
+          "file": "zcl_hr_overtime.abap",
+          "line": 109,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_overtime.abap:109"
+        }
+      ]
+    },
+    {
+      "id": "BM-093-B10",
+      "text": "Über der Grenze ist die Ampel rot, über 80 Prozent der Grenze gelb, sonst grün.",
+      "anchors": [
+        {
+          "file": "zcl_hr_overtime.abap",
+          "line": 112,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_overtime.abap:112"
+        },
+        {
+          "file": "zcl_hr_overtime.abap",
+          "line": 113,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_overtime.abap:113"
+        },
+        {
+          "file": "zcl_hr_overtime.abap",
+          "line": 115,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_overtime.abap:115"
+        },
+        {
+          "file": "zcl_hr_overtime.abap",
+          "line": 117,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_overtime.abap:117"
+        }
+      ]
+    },
+    {
+      "id": "BM-093-B11",
+      "text": "Nur bei roter Ampel und gewählter Alarmierung wird ein Alarm ausgelöst.",
+      "anchors": [
+        {
+          "file": "zhr_ot_eval.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ot_eval.abap:73"
+        },
+        {
+          "file": "zhr_ot_eval.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ot_eval.abap:74"
+        }
+      ]
+    },
+    {
+      "id": "BM-093-B12",
+      "text": "Je Mitarbeiter und Monat wird höchstens ein Alarm ausgelöst; ein bereits protokollierter Alarm wird nicht wiederholt.",
+      "anchors": [
+        {
+          "file": "zcl_hr_overtime.abap",
+          "line": 126,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_overtime.abap:126"
+        },
+        {
+          "file": "zcl_hr_overtime.abap",
+          "line": 129,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_overtime.abap:129"
+        },
+        {
+          "file": "zcl_hr_overtime.abap",
+          "line": 130,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_overtime.abap:130"
+        }
+      ]
+    },
+    {
+      "id": "BM-093-B13",
+      "text": "Ein neuer Alarm wird mit Überstunden, Grenze, Datum und Benutzer protokolliert und löst das Workflow-Ereignis LIMITEXCEEDED für die Führungskraft aus.",
+      "anchors": [
+        {
+          "file": "zcl_hr_overtime.abap",
+          "line": 140,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_overtime.abap:140"
+        },
+        {
+          "file": "zcl_hr_overtime.abap",
+          "line": 143,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_overtime.abap:143"
+        }
+      ]
+    },
+    {
+      "id": "BM-093-B14",
+      "text": "Wurden Alarme ausgelöst, werden sie festgeschrieben.",
+      "anchors": [
+        {
+          "file": "zhr_ot_eval.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ot_eval.abap:80"
+        },
+        {
+          "file": "zhr_ot_eval.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ot_eval.abap:81"
+        }
+      ]
+    },
+    {
+      "id": "BM-093-B15",
+      "text": "Zum Schluss wird die Überstundenampel aller bewerteten Mitarbeiter als ALV-Liste angezeigt.",
+      "anchors": [
+        {
+          "file": "zhr_ot_eval.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ot_eval.abap:84"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "zhr_ot_eval.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ot_eval.abap:30"
+        },
+        "meaning": "Monatslauf starten"
+      },
+      {
+        "id": "new",
+        "type": "call",
+        "anchor": {
+          "file": "zhr_ot_eval.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ot_eval.abap:37"
+        },
+        "meaning": "Auswertung für den Monat anlegen (Grenzwerte laden)"
+      },
+      {
+        "id": "rp",
+        "type": "read",
+        "anchor": {
+          "file": "zhr_ot_eval.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ot_eval.abap:42"
+        },
+        "meaning": "Mitarbeiter der Selektion im Monat lesen"
+      },
+      {
+        "id": "g0",
+        "type": "gateway",
+        "anchor": {
+          "file": "zhr_ot_eval.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ot_eval.abap:48"
+        },
+        "meaning": "Keine Mitarbeiter?"
+      },
+      {
+        "id": "m0",
+        "type": "output",
+        "anchor": {
+          "file": "zhr_ot_eval.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ot_eval.abap:49"
+        },
+        "meaning": "Keine Mitarbeiter melden"
+      },
+      {
+        "id": "e0",
+        "type": "end",
+        "anchor": {
+          "file": "zhr_ot_eval.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ot_eval.abap:50"
+        },
+        "meaning": "Lauf beenden"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "zhr_ot_eval.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ot_eval.abap:53"
+        },
+        "meaning": "Mitarbeiter durchlaufen"
+      },
+      {
+        "id": "au",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zhr_ot_eval.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ot_eval.abap:55"
+        },
+        "meaning": "Leseberechtigung für Anwesenheiten prüfen"
+      },
+      {
+        "id": "ga",
+        "type": "gateway",
+        "anchor": {
+          "file": "zhr_ot_eval.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ot_eval.abap:68"
+        },
+        "meaning": "Keine Berechtigung?"
+      },
+      {
+        "id": "ev",
+        "type": "call",
+        "anchor": {
+          "file": "zhr_ot_eval.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ot_eval.abap:72"
+        },
+        "meaning": "Überstunden des Mitarbeiters bewerten"
+      },
+      {
+        "id": "gr",
+        "type": "gateway",
+        "anchor": {
+          "file": "zhr_ot_eval.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ot_eval.abap:73"
+        },
+        "meaning": "Rot und Alarmierung gewünscht?"
+      },
+      {
+        "id": "ra",
+        "type": "call",
+        "anchor": {
+          "file": "zhr_ot_eval.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ot_eval.abap:74"
+        },
+        "meaning": "Alarm auslösen"
+      },
+      {
+        "id": "gc",
+        "type": "gateway",
+        "anchor": {
+          "file": "zhr_ot_eval.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ot_eval.abap:80"
+        },
+        "meaning": "Alarme ausgelöst?"
+      },
+      {
+        "id": "cw",
+        "type": "transaction",
+        "anchor": {
+          "file": "zhr_ot_eval.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ot_eval.abap:81"
+        },
+        "meaning": "Alarme und Ereignisse festschreiben"
+      },
+      {
+        "id": "alv",
+        "type": "output",
+        "anchor": {
+          "file": "zhr_ot_eval.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ot_eval.abap:84"
+        },
+        "meaning": "Überstundenampel als ALV anzeigen"
+      },
+      {
+        "id": "e_main",
+        "type": "end",
+        "anchor": {
+          "file": "zhr_ot_eval.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zhr_ot_eval.abap:84"
+        },
+        "meaning": "Lauf endet mit der Anzeige"
+      },
+      {
+        "id": "s_c",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_hr_overtime.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_overtime.abap:32"
+        },
+        "meaning": "Auswertung anlegen"
+      },
+      {
+        "id": "r_l",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_hr_overtime.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_overtime.abap:36"
+        },
+        "meaning": "Monatsgrenzen je Personalbereich laden"
+      },
+      {
+        "id": "e_c",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_hr_overtime.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_overtime.abap:39"
+        },
+        "meaning": "Auswertung bereit"
+      },
+      {
+        "id": "s_e",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_hr_overtime.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_overtime.abap:42"
+        },
+        "meaning": "Bewertung eines Mitarbeiters"
+      },
+      {
+        "id": "h7",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_hr_overtime.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_overtime.abap:56"
+        },
+        "meaning": "Sollarbeitszeit (IT0007) zum Monatsende lesen"
+      },
+      {
+        "id": "g7",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_hr_overtime.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_overtime.abap:67"
+        },
+        "meaning": "Keine Sollarbeitszeit?"
+      },
+      {
+        "id": "e_e1",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_hr_overtime.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_overtime.abap:70"
+        },
+        "meaning": "Bewertung abbrechen"
+      },
+      {
+        "id": "h1",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_hr_overtime.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_overtime.abap:74"
+        },
+        "meaning": "Personalbereich und Organisationseinheit (IT0001) lesen"
+      },
+      {
+        "id": "r_ist",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_hr_overtime.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_overtime.abap:90"
+        },
+        "meaning": "Anwesenheitsstunden des Monats summieren"
+      },
+      {
+        "id": "r_meh",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_hr_overtime.abap",
+          "line": 95,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_overtime.abap:95"
+        },
+        "meaning": "Erfasste Mehrarbeit des Monats summieren"
+      },
+      {
+        "id": "a_ot",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_hr_overtime.abap",
+          "line": 103,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_overtime.abap:103"
+        },
+        "meaning": "Überstunden = Ist + Mehrarbeit − Soll"
+      },
+      {
+        "id": "rt",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_hr_overtime.abap",
+          "line": 105,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_overtime.abap:105"
+        },
+        "meaning": "Grenze des Personalbereichs nachschlagen"
+      },
+      {
+        "id": "g_l",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_hr_overtime.abap",
+          "line": 106,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_overtime.abap:106"
+        },
+        "meaning": "Grenze vorhanden?"
+      },
+      {
+        "id": "a_d",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_hr_overtime.abap",
+          "line": 109,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_overtime.abap:109"
+        },
+        "meaning": "Standardgrenze 20 Stunden verwenden"
+      },
+      {
+        "id": "g_s",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_hr_overtime.abap",
+          "line": 112,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_overtime.abap:112"
+        },
+        "meaning": "Ampel bestimmen"
+      },
+      {
+        "id": "a_r",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_hr_overtime.abap",
+          "line": 113,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_overtime.abap:113"
+        },
+        "meaning": "Rot: Grenze überschritten"
+      },
+      {
+        "id": "a_y",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_hr_overtime.abap",
+          "line": 115,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_overtime.abap:115"
+        },
+        "meaning": "Gelb: über 80 % der Grenze"
+      },
+      {
+        "id": "a_g",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_hr_overtime.abap",
+          "line": 117,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_overtime.abap:117"
+        },
+        "meaning": "Grün"
+      },
+      {
+        "id": "e_e2",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_hr_overtime.abap",
+          "line": 119,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_overtime.abap:119"
+        },
+        "meaning": "Ergebnis zurückgeben"
+      },
+      {
+        "id": "s_a",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_hr_overtime.abap",
+          "line": 122,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_overtime.abap:122"
+        },
+        "meaning": "Alarmierung"
+      },
+      {
+        "id": "r_a",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_hr_overtime.abap",
+          "line": 126,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_overtime.abap:126"
+        },
+        "meaning": "Prüfen, ob für Mitarbeiter und Monat schon alarmiert wurde"
+      },
+      {
+        "id": "g_a",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_hr_overtime.abap",
+          "line": 129,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_overtime.abap:129"
+        },
+        "meaning": "Schon alarmiert?"
+      },
+      {
+        "id": "e_a1",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_hr_overtime.abap",
+          "line": 130,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_overtime.abap:130"
+        },
+        "meaning": "Keinen zweiten Alarm auslösen"
+      },
+      {
+        "id": "w_a",
+        "type": "write",
+        "anchor": {
+          "file": "zcl_hr_overtime.abap",
+          "line": 140,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_overtime.abap:140"
+        },
+        "meaning": "Alarm mit Überstunden und Grenze protokollieren"
+      },
+      {
+        "id": "ev_a",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_hr_overtime.abap",
+          "line": 143,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_overtime.abap:143"
+        },
+        "meaning": "Workflow-Ereignis LIMITEXCEEDED auslösen"
+      },
+      {
+        "id": "e_a2",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_hr_overtime.abap",
+          "line": 151,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_hr_overtime.abap:151"
+        },
+        "meaning": "Alarm erledigt"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "new",
+        "condition": "always"
+      },
+      {
+        "from": "new",
+        "to": "s_c",
+        "condition": "always"
+      },
+      {
+        "from": "rp",
+        "to": "g0",
+        "condition": "always"
+      },
+      {
+        "from": "g0",
+        "to": "m0",
+        "condition": "gt_pernr IS INITIAL"
+      },
+      {
+        "from": "m0",
+        "to": "e0",
+        "condition": "always"
+      },
+      {
+        "from": "g0",
+        "to": "l",
+        "condition": "else"
+      },
+      {
+        "from": "l",
+        "to": "au",
+        "condition": "next row"
+      },
+      {
+        "from": "au",
+        "to": "ga",
+        "condition": "always"
+      },
+      {
+        "from": "ga",
+        "to": "l",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "ga",
+        "to": "ev",
+        "condition": "else"
+      },
+      {
+        "from": "ev",
+        "to": "s_e",
+        "condition": "always"
+      },
+      {
+        "from": "gr",
+        "to": "ra",
+        "condition": "gs_res-status = 'R' AND p_alert = 'X'"
+      },
+      {
+        "from": "ra",
+        "to": "s_a",
+        "condition": "always"
+      },
+      {
+        "from": "gr",
+        "to": "l",
+        "condition": "else"
+      },
+      {
+        "from": "l",
+        "to": "gc",
+        "condition": "no more rows"
+      },
+      {
+        "from": "gc",
+        "to": "cw",
+        "condition": "gv_alerts > 0"
+      },
+      {
+        "from": "gc",
+        "to": "alv",
+        "condition": "else"
+      },
+      {
+        "from": "cw",
+        "to": "alv",
+        "condition": "always"
+      },
+      {
+        "from": "s_c",
+        "to": "r_l",
+        "condition": "always"
+      },
+      {
+        "from": "r_l",
+        "to": "e_c",
+        "condition": "always"
+      },
+      {
+        "from": "s_e",
+        "to": "h7",
+        "condition": "always"
+      },
+      {
+        "from": "h7",
+        "to": "g7",
+        "condition": "always"
+      },
+      {
+        "from": "g7",
+        "to": "h1",
+        "condition": "else"
+      },
+      {
+        "from": "h1",
+        "to": "r_ist",
+        "condition": "always"
+      },
+      {
+        "from": "r_ist",
+        "to": "r_meh",
+        "condition": "always"
+      },
+      {
+        "from": "r_meh",
+        "to": "a_ot",
+        "condition": "always"
+      },
+      {
+        "from": "a_ot",
+        "to": "rt",
+        "condition": "always"
+      },
+      {
+        "from": "rt",
+        "to": "g_l",
+        "condition": "always"
+      },
+      {
+        "from": "g_l",
+        "to": "a_d",
+        "condition": "else"
+      },
+      {
+        "from": "a_d",
+        "to": "g_s",
+        "condition": "always"
+      },
+      {
+        "from": "g_s",
+        "to": "a_r",
+        "condition": "rs_res-overtime > rs_res-limit"
+      },
+      {
+        "from": "g_s",
+        "to": "a_y",
+        "condition": "rs_res-overtime > rs_res-limit * '0.8'"
+      },
+      {
+        "from": "g_s",
+        "to": "a_g",
+        "condition": "else"
+      },
+      {
+        "from": "a_r",
+        "to": "e_e2",
+        "condition": "always"
+      },
+      {
+        "from": "a_y",
+        "to": "e_e2",
+        "condition": "always"
+      },
+      {
+        "from": "a_g",
+        "to": "e_e2",
+        "condition": "always"
+      },
+      {
+        "from": "s_a",
+        "to": "r_a",
+        "condition": "always"
+      },
+      {
+        "from": "r_a",
+        "to": "g_a",
+        "condition": "always"
+      },
+      {
+        "from": "g_a",
+        "to": "e_a1",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "g_a",
+        "to": "w_a",
+        "condition": "else"
+      },
+      {
+        "from": "w_a",
+        "to": "ev_a",
+        "condition": "always"
+      },
+      {
+        "from": "ev_a",
+        "to": "e_a2",
+        "condition": "always"
+      },
+      {
+        "from": "g7",
+        "to": "e_e1",
+        "condition": "sy-subrc <> 0 OR lt_p0007 IS INITIAL"
+      },
+      {
+        "from": "g_l",
+        "to": "g_s",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "alv",
+        "to": "e_main",
+        "condition": "always"
+      },
+      {
+        "from": "e_c",
+        "to": "rp",
+        "condition": "always"
+      },
+      {
+        "from": "e_e1",
+        "to": "gr",
+        "condition": "always"
+      },
+      {
+        "from": "e_e2",
+        "to": "gr",
+        "condition": "always"
+      },
+      {
+        "from": "e_a1",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "e_a2",
+        "to": "l",
+        "condition": "next iteration"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zcl_hr_overtime.abap:102 — kein Fachsatz „Feiertage und Abwesenheiten mindern das Soll“ (vereinfachte Formel ohne Kalender).",
+    "zcl_hr_overtime.abap:143 — kein Fachsatz „Überstunden werden genehmigt oder ausgezahlt“ (nur Alarm-Ereignis).",
+    "zhr_ot_eval.abap:55 — kein Fachsatz „Berechtigung für Mehrarbeit (IT2005) wird geprüft“ (geprüft wird nur IT2002).",
+    "zcl_hr_overtime.abap:126 — kein Fachsatz „die Führungskraft wird bei erneuter Überschreitung im selben Monat erneut benachrichtigt“."
+  ],
+  "processDescription": "Die Personalabteilung startet den Überstundenmonitor für einen Monat. Zuerst werden die im Monat gültigen Überstundengrenzen je Personalbereich geladen und die Mitarbeiter der gewählten Organisationseinheiten und Personalbereiche gelesen; gibt es keine, endet der Lauf. Je Mitarbeiter wird geprüft, ob der Benutzer dessen Anwesenheiten lesen darf, sonst wird er übersprungen. Die Bewertung liest die Sollarbeitszeit zum Monatsende – fehlt sie, erhält der Mitarbeiter Status E – sowie Personalbereich und Organisationseinheit. Ist-Stunden aus Anwesenheiten und erfasster Mehrarbeit werden summiert, das Soll vereinfacht aus Wochenstunden und fünf Siebteln der Kalendertage berechnet, Feiertage bleiben unberücksichtigt. Die Überstunden werden mit der Grenze des Personalbereichs (ersatzweise 20 Stunden) zu einer Ampel rot, gelb (über 80 Prozent) oder grün verglichen. Bei roter Ampel und gewählter Alarmierung wird – höchstens einmal je Mitarbeiter und Monat – ein Alarm protokolliert und das Workflow-Ereignis LIMITEXCEEDED für die Führungskraft ausgelöst; ausgelöste Alarme werden festgeschrieben. Zum Schluss erscheint die Ampel aller bewerteten Mitarbeiter als ALV-Liste."
+}

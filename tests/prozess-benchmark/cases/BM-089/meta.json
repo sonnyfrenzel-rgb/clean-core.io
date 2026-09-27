@@ -1,0 +1,21 @@
+{
+  "id": "BM-089",
+  "title": "PLM-Brücke: freigegebene Teile per RFC holen und als Material anlegen oder ändern",
+  "domain": "Querschnitt — Schnittstellen, Stammdaten, HR, Workflow, technische Jobs",
+  "band": "mittel",
+  "loc": 94,
+  "constructs": [
+    "CALL FUNCTION DESTINATION",
+    "EXCEPTIONS communication_failure MESSAGE",
+    "SELECT SINGLE MARA",
+    "BAPI_MATERIAL_SAVEDATA",
+    "BAPI_TRANSACTION_COMMIT/ROLLBACK",
+    "Rückmelde-RFC"
+  ],
+  "scenario": "Nachtjob, der aus dem PLM-System freigegebene Konstruktionsteile per RFC abholt, im ERP als Halbfabrikat anlegt oder ändert und die Übernahme an das PLM zurückmeldet.",
+  "s4_issues": [
+    "Materialnummer 40-stellig: PLM liefert 18-stellige Nummern ohne Konvertierung",
+    "Direkter Lesezugriff auf MARA",
+    "RFC-Destinationen und Kommunikationsszenarien im Zielsystem neu einrichten"
+  ]
+}

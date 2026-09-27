@@ -1,0 +1,2895 @@
+{
+  "id": "BM-057",
+  "title": "Monatsabschluss-Steuerungsjob für mehrere Buchungskreise mit Schrittliste, Abgrenzungen und Parallelprüfung",
+  "classes": [
+    "K01"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [
+    "Asynchroner Zweig: Die Kante async_call → fm_s (Task-Start) und fm_end → f_recv (Callback ON END OF TASK) ist mit „always“ modelliert; es gibt keine Rückkehrkante in den Aufrufer. Ist diese Darstellung für STARTING NEW TASK gewünscht?",
+    "WAIT UNTIL ist als action typisiert, weil die Knotentabelle es nicht als async aufführt.",
+    "BAPI_TRANSACTION_COMMIT/ROLLBACK sind als opaque_call (Standardbaustein außerhalb des Falls) typisiert, nicht als transaction.",
+    "Macro-Aufrufe mac_log sind nur dort Knoten (output), wo sie einen Fehler- oder Warnpfad tragen; die Makrodefinition selbst ist kein Knoten."
+  ],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "ENQUEUE_EZFI_CLOSE_RUN",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zfi_close_run.abap",
+        "line": 38,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zfi_close_run.abap:38"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "DEQUEUE_EZFI_CLOSE_RUN",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zfi_close_run_f01.abap",
+        "line": 84,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zfi_close_run_f01.abap:84"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAL_LOG_CREATE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zfi_close_run.abap",
+        "line": 28,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zfi_close_run.abap:28"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAL_LOG_MSG_ADD",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zfi_close_run_top.abap",
+        "line": 64,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zfi_close_run_top.abap:64"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAL_DB_SAVE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zfi_close_run_f01.abap",
+        "line": 74,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zfi_close_run_f01.abap:74"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "T001",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zfi_close_run_f01.abap",
+        "line": 25,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zfi_close_run_f01.abap:25"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "T001B",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zfi_close_run_f01.abap",
+        "line": 30,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zfi_close_run_f01.abap:30"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZFI_CLOSE_STEP",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zfi_close_run.abap",
+        "line": 62,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zfi_close_run.abap:62"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZFI_CLOSE_STAT",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zfi_close_run.abap",
+        "line": 67,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zfi_close_run.abap:67"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZFI_CLOSE_STAT",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "zfi_close_run_f02.abap",
+        "line": 70,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zfi_close_run_f02.abap:70"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZFI_ACCRUAL",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zfi_close_run_f02.abap",
+        "line": 103,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zfi_close_run_f02.abap:103"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZFI_ACCRUAL",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "zfi_close_run_f02.abap",
+        "line": 164,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zfi_close_run_f02.abap:164"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_ACC_DOCUMENT_CHECK",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zfi_close_run_f02.abap",
+        "line": 133,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zfi_close_run_f02.abap:133"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_ACC_DOCUMENT_POST",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zfi_close_run_f02.abap",
+        "line": 141,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zfi_close_run_f02.abap:141"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_ROLLBACK",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zfi_close_run_f02.abap",
+        "line": 154,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zfi_close_run_f02.abap:154"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_COMMIT",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zfi_close_run_f02.abap",
+        "line": 159,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zfi_close_run_f02.abap:159"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "RAPOST2000",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zfi_close_run_f02.abap",
+        "line": 189,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zfi_close_run_f02.abap:189"
+      },
+      "identity": {
+        "objectType": "PROG"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "Z_FI_CLOSE_STEP_BUKRS",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zfi_close_run_f02.abap",
+        "line": 223,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zfi_close_run_f02.abap:223"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZFI_CLOSE_ACCT",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "z_fi_close_step_bukrs.abap",
+        "line": 27,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_fi_close_step_bukrs.abap:27"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BSIS",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "z_fi_close_step_bukrs.abap",
+        "line": 34,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_fi_close_step_bukrs.abap:34"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZFI_CLOSE_RUN",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "zfi_close_run_f01.abap",
+        "line": 71,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zfi_close_run_f01.abap:71"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "CL_BCS",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zfi_close_run_f01.abap",
+        "line": 117,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zfi_close_run_f01.abap:117"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-057-B01",
+      "text": "Zu Beginn des Jobs wird ein Anwendungsprotokoll für den Abschlusslauf mit der Lauf-ID als externer Nummer angelegt.",
+      "anchors": [
+        {
+          "file": "zfi_close_run.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run.abap:28"
+        }
+      ]
+    },
+    {
+      "id": "BM-057-B02",
+      "text": "Der Abschlusslauf wird für Lauf-ID, Geschäftsjahr und Periode exklusiv gesperrt, damit er nicht doppelt läuft.",
+      "anchors": [
+        {
+          "file": "zfi_close_run.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run.abap:38"
+        }
+      ]
+    },
+    {
+      "id": "BM-057-B03",
+      "text": "Ist der Lauf bereits gesperrt, wird im Jobprotokoll gemeldet, wer ihn bearbeitet, und der Job endet ohne Verarbeitung.",
+      "anchors": [
+        {
+          "file": "zfi_close_run.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run.abap:49"
+        },
+        {
+          "file": "zfi_close_run.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run.abap:51"
+        },
+        {
+          "file": "zfi_close_run.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run.abap:52"
+        }
+      ]
+    },
+    {
+      "id": "BM-057-B04",
+      "text": "Für die ausgewählten Buchungskreise wird die Buchungsperiodenvariante gelesen.",
+      "anchors": [
+        {
+          "file": "zfi_close_run_f01.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f01.abap:25"
+        }
+      ]
+    },
+    {
+      "id": "BM-057-B05",
+      "text": "Je Buchungskreis wird geprüft, ob die Abschlussperiode im ersten Intervall der Periodensteuerung für alle Kontoarten offen ist.",
+      "anchors": [
+        {
+          "file": "zfi_close_run_f01.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f01.abap:30"
+        },
+        {
+          "file": "zfi_close_run_f01.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f01.abap:41"
+        }
+      ]
+    },
+    {
+      "id": "BM-057-B06",
+      "text": "Buchungskreise ohne gepflegte Periodensteuerung werden ohne Meldung übergangen.",
+      "anchors": [
+        {
+          "file": "zfi_close_run_f01.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f01.abap:34"
+        }
+      ]
+    },
+    {
+      "id": "BM-057-B07",
+      "text": "Buchungskreise mit offener Periode werden in den Abschluss aufgenommen; bei geschlossener Periode wird eine Warnung protokolliert.",
+      "anchors": [
+        {
+          "file": "zfi_close_run_f01.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f01.abap:41"
+        },
+        {
+          "file": "zfi_close_run_f01.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f01.abap:42"
+        },
+        {
+          "file": "zfi_close_run_f01.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f01.abap:44"
+        }
+      ]
+    },
+    {
+      "id": "BM-057-B08",
+      "text": "Hat kein Buchungskreis eine offene Periode, werden keine Abschlussschritte ausgeführt.",
+      "anchors": [
+        {
+          "file": "zfi_close_run.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run.abap:57"
+        }
+      ]
+    },
+    {
+      "id": "BM-057-B09",
+      "text": "Die aktiven Abschlussschritte der gewählten Laufart werden aus dem Customizing in ihrer festgelegten Reihenfolge gelesen.",
+      "anchors": [
+        {
+          "file": "zfi_close_run.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run.abap:62"
+        }
+      ]
+    },
+    {
+      "id": "BM-057-B10",
+      "text": "Zusätzlich wird der bisherige Schrittstatus dieses Laufs für Geschäftsjahr und Periode gelesen.",
+      "anchors": [
+        {
+          "file": "zfi_close_run.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run.abap:67"
+        }
+      ]
+    },
+    {
+      "id": "BM-057-B11",
+      "text": "Schritte, die in diesem Lauf bereits erfolgreich waren, werden bei einem Neustart übersprungen.",
+      "anchors": [
+        {
+          "file": "zfi_close_run_f02.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f02.abap:22"
+        },
+        {
+          "file": "zfi_close_run_f02.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f02.abap:25"
+        }
+      ]
+    },
+    {
+      "id": "BM-057-B12",
+      "text": "Je nach Schritttyp wird eine Kundenroutine, ein Funktionsbaustein, die Abgrenzungsbuchung, ein Standardprogramm oder eine parallele Prüfung je Buchungskreis ausgeführt.",
+      "anchors": [
+        {
+          "file": "zfi_close_run_f02.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f02.abap:30"
+        }
+      ]
+    },
+    {
+      "id": "BM-057-B13",
+      "text": "Welche Kundenroutine bzw. welcher Funktionsbaustein läuft, steht nur im Customizing und ist im Code nicht bestimmt.",
+      "anchors": [
+        {
+          "file": "zfi_close_run_f02.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f02.abap:33"
+        },
+        {
+          "file": "zfi_close_run_f02.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f02.abap:40"
+        }
+      ]
+    },
+    {
+      "id": "BM-057-B14",
+      "text": "Ein unbekannter Schritttyp gilt als fehlerhaft.",
+      "anchors": [
+        {
+          "file": "zfi_close_run_f02.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f02.abap:57"
+        }
+      ]
+    },
+    {
+      "id": "BM-057-B15",
+      "text": "Nach jedem Schritt wird sein Ergebnis als erfolgreich oder fehlerhaft mit Benutzer und Zeitpunkt gespeichert und festgeschrieben.",
+      "anchors": [
+        {
+          "file": "zfi_close_run_f02.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f02.abap:66"
+        },
+        {
+          "file": "zfi_close_run_f02.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f02.abap:70"
+        },
+        {
+          "file": "zfi_close_run_f02.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f02.abap:71"
+        }
+      ]
+    },
+    {
+      "id": "BM-057-B16",
+      "text": "Scheitert ein als kritisch gekennzeichneter Schritt, wird der Lauf als abgebrochen markiert, der Abbruch protokolliert und kein weiterer Schritt ausgeführt.",
+      "anchors": [
+        {
+          "file": "zfi_close_run_f02.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f02.abap:74"
+        },
+        {
+          "file": "zfi_close_run_f02.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f02.abap:75"
+        },
+        {
+          "file": "zfi_close_run_f02.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f02.abap:76"
+        }
+      ]
+    },
+    {
+      "id": "BM-057-B17",
+      "text": "Für die Abgrenzungen werden die noch nicht gebuchten Abgrenzungspositionen der Buchungskreise mit offener Periode für die Abschlussperiode gelesen.",
+      "anchors": [
+        {
+          "file": "zfi_close_run_f02.abap",
+          "line": 103,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f02.abap:103"
+        }
+      ]
+    },
+    {
+      "id": "BM-057-B18",
+      "text": "Jede Abgrenzung wird als Sachkontenbeleg der Belegart SA zum eingegebenen Buchungsdatum aufgebaut: Aufwand mit Kostenstelle im Soll an Abgrenzungskonto im Haben.",
+      "anchors": [
+        {
+          "file": "zfi_close_run_f02.abap",
+          "line": 119,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f02.abap:119"
+        },
+        {
+          "file": "zfi_close_run_f02.abap",
+          "line": 124,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f02.abap:124"
+        },
+        {
+          "file": "zfi_close_run_f02.abap",
+          "line": 126,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f02.abap:126"
+        },
+        {
+          "file": "zfi_close_run_f02.abap",
+          "line": 128,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f02.abap:128"
+        },
+        {
+          "file": "zfi_close_run_f02.abap",
+          "line": 129,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f02.abap:129"
+        }
+      ]
+    },
+    {
+      "id": "BM-057-B19",
+      "text": "Im Testlauf wird der Abgrenzungsbeleg nur geprüft, im Echtlauf gebucht.",
+      "anchors": [
+        {
+          "file": "zfi_close_run_f02.abap",
+          "line": 131,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f02.abap:131"
+        },
+        {
+          "file": "zfi_close_run_f02.abap",
+          "line": 133,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f02.abap:133"
+        },
+        {
+          "file": "zfi_close_run_f02.abap",
+          "line": 141,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f02.abap:141"
+        }
+      ]
+    },
+    {
+      "id": "BM-057-B20",
+      "text": "Meldet Prüfung oder Buchung einen Fehler, wird zurückgerollt, der Abgrenzungsschritt als fehlerhaft gewertet und der Fehler mit Buchungskreis protokolliert.",
+      "anchors": [
+        {
+          "file": "zfi_close_run_f02.abap",
+          "line": 153,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f02.abap:153"
+        },
+        {
+          "file": "zfi_close_run_f02.abap",
+          "line": 154,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f02.abap:154"
+        },
+        {
+          "file": "zfi_close_run_f02.abap",
+          "line": 155,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f02.abap:155"
+        },
+        {
+          "file": "zfi_close_run_f02.abap",
+          "line": 156,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f02.abap:156"
+        }
+      ]
+    },
+    {
+      "id": "BM-057-B21",
+      "text": "Im Echtlauf wird eine fehlerfreie Buchung festgeschrieben und die Abgrenzung mit der Belegnummer als gebucht gekennzeichnet.",
+      "anchors": [
+        {
+          "file": "zfi_close_run_f02.abap",
+          "line": 158,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f02.abap:158"
+        },
+        {
+          "file": "zfi_close_run_f02.abap",
+          "line": 159,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f02.abap:159"
+        },
+        {
+          "file": "zfi_close_run_f02.abap",
+          "line": 164,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f02.abap:164"
+        }
+      ]
+    },
+    {
+      "id": "BM-057-B22",
+      "text": "Für den Abschreibungslauf wird das Standardprogramm RAPOST2000 je Buchungskreis nacheinander für Geschäftsjahr und Periode gestartet, im Testlauf als Testlauf.",
+      "anchors": [
+        {
+          "file": "zfi_close_run_f02.abap",
+          "line": 188,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f02.abap:188"
+        },
+        {
+          "file": "zfi_close_run_f02.abap",
+          "line": 189,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f02.abap:189"
+        }
+      ]
+    },
+    {
+      "id": "BM-057-B23",
+      "text": "Andere Standardprogramme werden mit der im Customizing hinterlegten Variante gestartet.",
+      "anchors": [
+        {
+          "file": "zfi_close_run_f02.abap",
+          "line": 199,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f02.abap:199"
+        }
+      ]
+    },
+    {
+      "id": "BM-057-B24",
+      "text": "Das Ergebnis der gestarteten Programme wird nicht ausgewertet; der Schritt gilt immer als erfolgreich.",
+      "anchors": [
+        {
+          "file": "zfi_close_run_f02.abap",
+          "line": 205,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f02.abap:205"
+        }
+      ]
+    },
+    {
+      "id": "BM-057-B25",
+      "text": "Für den Parallelschritt wird je Buchungskreis eine Prüfung als eigene Task in der angegebenen Servergruppe gestartet.",
+      "anchors": [
+        {
+          "file": "zfi_close_run_f02.abap",
+          "line": 221,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f02.abap:221"
+        },
+        {
+          "file": "zfi_close_run_f02.abap",
+          "line": 223,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f02.abap:223"
+        }
+      ]
+    },
+    {
+      "id": "BM-057-B26",
+      "text": "Kann die Prüfung eines Buchungskreises nicht gestartet werden, gilt er als fehlerhaft und der Fehler wird protokolliert.",
+      "anchors": [
+        {
+          "file": "zfi_close_run_f02.abap",
+          "line": 236,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f02.abap:236"
+        },
+        {
+          "file": "zfi_close_run_f02.abap",
+          "line": 241,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f02.abap:241"
+        }
+      ]
+    },
+    {
+      "id": "BM-057-B27",
+      "text": "Die Prüfung ermittelt je als Nullkonto gepflegtem Verrechnungskonto des Buchungskreises den Saldo der offenen Posten des Geschäftsjahres bis zur Abschlussperiode.",
+      "anchors": [
+        {
+          "file": "z_fi_close_step_bukrs.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_fi_close_step_bukrs.abap:27"
+        },
+        {
+          "file": "z_fi_close_step_bukrs.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_fi_close_step_bukrs.abap:34"
+        },
+        {
+          "file": "z_fi_close_step_bukrs.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_fi_close_step_bukrs.abap:39"
+        }
+      ]
+    },
+    {
+      "id": "BM-057-B28",
+      "text": "Ist ein Verrechnungskonto nicht ausgeglichen, meldet die Prüfung für den Buchungskreis einen Fehler mit Konto und Saldo; sonst meldet sie die Konten als ausgeglichen.",
+      "anchors": [
+        {
+          "file": "z_fi_close_step_bukrs.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_fi_close_step_bukrs.abap:42"
+        },
+        {
+          "file": "z_fi_close_step_bukrs.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_fi_close_step_bukrs.abap:43"
+        },
+        {
+          "file": "z_fi_close_step_bukrs.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_fi_close_step_bukrs.abap:50"
+        }
+      ]
+    },
+    {
+      "id": "BM-057-B29",
+      "text": "Jede Rückmeldung einer Prüfung wird entgegengenommen und gezählt; fehlerhafte Prüfungen werden gezählt und protokolliert.",
+      "anchors": [
+        {
+          "file": "zfi_close_run_f02.abap",
+          "line": 263,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f02.abap:263"
+        },
+        {
+          "file": "zfi_close_run_f02.abap",
+          "line": 271,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f02.abap:271"
+        },
+        {
+          "file": "zfi_close_run_f02.abap",
+          "line": 273,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f02.abap:273"
+        },
+        {
+          "file": "zfi_close_run_f02.abap",
+          "line": 275,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f02.abap:275"
+        }
+      ]
+    },
+    {
+      "id": "BM-057-B30",
+      "text": "Der Lauf wartet höchstens 30 Minuten auf alle Rückmeldungen; Zeitüberschreitung, Startfehler oder Prüffehler machen den Parallelschritt fehlerhaft.",
+      "anchors": [
+        {
+          "file": "zfi_close_run_f02.abap",
+          "line": 246,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f02.abap:246"
+        },
+        {
+          "file": "zfi_close_run_f02.abap",
+          "line": 247,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f02.abap:247"
+        },
+        {
+          "file": "zfi_close_run_f02.abap",
+          "line": 248,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f02.abap:248"
+        }
+      ]
+    },
+    {
+      "id": "BM-057-B31",
+      "text": "Zum Abschluss erhält der Laufkopf den Status abgebrochen, ohne offene Periode oder erfolgreich und wird gespeichert.",
+      "anchors": [
+        {
+          "file": "zfi_close_run_f01.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f01.abap:68"
+        },
+        {
+          "file": "zfi_close_run_f01.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f01.abap:71"
+        }
+      ]
+    },
+    {
+      "id": "BM-057-B32",
+      "text": "Danach wird das Anwendungsprotokoll gesichert, alles festgeschrieben und die Laufsperre aufgehoben.",
+      "anchors": [
+        {
+          "file": "zfi_close_run_f01.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f01.abap:74"
+        },
+        {
+          "file": "zfi_close_run_f01.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f01.abap:82"
+        },
+        {
+          "file": "zfi_close_run_f01.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f01.abap:84"
+        }
+      ]
+    },
+    {
+      "id": "BM-057-B33",
+      "text": "Ist eine Mailadresse angegeben, wird eine Abschlussmail mit Laufstatus und Anzahl der Buchungskreise versendet; ein Versandfehler wird nur im Jobprotokoll gemeldet.",
+      "anchors": [
+        {
+          "file": "zfi_close_run_f01.abap",
+          "line": 109,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f01.abap:109"
+        },
+        {
+          "file": "zfi_close_run_f01.abap",
+          "line": 125,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f01.abap:125"
+        },
+        {
+          "file": "zfi_close_run_f01.abap",
+          "line": 126,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f01.abap:126"
+        },
+        {
+          "file": "zfi_close_run_f01.abap",
+          "line": 129,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f01.abap:129"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "zfi_close_run.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run.abap:21"
+        },
+        "meaning": "Jobstart des Monatsabschluss-Steuerungsreports"
+      },
+      {
+        "id": "bal_create",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zfi_close_run.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run.abap:28"
+        },
+        "meaning": "Anwendungsprotokoll für den Lauf anlegen"
+      },
+      {
+        "id": "enq",
+        "type": "lock",
+        "anchor": {
+          "file": "zfi_close_run.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run.abap:38"
+        },
+        "meaning": "Abschlusslauf je Lauf-ID und Periode exklusiv sperren"
+      },
+      {
+        "id": "g_lock",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_close_run.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run.abap:49"
+        },
+        "meaning": "Sperre erhalten?"
+      },
+      {
+        "id": "o_locked",
+        "type": "output",
+        "anchor": {
+          "file": "zfi_close_run.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run.abap:51"
+        },
+        "meaning": "Im Jobprotokoll melden, dass der Lauf bereits bearbeitet wird"
+      },
+      {
+        "id": "e_locked",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_close_run.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run.abap:52"
+        },
+        "meaning": "Job ohne Verarbeitung beenden"
+      },
+      {
+        "id": "c_per",
+        "type": "call",
+        "anchor": {
+          "file": "zfi_close_run.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run.abap:56"
+        },
+        "meaning": "Periodenprüfung je Buchungskreis aufrufen"
+      },
+      {
+        "id": "g_nobukrs",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_close_run.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run.abap:57"
+        },
+        "meaning": "Kein Buchungskreis mit offener Periode?"
+      },
+      {
+        "id": "q_steps",
+        "type": "read",
+        "anchor": {
+          "file": "zfi_close_run.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run.abap:62"
+        },
+        "meaning": "Aktive Abschlussschritte der Laufart in Reihenfolge lesen"
+      },
+      {
+        "id": "q_stat",
+        "type": "read",
+        "anchor": {
+          "file": "zfi_close_run.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run.abap:67"
+        },
+        "meaning": "Bisherigen Schrittstatus des Laufs lesen (Restart)"
+      },
+      {
+        "id": "c_exec",
+        "type": "call",
+        "anchor": {
+          "file": "zfi_close_run.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run.abap:71"
+        },
+        "meaning": "Schrittliste abarbeiten"
+      },
+      {
+        "id": "c_fin",
+        "type": "call",
+        "anchor": {
+          "file": "zfi_close_run.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run.abap:75"
+        },
+        "meaning": "Lauf abschließen"
+      },
+      {
+        "id": "e_main",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_close_run.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run.abap:75"
+        },
+        "meaning": "Job endet"
+      },
+      {
+        "id": "f_per",
+        "type": "start",
+        "anchor": {
+          "file": "zfi_close_run_f01.abap",
+          "line": 13,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f01.abap:13"
+        },
+        "meaning": "Periodenprüfung"
+      },
+      {
+        "id": "q_t001",
+        "type": "read",
+        "anchor": {
+          "file": "zfi_close_run_f01.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f01.abap:25"
+        },
+        "meaning": "Buchungskreise mit Periodenvariante lesen"
+      },
+      {
+        "id": "l_t001",
+        "type": "loop",
+        "anchor": {
+          "file": "zfi_close_run_f01.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f01.abap:28"
+        },
+        "meaning": "Buchungskreise durchlaufen"
+      },
+      {
+        "id": "q_t001b",
+        "type": "read",
+        "anchor": {
+          "file": "zfi_close_run_f01.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f01.abap:30"
+        },
+        "meaning": "Periodensteuerung der Variante für alle Kontoarten lesen"
+      },
+      {
+        "id": "g_t001b",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_close_run_f01.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f01.abap:34"
+        },
+        "meaning": "Periodensteuerung gepflegt?"
+      },
+      {
+        "id": "g_open",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_close_run_f01.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f01.abap:41"
+        },
+        "meaning": "Abschlussperiode im ersten Intervall offen?"
+      },
+      {
+        "id": "o_closed",
+        "type": "output",
+        "anchor": {
+          "file": "zfi_close_run_f01.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f01.abap:44"
+        },
+        "meaning": "Warnung: Periode im Buchungskreis geschlossen"
+      },
+      {
+        "id": "x_per",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_close_run_f01.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f01.abap:50"
+        },
+        "meaning": "CHECK_PERIODS beendet, Buchungskreisliste steht"
+      },
+      {
+        "id": "f_exec",
+        "type": "start",
+        "anchor": {
+          "file": "zfi_close_run_f02.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f02.abap:15"
+        },
+        "meaning": "Schrittausführung"
+      },
+      {
+        "id": "l_steps",
+        "type": "loop",
+        "anchor": {
+          "file": "zfi_close_run_f02.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f02.abap:19"
+        },
+        "meaning": "Abschlussschritte in Reihenfolge durchlaufen"
+      },
+      {
+        "id": "rt_stat",
+        "type": "read",
+        "anchor": {
+          "file": "zfi_close_run_f02.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f02.abap:22"
+        },
+        "meaning": "Nachschlagen, ob der Schritt bereits erfolgreich lief"
+      },
+      {
+        "id": "g_done",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_close_run_f02.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f02.abap:25"
+        },
+        "meaning": "Schritt bereits erfolgreich?"
+      },
+      {
+        "id": "g_type",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_close_run_f02.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f02.abap:30"
+        },
+        "meaning": "Verzweigung nach Schritttyp"
+      },
+      {
+        "id": "dyn_form",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zfi_close_run_f02.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f02.abap:33"
+        },
+        "meaning": "Kundenroutine aus Customizing dynamisch ausführen (Ziel nicht bestimmbar)"
+      },
+      {
+        "id": "dyn_fm",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zfi_close_run_f02.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f02.abap:40"
+        },
+        "meaning": "Funktionsbaustein aus Customizing dynamisch aufrufen (Ziel nicht bestimmbar)"
+      },
+      {
+        "id": "c_accr",
+        "type": "call",
+        "anchor": {
+          "file": "zfi_close_run_f02.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f02.abap:49"
+        },
+        "meaning": "Abgrenzungen buchen"
+      },
+      {
+        "id": "c_sub",
+        "type": "call",
+        "anchor": {
+          "file": "zfi_close_run_f02.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f02.abap:51"
+        },
+        "meaning": "Standardprogramm einplanen"
+      },
+      {
+        "id": "c_par",
+        "type": "call",
+        "anchor": {
+          "file": "zfi_close_run_f02.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f02.abap:53"
+        },
+        "meaning": "Parallele Prüfung je Buchungskreis"
+      },
+      {
+        "id": "rc_other",
+        "type": "action",
+        "anchor": {
+          "file": "zfi_close_run_f02.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f02.abap:57"
+        },
+        "meaning": "Unbekannter Schritttyp gilt als Fehler"
+      },
+      {
+        "id": "st",
+        "type": "action",
+        "anchor": {
+          "file": "zfi_close_run_f02.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f02.abap:66"
+        },
+        "meaning": "Schrittstatus aus Ergebnis ableiten (erfolgreich/fehlerhaft)"
+      },
+      {
+        "id": "w_stat",
+        "type": "write",
+        "anchor": {
+          "file": "zfi_close_run_f02.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f02.abap:70"
+        },
+        "meaning": "Schrittstatus speichern"
+      },
+      {
+        "id": "cw_stat",
+        "type": "transaction",
+        "anchor": {
+          "file": "zfi_close_run_f02.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f02.abap:71"
+        },
+        "meaning": "Schrittstatus festschreiben"
+      },
+      {
+        "id": "g_crit",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_close_run_f02.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f02.abap:74"
+        },
+        "meaning": "Kritischer Schritt fehlerhaft?"
+      },
+      {
+        "id": "abort",
+        "type": "action",
+        "anchor": {
+          "file": "zfi_close_run_f02.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f02.abap:75"
+        },
+        "meaning": "Lauf als abgebrochen kennzeichnen"
+      },
+      {
+        "id": "o_crit",
+        "type": "output",
+        "anchor": {
+          "file": "zfi_close_run_f02.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f02.abap:76"
+        },
+        "meaning": "Abbruch wegen kritischem Schritt protokollieren"
+      },
+      {
+        "id": "x_exec",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_close_run_f02.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f02.abap:83"
+        },
+        "meaning": "EXECUTE_STEPS beendet (alle Schritte oder Abbruch)"
+      },
+      {
+        "id": "f_accr",
+        "type": "start",
+        "anchor": {
+          "file": "zfi_close_run_f02.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f02.abap:90"
+        },
+        "meaning": "Abgrenzungsbuchung"
+      },
+      {
+        "id": "q_accr",
+        "type": "read",
+        "anchor": {
+          "file": "zfi_close_run_f02.abap",
+          "line": 103,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f02.abap:103"
+        },
+        "meaning": "Ungebuchte Abgrenzungen der offenen Buchungskreise für die Periode lesen"
+      },
+      {
+        "id": "l_accr",
+        "type": "loop",
+        "anchor": {
+          "file": "zfi_close_run_f02.abap",
+          "line": 110,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f02.abap:110"
+        },
+        "meaning": "Abgrenzungen durchlaufen"
+      },
+      {
+        "id": "g_test",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_close_run_f02.abap",
+          "line": 131,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f02.abap:131"
+        },
+        "meaning": "Testlauf?"
+      },
+      {
+        "id": "bapi_chk",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zfi_close_run_f02.abap",
+          "line": 133,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f02.abap:133"
+        },
+        "meaning": "Abgrenzungsbeleg nur prüfen"
+      },
+      {
+        "id": "bapi",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zfi_close_run_f02.abap",
+          "line": 141,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f02.abap:141"
+        },
+        "meaning": "Abgrenzungsbeleg buchen"
+      },
+      {
+        "id": "rt_ret",
+        "type": "read",
+        "anchor": {
+          "file": "zfi_close_run_f02.abap",
+          "line": 152,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f02.abap:152"
+        },
+        "meaning": "Fehlermeldung in der Rückgabe suchen"
+      },
+      {
+        "id": "g_bapi",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_close_run_f02.abap",
+          "line": 153,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f02.abap:153"
+        },
+        "meaning": "Buchung/Prüfung fehlerhaft?"
+      },
+      {
+        "id": "rb",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zfi_close_run_f02.abap",
+          "line": 154,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f02.abap:154"
+        },
+        "meaning": "Buchung zurückrollen"
+      },
+      {
+        "id": "o_bapierr",
+        "type": "output",
+        "anchor": {
+          "file": "zfi_close_run_f02.abap",
+          "line": 156,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f02.abap:156"
+        },
+        "meaning": "Buchungsfehler je Buchungskreis protokollieren"
+      },
+      {
+        "id": "g_post",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_close_run_f02.abap",
+          "line": 158,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f02.abap:158"
+        },
+        "meaning": "Echtlauf?"
+      },
+      {
+        "id": "cm",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zfi_close_run_f02.abap",
+          "line": 159,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f02.abap:159"
+        },
+        "meaning": "Buchung festschreiben"
+      },
+      {
+        "id": "w_accr",
+        "type": "write",
+        "anchor": {
+          "file": "zfi_close_run_f02.abap",
+          "line": 164,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f02.abap:164"
+        },
+        "meaning": "Abgrenzung als gebucht mit Belegnummer kennzeichnen"
+      },
+      {
+        "id": "x_accr",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_close_run_f02.abap",
+          "line": 174,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f02.abap:174"
+        },
+        "meaning": "POST_ACCRUALS beendet, Ergebnis in gv_rc"
+      },
+      {
+        "id": "f_sub",
+        "type": "start",
+        "anchor": {
+          "file": "zfi_close_run_f02.abap",
+          "line": 181,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f02.abap:181"
+        },
+        "meaning": "Einplanung Standardprogramm"
+      },
+      {
+        "id": "g_prog",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_close_run_f02.abap",
+          "line": 185,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f02.abap:185"
+        },
+        "meaning": "Welches Programm?"
+      },
+      {
+        "id": "l_sub",
+        "type": "loop",
+        "anchor": {
+          "file": "zfi_close_run_f02.abap",
+          "line": 188,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f02.abap:188"
+        },
+        "meaning": "Buchungskreise nacheinander durchlaufen"
+      },
+      {
+        "id": "sub_afa",
+        "type": "external_program",
+        "anchor": {
+          "file": "zfi_close_run_f02.abap",
+          "line": 189,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f02.abap:189"
+        },
+        "meaning": "Abschreibungslauf RAPOST2000 je Buchungskreis starten"
+      },
+      {
+        "id": "sub_gen",
+        "type": "external_program",
+        "anchor": {
+          "file": "zfi_close_run_f02.abap",
+          "line": 199,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f02.abap:199"
+        },
+        "meaning": "Programm aus Customizing mit Variante starten (Ziel nicht bestimmbar)"
+      },
+      {
+        "id": "rc0",
+        "type": "action",
+        "anchor": {
+          "file": "zfi_close_run_f02.abap",
+          "line": 205,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f02.abap:205"
+        },
+        "meaning": "Schritt unabhängig vom Programmergebnis als erfolgreich werten"
+      },
+      {
+        "id": "x_sub",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_close_run_f02.abap",
+          "line": 207,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f02.abap:207"
+        },
+        "meaning": "SUBMIT_PROGRAM beendet"
+      },
+      {
+        "id": "f_par",
+        "type": "start",
+        "anchor": {
+          "file": "zfi_close_run_f02.abap",
+          "line": 214,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f02.abap:214"
+        },
+        "meaning": "Parallelprüfung"
+      },
+      {
+        "id": "l_par",
+        "type": "loop",
+        "anchor": {
+          "file": "zfi_close_run_f02.abap",
+          "line": 221,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f02.abap:221"
+        },
+        "meaning": "Buchungskreise durchlaufen"
+      },
+      {
+        "id": "async_call",
+        "type": "async",
+        "anchor": {
+          "file": "zfi_close_run_f02.abap",
+          "line": 223,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f02.abap:223"
+        },
+        "meaning": "Prüfung des Buchungskreises als parallele Task in der Servergruppe starten"
+      },
+      {
+        "id": "g_par",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_close_run_f02.abap",
+          "line": 236,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f02.abap:236"
+        },
+        "meaning": "Task gestartet?"
+      },
+      {
+        "id": "o_parfail",
+        "type": "output",
+        "anchor": {
+          "file": "zfi_close_run_f02.abap",
+          "line": 241,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f02.abap:241"
+        },
+        "meaning": "Startfehler des Buchungskreises protokollieren"
+      },
+      {
+        "id": "wait",
+        "type": "action",
+        "anchor": {
+          "file": "zfi_close_run_f02.abap",
+          "line": 246,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f02.abap:246"
+        },
+        "meaning": "Auf alle Rückmeldungen warten, höchstens 30 Minuten"
+      },
+      {
+        "id": "g_parres",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_close_run_f02.abap",
+          "line": 247,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f02.abap:247"
+        },
+        "meaning": "Zeitüberschreitung, Start- oder Prüffehler?"
+      },
+      {
+        "id": "rc4_par",
+        "type": "action",
+        "anchor": {
+          "file": "zfi_close_run_f02.abap",
+          "line": 248,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f02.abap:248"
+        },
+        "meaning": "Parallelschritt als fehlerhaft werten"
+      },
+      {
+        "id": "x_par",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_close_run_f02.abap",
+          "line": 251,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f02.abap:251"
+        },
+        "meaning": "RUN_PARALLEL beendet, Ergebnis in gv_rc"
+      },
+      {
+        "id": "f_recv",
+        "type": "start",
+        "anchor": {
+          "file": "zfi_close_run_f02.abap",
+          "line": 258,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f02.abap:258"
+        },
+        "meaning": "Rückmeldung einer Task (Callback)"
+      },
+      {
+        "id": "recv",
+        "type": "async",
+        "anchor": {
+          "file": "zfi_close_run_f02.abap",
+          "line": 263,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f02.abap:263"
+        },
+        "meaning": "Ergebnis der Buchungskreisprüfung entgegennehmen"
+      },
+      {
+        "id": "g_recv",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_close_run_f02.abap",
+          "line": 271,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f02.abap:271"
+        },
+        "meaning": "Prüfung fehlerhaft oder Task abgebrochen?"
+      },
+      {
+        "id": "o_perr",
+        "type": "output",
+        "anchor": {
+          "file": "zfi_close_run_f02.abap",
+          "line": 273,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f02.abap:273"
+        },
+        "meaning": "Prüffehler des Buchungskreises protokollieren"
+      },
+      {
+        "id": "e_recv",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_close_run_f02.abap",
+          "line": 275,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f02.abap:275"
+        },
+        "meaning": "Rückmeldung zählen, Callback endet"
+      },
+      {
+        "id": "fm_s",
+        "type": "start",
+        "anchor": {
+          "file": "z_fi_close_step_bukrs.abap",
+          "line": 1,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_fi_close_step_bukrs.abap:1"
+        },
+        "meaning": "Prüfbaustein je Buchungskreis"
+      },
+      {
+        "id": "fm_q_acct",
+        "type": "read",
+        "anchor": {
+          "file": "z_fi_close_step_bukrs.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_fi_close_step_bukrs.abap:27"
+        },
+        "meaning": "Als Nullkonto gepflegte Verrechnungskonten des Buchungskreises lesen"
+      },
+      {
+        "id": "fm_l_acct",
+        "type": "loop",
+        "anchor": {
+          "file": "z_fi_close_step_bukrs.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_fi_close_step_bukrs.abap:31"
+        },
+        "meaning": "Verrechnungskonten durchlaufen"
+      },
+      {
+        "id": "fm_l_bsis",
+        "type": "loop",
+        "anchor": {
+          "file": "z_fi_close_step_bukrs.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_fi_close_step_bukrs.abap:34"
+        },
+        "meaning": "Offene Posten des Kontos im Geschäftsjahr bis zur Periode lesen"
+      },
+      {
+        "id": "fm_sum",
+        "type": "action",
+        "anchor": {
+          "file": "z_fi_close_step_bukrs.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_fi_close_step_bukrs.abap:39"
+        },
+        "meaning": "Saldo vorzeichengerecht aufsummieren"
+      },
+      {
+        "id": "fm_g_saldo",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_fi_close_step_bukrs.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_fi_close_step_bukrs.abap:42"
+        },
+        "meaning": "Konto nicht ausgeglichen?"
+      },
+      {
+        "id": "fm_rc4",
+        "type": "action",
+        "anchor": {
+          "file": "z_fi_close_step_bukrs.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_fi_close_step_bukrs.abap:43"
+        },
+        "meaning": "Buchungskreis mit Fehler und Konto/Saldo melden"
+      },
+      {
+        "id": "fm_end",
+        "type": "end",
+        "anchor": {
+          "file": "z_fi_close_step_bukrs.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_fi_close_step_bukrs.abap:50"
+        },
+        "meaning": "Ergebnismeldung setzen, Baustein endet"
+      },
+      {
+        "id": "f_fin",
+        "type": "start",
+        "anchor": {
+          "file": "zfi_close_run_f01.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f01.abap:57"
+        },
+        "meaning": "Laufabschluss"
+      },
+      {
+        "id": "st_run",
+        "type": "action",
+        "anchor": {
+          "file": "zfi_close_run_f01.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f01.abap:68"
+        },
+        "meaning": "Laufstatus bestimmen: abgebrochen, ohne offene Periode oder erfolgreich"
+      },
+      {
+        "id": "w_run",
+        "type": "write",
+        "anchor": {
+          "file": "zfi_close_run_f01.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f01.abap:71"
+        },
+        "meaning": "Laufkopf speichern"
+      },
+      {
+        "id": "bal_save",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zfi_close_run_f01.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f01.abap:74"
+        },
+        "meaning": "Anwendungsprotokoll sichern"
+      },
+      {
+        "id": "cw_fin",
+        "type": "transaction",
+        "anchor": {
+          "file": "zfi_close_run_f01.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f01.abap:82"
+        },
+        "meaning": "Laufkopf und Protokoll festschreiben"
+      },
+      {
+        "id": "deq",
+        "type": "lock",
+        "anchor": {
+          "file": "zfi_close_run_f01.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f01.abap:84"
+        },
+        "meaning": "Laufsperre aufheben"
+      },
+      {
+        "id": "c_mail",
+        "type": "call",
+        "anchor": {
+          "file": "zfi_close_run_f01.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f01.abap:92"
+        },
+        "meaning": "Abschlussmail senden"
+      },
+      {
+        "id": "f_mail",
+        "type": "start",
+        "anchor": {
+          "file": "zfi_close_run_f01.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f01.abap:99"
+        },
+        "meaning": "Mailversand"
+      },
+      {
+        "id": "g_mail",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_close_run_f01.abap",
+          "line": 109,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f01.abap:109"
+        },
+        "meaning": "Mailadresse angegeben?"
+      },
+      {
+        "id": "m_send",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zfi_close_run_f01.abap",
+          "line": 125,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f01.abap:125"
+        },
+        "meaning": "Abschlussmail mit Laufstatus versenden"
+      },
+      {
+        "id": "cw_mail",
+        "type": "transaction",
+        "anchor": {
+          "file": "zfi_close_run_f01.abap",
+          "line": 126,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f01.abap:126"
+        },
+        "meaning": "Versand festschreiben"
+      },
+      {
+        "id": "o_mailerr",
+        "type": "output",
+        "anchor": {
+          "file": "zfi_close_run_f01.abap",
+          "line": 129,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f01.abap:129"
+        },
+        "meaning": "Versandfehler im Jobprotokoll melden"
+      },
+      {
+        "id": "x_mail",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_close_run_f01.abap",
+          "line": 132,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f01.abap:132"
+        },
+        "meaning": "SEND_MAIL beendet"
+      },
+      {
+        "id": "x_fin",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_close_run_f01.abap",
+          "line": 94,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_close_run_f01.abap:94"
+        },
+        "meaning": "FINISH_RUN beendet"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "bal_create",
+        "condition": "always"
+      },
+      {
+        "from": "bal_create",
+        "to": "enq",
+        "condition": "always"
+      },
+      {
+        "from": "enq",
+        "to": "g_lock",
+        "condition": "always"
+      },
+      {
+        "from": "g_lock",
+        "to": "o_locked",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "o_locked",
+        "to": "e_locked",
+        "condition": "always"
+      },
+      {
+        "from": "g_lock",
+        "to": "c_per",
+        "condition": "else"
+      },
+      {
+        "from": "c_per",
+        "to": "f_per",
+        "condition": "always"
+      },
+      {
+        "from": "f_per",
+        "to": "q_t001",
+        "condition": "always"
+      },
+      {
+        "from": "q_t001",
+        "to": "l_t001",
+        "condition": "always"
+      },
+      {
+        "from": "l_t001",
+        "to": "q_t001b",
+        "condition": "next row"
+      },
+      {
+        "from": "q_t001b",
+        "to": "g_t001b",
+        "condition": "always"
+      },
+      {
+        "from": "g_t001b",
+        "to": "l_t001",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g_t001b",
+        "to": "g_open",
+        "condition": "else"
+      },
+      {
+        "from": "g_open",
+        "to": "l_t001",
+        "condition": "lv_akt BETWEEN lv_von AND lv_bis"
+      },
+      {
+        "from": "g_open",
+        "to": "o_closed",
+        "condition": "else"
+      },
+      {
+        "from": "o_closed",
+        "to": "l_t001",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l_t001",
+        "to": "x_per",
+        "condition": "no more rows"
+      },
+      {
+        "from": "g_nobukrs",
+        "to": "c_fin",
+        "condition": "gt_bukrs IS INITIAL"
+      },
+      {
+        "from": "g_nobukrs",
+        "to": "q_steps",
+        "condition": "else"
+      },
+      {
+        "from": "q_steps",
+        "to": "q_stat",
+        "condition": "always"
+      },
+      {
+        "from": "q_stat",
+        "to": "c_exec",
+        "condition": "always"
+      },
+      {
+        "from": "c_exec",
+        "to": "f_exec",
+        "condition": "always"
+      },
+      {
+        "from": "f_exec",
+        "to": "l_steps",
+        "condition": "always"
+      },
+      {
+        "from": "l_steps",
+        "to": "rt_stat",
+        "condition": "next row"
+      },
+      {
+        "from": "rt_stat",
+        "to": "g_done",
+        "condition": "always"
+      },
+      {
+        "from": "g_done",
+        "to": "l_steps",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "g_done",
+        "to": "g_type",
+        "condition": "else"
+      },
+      {
+        "from": "g_type",
+        "to": "dyn_form",
+        "condition": "WHEN 'F'"
+      },
+      {
+        "from": "g_type",
+        "to": "dyn_fm",
+        "condition": "WHEN 'B'"
+      },
+      {
+        "from": "g_type",
+        "to": "c_accr",
+        "condition": "WHEN 'A'"
+      },
+      {
+        "from": "g_type",
+        "to": "c_sub",
+        "condition": "WHEN 'S'"
+      },
+      {
+        "from": "g_type",
+        "to": "c_par",
+        "condition": "WHEN 'P'"
+      },
+      {
+        "from": "g_type",
+        "to": "rc_other",
+        "condition": "else"
+      },
+      {
+        "from": "dyn_form",
+        "to": "st",
+        "condition": "always"
+      },
+      {
+        "from": "dyn_fm",
+        "to": "st",
+        "condition": "always"
+      },
+      {
+        "from": "rc_other",
+        "to": "st",
+        "condition": "always"
+      },
+      {
+        "from": "c_accr",
+        "to": "f_accr",
+        "condition": "always"
+      },
+      {
+        "from": "c_sub",
+        "to": "f_sub",
+        "condition": "always"
+      },
+      {
+        "from": "c_par",
+        "to": "f_par",
+        "condition": "always"
+      },
+      {
+        "from": "st",
+        "to": "w_stat",
+        "condition": "always"
+      },
+      {
+        "from": "w_stat",
+        "to": "cw_stat",
+        "condition": "always"
+      },
+      {
+        "from": "cw_stat",
+        "to": "g_crit",
+        "condition": "always"
+      },
+      {
+        "from": "g_crit",
+        "to": "abort",
+        "condition": "gv_rc <> 0 AND gs_step-critical = abap_true"
+      },
+      {
+        "from": "abort",
+        "to": "o_crit",
+        "condition": "always"
+      },
+      {
+        "from": "o_crit",
+        "to": "x_exec",
+        "condition": "always"
+      },
+      {
+        "from": "g_crit",
+        "to": "l_steps",
+        "condition": "else"
+      },
+      {
+        "from": "l_steps",
+        "to": "x_exec",
+        "condition": "no more rows"
+      },
+      {
+        "from": "f_accr",
+        "to": "q_accr",
+        "condition": "always"
+      },
+      {
+        "from": "q_accr",
+        "to": "l_accr",
+        "condition": "always"
+      },
+      {
+        "from": "l_accr",
+        "to": "g_test",
+        "condition": "next row"
+      },
+      {
+        "from": "g_test",
+        "to": "bapi_chk",
+        "condition": "p_test = abap_true"
+      },
+      {
+        "from": "g_test",
+        "to": "bapi",
+        "condition": "else"
+      },
+      {
+        "from": "bapi_chk",
+        "to": "rt_ret",
+        "condition": "always"
+      },
+      {
+        "from": "bapi",
+        "to": "rt_ret",
+        "condition": "always"
+      },
+      {
+        "from": "rt_ret",
+        "to": "g_bapi",
+        "condition": "always"
+      },
+      {
+        "from": "g_bapi",
+        "to": "rb",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "rb",
+        "to": "o_bapierr",
+        "condition": "always"
+      },
+      {
+        "from": "o_bapierr",
+        "to": "l_accr",
+        "condition": "next iteration"
+      },
+      {
+        "from": "g_bapi",
+        "to": "g_post",
+        "condition": "else"
+      },
+      {
+        "from": "g_post",
+        "to": "cm",
+        "condition": "p_test = abap_false"
+      },
+      {
+        "from": "cm",
+        "to": "w_accr",
+        "condition": "always"
+      },
+      {
+        "from": "w_accr",
+        "to": "l_accr",
+        "condition": "next iteration"
+      },
+      {
+        "from": "g_post",
+        "to": "l_accr",
+        "condition": "else"
+      },
+      {
+        "from": "l_accr",
+        "to": "x_accr",
+        "condition": "no more rows"
+      },
+      {
+        "from": "f_sub",
+        "to": "g_prog",
+        "condition": "always"
+      },
+      {
+        "from": "g_prog",
+        "to": "l_sub",
+        "condition": "WHEN 'RAPOST2000'"
+      },
+      {
+        "from": "l_sub",
+        "to": "sub_afa",
+        "condition": "next row"
+      },
+      {
+        "from": "sub_afa",
+        "to": "l_sub",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l_sub",
+        "to": "rc0",
+        "condition": "no more rows"
+      },
+      {
+        "from": "g_prog",
+        "to": "sub_gen",
+        "condition": "else"
+      },
+      {
+        "from": "sub_gen",
+        "to": "rc0",
+        "condition": "always"
+      },
+      {
+        "from": "rc0",
+        "to": "x_sub",
+        "condition": "always"
+      },
+      {
+        "from": "f_par",
+        "to": "l_par",
+        "condition": "always"
+      },
+      {
+        "from": "l_par",
+        "to": "async_call",
+        "condition": "next row"
+      },
+      {
+        "from": "async_call",
+        "to": "g_par",
+        "condition": "always"
+      },
+      {
+        "from": "g_par",
+        "to": "l_par",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "g_par",
+        "to": "o_parfail",
+        "condition": "else"
+      },
+      {
+        "from": "o_parfail",
+        "to": "l_par",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l_par",
+        "to": "wait",
+        "condition": "no more rows"
+      },
+      {
+        "from": "wait",
+        "to": "g_parres",
+        "condition": "always"
+      },
+      {
+        "from": "g_parres",
+        "to": "rc4_par",
+        "condition": "sy-subrc <> 0 OR gv_failed > 0 OR gv_perr > 0"
+      },
+      {
+        "from": "rc4_par",
+        "to": "x_par",
+        "condition": "always"
+      },
+      {
+        "from": "g_parres",
+        "to": "x_par",
+        "condition": "else"
+      },
+      {
+        "from": "async_call",
+        "to": "fm_s",
+        "condition": "always"
+      },
+      {
+        "from": "fm_s",
+        "to": "fm_q_acct",
+        "condition": "always"
+      },
+      {
+        "from": "fm_q_acct",
+        "to": "fm_l_acct",
+        "condition": "always"
+      },
+      {
+        "from": "fm_l_acct",
+        "to": "fm_l_bsis",
+        "condition": "next row"
+      },
+      {
+        "from": "fm_l_bsis",
+        "to": "fm_sum",
+        "condition": "next row"
+      },
+      {
+        "from": "fm_sum",
+        "to": "fm_l_bsis",
+        "condition": "next iteration"
+      },
+      {
+        "from": "fm_l_bsis",
+        "to": "fm_g_saldo",
+        "condition": "no more rows"
+      },
+      {
+        "from": "fm_g_saldo",
+        "to": "fm_rc4",
+        "condition": "lv_saldo <> 0"
+      },
+      {
+        "from": "fm_rc4",
+        "to": "fm_end",
+        "condition": "always"
+      },
+      {
+        "from": "fm_g_saldo",
+        "to": "fm_l_acct",
+        "condition": "else"
+      },
+      {
+        "from": "fm_l_acct",
+        "to": "fm_end",
+        "condition": "no more rows"
+      },
+      {
+        "from": "fm_end",
+        "to": "f_recv",
+        "condition": "always"
+      },
+      {
+        "from": "f_recv",
+        "to": "recv",
+        "condition": "always"
+      },
+      {
+        "from": "recv",
+        "to": "g_recv",
+        "condition": "always"
+      },
+      {
+        "from": "g_recv",
+        "to": "o_perr",
+        "condition": "sy-subrc <> 0 OR lv_rc <> 0"
+      },
+      {
+        "from": "o_perr",
+        "to": "e_recv",
+        "condition": "always"
+      },
+      {
+        "from": "g_recv",
+        "to": "e_recv",
+        "condition": "else"
+      },
+      {
+        "from": "c_fin",
+        "to": "f_fin",
+        "condition": "always"
+      },
+      {
+        "from": "f_fin",
+        "to": "st_run",
+        "condition": "always"
+      },
+      {
+        "from": "st_run",
+        "to": "w_run",
+        "condition": "always"
+      },
+      {
+        "from": "w_run",
+        "to": "bal_save",
+        "condition": "always"
+      },
+      {
+        "from": "bal_save",
+        "to": "cw_fin",
+        "condition": "always"
+      },
+      {
+        "from": "cw_fin",
+        "to": "deq",
+        "condition": "always"
+      },
+      {
+        "from": "deq",
+        "to": "c_mail",
+        "condition": "always"
+      },
+      {
+        "from": "c_mail",
+        "to": "f_mail",
+        "condition": "always"
+      },
+      {
+        "from": "f_mail",
+        "to": "g_mail",
+        "condition": "always"
+      },
+      {
+        "from": "g_mail",
+        "to": "m_send",
+        "condition": "p_mail IS NOT INITIAL"
+      },
+      {
+        "from": "g_mail",
+        "to": "x_mail",
+        "condition": "else"
+      },
+      {
+        "from": "m_send",
+        "to": "cw_mail",
+        "condition": "always"
+      },
+      {
+        "from": "cw_mail",
+        "to": "x_mail",
+        "condition": "always"
+      },
+      {
+        "from": "m_send",
+        "to": "o_mailerr",
+        "condition": "CATCH cx_bcs"
+      },
+      {
+        "from": "o_mailerr",
+        "to": "x_mail",
+        "condition": "always"
+      },
+      {
+        "from": "x_per",
+        "to": "g_nobukrs",
+        "condition": "always"
+      },
+      {
+        "from": "x_exec",
+        "to": "c_fin",
+        "condition": "always"
+      },
+      {
+        "from": "x_accr",
+        "to": "st",
+        "condition": "always"
+      },
+      {
+        "from": "x_sub",
+        "to": "st",
+        "condition": "always"
+      },
+      {
+        "from": "x_par",
+        "to": "st",
+        "condition": "always"
+      },
+      {
+        "from": "x_mail",
+        "to": "x_fin",
+        "condition": "always"
+      },
+      {
+        "from": "x_fin",
+        "to": "e_main",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zfi_close_run_f02.abap:33 — kein call-Knoten und kein Fachsatz mit einem bestimmten Abschlussschritt (Programm und FORM stammen aus ZFI_CLOSE_STEP; wegen IF FOUND bleibt eine fehlende Routine folgenlos und der Schritt wird mit Status S gespeichert)",
+    "zfi_close_run_f02.abap:205 — kein Fachsatz „ein fehlgeschlagener Abschreibungslauf bzw. ein fehlgeschlagenes Standardprogramm führt zum Fehlerstatus“ (cv_rc wird nach SUBMIT fest auf 0 gesetzt, das Programmergebnis wird nicht ausgewertet)",
+    "zfi_close_run_f01.abap:68 — kein Fachsatz „Status S bedeutet, dass alle Schritte fehlerfrei waren“ (nicht kritische Schritte können mit E enden, der Laufkopf erhält trotzdem S)",
+    "zfi_close_run_f02.abap:70 — kein Fachsatz „ein Testlauf schreibt nichts fort“ (Schrittstatus und Laufkopf werden auch im Testlauf gespeichert und festgeschrieben; ein späterer Echtlauf mit derselben Lauf-ID überspringt die im Test erfolgreichen Schritte, und Kundenroutinen sowie Programme mit Customizing-Variante laufen ohne Testschalter)"
+  ],
+  "processDescription": "Der Report läuft als Hintergrundjob zum Monatsende für eine Lauf-ID, eine Laufart, mehrere Buchungskreise sowie Geschäftsjahr und Periode. Er legt ein Anwendungsprotokoll an und sperrt den Lauf exklusiv; ist er bereits gesperrt, endet der Job mit einer Meldung im Jobprotokoll. Anschließend wird je Buchungskreis in der Periodensteuerung geprüft, ob die Abschlussperiode offen ist; nur diese Buchungskreise laufen mit, bei geschlossener Periode wird gewarnt. Die aktiven Schritte der Laufart werden in Customizing-Reihenfolge abgearbeitet, bereits erfolgreich gelaufene Schritte werden beim Neustart übersprungen. Je Schritttyp läuft eine im Customizing hinterlegte Kundenroutine oder ein Funktionsbaustein (Ziel im Code nicht bestimmbar), die Buchung der Abgrenzungen, ein Standardprogramm wie der Abschreibungslauf oder eine parallele Prüfung je Buchungskreis. Abgrenzungen werden als Beleg Aufwand an Abgrenzung gebucht, im Testlauf nur geprüft; Fehler werden zurückgerollt und protokolliert, erfolgreiche Buchungen festgeschrieben und in der Abgrenzungstabelle als gebucht markiert. Die Parallelprüfung startet je Buchungskreis eine eigene Task, die den Saldo der offenen Posten der Nullkonten ermittelt; der Job wartet höchstens 30 Minuten auf alle Rückmeldungen. Nach jedem Schritt wird dessen Status gespeichert; scheitert ein kritischer Schritt, wird der Lauf abgebrochen. Zum Schluss werden Laufstatus und Protokoll gesichert, die Sperre aufgehoben und bei angegebener Adresse eine Abschlussmail versendet. Das Ergebnis eingeplanter Standardprogramme wird nicht geprüft, und nicht kritische Fehler verhindern den Status erfolgreich nicht."
+}

@@ -1,0 +1,19 @@
+{
+  "id": "BM-065",
+  "title": "Eingabeprüfung Gutmenge in der Werkerrückmeldung (PAI-Modul)",
+  "domain": "PP / PM / QM — Produktion, Instandhaltung, Qualität",
+  "band": "einfach",
+  "loc": 28,
+  "constructs": [
+    "MODULE … INPUT",
+    "SELECT SINGLE INNER JOIN AFVC/AFVV",
+    "MESSAGE E im PAI",
+    "globale Dynprofelder aus TOP-Include (nicht geliefert)"
+  ],
+  "scenario": "PAI-Prüfmodul einer selbstgebauten Rückmeldetransaktion am Werker-Terminal; typischer Dynpro-Rest, der bei der Transformation in eine Fiori-Rückmelde-App übergehen soll.",
+  "s4_issues": [
+    "Dynpro nicht Fiori-fähig",
+    "Direktzugriff AFVC/AFVV statt CDS I_MfgOrderOperation",
+    "Ausschuss und Nacharbeit bei der Mengenprüfung nicht berücksichtigt"
+  ]
+}

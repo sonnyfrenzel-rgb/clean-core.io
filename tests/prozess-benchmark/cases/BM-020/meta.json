@@ -1,0 +1,27 @@
+{
+  "id": "BM-020",
+  "title": "Jahresbonus: Umsatz per Native SQL, Staffel und Kappung je Kunde, Gutschriftsanforderung per BAPI mit verbuchtem Bonusbeleg",
+  "domain": "SD / Order-to-Cash",
+  "band": "sehr komplex",
+  "loc": 432,
+  "constructs": [
+    "REPORT mit TOP-/F01-Include",
+    "INITIALIZATION mit Vorjahr",
+    "EXEC SQL OPEN/FETCH/CLOSE mit Cursor und expliziter Mandantenbedingung",
+    "DO mit EXIT bei Cursorende",
+    "globale Klasse mit Konstruktor-Ausnahme",
+    "CONVERT_TO_LOCAL_CURRENCY",
+    "LOOP … WHERE … EXIT auf absteigend sortierter Staffel",
+    "round( )",
+    "CALL FUNCTION … IN UPDATE TASK vor BAPI_SALESORDER_CREATEFROMDAT2",
+    "BAPI_TRANSACTION_COMMIT/ROLLBACK",
+    "REUSE_ALV_GRID_DISPLAY mit Summen"
+  ],
+  "scenario": "Eigenentwickelte Jahresbonusabrechnung als Ersatz für die SD-Bonusabsprachen: Umsatz je Regulierer aus den Fakturen, Bonus nach Staffel, Gutschriftsanforderung je Kunde.",
+  "s4_issues": [
+    "Native SQL auf VBRK/VBRP umgeht Datenbankunabhängigkeit und ist in ABAP Cloud nicht zulässig; auf HANA besser CDS/AMDP",
+    "SD-Bonusabsprachen sind in S/4 durch Settlement Management (Konditionsverträge) abgelöst",
+    "KNVV-BOKRE (Bonusrelevanz) gehört zur alten Bonusabwicklung",
+    "Infostrukturen S0xx (auskommentierter S003-Zugriff) werden nicht mehr fortgeschrieben"
+  ]
+}

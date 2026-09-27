@@ -1,0 +1,23 @@
+{
+  "id": "BM-095",
+  "title": "Bestandsabgleich mit Fremd-WMS über EXEC SQL und Differenzbuchung",
+  "domain": "Querschnitt — Schnittstellen, Stammdaten, HR, Workflow, technische Jobs",
+  "band": "komplex",
+  "loc": 183,
+  "constructs": [
+    "EXEC SQL CONNECT/SET CONNECTION/DISCONNECT",
+    "Native OPEN/FETCH/CLOSE Cursor",
+    "DO/EXIT",
+    "SELECT MARD",
+    "CONVERSION_EXIT_MATN1_INPUT",
+    "READ TABLE WITH TABLE KEY",
+    "BAPI_GOODSMVT_CREATE",
+    "generischer TABLE-Parameter"
+  ],
+  "scenario": "Nächtlicher Abgleich des Lagerortbestands mit einem externen Oracle-Lagerverwaltungssystem über eine DBCON-Sekundärverbindung; Differenzen außerhalb der Toleranz werden als Warenbewegung gebucht.",
+  "s4_issues": [
+    "Native SQL auf Fremddatenbank (EXEC SQL, DBCON) ist nicht cloudfähig und muss durch eine Schnittstelle ersetzt werden",
+    "MARD-Bestände werden in S/4 aus MATDOC berechnet (Kompatibilitätsview)",
+    "Materialnummer: WMS liefert 18 Stellen"
+  ]
+}

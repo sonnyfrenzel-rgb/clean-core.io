@@ -1,0 +1,21 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten e2 (neu)",
+      "before": "—",
+      "after": "end source.abap:18 „Job bricht mit Rückstau-Meldung ab“",
+      "why": "MESSAGE e398 in START-OF-SELECTION beendet den Lauf (Hintergrund: Jobabbruch); Konvention: output + end auf derselben Zeile. m hatte keine ausgehende Kante.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten e3 (neu)",
+      "before": "—",
+      "after": "end source.abap:20 „Lauf endet nach der Ausgabe“",
+      "why": "Implizites Ende von START-OF-SELECTION fehlte (end auf der letzten Anweisung). o2 hatte keine ausgehende Kante.",
+      "category": "fehlender Knoten"
+    }
+  ],
+  "doubts": []
+}

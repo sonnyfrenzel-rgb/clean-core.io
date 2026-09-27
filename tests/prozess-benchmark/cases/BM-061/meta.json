@@ -1,0 +1,23 @@
+{
+  "id": "BM-061",
+  "title": "Rückstandsliste offener Fertigungsaufträge je Werk",
+  "domain": "PP / PM / QM — Produktion, Instandhaltung, Qualität",
+  "band": "einfach",
+  "loc": 37,
+  "constructs": [
+    "REPORT",
+    "SELECT-OPTIONS",
+    "SELECT INNER JOIN AFKO/AFPO",
+    "sy-subrc",
+    "MESSAGE TYPE S",
+    "EXIT",
+    "LOOP AT",
+    "WRITE"
+  ],
+  "scenario": "Klassischer Dispositionsreport aus dem Werkscontrolling, den Fertigungssteuerer morgens für ihren Rückstand starten; in jeder PP-Transformation Kandidat für eine Fiori-App oder CDS-Abfrage.",
+  "s4_issues": [
+    "Direktzugriff AFKO/AFPO statt CDS (I_ManufacturingOrder / I_ManufacturingOrderItem)",
+    "MATNR 40 Zeichen: WRITE-Liste mit fester Spaltenbreite",
+    "Listausgabe WRITE nicht Fiori-fähig"
+  ]
+}

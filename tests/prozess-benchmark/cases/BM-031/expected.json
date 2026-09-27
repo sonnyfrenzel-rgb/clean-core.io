@@ -1,0 +1,1254 @@
+{
+  "id": "BM-031",
+  "title": "Rechnungsprüfung MIRO: kreditorspezifische Preis-/Mengentoleranz beim Sichern (INVOICE_UPDATE)",
+  "classes": [
+    "K05",
+    "K01",
+    "K12",
+    "K09"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [
+    "Ist S_RBKP_NEW-BELNR in CHANGE_AT_SAVE schon vergeben? Sonst entstehen Protokollzeilen ohne Belegnummer."
+  ],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "INVOICE_UPDATE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_im_invoice_update.abap",
+        "line": 16,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_im_invoice_update.abap:16"
+      },
+      "identity": {
+        "objectType": "BADI"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZCL_MM_IV_CHECK",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_im_invoice_update.abap",
+        "line": 32,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_im_invoice_update.abap:32"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZMM_IV_TOL",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_mm_iv_check.abap",
+        "line": 28,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_mm_iv_check.abap:28"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "EKPO",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_mm_iv_check.abap",
+        "line": 50,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_mm_iv_check.abap:50"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "EKBE",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_mm_iv_check.abap",
+        "line": 67,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_mm_iv_check.abap:67"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "Z_MM_IV_LOG_WRITE",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_im_invoice_update.abap",
+        "line": 78,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_im_invoice_update.abap:78"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZMM_IV_LOG",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "z_mm_iv_log_write.abap",
+        "line": 12,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_mm_iv_log_write.abap:12"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-031-B01",
+      "text": "Beim Sichern einer Eingangsrechnung in der Logistik-Rechnungsprüfung werden nur Rechnungen geprüft; Gutschriften und nachträgliche Belastungen bleiben ungeprüft.",
+      "anchors": [
+        {
+          "file": "zcl_im_invoice_update.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_invoice_update.abap:16"
+        },
+        {
+          "file": "zcl_im_invoice_update.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_invoice_update.abap:27"
+        },
+        {
+          "file": "zcl_im_invoice_update.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_invoice_update.abap:28"
+        }
+      ]
+    },
+    {
+      "id": "BM-031-B02",
+      "text": "Die Toleranz wird zuerst kreditorspezifisch für den Buchungskreis gesucht, dann als Buchungskreis-Default, und fehlt beides, gilt eine feste Preistoleranz von 5 %.",
+      "anchors": [
+        {
+          "file": "zcl_mm_iv_check.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_iv_check.abap:28"
+        },
+        {
+          "file": "zcl_mm_iv_check.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_iv_check.abap:32"
+        },
+        {
+          "file": "zcl_mm_iv_check.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_iv_check.abap:38"
+        }
+      ]
+    },
+    {
+      "id": "BM-031-B03",
+      "text": "Ist die Prüfung für den Kreditor abgeschaltet, wird die Rechnung ohne Prüfung gesichert.",
+      "anchors": [
+        {
+          "file": "zcl_im_invoice_update.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_invoice_update.abap:34"
+        },
+        {
+          "file": "zcl_im_invoice_update.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_invoice_update.abap:35"
+        }
+      ]
+    },
+    {
+      "id": "BM-031-B04",
+      "text": "Geprüft werden nur Rechnungspositionen mit Bestellbezug.",
+      "anchors": [
+        {
+          "file": "zcl_im_invoice_update.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_invoice_update.abap:38"
+        }
+      ]
+    },
+    {
+      "id": "BM-031-B05",
+      "text": "Je Position wird die Bestellposition gelesen; fehlt sie oder sind Preiseinheit bzw. Rechnungsmenge null, wird die Position übersprungen.",
+      "anchors": [
+        {
+          "file": "zcl_mm_iv_check.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_iv_check.abap:50"
+        },
+        {
+          "file": "zcl_mm_iv_check.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_iv_check.abap:53"
+        },
+        {
+          "file": "zcl_im_invoice_update.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_invoice_update.abap:40"
+        }
+      ]
+    },
+    {
+      "id": "BM-031-B06",
+      "text": "Rechnungs- und Bestellpreis werden je Einheit verglichen; daraus ergeben sich die prozentuale Preisabweichung und der Differenzbetrag über die Rechnungsmenge.",
+      "anchors": [
+        {
+          "file": "zcl_mm_iv_check.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_iv_check.abap:59"
+        },
+        {
+          "file": "zcl_mm_iv_check.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_iv_check.abap:62"
+        }
+      ]
+    },
+    {
+      "id": "BM-031-B07",
+      "text": "Bei WE-bezogener Rechnungsprüfung wird die Rechnungsmenge gegen die gelieferte, noch nicht berechnete Menge aus der Bestellentwicklung gestellt; nur ein Überhang zählt als Mengenüberschreitung.",
+      "anchors": [
+        {
+          "file": "zcl_mm_iv_check.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_iv_check.abap:67"
+        },
+        {
+          "file": "zcl_mm_iv_check.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_iv_check.abap:72"
+        },
+        {
+          "file": "zcl_mm_iv_check.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_iv_check.abap:78"
+        },
+        {
+          "file": "zcl_mm_iv_check.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_iv_check.abap:79"
+        }
+      ]
+    },
+    {
+      "id": "BM-031-B08",
+      "text": "Eine Position ist auffällig, wenn die Preisabweichung die Toleranz übersteigt oder, falls der Kreditor keine Mengenüberschreitung erlaubt, mehr berechnet als offen geliefert wurde.",
+      "anchors": [
+        {
+          "file": "zcl_im_invoice_update.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_invoice_update.abap:45"
+        },
+        {
+          "file": "zcl_im_invoice_update.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_invoice_update.abap:46"
+        },
+        {
+          "file": "zcl_im_invoice_update.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_invoice_update.abap:48"
+        }
+      ]
+    },
+    {
+      "id": "BM-031-B09",
+      "text": "Für jede auffällige Position wird der Differenzbetrag summiert und eine Protokollzeile mit Rechnung, Bestellung, Kreditor, Differenz, Benutzer und Datum gebildet.",
+      "anchors": [
+        {
+          "file": "zcl_im_invoice_update.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_invoice_update.abap:53"
+        },
+        {
+          "file": "zcl_im_invoice_update.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_invoice_update.abap:54"
+        }
+      ]
+    },
+    {
+      "id": "BM-031-B10",
+      "text": "Ohne auffällige Position wird die Rechnung normal gesichert.",
+      "anchors": [
+        {
+          "file": "zcl_im_invoice_update.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_invoice_update.abap:67"
+        },
+        {
+          "file": "zcl_im_invoice_update.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_invoice_update.abap:68"
+        }
+      ]
+    },
+    {
+      "id": "BM-031-B11",
+      "text": "Übersteigt die Summe der Differenzen eine gepflegte harte Betragsgrenze, wird das Sichern mit einer Fehlermeldung verhindert.",
+      "anchors": [
+        {
+          "file": "zcl_im_invoice_update.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_invoice_update.abap:72"
+        },
+        {
+          "file": "zcl_im_invoice_update.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_invoice_update.abap:73"
+        }
+      ]
+    },
+    {
+      "id": "BM-031-B12",
+      "text": "Sonst wird die Rechnung gesichert und die Abweichungen werden mit der Verbuchung als offene Nacharbeitsfälle für die Kreditorenbuchhaltung protokolliert.",
+      "anchors": [
+        {
+          "file": "zcl_im_invoice_update.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_invoice_update.abap:78"
+        },
+        {
+          "file": "z_mm_iv_log_write.abap",
+          "line": 11,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mm_iv_log_write.abap:11"
+        },
+        {
+          "file": "z_mm_iv_log_write.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mm_iv_log_write.abap:12"
+        }
+      ]
+    },
+    {
+      "id": "BM-031-B13",
+      "text": "Scheitert das Schreiben des Protokolls, bricht die Verbuchung mit Abbruchmeldung ab.",
+      "anchors": [
+        {
+          "file": "z_mm_iv_log_write.abap",
+          "line": 13,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mm_iv_log_write.abap:13"
+        },
+        {
+          "file": "z_mm_iv_log_write.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mm_iv_log_write.abap:14"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_im_invoice_update.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_invoice_update.abap:16"
+        },
+        "meaning": "MIRO: Rechnung wird gesichert"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_im_invoice_update.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_invoice_update.abap:27"
+        },
+        "meaning": "Gutschrift oder nachträgliche Belastung?"
+      },
+      {
+        "id": "r1",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_im_invoice_update.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_invoice_update.abap:28"
+        },
+        "meaning": "Keine Prüfung"
+      },
+      {
+        "id": "ct",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_im_invoice_update.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_invoice_update.abap:32"
+        },
+        "meaning": "Toleranz für Kreditor ermitteln"
+      },
+      {
+        "id": "t0",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_mm_iv_check.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_iv_check.abap:26"
+        },
+        "meaning": "Toleranzfindung"
+      },
+      {
+        "id": "tq1",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_mm_iv_check.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_iv_check.abap:28"
+        },
+        "meaning": "Kreditorspezifische Toleranz lesen"
+      },
+      {
+        "id": "tg1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_mm_iv_check.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_iv_check.abap:31"
+        },
+        "meaning": "Kreditortoleranz vorhanden?"
+      },
+      {
+        "id": "tq2",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_mm_iv_check.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_iv_check.abap:32"
+        },
+        "meaning": "Buchungskreis-Default lesen"
+      },
+      {
+        "id": "tg2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_mm_iv_check.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_iv_check.abap:35"
+        },
+        "meaning": "Default vorhanden?"
+      },
+      {
+        "id": "td",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_mm_iv_check.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_iv_check.abap:38"
+        },
+        "meaning": "Feste 5 % Preistoleranz"
+      },
+      {
+        "id": "te",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_mm_iv_check.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_iv_check.abap:41"
+        },
+        "meaning": "Toleranz zurück"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_im_invoice_update.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_invoice_update.abap:34"
+        },
+        "meaning": "Prüfung für Kreditor abgeschaltet?"
+      },
+      {
+        "id": "r2",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_im_invoice_update.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_invoice_update.abap:35"
+        },
+        "meaning": "Keine Prüfung"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_im_invoice_update.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_invoice_update.abap:38"
+        },
+        "meaning": "Bestellbezogene Rechnungspositionen durchlaufen"
+      },
+      {
+        "id": "ci",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_im_invoice_update.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_invoice_update.abap:39"
+        },
+        "meaning": "Position gegen Bestellung prüfen"
+      },
+      {
+        "id": "k0",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_mm_iv_check.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_iv_check.abap:43"
+        },
+        "meaning": "Positionsprüfung"
+      },
+      {
+        "id": "kq",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_mm_iv_check.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_iv_check.abap:50"
+        },
+        "meaning": "Bestellposition lesen"
+      },
+      {
+        "id": "kg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_mm_iv_check.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_iv_check.abap:53"
+        },
+        "meaning": "Bestellposition unbrauchbar?"
+      },
+      {
+        "id": "kr",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_mm_iv_check.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_iv_check.abap:55"
+        },
+        "meaning": "Als nicht gefunden markieren"
+      },
+      {
+        "id": "kp",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_mm_iv_check.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_iv_check.abap:59"
+        },
+        "meaning": "Stückpreise, prozentuale Abweichung und Differenzbetrag berechnen"
+      },
+      {
+        "id": "kw",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_mm_iv_check.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_iv_check.abap:67"
+        },
+        "meaning": "Wareneingangsmenge aus Bestellentwicklung"
+      },
+      {
+        "id": "kr2",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_mm_iv_check.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_iv_check.abap:72"
+        },
+        "meaning": "Bereits berechnete Menge aus Bestellentwicklung"
+      },
+      {
+        "id": "kgw",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_mm_iv_check.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_iv_check.abap:78"
+        },
+        "meaning": "WE-bezogene Rechnungsprüfung?"
+      },
+      {
+        "id": "ko",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_mm_iv_check.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_iv_check.abap:79"
+        },
+        "meaning": "Mengenüberschreitung gegen offene WE-Menge"
+      },
+      {
+        "id": "ke",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_mm_iv_check.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_iv_check.abap:84"
+        },
+        "meaning": "Ergebnis zurück"
+      },
+      {
+        "id": "gn",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_im_invoice_update.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_invoice_update.abap:40"
+        },
+        "meaning": "Position prüfbar?"
+      },
+      {
+        "id": "gp",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_im_invoice_update.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_invoice_update.abap:45"
+        },
+        "meaning": "Preis- oder Mengenabweichung?"
+      },
+      {
+        "id": "ap",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_im_invoice_update.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_invoice_update.abap:46"
+        },
+        "meaning": "Grund Preisabweichung"
+      },
+      {
+        "id": "am",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_im_invoice_update.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_invoice_update.abap:48"
+        },
+        "meaning": "Grund Mengenüberschreitung"
+      },
+      {
+        "id": "ab",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_im_invoice_update.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_invoice_update.abap:53"
+        },
+        "meaning": "Abweichung vormerken, Differenz summieren, Protokollzeile bilden"
+      },
+      {
+        "id": "gb",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_im_invoice_update.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_invoice_update.abap:67"
+        },
+        "meaning": "Abweichung gefunden?"
+      },
+      {
+        "id": "r3",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_im_invoice_update.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_invoice_update.abap:68"
+        },
+        "meaning": "Rechnung unauffällig"
+      },
+      {
+        "id": "gh",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_im_invoice_update.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_invoice_update.abap:72"
+        },
+        "meaning": "Harte Betragsgrenze überschritten?"
+      },
+      {
+        "id": "mh",
+        "type": "output",
+        "anchor": {
+          "file": "zcl_im_invoice_update.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_invoice_update.abap:73"
+        },
+        "meaning": "Sichern verhindern mit Fehlermeldung"
+      },
+      {
+        "id": "xh",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_im_invoice_update.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_invoice_update.abap:73"
+        },
+        "meaning": "Sichern verhindert (Ausnahme ERROR_WITH_MESSAGE)"
+      },
+      {
+        "id": "ut",
+        "type": "update_task",
+        "anchor": {
+          "file": "zcl_im_invoice_update.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_invoice_update.abap:78"
+        },
+        "meaning": "Abweichungsprotokoll in Verbuchung vormerken"
+      },
+      {
+        "id": "me",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_im_invoice_update.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_invoice_update.abap:82"
+        },
+        "meaning": "Sichern fortsetzen"
+      },
+      {
+        "id": "f0",
+        "type": "start",
+        "anchor": {
+          "file": "z_mm_iv_log_write.abap",
+          "line": 1,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mm_iv_log_write.abap:1"
+        },
+        "meaning": "Verbuchung Abweichungsprotokoll"
+      },
+      {
+        "id": "fl",
+        "type": "loop",
+        "anchor": {
+          "file": "z_mm_iv_log_write.abap",
+          "line": 10,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mm_iv_log_write.abap:10"
+        },
+        "meaning": "Protokollzeilen durchlaufen"
+      },
+      {
+        "id": "fw",
+        "type": "write",
+        "anchor": {
+          "file": "z_mm_iv_log_write.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mm_iv_log_write.abap:12"
+        },
+        "meaning": "Abweichung mit Status offen schreiben"
+      },
+      {
+        "id": "fg",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_mm_iv_log_write.abap",
+          "line": 13,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mm_iv_log_write.abap:13"
+        },
+        "meaning": "Schreiben fehlgeschlagen?"
+      },
+      {
+        "id": "fa",
+        "type": "output",
+        "anchor": {
+          "file": "z_mm_iv_log_write.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mm_iv_log_write.abap:14"
+        },
+        "meaning": "Verbuchungsabbruch"
+      },
+      {
+        "id": "xa",
+        "type": "end",
+        "anchor": {
+          "file": "z_mm_iv_log_write.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mm_iv_log_write.abap:14"
+        },
+        "meaning": "Verbuchung abgebrochen"
+      },
+      {
+        "id": "fe",
+        "type": "end",
+        "anchor": {
+          "file": "z_mm_iv_log_write.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mm_iv_log_write.abap:18"
+        },
+        "meaning": "Protokoll verbucht"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "r1",
+        "condition": "s_rbkp_new-xrech <> 'X' OR s_rbkp_new-tbtkz = 'X'"
+      },
+      {
+        "from": "g1",
+        "to": "ct",
+        "condition": "else"
+      },
+      {
+        "from": "ct",
+        "to": "t0",
+        "condition": "always"
+      },
+      {
+        "from": "t0",
+        "to": "tq1",
+        "condition": "always"
+      },
+      {
+        "from": "tq1",
+        "to": "tg1",
+        "condition": "always"
+      },
+      {
+        "from": "tg1",
+        "to": "tq2",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "tg1",
+        "to": "te",
+        "condition": "else"
+      },
+      {
+        "from": "tq2",
+        "to": "tg2",
+        "condition": "always"
+      },
+      {
+        "from": "tg2",
+        "to": "td",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "tg2",
+        "to": "te",
+        "condition": "else"
+      },
+      {
+        "from": "td",
+        "to": "te",
+        "condition": "always"
+      },
+      {
+        "from": "te",
+        "to": "g2",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "r2",
+        "condition": "ls_tol-inaktiv = 'X'"
+      },
+      {
+        "from": "g2",
+        "to": "l",
+        "condition": "else"
+      },
+      {
+        "from": "l",
+        "to": "ci",
+        "condition": "next row"
+      },
+      {
+        "from": "ci",
+        "to": "k0",
+        "condition": "always"
+      },
+      {
+        "from": "k0",
+        "to": "kq",
+        "condition": "always"
+      },
+      {
+        "from": "kq",
+        "to": "kg",
+        "condition": "always"
+      },
+      {
+        "from": "kg",
+        "to": "kr",
+        "condition": "sy-subrc <> 0 OR ls_ekpo-peinh = 0 OR is_rseg-menge = 0"
+      },
+      {
+        "from": "kr",
+        "to": "gn",
+        "condition": "always"
+      },
+      {
+        "from": "kg",
+        "to": "kp",
+        "condition": "else"
+      },
+      {
+        "from": "kp",
+        "to": "kw",
+        "condition": "always"
+      },
+      {
+        "from": "kw",
+        "to": "kr2",
+        "condition": "always"
+      },
+      {
+        "from": "kr2",
+        "to": "kgw",
+        "condition": "always"
+      },
+      {
+        "from": "kgw",
+        "to": "ko",
+        "condition": "ls_ekpo-webre = 'X'"
+      },
+      {
+        "from": "kgw",
+        "to": "ke",
+        "condition": "else"
+      },
+      {
+        "from": "ko",
+        "to": "ke",
+        "condition": "always"
+      },
+      {
+        "from": "ke",
+        "to": "gn",
+        "condition": "always"
+      },
+      {
+        "from": "gn",
+        "to": "l",
+        "condition": "ls_result-not_found = abap_true"
+      },
+      {
+        "from": "gn",
+        "to": "gp",
+        "condition": "else"
+      },
+      {
+        "from": "gp",
+        "to": "ap",
+        "condition": "ls_result-price_dev_pct > ls_tol-preis_pct"
+      },
+      {
+        "from": "gp",
+        "to": "am",
+        "condition": "ls_result-qty_over > 0 AND ls_tol-menge_ueber = space"
+      },
+      {
+        "from": "gp",
+        "to": "l",
+        "condition": "else"
+      },
+      {
+        "from": "ap",
+        "to": "ab",
+        "condition": "always"
+      },
+      {
+        "from": "am",
+        "to": "ab",
+        "condition": "always"
+      },
+      {
+        "from": "ab",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l",
+        "to": "gb",
+        "condition": "no more rows"
+      },
+      {
+        "from": "gb",
+        "to": "r3",
+        "condition": "lv_block = abap_false"
+      },
+      {
+        "from": "gb",
+        "to": "gh",
+        "condition": "else"
+      },
+      {
+        "from": "gh",
+        "to": "mh",
+        "condition": "ls_tol-hart_betrag > 0 AND lv_sum_diff > ls_tol-hart_betrag"
+      },
+      {
+        "from": "gh",
+        "to": "ut",
+        "condition": "else"
+      },
+      {
+        "from": "ut",
+        "to": "me",
+        "condition": "always"
+      },
+      {
+        "from": "f0",
+        "to": "fl",
+        "condition": "always"
+      },
+      {
+        "from": "fl",
+        "to": "fw",
+        "condition": "next row"
+      },
+      {
+        "from": "fw",
+        "to": "fg",
+        "condition": "always"
+      },
+      {
+        "from": "fg",
+        "to": "fa",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "fg",
+        "to": "fl",
+        "condition": "else"
+      },
+      {
+        "from": "fl",
+        "to": "fe",
+        "condition": "no more rows"
+      },
+      {
+        "from": "mh",
+        "to": "xh",
+        "condition": "always"
+      },
+      {
+        "from": "fa",
+        "to": "xa",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zcl_im_invoice_update.abap:78 — kein Fachsatz „Die Rechnung wird zur Zahlung gesperrt“ (es wird nur protokolliert; ein Zahlsperrgrund wird nicht gesetzt)",
+    "zcl_im_invoice_update.abap:73 — kein Fachsatz „Die Rechnung wird geparkt“ (das Sichern wird verhindert, nicht in Parken umgelenkt)",
+    "zcl_mm_iv_check.abap:78 — kein Fachsatz „Mengenprüfung für alle Positionen“ (nur bei WE-bezogener Rechnungsprüfung)",
+    "gesamte Scheibe — kein Fachsatz „Unterschreitungen des Bestellpreises werden gemeldet“ (nur positive Abweichung über Toleranz löst aus; negative Abweichung ist nie größer als die Toleranz)"
+  ],
+  "processDescription": "Beim Sichern einer Eingangsrechnung in MIRO ruft die Logistik-Rechnungsprüfung die BAdI-Implementierung. Gutschriften und nachträgliche Belastungen werden nicht geprüft. Für echte Rechnungen wird die Toleranz ermittelt: zuerst kreditorspezifisch, dann als Buchungskreis-Default, notfalls eine feste Preistoleranz von 5 %. Ist die Prüfung für den Kreditor abgeschaltet, endet sie. Sonst wird jede Position mit Bestellbezug gegen die Bestellposition geprüft: Positionen ohne lesbare Bestellung oder mit Nullmengen werden übersprungen, für die übrigen werden Stückpreisabweichung in Prozent und Differenzbetrag berechnet, bei WE-bezogener Prüfung zusätzlich die Menge über der gelieferten, noch nicht berechneten Menge. Eine Position ist auffällig bei Preisabweichung über Toleranz oder bei Mengenüberschreitung, wenn der Kreditor sie nicht erlaubt; ihre Differenz wird summiert und eine Protokollzeile gebildet. Ohne Auffälligkeit wird normal gesichert. Übersteigt die Differenzsumme eine gepflegte harte Grenze, verhindert eine Fehlermeldung das Sichern. Sonst wird gesichert, und ein Verbuchungsbaustein schreibt die Abweichungen als offene Fälle für die Kreditorenbuchhaltung; scheitert das, bricht die Verbuchung ab."
+}

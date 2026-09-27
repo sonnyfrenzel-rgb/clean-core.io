@@ -1,0 +1,2530 @@
+{
+  "id": "BM-080",
+  "title": "Automatische Chargenfreigabe: Ergebnisbewertung, Verwendungsentscheid, Chargenklassifizierung und QS-Mail",
+  "classes": [
+    "K01",
+    "K03",
+    "K12",
+    "K09",
+    "K18"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [
+    "Soll die Bedeutung der vierten Stelle des Steuerkennzeichens als Kann-/Pflichtmerkmal fachlich bestätigt werden (Kommentar im Code)?"
+  ],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "QALS",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zqm_charge_freigabe_f01.abap",
+        "line": 9,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zqm_charge_freigabe_f01.abap:9"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ENQUEUE_EQQALS1",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zqm_charge_freigabe_f01.abap",
+        "line": 34,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zqm_charge_freigabe_f01.abap:34"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "DEQUEUE_EQQALS1",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zqm_charge_freigabe_f01.abap",
+        "line": 104,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zqm_charge_freigabe_f01.abap:104"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "QAMV",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zqm_charge_freigabe_cl.abap",
+        "line": 47,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zqm_charge_freigabe_cl.abap:47"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "QAMR",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zqm_charge_freigabe_cl.abap",
+        "line": 57,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zqm_charge_freigabe_cl.abap:57"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_INSPLOT_SETUSAGEDECISION",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zqm_charge_freigabe_f02.abap",
+        "line": 25,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zqm_charge_freigabe_f02.abap:25"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_OBJCL_GETDETAIL",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zqm_charge_freigabe_f02.abap",
+        "line": 64,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zqm_charge_freigabe_f02.abap:64"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_OBJCL_CHANGE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zqm_charge_freigabe_f02.abap",
+        "line": 85,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zqm_charge_freigabe_f02.abap:85"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_BATCH_CHANGE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zqm_charge_freigabe_f02.abap",
+        "line": 119,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zqm_charge_freigabe_f02.abap:119"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_COMMIT",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zqm_charge_freigabe_f02.abap",
+        "line": 40,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zqm_charge_freigabe_f02.abap:40"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_ROLLBACK",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zqm_charge_freigabe_f02.abap",
+        "line": 35,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zqm_charge_freigabe_f02.abap:35"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "CL_BCS",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zqm_charge_freigabe_f02.abap",
+        "line": 155,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zqm_charge_freigabe_f02.abap:155"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "CL_DOCUMENT_BCS",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zqm_charge_freigabe_f02.abap",
+        "line": 156,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zqm_charge_freigabe_f02.abap:156"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "CL_DISTRIBUTIONLIST_BCS",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zqm_charge_freigabe_f02.abap",
+        "line": 160,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zqm_charge_freigabe_f02.abap:160"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZQM_FREIGABE_LOG",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "zqm_charge_freigabe_f02.abap",
+        "line": 185,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zqm_charge_freigabe_f02.abap:185"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "REUSE_ALV_GRID_DISPLAY",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zqm_charge_freigabe_f01.abap",
+        "line": 125,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zqm_charge_freigabe_f01.abap:125"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-080-B01",
+      "text": "Es werden Prüflose des Werks mit Charge und ohne Verwendungsentscheid zu den gewählten Herkünften (Vorschlag 04), Materialien und Entstehungsdaten gelesen.",
+      "anchors": [
+        {
+          "file": "zqm_charge_freigabe_f01.abap",
+          "line": 9,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_f01.abap:9"
+        }
+      ]
+    },
+    {
+      "id": "BM-080-B02",
+      "text": "Gibt es keine, wird ein Hinweis ausgegeben; die Ausgabe am Ende läuft trotzdem mit leerem Protokoll.",
+      "anchors": [
+        {
+          "file": "zqm_charge_freigabe.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe.abap:24"
+        },
+        {
+          "file": "zqm_charge_freigabe.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe.abap:25"
+        },
+        {
+          "file": "zqm_charge_freigabe.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe.abap:26"
+        },
+        {
+          "file": "zqm_charge_freigabe.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe.abap:35"
+        }
+      ]
+    },
+    {
+      "id": "BM-080-B03",
+      "text": "Jedes Prüflos wird gesperrt; ist es gesperrt, wird es gelb mit dem sperrenden Benutzer protokolliert und übersprungen.",
+      "anchors": [
+        {
+          "file": "zqm_charge_freigabe_f01.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_f01.abap:34"
+        },
+        {
+          "file": "zqm_charge_freigabe_f01.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_f01.abap:41"
+        },
+        {
+          "file": "zqm_charge_freigabe_f01.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_f01.abap:45"
+        }
+      ]
+    },
+    {
+      "id": "BM-080-B04",
+      "text": "Zur Bewertung werden die Merkmalsvorgaben mit Toleranzen und die Merkmalsergebnisse des Prüfloses gelesen; ohne Merkmale bleibt das Los offen.",
+      "anchors": [
+        {
+          "file": "zqm_charge_freigabe_f01.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_f01.abap:48"
+        },
+        {
+          "file": "zqm_charge_freigabe_cl.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_cl.abap:47"
+        },
+        {
+          "file": "zqm_charge_freigabe_cl.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_cl.abap:51"
+        },
+        {
+          "file": "zqm_charge_freigabe_cl.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_cl.abap:57"
+        }
+      ]
+    },
+    {
+      "id": "BM-080-B05",
+      "text": "Fehlt zu einem Pflichtmerkmal das bewertete Ergebnis, bleibt das Los offen; fehlende Kannmerkmale werden übergangen.",
+      "anchors": [
+        {
+          "file": "zqm_charge_freigabe_cl.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_cl.abap:66"
+        },
+        {
+          "file": "zqm_charge_freigabe_cl.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_cl.abap:68"
+        },
+        {
+          "file": "zqm_charge_freigabe_cl.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_cl.abap:73"
+        }
+      ]
+    },
+    {
+      "id": "BM-080-B06",
+      "text": "Ist ein Merkmal zurückgewiesen, wird das Los zurückgewiesen.",
+      "anchors": [
+        {
+          "file": "zqm_charge_freigabe_cl.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_cl.abap:76"
+        },
+        {
+          "file": "zqm_charge_freigabe_cl.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_cl.abap:79"
+        }
+      ]
+    },
+    {
+      "id": "BM-080-B07",
+      "text": "Auch ein angenommenes Merkmal führt zur Rückweisung, wenn sein Mittelwert eine gesetzte obere Toleranz überschreitet oder eine gesetzte untere Toleranz unterschreitet.",
+      "anchors": [
+        {
+          "file": "zqm_charge_freigabe_cl.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_cl.abap:83"
+        },
+        {
+          "file": "zqm_charge_freigabe_cl.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_cl.abap:98"
+        },
+        {
+          "file": "zqm_charge_freigabe_cl.abap",
+          "line": 101,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_cl.abap:101"
+        },
+        {
+          "file": "zqm_charge_freigabe_cl.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_cl.abap:85"
+        }
+      ]
+    },
+    {
+      "id": "BM-080-B08",
+      "text": "Sind alle Merkmale in Ordnung, wird das Los angenommen.",
+      "anchors": [
+        {
+          "file": "zqm_charge_freigabe_cl.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_cl.abap:45"
+        },
+        {
+          "file": "zqm_charge_freigabe_cl.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_cl.abap:92"
+        }
+      ]
+    },
+    {
+      "id": "BM-080-B09",
+      "text": "Ein offenes Los wird gelb protokolliert, entsperrt und nicht entschieden.",
+      "anchors": [
+        {
+          "file": "zqm_charge_freigabe_f01.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_f01.abap:53"
+        },
+        {
+          "file": "zqm_charge_freigabe_f01.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_f01.abap:57"
+        },
+        {
+          "file": "zqm_charge_freigabe_f01.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_f01.abap:58"
+        }
+      ]
+    },
+    {
+      "id": "BM-080-B10",
+      "text": "Annahme führt zum Entscheidungscode A1, Rückweisung zu R1.",
+      "anchors": [
+        {
+          "file": "zqm_charge_freigabe_f01.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_f01.abap:60"
+        },
+        {
+          "file": "zqm_charge_freigabe_f01.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_f01.abap:62"
+        }
+      ]
+    },
+    {
+      "id": "BM-080-B11",
+      "text": "Im Testlauf (Vorschlag) wird nur der geplante Entscheid grün protokolliert und das Los entsperrt.",
+      "anchors": [
+        {
+          "file": "zqm_charge_freigabe_f01.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_f01.abap:65"
+        },
+        {
+          "file": "zqm_charge_freigabe_f01.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_f01.abap:69"
+        },
+        {
+          "file": "zqm_charge_freigabe_f01.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_f01.abap:70"
+        }
+      ]
+    },
+    {
+      "id": "BM-080-B12",
+      "text": "Sonst wird der Verwendungsentscheid mit dem Code aus der Auswahlmenge ZCHARGE und Bestandsbuchung gesetzt; bei Fehler wird zurückgerollt, das Los rot mit Fehlertext protokolliert, entsperrt und nicht weiter bearbeitet.",
+      "anchors": [
+        {
+          "file": "zqm_charge_freigabe_f01.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_f01.abap:73"
+        },
+        {
+          "file": "zqm_charge_freigabe_f02.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_f02.abap:25"
+        },
+        {
+          "file": "zqm_charge_freigabe_f02.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_f02.abap:34"
+        },
+        {
+          "file": "zqm_charge_freigabe_f02.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_f02.abap:35"
+        },
+        {
+          "file": "zqm_charge_freigabe_f01.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_f01.abap:74"
+        }
+      ]
+    },
+    {
+      "id": "BM-080-B13",
+      "text": "Nach erfolgreichem Entscheid wird festgeschrieben.",
+      "anchors": [
+        {
+          "file": "zqm_charge_freigabe_f02.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_f02.abap:40"
+        }
+      ]
+    },
+    {
+      "id": "BM-080-B14",
+      "text": "In der Chargenklassifizierung (Klasse Z_CHARGE, Klassenart 023) wird das Merkmal Z_FREIGABE bei Annahme auf FREI, sonst auf GESPERRT gesetzt und das Freigabedatum auf heute; die übrigen Merkmalwerte bleiben erhalten.",
+      "anchors": [
+        {
+          "file": "zqm_charge_freigabe_f01.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_f01.abap:82"
+        },
+        {
+          "file": "zqm_charge_freigabe_f02.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_f02.abap:64"
+        },
+        {
+          "file": "zqm_charge_freigabe_f02.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_f02.abap:77"
+        },
+        {
+          "file": "zqm_charge_freigabe_f02.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_f02.abap:85"
+        }
+      ]
+    },
+    {
+      "id": "BM-080-B15",
+      "text": "Scheitert die Klassifizierung, wird sie zurückgerollt und im Protokolltext vermerkt; der Verwendungsentscheid bleibt bestehen.",
+      "anchors": [
+        {
+          "file": "zqm_charge_freigabe_f02.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_f02.abap:97"
+        },
+        {
+          "file": "zqm_charge_freigabe_f02.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_f02.abap:98"
+        },
+        {
+          "file": "zqm_charge_freigabe_f01.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_f01.abap:83"
+        }
+      ]
+    },
+    {
+      "id": "BM-080-B16",
+      "text": "Bei Rückweisung wird die Charge im Werk auf „nicht frei“ gesetzt.",
+      "anchors": [
+        {
+          "file": "zqm_charge_freigabe_f01.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_f01.abap:87"
+        },
+        {
+          "file": "zqm_charge_freigabe_f01.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_f01.abap:88"
+        },
+        {
+          "file": "zqm_charge_freigabe_f02.abap",
+          "line": 119,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_f02.abap:119"
+        }
+      ]
+    },
+    {
+      "id": "BM-080-B17",
+      "text": "Bei Rückweisung und gesetztem Mailschalter erhält der QS-Verteiler eine Mail mit Charge, Prüflos, Material, Grund und Losmenge; ein Mailfehler bricht den Ablauf nicht ab.",
+      "anchors": [
+        {
+          "file": "zqm_charge_freigabe_f01.abap",
+          "line": 89,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_f01.abap:89"
+        },
+        {
+          "file": "zqm_charge_freigabe_f02.abap",
+          "line": 156,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_f02.abap:156"
+        },
+        {
+          "file": "zqm_charge_freigabe_f02.abap",
+          "line": 160,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_f02.abap:160"
+        },
+        {
+          "file": "zqm_charge_freigabe_f02.abap",
+          "line": 163,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_f02.abap:163"
+        }
+      ]
+    },
+    {
+      "id": "BM-080-B18",
+      "text": "Entschiedene Lose werden rot (Rückweisung) oder grün (Annahme) protokolliert und in das GMP-Protokoll mit Benutzer und Zeitpunkt geschrieben; danach wird das Los entsperrt.",
+      "anchors": [
+        {
+          "file": "zqm_charge_freigabe_f01.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_f01.abap:98"
+        },
+        {
+          "file": "zqm_charge_freigabe_f02.abap",
+          "line": 185,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_f02.abap:185"
+        },
+        {
+          "file": "zqm_charge_freigabe_f01.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_f01.abap:99"
+        }
+      ]
+    },
+    {
+      "id": "BM-080-B19",
+      "text": "Am Ende wird das Protokoll mit Ampel, Prüflos, Material, Charge, Bewertung, VE-Code und Ergebnis als ALV-Liste ausgegeben.",
+      "anchors": [
+        {
+          "file": "zqm_charge_freigabe.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe.abap:36"
+        },
+        {
+          "file": "zqm_charge_freigabe_f01.abap",
+          "line": 125,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_f01.abap:125"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "zqm_charge_freigabe.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe.abap:22"
+        },
+        "meaning": "Job- oder Dialogstart"
+      },
+      {
+        "id": "p_sel",
+        "type": "call",
+        "anchor": {
+          "file": "zqm_charge_freigabe.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe.abap:23"
+        },
+        "meaning": "Prüflose lesen"
+      },
+      {
+        "id": "f_sel",
+        "type": "start",
+        "anchor": {
+          "file": "zqm_charge_freigabe_f01.abap",
+          "line": 8,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_f01.abap:8"
+        },
+        "meaning": "Selektion"
+      },
+      {
+        "id": "q_sel",
+        "type": "read",
+        "anchor": {
+          "file": "zqm_charge_freigabe_f01.abap",
+          "line": 9,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_f01.abap:9"
+        },
+        "meaning": "Prüflose mit Charge ohne Verwendungsentscheid im Werk lesen"
+      },
+      {
+        "id": "fe_sel",
+        "type": "end",
+        "anchor": {
+          "file": "zqm_charge_freigabe_f01.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_f01.abap:19"
+        },
+        "meaning": "Prüflose sortiert, Rückkehr"
+      },
+      {
+        "id": "g0",
+        "type": "gateway",
+        "anchor": {
+          "file": "zqm_charge_freigabe.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe.abap:24"
+        },
+        "meaning": "Prüflose vorhanden?"
+      },
+      {
+        "id": "m0",
+        "type": "output",
+        "anchor": {
+          "file": "zqm_charge_freigabe.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe.abap:25"
+        },
+        "meaning": "Hinweis: keine Prüflose"
+      },
+      {
+        "id": "e0",
+        "type": "end",
+        "anchor": {
+          "file": "zqm_charge_freigabe.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe.abap:26"
+        },
+        "meaning": "START-OF-SELECTION verlassen (Ausgabe folgt trotzdem)"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "zqm_charge_freigabe.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe.abap:31"
+        },
+        "meaning": "Je Prüflos"
+      },
+      {
+        "id": "p_los",
+        "type": "call",
+        "anchor": {
+          "file": "zqm_charge_freigabe.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe.abap:32"
+        },
+        "meaning": "Prüflos verarbeiten"
+      },
+      {
+        "id": "eos",
+        "type": "start",
+        "anchor": {
+          "file": "zqm_charge_freigabe.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe.abap:35"
+        },
+        "meaning": "Abschluss"
+      },
+      {
+        "id": "p_aus",
+        "type": "call",
+        "anchor": {
+          "file": "zqm_charge_freigabe.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe.abap:36"
+        },
+        "meaning": "Protokoll ausgeben"
+      },
+      {
+        "id": "f_aus",
+        "type": "start",
+        "anchor": {
+          "file": "zqm_charge_freigabe_f01.abap",
+          "line": 112,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_f01.abap:112"
+        },
+        "meaning": "Ausgabe"
+      },
+      {
+        "id": "alv",
+        "type": "output",
+        "anchor": {
+          "file": "zqm_charge_freigabe_f01.abap",
+          "line": 125,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_f01.abap:125"
+        },
+        "meaning": "Protokoll mit Ampel als ALV (im Job Spool)"
+      },
+      {
+        "id": "fe_aus",
+        "type": "end",
+        "anchor": {
+          "file": "zqm_charge_freigabe_f01.abap",
+          "line": 133,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_f01.abap:133"
+        },
+        "meaning": "Protokoll angezeigt, Ende"
+      },
+      {
+        "id": "f_los",
+        "type": "start",
+        "anchor": {
+          "file": "zqm_charge_freigabe_f01.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_f01.abap:24"
+        },
+        "meaning": "Ein Prüflos"
+      },
+      {
+        "id": "lk",
+        "type": "lock",
+        "anchor": {
+          "file": "zqm_charge_freigabe_f01.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_f01.abap:34"
+        },
+        "meaning": "Prüflos sperren"
+      },
+      {
+        "id": "g_lk",
+        "type": "gateway",
+        "anchor": {
+          "file": "zqm_charge_freigabe_f01.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_f01.abap:41"
+        },
+        "meaning": "Sperre erhalten?"
+      },
+      {
+        "id": "e_lk",
+        "type": "end",
+        "anchor": {
+          "file": "zqm_charge_freigabe_f01.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_f01.abap:45"
+        },
+        "meaning": "Gelb protokolliert: gesperrt"
+      },
+      {
+        "id": "c_bew",
+        "type": "call",
+        "anchor": {
+          "file": "zqm_charge_freigabe_f01.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_f01.abap:48"
+        },
+        "meaning": "Ergebnisse bewerten"
+      },
+      {
+        "id": "cs",
+        "type": "gateway",
+        "anchor": {
+          "file": "zqm_charge_freigabe_f01.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_f01.abap:53"
+        },
+        "meaning": "Offen, Annahme oder Rückweisung?"
+      },
+      {
+        "id": "p_ent1",
+        "type": "call",
+        "anchor": {
+          "file": "zqm_charge_freigabe_f01.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_f01.abap:57"
+        },
+        "meaning": "Sperre aufheben"
+      },
+      {
+        "id": "e_off",
+        "type": "end",
+        "anchor": {
+          "file": "zqm_charge_freigabe_f01.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_f01.abap:58"
+        },
+        "meaning": "Gelb protokolliert: offen"
+      },
+      {
+        "id": "g_test",
+        "type": "gateway",
+        "anchor": {
+          "file": "zqm_charge_freigabe_f01.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_f01.abap:65"
+        },
+        "meaning": "Testlauf?"
+      },
+      {
+        "id": "p_ent2",
+        "type": "call",
+        "anchor": {
+          "file": "zqm_charge_freigabe_f01.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_f01.abap:69"
+        },
+        "meaning": "Sperre aufheben"
+      },
+      {
+        "id": "e_test",
+        "type": "end",
+        "anchor": {
+          "file": "zqm_charge_freigabe_f01.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_f01.abap:70"
+        },
+        "meaning": "Grün protokolliert: Testlauf mit geplantem VE-Code"
+      },
+      {
+        "id": "p_ve",
+        "type": "call",
+        "anchor": {
+          "file": "zqm_charge_freigabe_f01.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_f01.abap:73"
+        },
+        "meaning": "Verwendungsentscheid setzen"
+      },
+      {
+        "id": "g_ve",
+        "type": "gateway",
+        "anchor": {
+          "file": "zqm_charge_freigabe_f01.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_f01.abap:74"
+        },
+        "meaning": "VE gesetzt?"
+      },
+      {
+        "id": "p_ent3",
+        "type": "call",
+        "anchor": {
+          "file": "zqm_charge_freigabe_f01.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_f01.abap:78"
+        },
+        "meaning": "Sperre aufheben"
+      },
+      {
+        "id": "e_ve",
+        "type": "end",
+        "anchor": {
+          "file": "zqm_charge_freigabe_f01.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_f01.abap:79"
+        },
+        "meaning": "Rot protokolliert: VE-Fehler"
+      },
+      {
+        "id": "p_kl",
+        "type": "call",
+        "anchor": {
+          "file": "zqm_charge_freigabe_f01.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_f01.abap:82"
+        },
+        "meaning": "Chargenklassifizierung fortschreiben"
+      },
+      {
+        "id": "g_kl",
+        "type": "gateway",
+        "anchor": {
+          "file": "zqm_charge_freigabe_f01.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_f01.abap:83"
+        },
+        "meaning": "Klassifizierung fortgeschrieben? – sonst Zusatz im Text"
+      },
+      {
+        "id": "g_r",
+        "type": "gateway",
+        "anchor": {
+          "file": "zqm_charge_freigabe_f01.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_f01.abap:87"
+        },
+        "meaning": "Rückweisung?"
+      },
+      {
+        "id": "p_sp",
+        "type": "call",
+        "anchor": {
+          "file": "zqm_charge_freigabe_f01.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_f01.abap:88"
+        },
+        "meaning": "Charge auf nicht frei setzen"
+      },
+      {
+        "id": "g_mail",
+        "type": "gateway",
+        "anchor": {
+          "file": "zqm_charge_freigabe_f01.abap",
+          "line": 89,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_f01.abap:89"
+        },
+        "meaning": "Mail gewünscht?"
+      },
+      {
+        "id": "p_mail",
+        "type": "call",
+        "anchor": {
+          "file": "zqm_charge_freigabe_f01.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_f01.abap:90"
+        },
+        "meaning": "QS-Verteiler informieren"
+      },
+      {
+        "id": "p_prot",
+        "type": "call",
+        "anchor": {
+          "file": "zqm_charge_freigabe_f01.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_f01.abap:98"
+        },
+        "meaning": "GMP-Protokoll schreiben"
+      },
+      {
+        "id": "p_ent4",
+        "type": "call",
+        "anchor": {
+          "file": "zqm_charge_freigabe_f01.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_f01.abap:99"
+        },
+        "meaning": "Sperre aufheben"
+      },
+      {
+        "id": "e_los",
+        "type": "end",
+        "anchor": {
+          "file": "zqm_charge_freigabe_f01.abap",
+          "line": 100,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_f01.abap:100"
+        },
+        "meaning": "Prüflos erledigt (grün Annahme, rot Rückweisung)"
+      },
+      {
+        "id": "f_ent",
+        "type": "start",
+        "anchor": {
+          "file": "zqm_charge_freigabe_f01.abap",
+          "line": 103,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_f01.abap:103"
+        },
+        "meaning": "Entsperren"
+      },
+      {
+        "id": "dq",
+        "type": "lock",
+        "anchor": {
+          "file": "zqm_charge_freigabe_f01.abap",
+          "line": 104,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_f01.abap:104"
+        },
+        "meaning": "Prüflossperre aufheben"
+      },
+      {
+        "id": "fe_ent",
+        "type": "end",
+        "anchor": {
+          "file": "zqm_charge_freigabe_f01.abap",
+          "line": 107,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_f01.abap:107"
+        },
+        "meaning": "Prüflos entsperrt, Rückkehr"
+      },
+      {
+        "id": "b_s",
+        "type": "start",
+        "anchor": {
+          "file": "zqm_charge_freigabe_cl.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_cl.abap:37"
+        },
+        "meaning": "Bewertung, Vorschlag Annahme"
+      },
+      {
+        "id": "b_q1",
+        "type": "read",
+        "anchor": {
+          "file": "zqm_charge_freigabe_cl.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_cl.abap:47"
+        },
+        "meaning": "Merkmalsvorgaben mit Toleranzen lesen"
+      },
+      {
+        "id": "b_g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zqm_charge_freigabe_cl.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_cl.abap:51"
+        },
+        "meaning": "Merkmale vorhanden?"
+      },
+      {
+        "id": "b_e1",
+        "type": "end",
+        "anchor": {
+          "file": "zqm_charge_freigabe_cl.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_cl.abap:54"
+        },
+        "meaning": "Offen: keine Prüfmerkmale"
+      },
+      {
+        "id": "b_q2",
+        "type": "read",
+        "anchor": {
+          "file": "zqm_charge_freigabe_cl.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_cl.abap:57"
+        },
+        "meaning": "Merkmalsergebnisse lesen"
+      },
+      {
+        "id": "b_l",
+        "type": "loop",
+        "anchor": {
+          "file": "zqm_charge_freigabe_cl.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_cl.abap:62"
+        },
+        "meaning": "Je Merkmalsvorgabe"
+      },
+      {
+        "id": "b_g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zqm_charge_freigabe_cl.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_cl.abap:66"
+        },
+        "meaning": "Ergebnis fehlt oder unbewertet?"
+      },
+      {
+        "id": "b_g3",
+        "type": "gateway",
+        "anchor": {
+          "file": "zqm_charge_freigabe_cl.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_cl.abap:68"
+        },
+        "meaning": "Kannmerkmal?"
+      },
+      {
+        "id": "b_e2",
+        "type": "end",
+        "anchor": {
+          "file": "zqm_charge_freigabe_cl.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_cl.abap:73"
+        },
+        "meaning": "Offen: Pflichtmerkmal fehlt"
+      },
+      {
+        "id": "b_g4",
+        "type": "gateway",
+        "anchor": {
+          "file": "zqm_charge_freigabe_cl.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_cl.abap:76"
+        },
+        "meaning": "Merkmal zurückgewiesen?"
+      },
+      {
+        "id": "b_e3",
+        "type": "end",
+        "anchor": {
+          "file": "zqm_charge_freigabe_cl.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_cl.abap:79"
+        },
+        "meaning": "Rückweisung: Merkmal zurückgewiesen"
+      },
+      {
+        "id": "b_c",
+        "type": "call",
+        "anchor": {
+          "file": "zqm_charge_freigabe_cl.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_cl.abap:83"
+        },
+        "meaning": "Mittelwert gegen Toleranzen prüfen"
+      },
+      {
+        "id": "t_s",
+        "type": "start",
+        "anchor": {
+          "file": "zqm_charge_freigabe_cl.abap",
+          "line": 96,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_cl.abap:96"
+        },
+        "meaning": "Toleranzprüfung"
+      },
+      {
+        "id": "t_g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zqm_charge_freigabe_cl.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_cl.abap:98"
+        },
+        "meaning": "Obergrenze gesetzt und überschritten?"
+      },
+      {
+        "id": "t_a1",
+        "type": "action",
+        "anchor": {
+          "file": "zqm_charge_freigabe_cl.abap",
+          "line": 100,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_cl.abap:100"
+        },
+        "meaning": "Verletzt"
+      },
+      {
+        "id": "t_a2",
+        "type": "action",
+        "anchor": {
+          "file": "zqm_charge_freigabe_cl.abap",
+          "line": 103,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_cl.abap:103"
+        },
+        "meaning": "Verletzt"
+      },
+      {
+        "id": "t_e",
+        "type": "end",
+        "anchor": {
+          "file": "zqm_charge_freigabe_cl.abap",
+          "line": 105,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_cl.abap:105"
+        },
+        "meaning": "Ergebnis zurück"
+      },
+      {
+        "id": "b_g5",
+        "type": "gateway",
+        "anchor": {
+          "file": "zqm_charge_freigabe_cl.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_cl.abap:85"
+        },
+        "meaning": "Toleranz verletzt?"
+      },
+      {
+        "id": "b_e4",
+        "type": "end",
+        "anchor": {
+          "file": "zqm_charge_freigabe_cl.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_cl.abap:88"
+        },
+        "meaning": "Rückweisung: außerhalb Toleranz"
+      },
+      {
+        "id": "b_done",
+        "type": "end",
+        "anchor": {
+          "file": "zqm_charge_freigabe_cl.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_cl.abap:93"
+        },
+        "meaning": "Annahme: alle Merkmale in Ordnung"
+      },
+      {
+        "id": "v_s",
+        "type": "start",
+        "anchor": {
+          "file": "zqm_charge_freigabe_f02.abap",
+          "line": 8,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_f02.abap:8"
+        },
+        "meaning": "Verwendungsentscheid"
+      },
+      {
+        "id": "v_c",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zqm_charge_freigabe_f02.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_f02.abap:25"
+        },
+        "meaning": "VE mit Code A1/R1 aus Auswahlmenge ZCHARGE und Bestandsbuchung setzen"
+      },
+      {
+        "id": "v_g",
+        "type": "gateway",
+        "anchor": {
+          "file": "zqm_charge_freigabe_f02.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_f02.abap:34"
+        },
+        "meaning": "Fehler?"
+      },
+      {
+        "id": "v_rb",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zqm_charge_freigabe_f02.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_f02.abap:35"
+        },
+        "meaning": "Zurückrollen"
+      },
+      {
+        "id": "v_e",
+        "type": "end",
+        "anchor": {
+          "file": "zqm_charge_freigabe_f02.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_f02.abap:37"
+        },
+        "meaning": "Nicht gesetzt, Fehlertext"
+      },
+      {
+        "id": "v_cm",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zqm_charge_freigabe_f02.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_f02.abap:40"
+        },
+        "meaning": "Festschreiben"
+      },
+      {
+        "id": "fe_ve",
+        "type": "end",
+        "anchor": {
+          "file": "zqm_charge_freigabe_f02.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_f02.abap:44"
+        },
+        "meaning": "VE gesetzt, Rückkehr mit cv_ok = X"
+      },
+      {
+        "id": "k_s",
+        "type": "start",
+        "anchor": {
+          "file": "zqm_charge_freigabe_f02.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_f02.abap:49"
+        },
+        "meaning": "Klassifizierung"
+      },
+      {
+        "id": "k_get",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zqm_charge_freigabe_f02.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_f02.abap:64"
+        },
+        "meaning": "Aktuelle Merkmalwerte der Charge (Klasse Z_CHARGE, Klassenart 023) lesen"
+      },
+      {
+        "id": "k_chg",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zqm_charge_freigabe_f02.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_f02.abap:85"
+        },
+        "meaning": "Z_FREIGABE = FREI/GESPERRT und Freigabedatum heute schreiben"
+      },
+      {
+        "id": "k_g",
+        "type": "gateway",
+        "anchor": {
+          "file": "zqm_charge_freigabe_f02.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_f02.abap:97"
+        },
+        "meaning": "Fehler?"
+      },
+      {
+        "id": "k_rb",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zqm_charge_freigabe_f02.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_f02.abap:98"
+        },
+        "meaning": "Zurückrollen"
+      },
+      {
+        "id": "k_e",
+        "type": "end",
+        "anchor": {
+          "file": "zqm_charge_freigabe_f02.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_f02.abap:99"
+        },
+        "meaning": "Nicht fortgeschrieben"
+      },
+      {
+        "id": "k_cm",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zqm_charge_freigabe_f02.abap",
+          "line": 102,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_f02.abap:102"
+        },
+        "meaning": "Festschreiben"
+      },
+      {
+        "id": "fe_kl",
+        "type": "end",
+        "anchor": {
+          "file": "zqm_charge_freigabe_f02.abap",
+          "line": 106,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_f02.abap:106"
+        },
+        "meaning": "Klassifizierung fortgeschrieben, Rückkehr mit cv_ok = X"
+      },
+      {
+        "id": "c_s",
+        "type": "start",
+        "anchor": {
+          "file": "zqm_charge_freigabe_f02.abap",
+          "line": 111,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_f02.abap:111"
+        },
+        "meaning": "Chargenzustand"
+      },
+      {
+        "id": "c_c",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zqm_charge_freigabe_f02.abap",
+          "line": 119,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_f02.abap:119"
+        },
+        "meaning": "Charge im Werk auf nicht frei setzen"
+      },
+      {
+        "id": "c_g",
+        "type": "gateway",
+        "anchor": {
+          "file": "zqm_charge_freigabe_f02.abap",
+          "line": 129,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_f02.abap:129"
+        },
+        "meaning": "Fehler?"
+      },
+      {
+        "id": "c_rb",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zqm_charge_freigabe_f02.abap",
+          "line": 130,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_f02.abap:130"
+        },
+        "meaning": "Zurückrollen (ohne Protokoll)"
+      },
+      {
+        "id": "c_cm",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zqm_charge_freigabe_f02.abap",
+          "line": 132,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_f02.abap:132"
+        },
+        "meaning": "Festschreiben"
+      },
+      {
+        "id": "fe_sp",
+        "type": "end",
+        "anchor": {
+          "file": "zqm_charge_freigabe_f02.abap",
+          "line": 136,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_f02.abap:136"
+        },
+        "meaning": "Chargenzustand bearbeitet, Rückkehr"
+      },
+      {
+        "id": "m_s",
+        "type": "start",
+        "anchor": {
+          "file": "zqm_charge_freigabe_f02.abap",
+          "line": 141,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_f02.abap:141"
+        },
+        "meaning": "Mail"
+      },
+      {
+        "id": "m_doc",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zqm_charge_freigabe_f02.abap",
+          "line": 156,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_f02.abap:156"
+        },
+        "meaning": "Mail mit Charge, Los, Material, Grund und Losmenge aufbauen"
+      },
+      {
+        "id": "m_dli",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zqm_charge_freigabe_f02.abap",
+          "line": 160,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_f02.abap:160"
+        },
+        "meaning": "Verteilerliste der QS als Empfänger"
+      },
+      {
+        "id": "m_send",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zqm_charge_freigabe_f02.abap",
+          "line": 163,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_f02.abap:163"
+        },
+        "meaning": "Mail senden"
+      },
+      {
+        "id": "m_cw",
+        "type": "transaction",
+        "anchor": {
+          "file": "zqm_charge_freigabe_f02.abap",
+          "line": 164,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_f02.abap:164"
+        },
+        "meaning": "Versand festschreiben"
+      },
+      {
+        "id": "fe_mail",
+        "type": "end",
+        "anchor": {
+          "file": "zqm_charge_freigabe_f02.abap",
+          "line": 168,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_f02.abap:168"
+        },
+        "meaning": "Mail versendet oder Fehler still übergangen, Rückkehr"
+      },
+      {
+        "id": "pr_s",
+        "type": "start",
+        "anchor": {
+          "file": "zqm_charge_freigabe_f02.abap",
+          "line": 173,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_f02.abap:173"
+        },
+        "meaning": "GMP-Protokoll"
+      },
+      {
+        "id": "pr_w",
+        "type": "write",
+        "anchor": {
+          "file": "zqm_charge_freigabe_f02.abap",
+          "line": 185,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_f02.abap:185"
+        },
+        "meaning": "Protokollsatz mit Los, Material, Charge, Bewertung, VE-Code, Text, Benutzer, Zeitpunkt schreiben"
+      },
+      {
+        "id": "pr_cw",
+        "type": "transaction",
+        "anchor": {
+          "file": "zqm_charge_freigabe_f02.abap",
+          "line": 186,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_f02.abap:186"
+        },
+        "meaning": "Festschreiben"
+      },
+      {
+        "id": "fe_pr",
+        "type": "end",
+        "anchor": {
+          "file": "zqm_charge_freigabe_f02.abap",
+          "line": 187,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zqm_charge_freigabe_f02.abap:187"
+        },
+        "meaning": "GMP-Protokoll geschrieben, Rückkehr"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "p_sel",
+        "condition": "always"
+      },
+      {
+        "from": "p_sel",
+        "to": "f_sel",
+        "condition": "always"
+      },
+      {
+        "from": "f_sel",
+        "to": "q_sel",
+        "condition": "always"
+      },
+      {
+        "from": "q_sel",
+        "to": "fe_sel",
+        "condition": "always"
+      },
+      {
+        "from": "g0",
+        "to": "m0",
+        "condition": "gt_lose IS INITIAL"
+      },
+      {
+        "from": "m0",
+        "to": "e0",
+        "condition": "always"
+      },
+      {
+        "from": "e0",
+        "to": "eos",
+        "condition": "always"
+      },
+      {
+        "from": "g0",
+        "to": "l",
+        "condition": "else"
+      },
+      {
+        "from": "l",
+        "to": "p_los",
+        "condition": "next row"
+      },
+      {
+        "from": "p_los",
+        "to": "f_los",
+        "condition": "always"
+      },
+      {
+        "from": "l",
+        "to": "eos",
+        "condition": "no more rows"
+      },
+      {
+        "from": "eos",
+        "to": "p_aus",
+        "condition": "always"
+      },
+      {
+        "from": "p_aus",
+        "to": "f_aus",
+        "condition": "always"
+      },
+      {
+        "from": "f_aus",
+        "to": "alv",
+        "condition": "always"
+      },
+      {
+        "from": "f_los",
+        "to": "lk",
+        "condition": "always"
+      },
+      {
+        "from": "lk",
+        "to": "g_lk",
+        "condition": "always"
+      },
+      {
+        "from": "g_lk",
+        "to": "e_lk",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g_lk",
+        "to": "c_bew",
+        "condition": "else"
+      },
+      {
+        "from": "c_bew",
+        "to": "b_s",
+        "condition": "always"
+      },
+      {
+        "from": "b_s",
+        "to": "b_q1",
+        "condition": "always"
+      },
+      {
+        "from": "b_q1",
+        "to": "b_g1",
+        "condition": "always"
+      },
+      {
+        "from": "b_g1",
+        "to": "b_e1",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "b_g1",
+        "to": "b_q2",
+        "condition": "else"
+      },
+      {
+        "from": "b_q2",
+        "to": "b_l",
+        "condition": "always"
+      },
+      {
+        "from": "b_l",
+        "to": "b_g2",
+        "condition": "next row"
+      },
+      {
+        "from": "b_g2",
+        "to": "b_g3",
+        "condition": "sy-subrc <> 0 OR ls_ergebnis-mbewertg IS INITIAL"
+      },
+      {
+        "from": "b_g3",
+        "to": "b_l",
+        "condition": "ls_vorgabe-steuerkz+3(1) = space"
+      },
+      {
+        "from": "b_g3",
+        "to": "b_e2",
+        "condition": "else"
+      },
+      {
+        "from": "b_g2",
+        "to": "b_g4",
+        "condition": "else"
+      },
+      {
+        "from": "b_g4",
+        "to": "b_e3",
+        "condition": "ls_ergebnis-mbewertg = 'R'"
+      },
+      {
+        "from": "b_g4",
+        "to": "b_c",
+        "condition": "else"
+      },
+      {
+        "from": "b_c",
+        "to": "t_s",
+        "condition": "always"
+      },
+      {
+        "from": "t_s",
+        "to": "t_g1",
+        "condition": "always"
+      },
+      {
+        "from": "t_g1",
+        "to": "t_a1",
+        "condition": "is_vorgabe-toleranzob IS NOT INITIAL AND is_ergebnis-mittelwert > is_vorgabe-toleranzob"
+      },
+      {
+        "from": "t_a1",
+        "to": "t_e",
+        "condition": "always"
+      },
+      {
+        "from": "t_a2",
+        "to": "t_e",
+        "condition": "always"
+      },
+      {
+        "from": "t_e",
+        "to": "b_g5",
+        "condition": "always"
+      },
+      {
+        "from": "b_g5",
+        "to": "b_e4",
+        "condition": "lv_verletzt = abap_true"
+      },
+      {
+        "from": "b_g5",
+        "to": "b_l",
+        "condition": "else"
+      },
+      {
+        "from": "b_l",
+        "to": "b_done",
+        "condition": "no more rows"
+      },
+      {
+        "from": "b_e1",
+        "to": "cs",
+        "condition": "always"
+      },
+      {
+        "from": "b_e2",
+        "to": "cs",
+        "condition": "always"
+      },
+      {
+        "from": "b_e3",
+        "to": "cs",
+        "condition": "always"
+      },
+      {
+        "from": "b_e4",
+        "to": "cs",
+        "condition": "always"
+      },
+      {
+        "from": "b_done",
+        "to": "cs",
+        "condition": "always"
+      },
+      {
+        "from": "cs",
+        "to": "p_ent1",
+        "condition": "WHEN gc_offen"
+      },
+      {
+        "from": "cs",
+        "to": "g_test",
+        "condition": "WHEN gc_annahme"
+      },
+      {
+        "from": "cs",
+        "to": "g_test",
+        "condition": "WHEN gc_rueckw"
+      },
+      {
+        "from": "g_test",
+        "to": "p_ent2",
+        "condition": "p_test = abap_true"
+      },
+      {
+        "from": "g_test",
+        "to": "p_ve",
+        "condition": "else"
+      },
+      {
+        "from": "p_ve",
+        "to": "v_s",
+        "condition": "always"
+      },
+      {
+        "from": "v_s",
+        "to": "v_c",
+        "condition": "always"
+      },
+      {
+        "from": "v_c",
+        "to": "v_g",
+        "condition": "always"
+      },
+      {
+        "from": "v_g",
+        "to": "v_rb",
+        "condition": "ls_ret-type CA 'EA'"
+      },
+      {
+        "from": "v_rb",
+        "to": "v_e",
+        "condition": "always"
+      },
+      {
+        "from": "v_g",
+        "to": "v_cm",
+        "condition": "else"
+      },
+      {
+        "from": "v_e",
+        "to": "g_ve",
+        "condition": "always"
+      },
+      {
+        "from": "v_cm",
+        "to": "fe_ve",
+        "condition": "always"
+      },
+      {
+        "from": "g_ve",
+        "to": "p_ent3",
+        "condition": "lv_ok = abap_false"
+      },
+      {
+        "from": "g_ve",
+        "to": "p_kl",
+        "condition": "else"
+      },
+      {
+        "from": "p_kl",
+        "to": "k_s",
+        "condition": "always"
+      },
+      {
+        "from": "k_s",
+        "to": "k_get",
+        "condition": "always"
+      },
+      {
+        "from": "k_get",
+        "to": "k_chg",
+        "condition": "always"
+      },
+      {
+        "from": "k_chg",
+        "to": "k_g",
+        "condition": "always"
+      },
+      {
+        "from": "k_g",
+        "to": "k_rb",
+        "condition": "line_exists( lt_return[ type = 'E' ] )"
+      },
+      {
+        "from": "k_rb",
+        "to": "k_e",
+        "condition": "always"
+      },
+      {
+        "from": "k_g",
+        "to": "k_cm",
+        "condition": "else"
+      },
+      {
+        "from": "k_e",
+        "to": "g_kl",
+        "condition": "always"
+      },
+      {
+        "from": "k_cm",
+        "to": "fe_kl",
+        "condition": "always"
+      },
+      {
+        "from": "g_kl",
+        "to": "g_r",
+        "condition": "lv_ok = abap_false"
+      },
+      {
+        "from": "g_kl",
+        "to": "g_r",
+        "condition": "else"
+      },
+      {
+        "from": "g_r",
+        "to": "p_sp",
+        "condition": "lv_entsch = gc_rueckw"
+      },
+      {
+        "from": "g_r",
+        "to": "p_prot",
+        "condition": "else"
+      },
+      {
+        "from": "p_sp",
+        "to": "c_s",
+        "condition": "always"
+      },
+      {
+        "from": "c_s",
+        "to": "c_c",
+        "condition": "always"
+      },
+      {
+        "from": "c_c",
+        "to": "c_g",
+        "condition": "always"
+      },
+      {
+        "from": "c_g",
+        "to": "c_rb",
+        "condition": "line_exists( lt_return[ type = 'E' ] )"
+      },
+      {
+        "from": "c_g",
+        "to": "c_cm",
+        "condition": "else"
+      },
+      {
+        "from": "c_rb",
+        "to": "fe_sp",
+        "condition": "always"
+      },
+      {
+        "from": "c_cm",
+        "to": "fe_sp",
+        "condition": "always"
+      },
+      {
+        "from": "g_mail",
+        "to": "p_mail",
+        "condition": "p_mail = abap_true"
+      },
+      {
+        "from": "g_mail",
+        "to": "p_prot",
+        "condition": "else"
+      },
+      {
+        "from": "p_mail",
+        "to": "m_s",
+        "condition": "always"
+      },
+      {
+        "from": "m_s",
+        "to": "m_doc",
+        "condition": "always"
+      },
+      {
+        "from": "m_doc",
+        "to": "m_dli",
+        "condition": "always"
+      },
+      {
+        "from": "m_dli",
+        "to": "m_send",
+        "condition": "always"
+      },
+      {
+        "from": "m_send",
+        "to": "m_cw",
+        "condition": "always"
+      },
+      {
+        "from": "m_cw",
+        "to": "fe_mail",
+        "condition": "always"
+      },
+      {
+        "from": "p_prot",
+        "to": "pr_s",
+        "condition": "always"
+      },
+      {
+        "from": "pr_s",
+        "to": "pr_w",
+        "condition": "always"
+      },
+      {
+        "from": "pr_w",
+        "to": "pr_cw",
+        "condition": "always"
+      },
+      {
+        "from": "pr_cw",
+        "to": "fe_pr",
+        "condition": "always"
+      },
+      {
+        "from": "p_ent1",
+        "to": "f_ent",
+        "condition": "always"
+      },
+      {
+        "from": "p_ent2",
+        "to": "f_ent",
+        "condition": "always"
+      },
+      {
+        "from": "p_ent3",
+        "to": "f_ent",
+        "condition": "always"
+      },
+      {
+        "from": "p_ent4",
+        "to": "f_ent",
+        "condition": "always"
+      },
+      {
+        "from": "f_ent",
+        "to": "dq",
+        "condition": "always"
+      },
+      {
+        "from": "fe_ent",
+        "to": "e_off",
+        "condition": "always"
+      },
+      {
+        "from": "fe_ent",
+        "to": "e_test",
+        "condition": "always"
+      },
+      {
+        "from": "fe_ent",
+        "to": "e_ve",
+        "condition": "always"
+      },
+      {
+        "from": "fe_ent",
+        "to": "e_los",
+        "condition": "always"
+      },
+      {
+        "from": "e_lk",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "e_off",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "e_test",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "e_ve",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "e_los",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "t_g1",
+        "to": "t_a2",
+        "condition": "is_vorgabe-toleranzun IS NOT INITIAL AND is_ergebnis-mittelwert < is_vorgabe-toleranzun"
+      },
+      {
+        "from": "t_g1",
+        "to": "t_e",
+        "condition": "else"
+      },
+      {
+        "from": "fe_sel",
+        "to": "g0",
+        "condition": "always"
+      },
+      {
+        "from": "alv",
+        "to": "fe_aus",
+        "condition": "always"
+      },
+      {
+        "from": "dq",
+        "to": "fe_ent",
+        "condition": "always"
+      },
+      {
+        "from": "fe_ve",
+        "to": "g_ve",
+        "condition": "always"
+      },
+      {
+        "from": "fe_kl",
+        "to": "g_kl",
+        "condition": "always"
+      },
+      {
+        "from": "fe_sp",
+        "to": "g_mail",
+        "condition": "always"
+      },
+      {
+        "from": "fe_mail",
+        "to": "p_prot",
+        "condition": "always"
+      },
+      {
+        "from": "m_send",
+        "to": "fe_mail",
+        "condition": "cx_bcs"
+      },
+      {
+        "from": "fe_pr",
+        "to": "p_ent4",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zqm_charge_freigabe_f01.abap:98 — kein Fachsatz „Jedes Prüflos wird im GMP-Protokoll festgehalten“ (gesperrte, offene, Testlauf- und VE-Fehler-Lose landen nur in der ALV-Liste, nicht in ZQM_FREIGABE_LOG)",
+    "zqm_charge_freigabe_f02.abap:119 — kein Fachsatz „Ein Fehler beim Sperren der Charge wird protokolliert“ (er wird nur zurückgerollt; der Protokolltext bleibt unverändert)",
+    "zqm_charge_freigabe_cl.abap:98 — kein Fachsatz „Toleranzgrenze 0 wird geprüft“ (eine Grenze mit Wert 0 gilt wegen IS NOT INITIAL als nicht gesetzt)",
+    "gesamte Scheibe — kein Fachsatz „Entscheid, Klassifizierung und Chargensperre werden gemeinsam gebucht oder gemeinsam verworfen“ (jeder Schritt hat eigenes Commit/Rollback)"
+  ],
+  "processDescription": "Der Report läuft stündlich als Job oder im Dialog bei der QS-Leitung. Er liest die Prüflose mit Charge, für die noch kein Verwendungsentscheid vorliegt; gibt es keine, meldet er das und zeigt am Ende ein leeres Protokoll. Jedes Los wird gesperrt und bewertet: fehlen Ergebnisse zu Pflichtmerkmalen, bleibt es offen; ein zurückgewiesenes Merkmal oder ein Mittelwert außerhalb einer gesetzten Toleranz führt zur Rückweisung; sonst wird angenommen. Offene Lose werden nur protokolliert, im Testlauf nur der geplante Entscheid. Sonst setzt der Report den Verwendungsentscheid A1 oder R1 mit Bestandsbuchung; scheitert das, rollt er zurück und bricht für dieses Los ab. Danach schreibt er das Freigabemerkmal der Charge auf FREI oder GESPERRT samt Datum fort. Bei Rückweisung setzt er die Charge zusätzlich auf nicht frei und informiert auf Wunsch die QS per Mail. Jedes entschiedene Los wird ins GMP-Protokoll geschrieben und entsperrt; zum Schluss zeigt der Report alle Ergebnisse als ALV-Liste mit Ampeln."
+}

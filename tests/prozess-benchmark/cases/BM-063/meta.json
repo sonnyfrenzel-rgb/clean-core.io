@@ -1,0 +1,23 @@
+{
+  "id": "BM-063",
+  "title": "Störmeldung für ein Equipment per BAPI anlegen",
+  "domain": "PP / PM / QM — Produktion, Instandhaltung, Qualität",
+  "band": "einfach",
+  "loc": 34,
+  "constructs": [
+    "REPORT",
+    "PARAMETERS",
+    "BAPI_ALM_NOTIF_CREATE",
+    "BAPI_ALM_NOTIF_SAVE",
+    "BAPI_TRANSACTION_COMMIT",
+    "line_exists",
+    "MESSAGE DISPLAY LIKE",
+    "RETURN",
+    "WRITE"
+  ],
+  "scenario": "Kleiner Anlage-Report, den Leitstandsmitarbeiter statt IW21 nutzen, um Störungen an Equipments schnell zu melden; oft Vorstufe zu einer Fiori-Meldungs-App.",
+  "s4_issues": [
+    "Listausgabe WRITE/Selektionsbild nicht Fiori-fähig",
+    "Ergebnis von BAPI_ALM_NOTIF_SAVE wird nicht ausgewertet – Commit trotz Fehler möglich"
+  ]
+}

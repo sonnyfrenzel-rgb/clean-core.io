@@ -1,0 +1,18 @@
+{
+  "id": "BM-062",
+  "title": "Freigabeprüfung eines Prüfloses über den Verwendungsentscheid",
+  "domain": "PP / PM / QM — Produktion, Instandhaltung, Qualität",
+  "band": "einfach",
+  "loc": 33,
+  "constructs": [
+    "FUNCTION",
+    "SELECT SINGLE",
+    "RAISE exception",
+    "IF sy-subrc AND Feldvergleich"
+  ],
+  "scenario": "Kleiner Prüfbaustein, den Versand- oder Lieferprogramme vor der Kommissionierung einer Charge aufrufen; typisch für QM-nahe Z-Funktionsgruppen, die bei der Transformation auf freigegebene APIs umgestellt werden müssen.",
+  "s4_issues": [
+    "Direktzugriff QALS/QAVE statt CDS I_InspectionLot / I_InspLotUsageDecision",
+    "SELECT * auf QALS liest alle Felder, Feldliste in S/4 erweitert"
+  ]
+}

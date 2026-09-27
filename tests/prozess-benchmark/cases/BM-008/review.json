@@ -1,0 +1,21 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten rb",
+      "before": "transaction",
+      "after": "opaque_call",
+      "why": "Vereinheitlichte Konvention: BAPI_TRANSACTION_COMMIT/_ROLLBACK sind opaque_call; transaction nur an COMMIT WORK/ROLLBACK WORK/CALL TRANSACTION.",
+      "category": "Knotenart"
+    },
+    {
+      "where": "Knoten cm",
+      "before": "transaction",
+      "after": "opaque_call",
+      "why": "Vereinheitlichte Konvention: BAPI_TRANSACTION_COMMIT/_ROLLBACK sind opaque_call; transaction nur an COMMIT WORK/ROLLBACK WORK/CALL TRANSACTION.",
+      "category": "Knotenart"
+    }
+  ],
+  "doubts": []
+}

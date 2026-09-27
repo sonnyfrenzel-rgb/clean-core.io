@@ -1,0 +1,2346 @@
+{
+  "id": "BM-098",
+  "title": "Freigabe-Workflow für Bankverbindungsänderungen am Kreditor: Prüfbaustein, Workflow-Klasse, Agentenregel, Überwachung",
+  "classes": [
+    "K01",
+    "K09",
+    "K10",
+    "K11",
+    "K15"
+  ],
+  "classic_level": "D",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [
+    "Die leeren Pflichtmethoden von IF_WORKFLOW (REFRESH, EXECUTE_DEFAULT_METHOD, RELEASE) sowie LPOR und DEFAULT_ATTRIBUTE_VALUE tragen keinen Prozessschritt und sind bewusst ohne Skelettknoten — trägt diese Abgrenzung?"
+  ],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "CDHDR",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "z_wf_check_bank_change.abap",
+        "line": 25,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_wf_check_bank_change.abap:25"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZWF_TRUSTED_USR",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "z_wf_check_bank_change.abap",
+        "line": 36,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_wf_check_bank_change.abap:36"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "CDPOS",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "z_wf_check_bank_change.abap",
+        "line": 44,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_wf_check_bank_change.abap:44"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "LFB1",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_wf_vendor_bank.abap",
+        "line": 94,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_wf_vendor_bank.abap:94"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "LFB1",
+      "owner": "SAP",
+      "usage": "write",
+      "anchor": {
+        "file": "zcl_wf_vendor_bank.abap",
+        "line": 107,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_wf_vendor_bank.abap:107"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZWF_BANK_HIST",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "zcl_wf_vendor_bank.abap",
+        "line": 118,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_wf_vendor_bank.abap:118"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "LFA1",
+      "owner": "SAP",
+      "usage": "write",
+      "anchor": {
+        "file": "zcl_wf_vendor_bank.abap",
+        "line": 164,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_wf_vendor_bank.abap:164"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "LFBK",
+      "owner": "SAP",
+      "usage": "write",
+      "anchor": {
+        "file": "zcl_wf_vendor_bank.abap",
+        "line": 203,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_wf_vendor_bank.abap:203"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "LFBK",
+      "owner": "SAP",
+      "usage": "write",
+      "anchor": {
+        "file": "zcl_wf_vendor_bank.abap",
+        "line": 222,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_wf_vendor_bank.abap:222"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "SO_NEW_DOCUMENT_SEND_API1",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_wf_vendor_bank.abap",
+        "line": 248,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_wf_vendor_bank.abap:248"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZWF_BANK_APPR",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "z_wf_bank_approver_rule.abap",
+        "line": 29,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_wf_bank_approver_rule.abap:29"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "PA0105",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "z_wf_bank_approver_rule.abap",
+        "line": 44,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_wf_bank_approver_rule.abap:44"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "RH_GET_LEADER",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "z_wf_bank_approver_rule.abap",
+        "line": 53,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_wf_bank_approver_rule.abap:53"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "SAP_WAPI_WORKITEMS_TO_OBJECT",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zfi_bank_wf_monitor.abap",
+        "line": 62,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zfi_bank_wf_monitor.abap:62"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "SAP_WAPI_FORWARD_WORKITEM",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zfi_bank_wf_monitor.abap",
+        "line": 72,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zfi_bank_wf_monitor.abap:72"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "Z_WF_SEND_REMINDER",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zfi_bank_wf_monitor.abap",
+        "line": 78,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zfi_bank_wf_monitor.abap:78"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-098-B01",
+      "text": "Bei jeder Änderung eines Kreditors wird der jüngste Änderungsbeleg gelesen; ohne Beleg startet kein Freigabe-Workflow.",
+      "anchors": [
+        {
+          "file": "z_wf_check_bank_change.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_wf_check_bank_change.abap:25"
+        },
+        {
+          "file": "z_wf_check_bank_change.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_wf_check_bank_change.abap:31"
+        },
+        {
+          "file": "z_wf_check_bank_change.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_wf_check_bank_change.abap:32"
+        }
+      ]
+    },
+    {
+      "id": "BM-098-B02",
+      "text": "Hat ein vom Freigabeverfahren ausgenommener Benutzer (gültiger Eintrag der Ausnahmeliste) geändert, startet kein Workflow.",
+      "anchors": [
+        {
+          "file": "z_wf_check_bank_change.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_wf_check_bank_change.abap:36"
+        },
+        {
+          "file": "z_wf_check_bank_change.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_wf_check_bank_change.abap:40"
+        }
+      ]
+    },
+    {
+      "id": "BM-098-B03",
+      "text": "Nur wenn der Änderungsbeleg Positionen zur Bankverbindung enthält, darf der Workflow starten.",
+      "anchors": [
+        {
+          "file": "z_wf_check_bank_change.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_wf_check_bank_change.abap:44"
+        },
+        {
+          "file": "z_wf_check_bank_change.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_wf_check_bank_change.abap:49"
+        },
+        {
+          "file": "z_wf_check_bank_change.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_wf_check_bank_change.abap:50"
+        }
+      ]
+    },
+    {
+      "id": "BM-098-B04",
+      "text": "Der Workflow arbeitet mit einem Objekt aus Kreditornummer und Buchungskreis.",
+      "anchors": [
+        {
+          "file": "zcl_wf_vendor_bank.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_wf_vendor_bank.abap:53"
+        }
+      ]
+    },
+    {
+      "id": "BM-098-B05",
+      "text": "Im ersten Schritt wird die Zahlsperre des Kreditors im Buchungskreis gelesen; ist der Kreditor dort nicht angelegt, endet der Schritt mit Fehler.",
+      "anchors": [
+        {
+          "file": "zcl_wf_vendor_bank.abap",
+          "line": 94,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_wf_vendor_bank.abap:94"
+        },
+        {
+          "file": "zcl_wf_vendor_bank.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_wf_vendor_bank.abap:97"
+        },
+        {
+          "file": "zcl_wf_vendor_bank.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_wf_vendor_bank.abap:98"
+        }
+      ]
+    },
+    {
+      "id": "BM-098-B06",
+      "text": "Ist bereits die Zahlsperre B gesetzt, geschieht nichts weiter.",
+      "anchors": [
+        {
+          "file": "zcl_wf_vendor_bank.abap",
+          "line": 102,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_wf_vendor_bank.abap:102"
+        },
+        {
+          "file": "zcl_wf_vendor_bank.abap",
+          "line": 103,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_wf_vendor_bank.abap:103"
+        }
+      ]
+    },
+    {
+      "id": "BM-098-B07",
+      "text": "Sonst wird die Zahlsperre B direkt im Buchungskreissegment gesetzt und die bisherige Zahlsperre mit Datum, Uhrzeit und Benutzer protokolliert.",
+      "anchors": [
+        {
+          "file": "zcl_wf_vendor_bank.abap",
+          "line": 107,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_wf_vendor_bank.abap:107"
+        },
+        {
+          "file": "zcl_wf_vendor_bank.abap",
+          "line": 118,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_wf_vendor_bank.abap:118"
+        }
+      ]
+    },
+    {
+      "id": "BM-098-B08",
+      "text": "Die Freigeber sind die im Buchungskreis zum heutigen Tag gültigen festen Freigeber ohne den Antragsteller.",
+      "anchors": [
+        {
+          "file": "z_wf_bank_approver_rule.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_wf_bank_approver_rule.abap:29"
+        },
+        {
+          "file": "z_wf_bank_approver_rule.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_wf_bank_approver_rule.abap:34"
+        },
+        {
+          "file": "z_wf_bank_approver_rule.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_wf_bank_approver_rule.abap:39"
+        }
+      ]
+    },
+    {
+      "id": "BM-098-B09",
+      "text": "Gibt es keinen, wird über die Personalnummer des Antragstellers der Leiter seiner Organisationseinheit als Freigeber bestimmt; gelingt das nicht, wird niemand gefunden.",
+      "anchors": [
+        {
+          "file": "z_wf_bank_approver_rule.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_wf_bank_approver_rule.abap:44"
+        },
+        {
+          "file": "z_wf_bank_approver_rule.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_wf_bank_approver_rule.abap:53"
+        },
+        {
+          "file": "z_wf_bank_approver_rule.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_wf_bank_approver_rule.abap:50"
+        },
+        {
+          "file": "z_wf_bank_approver_rule.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_wf_bank_approver_rule.abap:67"
+        }
+      ]
+    },
+    {
+      "id": "BM-098-B10",
+      "text": "Bei der Freigabe darf der Benutzer, der die Bankverbindung zuletzt geändert hat, nicht selbst freigeben.",
+      "anchors": [
+        {
+          "file": "zcl_wf_vendor_bank.abap",
+          "line": 128,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_wf_vendor_bank.abap:128"
+        },
+        {
+          "file": "zcl_wf_vendor_bank.abap",
+          "line": 129,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_wf_vendor_bank.abap:129"
+        },
+        {
+          "file": "zcl_wf_vendor_bank.abap",
+          "line": 130,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_wf_vendor_bank.abap:130"
+        }
+      ]
+    },
+    {
+      "id": "BM-098-B11",
+      "text": "Nach der Freigabe wird die Zahlsperre auf den Wert vor der letzten protokollierten Sperre zurückgesetzt und die Freigabe protokolliert.",
+      "anchors": [
+        {
+          "file": "zcl_wf_vendor_bank.abap",
+          "line": 136,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_wf_vendor_bank.abap:136"
+        },
+        {
+          "file": "zcl_wf_vendor_bank.abap",
+          "line": 143,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_wf_vendor_bank.abap:143"
+        },
+        {
+          "file": "zcl_wf_vendor_bank.abap",
+          "line": 154,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_wf_vendor_bank.abap:154"
+        }
+      ]
+    },
+    {
+      "id": "BM-098-B12",
+      "text": "Bei Ablehnung wird die Bankdatenänderung des letzten Änderungsbelegs zurückgedreht.",
+      "anchors": [
+        {
+          "file": "zcl_wf_vendor_bank.abap",
+          "line": 161,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_wf_vendor_bank.abap:161"
+        },
+        {
+          "file": "zcl_wf_vendor_bank.abap",
+          "line": 188,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_wf_vendor_bank.abap:188"
+        },
+        {
+          "file": "zcl_wf_vendor_bank.abap",
+          "line": 189,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_wf_vendor_bank.abap:189"
+        }
+      ]
+    },
+    {
+      "id": "BM-098-B13",
+      "text": "Eine neu angelegte Bankverbindung wird wieder gelöscht.",
+      "anchors": [
+        {
+          "file": "zcl_wf_vendor_bank.abap",
+          "line": 200,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_wf_vendor_bank.abap:200"
+        },
+        {
+          "file": "zcl_wf_vendor_bank.abap",
+          "line": 203,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_wf_vendor_bank.abap:203"
+        }
+      ]
+    },
+    {
+      "id": "BM-098-B14",
+      "text": "Wurde eine Bankverbindung gelöscht, bricht das Zurückdrehen mit der Aufforderung zur manuellen Wiederherstellung ab.",
+      "anchors": [
+        {
+          "file": "zcl_wf_vendor_bank.abap",
+          "line": 210,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_wf_vendor_bank.abap:210"
+        }
+      ]
+    },
+    {
+      "id": "BM-098-B15",
+      "text": "Bei einer Feldänderung wird der alte Wert des geänderten Feldes wieder in die Bankverbindung geschrieben.",
+      "anchors": [
+        {
+          "file": "zcl_wf_vendor_bank.abap",
+          "line": 214,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_wf_vendor_bank.abap:214"
+        },
+        {
+          "file": "zcl_wf_vendor_bank.abap",
+          "line": 219,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_wf_vendor_bank.abap:219"
+        },
+        {
+          "file": "zcl_wf_vendor_bank.abap",
+          "line": 221,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_wf_vendor_bank.abap:221"
+        },
+        {
+          "file": "zcl_wf_vendor_bank.abap",
+          "line": 222,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_wf_vendor_bank.abap:222"
+        }
+      ]
+    },
+    {
+      "id": "BM-098-B16",
+      "text": "Nach einer Ablehnung wird der Kreditor zentral zum Buchen gesperrt, die Zahlsperre bleibt bestehen und die Ablehnung wird mit Grund protokolliert.",
+      "anchors": [
+        {
+          "file": "zcl_wf_vendor_bank.abap",
+          "line": 164,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_wf_vendor_bank.abap:164"
+        },
+        {
+          "file": "zcl_wf_vendor_bank.abap",
+          "line": 174,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_wf_vendor_bank.abap:174"
+        }
+      ]
+    },
+    {
+      "id": "BM-098-B17",
+      "text": "Der Antragsteller erhält eine Nachricht, ob die Bankverbindung freigegeben oder abgelehnt wurde.",
+      "anchors": [
+        {
+          "file": "zcl_wf_vendor_bank.abap",
+          "line": 236,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_wf_vendor_bank.abap:236"
+        },
+        {
+          "file": "zcl_wf_vendor_bank.abap",
+          "line": 248,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_wf_vendor_bank.abap:248"
+        }
+      ]
+    },
+    {
+      "id": "BM-098-B18",
+      "text": "Täglich werden alle protokollierten Zahlsperren geprüft; wurde seit dem Sperrdatum freigegeben oder abgelehnt, ist nichts zu tun.",
+      "anchors": [
+        {
+          "file": "zfi_bank_wf_monitor.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bank_wf_monitor.abap:23"
+        },
+        {
+          "file": "zfi_bank_wf_monitor.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bank_wf_monitor.abap:28"
+        },
+        {
+          "file": "zfi_bank_wf_monitor.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bank_wf_monitor.abap:34"
+        }
+      ]
+    },
+    {
+      "id": "BM-098-B19",
+      "text": "Ist eine offene Sperre mindestens so alt wie die Eskalationsfrist, werden die bereiten Workitems an den Leiter der Kreditorenbuchhaltung weitergeleitet.",
+      "anchors": [
+        {
+          "file": "zfi_bank_wf_monitor.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bank_wf_monitor.abap:39"
+        },
+        {
+          "file": "zfi_bank_wf_monitor.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bank_wf_monitor.abap:40"
+        },
+        {
+          "file": "zfi_bank_wf_monitor.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bank_wf_monitor.abap:72"
+        }
+      ]
+    },
+    {
+      "id": "BM-098-B20",
+      "text": "Ist sie mindestens so alt wie die Erinnerungsfrist, erhalten die Bearbeiter der bereiten Workitems eine Erinnerung.",
+      "anchors": [
+        {
+          "file": "zfi_bank_wf_monitor.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bank_wf_monitor.abap:43"
+        },
+        {
+          "file": "zfi_bank_wf_monitor.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bank_wf_monitor.abap:78"
+        }
+      ]
+    },
+    {
+      "id": "BM-098-B21",
+      "text": "Zum Schluss werden die Anzahlen von Erinnerungen und Eskalationen ausgegeben.",
+      "anchors": [
+        {
+          "file": "zfi_bank_wf_monitor.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bank_wf_monitor.abap:49"
+        },
+        {
+          "file": "zfi_bank_wf_monitor.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bank_wf_monitor.abap:50"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "k_s",
+        "type": "start",
+        "anchor": {
+          "file": "z_wf_check_bank_change.abap",
+          "line": 1,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_wf_check_bank_change.abap:1"
+        },
+        "meaning": "Ereignis KRED-CHANGED prüfen"
+      },
+      {
+        "id": "k_r1",
+        "type": "read",
+        "anchor": {
+          "file": "z_wf_check_bank_change.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_wf_check_bank_change.abap:25"
+        },
+        "meaning": "Letzten Änderungsbeleg des Kreditors lesen"
+      },
+      {
+        "id": "k_rt",
+        "type": "read",
+        "anchor": {
+          "file": "z_wf_check_bank_change.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_wf_check_bank_change.abap:30"
+        },
+        "meaning": "Änderungsbeleg übernehmen"
+      },
+      {
+        "id": "k_g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_wf_check_bank_change.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_wf_check_bank_change.abap:31"
+        },
+        "meaning": "Kein Änderungsbeleg?"
+      },
+      {
+        "id": "k_e1",
+        "type": "end",
+        "anchor": {
+          "file": "z_wf_check_bank_change.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_wf_check_bank_change.abap:32"
+        },
+        "meaning": "Kein Workflow"
+      },
+      {
+        "id": "k_r2",
+        "type": "read",
+        "anchor": {
+          "file": "z_wf_check_bank_change.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_wf_check_bank_change.abap:36"
+        },
+        "meaning": "Ist der Änderer ausgenommen?"
+      },
+      {
+        "id": "k_g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_wf_check_bank_change.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_wf_check_bank_change.abap:39"
+        },
+        "meaning": "Ausgenommener Benutzer?"
+      },
+      {
+        "id": "k_e2",
+        "type": "end",
+        "anchor": {
+          "file": "z_wf_check_bank_change.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_wf_check_bank_change.abap:40"
+        },
+        "meaning": "Kein Workflow"
+      },
+      {
+        "id": "k_r3",
+        "type": "read",
+        "anchor": {
+          "file": "z_wf_check_bank_change.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_wf_check_bank_change.abap:44"
+        },
+        "meaning": "Änderungspositionen an LFBK zählen"
+      },
+      {
+        "id": "k_g3",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_wf_check_bank_change.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_wf_check_bank_change.abap:49"
+        },
+        "meaning": "Keine Bankdatenänderung?"
+      },
+      {
+        "id": "k_e3",
+        "type": "end",
+        "anchor": {
+          "file": "z_wf_check_bank_change.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_wf_check_bank_change.abap:50"
+        },
+        "meaning": "Kein Workflow"
+      },
+      {
+        "id": "k_e",
+        "type": "end",
+        "anchor": {
+          "file": "z_wf_check_bank_change.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_wf_check_bank_change.abap:52"
+        },
+        "meaning": "Workflow darf starten"
+      },
+      {
+        "id": "f_s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_wf_vendor_bank.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_wf_vendor_bank.abap:51"
+        },
+        "meaning": "Workflow-Instanz aus Schlüssel"
+      },
+      {
+        "id": "f_a",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_wf_vendor_bank.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_wf_vendor_bank.abap:53"
+        },
+        "meaning": "Objekt für Kreditor und Buchungskreis bilden"
+      },
+      {
+        "id": "f_e",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_wf_vendor_bank.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_wf_vendor_bank.abap:58"
+        },
+        "meaning": "Instanz zurückgeben"
+      },
+      {
+        "id": "lc_s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_wf_vendor_bank.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_wf_vendor_bank.abap:78"
+        },
+        "meaning": "Letzten Änderungsbeleg ermitteln"
+      },
+      {
+        "id": "lc_r",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_wf_vendor_bank.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_wf_vendor_bank.abap:81"
+        },
+        "meaning": "Jüngsten Änderungsbeleg KRED lesen"
+      },
+      {
+        "id": "lc_e",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_wf_vendor_bank.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_wf_vendor_bank.abap:87"
+        },
+        "meaning": "Beleg zurückgeben"
+      },
+      {
+        "id": "b_s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_wf_vendor_bank.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_wf_vendor_bank.abap:90"
+        },
+        "meaning": "Schritt Zahlsperre"
+      },
+      {
+        "id": "b_r",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_wf_vendor_bank.abap",
+          "line": 94,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_wf_vendor_bank.abap:94"
+        },
+        "meaning": "Aktuelle Zahlsperre im Buchungskreis lesen"
+      },
+      {
+        "id": "b_g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_wf_vendor_bank.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_wf_vendor_bank.abap:97"
+        },
+        "meaning": "Kreditor im Buchungskreis unbekannt?"
+      },
+      {
+        "id": "b_e1",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_wf_vendor_bank.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_wf_vendor_bank.abap:98"
+        },
+        "meaning": "Fehler: Kreditor nicht im Buchungskreis"
+      },
+      {
+        "id": "b_g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_wf_vendor_bank.abap",
+          "line": 102,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_wf_vendor_bank.abap:102"
+        },
+        "meaning": "Bereits mit B gesperrt?"
+      },
+      {
+        "id": "b_e2",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_wf_vendor_bank.abap",
+          "line": 103,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_wf_vendor_bank.abap:103"
+        },
+        "meaning": "Nichts tun"
+      },
+      {
+        "id": "b_w1",
+        "type": "write",
+        "anchor": {
+          "file": "zcl_wf_vendor_bank.abap",
+          "line": 107,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_wf_vendor_bank.abap:107"
+        },
+        "meaning": "Zahlsperre B setzen"
+      },
+      {
+        "id": "b_w2",
+        "type": "write",
+        "anchor": {
+          "file": "zcl_wf_vendor_bank.abap",
+          "line": 118,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_wf_vendor_bank.abap:118"
+        },
+        "meaning": "Sperre mit bisheriger Zahlsperre protokollieren"
+      },
+      {
+        "id": "b_e",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_wf_vendor_bank.abap",
+          "line": 119,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_wf_vendor_bank.abap:119"
+        },
+        "meaning": "Schritt erledigt"
+      },
+      {
+        "id": "a_s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_wf_vendor_bank.abap",
+          "line": 122,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_wf_vendor_bank.abap:122"
+        },
+        "meaning": "Schritt Freigeben"
+      },
+      {
+        "id": "a_c",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_wf_vendor_bank.abap",
+          "line": 128,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_wf_vendor_bank.abap:128"
+        },
+        "meaning": "Änderer ermitteln"
+      },
+      {
+        "id": "a_g",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_wf_vendor_bank.abap",
+          "line": 129,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_wf_vendor_bank.abap:129"
+        },
+        "meaning": "Freigeber ist der Änderer?"
+      },
+      {
+        "id": "a_e1",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_wf_vendor_bank.abap",
+          "line": 130,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_wf_vendor_bank.abap:130"
+        },
+        "meaning": "Fehler: Vier-Augen-Prinzip verletzt"
+      },
+      {
+        "id": "a_r",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_wf_vendor_bank.abap",
+          "line": 136,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_wf_vendor_bank.abap:136"
+        },
+        "meaning": "Letzte Sperre mit bisheriger Zahlsperre lesen"
+      },
+      {
+        "id": "a_w1",
+        "type": "write",
+        "anchor": {
+          "file": "zcl_wf_vendor_bank.abap",
+          "line": 143,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_wf_vendor_bank.abap:143"
+        },
+        "meaning": "Zahlsperre auf bisherigen Wert zurücksetzen"
+      },
+      {
+        "id": "a_w2",
+        "type": "write",
+        "anchor": {
+          "file": "zcl_wf_vendor_bank.abap",
+          "line": 154,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_wf_vendor_bank.abap:154"
+        },
+        "meaning": "Freigabe protokollieren"
+      },
+      {
+        "id": "a_e",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_wf_vendor_bank.abap",
+          "line": 155,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_wf_vendor_bank.abap:155"
+        },
+        "meaning": "Schritt erledigt"
+      },
+      {
+        "id": "r_s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_wf_vendor_bank.abap",
+          "line": 158,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_wf_vendor_bank.abap:158"
+        },
+        "meaning": "Schritt Ablehnen"
+      },
+      {
+        "id": "r_c",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_wf_vendor_bank.abap",
+          "line": 161,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_wf_vendor_bank.abap:161"
+        },
+        "meaning": "Bankdatenänderung zurückdrehen"
+      },
+      {
+        "id": "r_w1",
+        "type": "write",
+        "anchor": {
+          "file": "zcl_wf_vendor_bank.abap",
+          "line": 164,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_wf_vendor_bank.abap:164"
+        },
+        "meaning": "Kreditor zentral zum Buchen sperren"
+      },
+      {
+        "id": "r_w2",
+        "type": "write",
+        "anchor": {
+          "file": "zcl_wf_vendor_bank.abap",
+          "line": 174,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_wf_vendor_bank.abap:174"
+        },
+        "meaning": "Ablehnung mit Grund protokollieren"
+      },
+      {
+        "id": "r_e",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_wf_vendor_bank.abap",
+          "line": 175,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_wf_vendor_bank.abap:175"
+        },
+        "meaning": "Schritt erledigt"
+      },
+      {
+        "id": "x_s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_wf_vendor_bank.abap",
+          "line": 178,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_wf_vendor_bank.abap:178"
+        },
+        "meaning": "Zurückdrehen"
+      },
+      {
+        "id": "x_c",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_wf_vendor_bank.abap",
+          "line": 188,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_wf_vendor_bank.abap:188"
+        },
+        "meaning": "Letzten Änderungsbeleg ermitteln"
+      },
+      {
+        "id": "x_r",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_wf_vendor_bank.abap",
+          "line": 189,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_wf_vendor_bank.abap:189"
+        },
+        "meaning": "Geänderte Bankverbindungsfelder lesen"
+      },
+      {
+        "id": "x_l",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_wf_vendor_bank.abap",
+          "line": 195,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_wf_vendor_bank.abap:195"
+        },
+        "meaning": "Änderungspositionen durchlaufen"
+      },
+      {
+        "id": "x_c2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_wf_vendor_bank.abap",
+          "line": 200,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_wf_vendor_bank.abap:200"
+        },
+        "meaning": "Änderungsart unterscheiden"
+      },
+      {
+        "id": "x_del",
+        "type": "write",
+        "anchor": {
+          "file": "zcl_wf_vendor_bank.abap",
+          "line": 203,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_wf_vendor_bank.abap:203"
+        },
+        "meaning": "Neu angelegte Bankverbindung löschen"
+      },
+      {
+        "id": "x_e1",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_wf_vendor_bank.abap",
+          "line": 210,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_wf_vendor_bank.abap:210"
+        },
+        "meaning": "Fehler: gelöschte Verbindung manuell wiederherstellen"
+      },
+      {
+        "id": "x_rb",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_wf_vendor_bank.abap",
+          "line": 214,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_wf_vendor_bank.abap:214"
+        },
+        "meaning": "Aktuelle Bankverbindung lesen"
+      },
+      {
+        "id": "x_as",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_wf_vendor_bank.abap",
+          "line": 219,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_wf_vendor_bank.abap:219"
+        },
+        "meaning": "Geändertes Feld dynamisch adressieren"
+      },
+      {
+        "id": "x_g",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_wf_vendor_bank.abap",
+          "line": 220,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_wf_vendor_bank.abap:220"
+        },
+        "meaning": "Feld vorhanden?"
+      },
+      {
+        "id": "x_mod",
+        "type": "write",
+        "anchor": {
+          "file": "zcl_wf_vendor_bank.abap",
+          "line": 222,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_wf_vendor_bank.abap:222"
+        },
+        "meaning": "Bankverbindung mit altem Wert speichern"
+      },
+      {
+        "id": "x_e",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_wf_vendor_bank.abap",
+          "line": 226,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_wf_vendor_bank.abap:226"
+        },
+        "meaning": "Zurückdrehen beendet"
+      },
+      {
+        "id": "n_s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_wf_vendor_bank.abap",
+          "line": 229,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_wf_vendor_bank.abap:229"
+        },
+        "meaning": "Antragsteller informieren"
+      },
+      {
+        "id": "n_g",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_wf_vendor_bank.abap",
+          "line": 236,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_wf_vendor_bank.abap:236"
+        },
+        "meaning": "Freigegeben?"
+      },
+      {
+        "id": "n_ml",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_wf_vendor_bank.abap",
+          "line": 248,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_wf_vendor_bank.abap:248"
+        },
+        "meaning": "Nachricht an SAP-Benutzer des Antragstellers senden"
+      },
+      {
+        "id": "n_e",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_wf_vendor_bank.abap",
+          "line": 257,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_wf_vendor_bank.abap:257"
+        },
+        "meaning": "Fertig"
+      },
+      {
+        "id": "q_s",
+        "type": "start",
+        "anchor": {
+          "file": "z_wf_bank_approver_rule.abap",
+          "line": 1,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_wf_bank_approver_rule.abap:1"
+        },
+        "meaning": "Freigeber bestimmen"
+      },
+      {
+        "id": "q_r1",
+        "type": "read",
+        "anchor": {
+          "file": "z_wf_bank_approver_rule.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_wf_bank_approver_rule.abap:29"
+        },
+        "meaning": "Gültige Freigeber des Buchungskreises lesen"
+      },
+      {
+        "id": "q_l",
+        "type": "loop",
+        "anchor": {
+          "file": "z_wf_bank_approver_rule.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_wf_bank_approver_rule.abap:33"
+        },
+        "meaning": "Freigeber durchlaufen"
+      },
+      {
+        "id": "q_chk",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_wf_bank_approver_rule.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_wf_bank_approver_rule.abap:34"
+        },
+        "meaning": "Nicht der Antragsteller?"
+      },
+      {
+        "id": "q_g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_wf_bank_approver_rule.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_wf_bank_approver_rule.abap:39"
+        },
+        "meaning": "Freigeber gefunden?"
+      },
+      {
+        "id": "q_e1",
+        "type": "end",
+        "anchor": {
+          "file": "z_wf_bank_approver_rule.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_wf_bank_approver_rule.abap:40"
+        },
+        "meaning": "Feste Freigeber zurückgeben"
+      },
+      {
+        "id": "q_r2",
+        "type": "read",
+        "anchor": {
+          "file": "z_wf_bank_approver_rule.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_wf_bank_approver_rule.abap:44"
+        },
+        "meaning": "Personalnummer zum Benutzer des Antragstellers lesen"
+      },
+      {
+        "id": "q_g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_wf_bank_approver_rule.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_wf_bank_approver_rule.abap:49"
+        },
+        "meaning": "Kein Mitarbeiter?"
+      },
+      {
+        "id": "q_e2",
+        "type": "end",
+        "anchor": {
+          "file": "z_wf_bank_approver_rule.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_wf_bank_approver_rule.abap:50"
+        },
+        "meaning": "Niemand gefunden"
+      },
+      {
+        "id": "q_ld",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "z_wf_bank_approver_rule.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_wf_bank_approver_rule.abap:53"
+        },
+        "meaning": "Leiter der Organisationseinheit ermitteln"
+      },
+      {
+        "id": "q_g3",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_wf_bank_approver_rule.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_wf_bank_approver_rule.abap:66"
+        },
+        "meaning": "Kein Leiter?"
+      },
+      {
+        "id": "q_e3",
+        "type": "end",
+        "anchor": {
+          "file": "z_wf_bank_approver_rule.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_wf_bank_approver_rule.abap:67"
+        },
+        "meaning": "Niemand gefunden"
+      },
+      {
+        "id": "q_e",
+        "type": "end",
+        "anchor": {
+          "file": "z_wf_bank_approver_rule.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_wf_bank_approver_rule.abap:72"
+        },
+        "meaning": "Leiter als Freigeber zurückgeben"
+      },
+      {
+        "id": "m_s",
+        "type": "start",
+        "anchor": {
+          "file": "zfi_bank_wf_monitor.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bank_wf_monitor.abap:22"
+        },
+        "meaning": "Tägliche Überwachung"
+      },
+      {
+        "id": "m_r1",
+        "type": "read",
+        "anchor": {
+          "file": "zfi_bank_wf_monitor.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bank_wf_monitor.abap:23"
+        },
+        "meaning": "Alle Zahlsperren lesen"
+      },
+      {
+        "id": "m_l",
+        "type": "loop",
+        "anchor": {
+          "file": "zfi_bank_wf_monitor.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bank_wf_monitor.abap:26"
+        },
+        "meaning": "Sperren durchlaufen"
+      },
+      {
+        "id": "m_r2",
+        "type": "read",
+        "anchor": {
+          "file": "zfi_bank_wf_monitor.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bank_wf_monitor.abap:28"
+        },
+        "meaning": "Entscheidung seit der Sperre suchen"
+      },
+      {
+        "id": "m_g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_bank_wf_monitor.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bank_wf_monitor.abap:34"
+        },
+        "meaning": "Schon entschieden?"
+      },
+      {
+        "id": "m_g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_bank_wf_monitor.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bank_wf_monitor.abap:39"
+        },
+        "meaning": "Alter der Sperre prüfen"
+      },
+      {
+        "id": "m_ce",
+        "type": "call",
+        "anchor": {
+          "file": "zfi_bank_wf_monitor.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bank_wf_monitor.abap:40"
+        },
+        "meaning": "An Leiter Kreditorenbuchhaltung weiterleiten"
+      },
+      {
+        "id": "m_cr",
+        "type": "call",
+        "anchor": {
+          "file": "zfi_bank_wf_monitor.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bank_wf_monitor.abap:43"
+        },
+        "meaning": "Bearbeiter erinnern"
+      },
+      {
+        "id": "m_cw",
+        "type": "transaction",
+        "anchor": {
+          "file": "zfi_bank_wf_monitor.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bank_wf_monitor.abap:47"
+        },
+        "meaning": "Weiterleitungen festschreiben"
+      },
+      {
+        "id": "m_o1",
+        "type": "output",
+        "anchor": {
+          "file": "zfi_bank_wf_monitor.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bank_wf_monitor.abap:49"
+        },
+        "meaning": "Anzahl Erinnerungen ausgeben"
+      },
+      {
+        "id": "m_o2",
+        "type": "output",
+        "anchor": {
+          "file": "zfi_bank_wf_monitor.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bank_wf_monitor.abap:50"
+        },
+        "meaning": "Anzahl Eskalationen ausgeben"
+      },
+      {
+        "id": "m_e",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_bank_wf_monitor.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bank_wf_monitor.abap:50"
+        },
+        "meaning": "Überwachungslauf endet nach der Ausgabe"
+      },
+      {
+        "id": "w_s",
+        "type": "start",
+        "anchor": {
+          "file": "zfi_bank_wf_monitor.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bank_wf_monitor.abap:55"
+        },
+        "meaning": "Erinnern oder weiterleiten"
+      },
+      {
+        "id": "w_wi",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zfi_bank_wf_monitor.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bank_wf_monitor.abap:62"
+        },
+        "meaning": "Workitems zum Workflow-Objekt lesen"
+      },
+      {
+        "id": "w_l",
+        "type": "loop",
+        "anchor": {
+          "file": "zfi_bank_wf_monitor.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bank_wf_monitor.abap:70"
+        },
+        "meaning": "Bereite Dialog-Workitems durchlaufen"
+      },
+      {
+        "id": "w_g",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_bank_wf_monitor.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bank_wf_monitor.abap:71"
+        },
+        "meaning": "Eskalation?"
+      },
+      {
+        "id": "w_fw",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zfi_bank_wf_monitor.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bank_wf_monitor.abap:72"
+        },
+        "meaning": "Workitem an Eskalationsbenutzer weiterleiten"
+      },
+      {
+        "id": "w_rm",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zfi_bank_wf_monitor.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bank_wf_monitor.abap:78"
+        },
+        "meaning": "Erinnerung zum Workitem senden"
+      },
+      {
+        "id": "w_e",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_bank_wf_monitor.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_bank_wf_monitor.abap:83"
+        },
+        "meaning": "Fertig"
+      }
+    ],
+    "edges": [
+      {
+        "from": "k_s",
+        "to": "k_r1",
+        "condition": "always"
+      },
+      {
+        "from": "k_r1",
+        "to": "k_rt",
+        "condition": "always"
+      },
+      {
+        "from": "k_rt",
+        "to": "k_g1",
+        "condition": "always"
+      },
+      {
+        "from": "k_g1",
+        "to": "k_e1",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "k_g1",
+        "to": "k_r2",
+        "condition": "else"
+      },
+      {
+        "from": "k_r2",
+        "to": "k_g2",
+        "condition": "always"
+      },
+      {
+        "from": "k_g2",
+        "to": "k_e2",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "k_g2",
+        "to": "k_r3",
+        "condition": "else"
+      },
+      {
+        "from": "k_r3",
+        "to": "k_g3",
+        "condition": "always"
+      },
+      {
+        "from": "k_g3",
+        "to": "k_e3",
+        "condition": "lv_count = 0"
+      },
+      {
+        "from": "k_g3",
+        "to": "k_e",
+        "condition": "else"
+      },
+      {
+        "from": "f_s",
+        "to": "f_a",
+        "condition": "always"
+      },
+      {
+        "from": "f_a",
+        "to": "f_e",
+        "condition": "always"
+      },
+      {
+        "from": "lc_s",
+        "to": "lc_r",
+        "condition": "always"
+      },
+      {
+        "from": "lc_r",
+        "to": "lc_e",
+        "condition": "always"
+      },
+      {
+        "from": "b_s",
+        "to": "b_r",
+        "condition": "always"
+      },
+      {
+        "from": "b_r",
+        "to": "b_g1",
+        "condition": "always"
+      },
+      {
+        "from": "b_g1",
+        "to": "b_e1",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "b_g1",
+        "to": "b_g2",
+        "condition": "else"
+      },
+      {
+        "from": "b_g2",
+        "to": "b_e2",
+        "condition": "lv_zahls = 'B'"
+      },
+      {
+        "from": "b_g2",
+        "to": "b_w1",
+        "condition": "else"
+      },
+      {
+        "from": "b_w1",
+        "to": "b_w2",
+        "condition": "always"
+      },
+      {
+        "from": "b_w2",
+        "to": "b_e",
+        "condition": "always"
+      },
+      {
+        "from": "a_s",
+        "to": "a_c",
+        "condition": "always"
+      },
+      {
+        "from": "a_c",
+        "to": "lc_s",
+        "condition": "always"
+      },
+      {
+        "from": "a_g",
+        "to": "a_e1",
+        "condition": "ls_hdr-username = iv_approver"
+      },
+      {
+        "from": "a_g",
+        "to": "a_r",
+        "condition": "else"
+      },
+      {
+        "from": "a_r",
+        "to": "a_w1",
+        "condition": "always"
+      },
+      {
+        "from": "a_w1",
+        "to": "a_w2",
+        "condition": "always"
+      },
+      {
+        "from": "a_w2",
+        "to": "a_e",
+        "condition": "always"
+      },
+      {
+        "from": "r_s",
+        "to": "r_c",
+        "condition": "always"
+      },
+      {
+        "from": "r_c",
+        "to": "x_s",
+        "condition": "always"
+      },
+      {
+        "from": "r_w1",
+        "to": "r_w2",
+        "condition": "always"
+      },
+      {
+        "from": "r_w2",
+        "to": "r_e",
+        "condition": "always"
+      },
+      {
+        "from": "x_s",
+        "to": "x_c",
+        "condition": "always"
+      },
+      {
+        "from": "x_c",
+        "to": "lc_s",
+        "condition": "always"
+      },
+      {
+        "from": "x_r",
+        "to": "x_l",
+        "condition": "always"
+      },
+      {
+        "from": "x_l",
+        "to": "x_c2",
+        "condition": "next row"
+      },
+      {
+        "from": "x_c2",
+        "to": "x_del",
+        "condition": "WHEN 'I'"
+      },
+      {
+        "from": "x_del",
+        "to": "x_l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "x_c2",
+        "to": "x_e1",
+        "condition": "WHEN 'D'"
+      },
+      {
+        "from": "x_c2",
+        "to": "x_rb",
+        "condition": "WHEN 'U'"
+      },
+      {
+        "from": "x_c2",
+        "to": "x_l",
+        "condition": "else"
+      },
+      {
+        "from": "x_rb",
+        "to": "x_as",
+        "condition": "always"
+      },
+      {
+        "from": "x_as",
+        "to": "x_g",
+        "condition": "always"
+      },
+      {
+        "from": "x_g",
+        "to": "x_l",
+        "condition": "else"
+      },
+      {
+        "from": "x_mod",
+        "to": "x_l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "x_l",
+        "to": "x_e",
+        "condition": "no more rows"
+      },
+      {
+        "from": "n_s",
+        "to": "n_g",
+        "condition": "always"
+      },
+      {
+        "from": "n_ml",
+        "to": "n_e",
+        "condition": "always"
+      },
+      {
+        "from": "q_s",
+        "to": "q_r1",
+        "condition": "always"
+      },
+      {
+        "from": "q_r1",
+        "to": "q_l",
+        "condition": "always"
+      },
+      {
+        "from": "q_l",
+        "to": "q_chk",
+        "condition": "next row"
+      },
+      {
+        "from": "q_chk",
+        "to": "q_l",
+        "condition": "ls_appr-uname <> lv_requester"
+      },
+      {
+        "from": "q_chk",
+        "to": "q_l",
+        "condition": "else"
+      },
+      {
+        "from": "q_l",
+        "to": "q_g1",
+        "condition": "no more rows"
+      },
+      {
+        "from": "q_g1",
+        "to": "q_e1",
+        "condition": "actor_tab[] IS NOT INITIAL"
+      },
+      {
+        "from": "q_g1",
+        "to": "q_r2",
+        "condition": "else"
+      },
+      {
+        "from": "q_r2",
+        "to": "q_g2",
+        "condition": "always"
+      },
+      {
+        "from": "q_g2",
+        "to": "q_e2",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "q_g2",
+        "to": "q_ld",
+        "condition": "else"
+      },
+      {
+        "from": "q_ld",
+        "to": "q_g3",
+        "condition": "always"
+      },
+      {
+        "from": "q_g3",
+        "to": "q_e3",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "q_g3",
+        "to": "q_e",
+        "condition": "else"
+      },
+      {
+        "from": "m_s",
+        "to": "m_r1",
+        "condition": "always"
+      },
+      {
+        "from": "m_r1",
+        "to": "m_l",
+        "condition": "always"
+      },
+      {
+        "from": "m_l",
+        "to": "m_r2",
+        "condition": "next row"
+      },
+      {
+        "from": "m_r2",
+        "to": "m_g1",
+        "condition": "always"
+      },
+      {
+        "from": "m_g1",
+        "to": "m_l",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "m_g1",
+        "to": "m_g2",
+        "condition": "else"
+      },
+      {
+        "from": "m_g2",
+        "to": "m_ce",
+        "condition": "gv_age >= p_esc"
+      },
+      {
+        "from": "m_g2",
+        "to": "m_cr",
+        "condition": "gv_age >= p_days"
+      },
+      {
+        "from": "m_g2",
+        "to": "m_l",
+        "condition": "else"
+      },
+      {
+        "from": "m_ce",
+        "to": "w_s",
+        "condition": "always"
+      },
+      {
+        "from": "m_cr",
+        "to": "w_s",
+        "condition": "always"
+      },
+      {
+        "from": "m_l",
+        "to": "m_cw",
+        "condition": "no more rows"
+      },
+      {
+        "from": "m_cw",
+        "to": "m_o1",
+        "condition": "always"
+      },
+      {
+        "from": "m_o1",
+        "to": "m_o2",
+        "condition": "always"
+      },
+      {
+        "from": "w_s",
+        "to": "w_wi",
+        "condition": "always"
+      },
+      {
+        "from": "w_wi",
+        "to": "w_l",
+        "condition": "always"
+      },
+      {
+        "from": "w_l",
+        "to": "w_g",
+        "condition": "next row"
+      },
+      {
+        "from": "w_g",
+        "to": "w_fw",
+        "condition": "pv_user IS NOT INITIAL"
+      },
+      {
+        "from": "w_g",
+        "to": "w_rm",
+        "condition": "else"
+      },
+      {
+        "from": "w_fw",
+        "to": "w_l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "w_rm",
+        "to": "w_l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "w_l",
+        "to": "w_e",
+        "condition": "no more rows"
+      },
+      {
+        "from": "x_g",
+        "to": "x_mod",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "n_g",
+        "to": "n_ml",
+        "condition": "iv_result = 'A'"
+      },
+      {
+        "from": "n_g",
+        "to": "n_ml",
+        "condition": "else"
+      },
+      {
+        "from": "m_o2",
+        "to": "m_e",
+        "condition": "always"
+      },
+      {
+        "from": "lc_e",
+        "to": "a_g",
+        "condition": "always"
+      },
+      {
+        "from": "lc_e",
+        "to": "x_r",
+        "condition": "always"
+      },
+      {
+        "from": "x_e",
+        "to": "r_w1",
+        "condition": "always"
+      },
+      {
+        "from": "w_e",
+        "to": "m_l",
+        "condition": "next iteration"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "z_wf_check_bank_change.abap:36 — kein Fachsatz „jede Bankdatenänderung durchläuft die Freigabe“ (Benutzer der Ausnahmeliste sind ausgenommen).",
+    "zcl_wf_vendor_bank.abap:102 — kein Fachsatz „die Freigabe stellt immer die Zahlsperre vor der Änderung wieder her“ (war schon B gesetzt, wird nichts protokolliert und die Freigabe greift auf eine ältere Sperre zurück).",
+    "zcl_wf_vendor_bank.abap:210 — kein Fachsatz „eine geänderte Kontonummer wird bei Ablehnung automatisch zurückgesetzt“ (Schlüsseländerungen erscheinen als Löschen+Anlegen; der Löschfall bricht ab).",
+    "zfi_bank_wf_monitor.abap:70 — kein Fachsatz „alle offenen Workitems werden erinnert“ (nur Status READY, nicht STARTED)."
+  ],
+  "processDescription": "Nach einem Zahlungsbetrugsfall unterliegen Änderungen an Bankverbindungen von Kreditoren einer Vier-Augen-Freigabe. Bei jeder Kreditoränderung prüft ein Baustein der Ereignisverknüpfung den jüngsten Änderungsbeleg: Der Freigabe-Workflow startet nur, wenn der Änderer nicht auf der Ausnahmeliste steht und der Beleg die Bankverbindung betrifft. Im ersten Schritt setzt der Workflow im Buchungskreis die Zahlsperre B und protokolliert die bisherige Sperre; war B bereits gesetzt, geschieht nichts. Als Freigeber gelten die gültigen festen Freigeber des Buchungskreises ohne den Antragsteller, ersatzweise der Leiter seiner Organisationseinheit. Der Änderer selbst darf nicht freigeben. Bei Freigabe wird die Zahlsperre auf den protokollierten Vorwert zurückgesetzt; bei Ablehnung werden neu angelegte Bankverbindungen gelöscht, geänderte Felder auf ihren alten Wert gesetzt, bei gelöschten Verbindungen bricht der Schritt ab – danach wird der Kreditor zentral zum Buchen gesperrt. Jede Entscheidung wird protokolliert und der Antragsteller benachrichtigt. Ein täglicher Job erinnert die Bearbeiter offener Freigaben nach der Erinnerungsfrist und leitet nach der Eskalationsfrist an den Leiter der Kreditorenbuchhaltung weiter."
+}

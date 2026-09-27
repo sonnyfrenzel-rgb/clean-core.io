@@ -1,0 +1,212 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten e_m_pernr",
+      "before": "—",
+      "after": "end mzpp_werkeri01.abap:23 „Dialogschritt abgebrochen, Personalnummer neu eingeben“",
+      "why": "MESSAGE TYPE E im PAI bricht den Dialogschritt ab; Konvention: output + end auf derselben Zeile",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kante m_pernr→e_m_pernr",
+      "before": "—",
+      "after": "[always]",
+      "why": "Pfadende nach Fehlermeldung",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten e_m_ok1",
+      "before": "—",
+      "after": "end mzpp_werkeri01.abap:38 „Dialogschritt abgebrochen, Scanbild bleibt stehen“",
+      "why": "MESSAGE TYPE E im PAI bricht den Dialogschritt ab; Konvention: output + end auf derselben Zeile",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kante m_ok1→e_m_ok1",
+      "before": "—",
+      "after": "[always]",
+      "why": "Pfadende nach Fehlermeldung",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten e_m_mcha",
+      "before": "—",
+      "after": "end mzpp_werkeri01.abap:56 „Dialogschritt abgebrochen, Charge korrigieren“",
+      "why": "MESSAGE TYPE E im PAI bricht den Dialogschritt ab; Konvention: output + end auf derselben Zeile",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kante m_mcha→e_m_mcha",
+      "before": "—",
+      "after": "[always]",
+      "why": "Pfadende nach Fehlermeldung",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten e_m_m1",
+      "before": "—",
+      "after": "end mzpp_werkeri01.abap:67 „Dialogschritt abgebrochen, Menge erfassen“",
+      "why": "MESSAGE TYPE E im PAI bricht den Dialogschritt ab; Konvention: output + end auf derselben Zeile",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kante m_m1→e_m_m1",
+      "before": "—",
+      "after": "[always]",
+      "why": "Pfadende nach Fehlermeldung",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten e_m_m3",
+      "before": "—",
+      "after": "end mzpp_werkeri01.abap:73 „Dialogschritt abgebrochen, Gutmenge korrigieren“",
+      "why": "MESSAGE TYPE E im PAI bricht den Dialogschritt ab; Konvention: output + end auf derselben Zeile",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kante m_m3→e_m_m3",
+      "before": "—",
+      "after": "[always]",
+      "why": "Pfadende nach Fehlermeldung",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten e_m_m5",
+      "before": "—",
+      "after": "end mzpp_werkeri01.abap:80 „Dialogschritt abgebrochen, Abweichungsgrund erfassen“",
+      "why": "MESSAGE TYPE E im PAI bricht den Dialogschritt ab; Konvention: output + end auf derselben Zeile",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kante m_m5→e_m_m5",
+      "before": "—",
+      "after": "[always]",
+      "why": "Pfadende nach Fehlermeldung",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten e_o100",
+      "before": "—",
+      "after": "end mzpp_werkero01.abap:12 „Scanbild 0100 bereit“",
+      "why": "Konvention: jeder auslaufende MODULE hat einen eigenen end-Knoten auf ENDMODULE",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kante s_o100→e_o100",
+      "before": "—",
+      "after": "[always]",
+      "why": "PBO-Modul ohne Verzweigung läuft bis ENDMODULE",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten e_o200",
+      "before": "—",
+      "after": "end mzpp_werkero01.abap:20 „Mengenbild 0200 bereit“",
+      "why": "Konvention: jeder auslaufende MODULE hat einen eigenen end-Knoten auf ENDMODULE",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kante s_o200→e_o200",
+      "before": "—",
+      "after": "[always]",
+      "why": "PBO-Modul ohne Verzweigung läuft bis ENDMODULE",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten fe_auf",
+      "before": "—",
+      "after": "end mzpp_werkerf01.abap:74 „Auftrag/Vorgang gültig, Rückkehr mit gv_ok = X“",
+      "why": "Konvention: jeder auslaufende FORM hat einen eigenen end-Knoten auf ENDFORM; Rückkehr zum Aufrufer läuft über diesen",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kante a_ok→g_ok1",
+      "before": "a_ok→g_ok1 [always]",
+      "after": "a_ok→fe_auf [always]",
+      "why": "Konvention: jeder auslaufende FORM hat einen eigenen end-Knoten auf ENDFORM; Rückkehr zum Aufrufer läuft über diesen",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante fe_auf→g_ok1",
+      "before": "—",
+      "after": "[always]",
+      "why": "Rückkante vom FORM-Ende nach PERFORM auftrag_lesen",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten fe_komp",
+      "before": "—",
+      "after": "end mzpp_werkerf01.abap:89 „Komponenten gelesen, Rückkehr“",
+      "why": "Konvention: jeder auslaufende FORM hat einen eigenen end-Knoten auf ENDFORM; Rückkehr zum Aufrufer läuft über diesen",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kante q_resb→lv200",
+      "before": "q_resb→lv200 [always]",
+      "after": "q_resb→fe_komp [always]",
+      "why": "Konvention: jeder auslaufende FORM hat einen eigenen end-Knoten auf ENDFORM; Rückkehr zum Aufrufer läuft über diesen",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante fe_komp→lv200",
+      "before": "—",
+      "after": "[always]",
+      "why": "Rückkante vom FORM-Ende nach PERFORM komponenten_lesen",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten fe_rm",
+      "before": "—",
+      "after": "end mzpp_werkerf01.abap:180 „Gebucht, Rückkehr mit gv_ok = X“",
+      "why": "Konvention: jeder auslaufende FORM hat einen eigenen end-Knoten auf ENDFORM; Rückkehr zum Aufrufer läuft über diesen",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kante cm→g_ok2",
+      "before": "cm→g_ok2 [always]",
+      "after": "cm→fe_rm [always]",
+      "why": "Konvention: jeder auslaufende FORM hat einen eigenen end-Knoten auf ENDFORM; Rückkehr zum Aufrufer läuft über diesen",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante fe_rm→g_ok2",
+      "before": "—",
+      "after": "[always]",
+      "why": "Rückkante vom FORM-Ende nach PERFORM rueckmelden",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten fe_et",
+      "before": "—",
+      "after": "end mzpp_werkerf01.abap:197 „Druck erledigt, Rückkehr“",
+      "why": "Konvention: jeder auslaufende FORM hat einen eigenen end-Knoten auf ENDFORM; Rückkehr zum Aufrufer läuft über diesen",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kante g_et→m_s30",
+      "before": "g_et→m_s30 [else]",
+      "after": "g_et→fe_et [else]",
+      "why": "Konvention: jeder auslaufende FORM hat einen eigenen end-Knoten auf ENDFORM; Rückkehr zum Aufrufer läuft über diesen",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante m_et→m_s30",
+      "before": "m_et→m_s30 [always]",
+      "after": "m_et→fe_et [always]",
+      "why": "Konvention: jeder auslaufende FORM hat einen eigenen end-Knoten auf ENDFORM; Rückkehr zum Aufrufer läuft über diesen",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante fe_et→m_s30",
+      "before": "—",
+      "after": "[always]",
+      "why": "Rückkante vom FORM-Ende nach PERFORM etikett_drucken",
+      "category": "Kante"
+    }
+  ],
+  "doubts": [
+    "mzpp_werkerf01.abap:169 — Ob MESSAGE einen Konstruktorausdruck COND string( … ) direkt als Text-Operanden akzeptiert, ist nicht sicher; Fachlich unberührt, nicht geändert."
+  ]
+}

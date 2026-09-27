@@ -1,0 +1,2377 @@
+{
+  "id": "BM-036",
+  "title": "Bestell-BAdI ME_PROCESS_PO_CUST: Lieferantensperre, Infosatzpreis, Gefahrgut, Kostenstelle, Budget und Workflow",
+  "classes": [
+    "K05",
+    "K01",
+    "K12",
+    "K14",
+    "K09"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [
+    "CHECK rechnet bei Änderung einer bestehenden Bestellung den vollen Bedarf gegen einen Verbrauch, der diese Bestellung schon enthält; ist die Doppelzählung fachlich gewollt?",
+    "Makros mac_po_error/mac_po_warning expandieren zu mmpur_message_forced aus MM_MESSAGES_MAC; im Zielrelease verfügbar?"
+  ],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "ME_PROCESS_PO_CUST",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_im_me_process_po_cust.abap",
+        "line": 32,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_im_me_process_po_cust.abap:32"
+      },
+      "identity": {
+        "objectType": "BADI"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZCL_MM_PO_RULES",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_im_me_process_po_cust.abap",
+        "line": 28,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_im_me_process_po_cust.abap:28"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "LFM1",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_mm_po_rules.abap",
+        "line": 57,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_mm_po_rules.abap:57"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "LFA1",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_mm_po_rules.abap",
+        "line": 64,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_mm_po_rules.abap:64"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "EINA",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_mm_po_rules.abap",
+        "line": 79,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_mm_po_rules.abap:79"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "EINE",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_mm_po_rules.abap",
+        "line": 79,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_mm_po_rules.abap:79"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "MARA",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_mm_po_rules.abap",
+        "line": 107,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_mm_po_rules.abap:107"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "CSKS",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_mm_po_rules.abap",
+        "line": 114,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_mm_po_rules.abap:114"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZMM_PO_BUDGET",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_mm_po_rules.abap",
+        "line": 157,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_mm_po_rules.abap:157"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZMM_PO_BUDGET",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "z_mm_po_budget_update.abap",
+        "line": 28,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_mm_po_budget_update.abap:28"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZMM_PO_BUDGET_H",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "z_mm_po_budget_update.abap",
+        "line": 40,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_mm_po_budget_update.abap:40"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "Z_MM_PO_BUDGET_UPDATE",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_im_me_process_po_cust.abap",
+        "line": 143,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_im_me_process_po_cust.abap:143"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "SWE_EVENT_CREATE_IN_UPD_TASK",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_im_me_process_po_cust.abap",
+        "line": 155,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_im_me_process_po_cust.abap:155"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-036-B01",
+      "text": "Die Kopfprüfungen gelten nur für die Bestellarten NB und ZNB; andere Bestellarten bleiben ungeprüft.",
+      "anchors": [
+        {
+          "file": "zcl_im_me_process_po_cust.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_me_process_po_cust.abap:38"
+        }
+      ]
+    },
+    {
+      "id": "BM-036-B02",
+      "text": "Ein Lieferant gilt als gesperrt, wenn er in der Einkaufsorganisation oder zentral für den Einkauf gesperrt ist.",
+      "anchors": [
+        {
+          "file": "zcl_mm_po_rules.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_rules.abap:57"
+        },
+        {
+          "file": "zcl_mm_po_rules.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_rules.abap:60"
+        },
+        {
+          "file": "zcl_mm_po_rules.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_rules.abap:64"
+        }
+      ]
+    },
+    {
+      "id": "BM-036-B03",
+      "text": "Bei gesperrtem Lieferanten wird eine Fehlermeldung erzwungen, der Bestellkopf ungültig gesetzt und nicht weiter geprüft.",
+      "anchors": [
+        {
+          "file": "zcl_im_me_process_po_cust.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_me_process_po_cust.abap:44"
+        },
+        {
+          "file": "zcl_im_me_process_po_cust.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_me_process_po_cust.abap:45"
+        },
+        {
+          "file": "zmm_po_badi_macros.abap",
+          "line": 11,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_po_badi_macros.abap:11"
+        },
+        {
+          "file": "zcl_im_me_process_po_cust.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_me_process_po_cust.abap:46"
+        }
+      ]
+    },
+    {
+      "id": "BM-036-B04",
+      "text": "Ist im Bestellkopf keine Zahlungsbedingung gepflegt, wird die Zahlungsbedingung aus den Einkaufsdaten des Lieferanten übernommen, sofern dort eine steht.",
+      "anchors": [
+        {
+          "file": "zcl_im_me_process_po_cust.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_me_process_po_cust.abap:50"
+        },
+        {
+          "file": "zcl_mm_po_rules.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_rules.abap:70"
+        },
+        {
+          "file": "zcl_im_me_process_po_cust.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_me_process_po_cust.abap:53"
+        },
+        {
+          "file": "zcl_im_me_process_po_cust.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_me_process_po_cust.abap:55"
+        }
+      ]
+    },
+    {
+      "id": "BM-036-B05",
+      "text": "Gelöschte Positionen und Positionen ohne Material werden nicht geprüft.",
+      "anchors": [
+        {
+          "file": "zcl_im_me_process_po_cust.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_me_process_po_cust.abap:68"
+        }
+      ]
+    },
+    {
+      "id": "BM-036-B06",
+      "text": "Der Nettopreis je Preiseinheit wird mit dem Preis des gültigen Normal-Infosatzes für Lieferant, Material und Einkaufsorganisation verglichen, bevorzugt dem werksbezogenen; ohne verwendbaren Infosatz gilt die Abweichung als null.",
+      "anchors": [
+        {
+          "file": "zcl_mm_po_rules.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_rules.abap:79"
+        },
+        {
+          "file": "zcl_mm_po_rules.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_rules.abap:92"
+        },
+        {
+          "file": "zcl_mm_po_rules.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_rules.abap:98"
+        }
+      ]
+    },
+    {
+      "id": "BM-036-B07",
+      "text": "Liegt der Bestellpreis mehr als 25 % über dem Infosatzpreis, wird die Position mit Fehler ungültig gesetzt; bei mehr als 10 % gibt es eine Warnung.",
+      "anchors": [
+        {
+          "file": "zcl_im_me_process_po_cust.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_me_process_po_cust.abap:80"
+        },
+        {
+          "file": "zcl_im_me_process_po_cust.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_me_process_po_cust.abap:81"
+        },
+        {
+          "file": "zcl_im_me_process_po_cust.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_me_process_po_cust.abap:83"
+        }
+      ]
+    },
+    {
+      "id": "BM-036-B08",
+      "text": "Ist das Material Gefahrgut (Gefahrgutprofil gepflegt) und die Versandvorschrift nicht Z1, wird Z1 in der Position gesetzt.",
+      "anchors": [
+        {
+          "file": "zcl_mm_po_rules.abap",
+          "line": 107,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_rules.abap:107"
+        },
+        {
+          "file": "zcl_im_me_process_po_cust.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_me_process_po_cust.abap:88"
+        },
+        {
+          "file": "zcl_im_me_process_po_cust.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_me_process_po_cust.abap:90"
+        }
+      ]
+    },
+    {
+      "id": "BM-036-B09",
+      "text": "Bei Kontierung auf Kostenstelle muss die Kostenstelle heute gültig und nicht für Primärkosten gesperrt sein; sonst wird die Kontierung mit Fehler ungültig gesetzt.",
+      "anchors": [
+        {
+          "file": "zcl_im_me_process_po_cust.abap",
+          "line": 104,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_me_process_po_cust.abap:104"
+        },
+        {
+          "file": "zcl_mm_po_rules.abap",
+          "line": 114,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_rules.abap:114"
+        },
+        {
+          "file": "zcl_mm_po_rules.abap",
+          "line": 119,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_rules.abap:119"
+        },
+        {
+          "file": "zcl_im_me_process_po_cust.abap",
+          "line": 110,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_me_process_po_cust.abap:110"
+        },
+        {
+          "file": "zcl_im_me_process_po_cust.abap",
+          "line": 111,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_me_process_po_cust.abap:111"
+        }
+      ]
+    },
+    {
+      "id": "BM-036-B10",
+      "text": "Beim Prüfen und Sichern wird der Budgetbedarf je Kostenstelle und Jahr des Bestelldatums aus allen nicht gelöschten Kostenstellenpositionen ermittelt, bei prozentualer Aufteilung anteilig, sonst mit dem vollen Positionswert.",
+      "anchors": [
+        {
+          "file": "zcl_im_me_process_po_cust.abap",
+          "line": 120,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_me_process_po_cust.abap:120"
+        },
+        {
+          "file": "zcl_mm_po_rules.abap",
+          "line": 136,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_rules.abap:136"
+        },
+        {
+          "file": "zcl_mm_po_rules.abap",
+          "line": 146,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_rules.abap:146"
+        },
+        {
+          "file": "zcl_mm_po_rules.abap",
+          "line": 151,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_rules.abap:151"
+        }
+      ]
+    },
+    {
+      "id": "BM-036-B11",
+      "text": "Für jede Kostenstelle mit gepflegtem Budget gilt: übersteigen bisheriger Verbrauch plus Bestellbedarf das Budget, wird eine Fehlermeldung ausgegeben und das Sichern verhindert; Kostenstellen ohne Budgetsatz werden nicht geprüft.",
+      "anchors": [
+        {
+          "file": "zcl_mm_po_rules.abap",
+          "line": 157,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_rules.abap:157"
+        },
+        {
+          "file": "zcl_im_me_process_po_cust.abap",
+          "line": 124,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_me_process_po_cust.abap:124"
+        },
+        {
+          "file": "zcl_im_me_process_po_cust.abap",
+          "line": 127,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_me_process_po_cust.abap:127"
+        },
+        {
+          "file": "zcl_im_me_process_po_cust.abap",
+          "line": 128,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_me_process_po_cust.abap:128"
+        },
+        {
+          "file": "zcl_im_me_process_po_cust.abap",
+          "line": 129,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_me_process_po_cust.abap:129"
+        }
+      ]
+    },
+    {
+      "id": "BM-036-B12",
+      "text": "Beim Buchen wird der Budgetbedarf erneut ermittelt und, falls vorhanden, in der Verbuchung als Verbrauch fortgeschrieben.",
+      "anchors": [
+        {
+          "file": "zcl_im_me_process_po_cust.abap",
+          "line": 141,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_me_process_po_cust.abap:141"
+        },
+        {
+          "file": "zcl_im_me_process_po_cust.abap",
+          "line": 142,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_me_process_po_cust.abap:142"
+        },
+        {
+          "file": "zcl_im_me_process_po_cust.abap",
+          "line": 143,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_me_process_po_cust.abap:143"
+        }
+      ]
+    },
+    {
+      "id": "BM-036-B13",
+      "text": "Die Verbuchung liest je Kostenstelle den Budgetsatz sperrend, überspringt Kostenstellen ohne Budget und erhöht den Verbrauch um den vollen Bedarf, auch bei Änderung einer bereits gebuchten Bestellung.",
+      "anchors": [
+        {
+          "file": "z_mm_po_budget_update.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mm_po_budget_update.abap:17"
+        },
+        {
+          "file": "z_mm_po_budget_update.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mm_po_budget_update.abap:21"
+        },
+        {
+          "file": "z_mm_po_budget_update.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mm_po_budget_update.abap:25"
+        },
+        {
+          "file": "z_mm_po_budget_update.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mm_po_budget_update.abap:28"
+        }
+      ]
+    },
+    {
+      "id": "BM-036-B14",
+      "text": "Scheitert das Fortschreiben, bricht die Verbuchung ab; sonst wird eine Historienzeile mit Kostenstelle, Jahr, Bestellung, Wert und Zeitpunkt geschrieben.",
+      "anchors": [
+        {
+          "file": "z_mm_po_budget_update.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mm_po_budget_update.abap:29"
+        },
+        {
+          "file": "z_mm_po_budget_update.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mm_po_budget_update.abap:30"
+        },
+        {
+          "file": "z_mm_po_budget_update.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mm_po_budget_update.abap:40"
+        }
+      ]
+    },
+    {
+      "id": "BM-036-B15",
+      "text": "Erreicht der Gesamtwert der Kostenstellenbedarfe 50.000, wird mit der Verbuchung das Workflow-Ereignis HIGHVALUE zur Bestellung ausgelöst.",
+      "anchors": [
+        {
+          "file": "zcl_im_me_process_po_cust.abap",
+          "line": 151,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_me_process_po_cust.abap:151"
+        },
+        {
+          "file": "zcl_im_me_process_po_cust.abap",
+          "line": 153,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_me_process_po_cust.abap:153"
+        },
+        {
+          "file": "zcl_im_me_process_po_cust.abap",
+          "line": 155,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_me_process_po_cust.abap:155"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "h0",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_im_me_process_po_cust.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_me_process_po_cust.abap:32"
+        },
+        "meaning": "Bestellkopf wird verarbeitet"
+      },
+      {
+        "id": "h1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_im_me_process_po_cust.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_me_process_po_cust.abap:38"
+        },
+        "meaning": "Bestellart NB oder ZNB?"
+      },
+      {
+        "id": "h2",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_im_me_process_po_cust.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_me_process_po_cust.abap:39"
+        },
+        "meaning": "Andere Bestellart: keine Prüfung"
+      },
+      {
+        "id": "hc",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_im_me_process_po_cust.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_me_process_po_cust.abap:42"
+        },
+        "meaning": "Lieferantensperre prüfen"
+      },
+      {
+        "id": "Rv0",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_mm_po_rules.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_rules.abap:54"
+        },
+        "meaning": "Sperrprüfung"
+      },
+      {
+        "id": "Rv1",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_mm_po_rules.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_rules.abap:57"
+        },
+        "meaning": "Einkaufssperre in der EKORG lesen"
+      },
+      {
+        "id": "Rv2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_mm_po_rules.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_rules.abap:60"
+        },
+        "meaning": "In EKORG gesperrt?"
+      },
+      {
+        "id": "Rv3",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_mm_po_rules.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_rules.abap:62"
+        },
+        "meaning": "Gesperrt"
+      },
+      {
+        "id": "Rv4",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_mm_po_rules.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_rules.abap:64"
+        },
+        "meaning": "Zentrale Einkaufssperre lesen"
+      },
+      {
+        "id": "Rv5",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_mm_po_rules.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_rules.abap:67"
+        },
+        "meaning": "Ergebnis zentrale Sperre"
+      },
+      {
+        "id": "hg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_im_me_process_po_cust.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_me_process_po_cust.abap:44"
+        },
+        "meaning": "Lieferant gesperrt?"
+      },
+      {
+        "id": "he",
+        "type": "output",
+        "anchor": {
+          "file": "zcl_im_me_process_po_cust.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_me_process_po_cust.abap:45"
+        },
+        "meaning": "Fehler: Lieferant gesperrt, Kopf ungültig"
+      },
+      {
+        "id": "h3",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_im_me_process_po_cust.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_me_process_po_cust.abap:46"
+        },
+        "meaning": "Kopfverarbeitung beenden"
+      },
+      {
+        "id": "hz",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_im_me_process_po_cust.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_me_process_po_cust.abap:50"
+        },
+        "meaning": "Zahlungsbedingung leer?"
+      },
+      {
+        "id": "hpc",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_im_me_process_po_cust.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_me_process_po_cust.abap:51"
+        },
+        "meaning": "Zahlungsbedingung ermitteln"
+      },
+      {
+        "id": "Rp0",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_mm_po_rules.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_rules.abap:69"
+        },
+        "meaning": "Zahlungsbedingung lesen"
+      },
+      {
+        "id": "Rp1",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_mm_po_rules.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_rules.abap:70"
+        },
+        "meaning": "Zahlungsbedingung aus Einkaufsdaten"
+      },
+      {
+        "id": "hzg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_im_me_process_po_cust.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_me_process_po_cust.abap:53"
+        },
+        "meaning": "Zahlungsbedingung gefunden?"
+      },
+      {
+        "id": "hs",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_im_me_process_po_cust.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_me_process_po_cust.abap:55"
+        },
+        "meaning": "Zahlungsbedingung in Bestellkopf übernehmen"
+      },
+      {
+        "id": "he2",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_im_me_process_po_cust.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_me_process_po_cust.abap:58"
+        },
+        "meaning": "Kopf fertig"
+      },
+      {
+        "id": "i0",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_im_me_process_po_cust.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_me_process_po_cust.abap:60"
+        },
+        "meaning": "Bestellposition wird verarbeitet"
+      },
+      {
+        "id": "i1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_im_me_process_po_cust.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_me_process_po_cust.abap:68"
+        },
+        "meaning": "Gelöscht oder ohne Material?"
+      },
+      {
+        "id": "i2",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_im_me_process_po_cust.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_me_process_po_cust.abap:69"
+        },
+        "meaning": "Keine Prüfung"
+      },
+      {
+        "id": "ipc",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_im_me_process_po_cust.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_me_process_po_cust.abap:74"
+        },
+        "meaning": "Preisabweichung zum Infosatz ermitteln"
+      },
+      {
+        "id": "Rd0",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_mm_po_rules.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_rules.abap:75"
+        },
+        "meaning": "Preisvergleich"
+      },
+      {
+        "id": "Rd1",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_mm_po_rules.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_rules.abap:79"
+        },
+        "meaning": "Infosatzpreis (werksbezogen vor werksübergreifend) lesen"
+      },
+      {
+        "id": "Rd2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_mm_po_rules.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_rules.abap:92"
+        },
+        "meaning": "Infosatzpreis verwendbar?"
+      },
+      {
+        "id": "Rd3",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_mm_po_rules.abap",
+          "line": 94,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_rules.abap:94"
+        },
+        "meaning": "Ohne Infosatz: Abweichung 0"
+      },
+      {
+        "id": "Rd4",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_mm_po_rules.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_rules.abap:98"
+        },
+        "meaning": "Prozentuale Abweichung Bestell- zu Infosatzpreis"
+      },
+      {
+        "id": "i3",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_im_me_process_po_cust.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_me_process_po_cust.abap:80"
+        },
+        "meaning": "Abweichung über 25 % / über 10 %?"
+      },
+      {
+        "id": "i4",
+        "type": "output",
+        "anchor": {
+          "file": "zcl_im_me_process_po_cust.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_me_process_po_cust.abap:81"
+        },
+        "meaning": "Fehler: Preisabweichung, Position ungültig"
+      },
+      {
+        "id": "i5",
+        "type": "output",
+        "anchor": {
+          "file": "zcl_im_me_process_po_cust.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_me_process_po_cust.abap:83"
+        },
+        "meaning": "Warnung: Preisabweichung"
+      },
+      {
+        "id": "ihc",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_im_me_process_po_cust.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_me_process_po_cust.abap:87"
+        },
+        "meaning": "Gefahrgut prüfen"
+      },
+      {
+        "id": "Rh0",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_mm_po_rules.abap",
+          "line": 101,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_rules.abap:101"
+        },
+        "meaning": "Gefahrgutprüfung"
+      },
+      {
+        "id": "Rh1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_mm_po_rules.abap",
+          "line": 103,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_rules.abap:103"
+        },
+        "meaning": "Gefahrgutkennzeichen schon ermittelt?"
+      },
+      {
+        "id": "Rh2",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_mm_po_rules.abap",
+          "line": 105,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_rules.abap:105"
+        },
+        "meaning": "Gepuffertes Kennzeichen zurück"
+      },
+      {
+        "id": "Rh3",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_mm_po_rules.abap",
+          "line": 107,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_rules.abap:107"
+        },
+        "meaning": "Gefahrgutprofil des Materials lesen"
+      },
+      {
+        "id": "ihg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_im_me_process_po_cust.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_me_process_po_cust.abap:88"
+        },
+        "meaning": "Gefahrgut ohne Versandvorschrift Z1?"
+      },
+      {
+        "id": "i6",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_im_me_process_po_cust.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_me_process_po_cust.abap:90"
+        },
+        "meaning": "Versandvorschrift Z1 setzen"
+      },
+      {
+        "id": "ie",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_im_me_process_po_cust.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_me_process_po_cust.abap:92"
+        },
+        "meaning": "Position fertig"
+      },
+      {
+        "id": "a0",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_im_me_process_po_cust.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_me_process_po_cust.abap:97"
+        },
+        "meaning": "Kontierung wird verarbeitet"
+      },
+      {
+        "id": "a1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_im_me_process_po_cust.abap",
+          "line": 104,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_me_process_po_cust.abap:104"
+        },
+        "meaning": "Kostenstellenkontierung mit Kostenstelle?"
+      },
+      {
+        "id": "a2",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_im_me_process_po_cust.abap",
+          "line": 105,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_me_process_po_cust.abap:105"
+        },
+        "meaning": "Keine Prüfung"
+      },
+      {
+        "id": "acc",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_im_me_process_po_cust.abap",
+          "line": 107,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_me_process_po_cust.abap:107"
+        },
+        "meaning": "Kostenstelle prüfen"
+      },
+      {
+        "id": "Rc0",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_mm_po_rules.abap",
+          "line": 113,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_rules.abap:113"
+        },
+        "meaning": "Kostenstellenprüfung"
+      },
+      {
+        "id": "Rc1",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_mm_po_rules.abap",
+          "line": 114,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_rules.abap:114"
+        },
+        "meaning": "Heute gültige Kostenstelle und Primärkostensperre lesen"
+      },
+      {
+        "id": "Rc2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_mm_po_rules.abap",
+          "line": 119,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_rules.abap:119"
+        },
+        "meaning": "Nicht gültig oder gesperrt?"
+      },
+      {
+        "id": "acg",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_im_me_process_po_cust.abap",
+          "line": 110,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_me_process_po_cust.abap:110"
+        },
+        "meaning": "Kostenstelle ungültig?"
+      },
+      {
+        "id": "a3",
+        "type": "output",
+        "anchor": {
+          "file": "zcl_im_me_process_po_cust.abap",
+          "line": 111,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_me_process_po_cust.abap:111"
+        },
+        "meaning": "Fehler: Kostenstelle, Kontierung ungültig"
+      },
+      {
+        "id": "ae",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_im_me_process_po_cust.abap",
+          "line": 113,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_me_process_po_cust.abap:113"
+        },
+        "meaning": "Kontierung fertig"
+      },
+      {
+        "id": "c0",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_im_me_process_po_cust.abap",
+          "line": 115,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_me_process_po_cust.abap:115"
+        },
+        "meaning": "Prüfen/Sichern der Bestellung"
+      },
+      {
+        "id": "cbn",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_im_me_process_po_cust.abap",
+          "line": 120,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_me_process_po_cust.abap:120"
+        },
+        "meaning": "Budgetbedarf je Kostenstelle ermitteln"
+      },
+      {
+        "id": "Rb0",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_mm_po_rules.abap",
+          "line": 128,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_rules.abap:128"
+        },
+        "meaning": "Bedarfsermittlung"
+      },
+      {
+        "id": "Rb1",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_mm_po_rules.abap",
+          "line": 134,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_rules.abap:134"
+        },
+        "meaning": "Positionen durchlaufen"
+      },
+      {
+        "id": "Rb2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_mm_po_rules.abap",
+          "line": 136,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_rules.abap:136"
+        },
+        "meaning": "Aktive Kostenstellenposition?"
+      },
+      {
+        "id": "Rb3",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_mm_po_rules.abap",
+          "line": 140,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_rules.abap:140"
+        },
+        "meaning": "Kontierungen durchlaufen"
+      },
+      {
+        "id": "Rb4",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_mm_po_rules.abap",
+          "line": 146,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_rules.abap:146"
+        },
+        "meaning": "Prozentuale Aufteilung?"
+      },
+      {
+        "id": "Rb5",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_mm_po_rules.abap",
+          "line": 151,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_rules.abap:151"
+        },
+        "meaning": "Bedarf je Kostenstelle und Jahr summieren"
+      },
+      {
+        "id": "Rb6",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_mm_po_rules.abap",
+          "line": 154,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_rules.abap:154"
+        },
+        "meaning": "Bedarf zurück"
+      },
+      {
+        "id": "c1",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_im_me_process_po_cust.abap",
+          "line": 121,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_me_process_po_cust.abap:121"
+        },
+        "meaning": "Kostenstellen mit Bedarf durchlaufen"
+      },
+      {
+        "id": "cbo",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_im_me_process_po_cust.abap",
+          "line": 122,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_me_process_po_cust.abap:122"
+        },
+        "meaning": "Budget lesen"
+      },
+      {
+        "id": "Ro0",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_mm_po_rules.abap",
+          "line": 156,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_rules.abap:156"
+        },
+        "meaning": "Budgetzugriff"
+      },
+      {
+        "id": "Ro1",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_mm_po_rules.abap",
+          "line": 157,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_rules.abap:157"
+        },
+        "meaning": "Budget und Verbrauch der Kostenstelle im Jahr lesen"
+      },
+      {
+        "id": "c2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_im_me_process_po_cust.abap",
+          "line": 124,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_me_process_po_cust.abap:124"
+        },
+        "meaning": "Budget gepflegt?"
+      },
+      {
+        "id": "c3",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_im_me_process_po_cust.abap",
+          "line": 127,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_me_process_po_cust.abap:127"
+        },
+        "meaning": "Budget überschritten?"
+      },
+      {
+        "id": "c4",
+        "type": "output",
+        "anchor": {
+          "file": "zcl_im_me_process_po_cust.abap",
+          "line": 128,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_me_process_po_cust.abap:128"
+        },
+        "meaning": "Fehler: Budget überschritten"
+      },
+      {
+        "id": "c5",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_im_me_process_po_cust.abap",
+          "line": 129,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_me_process_po_cust.abap:129"
+        },
+        "meaning": "Sichern verhindern"
+      },
+      {
+        "id": "ce",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_im_me_process_po_cust.abap",
+          "line": 132,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_me_process_po_cust.abap:132"
+        },
+        "meaning": "Prüfung fertig"
+      },
+      {
+        "id": "p0",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_im_me_process_po_cust.abap",
+          "line": 134,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_me_process_po_cust.abap:134"
+        },
+        "meaning": "Bestellung wird gebucht"
+      },
+      {
+        "id": "pbn",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_im_me_process_po_cust.abap",
+          "line": 141,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_me_process_po_cust.abap:141"
+        },
+        "meaning": "Budgetbedarf ermitteln"
+      },
+      {
+        "id": "p1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_im_me_process_po_cust.abap",
+          "line": 142,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_me_process_po_cust.abap:142"
+        },
+        "meaning": "Kostenstellenbedarf vorhanden?"
+      },
+      {
+        "id": "p2",
+        "type": "update_task",
+        "anchor": {
+          "file": "zcl_im_me_process_po_cust.abap",
+          "line": 143,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_me_process_po_cust.abap:143"
+        },
+        "meaning": "Budgetverbrauch in der Verbuchung fortschreiben"
+      },
+      {
+        "id": "U0",
+        "type": "start",
+        "anchor": {
+          "file": "z_mm_po_budget_update.abap",
+          "line": 1,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mm_po_budget_update.abap:1"
+        },
+        "meaning": "Verbuchung Budgetverbrauch"
+      },
+      {
+        "id": "U1",
+        "type": "loop",
+        "anchor": {
+          "file": "z_mm_po_budget_update.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mm_po_budget_update.abap:16"
+        },
+        "meaning": "Bedarfe durchlaufen"
+      },
+      {
+        "id": "U2",
+        "type": "read",
+        "anchor": {
+          "file": "z_mm_po_budget_update.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mm_po_budget_update.abap:17"
+        },
+        "meaning": "Budgetsatz sperrend lesen"
+      },
+      {
+        "id": "U3",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_mm_po_budget_update.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mm_po_budget_update.abap:21"
+        },
+        "meaning": "Budget gepflegt?"
+      },
+      {
+        "id": "U4",
+        "type": "action",
+        "anchor": {
+          "file": "z_mm_po_budget_update.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mm_po_budget_update.abap:25"
+        },
+        "meaning": "Verbrauch um Bestellwert erhöhen"
+      },
+      {
+        "id": "U5",
+        "type": "write",
+        "anchor": {
+          "file": "z_mm_po_budget_update.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mm_po_budget_update.abap:28"
+        },
+        "meaning": "Budgetsatz schreiben"
+      },
+      {
+        "id": "U6",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_mm_po_budget_update.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mm_po_budget_update.abap:29"
+        },
+        "meaning": "Update fehlgeschlagen?"
+      },
+      {
+        "id": "U7",
+        "type": "output",
+        "anchor": {
+          "file": "z_mm_po_budget_update.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mm_po_budget_update.abap:30"
+        },
+        "meaning": "Verbuchungsabbruch"
+      },
+      {
+        "id": "U7x",
+        "type": "end",
+        "anchor": {
+          "file": "z_mm_po_budget_update.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mm_po_budget_update.abap:30"
+        },
+        "meaning": "Verbuchung abgebrochen"
+      },
+      {
+        "id": "U8",
+        "type": "write",
+        "anchor": {
+          "file": "z_mm_po_budget_update.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mm_po_budget_update.abap:40"
+        },
+        "meaning": "Verbrauchshistorie mit Bestellung schreiben"
+      },
+      {
+        "id": "U9",
+        "type": "end",
+        "anchor": {
+          "file": "z_mm_po_budget_update.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mm_po_budget_update.abap:43"
+        },
+        "meaning": "Verbuchung fertig"
+      },
+      {
+        "id": "p3",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_im_me_process_po_cust.abap",
+          "line": 150,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_me_process_po_cust.abap:150"
+        },
+        "meaning": "Bedarfe durchlaufen"
+      },
+      {
+        "id": "p4",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_im_me_process_po_cust.abap",
+          "line": 151,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_me_process_po_cust.abap:151"
+        },
+        "meaning": "Gesamtwert der Kostenstellenbedarfe"
+      },
+      {
+        "id": "p5",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_im_me_process_po_cust.abap",
+          "line": 153,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_me_process_po_cust.abap:153"
+        },
+        "meaning": "Ab 50.000?"
+      },
+      {
+        "id": "p6",
+        "type": "update_task",
+        "anchor": {
+          "file": "zcl_im_me_process_po_cust.abap",
+          "line": 155,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_me_process_po_cust.abap:155"
+        },
+        "meaning": "Workflow-Ereignis HIGHVALUE auslösen"
+      },
+      {
+        "id": "pe",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_im_me_process_po_cust.abap",
+          "line": 161,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_im_me_process_po_cust.abap:161"
+        },
+        "meaning": "Buchung fertig"
+      },
+      {
+        "id": "Rp9",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_mm_po_rules.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_rules.abap:73"
+        },
+        "meaning": "VENDOR_PAYMENT_TERMS beendet, Zahlungsbedingung zurück"
+      },
+      {
+        "id": "Rd9",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_mm_po_rules.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_rules.abap:99"
+        },
+        "meaning": "PRICE_DEVIATION beendet, Abweichung zurück"
+      },
+      {
+        "id": "Rh9",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_mm_po_rules.abap",
+          "line": 111,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_rules.abap:111"
+        },
+        "meaning": "IS_HAZARDOUS beendet, Kennzeichen gepuffert"
+      },
+      {
+        "id": "Rc9",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_mm_po_rules.abap",
+          "line": 126,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_rules.abap:126"
+        },
+        "meaning": "COST_CENTER_VALID beendet"
+      },
+      {
+        "id": "Ro9",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_mm_po_rules.abap",
+          "line": 160,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_po_rules.abap:160"
+        },
+        "meaning": "BUDGET_OF beendet, Budgetsatz zurück"
+      }
+    ],
+    "edges": [
+      {
+        "from": "h0",
+        "to": "h1",
+        "condition": "always"
+      },
+      {
+        "from": "h1",
+        "to": "h2",
+        "condition": "ls_header-bsart <> gc_bsart_normal AND ls_header-bsart <> gc_bsart_zusatz"
+      },
+      {
+        "from": "h1",
+        "to": "hc",
+        "condition": "else"
+      },
+      {
+        "from": "hc",
+        "to": "Rv0",
+        "condition": "always"
+      },
+      {
+        "from": "Rv0",
+        "to": "Rv1",
+        "condition": "always"
+      },
+      {
+        "from": "Rv1",
+        "to": "Rv2",
+        "condition": "always"
+      },
+      {
+        "from": "Rv2",
+        "to": "Rv3",
+        "condition": "lv_sperm = 'X'"
+      },
+      {
+        "from": "Rv2",
+        "to": "Rv4",
+        "condition": "else"
+      },
+      {
+        "from": "Rv3",
+        "to": "hg",
+        "condition": "always"
+      },
+      {
+        "from": "Rv4",
+        "to": "Rv5",
+        "condition": "always"
+      },
+      {
+        "from": "Rv5",
+        "to": "hg",
+        "condition": "always"
+      },
+      {
+        "from": "hg",
+        "to": "he",
+        "condition": "lv_blocked = abap_true"
+      },
+      {
+        "from": "he",
+        "to": "h3",
+        "condition": "always"
+      },
+      {
+        "from": "hg",
+        "to": "hz",
+        "condition": "else"
+      },
+      {
+        "from": "hz",
+        "to": "hpc",
+        "condition": "ls_header-zterm IS INITIAL"
+      },
+      {
+        "from": "hz",
+        "to": "he2",
+        "condition": "else"
+      },
+      {
+        "from": "hpc",
+        "to": "Rp0",
+        "condition": "always"
+      },
+      {
+        "from": "Rp0",
+        "to": "Rp1",
+        "condition": "always"
+      },
+      {
+        "from": "Rp1",
+        "to": "Rp9",
+        "condition": "always"
+      },
+      {
+        "from": "hzg",
+        "to": "hs",
+        "condition": "lv_zterm IS NOT INITIAL"
+      },
+      {
+        "from": "hzg",
+        "to": "he2",
+        "condition": "else"
+      },
+      {
+        "from": "hs",
+        "to": "he2",
+        "condition": "always"
+      },
+      {
+        "from": "i0",
+        "to": "i1",
+        "condition": "always"
+      },
+      {
+        "from": "i1",
+        "to": "i2",
+        "condition": "ls_item-loekz IS NOT INITIAL OR ls_item-matnr IS INITIAL"
+      },
+      {
+        "from": "i1",
+        "to": "ipc",
+        "condition": "else"
+      },
+      {
+        "from": "ipc",
+        "to": "Rd0",
+        "condition": "always"
+      },
+      {
+        "from": "Rd0",
+        "to": "Rd1",
+        "condition": "always"
+      },
+      {
+        "from": "Rd1",
+        "to": "Rd2",
+        "condition": "always"
+      },
+      {
+        "from": "Rd2",
+        "to": "Rd3",
+        "condition": "sy-subrc <> 0 OR ls_info-peinh = 0 OR ls_info-netpr = 0 OR iv_peinh = 0"
+      },
+      {
+        "from": "Rd2",
+        "to": "Rd4",
+        "condition": "else"
+      },
+      {
+        "from": "Rd3",
+        "to": "i3",
+        "condition": "always"
+      },
+      {
+        "from": "Rd4",
+        "to": "Rd9",
+        "condition": "always"
+      },
+      {
+        "from": "i3",
+        "to": "i4",
+        "condition": "lv_dev > gc_err_pct"
+      },
+      {
+        "from": "i3",
+        "to": "i5",
+        "condition": "lv_dev > gc_warn_pct"
+      },
+      {
+        "from": "i3",
+        "to": "ihc",
+        "condition": "else"
+      },
+      {
+        "from": "i4",
+        "to": "ihc",
+        "condition": "always"
+      },
+      {
+        "from": "i5",
+        "to": "ihc",
+        "condition": "always"
+      },
+      {
+        "from": "ihc",
+        "to": "Rh0",
+        "condition": "always"
+      },
+      {
+        "from": "Rh0",
+        "to": "Rh1",
+        "condition": "always"
+      },
+      {
+        "from": "Rh3",
+        "to": "Rh9",
+        "condition": "always"
+      },
+      {
+        "from": "ihg",
+        "to": "i6",
+        "condition": "lv_haz = abap_true AND ls_item-evers <> 'Z1'"
+      },
+      {
+        "from": "ihg",
+        "to": "ie",
+        "condition": "else"
+      },
+      {
+        "from": "i6",
+        "to": "ie",
+        "condition": "always"
+      },
+      {
+        "from": "a0",
+        "to": "a1",
+        "condition": "always"
+      },
+      {
+        "from": "a1",
+        "to": "a2",
+        "condition": "ls_item-knttp <> gc_knttp_kostl OR ls_acc-kostl IS INITIAL"
+      },
+      {
+        "from": "a1",
+        "to": "acc",
+        "condition": "else"
+      },
+      {
+        "from": "acc",
+        "to": "Rc0",
+        "condition": "always"
+      },
+      {
+        "from": "Rc0",
+        "to": "Rc1",
+        "condition": "always"
+      },
+      {
+        "from": "Rc1",
+        "to": "Rc2",
+        "condition": "always"
+      },
+      {
+        "from": "Rc2",
+        "to": "Rc9",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "Rc2",
+        "to": "Rc9",
+        "condition": "lv_bkzkp = 'X'"
+      },
+      {
+        "from": "Rc2",
+        "to": "Rc9",
+        "condition": "else"
+      },
+      {
+        "from": "acg",
+        "to": "a3",
+        "condition": "lv_valid = abap_false"
+      },
+      {
+        "from": "acg",
+        "to": "ae",
+        "condition": "else"
+      },
+      {
+        "from": "a3",
+        "to": "ae",
+        "condition": "always"
+      },
+      {
+        "from": "c0",
+        "to": "cbn",
+        "condition": "always"
+      },
+      {
+        "from": "cbn",
+        "to": "Rb0",
+        "condition": "always"
+      },
+      {
+        "from": "Rb0",
+        "to": "Rb1",
+        "condition": "always"
+      },
+      {
+        "from": "Rb1",
+        "to": "Rb2",
+        "condition": "next row"
+      },
+      {
+        "from": "Rb2",
+        "to": "Rb1",
+        "condition": "ls_item-loekz IS NOT INITIAL OR ls_item-knttp <> 'K'"
+      },
+      {
+        "from": "Rb2",
+        "to": "Rb3",
+        "condition": "else"
+      },
+      {
+        "from": "Rb3",
+        "to": "Rb4",
+        "condition": "next row"
+      },
+      {
+        "from": "Rb4",
+        "to": "Rb5",
+        "condition": "ls_acc-vproz > 0"
+      },
+      {
+        "from": "Rb4",
+        "to": "Rb5",
+        "condition": "else"
+      },
+      {
+        "from": "Rb5",
+        "to": "Rb3",
+        "condition": "next iteration"
+      },
+      {
+        "from": "Rb3",
+        "to": "Rb1",
+        "condition": "no more rows"
+      },
+      {
+        "from": "Rb1",
+        "to": "Rb6",
+        "condition": "no more rows"
+      },
+      {
+        "from": "Rb6",
+        "to": "c1",
+        "condition": "always"
+      },
+      {
+        "from": "Rb6",
+        "to": "p1",
+        "condition": "always"
+      },
+      {
+        "from": "c1",
+        "to": "cbo",
+        "condition": "next row"
+      },
+      {
+        "from": "cbo",
+        "to": "Ro0",
+        "condition": "always"
+      },
+      {
+        "from": "Ro0",
+        "to": "Ro1",
+        "condition": "always"
+      },
+      {
+        "from": "Ro1",
+        "to": "Ro9",
+        "condition": "always"
+      },
+      {
+        "from": "c2",
+        "to": "c1",
+        "condition": "ls_avail IS INITIAL"
+      },
+      {
+        "from": "c2",
+        "to": "c3",
+        "condition": "else"
+      },
+      {
+        "from": "c3",
+        "to": "c4",
+        "condition": "ls_avail-verbraucht + ls_need-netwr > ls_avail-budget"
+      },
+      {
+        "from": "c3",
+        "to": "c1",
+        "condition": "else"
+      },
+      {
+        "from": "c4",
+        "to": "c5",
+        "condition": "always"
+      },
+      {
+        "from": "c5",
+        "to": "c1",
+        "condition": "next iteration"
+      },
+      {
+        "from": "c1",
+        "to": "ce",
+        "condition": "no more rows"
+      },
+      {
+        "from": "p0",
+        "to": "pbn",
+        "condition": "always"
+      },
+      {
+        "from": "pbn",
+        "to": "Rb0",
+        "condition": "always"
+      },
+      {
+        "from": "p1",
+        "to": "p2",
+        "condition": "lt_need IS NOT INITIAL"
+      },
+      {
+        "from": "p1",
+        "to": "p3",
+        "condition": "else"
+      },
+      {
+        "from": "p2",
+        "to": "p3",
+        "condition": "always"
+      },
+      {
+        "from": "U0",
+        "to": "U1",
+        "condition": "always"
+      },
+      {
+        "from": "U1",
+        "to": "U2",
+        "condition": "next row"
+      },
+      {
+        "from": "U2",
+        "to": "U3",
+        "condition": "always"
+      },
+      {
+        "from": "U3",
+        "to": "U1",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "U3",
+        "to": "U4",
+        "condition": "else"
+      },
+      {
+        "from": "U4",
+        "to": "U5",
+        "condition": "always"
+      },
+      {
+        "from": "U5",
+        "to": "U6",
+        "condition": "always"
+      },
+      {
+        "from": "U6",
+        "to": "U7",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "U6",
+        "to": "U8",
+        "condition": "else"
+      },
+      {
+        "from": "U8",
+        "to": "U1",
+        "condition": "next iteration"
+      },
+      {
+        "from": "U1",
+        "to": "U9",
+        "condition": "no more rows"
+      },
+      {
+        "from": "p3",
+        "to": "p4",
+        "condition": "next row"
+      },
+      {
+        "from": "p4",
+        "to": "p3",
+        "condition": "next iteration"
+      },
+      {
+        "from": "p3",
+        "to": "p5",
+        "condition": "no more rows"
+      },
+      {
+        "from": "p5",
+        "to": "p6",
+        "condition": "lv_total >= gc_wf_limit"
+      },
+      {
+        "from": "p5",
+        "to": "pe",
+        "condition": "else"
+      },
+      {
+        "from": "p6",
+        "to": "pe",
+        "condition": "always"
+      },
+      {
+        "from": "Rp9",
+        "to": "hzg",
+        "condition": "always"
+      },
+      {
+        "from": "Rd9",
+        "to": "i3",
+        "condition": "always"
+      },
+      {
+        "from": "Rh1",
+        "to": "Rh2",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "Rh1",
+        "to": "Rh3",
+        "condition": "else"
+      },
+      {
+        "from": "Rh2",
+        "to": "ihg",
+        "condition": "always"
+      },
+      {
+        "from": "Rh9",
+        "to": "ihg",
+        "condition": "always"
+      },
+      {
+        "from": "Rc9",
+        "to": "acg",
+        "condition": "always"
+      },
+      {
+        "from": "Ro9",
+        "to": "c2",
+        "condition": "always"
+      },
+      {
+        "from": "U7",
+        "to": "U7x",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zcl_im_me_process_po_cust.abap:155 — kein Fachsatz „Die Bestellung wird ab 50.000 zur Freigabe gesperrt“ (es wird nur ein Ereignis ausgelöst; eine Freigabesperre setzt der Code nicht)",
+    "zcl_im_me_process_po_cust.abap:124 — kein Fachsatz „Ohne Budget darf nicht bestellt werden“ (ohne Budgetsatz wird gar nicht geprüft)",
+    "zcl_mm_po_rules.abap:79 — kein Fachsatz „Der Preis wird aus dem Infosatz übernommen“ (nur verglichen, nicht gesetzt)",
+    "z_mm_po_budget_update.abap:25 — kein Fachsatz „Bei Bestelländerung wird nur die Differenz gebucht“ (der volle Bedarf wird erneut addiert)"
+  ],
+  "processDescription": "Beim Anlegen und Ändern von Bestellungen (ME21N/ME22N) ruft der Einkauf die BAdI-Implementierung an mehreren Stellen. Bei der Kopfverarbeitung werden nur Bestellarten NB und ZNB betrachtet: Ist der Lieferant in der Einkaufsorganisation oder zentral für den Einkauf gesperrt, wird eine Fehlermeldung erzwungen und der Kopf ungültig gesetzt; fehlt die Zahlungsbedingung, wird sie aus den Einkaufsdaten des Lieferanten vorgeschlagen. Bei jeder aktiven Materialposition wird der Preis mit dem gültigen Infosatz verglichen: über 25 % Abweichung ist ein Fehler, über 10 % eine Warnung; ohne Infosatz wird nicht geprüft. Gefahrgutmaterialien erhalten die Versandvorschrift Z1. Kontierungen auf Kostenstelle werden auf eine heute gültige, nicht für Primärkosten gesperrte Kostenstelle geprüft. Beim Prüfen und Sichern wird der Bedarf je Kostenstelle und Jahr aus den Kostenstellenpositionen gebildet und gegen das gepflegte Budget abzüglich Verbrauch gestellt; eine Überschreitung verhindert das Sichern, Kostenstellen ohne Budget werden nicht geprüft. Beim Buchen wird der Bedarf in der Verbuchung als Verbrauch fortgeschrieben und historisiert, bei Fehler bricht die Verbuchung ab; ab 50.000 Gesamtwert wird zusätzlich ein Workflow-Ereignis ausgelöst. Bei Änderungen wird der volle Bedarf erneut addiert."
+}

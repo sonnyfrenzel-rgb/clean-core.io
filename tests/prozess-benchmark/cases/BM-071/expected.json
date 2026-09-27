@@ -1,0 +1,1397 @@
+{
+  "id": "BM-071",
+  "title": "RFC-Eingangsschnittstelle MES: Vorgangsrückmeldung mit Idempotenz und Sperre",
+  "classes": [
+    "K12",
+    "K15",
+    "K03"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [
+    "Ist die Berechtigungsprüfung ohne Protokoll im Fehlerfall gewollt (kein Eintrag in ZMES_RM_LOG)?"
+  ],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "ZMES_RM_LOG",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "z_mes_rueckmeldung.abap",
+        "line": 40,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_mes_rueckmeldung.abap:40"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ENQUEUE_ESORDER",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "z_mes_rueckmeldung.abap",
+        "line": 56,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_mes_rueckmeldung.abap:56"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "DEQUEUE_ESORDER",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "z_mes_rueckmeldung.abap",
+        "line": 74,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_mes_rueckmeldung.abap:74"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "AUFK",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "lzmes_rmf01.abap",
+        "line": 19,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzmes_rmf01.abap:19"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "STATUS_CHECK",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "lzmes_rmf01.abap",
+        "line": 28,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzmes_rmf01.abap:28"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "AFKO",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "lzmes_rmf01.abap",
+        "line": 57,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzmes_rmf01.abap:57"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "AFVC",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "lzmes_rmf01.abap",
+        "line": 59,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzmes_rmf01.abap:59"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_PRODORDCONF_CREATE_TT",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "lzmes_rmf01.abap",
+        "line": 99,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzmes_rmf01.abap:99"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_ROLLBACK",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "lzmes_rmf01.abap",
+        "line": 108,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzmes_rmf01.abap:108"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_COMMIT",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "lzmes_rmf01.abap",
+        "line": 114,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzmes_rmf01.abap:114"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZMES_RM_LOG",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "lzmes_rmf01.abap",
+        "line": 138,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzmes_rmf01.abap:138"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-071-B01",
+      "text": "Das MES übergibt je Aufruf eine Vorgangsrückmeldung mit eigener Nachrichten-ID, Auftrag, Vorgang, Gut- und Ausschussmenge, Endrückmeldekennzeichen und Buchungsdatum.",
+      "anchors": [
+        {
+          "file": "z_mes_rueckmeldung.abap",
+          "line": 1,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mes_rueckmeldung.abap:1"
+        }
+      ]
+    },
+    {
+      "id": "BM-071-B02",
+      "text": "Fehlt dem aufrufenden Benutzer die Berechtigung für die MES-Schnittstelle, wird Status E mit „Keine Berechtigung fuer MES-Rueckmeldung“ zurückgegeben, ohne zu protokollieren.",
+      "anchors": [
+        {
+          "file": "z_mes_rueckmeldung.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mes_rueckmeldung.abap:30"
+        },
+        {
+          "file": "z_mes_rueckmeldung.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mes_rueckmeldung.abap:32"
+        },
+        {
+          "file": "z_mes_rueckmeldung.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mes_rueckmeldung.abap:36"
+        }
+      ]
+    },
+    {
+      "id": "BM-071-B03",
+      "text": "Wurde dieselbe MES-ID bereits erfolgreich gebucht, wird Status D mit dem Hinweis „MES-ID bereits gebucht“ zurückgegeben und nichts erneut gebucht.",
+      "anchors": [
+        {
+          "file": "z_mes_rueckmeldung.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mes_rueckmeldung.abap:40"
+        },
+        {
+          "file": "z_mes_rueckmeldung.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mes_rueckmeldung.abap:43"
+        },
+        {
+          "file": "z_mes_rueckmeldung.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mes_rueckmeldung.abap:46"
+        }
+      ]
+    },
+    {
+      "id": "BM-071-B04",
+      "text": "Der Fertigungsauftrag wird gesperrt; ist er bereits gesperrt, wird der Sperrkonflikt protokolliert und Status L zurückgegeben, damit das MES später wiederholt.",
+      "anchors": [
+        {
+          "file": "z_mes_rueckmeldung.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mes_rueckmeldung.abap:56"
+        },
+        {
+          "file": "z_mes_rueckmeldung.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mes_rueckmeldung.abap:63"
+        },
+        {
+          "file": "z_mes_rueckmeldung.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mes_rueckmeldung.abap:68"
+        },
+        {
+          "file": "z_mes_rueckmeldung.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mes_rueckmeldung.abap:69"
+        }
+      ]
+    },
+    {
+      "id": "BM-071-B05",
+      "text": "Es wird geprüft, ob der Auftrag existiert und ein Fertigungsauftrag ist; sonst lautet das Ergebnis „Kein Fertigungsauftrag“.",
+      "anchors": [
+        {
+          "file": "lzmes_rmf01.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmes_rmf01.abap:19"
+        },
+        {
+          "file": "lzmes_rmf01.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmes_rmf01.abap:21"
+        }
+      ]
+    },
+    {
+      "id": "BM-071-B06",
+      "text": "Der Auftrag muss freigegeben sein, sonst lautet das Ergebnis „Auftrag nicht freigegeben“.",
+      "anchors": [
+        {
+          "file": "lzmes_rmf01.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmes_rmf01.abap:28"
+        },
+        {
+          "file": "lzmes_rmf01.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmes_rmf01.abap:36"
+        }
+      ]
+    },
+    {
+      "id": "BM-071-B07",
+      "text": "Ein technisch abgeschlossener Auftrag wird mit „Auftrag technisch abgeschlossen“ abgelehnt.",
+      "anchors": [
+        {
+          "file": "lzmes_rmf01.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmes_rmf01.abap:43"
+        },
+        {
+          "file": "lzmes_rmf01.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmes_rmf01.abap:51"
+        }
+      ]
+    },
+    {
+      "id": "BM-071-B08",
+      "text": "Der rückgemeldete Vorgang muss im Arbeitsplan des Auftrags vorhanden sein, sonst lautet das Ergebnis „Vorgang im Auftrag nicht vorhanden“.",
+      "anchors": [
+        {
+          "file": "lzmes_rmf01.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmes_rmf01.abap:57"
+        },
+        {
+          "file": "lzmes_rmf01.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmes_rmf01.abap:59"
+        },
+        {
+          "file": "lzmes_rmf01.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmes_rmf01.abap:62"
+        }
+      ]
+    },
+    {
+      "id": "BM-071-B09",
+      "text": "Scheitert die Prüfung, wird die Auftragssperre aufgehoben, der Prüffehler protokolliert und Status E mit dem Prüftext zurückgegeben.",
+      "anchors": [
+        {
+          "file": "z_mes_rueckmeldung.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mes_rueckmeldung.abap:73"
+        },
+        {
+          "file": "z_mes_rueckmeldung.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mes_rueckmeldung.abap:74"
+        },
+        {
+          "file": "z_mes_rueckmeldung.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mes_rueckmeldung.abap:79"
+        },
+        {
+          "file": "z_mes_rueckmeldung.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mes_rueckmeldung.abap:80"
+        }
+      ]
+    },
+    {
+      "id": "BM-071-B10",
+      "text": "Bei bestandener Prüfung wird die Vorgangsrückmeldung mit Buchungsdatum, Gutmenge, Ausschuss, Mengeneinheit und Endrückmeldekennzeichen gebucht; die MES-ID steht im Rückmeldetext.",
+      "anchors": [
+        {
+          "file": "z_mes_rueckmeldung.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mes_rueckmeldung.abap:83"
+        },
+        {
+          "file": "lzmes_rmf01.abap",
+          "line": 96,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmes_rmf01.abap:96"
+        },
+        {
+          "file": "lzmes_rmf01.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmes_rmf01.abap:99"
+        }
+      ]
+    },
+    {
+      "id": "BM-071-B11",
+      "text": "Meldet die Buchung einen Fehler, wird zurückgerollt und Status E mit dem Fehlertext gesetzt.",
+      "anchors": [
+        {
+          "file": "lzmes_rmf01.abap",
+          "line": 107,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmes_rmf01.abap:107"
+        },
+        {
+          "file": "lzmes_rmf01.abap",
+          "line": 108,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmes_rmf01.abap:108"
+        }
+      ]
+    },
+    {
+      "id": "BM-071-B12",
+      "text": "Sonst wird mit Warten auf die Verbuchung festgeschrieben, Rückmeldenummer und -zähler werden übernommen und Status S gesetzt.",
+      "anchors": [
+        {
+          "file": "lzmes_rmf01.abap",
+          "line": 114,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmes_rmf01.abap:114"
+        },
+        {
+          "file": "lzmes_rmf01.abap",
+          "line": 117,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmes_rmf01.abap:117"
+        }
+      ]
+    },
+    {
+      "id": "BM-071-B13",
+      "text": "Danach wird die Auftragssperre aufgehoben und das Ergebnis protokolliert.",
+      "anchors": [
+        {
+          "file": "z_mes_rueckmeldung.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mes_rueckmeldung.abap:87"
+        },
+        {
+          "file": "z_mes_rueckmeldung.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mes_rueckmeldung.abap:93"
+        }
+      ]
+    },
+    {
+      "id": "BM-071-B14",
+      "text": "Jeder Protokolleintrag hält MES-ID, Auftrag, Vorgang, Status, Text sowie Datum, Uhrzeit und Benutzer fest und wird sofort festgeschrieben.",
+      "anchors": [
+        {
+          "file": "lzmes_rmf01.abap",
+          "line": 138,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmes_rmf01.abap:138"
+        },
+        {
+          "file": "lzmes_rmf01.abap",
+          "line": 139,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmes_rmf01.abap:139"
+        }
+      ]
+    },
+    {
+      "id": "BM-071-B15",
+      "text": "Das MES erhält Status, Rückmeldenummer, Rückmeldezähler und die Meldungstabelle zurück.",
+      "anchors": [
+        {
+          "file": "z_mes_rueckmeldung.abap",
+          "line": 91,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mes_rueckmeldung.abap:91"
+        },
+        {
+          "file": "z_mes_rueckmeldung.abap",
+          "line": 95,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mes_rueckmeldung.abap:95"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "z_mes_rueckmeldung.abap",
+          "line": 1,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mes_rueckmeldung.abap:1"
+        },
+        "meaning": "RFC-Aufruf des MES mit einer Vorgangsrückmeldung"
+      },
+      {
+        "id": "ac",
+        "type": "action",
+        "anchor": {
+          "file": "z_mes_rueckmeldung.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mes_rueckmeldung.abap:30"
+        },
+        "meaning": "Berechtigung des MES-Users prüfen"
+      },
+      {
+        "id": "g_ac",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_mes_rueckmeldung.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mes_rueckmeldung.abap:32"
+        },
+        "meaning": "Berechtigt?"
+      },
+      {
+        "id": "e_ac",
+        "type": "end",
+        "anchor": {
+          "file": "z_mes_rueckmeldung.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mes_rueckmeldung.abap:36"
+        },
+        "meaning": "Status E ohne Protokoll zurück"
+      },
+      {
+        "id": "qd",
+        "type": "read",
+        "anchor": {
+          "file": "z_mes_rueckmeldung.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mes_rueckmeldung.abap:40"
+        },
+        "meaning": "Erfolgreich gebuchte Nachricht mit derselben MES-ID suchen"
+      },
+      {
+        "id": "g_d",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_mes_rueckmeldung.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mes_rueckmeldung.abap:43"
+        },
+        "meaning": "MES-ID bereits gebucht?"
+      },
+      {
+        "id": "e_d",
+        "type": "end",
+        "anchor": {
+          "file": "z_mes_rueckmeldung.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mes_rueckmeldung.abap:46"
+        },
+        "meaning": "Status D (Dublette) zurück"
+      },
+      {
+        "id": "lk",
+        "type": "lock",
+        "anchor": {
+          "file": "z_mes_rueckmeldung.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mes_rueckmeldung.abap:56"
+        },
+        "meaning": "Fertigungsauftrag sperren"
+      },
+      {
+        "id": "g_lk",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_mes_rueckmeldung.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mes_rueckmeldung.abap:63"
+        },
+        "meaning": "Sperre erhalten?"
+      },
+      {
+        "id": "pl1",
+        "type": "call",
+        "anchor": {
+          "file": "z_mes_rueckmeldung.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mes_rueckmeldung.abap:68"
+        },
+        "meaning": "Sperrkonflikt protokollieren"
+      },
+      {
+        "id": "e_lk",
+        "type": "end",
+        "anchor": {
+          "file": "z_mes_rueckmeldung.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mes_rueckmeldung.abap:69"
+        },
+        "meaning": "Status L zurück, MES wiederholt"
+      },
+      {
+        "id": "pa",
+        "type": "call",
+        "anchor": {
+          "file": "z_mes_rueckmeldung.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mes_rueckmeldung.abap:72"
+        },
+        "meaning": "Auftrag und Vorgang prüfen"
+      },
+      {
+        "id": "g_ok",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_mes_rueckmeldung.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mes_rueckmeldung.abap:73"
+        },
+        "meaning": "Prüfung bestanden?"
+      },
+      {
+        "id": "dq1",
+        "type": "lock",
+        "anchor": {
+          "file": "z_mes_rueckmeldung.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mes_rueckmeldung.abap:74"
+        },
+        "meaning": "Auftragssperre aufheben"
+      },
+      {
+        "id": "pl2",
+        "type": "call",
+        "anchor": {
+          "file": "z_mes_rueckmeldung.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mes_rueckmeldung.abap:79"
+        },
+        "meaning": "Prüffehler protokollieren"
+      },
+      {
+        "id": "e_ok",
+        "type": "end",
+        "anchor": {
+          "file": "z_mes_rueckmeldung.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mes_rueckmeldung.abap:80"
+        },
+        "meaning": "Status E mit Prüftext zurück"
+      },
+      {
+        "id": "pb",
+        "type": "call",
+        "anchor": {
+          "file": "z_mes_rueckmeldung.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mes_rueckmeldung.abap:83"
+        },
+        "meaning": "Rückmeldung buchen"
+      },
+      {
+        "id": "dq2",
+        "type": "lock",
+        "anchor": {
+          "file": "z_mes_rueckmeldung.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mes_rueckmeldung.abap:87"
+        },
+        "meaning": "Auftragssperre aufheben"
+      },
+      {
+        "id": "pl3",
+        "type": "call",
+        "anchor": {
+          "file": "z_mes_rueckmeldung.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mes_rueckmeldung.abap:93"
+        },
+        "meaning": "Buchungsergebnis protokollieren"
+      },
+      {
+        "id": "done",
+        "type": "end",
+        "anchor": {
+          "file": "z_mes_rueckmeldung.abap",
+          "line": 95,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_mes_rueckmeldung.abap:95"
+        },
+        "meaning": "Status, Rückmeldenummer und -zähler an das MES zurück"
+      },
+      {
+        "id": "fs1",
+        "type": "start",
+        "anchor": {
+          "file": "lzmes_rmf01.abap",
+          "line": 9,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmes_rmf01.abap:9"
+        },
+        "meaning": "Auftragsprüfung"
+      },
+      {
+        "id": "qa",
+        "type": "read",
+        "anchor": {
+          "file": "lzmes_rmf01.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmes_rmf01.abap:19"
+        },
+        "meaning": "Auftragsstamm lesen"
+      },
+      {
+        "id": "ga",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzmes_rmf01.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmes_rmf01.abap:21"
+        },
+        "meaning": "Existiert und ist Fertigungsauftrag?"
+      },
+      {
+        "id": "ea",
+        "type": "end",
+        "anchor": {
+          "file": "lzmes_rmf01.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmes_rmf01.abap:24"
+        },
+        "meaning": "Nicht ok: kein Fertigungsauftrag"
+      },
+      {
+        "id": "sc1",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "lzmes_rmf01.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmes_rmf01.abap:28"
+        },
+        "meaning": "Systemstatus FREI (I0002) prüfen"
+      },
+      {
+        "id": "gs1",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzmes_rmf01.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmes_rmf01.abap:36"
+        },
+        "meaning": "Freigegeben?"
+      },
+      {
+        "id": "es1",
+        "type": "end",
+        "anchor": {
+          "file": "lzmes_rmf01.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmes_rmf01.abap:39"
+        },
+        "meaning": "Nicht ok: nicht freigegeben"
+      },
+      {
+        "id": "sc2",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "lzmes_rmf01.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmes_rmf01.abap:43"
+        },
+        "meaning": "Systemstatus TABG (I0045) prüfen"
+      },
+      {
+        "id": "gs2",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzmes_rmf01.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmes_rmf01.abap:51"
+        },
+        "meaning": "Technisch abgeschlossen?"
+      },
+      {
+        "id": "es2",
+        "type": "end",
+        "anchor": {
+          "file": "lzmes_rmf01.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmes_rmf01.abap:54"
+        },
+        "meaning": "Nicht ok: technisch abgeschlossen"
+      },
+      {
+        "id": "qk",
+        "type": "read",
+        "anchor": {
+          "file": "lzmes_rmf01.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmes_rmf01.abap:57"
+        },
+        "meaning": "Arbeitsplannummer des Auftrags lesen"
+      },
+      {
+        "id": "qv",
+        "type": "read",
+        "anchor": {
+          "file": "lzmes_rmf01.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmes_rmf01.abap:59"
+        },
+        "meaning": "Vorgang im Auftrag suchen"
+      },
+      {
+        "id": "gv",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzmes_rmf01.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmes_rmf01.abap:62"
+        },
+        "meaning": "Vorgang vorhanden?"
+      },
+      {
+        "id": "ev",
+        "type": "end",
+        "anchor": {
+          "file": "lzmes_rmf01.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmes_rmf01.abap:65"
+        },
+        "meaning": "Nicht ok: Vorgang fehlt"
+      },
+      {
+        "id": "aok",
+        "type": "action",
+        "anchor": {
+          "file": "lzmes_rmf01.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmes_rmf01.abap:68"
+        },
+        "meaning": "Prüfung bestanden"
+      },
+      {
+        "id": "fe1",
+        "type": "end",
+        "anchor": {
+          "file": "lzmes_rmf01.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmes_rmf01.abap:69"
+        },
+        "meaning": "Prüfung bestanden, Rückkehr mit cv_ok = X"
+      },
+      {
+        "id": "fs2",
+        "type": "start",
+        "anchor": {
+          "file": "lzmes_rmf01.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmes_rmf01.abap:74"
+        },
+        "meaning": "Rückmeldung buchen"
+      },
+      {
+        "id": "cb",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "lzmes_rmf01.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmes_rmf01.abap:99"
+        },
+        "meaning": "Vorgangsrückmeldung mit Buchungsdatum, Gutmenge, Ausschuss, Endrückmeldekennzeichen und MES-ID im Text buchen"
+      },
+      {
+        "id": "gb",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzmes_rmf01.abap",
+          "line": 107,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmes_rmf01.abap:107"
+        },
+        "meaning": "Fehler bei der Rückmeldung?"
+      },
+      {
+        "id": "rb",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "lzmes_rmf01.abap",
+          "line": 108,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmes_rmf01.abap:108"
+        },
+        "meaning": "Zurückrollen, Status E mit Fehlertext"
+      },
+      {
+        "id": "cm",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "lzmes_rmf01.abap",
+          "line": 114,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmes_rmf01.abap:114"
+        },
+        "meaning": "Festschreiben, Rückmeldenummer/-zähler übernehmen, Status S"
+      },
+      {
+        "id": "fe2",
+        "type": "end",
+        "anchor": {
+          "file": "lzmes_rmf01.abap",
+          "line": 122,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmes_rmf01.abap:122"
+        },
+        "meaning": "Rückkehr aus der Buchung mit gesetztem Status"
+      },
+      {
+        "id": "fs3",
+        "type": "start",
+        "anchor": {
+          "file": "lzmes_rmf01.abap",
+          "line": 127,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmes_rmf01.abap:127"
+        },
+        "meaning": "Schnittstellenprotokoll"
+      },
+      {
+        "id": "wl",
+        "type": "write",
+        "anchor": {
+          "file": "lzmes_rmf01.abap",
+          "line": 138,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmes_rmf01.abap:138"
+        },
+        "meaning": "Protokollsatz mit MES-ID, Auftrag, Vorgang, Status, Text schreiben"
+      },
+      {
+        "id": "cw",
+        "type": "transaction",
+        "anchor": {
+          "file": "lzmes_rmf01.abap",
+          "line": 139,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmes_rmf01.abap:139"
+        },
+        "meaning": "Protokoll festschreiben"
+      },
+      {
+        "id": "fe3",
+        "type": "end",
+        "anchor": {
+          "file": "lzmes_rmf01.abap",
+          "line": 140,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmes_rmf01.abap:140"
+        },
+        "meaning": "Protokoll geschrieben, Rückkehr zum Aufrufer"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "ac",
+        "condition": "always"
+      },
+      {
+        "from": "ac",
+        "to": "g_ac",
+        "condition": "always"
+      },
+      {
+        "from": "g_ac",
+        "to": "e_ac",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g_ac",
+        "to": "qd",
+        "condition": "else"
+      },
+      {
+        "from": "qd",
+        "to": "g_d",
+        "condition": "always"
+      },
+      {
+        "from": "g_d",
+        "to": "e_d",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "g_d",
+        "to": "lk",
+        "condition": "else"
+      },
+      {
+        "from": "lk",
+        "to": "g_lk",
+        "condition": "always"
+      },
+      {
+        "from": "g_lk",
+        "to": "pl1",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "pl1",
+        "to": "fs3",
+        "condition": "always"
+      },
+      {
+        "from": "g_lk",
+        "to": "pa",
+        "condition": "else"
+      },
+      {
+        "from": "pa",
+        "to": "fs1",
+        "condition": "always"
+      },
+      {
+        "from": "fs1",
+        "to": "qa",
+        "condition": "always"
+      },
+      {
+        "from": "qa",
+        "to": "ga",
+        "condition": "always"
+      },
+      {
+        "from": "ga",
+        "to": "ea",
+        "condition": "sy-subrc <> 0 OR lv_autyp <> '10'"
+      },
+      {
+        "from": "ga",
+        "to": "sc1",
+        "condition": "else"
+      },
+      {
+        "from": "sc1",
+        "to": "gs1",
+        "condition": "always"
+      },
+      {
+        "from": "gs1",
+        "to": "es1",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "gs1",
+        "to": "sc2",
+        "condition": "else"
+      },
+      {
+        "from": "sc2",
+        "to": "gs2",
+        "condition": "always"
+      },
+      {
+        "from": "gs2",
+        "to": "es2",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "gs2",
+        "to": "qk",
+        "condition": "else"
+      },
+      {
+        "from": "qk",
+        "to": "qv",
+        "condition": "always"
+      },
+      {
+        "from": "qv",
+        "to": "gv",
+        "condition": "always"
+      },
+      {
+        "from": "gv",
+        "to": "ev",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "gv",
+        "to": "aok",
+        "condition": "else"
+      },
+      {
+        "from": "ea",
+        "to": "g_ok",
+        "condition": "always"
+      },
+      {
+        "from": "es1",
+        "to": "g_ok",
+        "condition": "always"
+      },
+      {
+        "from": "es2",
+        "to": "g_ok",
+        "condition": "always"
+      },
+      {
+        "from": "ev",
+        "to": "g_ok",
+        "condition": "always"
+      },
+      {
+        "from": "aok",
+        "to": "fe1",
+        "condition": "always"
+      },
+      {
+        "from": "g_ok",
+        "to": "dq1",
+        "condition": "lv_ok = abap_false"
+      },
+      {
+        "from": "dq1",
+        "to": "pl2",
+        "condition": "always"
+      },
+      {
+        "from": "pl2",
+        "to": "fs3",
+        "condition": "always"
+      },
+      {
+        "from": "g_ok",
+        "to": "pb",
+        "condition": "else"
+      },
+      {
+        "from": "pb",
+        "to": "fs2",
+        "condition": "always"
+      },
+      {
+        "from": "fs2",
+        "to": "cb",
+        "condition": "always"
+      },
+      {
+        "from": "cb",
+        "to": "gb",
+        "condition": "always"
+      },
+      {
+        "from": "gb",
+        "to": "rb",
+        "condition": "ls_return-type CA 'EA' OR ls_detail-type CA 'EA'"
+      },
+      {
+        "from": "gb",
+        "to": "cm",
+        "condition": "else"
+      },
+      {
+        "from": "rb",
+        "to": "fe2",
+        "condition": "always"
+      },
+      {
+        "from": "cm",
+        "to": "fe2",
+        "condition": "always"
+      },
+      {
+        "from": "dq2",
+        "to": "pl3",
+        "condition": "always"
+      },
+      {
+        "from": "pl3",
+        "to": "fs3",
+        "condition": "always"
+      },
+      {
+        "from": "fs3",
+        "to": "wl",
+        "condition": "always"
+      },
+      {
+        "from": "wl",
+        "to": "cw",
+        "condition": "always"
+      },
+      {
+        "from": "fe3",
+        "to": "e_lk",
+        "condition": "always"
+      },
+      {
+        "from": "fe3",
+        "to": "e_ok",
+        "condition": "always"
+      },
+      {
+        "from": "fe3",
+        "to": "done",
+        "condition": "always"
+      },
+      {
+        "from": "fe1",
+        "to": "g_ok",
+        "condition": "always"
+      },
+      {
+        "from": "fe2",
+        "to": "dq2",
+        "condition": "always"
+      },
+      {
+        "from": "cw",
+        "to": "fe3",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "z_mes_rueckmeldung.abap:69 — kein Fachsatz „Bei Sperrkonflikt wird die Rückmeldung später automatisch nachgebucht“ (SAP bucht nichts nach; nur Status L geht an das MES zurück)",
+    "z_mes_rueckmeldung.abap:40 — kein Fachsatz „Jede bereits empfangene MES-ID wird abgewiesen“ (nur erfolgreich gebuchte, Status S; fehlerhafte Nachrichten können erneut gebucht werden)",
+    "lzmes_rmf01.abap:107 — kein Fachsatz „Alle Detailmeldungen der Rückmeldung werden ausgewertet“ (nur die erste Zeile von DETAIL_RETURN)",
+    "gesamte Scheibe — kein Fachsatz „Komponentenverbrauch oder Wareneingang werden gebucht“ (es werden keine Warenbewegungen übergeben)"
+  ],
+  "processDescription": "Das MES ruft den Baustein per RFC für jede Arbeitsgangrückmeldung auf. Zuerst prüft SAP die Berechtigung des technischen Benutzers und weist ohne Berechtigung mit Status E ab. Danach prüft es anhand der MES-ID im Schnittstellenprotokoll, ob dieselbe Nachricht bereits erfolgreich gebucht wurde; dann antwortet es mit Status D und bucht nicht erneut. Anschließend sperrt es den Fertigungsauftrag. Ist er gesperrt, protokolliert es den Konflikt und antwortet mit Status L, damit das MES später wiederholt. Mit Sperre prüft es, ob es sich um einen freigegebenen, nicht technisch abgeschlossenen Fertigungsauftrag handelt und ob der Vorgang existiert. Scheitert eine Prüfung, hebt es die Sperre auf, protokolliert den Grund und antwortet mit Status E. Sonst bucht es die Vorgangsrückmeldung mit Gut- und Ausschussmenge und der MES-ID im Text; bei Fehler rollt es zurück, bei Erfolg schreibt es fest und übernimmt Rückmeldenummer und -zähler. Zum Schluss hebt es die Sperre auf, schreibt das Ergebnis mit eigenem Commit ins Protokoll und gibt Status, Rückmeldenummer und Meldungen an das MES zurück."
+}

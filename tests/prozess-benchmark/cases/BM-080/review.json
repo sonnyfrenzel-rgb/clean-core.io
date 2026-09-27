@@ -1,0 +1,229 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten t_g2",
+      "before": "gateway zqm_charge_freigabe_cl.abap:101 „Untergrenze gesetzt und unterschritten?“ (+3 Kanten)",
+      "after": "entfernt",
+      "why": "ELSEIF ist nach vereinheitlichter Konvention eine Bedingungskante des ursprünglichen Gateways t_g1, kein eigenes Gateway",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Kante t_g1→t_a2",
+      "before": "—",
+      "after": "[is_vorgabe-toleranzun IS NOT INITIAL AND is_ergebnis-mittelwert < is_vorgabe-toleranzun]",
+      "why": "ELSEIF-Zweig als Bedingungskante von t_g1",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante t_g1→t_e",
+      "before": "—",
+      "after": "[else]",
+      "why": "weder Ober- noch Untergrenze verletzt",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten fe_sel",
+      "before": "—",
+      "after": "end zqm_charge_freigabe_f01.abap:19 „Prüflose sortiert, Rückkehr“",
+      "why": "Konvention: jeder auslaufende FORM hat einen eigenen end-Knoten auf ENDFORM; Rückkehr zum Aufrufer läuft über diesen",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kante q_sel→g0",
+      "before": "q_sel→g0 [always]",
+      "after": "q_sel→fe_sel [always]",
+      "why": "Konvention: jeder auslaufende FORM hat einen eigenen end-Knoten auf ENDFORM; Rückkehr zum Aufrufer läuft über diesen",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante fe_sel→g0",
+      "before": "—",
+      "after": "[always]",
+      "why": "Rückkante vom FORM-Ende nach PERFORM prueflose_lesen",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten fe_aus",
+      "before": "—",
+      "after": "end zqm_charge_freigabe_f01.abap:133 „Protokoll angezeigt, Ende“",
+      "why": "Konvention: jeder auslaufende FORM hat einen eigenen end-Knoten auf ENDFORM; Rückkehr zum Aufrufer läuft über diesen",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kante alv→fe_aus",
+      "before": "—",
+      "after": "[always]",
+      "why": "ALV-Aufruf ist die letzte Anweisung des FORM ausgabe",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten fe_ent",
+      "before": "—",
+      "after": "end zqm_charge_freigabe_f01.abap:107 „Prüflos entsperrt, Rückkehr“",
+      "why": "Konvention: jeder auslaufende FORM hat einen eigenen end-Knoten auf ENDFORM; Rückkehr zum Aufrufer läuft über diesen",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kante dq→e_off",
+      "before": "dq→e_off [always]",
+      "after": "fe_ent→e_off [always]",
+      "why": "Konvention: jeder auslaufende FORM hat einen eigenen end-Knoten auf ENDFORM; Rückkehr zum Aufrufer läuft über diesen",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante dq→e_test",
+      "before": "dq→e_test [always]",
+      "after": "fe_ent→e_test [always]",
+      "why": "Konvention: jeder auslaufende FORM hat einen eigenen end-Knoten auf ENDFORM; Rückkehr zum Aufrufer läuft über diesen",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante dq→e_ve",
+      "before": "dq→e_ve [always]",
+      "after": "fe_ent→e_ve [always]",
+      "why": "Konvention: jeder auslaufende FORM hat einen eigenen end-Knoten auf ENDFORM; Rückkehr zum Aufrufer läuft über diesen",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante dq→e_los",
+      "before": "dq→e_los [always]",
+      "after": "fe_ent→e_los [always]",
+      "why": "Konvention: jeder auslaufende FORM hat einen eigenen end-Knoten auf ENDFORM; Rückkehr zum Aufrufer läuft über diesen",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante dq→fe_ent",
+      "before": "—",
+      "after": "[always]",
+      "why": "DEQUEUE ist die einzige Anweisung des FORM entsperren",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten fe_ve",
+      "before": "—",
+      "after": "end zqm_charge_freigabe_f02.abap:44 „VE gesetzt, Rückkehr mit cv_ok = X“",
+      "why": "Konvention: jeder auslaufende FORM hat einen eigenen end-Knoten auf ENDFORM; Rückkehr zum Aufrufer läuft über diesen",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kante v_cm→g_ve",
+      "before": "v_cm→g_ve [always]",
+      "after": "v_cm→fe_ve [always]",
+      "why": "Konvention: jeder auslaufende FORM hat einen eigenen end-Knoten auf ENDFORM; Rückkehr zum Aufrufer läuft über diesen",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante fe_ve→g_ve",
+      "before": "—",
+      "after": "[always]",
+      "why": "Rückkante vom FORM-Ende nach PERFORM ve_setzen",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten fe_kl",
+      "before": "—",
+      "after": "end zqm_charge_freigabe_f02.abap:106 „Klassifizierung fortgeschrieben, Rückkehr mit cv_ok = X“",
+      "why": "Konvention: jeder auslaufende FORM hat einen eigenen end-Knoten auf ENDFORM; Rückkehr zum Aufrufer läuft über diesen",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kante k_cm→g_kl",
+      "before": "k_cm→g_kl [always]",
+      "after": "k_cm→fe_kl [always]",
+      "why": "Konvention: jeder auslaufende FORM hat einen eigenen end-Knoten auf ENDFORM; Rückkehr zum Aufrufer läuft über diesen",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante fe_kl→g_kl",
+      "before": "—",
+      "after": "[always]",
+      "why": "Rückkante vom FORM-Ende nach PERFORM klassifizierung",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten fe_sp",
+      "before": "—",
+      "after": "end zqm_charge_freigabe_f02.abap:136 „Chargenzustand bearbeitet, Rückkehr“",
+      "why": "Konvention: jeder auslaufende FORM hat einen eigenen end-Knoten auf ENDFORM; Rückkehr zum Aufrufer läuft über diesen",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kante c_rb→g_mail",
+      "before": "c_rb→g_mail [always]",
+      "after": "c_rb→fe_sp [always]",
+      "why": "Konvention: jeder auslaufende FORM hat einen eigenen end-Knoten auf ENDFORM; Rückkehr zum Aufrufer läuft über diesen",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante c_cm→g_mail",
+      "before": "c_cm→g_mail [always]",
+      "after": "c_cm→fe_sp [always]",
+      "why": "Konvention: jeder auslaufende FORM hat einen eigenen end-Knoten auf ENDFORM; Rückkehr zum Aufrufer läuft über diesen",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante fe_sp→g_mail",
+      "before": "—",
+      "after": "[always]",
+      "why": "Rückkante vom FORM-Ende nach PERFORM charge_sperren",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten fe_mail",
+      "before": "—",
+      "after": "end zqm_charge_freigabe_f02.abap:168 „Mail versendet oder Fehler still übergangen, Rückkehr“",
+      "why": "Konvention: jeder auslaufende FORM hat einen eigenen end-Knoten auf ENDFORM; Rückkehr zum Aufrufer läuft über diesen",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kante m_cw→p_prot",
+      "before": "m_cw→p_prot [always]",
+      "after": "m_cw→fe_mail [always]",
+      "why": "Konvention: jeder auslaufende FORM hat einen eigenen end-Knoten auf ENDFORM; Rückkehr zum Aufrufer läuft über diesen",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante fe_mail→p_prot",
+      "before": "—",
+      "after": "[always]",
+      "why": "Rückkante vom FORM-Ende nach PERFORM mail_senden",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante m_send→fe_mail",
+      "before": "—",
+      "after": "[cx_bcs]",
+      "why": "Fehlerpfad: BCS-Ausnahme wird leer abgefangen, FORM läuft ohne Versand aus (fehlte)",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten fe_pr",
+      "before": "—",
+      "after": "end zqm_charge_freigabe_f02.abap:187 „GMP-Protokoll geschrieben, Rückkehr“",
+      "why": "Konvention: jeder auslaufende FORM hat einen eigenen end-Knoten auf ENDFORM; Rückkehr zum Aufrufer läuft über diesen",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kante pr_cw→p_ent4",
+      "before": "pr_cw→p_ent4 [always]",
+      "after": "pr_cw→fe_pr [always]",
+      "why": "Konvention: jeder auslaufende FORM hat einen eigenen end-Knoten auf ENDFORM; Rückkehr zum Aufrufer läuft über diesen",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante fe_pr→p_ent4",
+      "before": "—",
+      "after": "[always]",
+      "why": "Rückkante vom FORM-Ende nach PERFORM protokoll_schreiben",
+      "category": "Kante"
+    }
+  ],
+  "doubts": [
+    "zqm_charge_freigabe_f02.abap:23 — Feld BAPI2045UD-UD_STOCK_POSTING (vom Autor gemeldet) nicht sicher verifizierbar; ebenso Parameter LANGUAGE (möglicherweise Struktur BAPI2045LA statt sy-langu). Nicht geändert.",
+    "zqm_charge_freigabe_f02.abap:116 — Feld BAPIBATCHATT-RESTRICTED (vom Autor gemeldet) nicht sicher verifizierbar; Fachsatz „nicht frei“ hängt daran. Nicht geändert.",
+    "zqm_charge_freigabe_f01.abap:34 — Sperrbaustein ENQUEUE_EQQALS1 (Sperrobjekt EQQALS1 für QALS) halte ich für plausibel, nicht gegen ein System geprüft.",
+    "zqm_charge_freigabe_f02.abap:154 — Die CATCH-cx_bcs-Kante wurde nur vom Sendeknoten m_send gezogen; streng genommen können auch create_document/getu_persistent (m_doc, m_dli) werfen."
+  ]
+}

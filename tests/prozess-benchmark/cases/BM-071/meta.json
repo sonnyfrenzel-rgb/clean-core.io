@@ -1,0 +1,26 @@
+{
+  "id": "BM-071",
+  "title": "RFC-Eingangsschnittstelle MES: Vorgangsrückmeldung mit Idempotenz und Sperre",
+  "domain": "PP / PM / QM — Produktion, Instandhaltung, Qualität",
+  "band": "komplex",
+  "loc": 256,
+  "constructs": [
+    "RFC-fähiger Funktionsbaustein",
+    "AUTHORITY-CHECK",
+    "Idempotenzprüfung über Z-Protokolltabelle",
+    "ENQUEUE_ESORDER/DEQUEUE_ESORDER",
+    "STATUS_CHECK",
+    "BAPI_PRODORDCONF_CREATE_TT",
+    "BAPI_TRANSACTION_COMMIT/ROLLBACK",
+    "MODIFY Z-Tabelle + COMMIT WORK",
+    "FORM-Routinen mit globalem Kontext",
+    "VALUE #( ) / COND #( ) / String-Templates"
+  ],
+  "scenario": "Eingangsbaustein, über den ein Manufacturing Execution System jede Arbeitsgangrückmeldung synchron per RFC an SAP übergibt; in fast jeder PP-Transformation zu klären, ob er bleibt oder durch die Standard-API/Event-Anbindung ersetzt wird.",
+  "s4_issues": [
+    "RFC-Schnittstelle ohne freigegebene API – Kandidat für API_PROD_ORDER_CONFIRMATION_2_SRV",
+    "Direktzugriff AUFK/AFKO/AFVC statt CDS",
+    "COMMIT WORK im Protokoll-FORM mischt LUWs",
+    "Z-Berechtigungsobjekt muss für technischen RFC-User migriert werden"
+  ]
+}

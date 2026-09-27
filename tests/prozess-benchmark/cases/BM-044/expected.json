@@ -1,0 +1,290 @@
+{
+  "id": "BM-044",
+  "title": "Funktionsbaustein: Fremdwährungsbetrag in Hauswährung des Buchungskreises umrechnen",
+  "classes": [
+    "K03",
+    "K01"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "T001",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 15,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:15"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "CONVERT_TO_LOCAL_CURRENCY",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 22,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:22"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-044-B01",
+      "text": "Zum übergebenen Buchungskreis wird die Hauswährung ermittelt; existiert der Buchungskreis nicht, bricht der Baustein mit COMPANY_NOT_FOUND ab.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:15"
+        },
+        {
+          "file": "source.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:17"
+        },
+        {
+          "file": "source.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:18"
+        }
+      ]
+    },
+    {
+      "id": "BM-044-B02",
+      "text": "Der Fremdwährungsbetrag wird zum übergebenen Datum mit dem Durchschnittskurs (Kurstyp M) in die Hauswährung umgerechnet.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:22"
+        }
+      ]
+    },
+    {
+      "id": "BM-044-B03",
+      "text": "Scheitert die Umrechnung, etwa weil kein Kurs gepflegt ist, bricht der Baustein mit NO_RATE ab.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:37"
+        },
+        {
+          "file": "source.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:38"
+        }
+      ]
+    },
+    {
+      "id": "BM-044-B04",
+      "text": "Bei Erfolg liefert der Baustein den Hauswährungsbetrag und den verwendeten Kurs zurück.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:22"
+        },
+        {
+          "file": "source.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:40"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 1,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:1"
+        },
+        "meaning": "Umrechnungsbaustein aufgerufen"
+      },
+      {
+        "id": "q",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:15"
+        },
+        "meaning": "Hauswährung des Buchungskreises lesen"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:17"
+        },
+        "meaning": "Buchungskreis gefunden?"
+      },
+      {
+        "id": "x1",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:18"
+        },
+        "meaning": "Ausnahme COMPANY_NOT_FOUND"
+      },
+      {
+        "id": "c",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:22"
+        },
+        "meaning": "Betrag mit Durchschnittskurs M zum Datum umrechnen (Standardbaustein)"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:37"
+        },
+        "meaning": "Umrechnung erfolgreich?"
+      },
+      {
+        "id": "x2",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:38"
+        },
+        "meaning": "Ausnahme NO_RATE"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:40"
+        },
+        "meaning": "Hauswährungsbetrag und Kurs zurückgeben"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "q",
+        "condition": "always"
+      },
+      {
+        "from": "q",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "x1",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g1",
+        "to": "c",
+        "condition": "else"
+      },
+      {
+        "from": "c",
+        "to": "g2",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "x2",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g2",
+        "to": "e",
+        "condition": "else"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "source.abap:22 — kein Fachsatz „der Betrag wird gebucht“ (reine Berechnung, keine Buchung)",
+    "source.abap:22 — kein Fachsatz „Kurs wird aus dem Buchungsbeleg übernommen“ (Kurstyp M zum übergebenen Datum)",
+    "source.abap:38 — kein Fachsatz „Umrechnung erfolgt mit Kurs 1“ (es gibt keinen Rückfallwert, nur die Ausnahme)"
+  ],
+  "processDescription": "Ein aufrufendes Programm übergibt Buchungskreis, Fremdwährung, Betrag und Datum. Der Baustein ermittelt die Hauswährung des Buchungskreises und bricht mit COMPANY_NOT_FOUND ab, wenn es ihn nicht gibt. Danach wird der Betrag mit dem Durchschnittskurs M zum Datum über einen Standardbaustein umgerechnet. Schlägt das fehl, endet der Baustein mit NO_RATE. Sonst gibt er Hauswährungsbetrag und Kurs zurück; gebucht oder gespeichert wird nichts."
+}

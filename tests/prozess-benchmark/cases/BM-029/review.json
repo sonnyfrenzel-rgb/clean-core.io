@@ -1,0 +1,35 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "source.abap:53/60",
+      "before": "ls_code TYPE bapi2017_gm_code VALUE '04', (Z. 53)",
+      "after": "ls_code TYPE bapi2017_gm_code, (Z. 53); ls_code-gm_code = '04'. vor ls_head-pstng_date in Z. 60",
+      "why": "BAPI2017_GM_CODE ist eine Struktur; ein Startwert per VALUE-Literal ist für Strukturen nicht zulässig (nur VALUE IS INITIAL). Die Zuweisung steht jetzt in Zeile 60 vor der bestehenden Anweisung, damit keine Zeilennummer und kein Anker sich verschiebt.",
+      "category": "Quelltext"
+    },
+    {
+      "where": "Knoten x1 (neu)",
+      "before": "—",
+      "after": "end source.abap:48 „SELECT_CHARGEN beendet“; umgeleitet: q->g0 [always] jetzt q->x1; neu x1->g0 [always]",
+      "why": "Vereinheitlichung (wie im Gegencheck FI/CO): jeder auslaufende FORM/METHOD/MODULE/FUNCTION-Block endet mit eigenem end-Knoten auf ENDFORM/ENDMETHOD/ENDMODULE/ENDFUNCTION (Brieftabelle: end auch bei implizitem Blockende); die Rückkante führt von dort zum Knoten nach dem Aufruf.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten x3 (neu)",
+      "before": "—",
+      "after": "end source.abap:100 „ANZEIGEN beendet“; neu alv->x3 [always]",
+      "why": "Vereinheitlichung (wie im Gegencheck FI/CO): jeder auslaufende FORM/METHOD/MODULE/FUNCTION-Block endet mit eigenem end-Knoten auf ENDFORM/ENDMETHOD/ENDMODULE/ENDFUNCTION (Brieftabelle: end auch bei implizitem Blockende); die Rückkante führt von dort zum Knoten nach dem Aufruf.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten e (neu)",
+      "before": "—",
+      "after": "end source.abap:35 „Job beendet“; neu x3->e [always]",
+      "why": "Das Hauptprogramm endet implizit mit der letzten Anweisung von START-OF-SELECTION (PERFORM anzeigen); ohne diesen Knoten fehlt der Rücksprung aus ANZEIGEN (Validator-Warnung alv ohne ausgehende Kante).",
+      "category": "fehlender Knoten"
+    }
+  ],
+  "doubts": []
+}

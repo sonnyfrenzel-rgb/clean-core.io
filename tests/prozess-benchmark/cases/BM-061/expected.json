@@ -1,0 +1,282 @@
+{
+  "id": "BM-061",
+  "title": "Rückstandsliste offener Fertigungsaufträge je Werk",
+  "classes": [
+    "K01",
+    "K04"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "AFKO",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 20,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:20"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "AFPO",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 20,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:20"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-061-B01",
+      "text": "Es werden Fertigungsaufträge des eingegebenen Werks und der gewählten Disponenten selektiert, deren Eckendtermin vor dem heutigen Datum liegt, die kein Endlieferkennzeichen tragen und deren gelieferte Menge unter der Auftragsmenge liegt.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:20"
+        }
+      ]
+    },
+    {
+      "id": "BM-061-B02",
+      "text": "Ohne Treffer wird die Meldung „Kein Rueckstand im Werk“ ausgegeben und die Verarbeitung beendet.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:28"
+        },
+        {
+          "file": "source.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:29"
+        },
+        {
+          "file": "source.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:30"
+        }
+      ]
+    },
+    {
+      "id": "BM-061-B03",
+      "text": "Die Rückstandsaufträge werden nach Eckendtermin sortiert und je Auftrag mit Material, Ecktermin und offener Restmenge (Auftragsmenge minus gelieferte Menge) als Liste ausgegeben.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:33"
+        },
+        {
+          "file": "source.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:35"
+        },
+        {
+          "file": "source.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:36"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:19"
+        },
+        "meaning": "Reportstart"
+      },
+      {
+        "id": "q",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:20"
+        },
+        "meaning": "Überfällige, nicht endgelieferte Fertigungsaufträge mit offener Menge im Werk lesen"
+      },
+      {
+        "id": "g",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:28"
+        },
+        "meaning": "Rückstand gefunden?"
+      },
+      {
+        "id": "msg",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:29"
+        },
+        "meaning": "Meldung: kein Rückstand im Werk"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:30"
+        },
+        "meaning": "Verarbeitung beenden"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "source.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:34"
+        },
+        "meaning": "Rückstandsaufträge nach Ecktermin durchlaufen"
+      },
+      {
+        "id": "o",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:36"
+        },
+        "meaning": "Auftrag, Material, Ecktermin und offene Restmenge ausgeben"
+      },
+      {
+        "id": "done",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:37"
+        },
+        "meaning": "Liste fertig"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "q",
+        "condition": "always"
+      },
+      {
+        "from": "q",
+        "to": "g",
+        "condition": "always"
+      },
+      {
+        "from": "g",
+        "to": "msg",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "msg",
+        "to": "e",
+        "condition": "always"
+      },
+      {
+        "from": "g",
+        "to": "l",
+        "condition": "else"
+      },
+      {
+        "from": "l",
+        "to": "o",
+        "condition": "next row"
+      },
+      {
+        "from": "o",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l",
+        "to": "done",
+        "condition": "no more rows"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "source.abap:26 — kein Fachsatz „Technisch abgeschlossene Aufträge werden ausgeschlossen“ (gefiltert wird nur das Endlieferkennzeichen, kein Systemstatus TABG/TECO)",
+    "source.abap:33 — kein Fachsatz „Die Liste wird nach Material sortiert“ (die Sortierung nach MATNR ist auskommentiert)",
+    "gesamte Scheibe — kein Fachsatz „Aufträge werden umterminiert oder geändert“ (der Report liest und listet nur)"
+  ],
+  "processDescription": "Ein Fertigungssteuerer startet den Report mit Werk und optional Disponentenbereich. Der Report liest aus Auftragskopf und Auftragsposition alle Fertigungsaufträge des Werks, deren Eckendtermin bereits überschritten ist, die noch nicht endgeliefert sind und deren Wareneingangsmenge unter der Auftragsmenge liegt. Findet er keinen solchen Auftrag, meldet er „Kein Rueckstand im Werk“ und endet. Andernfalls sortiert er die Aufträge nach Ecktermin und gibt je Auftrag Auftragsnummer, Material, Ecktermin und die offene Restmenge aus. Der Report verändert keine Daten."
+}

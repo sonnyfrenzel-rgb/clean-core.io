@@ -1,0 +1,19 @@
+{
+  "id": "BM-044",
+  "title": "Funktionsbaustein: Fremdwährungsbetrag in Hauswährung des Buchungskreises umrechnen",
+  "domain": "FI/CO / Record-to-Report",
+  "band": "einfach",
+  "loc": 40,
+  "constructs": [
+    "FUNCTION",
+    "SELECT SINGLE",
+    "CALL FUNCTION mit EXCEPTIONS",
+    "RAISE"
+  ],
+  "scenario": "Kleiner Hilfsbaustein aus einer Z-Funktionsgruppe, den Schnittstellen und Reports zur Umrechnung auf Hauswährung mit Kurstyp M aufrufen; wird bei der Transformation wegen T001-Zugriff und Kursfindung auffällig.",
+  "s4_issues": [
+    "Direkter Lesezugriff auf T001 (CDS-Nachfolger I_CompanyCode)",
+    "CONVERT_TO_LOCAL_CURRENCY ist nicht für ABAP Cloud freigegeben (Nachfolger CL_EXCHANGE_RATES)",
+    "Nicht klassenbasierte Ausnahmen"
+  ]
+}

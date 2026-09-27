@@ -1,0 +1,701 @@
+{
+  "id": "BM-090",
+  "title": "Archivierung von Schnittstellenprotokollen: ADK-Schreibprogramm",
+  "classes": [
+    "K03",
+    "K15"
+  ],
+  "classic_level": "B",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "ZIF_LOG_HDR",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 29,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:29"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZIF_LOG_ITM",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 57,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:57"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ARCHIVE_OPEN_FOR_WRITE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 39,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:39"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ARCHIVE_PUT_RECORD",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 52,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:52"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ARCHIVE_SAVE_OBJECT",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 66,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:66"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-090-B01",
+      "text": "Der Lauf setzt die Berechtigung zum Archivieren des Objekts ZIF_LOG voraus; fehlt sie, bricht er ab.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:19"
+        },
+        {
+          "file": "source.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:23"
+        },
+        {
+          "file": "source.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:24"
+        }
+      ]
+    },
+    {
+      "id": "BM-090-B02",
+      "text": "Es werden abgeschlossene oder abgebrochene Schnittstellenprotokolle der gewählten Schnittstellen gelesen, die älter als die Verweildauer sind.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:27"
+        },
+        {
+          "file": "source.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:29"
+        }
+      ]
+    },
+    {
+      "id": "BM-090-B03",
+      "text": "Gibt es keine, wird das gemeldet und der Lauf beendet.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:33"
+        },
+        {
+          "file": "source.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:34"
+        },
+        {
+          "file": "source.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:35"
+        }
+      ]
+    },
+    {
+      "id": "BM-090-B04",
+      "text": "Eine Archivierungssitzung wird geöffnet; eine Archivdatei entsteht nur im Echtlauf.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:38"
+        },
+        {
+          "file": "source.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:39"
+        }
+      ]
+    },
+    {
+      "id": "BM-090-B05",
+      "text": "Je Protokoll werden Kopf und alle Positionen als ein Archivobjekt geschrieben.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:48"
+        },
+        {
+          "file": "source.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:52"
+        },
+        {
+          "file": "source.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:57"
+        },
+        {
+          "file": "source.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:60"
+        }
+      ]
+    },
+    {
+      "id": "BM-090-B06",
+      "text": "Kann ein Archivobjekt nicht gesichert werden, bricht der Lauf mit der Protokoll-ID ab.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:66"
+        },
+        {
+          "file": "source.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:72"
+        },
+        {
+          "file": "source.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:73"
+        }
+      ]
+    },
+    {
+      "id": "BM-090-B07",
+      "text": "Zum Schluss wird die Archivdatei geschlossen und die Anzahl archivierter Protokolle mit dem Testkennzeichen ausgegeben.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:78"
+        },
+        {
+          "file": "source.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:81"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:18"
+        },
+        "meaning": "Archivierungslauf starten"
+      },
+      {
+        "id": "auth",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:19"
+        },
+        "meaning": "Archivierungsberechtigung für ZIF_LOG prüfen"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:23"
+        },
+        "meaning": "Keine Berechtigung?"
+      },
+      {
+        "id": "m1",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:24"
+        },
+        "meaning": "Abbruch ohne Berechtigung"
+      },
+      {
+        "id": "e1",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:24"
+        },
+        "meaning": "Lauf bricht ohne Berechtigung ab"
+      },
+      {
+        "id": "r1",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:29"
+        },
+        "meaning": "Abgeschlossene Protokolle älter als Verweildauer lesen"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:33"
+        },
+        "meaning": "Nichts zu archivieren?"
+      },
+      {
+        "id": "m2",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:34"
+        },
+        "meaning": "Nichts zu archivieren melden"
+      },
+      {
+        "id": "e2",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:35"
+        },
+        "meaning": "Lauf beenden"
+      },
+      {
+        "id": "open",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:39"
+        },
+        "meaning": "Archivierungssitzung öffnen (Datei nur im Echtlauf)"
+      },
+      {
+        "id": "l1",
+        "type": "loop",
+        "anchor": {
+          "file": "source.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:47"
+        },
+        "meaning": "Protokolle durchlaufen"
+      },
+      {
+        "id": "new",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:48"
+        },
+        "meaning": "Neues Archivobjekt je Protokoll beginnen"
+      },
+      {
+        "id": "put1",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:52"
+        },
+        "meaning": "Protokollkopf ins Archiv schreiben"
+      },
+      {
+        "id": "r2",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:57"
+        },
+        "meaning": "Protokollpositionen lesen"
+      },
+      {
+        "id": "l2",
+        "type": "loop",
+        "anchor": {
+          "file": "source.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:59"
+        },
+        "meaning": "Positionen durchlaufen"
+      },
+      {
+        "id": "put2",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:60"
+        },
+        "meaning": "Position ins Archiv schreiben"
+      },
+      {
+        "id": "save",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:66"
+        },
+        "meaning": "Archivobjekt sichern"
+      },
+      {
+        "id": "g3",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:72"
+        },
+        "meaning": "Dateifehler beim Sichern?"
+      },
+      {
+        "id": "m3",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:73"
+        },
+        "meaning": "Abbruch mit Protokoll-ID"
+      },
+      {
+        "id": "e3",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:73"
+        },
+        "meaning": "Lauf bricht mit Protokoll-ID ab"
+      },
+      {
+        "id": "close",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:78"
+        },
+        "meaning": "Archivdatei schließen"
+      },
+      {
+        "id": "o",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:81"
+        },
+        "meaning": "Anzahl und Modus ausgeben"
+      },
+      {
+        "id": "e4",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:82"
+        },
+        "meaning": "Lauf endet nach der Ausgabe"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "auth",
+        "condition": "always"
+      },
+      {
+        "from": "auth",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "m1",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g1",
+        "to": "r1",
+        "condition": "else"
+      },
+      {
+        "from": "r1",
+        "to": "g2",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "m2",
+        "condition": "lt_hdr IS INITIAL"
+      },
+      {
+        "from": "m2",
+        "to": "e2",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "open",
+        "condition": "else"
+      },
+      {
+        "from": "open",
+        "to": "l1",
+        "condition": "always"
+      },
+      {
+        "from": "l1",
+        "to": "new",
+        "condition": "next row"
+      },
+      {
+        "from": "new",
+        "to": "put1",
+        "condition": "always"
+      },
+      {
+        "from": "put1",
+        "to": "r2",
+        "condition": "always"
+      },
+      {
+        "from": "r2",
+        "to": "l2",
+        "condition": "always"
+      },
+      {
+        "from": "l2",
+        "to": "put2",
+        "condition": "next row"
+      },
+      {
+        "from": "put2",
+        "to": "l2",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l2",
+        "to": "save",
+        "condition": "no more rows"
+      },
+      {
+        "from": "save",
+        "to": "g3",
+        "condition": "always"
+      },
+      {
+        "from": "g3",
+        "to": "m3",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g3",
+        "to": "l1",
+        "condition": "else"
+      },
+      {
+        "from": "l1",
+        "to": "close",
+        "condition": "no more rows"
+      },
+      {
+        "from": "close",
+        "to": "o",
+        "condition": "always"
+      },
+      {
+        "from": "m1",
+        "to": "e1",
+        "condition": "always"
+      },
+      {
+        "from": "m3",
+        "to": "e3",
+        "condition": "always"
+      },
+      {
+        "from": "o",
+        "to": "e4",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "gesamte Scheibe — kein Fachsatz „Protokolle werden aus der Datenbank gelöscht“ (das Schreibprogramm löscht nicht; das Löschprogramm ist nicht Teil des Falls).",
+    "gesamte Scheibe — kein write-Knoten (kein Datenbankschreiben; geschrieben wird nur in die Archivdatei).",
+    "source.abap:38 — kein Fachsatz „im Testmodus wird nichts gelesen“ (gelesen und gezählt wird auch im Test)."
+  ],
+  "processDescription": "Das Schreibprogramm des Archivierungsobjekts ZIF_LOG läuft als Job der Datenarchivierung. Es prüft zuerst die Archivierungsberechtigung für das Objekt und bricht ohne sie ab. Dann liest es alle abgeschlossenen oder abgebrochenen Schnittstellenprotokolle der gewählten Schnittstellen, die älter als die Verweildauer (Vorschlag 180 Tage) sind; gibt es keine, meldet es das und endet. Es öffnet eine Archivierungssitzung, die nur im Echtlauf eine Datei erzeugt. Je Protokoll schreibt es Kopf und alle Positionen als ein Archivobjekt und sichert es; ein Dateifehler bricht den Lauf mit der Protokoll-ID ab. Am Ende schließt es die Datei und gibt Anzahl und Testkennzeichen aus. Gelöscht wird in diesem Programm nichts."
+}

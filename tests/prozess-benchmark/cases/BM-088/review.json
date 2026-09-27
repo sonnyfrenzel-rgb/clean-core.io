@@ -1,0 +1,21 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten e1 (neu)",
+      "before": "—",
+      "after": "end source.abap:22 „Job bricht mit Dateifehler ab“",
+      "why": "MESSAGE e001 in START-OF-SELECTION beendet den Lauf; Konvention output + end auf derselben Zeile. m1 hatte keine ausgehende Kante.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten e2 (neu)",
+      "before": "—",
+      "after": "end source.abap:73 „Lauf endet nach der Zählerausgabe“",
+      "why": "Implizites Ende von START-OF-SELECTION fehlte (letzte Anweisung Z. 73); osum hatte keine ausgehende Kante.",
+      "category": "fehlender Knoten"
+    }
+  ],
+  "doubts": []
+}

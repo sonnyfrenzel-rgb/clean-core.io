@@ -1,0 +1,23 @@
+{
+  "id": "BM-069",
+  "title": "Automatischer Verwendungsentscheid für fehlerfreie Prüflose (Hintergrundjob)",
+  "domain": "PP / PM / QM — Produktion, Instandhaltung, Qualität",
+  "band": "mittel",
+  "loc": 108,
+  "constructs": [
+    "REPORT als Hintergrundjob",
+    "SELECT * QALS",
+    "SELECT SINGLE QAVE",
+    "SELECT COUNT(*) QAMR/QAMV",
+    "CONTINUE",
+    "BAPI_INSPLOT_SETUSAGEDECISION",
+    "BAPI_TRANSACTION_COMMIT/ROLLBACK",
+    "CL_SALV_TABLE"
+  ],
+  "scenario": "Stündlicher QM-Job, der Prüflose aus dem Produktionswareneingang ohne Fehler automatisch entscheidet, damit der Bestand schneller frei wird; bei Transformationen oft gegen den Standard-Job für automatischen VE (QA10) abzuwägen.",
+  "s4_issues": [
+    "Direktzugriffe QALS/QAVE/QAMR/QAMV statt CDS (I_InspectionLot, I_InspectionResult)",
+    "SELECT * auf QALS",
+    "Statusfeld STAT35 statt Systemstatus-API"
+  ]
+}

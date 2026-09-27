@@ -1,0 +1,28 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten g5",
+      "before": "gateway source.abap:69 „Reinheit mindestens Grenzwert?“ (+3 Kanten)",
+      "after": "entfernt",
+      "why": "ELSEIF ist nach vereinheitlichter Konvention eine Bedingungskante des ursprünglichen Gateways g4, kein eigenes Gateway",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Kante g4→aF",
+      "before": "—",
+      "after": "[ev_reinheit >= iv_min_reinheit]",
+      "why": "ELSEIF-Zweig als Bedingungskante von g4",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante g4→aS2",
+      "before": "—",
+      "after": "[else]",
+      "why": "ELSE-Zweig als Sonst-Kante von g4",
+      "category": "Kante"
+    }
+  ],
+  "doubts": []
+}

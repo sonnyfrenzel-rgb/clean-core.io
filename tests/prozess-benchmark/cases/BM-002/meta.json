@@ -1,0 +1,20 @@
+{
+  "id": "BM-002",
+  "title": "MV45AFZZ: Versandbedingung für Key Accounts beim Anlegen vorbelegen",
+  "domain": "SD / Order-to-Cash",
+  "band": "einfach",
+  "loc": 25,
+  "constructs": [
+    "User-Exit-FORM USEREXIT_MOVE_FIELD_TO_VBAK",
+    "CHECK auf Transaktionstyp",
+    "SELECT SINGLE",
+    "IF/ELSEIF",
+    "Kundenfeld per Append (ZZKEYACC)"
+  ],
+  "scenario": "Typischer Auftragsexit in MV45AFZZ, der beim Anlegen eines Kundenauftrags Kopffelder aus dem Kundenstamm vorbelegt; kommt in fast jedem ECC-SD-System vor.",
+  "s4_issues": [
+    "MV45AFZZ ist eine Modifikation im SAP-Namensraum (Modifikationsschlüssel), kein Clean-Core-Erweiterungspunkt",
+    "Append-Feld VBAK-ZZKEYACC muss in S/4 inkl. CDS-Erweiterung übernommen werden",
+    "direkter Lesezugriff auf KNVV"
+  ]
+}

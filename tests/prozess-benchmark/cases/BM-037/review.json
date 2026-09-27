@@ -1,0 +1,121 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten xma (neu)",
+      "before": "—",
+      "after": "end zmm_niederstwert_f01.abap:10 „Eingabe zurückgewiesen, Selektionsbild erneut“; neu ma->xma [always]",
+      "why": "MESSAGE vom Typ E/A beendet den Pfad; wie im übrigen Benchmark (z. B. BM-048, BM-051, BM-058) folgt dem output-Knoten ein end-Knoten auf derselben Anweisung. Validator-Warnung „keine ausgehende Kante“.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten x_fa (neu)",
+      "before": "—",
+      "after": "end zmm_niederstwert_f01.abap:12 „BERECHTIGUNG_PRUEFEN beendet“; umgeleitet: ga->s [else] jetzt ga->x_fa; neu x_fa->s [always]",
+      "why": "Vereinheitlichung (wie im Gegencheck FI/CO): jeder auslaufende FORM/METHOD/MODULE/FUNCTION-Block endet mit eigenem end-Knoten auf ENDFORM/ENDMETHOD/ENDMODULE/ENDFUNCTION (Brieftabelle: end auch bei implizitem Blockende); die Rückkante führt von dort zum Knoten nach dem Aufruf.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten x_fw (neu)",
+      "before": "—",
+      "after": "end zmm_niederstwert_f01.abap:21 „WERKE_ERMITTELN beendet“; umgeleitet: qw->gw [always] jetzt qw->x_fw; neu x_fw->gw [always]",
+      "why": "Vereinheitlichung (wie im Gegencheck FI/CO): jeder auslaufende FORM/METHOD/MODULE/FUNCTION-Block endet mit eigenem end-Knoten auf ENDFORM/ENDMETHOD/ENDMODULE/ENDFUNCTION (Brieftabelle: end auch bei implizitem Blockende); die Rückkante führt von dort zum Knoten nach dem Aufruf.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten xmw (neu)",
+      "before": "—",
+      "after": "end zmm_niederstwert.abap:32 „Lauf abgebrochen, keine Werke“; neu mw->xmw [always]",
+      "why": "MESSAGE vom Typ E/A beendet den Pfad; wie im übrigen Benchmark (z. B. BM-048, BM-051, BM-058) folgt dem output-Knoten ein end-Knoten auf derselben Anweisung. Validator-Warnung „keine ausgehende Kante“.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten x_fb (neu)",
+      "before": "—",
+      "after": "end zmm_niederstwert_f01.abap:45 „BESTAND_LESEN beendet“; umgeleitet: lb->gb [no more rows] jetzt lb->x_fb; neu x_fb->gb [always]",
+      "why": "Vereinheitlichung (wie im Gegencheck FI/CO): jeder auslaufende FORM/METHOD/MODULE/FUNCTION-Block endet mit eigenem end-Knoten auf ENDFORM/ENDMETHOD/ENDMODULE/ENDFUNCTION (Brieftabelle: end auch bei implizitem Blockende); die Rückkante führt von dort zum Knoten nach dem Aufruf.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten x_fm (neu)",
+      "before": "—",
+      "after": "end zmm_niederstwert_f01.abap:73 „MARKTPREIS_ERMITTELN beendet“; umgeleitet: lm->pg [no more rows] jetzt lm->x_fm; neu x_fm->pg [always]",
+      "why": "Vereinheitlichung (wie im Gegencheck FI/CO): jeder auslaufende FORM/METHOD/MODULE/FUNCTION-Block endet mit eigenem end-Knoten auf ENDFORM/ENDMETHOD/ENDMODULE/ENDFUNCTION (Brieftabelle: end auch bei implizitem Blockende); die Rückkante führt von dort zum Knoten nach dem Aufruf.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten x_fg (neu)",
+      "before": "—",
+      "after": "end zmm_niederstwert_f01.abap:111 „GAENGIGKEIT_ERMITTELN beendet“; umgeleitet: lg->pc [no more rows] jetzt lg->x_fg; neu x_fg->pc [always]",
+      "why": "Vereinheitlichung (wie im Gegencheck FI/CO): jeder auslaufende FORM/METHOD/MODULE/FUNCTION-Block endet mit eigenem end-Knoten auf ENDFORM/ENDMETHOD/ENDMODULE/ENDFUNCTION (Brieftabelle: end auch bei implizitem Blockende); die Rückkante führt von dort zum Knoten nach dem Aufruf.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten x_fc (neu)",
+      "before": "—",
+      "after": "end zmm_niederstwert_f01.abap:131 „ABWERTUNG_BERECHNEN beendet“; umgeleitet: lc->gt [no more rows] jetzt lc->x_fc; neu x_fc->gt [always]",
+      "why": "Vereinheitlichung (wie im Gegencheck FI/CO): jeder auslaufende FORM/METHOD/MODULE/FUNCTION-Block endet mit eigenem end-Knoten auf ENDFORM/ENDMETHOD/ENDMODULE/ENDFUNCTION (Brieftabelle: end auch bei implizitem Blockende); die Rückkante führt von dort zum Knoten nach dem Aufruf.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten x_fp (neu)",
+      "before": "—",
+      "after": "end zmm_niederstwert_f02.abap:85 „PREISE_AENDERN beendet“; umgeleitet: lp->ph [no more rows] jetzt lp->x_fp; neu x_fp->ph [always]",
+      "why": "Vereinheitlichung (wie im Gegencheck FI/CO): jeder auslaufende FORM/METHOD/MODULE/FUNCTION-Block endet mit eigenem end-Knoten auf ENDFORM/ENDMETHOD/ENDMODULE/ENDFUNCTION (Brieftabelle: end auch bei implizitem Blockende); die Rückkante führt von dort zum Knoten nach dem Aufruf.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten x_fh (neu)",
+      "before": "—",
+      "after": "end zmm_niederstwert_f02.abap:106 „HISTORIE_SCHREIBEN beendet“; umgeleitet: ch->eos [always] jetzt ch->x_fh; neu x_fh->eos [always]",
+      "why": "Vereinheitlichung (wie im Gegencheck FI/CO): jeder auslaufende FORM/METHOD/MODULE/FUNCTION-Block endet mit eigenem end-Knoten auf ENDFORM/ENDMETHOD/ENDMODULE/ENDFUNCTION (Brieftabelle: end auch bei implizitem Blockende); die Rückkante führt von dort zum Knoten nach dem Aufruf.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten eend (neu)",
+      "before": "—",
+      "after": "end zmm_niederstwert.abap:51 „Report beendet“ (implizites Ende von END-OF-SELECTION nach PERFORM ausgabe); Ziel der Rückkanten aus AUSGABE",
+      "why": "ro und rbt (RETURN aus AUSGABE) hatten kein Rücksprungziel; END-OF-SELECTION endet mit der letzten Anweisung Z. 51.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kanten ro->eend, rbt->eend (neu)",
+      "before": "ro, rbt ohne ausgehende Kante",
+      "after": "ro->eend [always], rbt->eend [always]",
+      "why": "RETURN verlässt die FORM AUSGABE; danach endet END-OF-SELECTION. Einheitlich mit den übrigen RETURN-Knoten in FORMs, die zum Knoten nach dem Aufruf zurückführen.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten x_pb (neu)",
+      "before": "—",
+      "after": "end zmm_niederstwert_f02.abap:164 „PROTOKOLL_BATCH beendet“; umgeleitet: wpb->rbt [always] jetzt wpb->x_pb; neu x_pb->rbt [always]",
+      "why": "Vereinheitlichung (wie im Gegencheck FI/CO): jeder auslaufende FORM/METHOD/MODULE/FUNCTION-Block endet mit eigenem end-Knoten auf ENDFORM/ENDMETHOD/ENDMODULE/ENDFUNCTION (Brieftabelle: end auch bei implizitem Blockende); die Rückkante führt von dort zum Knoten nach dem Aufruf.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten x_fu (neu)",
+      "before": "—",
+      "after": "end zmm_niederstwert_f02.abap:177 „USER_COMMAND beendet“; neu tm->x_fu [always], cu->x_fu [else] (CASE ohne WHEN OTHERS: anderer Funktionscode fällt durch)",
+      "why": "Vereinheitlichung (wie im Gegencheck FI/CO): jeder auslaufende FORM/METHOD/MODULE/FUNCTION-Block endet mit eigenem end-Knoten auf ENDFORM/ENDMETHOD/ENDMODULE/ENDFUNCTION (Brieftabelle: end auch bei implizitem Blockende); die Rückkante führt von dort zum Knoten nach dem Aufruf.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten x_fo (neu)",
+      "before": "—",
+      "after": "end zmm_niederstwert_f02.abap:144 „AUSGABE beendet (ALV verlassen)“; neu x_fo->eend [always]; neu x_fu->x_fo [always] (Rückkehr aus dem ALV-Callback zum Schritt nach der ALV-Anzeige)",
+      "why": "Vereinheitlichung (wie im Gegencheck FI/CO): jeder auslaufende FORM/METHOD/MODULE/FUNCTION-Block endet mit eigenem end-Knoten auf ENDFORM/ENDMETHOD/ENDMODULE/ENDFUNCTION (Brieftabelle: end auch bei implizitem Blockende); die Rückkante führt von dort zum Knoten nach dem Aufruf.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Fachsatz BM-037-B01, Anker",
+      "before": "22, 23",
+      "after": "22, 23, 24",
+      "why": "„des Vorjahres“ entsteht erst in Z. 24 (p_stich(4) = p_stich(4) - 1).",
+      "category": "Anker"
+    }
+  ],
+  "doubts": [
+    "zmm_niederstwert_f02.abap:167–177: USER_COMMAND ist ein ALV-Callback und wird je Benutzeraktion aus REUSE_ALV_GRID_DISPLAY gerufen; die Kante alv->fu [always] und die Rückkante x_fu->x_fo bilden das nur als einmaligen Durchlauf ab. Die CHECK sy-subrc = 0 nach READ TABLE … INDEX (Z. 170) ist rein technisch und nicht modelliert. Vertretbar, nicht weiter geändert."
+  ]
+}

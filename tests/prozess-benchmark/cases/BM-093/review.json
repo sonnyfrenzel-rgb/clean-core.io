@@ -1,0 +1,54 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten a_e",
+      "before": "action zcl_hr_overtime.abap:68 „Status E mit Hinweistext setzen“",
+      "after": "entfernt; überbrückt: g7->e_e1 [sy-subrc <> 0 OR lt_p0007 IS INITIAL]",
+      "why": "Reine Zuweisung von Status und Hinweistext (Z. 68) steuert keinen weiteren Fluss (das RETURN in Z. 70 beendet); laut Autorenbrief kein Knoten. Inhalt bleibt in Fachsatz B04.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Knoten a_l",
+      "before": "action zcl_hr_overtime.abap:107 „Grenze des Personalbereichs übernehmen“",
+      "after": "entfernt; überbrückt: g_l->g_s [sy-subrc = 0]",
+      "why": "Reine Übernahme der gefundenen Grenze (Z. 107) ist laut Autorenbrief kein Knoten; Inhalt bleibt in Fachsatz B09.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Knoten e_main (neu)",
+      "before": "—",
+      "after": "end zhr_ot_eval.abap:84 „Lauf endet mit der Anzeige“",
+      "why": "Implizites Ende von START-OF-SELECTION fehlte; alv hatte keine ausgehende Kante.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kanten new",
+      "before": "new->rp [always]",
+      "after": "e_c->rp [always]",
+      "why": "Konvention Aufrufe im Fall: Aufruf → Start des Ziels, end des Ziels → nächster Schritt (je Aufrufer eine Rückkante); die Direktkante Aufruf → Folgeknoten entfällt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten ev",
+      "before": "ev->gr [always]",
+      "after": "e_e1->gr [always], e_e2->gr [always]",
+      "why": "Konvention Aufrufe im Fall: Aufruf → Start des Ziels, end des Ziels → nächster Schritt (je Aufrufer eine Rückkante); die Direktkante Aufruf → Folgeknoten entfällt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten ra",
+      "before": "ra->l [next iteration]",
+      "after": "e_a1->l [next iteration], e_a2->l [next iteration]",
+      "why": "Konvention Aufrufe im Fall: Aufruf → Start des Ziels, end des Ziels → nächster Schritt (je Aufrufer eine Rückkante); die Direktkante Aufruf → Folgeknoten entfällt.",
+      "category": "Kante"
+    }
+  ],
+  "doubts": [],
+  "notes": [
+    "a_ot (Z. 103) bleibt: Berechnung, die das Ergebnis Überstunden festlegt (Brief: action für „Berechnung, die ein Ergebnis festlegt“); das Gateway g_s verzweigt darauf.",
+    "a_d (Z. 109) bleibt: legt fachlich die Standardgrenze 20 Stunden fest, an der die Ampel entscheidet, wenn für den Personalbereich keine Grenze hinterlegt ist.",
+    "a_r, a_y, a_g (Z. 113/115/117) bleiben: die Ampel ist das fachliche Ergebnis der Bewertung; Status R steuert im Report die Alarmierung (Gateway gr)."
+  ]
+}

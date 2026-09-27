@@ -1,0 +1,279 @@
+{
+  "id": "BM-042",
+  "title": "Substitutions-Exit: Zuordnung aus Referenz oder Belegkopftext bei Zahlungsbelegen",
+  "classes": [
+    "K16",
+    "K01"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "SKB1",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 17,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:17"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-042-B01",
+      "text": "Der Exit greift nur bei Zahlungsbelegen der Belegarten DZ und DA; bei allen anderen Belegarten bleibt die Belegzeile unverändert.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:12"
+        }
+      ]
+    },
+    {
+      "id": "BM-042-B02",
+      "text": "Bei Debitorenzeilen ohne Zuordnung wird die Referenznummer des Belegkopfs als Zuordnung übernommen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:14"
+        },
+        {
+          "file": "source.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:15"
+        }
+      ]
+    },
+    {
+      "id": "BM-042-B03",
+      "text": "Bei Sachkontenzeilen wird im Sachkontenstamm des Buchungskreises nachgesehen, ob das Konto offene Posten führt.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:17"
+        }
+      ]
+    },
+    {
+      "id": "BM-042-B04",
+      "text": "Nur bei OP-geführten Sachkonten werden die ersten 18 Zeichen des Belegkopftexts als Zuordnung gesetzt.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:20"
+        },
+        {
+          "file": "source.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:22"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 10,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:10"
+        },
+        "meaning": "Substitutions-Exit U910"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:12"
+        },
+        "meaning": "Belegart DZ oder DA?"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:14"
+        },
+        "meaning": "Debitorenzeile ohne Zuordnung bzw. Sachkontenzeile?"
+      },
+      {
+        "id": "a1",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:15"
+        },
+        "meaning": "Referenz als Zuordnung setzen"
+      },
+      {
+        "id": "q",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:17"
+        },
+        "meaning": "Sachkontenstamm auf OP-Führung lesen"
+      },
+      {
+        "id": "g3",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:20"
+        },
+        "meaning": "Konto OP-geführt?"
+      },
+      {
+        "id": "a2",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:22"
+        },
+        "meaning": "Belegkopftext als Zuordnung setzen"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:25"
+        },
+        "meaning": "Exit-Ende, Zeile zurück an Substitution"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "g2",
+        "condition": "bkpf-blart = 'DZ' OR bkpf-blart = 'DA'"
+      },
+      {
+        "from": "g1",
+        "to": "e",
+        "condition": "else"
+      },
+      {
+        "from": "g2",
+        "to": "a1",
+        "condition": "bseg-koart = 'D' AND bseg-zuonr IS INITIAL"
+      },
+      {
+        "from": "g2",
+        "to": "q",
+        "condition": "bseg-koart = 'S'"
+      },
+      {
+        "from": "g2",
+        "to": "e",
+        "condition": "else"
+      },
+      {
+        "from": "a1",
+        "to": "e",
+        "condition": "always"
+      },
+      {
+        "from": "q",
+        "to": "g3",
+        "condition": "always"
+      },
+      {
+        "from": "g3",
+        "to": "a2",
+        "condition": "sy-subrc = 0 AND lv_xopvw = 'X'"
+      },
+      {
+        "from": "g3",
+        "to": "e",
+        "condition": "else"
+      },
+      {
+        "from": "a2",
+        "to": "e",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "source.abap:10 — kein Fachsatz „Beleg wird gebucht oder abgelehnt“ (Substitution ändert nur Felder, sie bucht und meldet nichts)",
+    "source.abap:14 — kein Fachsatz „Kreditorenzeilen erhalten eine Zuordnung“ (KOART 'K' fällt in den Sonst-Zweig)",
+    "source.abap:22 — kein Fachsatz „vollständiger Belegkopftext wird übernommen“ (nur die ersten 18 Zeichen)"
+  ],
+  "processDescription": "Der Exit U910 wird von der FI-Substitution beim Buchen für jede Belegzeile aufgerufen. Er wirkt nur bei Zahlungsbelegen der Belegarten DZ und DA. Hat eine Debitorenzeile noch keine Zuordnung, wird die Referenznummer des Belegs dort eingetragen. Bei Sachkontenzeilen wird im Sachkontenstamm geprüft, ob das Konto offene Posten führt; nur dann wird der gekürzte Belegkopftext als Zuordnung gesetzt. Alle anderen Zeilen und Belegarten bleiben unverändert; der Exit bucht nichts und erzeugt keine Meldung."
+}

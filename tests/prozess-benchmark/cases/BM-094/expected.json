@@ -1,0 +1,1248 @@
+{
+  "id": "BM-094",
+  "title": "Generischer Schnittstellen-Eingangsverteiler mit dynamischem CALL FUNCTION, PERFORM und SUBMIT",
+  "classes": [
+    "K06",
+    "K13",
+    "K12",
+    "K11"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "ZIF_ROUTING",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zif_inbox_dispatch.abap",
+        "line": 34,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zif_inbox_dispatch.abap:34"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZIF_INBOX",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zif_inbox_dispatch.abap",
+        "line": 37,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zif_inbox_dispatch.abap:37"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZIF_INBOX",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "zif_inbox_dispatch_f01.abap",
+        "line": 61,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zif_inbox_dispatch_f01.abap:61"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ENQUEUE_EZIF_INBOX",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zif_inbox_dispatch.abap",
+        "line": 61,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zif_inbox_dispatch.abap:61"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAL_LOG_CREATE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zif_inbox_dispatch.abap",
+        "line": 51,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zif_inbox_dispatch.abap:51"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAL_DB_SAVE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zif_inbox_dispatch.abap",
+        "line": 82,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zif_inbox_dispatch.abap:82"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAL_LOG_MSG_ADD",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zif_inbox_dispatch_f01.abap",
+        "line": 99,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zif_inbox_dispatch_f01.abap:99"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-094-B01",
+      "text": "Es werden die aktiven Routen je Nachrichtentyp geladen.",
+      "anchors": [
+        {
+          "file": "zif_inbox_dispatch.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zif_inbox_dispatch.abap:34"
+        }
+      ]
+    },
+    {
+      "id": "BM-094-B02",
+      "text": "Es werden höchstens die eingegebene Anzahl neuer oder noch zu wiederholender Nachrichten der gewählten Typen in Eingangsreihenfolge gelesen; gibt es keine, endet der Lauf mit einer Meldung.",
+      "anchors": [
+        {
+          "file": "zif_inbox_dispatch.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zif_inbox_dispatch.abap:37"
+        },
+        {
+          "file": "zif_inbox_dispatch.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zif_inbox_dispatch.abap:42"
+        },
+        {
+          "file": "zif_inbox_dispatch.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zif_inbox_dispatch.abap:43"
+        }
+      ]
+    },
+    {
+      "id": "BM-094-B03",
+      "text": "Für den Lauf wird ein Anwendungslog angelegt, das nach 30 Tagen gelöscht werden darf.",
+      "anchors": [
+        {
+          "file": "zif_inbox_dispatch.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zif_inbox_dispatch.abap:51"
+        }
+      ]
+    },
+    {
+      "id": "BM-094-B04",
+      "text": "Jede Nachricht wird gesperrt; ist sie von einem parallelen Job gesperrt, wird sie übersprungen.",
+      "anchors": [
+        {
+          "file": "zif_inbox_dispatch.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zif_inbox_dispatch.abap:61"
+        },
+        {
+          "file": "zif_inbox_dispatch.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zif_inbox_dispatch.abap:68"
+        }
+      ]
+    },
+    {
+      "id": "BM-094-B05",
+      "text": "Gibt es für den Nachrichtentyp keine aktive Route, gilt die Nachricht als fehlerhaft.",
+      "anchors": [
+        {
+          "file": "zif_inbox_dispatch_f01.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zif_inbox_dispatch_f01.abap:16"
+        },
+        {
+          "file": "zif_inbox_dispatch_f01.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zif_inbox_dispatch_f01.abap:18"
+        },
+        {
+          "file": "zif_inbox_dispatch_f01.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zif_inbox_dispatch_f01.abap:20"
+        }
+      ]
+    },
+    {
+      "id": "BM-094-B06",
+      "text": "Bei Routingart F wird der konfigurierte Funktionsbaustein mit der Nachricht aufgerufen und liefert Returncode und Meldung; eine klassische Ausnahme gilt als Fehler.",
+      "anchors": [
+        {
+          "file": "zif_inbox_dispatch_f01.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zif_inbox_dispatch_f01.abap:27"
+        },
+        {
+          "file": "zif_inbox_dispatch_f01.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zif_inbox_dispatch_f01.abap:35"
+        },
+        {
+          "file": "zif_inbox_dispatch_f01.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zif_inbox_dispatch_f01.abap:37"
+        }
+      ]
+    },
+    {
+      "id": "BM-094-B07",
+      "text": "Bei Routingart P wird die konfigurierte FORM-Routine im konfigurierten Programm aufgerufen, sofern sie existiert.",
+      "anchors": [
+        {
+          "file": "zif_inbox_dispatch_f01.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zif_inbox_dispatch_f01.abap:42"
+        }
+      ]
+    },
+    {
+      "id": "BM-094-B08",
+      "text": "Bei Routingart S wird der konfigurierte Report mit der Nachrichten-Id gestartet und die Nachricht danach als erfolgreich betrachtet.",
+      "anchors": [
+        {
+          "file": "zif_inbox_dispatch_f01.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zif_inbox_dispatch_f01.abap:46"
+        },
+        {
+          "file": "zif_inbox_dispatch_f01.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zif_inbox_dispatch_f01.abap:47"
+        }
+      ]
+    },
+    {
+      "id": "BM-094-B09",
+      "text": "Eine unbekannte Routingart gilt als Fehler.",
+      "anchors": [
+        {
+          "file": "zif_inbox_dispatch_f01.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zif_inbox_dispatch_f01.abap:50"
+        }
+      ]
+    },
+    {
+      "id": "BM-094-B10",
+      "text": "Bei Erfolg erhält die Nachricht Status S mit Verarbeitungsdatum, was sofort festgeschrieben wird.",
+      "anchors": [
+        {
+          "file": "zif_inbox_dispatch_f01.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zif_inbox_dispatch_f01.abap:60"
+        },
+        {
+          "file": "zif_inbox_dispatch_f01.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zif_inbox_dispatch_f01.abap:61"
+        },
+        {
+          "file": "zif_inbox_dispatch_f01.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zif_inbox_dispatch_f01.abap:64"
+        }
+      ]
+    },
+    {
+      "id": "BM-094-B11",
+      "text": "Bei einem Fehler werden die Änderungen des Verarbeiters verworfen.",
+      "anchors": [
+        {
+          "file": "zif_inbox_dispatch_f01.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zif_inbox_dispatch_f01.abap:69"
+        }
+      ]
+    },
+    {
+      "id": "BM-094-B12",
+      "text": "Solange Wiederholungen übrig sind, erhält die Nachricht Status R mit erhöhtem Zähler und Fehlertext.",
+      "anchors": [
+        {
+          "file": "zif_inbox_dispatch_f01.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zif_inbox_dispatch_f01.abap:70"
+        },
+        {
+          "file": "zif_inbox_dispatch_f01.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zif_inbox_dispatch_f01.abap:71"
+        }
+      ]
+    },
+    {
+      "id": "BM-094-B13",
+      "text": "Ist die letzte Wiederholung verbraucht, erhält sie Status E und der Fehler wird mit Nachrichten-Id und -typ ins Anwendungslog geschrieben.",
+      "anchors": [
+        {
+          "file": "zif_inbox_dispatch_f01.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zif_inbox_dispatch_f01.abap:76"
+        },
+        {
+          "file": "zif_inbox_dispatch_f01.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zif_inbox_dispatch_f01.abap:80"
+        },
+        {
+          "file": "zif_inbox_dispatch_f01.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zif_inbox_dispatch_f01.abap:99"
+        }
+      ]
+    },
+    {
+      "id": "BM-094-B14",
+      "text": "Nach der Verarbeitung wird die Sperre der Nachricht freigegeben.",
+      "anchors": [
+        {
+          "file": "zif_inbox_dispatch.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zif_inbox_dispatch.abap:76"
+        }
+      ]
+    },
+    {
+      "id": "BM-094-B15",
+      "text": "Am Ende wird das Anwendungslog gesichert und festgeschrieben.",
+      "anchors": [
+        {
+          "file": "zif_inbox_dispatch.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zif_inbox_dispatch.abap:82"
+        },
+        {
+          "file": "zif_inbox_dispatch.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zif_inbox_dispatch.abap:87"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "zif_inbox_dispatch.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zif_inbox_dispatch.abap:33"
+        },
+        "meaning": "Verteilerlauf starten"
+      },
+      {
+        "id": "rr",
+        "type": "read",
+        "anchor": {
+          "file": "zif_inbox_dispatch.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zif_inbox_dispatch.abap:34"
+        },
+        "meaning": "Aktive Routen laden"
+      },
+      {
+        "id": "ri",
+        "type": "read",
+        "anchor": {
+          "file": "zif_inbox_dispatch.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zif_inbox_dispatch.abap:37"
+        },
+        "meaning": "Neue und zu wiederholende Nachrichten lesen"
+      },
+      {
+        "id": "g0",
+        "type": "gateway",
+        "anchor": {
+          "file": "zif_inbox_dispatch.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zif_inbox_dispatch.abap:42"
+        },
+        "meaning": "Nichts zu verteilen?"
+      },
+      {
+        "id": "m0",
+        "type": "output",
+        "anchor": {
+          "file": "zif_inbox_dispatch.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zif_inbox_dispatch.abap:43"
+        },
+        "meaning": "Leerlauf melden"
+      },
+      {
+        "id": "e0",
+        "type": "end",
+        "anchor": {
+          "file": "zif_inbox_dispatch.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zif_inbox_dispatch.abap:44"
+        },
+        "meaning": "Lauf beenden"
+      },
+      {
+        "id": "lc",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zif_inbox_dispatch.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zif_inbox_dispatch.abap:51"
+        },
+        "meaning": "Anwendungslog (30 Tage) anlegen"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "zif_inbox_dispatch.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zif_inbox_dispatch.abap:59"
+        },
+        "meaning": "Nachrichten durchlaufen"
+      },
+      {
+        "id": "enq",
+        "type": "lock",
+        "anchor": {
+          "file": "zif_inbox_dispatch.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zif_inbox_dispatch.abap:61"
+        },
+        "meaning": "Nachricht sperren"
+      },
+      {
+        "id": "genq",
+        "type": "gateway",
+        "anchor": {
+          "file": "zif_inbox_dispatch.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zif_inbox_dispatch.abap:68"
+        },
+        "meaning": "Von anderem Job gesperrt?"
+      },
+      {
+        "id": "cd",
+        "type": "call",
+        "anchor": {
+          "file": "zif_inbox_dispatch.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zif_inbox_dispatch.abap:73"
+        },
+        "meaning": "Nachricht verteilen"
+      },
+      {
+        "id": "cf",
+        "type": "call",
+        "anchor": {
+          "file": "zif_inbox_dispatch.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zif_inbox_dispatch.abap:74"
+        },
+        "meaning": "Status fortschreiben"
+      },
+      {
+        "id": "deq",
+        "type": "lock",
+        "anchor": {
+          "file": "zif_inbox_dispatch.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zif_inbox_dispatch.abap:76"
+        },
+        "meaning": "Sperre freigeben"
+      },
+      {
+        "id": "ls",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zif_inbox_dispatch.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zif_inbox_dispatch.abap:82"
+        },
+        "meaning": "Anwendungslog sichern"
+      },
+      {
+        "id": "cw0",
+        "type": "transaction",
+        "anchor": {
+          "file": "zif_inbox_dispatch.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zif_inbox_dispatch.abap:87"
+        },
+        "meaning": "Log festschreiben"
+      },
+      {
+        "id": "e_main",
+        "type": "end",
+        "anchor": {
+          "file": "zif_inbox_dispatch.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zif_inbox_dispatch.abap:87"
+        },
+        "meaning": "Lauf endet nach dem Festschreiben des Logs"
+      },
+      {
+        "id": "s_d",
+        "type": "start",
+        "anchor": {
+          "file": "zif_inbox_dispatch_f01.abap",
+          "line": 8,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zif_inbox_dispatch_f01.abap:8"
+        },
+        "meaning": "Verteilung"
+      },
+      {
+        "id": "rt",
+        "type": "read",
+        "anchor": {
+          "file": "zif_inbox_dispatch_f01.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zif_inbox_dispatch_f01.abap:16"
+        },
+        "meaning": "Route zum Nachrichtentyp nachschlagen"
+      },
+      {
+        "id": "grt",
+        "type": "gateway",
+        "anchor": {
+          "file": "zif_inbox_dispatch_f01.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zif_inbox_dispatch_f01.abap:18"
+        },
+        "meaning": "Keine aktive Route?"
+      },
+      {
+        "id": "a_nr",
+        "type": "action",
+        "anchor": {
+          "file": "zif_inbox_dispatch_f01.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zif_inbox_dispatch_f01.abap:20"
+        },
+        "meaning": "Fehler: keine Route"
+      },
+      {
+        "id": "e_nr",
+        "type": "end",
+        "anchor": {
+          "file": "zif_inbox_dispatch_f01.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zif_inbox_dispatch_f01.abap:21"
+        },
+        "meaning": "Verteilung abbrechen"
+      },
+      {
+        "id": "c",
+        "type": "gateway",
+        "anchor": {
+          "file": "zif_inbox_dispatch_f01.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zif_inbox_dispatch_f01.abap:24"
+        },
+        "meaning": "Routingart unterscheiden"
+      },
+      {
+        "id": "dyn",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zif_inbox_dispatch_f01.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zif_inbox_dispatch_f01.abap:27"
+        },
+        "meaning": "Konfigurierten Baustein dynamisch aufrufen"
+      },
+      {
+        "id": "gdyn",
+        "type": "gateway",
+        "anchor": {
+          "file": "zif_inbox_dispatch_f01.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zif_inbox_dispatch_f01.abap:35"
+        },
+        "meaning": "Klassische Ausnahme?"
+      },
+      {
+        "id": "a_ex",
+        "type": "action",
+        "anchor": {
+          "file": "zif_inbox_dispatch_f01.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zif_inbox_dispatch_f01.abap:37"
+        },
+        "meaning": "Fehler: Ausnahme im Baustein"
+      },
+      {
+        "id": "pf",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zif_inbox_dispatch_f01.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zif_inbox_dispatch_f01.abap:42"
+        },
+        "meaning": "Konfigurierte FORM-Routine dynamisch aufrufen, falls vorhanden"
+      },
+      {
+        "id": "sb",
+        "type": "external_program",
+        "anchor": {
+          "file": "zif_inbox_dispatch_f01.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zif_inbox_dispatch_f01.abap:46"
+        },
+        "meaning": "Konfigurierten Report mit Nachrichten-Id starten"
+      },
+      {
+        "id": "a_ot",
+        "type": "action",
+        "anchor": {
+          "file": "zif_inbox_dispatch_f01.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zif_inbox_dispatch_f01.abap:50"
+        },
+        "meaning": "Fehler: unbekannte Routingart"
+      },
+      {
+        "id": "e_d",
+        "type": "end",
+        "anchor": {
+          "file": "zif_inbox_dispatch_f01.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zif_inbox_dispatch_f01.abap:52"
+        },
+        "meaning": "Rückgabe Returncode"
+      },
+      {
+        "id": "s_f",
+        "type": "start",
+        "anchor": {
+          "file": "zif_inbox_dispatch_f01.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zif_inbox_dispatch_f01.abap:57"
+        },
+        "meaning": "Statusfortschreibung"
+      },
+      {
+        "id": "gok",
+        "type": "gateway",
+        "anchor": {
+          "file": "zif_inbox_dispatch_f01.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zif_inbox_dispatch_f01.abap:60"
+        },
+        "meaning": "Erfolgreich verarbeitet?"
+      },
+      {
+        "id": "ws",
+        "type": "write",
+        "anchor": {
+          "file": "zif_inbox_dispatch_f01.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zif_inbox_dispatch_f01.abap:61"
+        },
+        "meaning": "Status S mit Verarbeitungsdatum setzen"
+      },
+      {
+        "id": "cw1",
+        "type": "transaction",
+        "anchor": {
+          "file": "zif_inbox_dispatch_f01.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zif_inbox_dispatch_f01.abap:64"
+        },
+        "meaning": "Erfolg festschreiben"
+      },
+      {
+        "id": "e_f1",
+        "type": "end",
+        "anchor": {
+          "file": "zif_inbox_dispatch_f01.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zif_inbox_dispatch_f01.abap:65"
+        },
+        "meaning": "Fertig"
+      },
+      {
+        "id": "rb",
+        "type": "transaction",
+        "anchor": {
+          "file": "zif_inbox_dispatch_f01.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zif_inbox_dispatch_f01.abap:69"
+        },
+        "meaning": "Änderungen des Verarbeiters verwerfen"
+      },
+      {
+        "id": "gre",
+        "type": "gateway",
+        "anchor": {
+          "file": "zif_inbox_dispatch_f01.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zif_inbox_dispatch_f01.abap:70"
+        },
+        "meaning": "Noch Wiederholungen übrig?"
+      },
+      {
+        "id": "wr",
+        "type": "write",
+        "anchor": {
+          "file": "zif_inbox_dispatch_f01.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zif_inbox_dispatch_f01.abap:71"
+        },
+        "meaning": "Status R, Zähler +1, Fehlertext"
+      },
+      {
+        "id": "we",
+        "type": "write",
+        "anchor": {
+          "file": "zif_inbox_dispatch_f01.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zif_inbox_dispatch_f01.abap:76"
+        },
+        "meaning": "Status E endgültig, Zähler +1, Fehlertext"
+      },
+      {
+        "id": "cl",
+        "type": "call",
+        "anchor": {
+          "file": "zif_inbox_dispatch_f01.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zif_inbox_dispatch_f01.abap:80"
+        },
+        "meaning": "Endgültigen Fehler protokollieren"
+      },
+      {
+        "id": "cw2",
+        "type": "transaction",
+        "anchor": {
+          "file": "zif_inbox_dispatch_f01.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zif_inbox_dispatch_f01.abap:82"
+        },
+        "meaning": "Fehlerstatus festschreiben"
+      },
+      {
+        "id": "e_f2",
+        "type": "end",
+        "anchor": {
+          "file": "zif_inbox_dispatch_f01.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zif_inbox_dispatch_f01.abap:83"
+        },
+        "meaning": "Fertig"
+      },
+      {
+        "id": "s_l",
+        "type": "start",
+        "anchor": {
+          "file": "zif_inbox_dispatch_f01.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zif_inbox_dispatch_f01.abap:88"
+        },
+        "meaning": "Fehlerprotokoll"
+      },
+      {
+        "id": "bal",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zif_inbox_dispatch_f01.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zif_inbox_dispatch_f01.abap:99"
+        },
+        "meaning": "Fehlermeldung mit Nachrichten-Id und -typ ins Log"
+      },
+      {
+        "id": "e_l",
+        "type": "end",
+        "anchor": {
+          "file": "zif_inbox_dispatch_f01.abap",
+          "line": 105,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zif_inbox_dispatch_f01.abap:105"
+        },
+        "meaning": "Fertig"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "rr",
+        "condition": "always"
+      },
+      {
+        "from": "rr",
+        "to": "ri",
+        "condition": "always"
+      },
+      {
+        "from": "ri",
+        "to": "g0",
+        "condition": "always"
+      },
+      {
+        "from": "g0",
+        "to": "m0",
+        "condition": "gt_inbox IS INITIAL"
+      },
+      {
+        "from": "m0",
+        "to": "e0",
+        "condition": "always"
+      },
+      {
+        "from": "g0",
+        "to": "lc",
+        "condition": "else"
+      },
+      {
+        "from": "lc",
+        "to": "l",
+        "condition": "always"
+      },
+      {
+        "from": "l",
+        "to": "enq",
+        "condition": "next row"
+      },
+      {
+        "from": "enq",
+        "to": "genq",
+        "condition": "always"
+      },
+      {
+        "from": "genq",
+        "to": "l",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "genq",
+        "to": "cd",
+        "condition": "else"
+      },
+      {
+        "from": "cd",
+        "to": "s_d",
+        "condition": "always"
+      },
+      {
+        "from": "cf",
+        "to": "s_f",
+        "condition": "always"
+      },
+      {
+        "from": "deq",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l",
+        "to": "ls",
+        "condition": "no more rows"
+      },
+      {
+        "from": "ls",
+        "to": "cw0",
+        "condition": "always"
+      },
+      {
+        "from": "s_d",
+        "to": "rt",
+        "condition": "always"
+      },
+      {
+        "from": "rt",
+        "to": "grt",
+        "condition": "always"
+      },
+      {
+        "from": "grt",
+        "to": "a_nr",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "a_nr",
+        "to": "e_nr",
+        "condition": "always"
+      },
+      {
+        "from": "grt",
+        "to": "c",
+        "condition": "else"
+      },
+      {
+        "from": "c",
+        "to": "dyn",
+        "condition": "WHEN 'F'"
+      },
+      {
+        "from": "dyn",
+        "to": "gdyn",
+        "condition": "always"
+      },
+      {
+        "from": "gdyn",
+        "to": "a_ex",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "gdyn",
+        "to": "e_d",
+        "condition": "else"
+      },
+      {
+        "from": "a_ex",
+        "to": "e_d",
+        "condition": "always"
+      },
+      {
+        "from": "c",
+        "to": "pf",
+        "condition": "WHEN 'P'"
+      },
+      {
+        "from": "pf",
+        "to": "e_d",
+        "condition": "always"
+      },
+      {
+        "from": "c",
+        "to": "sb",
+        "condition": "WHEN 'S'"
+      },
+      {
+        "from": "sb",
+        "to": "e_d",
+        "condition": "always"
+      },
+      {
+        "from": "c",
+        "to": "a_ot",
+        "condition": "WHEN OTHERS"
+      },
+      {
+        "from": "a_ot",
+        "to": "e_d",
+        "condition": "always"
+      },
+      {
+        "from": "s_f",
+        "to": "gok",
+        "condition": "always"
+      },
+      {
+        "from": "gok",
+        "to": "ws",
+        "condition": "pv_rc = 0"
+      },
+      {
+        "from": "ws",
+        "to": "cw1",
+        "condition": "always"
+      },
+      {
+        "from": "cw1",
+        "to": "e_f1",
+        "condition": "always"
+      },
+      {
+        "from": "gok",
+        "to": "rb",
+        "condition": "else"
+      },
+      {
+        "from": "rb",
+        "to": "gre",
+        "condition": "always"
+      },
+      {
+        "from": "gre",
+        "to": "wr",
+        "condition": "ps_inbox-retry + 1 < p_retry"
+      },
+      {
+        "from": "gre",
+        "to": "we",
+        "condition": "else"
+      },
+      {
+        "from": "we",
+        "to": "cl",
+        "condition": "always"
+      },
+      {
+        "from": "cl",
+        "to": "s_l",
+        "condition": "always"
+      },
+      {
+        "from": "wr",
+        "to": "cw2",
+        "condition": "always"
+      },
+      {
+        "from": "cw2",
+        "to": "e_f2",
+        "condition": "always"
+      },
+      {
+        "from": "s_l",
+        "to": "bal",
+        "condition": "always"
+      },
+      {
+        "from": "bal",
+        "to": "e_l",
+        "condition": "always"
+      },
+      {
+        "from": "cw0",
+        "to": "e_main",
+        "condition": "always"
+      },
+      {
+        "from": "e_nr",
+        "to": "cf",
+        "condition": "always"
+      },
+      {
+        "from": "e_d",
+        "to": "cf",
+        "condition": "always"
+      },
+      {
+        "from": "e_f1",
+        "to": "deq",
+        "condition": "always"
+      },
+      {
+        "from": "e_f2",
+        "to": "deq",
+        "condition": "always"
+      },
+      {
+        "from": "e_l",
+        "to": "cw2",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zif_inbox_dispatch_f01.abap:42 — kein Fachsatz „fehlt die FORM-Routine, wird die Nachricht als Fehler markiert“ (IF FOUND überspringt stillschweigend; der Returncode bleibt 0 und die Nachricht erhält Status S).",
+    "zif_inbox_dispatch_f01.abap:27 — kein Fachsatz „ein nicht vorhandener Baustein wird als Fehler protokolliert“ (EXCEPTIONS OTHERS fängt CALL_FUNCTION_NOT_FOUND nicht; Laufzeitabbruch).",
+    "zif_inbox_dispatch.abap:61 — kein Fachsatz „nach dem Sperren wird geprüft, ob die Nachricht noch offen ist“ (kein erneutes Lesen; Doppelverarbeitung durch parallele Jobs möglich).",
+    "zif_inbox_dispatch_f01.abap:46 — kein Fachsatz „das Ergebnis des Reports wird ausgewertet“ (Erfolg wird pauschal angenommen)."
+  ],
+  "processDescription": "Ein alle fünf Minuten eingeplanter Job verteilt Nachrichten aus der kundeneigenen Inbox-Tabelle. Er lädt die aktiven Routen und liest höchstens die eingegebene Anzahl neuer oder noch zu wiederholender Nachrichten in Eingangsreihenfolge; ohne Nachrichten endet er mit einer Meldung. Er legt ein Anwendungslog an und sperrt jede Nachricht; von parallelen Jobs gesperrte Nachrichten überspringt er. Zur Verteilung schlägt er die Route des Nachrichtentyps nach – ohne Route ist die Nachricht fehlerhaft. Je nach Routingart ruft er dynamisch einen Funktionsbaustein, eine FORM-Routine in einem Programm (nur wenn vorhanden) oder startet einen Report; eine unbekannte Art ist ein Fehler. Bei Erfolg setzt er Status S und schreibt fest. Bei Fehler verwirft er die Änderungen des Verarbeiters, setzt Status R mit erhöhtem Zähler, solange Wiederholungen übrig sind, sonst Status E und protokolliert den Fehler im Anwendungslog; danach schreibt er fest. Nach jeder Nachricht gibt er die Sperre frei, am Ende sichert er das Log. Eine fehlende FORM-Routine oder ein Report-Aufruf gelten ungeprüft als Erfolg, ein fehlender Baustein führt zum Abbruch."
+}

@@ -1,0 +1,643 @@
+{
+  "id": "BM-009",
+  "title": "Nachrichtenprogramm Auftragsbestätigung per E-Mail: Rückgabecode nach Versandfehler hängt am Protokollaufruf",
+  "classes": [
+    "K16",
+    "K04",
+    "K01",
+    "K03"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "VBAK",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 23,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:23"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ADR6",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 30,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:30"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "KNA1",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 30,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:30"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "SO_NEW_DOCUMENT_SEND_API1",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 52,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:52"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "NAST_PROTOCOL_UPDATE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 72,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:72"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-009-B01",
+      "text": "Zur Nachricht wird der zugehörige Kundenauftrag gelesen; fehlt er, wird Fehler 010 protokolliert und die Nachricht als fehlerhaft beendet.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:23"
+        },
+        {
+          "file": "source.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:24"
+        },
+        {
+          "file": "source.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:25"
+        },
+        {
+          "file": "source.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:27"
+        }
+      ]
+    },
+    {
+      "id": "BM-009-B02",
+      "text": "Empfänger ist die Standard-E-Mail-Adresse des Nachrichtenpartners aus dem Kundenstamm; fehlt sie, wird Fehler 011 protokolliert und die Nachricht als fehlerhaft beendet.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:30"
+        },
+        {
+          "file": "source.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:35"
+        },
+        {
+          "file": "source.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:36"
+        },
+        {
+          "file": "source.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:38"
+        }
+      ]
+    },
+    {
+      "id": "BM-009-B03",
+      "text": "Die Mail nennt Bestellnummer des Kunden, Nettowert und Währung des Auftrags.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:41"
+        }
+      ]
+    },
+    {
+      "id": "BM-009-B04",
+      "text": "Bei der Probeausgabe am Bildschirm wird nur die Empfängeradresse angezeigt und nichts versendet.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:47"
+        },
+        {
+          "file": "source.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:48"
+        },
+        {
+          "file": "source.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:49"
+        }
+      ]
+    },
+    {
+      "id": "BM-009-B05",
+      "text": "Andernfalls wird die Auftragsbestätigung als E-Mail an den Kunden versendet.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:52"
+        }
+      ]
+    },
+    {
+      "id": "BM-009-B06",
+      "text": "Scheitert der Versand, wird Fehler 013 protokolliert; der Rückgabecode übernimmt aber das Ergebnis des Protokollaufrufs und ist bei erfolgreichem Protokoll null.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:61"
+        },
+        {
+          "file": "source.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:62"
+        },
+        {
+          "file": "source.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:63"
+        }
+      ]
+    },
+    {
+      "id": "BM-009-B07",
+      "text": "Fehlermeldungen werden über den Standard ins Verarbeitungsprotokoll der Nachricht geschrieben.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:72"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:18"
+        },
+        "meaning": "Nachricht ZBAM wird verarbeitet"
+      },
+      {
+        "id": "q1",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:23"
+        },
+        "meaning": "Auftragskopf zur Nachricht lesen"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:24"
+        },
+        "meaning": "Auftrag gefunden?"
+      },
+      {
+        "id": "c1",
+        "type": "call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:25"
+        },
+        "meaning": "Fehler 010 protokollieren"
+      },
+      {
+        "id": "e1",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:27"
+        },
+        "meaning": "Nachricht fehlerhaft beenden"
+      },
+      {
+        "id": "q2",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:30"
+        },
+        "meaning": "Standard-Mailadresse des Nachrichtenpartners lesen"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:35"
+        },
+        "meaning": "Mailadresse vorhanden?"
+      },
+      {
+        "id": "c2",
+        "type": "call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:36"
+        },
+        "meaning": "Fehler 011 protokollieren"
+      },
+      {
+        "id": "e2",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:38"
+        },
+        "meaning": "Nachricht fehlerhaft beenden"
+      },
+      {
+        "id": "g3",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:47"
+        },
+        "meaning": "Probeausgabe am Bildschirm?"
+      },
+      {
+        "id": "m",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:48"
+        },
+        "meaning": "Empfängeradresse nur anzeigen"
+      },
+      {
+        "id": "e3",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:49"
+        },
+        "meaning": "Probeausgabe beendet, nichts versendet"
+      },
+      {
+        "id": "send",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:52"
+        },
+        "meaning": "Auftragsbestätigung als E-Mail versenden"
+      },
+      {
+        "id": "g4",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:61"
+        },
+        "meaning": "Versand fehlgeschlagen?"
+      },
+      {
+        "id": "c3",
+        "type": "call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:62"
+        },
+        "meaning": "Fehler 013 protokollieren"
+      },
+      {
+        "id": "rc",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:63"
+        },
+        "meaning": "Rückgabecode aus dem sy-subrc des Protokollaufrufs setzen"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:65"
+        },
+        "meaning": "Nachrichtenverarbeitung beendet"
+      },
+      {
+        "id": "ps",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:70"
+        },
+        "meaning": "Protokollroutine"
+      },
+      {
+        "id": "p",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:72"
+        },
+        "meaning": "Fehlermeldung ins Nachrichtenprotokoll schreiben"
+      },
+      {
+        "id": "pe",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:80"
+        },
+        "meaning": "Protokollroutine beendet"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "q1",
+        "condition": "always"
+      },
+      {
+        "from": "q1",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "c1",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "c1",
+        "to": "ps",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "q2",
+        "condition": "else"
+      },
+      {
+        "from": "q2",
+        "to": "g2",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "c2",
+        "condition": "gv_email IS INITIAL"
+      },
+      {
+        "from": "c2",
+        "to": "ps",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "g3",
+        "condition": "else"
+      },
+      {
+        "from": "g3",
+        "to": "m",
+        "condition": "us_screen = abap_true"
+      },
+      {
+        "from": "m",
+        "to": "e3",
+        "condition": "always"
+      },
+      {
+        "from": "g3",
+        "to": "send",
+        "condition": "else"
+      },
+      {
+        "from": "send",
+        "to": "g4",
+        "condition": "always"
+      },
+      {
+        "from": "g4",
+        "to": "c3",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "c3",
+        "to": "ps",
+        "condition": "always"
+      },
+      {
+        "from": "rc",
+        "to": "e",
+        "condition": "always"
+      },
+      {
+        "from": "g4",
+        "to": "e",
+        "condition": "else"
+      },
+      {
+        "from": "ps",
+        "to": "p",
+        "condition": "always"
+      },
+      {
+        "from": "p",
+        "to": "pe",
+        "condition": "always"
+      },
+      {
+        "from": "pe",
+        "to": "e1",
+        "condition": "always"
+      },
+      {
+        "from": "pe",
+        "to": "e2",
+        "condition": "always"
+      },
+      {
+        "from": "pe",
+        "to": "rc",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "source.abap:63 — kein Fachsatz „ein Versandfehler markiert die Nachricht als fehlerhaft“: sy-subrc stammt aus dem Protokollaufruf, nicht aus dem Versand",
+    "source.abap:52 — kein Fachsatz „die Mail ist verschickt“: commit_work = space, der Versand hängt am COMMIT der Nachrichtensteuerung",
+    "gesamte Scheibe — kein Fachsatz „die Auftragsbestätigung wird als PDF angehängt“: es wird nur ein Mailtext mit drei Zeilen erzeugt"
+  ],
+  "processDescription": "Die Routine wird von der Nachrichtensteuerung für die Nachrichtenart ZBAM eines Kundenauftrags aufgerufen, sofort oder über RSNAST00. Sie liest den Auftrag zur Nachricht; fehlt er, protokolliert sie Fehler 010 und meldet die Nachricht als fehlerhaft. Dann sucht sie die Standard-E-Mail-Adresse des Nachrichtenpartners; fehlt diese, protokolliert sie Fehler 011 und meldet ebenfalls fehlerhaft. Sie baut einen kurzen Mailtext mit Kundenbestellnummer, Nettowert und Währung. Bei der Probeausgabe aus der Anzeige zeigt sie nur die Empfängeradresse und versendet nichts. Sonst übergibt sie die Mail an den Versand, ohne selbst zu committen. Schlägt die Übergabe fehl, protokolliert sie Fehler 013; weil der Rückgabecode danach aus dem Protokollaufruf stammt, gilt die Nachricht trotzdem als erfolgreich, solange das Protokoll geschrieben werden konnte."
+}

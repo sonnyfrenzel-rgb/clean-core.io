@@ -1,0 +1,80 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten x_rp (neu)",
+      "before": "—",
+      "after": "end mzfi_payrelf01.abap:124 „READ_PROPOSAL beendet, Zahlungen aufbereitet“; umgeleitet: rp_m1->uc_end [always]; neu x_rp->x_lk [always]",
+      "why": "Brieftabelle: end = Pfadende inkl. „Ende des Blocks“ (implizites Ende auf der letzten Anweisung); in BM-047–055 setzt derselbe Autor end-Knoten auf ENDFORM/ENDMETHOD. Vereinheitlicht: jede auslaufende FORM endet mit eigenem end-Knoten, Rückkehrkante von dort zum Knoten nach dem Aufruf (RETURN-Enden führen ebenfalls zum Knoten nach dem Aufruf).",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten x_lk (neu)",
+      "before": "—",
+      "after": "end mzfi_payrelf01.abap:36 „LOCK_RUN beendet“; umgeleitet: lk_msg->uc_end [always], rp_ret0->uc_end [always]; neu x_lk->uc_end [always]",
+      "why": "Brieftabelle: end = Pfadende inkl. „Ende des Blocks“ (implizites Ende auf der letzten Anweisung); in BM-047–055 setzt derselbe Autor end-Knoten auf ENDFORM/ENDMETHOD. Vereinheitlicht: jede auslaufende FORM endet mit eigenem end-Knoten, Rückkehrkante von dort zum Knoten nach dem Aufruf (RETURN-Enden führen ebenfalls zum Knoten nach dem Aufruf).",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten x_ul (neu)",
+      "before": "—",
+      "after": "end mzfi_payrelf01.abap:50 „UNLOCK_RUN beendet, Sperre gelöst“; umgeleitet: ul_deq->uc_bend [always]; neu x_ul->uc_bend [always]",
+      "why": "Brieftabelle: end = Pfadende inkl. „Ende des Blocks“ (implizites Ende auf der letzten Anweisung); in BM-047–055 setzt derselbe Autor end-Knoten auf ENDFORM/ENDMETHOD. Vereinheitlicht: jede auslaufende FORM endet mit eigenem end-Knoten, Rückkehrkante von dort zum Knoten nach dem Aufruf (RETURN-Enden führen ebenfalls zum Knoten nach dem Aufruf).",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten x_rl (neu)",
+      "before": "—",
+      "after": "end mzfi_payrelf01.abap:193 „RELEASE_MARKED beendet“; umgeleitet: rl_m->uc_end [always]; neu x_rl->uc_end [always]",
+      "why": "Brieftabelle: end = Pfadende inkl. „Ende des Blocks“ (implizites Ende auf der letzten Anweisung); in BM-047–055 setzt derselbe Autor end-Knoten auf ENDFORM/ENDMETHOD. Vereinheitlicht: jede auslaufende FORM endet mit eigenem end-Knoten, Rückkehrkante von dort zum Knoten nach dem Aufruf (RETURN-Enden führen ebenfalls zum Knoten nach dem Aufruf).",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten x_rj (neu)",
+      "before": "—",
+      "after": "end mzfi_payrelf01.abap:233 „REJECT_MARKED beendet“; umgeleitet: rj_pg->uc_end [else], rj_l->uc_end [no more rows]; neu x_rj->uc_end [always]",
+      "why": "Brieftabelle: end = Pfadende inkl. „Ende des Blocks“ (implizites Ende auf der letzten Anweisung); in BM-047–055 setzt derselbe Autor end-Knoten auf ENDFORM/ENDMETHOD. Vereinheitlicht: jede auslaufende FORM endet mit eigenem end-Knoten, Rückkehrkante von dort zum Knoten nach dem Aufruf (RETURN-Enden führen ebenfalls zum Knoten nach dem Aufruf).",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten x_sv (neu)",
+      "before": "—",
+      "after": "end mzfi_payrelf01.abap:298 „SAVE_RELEASES beendet“; umgeleitet: sv_g0->uc_end [else], sv_m->uc_end [always]; neu x_sv->uc_end [always]",
+      "why": "Brieftabelle: end = Pfadende inkl. „Ende des Blocks“ (implizites Ende auf der letzten Anweisung); in BM-047–055 setzt derselbe Autor end-Knoten auf ENDFORM/ENDMETHOD. Vereinheitlicht: jede auslaufende FORM endet mit eigenem end-Knoten, Rückkehrkante von dort zum Knoten nach dem Aufruf (RETURN-Enden führen ebenfalls zum Knoten nach dem Aufruf).",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten x_f1 (neu)",
+      "before": "—",
+      "after": "end mzfi_payrelf01.abap:357 „START_PAYMENT_RUN beendet“; umgeleitet: f1_ctm->uc_end [always], f1_ok->uc_end [always]; neu x_f1->uc_end [always]",
+      "why": "Brieftabelle: end = Pfadende inkl. „Ende des Blocks“ (implizites Ende auf der letzten Anweisung); in BM-047–055 setzt derselbe Autor end-Knoten auf ENDFORM/ENDMETHOD. Vereinheitlicht: jede auslaufende FORM endet mit eigenem end-Knoten, Rückkehrkante von dort zum Knoten nach dem Aufruf (RETURN-Enden führen ebenfalls zum Knoten nach dem Aufruf).",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten x_st (neu)",
+      "before": "st_pf ohne ausgehende Kante (Validator-Warnung)",
+      "after": "end mzfi_payrelo01.abap:24 „PBO beendet“; neu st_pf->x_st [always]",
+      "why": "Pfadende des PBO-Moduls fehlte; Brieftabelle: end auch bei implizitem Blockende.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten x_fu (neu)",
+      "before": "fu_ins ohne ausgehende Kante (Validator-Warnung)",
+      "after": "end z_fi_payrel_update.abap:59 „Verbuchung beendet“; neu fu_ins->x_fu [always]",
+      "why": "Pfadende des Verbuchungsbausteins fehlte; Brieftabelle: end auch bei implizitem Blockende.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "BM-059-B26 anchors",
+      "before": "z_fi_payrel_update.abap:27, z_fi_payrel_update.abap:33, z_fi_payrel_update.abap:34, z_fi_payrel_update.abap:34",
+      "after": "z_fi_payrel_update.abap:27, z_fi_payrel_update.abap:33, z_fi_payrel_update.abap:34",
+      "why": "z_fi_payrel_update.abap:34 war doppelt eingetragen.",
+      "category": "Anker"
+    }
+  ],
+  "doubts": [
+    "mzfi_payrelf01.abap:277/287: SWE_EVENT_CREATE wird IN UPDATE TASK gerufen. Üblich ist dafür SWE_EVENT_CREATE_IN_UPD_TASK; ob SWE_EVENT_CREATE als Verbuchungsbaustein zulässig ist, kann ich nicht sicher belegen. Quelltext und Knoten (update_task) nicht geändert.",
+    "PBO-Modul TC_PAY_GET_LINES (CASE auf den Status für die Ampel) ist nicht im Skelett; reine Anzeige, daher vertretbar. Nicht geändert."
+  ]
+}

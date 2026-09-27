@@ -1,0 +1,32 @@
+{
+  "id": "BM-078",
+  "title": "MES-Dateischnittstelle: Auftragsexport, Rückmelde- und Wareneingangsimport mit Dublettenprüfung",
+  "domain": "PP / PM / QM — Produktion, Instandhaltung, Qualität",
+  "band": "sehr komplex",
+  "loc": 436,
+  "constructs": [
+    "Hintergrundjob-REPORT mit Includes",
+    "DEFINE-Makro für Protokoll",
+    "SELECT 3-fach-JOIN AUFK/AFKO/AFPO",
+    "STATUS_CHECK",
+    "OPEN/READ/TRANSFER/CLOSE/DELETE DATASET",
+    "String-Templates mit &&",
+    "INSERT … FROM TABLE ACCEPTING DUPLICATE KEYS",
+    "COMMIT WORK",
+    "CASE Satzart",
+    "Dublettenprüfung AFRU über Rückmeldetext",
+    "Dublettenprüfung MKPF/MSEG über XBLNR",
+    "BAPI_PRODORDCONF_CREATE_TT",
+    "BAPI_GOODSMVT_CREATE (GM_CODE 02, 101)",
+    "BAL_LOG_CREATE/BAL_LOG_MSG_ADD_FREE_TEXT/BAL_DB_SAVE",
+    "MESSAGE E im Job"
+  ],
+  "scenario": "Viertelstündlicher Job, der als Dateischnittstelle zwischen SAP PP und einem Leitrechner/MES dient: freigegebene Aufträge hinaus, Rückmeldungen und Wareneingänge herein; in fast jedem Werk mit MES anzutreffen und bei der S/4-Transformation wegen MKPF/MSEG und Dateiablage zu überarbeiten.",
+  "s4_issues": [
+    "MKPF/MSEG-Lesezugriff – in S/4 nur noch Kompatibilitätsviews auf MATDOC, Performance prüfen",
+    "Dateiablage auf dem Applikationsserver (OPEN DATASET) statt API/Integration Suite",
+    "Direktzugriff AUFK/AFKO/AFPO/AFVC/RESB/AFRU statt CDS",
+    "Dublettenprüfung Rückmeldung über Freitext LTXA1",
+    "Z-Tabelle ZMES_EXPORT als Exportmerker"
+  ]
+}

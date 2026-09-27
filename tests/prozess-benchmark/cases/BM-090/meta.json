@@ -1,0 +1,21 @@
+{
+  "id": "BM-090",
+  "title": "Archivierung von Schnittstellenprotokollen: ADK-Schreibprogramm",
+  "domain": "Querschnitt — Schnittstellen, Stammdaten, HR, Workflow, technische Jobs",
+  "band": "mittel",
+  "loc": 82,
+  "constructs": [
+    "AUTHORITY-CHECK S_ARCHIVE",
+    "ARCHIVE_OPEN_FOR_WRITE",
+    "ARCHIVE_NEW_OBJECT",
+    "ARCHIVE_PUT_RECORD",
+    "ARCHIVE_SAVE_OBJECT",
+    "ARCHIVE_CLOSE_FILE",
+    "geschachtelte LOOPs"
+  ],
+  "scenario": "Schreibprogramm des kundeneigenen Archivierungsobjekts ZIF_LOG, das abgeschlossene Schnittstellenprotokolle nach einer Verweildauer in Archivdateien schreibt (Datenvolumenmanagement vor der Migration).",
+  "s4_issues": [
+    "Kundeneigenes Archivierungsobjekt muss im Zielsystem mitgenommen werden (AOBJ)",
+    "Löschprogramm und Lesezugriff auf archivierte Daten nicht Teil des Falls"
+  ]
+}

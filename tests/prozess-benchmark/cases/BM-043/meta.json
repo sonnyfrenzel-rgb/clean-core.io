@@ -1,0 +1,21 @@
+{
+  "id": "BM-043",
+  "title": "Validierungs-Exit: Kontierung auf gesperrte oder ungültige Kostenstelle ablehnen",
+  "domain": "FI/CO / Record-to-Report",
+  "band": "einfach",
+  "loc": 24,
+  "constructs": [
+    "PROGRAM (Validierungs-Exitpool)",
+    "FORM-Exit USING b_result",
+    "TABLES cobl",
+    "CHECK",
+    "SELECT SINGLE mit Gültigkeitszeitraum",
+    "IF/ELSEIF"
+  ],
+  "scenario": "Validierungs-Exit aus GGB0 (Zeitpunkt Kontierungsblock), mit dem das Controlling Buchungen auf gesperrte Kostenstellen schon im FI-Beleg abfängt; die Fehlermeldung selbst ist in der Validierung gepflegt, nicht im Code.",
+  "s4_issues": [
+    "Validierungs-Exits über GGB0/RGGBR000 sind in S/4HANA Cloud nicht verfügbar",
+    "Direkter Lesezugriff auf CSKS (CDS-Nachfolger I_CostCenter)",
+    "Dupliziert die Standard-Sperrprüfung der Kostenstelle"
+  ]
+}

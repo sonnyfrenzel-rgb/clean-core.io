@@ -1,0 +1,35 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten e1",
+      "before": "—",
+      "after": "end source.abap:21 „Dialogschritt abgebrochen – Eingabe muss korrigiert werden“",
+      "why": "MESSAGE TYPE E beendet den PAI-Pfad; Konvention: output + end auf derselben Zeile",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kante m1→e1",
+      "before": "—",
+      "after": "[always]",
+      "why": "Pfadende nach Fehlermeldung",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten e2",
+      "before": "—",
+      "after": "end source.abap:26 „Dialogschritt abgebrochen – Gutmenge muss korrigiert werden“",
+      "why": "MESSAGE TYPE E beendet den PAI-Pfad; Konvention: output + end auf derselben Zeile",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kante m2→e2",
+      "before": "—",
+      "after": "[always]",
+      "why": "Pfadende nach Fehlermeldung",
+      "category": "Kante"
+    }
+  ],
+  "doubts": []
+}

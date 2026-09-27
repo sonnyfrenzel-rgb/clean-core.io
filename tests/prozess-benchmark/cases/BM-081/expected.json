@@ -1,0 +1,299 @@
+{
+  "id": "BM-081",
+  "title": "Monitoring-Job: Rückstau offener Änderungszeiger je Nachrichtentyp",
+  "classes": [
+    "K01"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "BDCP2",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 9,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:9"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-081-B01",
+      "text": "Es wird gezählt, wie viele Änderungszeiger des gewählten Nachrichtentyps noch nicht verarbeitet sind.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 9,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:9"
+        }
+      ]
+    },
+    {
+      "id": "BM-081-B02",
+      "text": "Gibt es keine offenen Änderungszeiger, wird das gemeldet und der Lauf beendet.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:12"
+        },
+        {
+          "file": "source.abap",
+          "line": 13,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:13"
+        },
+        {
+          "file": "source.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:14"
+        }
+      ]
+    },
+    {
+      "id": "BM-081-B03",
+      "text": "Liegt die Anzahl über der eingegebenen Schwelle, bricht der Job mit der Meldung „Rückstau“ ab.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:16"
+        },
+        {
+          "file": "source.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:18"
+        }
+      ]
+    },
+    {
+      "id": "BM-081-B04",
+      "text": "Sonst wird die Anzahl offener Änderungszeiger für den Nachrichtentyp ausgegeben.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:20"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 8,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:8"
+        },
+        "meaning": "Jobstart"
+      },
+      {
+        "id": "q",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 9,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:9"
+        },
+        "meaning": "Offene Änderungszeiger zählen"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:12"
+        },
+        "meaning": "Keine offenen Zeiger?"
+      },
+      {
+        "id": "o1",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 13,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:13"
+        },
+        "meaning": "Kein Rückstau melden"
+      },
+      {
+        "id": "e1",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:14"
+        },
+        "meaning": "Lauf beenden"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:16"
+        },
+        "meaning": "Schwelle überschritten?"
+      },
+      {
+        "id": "m",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:18"
+        },
+        "meaning": "Jobabbruch mit Rückstau-Meldung"
+      },
+      {
+        "id": "e2",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:18"
+        },
+        "meaning": "Job bricht mit Rückstau-Meldung ab"
+      },
+      {
+        "id": "o2",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:20"
+        },
+        "meaning": "Anzahl offener Zeiger ausgeben"
+      },
+      {
+        "id": "e3",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:20"
+        },
+        "meaning": "Lauf endet nach der Ausgabe"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "q",
+        "condition": "always"
+      },
+      {
+        "from": "q",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "o1",
+        "condition": "lv_count = 0"
+      },
+      {
+        "from": "o1",
+        "to": "e1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "g2",
+        "condition": "else"
+      },
+      {
+        "from": "g2",
+        "to": "m",
+        "condition": "lv_count > p_limit"
+      },
+      {
+        "from": "g2",
+        "to": "o2",
+        "condition": "else"
+      },
+      {
+        "from": "m",
+        "to": "e2",
+        "condition": "always"
+      },
+      {
+        "from": "o2",
+        "to": "e3",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "source.abap:9 — kein Fachsatz „Änderungszeiger werden verarbeitet oder IDocs erzeugt“ (der Report zählt nur).",
+    "source.abap:18 — kein Fachsatz „Änderungszeiger werden gelöscht oder zurückgesetzt“ (die Meldung bricht nur ab).",
+    "gesamte Scheibe — kein write-Knoten (kein Datenbankschreiben)."
+  ],
+  "processDescription": "Ein Hintergrundjob überwacht den ALE-Versand von Stammdaten. Er zählt die noch unverarbeiteten Änderungszeiger für den eingegebenen Nachrichtentyp (Vorschlag ZMATMAS). Ist kein Zeiger offen, meldet er das und endet. Übersteigt die Anzahl die eingegebene Schwelle (Vorschlag 5000), bricht der Job mit einer Fehlermeldung „Rückstau“ ab, damit die Jobüberwachung alarmiert. Sonst gibt er Nachrichtentyp und Anzahl offener Zeiger aus. Der Job verarbeitet und verändert selbst keine Änderungszeiger."
+}

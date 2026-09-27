@@ -1,0 +1,129 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten xlm (neu)",
+      "before": "—",
+      "after": "end sapmzmm_pr_release.abap:25 „Programm abgebrochen, keine Berechtigung“; neu lm->xlm [always]",
+      "why": "MESSAGE vom Typ E/A beendet den Pfad; wie im übrigen Benchmark (z. B. BM-048, BM-051, BM-058) folgt dem output-Knoten ein end-Knoten auf derselben Anweisung. Validator-Warnung „keine ausgehende Kante“.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten xl0 (neu)",
+      "before": "—",
+      "after": "end mzmm_pr_release_o01.abap:25 „LISTE_LADEN beendet“; neu lg1->xl0 [else] (Liste schon geladen), gl0->xl0 [else], ml0->xl0 [always]",
+      "why": "Vereinheitlichung (wie im Gegencheck FI/CO): jeder auslaufende FORM/METHOD/MODULE/FUNCTION-Block endet mit eigenem end-Knoten auf ENDFORM/ENDMETHOD/ENDMODULE/ENDFUNCTION (Brieftabelle: end auch bei implizitem Blockende); die Rückkante führt von dort zum Knoten nach dem Aufruf.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kanten lg1->xl0 [else], gl0->xl0 [else] (neu)",
+      "before": "lg1 und gl0 nur mit der Bedingungskante",
+      "after": "je eine Sonst-Kante zum Modulende",
+      "why": "Beide IF-Gateways hatten keinen Sonst-Zweig; ohne ihn fehlt der Normalfall (Liste bereits geladen bzw. nicht leer).",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten xfc (neu)",
+      "before": "—",
+      "after": "end mzmm_pr_release_f01.abap:11 „CODES_LESEN beendet“; umgeleitet: qc->gc [always] jetzt qc->xfc; neu xfc->gc [always]",
+      "why": "Vereinheitlichung (wie im Gegencheck FI/CO): jeder auslaufende FORM/METHOD/MODULE/FUNCTION-Block endet mit eigenem end-Knoten auf ENDFORM/ENDMETHOD/ENDMODULE/ENDFUNCTION (Brieftabelle: end auch bei implizitem Blockende); die Rückkante führt von dort zum Knoten nach dem Aufruf.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten xmc (neu)",
+      "before": "—",
+      "after": "end mzmm_pr_release_o01.abap:16 „Cockpit mit Fehlermeldung beendet“; neu mc->xmc [always]",
+      "why": "MESSAGE vom Typ E/A beendet den Pfad; wie im übrigen Benchmark (z. B. BM-048, BM-051, BM-058) folgt dem output-Knoten ein end-Knoten auf derselben Anweisung. Validator-Warnung „keine ausgehende Kante“.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten xfb (neu)",
+      "before": "—",
+      "after": "end mzmm_pr_release_f01.abap:58 „BANF_LESEN beendet, Liste sortiert“; umgeleitet: lb->gl0 [no more rows] jetzt lb->xfb; neu xfb->gl0 [always]",
+      "why": "Vereinheitlichung (wie im Gegencheck FI/CO): jeder auslaufende FORM/METHOD/MODULE/FUNCTION-Block endet mit eigenem end-Knoten auf ENDFORM/ENDMETHOD/ENDMODULE/ENDFUNCTION (Brieftabelle: end auch bei implizitem Blockende); die Rückkante führt von dort zum Knoten nach dem Aufruf.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten xex (neu)",
+      "before": "—",
+      "after": "end mzmm_pr_release_i01.abap:11 „EXIT_COMMAND beendet“; neu exc->xex [else] (anderer Funktionscode: CASE ohne WHEN OTHERS fällt durch)",
+      "why": "Vereinheitlichung (wie im Gegencheck FI/CO): jeder auslaufende FORM/METHOD/MODULE/FUNCTION-Block endet mit eigenem end-Knoten auf ENDFORM/ENDMETHOD/ENDMODULE/ENDFUNCTION (Brieftabelle: end auch bei implizitem Blockende); die Rückkante führt von dort zum Knoten nach dem Aufruf.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten xu0 (neu)",
+      "before": "—",
+      "after": "end mzmm_pr_release_i01.abap:44 „USER_COMMAND_0100 beendet“; neu urf->xu0 [always]",
+      "why": "Vereinheitlichung (wie im Gegencheck FI/CO): jeder auslaufende FORM/METHOD/MODULE/FUNCTION-Block endet mit eigenem end-Knoten auf ENDFORM/ENDMETHOD/ENDMODULE/ENDFUNCTION (Brieftabelle: end auch bei implizitem Blockende); die Rückkante führt von dort zum Knoten nach dem Aufruf.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten usrt (neu)",
+      "before": "uc ohne Zweige WHEN 'SORT' und WHEN OTHERS",
+      "after": "action mzmm_pr_release_i01.abap:39 „Liste nach Positionswert absteigend sortieren“; uc->usrt [WHEN 'SORT'], usrt->xu0 [always], uc->xu0 [WHEN OTHERS]",
+      "why": "Der CASE hatte sieben Zweige, das Skelett nur fünf; die Sortierfunktion steht in der processDescription („sortieren nach Wert“), WHEN OTHERS ist der leere Rest.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten xfr (neu)",
+      "before": "—",
+      "after": "end mzmm_pr_release_f01.abap:136 „MARKIERTE_FREIGEBEN beendet“; neu xfr->xu0 [always]; neu ms->xfr [always]",
+      "why": "Vereinheitlichung (wie im Gegencheck FI/CO): jeder auslaufende FORM/METHOD/MODULE/FUNCTION-Block endet mit eigenem end-Knoten auf ENDFORM/ENDMETHOD/ENDMODULE/ENDFUNCTION (Brieftabelle: end auch bei implizitem Blockende); die Rückkante führt von dort zum Knoten nach dem Aufruf.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kanten u2l->xu0, u2x->xu0 (neu)",
+      "before": "u2l, u2x ohne ausgehende Kante",
+      "after": "u2l->xu0 [always], u2x->xu0 [always]",
+      "why": "LEAVE TO SCREEN 0 beendet das Popup 0200 und kehrt hinter CALL SCREEN 0200 zurück; danach endet USER_COMMAND_0100.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten xfd (neu)",
+      "before": "—",
+      "after": "end mzmm_pr_release_f01.abap:208 „DETAIL_ANZEIGEN beendet“; neu xfd->xu0 [always]; neu tme->xfd [always], rdd->xu0 [always] (RETURN kehrt in das PAI-Modul zurück)",
+      "why": "Vereinheitlichung (wie im Gegencheck FI/CO): jeder auslaufende FORM/METHOD/MODULE/FUNCTION-Block endet mit eigenem end-Knoten auf ENDFORM/ENDMETHOD/ENDMODULE/ENDFUNCTION (Brieftabelle: end auch bei implizitem Blockende); die Rückkante führt von dort zum Knoten nach dem Aufruf.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten xfs (neu)",
+      "before": "—",
+      "after": "end mzmm_pr_release_f01.abap:223 „SUMME_ANZEIGEN beendet“; neu xfs->xu0 [always]; neu ms0->xfs, msi->xfs [always]",
+      "why": "Vereinheitlichung (wie im Gegencheck FI/CO): jeder auslaufende FORM/METHOD/MODULE/FUNCTION-Block endet mit eigenem end-Knoten auf ENDFORM/ENDMETHOD/ENDMODULE/ENDFUNCTION (Brieftabelle: end auch bei implizitem Blockende); die Rückkante führt von dort zum Knoten nach dem Aufruf.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten xu2m (neu)",
+      "before": "—",
+      "after": "end mzmm_pr_release_i01.abap:51 „Popup bleibt, Grund fehlt“; neu u2m->xu2m [always]",
+      "why": "MESSAGE vom Typ E/A beendet den Pfad; wie im übrigen Benchmark (z. B. BM-048, BM-051, BM-058) folgt dem output-Knoten ein end-Knoten auf derselben Anweisung. Validator-Warnung „keine ausgehende Kante“.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten xfa (neu)",
+      "before": "—",
+      "after": "end mzmm_pr_release_f01.abap:193 „MARKIERTE_ABLEHNEN beendet“; umgeleitet: la->u2l [no more rows] jetzt la->xfa; neu xfa->u2l [always]",
+      "why": "Vereinheitlichung (wie im Gegencheck FI/CO): jeder auslaufende FORM/METHOD/MODULE/FUNCTION-Block endet mit eigenem end-Knoten auf ENDFORM/ENDMETHOD/ENDMODULE/ENDFUNCTION (Brieftabelle: end auch bei implizitem Blockende); die Rückkante führt von dort zum Knoten nach dem Aufruf.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten xu2 (neu)",
+      "before": "—",
+      "after": "end mzmm_pr_release_i01.abap:60 „USER_COMMAND_0200 beendet ohne Aktion“; neu u2c->xu2 [else] (anderer Funktionscode, CASE ohne WHEN OTHERS)",
+      "why": "Vereinheitlichung (wie im Gegencheck FI/CO): jeder auslaufende FORM/METHOD/MODULE/FUNCTION-Block endet mit eigenem end-Knoten auf ENDFORM/ENDMETHOD/ENDMODULE/ENDFUNCTION (Brieftabelle: end auch bei implizitem Blockende); die Rückkante führt von dort zum Knoten nach dem Aufruf.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten xf4 (neu)",
+      "before": "—",
+      "after": "end mzmm_pr_release_i01.abap:80 „F4_GRUND beendet“; neu f4c->xf4 [always]",
+      "why": "Vereinheitlichung (wie im Gegencheck FI/CO): jeder auslaufende FORM/METHOD/MODULE/FUNCTION-Block endet mit eigenem end-Knoten auf ENDFORM/ENDMETHOD/ENDMODULE/ENDFUNCTION (Brieftabelle: end auch bei implizitem Blockende); die Rückkante führt von dort zum Knoten nach dem Aufruf.",
+      "category": "fehlender Knoten"
+    }
+  ],
+  "doubts": [
+    "mzmm_pr_release_f01.abap:21–23 (IF gt_codes IS INITIAL / RETURN in BANF_LESEN) ist nicht im Skelett. Der Zweig wird nie erreicht, weil LISTE_LADEN vorher bei leerem gt_codes mit MESSAGE e050 abbricht; daher nicht ergänzt.",
+    "Die Module STATUS_0100, TC_LIST_MOVE, TC_LIST_MODIFY und STATUS_0200 (PF-Status, Tabellensteuerung) sind nicht im Skelett, und die Dynpro-Ablauflogik liegt dem Fall nicht bei; die Reihenfolge der Module ist daher nur lose verkettet (lg -> l0). Vertretbar, nicht geändert."
+  ]
+}

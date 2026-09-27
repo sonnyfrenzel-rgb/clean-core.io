@@ -1,0 +1,536 @@
+{
+  "id": "BM-067",
+  "title": "Instandhaltungsaufträge zu offenen Störmeldungen per Batch-Input IW31",
+  "classes": [
+    "K17",
+    "K14",
+    "K04"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "QMEL",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 45,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:45"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "QMIH",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 45,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:45"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "IW31",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 67,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:67"
+      },
+      "identity": {
+        "objectType": "TRAN"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-067-B01",
+      "text": "Es werden Störmeldungen der Art M1 aus den gewählten Planungswerken selektiert, denen noch kein Auftrag zugeordnet ist.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:45"
+        }
+      ]
+    },
+    {
+      "id": "BM-067-B02",
+      "text": "Gibt es keine solche Meldung, wird ein Hinweis ausgegeben und der Lauf beendet.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:52"
+        },
+        {
+          "file": "source.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:53"
+        },
+        {
+          "file": "source.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:54"
+        }
+      ]
+    },
+    {
+      "id": "BM-067-B03",
+      "text": "Meldungen ohne Equipment werden übersprungen und als übersprungen protokolliert.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:59"
+        },
+        {
+          "file": "source.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:60"
+        }
+      ]
+    },
+    {
+      "id": "BM-067-B04",
+      "text": "Für jede übrige Meldung wird eine Batch-Input-Mappe für IW31 mit Auftragsart PM01, Meldungsbezug, Planungswerk und Meldungskurztext als Auftragskurztext aufgebaut.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:64"
+        },
+        {
+          "file": "source.abap",
+          "line": 91,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:91"
+        }
+      ]
+    },
+    {
+      "id": "BM-067-B05",
+      "text": "Die Auftragsanlage läuft über IW31 im gewählten Batch-Input-Modus mit synchroner Verbuchung; die Meldungen der Transaktion werden gesammelt.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:67"
+        }
+      ]
+    },
+    {
+      "id": "BM-067-B06",
+      "text": "Enthalten die Meldungen eine Fehlermeldung, wird die Meldung mit dem Fehlertext protokolliert, sonst als verarbeitet.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:72"
+        },
+        {
+          "file": "source.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:73"
+        },
+        {
+          "file": "source.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:78"
+        },
+        {
+          "file": "source.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:81"
+        }
+      ]
+    },
+    {
+      "id": "BM-067-B07",
+      "text": "Am Ende werden Anzahl verarbeiteter und fehlerhafter Meldungen ausgegeben.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:86"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:44"
+        },
+        "meaning": "Reportstart"
+      },
+      {
+        "id": "q",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:45"
+        },
+        "meaning": "Offene Störmeldungen M1 ohne Auftrag der gewählten Planungswerke lesen"
+      },
+      {
+        "id": "g0",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:52"
+        },
+        "meaning": "Meldungen gefunden?"
+      },
+      {
+        "id": "w0",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:53"
+        },
+        "meaning": "Hinweis: keine offenen Störmeldungen ohne Auftrag"
+      },
+      {
+        "id": "e0",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:54"
+        },
+        "meaning": "Ende"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "source.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:57"
+        },
+        "meaning": "Je Meldung einen Auftrag anlegen"
+      },
+      {
+        "id": "geq",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:59"
+        },
+        "meaning": "Meldung ohne Equipment?"
+      },
+      {
+        "id": "wskip",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:60"
+        },
+        "meaning": "Meldung als übersprungen protokollieren"
+      },
+      {
+        "id": "p",
+        "type": "call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:64"
+        },
+        "meaning": "Batch-Input-Daten für IW31 aufbauen"
+      },
+      {
+        "id": "f",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 91,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:91"
+        },
+        "meaning": "Mappe IW31: Auftragsart PM01, Bezug Meldung, Planungswerk, Kurztext, Sichern"
+      },
+      {
+        "id": "fend",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 102,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:102"
+        },
+        "meaning": "Batch-Input-Mappe aufgebaut, Rückkehr zum Aufrufer"
+      },
+      {
+        "id": "ct",
+        "type": "transaction",
+        "anchor": {
+          "file": "source.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:67"
+        },
+        "meaning": "IW31 per Batch-Input ausführen, synchrone Verbuchung, Meldungen sammeln"
+      },
+      {
+        "id": "gerr",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:73"
+        },
+        "meaning": "Fehlermeldung in den Batch-Input-Meldungen?"
+      },
+      {
+        "id": "werr",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:78"
+        },
+        "meaning": "Meldung mit Fehlertext protokollieren"
+      },
+      {
+        "id": "wok",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:81"
+        },
+        "meaning": "Meldung als verarbeitet protokollieren"
+      },
+      {
+        "id": "sum",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:86"
+        },
+        "meaning": "Summen ausgeben"
+      },
+      {
+        "id": "e_end",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:86"
+        },
+        "meaning": "Report beendet"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "q",
+        "condition": "always"
+      },
+      {
+        "from": "q",
+        "to": "g0",
+        "condition": "always"
+      },
+      {
+        "from": "g0",
+        "to": "w0",
+        "condition": "gt_mel IS INITIAL"
+      },
+      {
+        "from": "w0",
+        "to": "e0",
+        "condition": "always"
+      },
+      {
+        "from": "g0",
+        "to": "l",
+        "condition": "else"
+      },
+      {
+        "from": "l",
+        "to": "geq",
+        "condition": "next row"
+      },
+      {
+        "from": "geq",
+        "to": "wskip",
+        "condition": "gs_mel-equnr IS INITIAL"
+      },
+      {
+        "from": "wskip",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "geq",
+        "to": "p",
+        "condition": "else"
+      },
+      {
+        "from": "p",
+        "to": "f",
+        "condition": "always"
+      },
+      {
+        "from": "fend",
+        "to": "ct",
+        "condition": "always"
+      },
+      {
+        "from": "ct",
+        "to": "gerr",
+        "condition": "always"
+      },
+      {
+        "from": "gerr",
+        "to": "werr",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "werr",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "gerr",
+        "to": "wok",
+        "condition": "else"
+      },
+      {
+        "from": "wok",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l",
+        "to": "sum",
+        "condition": "no more rows"
+      },
+      {
+        "from": "f",
+        "to": "fend",
+        "condition": "always"
+      },
+      {
+        "from": "sum",
+        "to": "e_end",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "source.abap:81 — kein Fachsatz „Der Auftrag wurde angelegt und die Auftragsnummer protokolliert“ (Erfolg wird nur aus dem Fehlen einer E-Meldung geschlossen, eine Auftragsnummer wird nicht ausgewertet; A-Meldungen werden nicht geprüft)",
+    "source.abap:91 — kein Fachsatz „Die Priorität wird in den Auftrag übernommen“ (die Priorität-Zeile ist auskommentiert)",
+    "gesamte Scheibe — kein Fachsatz „Der Auftrag wird freigegeben“ (die Mappe sichert nur mit =BU, eine Freigabe ist nicht enthalten)"
+  ],
+  "processDescription": "Der Report sucht in den gewählten Planungswerken alle Störmeldungen der Art M1, zu denen es noch keinen Auftrag gibt. Findet er keine, gibt er einen Hinweis aus und endet. Für jede Meldung prüft er, ob ein Equipment hinterlegt ist; Meldungen ohne Equipment protokolliert er als übersprungen. Für die übrigen baut er eine Batch-Input-Mappe für IW31 – Auftragsart PM01, Bezug zur Meldung, Planungswerk, Meldungskurztext als Auftragstext – und führt die Transaktion im gewählten Modus mit synchroner Verbuchung aus. Findet sich unter den gesammelten Meldungen eine Fehlermeldung, protokolliert er die Meldung mit Fehlertext, sonst als verarbeitet. Zum Schluss gibt er die Summen aus."
+}

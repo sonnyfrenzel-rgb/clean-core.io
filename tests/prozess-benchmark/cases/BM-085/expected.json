@@ -1,0 +1,309 @@
+{
+  "id": "BM-085",
+  "title": "Pflichtfeldprüfung einer Materialanlage-Vorlage per Makro",
+  "classes": [
+    "K14"
+  ],
+  "classic_level": "B",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "ZMM_MAT_STAGE",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 24,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:24"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZMM_MAT_STAGE",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "source.abap",
+        "line": 30,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:30"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-085-B01",
+      "text": "Es werden alle neuen Vorlagezeilen (Status N) des eingegebenen Stapels gelesen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:24"
+        }
+      ]
+    },
+    {
+      "id": "BM-085-B02",
+      "text": "Für jede Zeile wird geprüft, ob Materialart, Basismengeneinheit, Warengruppe und Werk gefüllt sind; jedes leere Feld wird als Fehler vermerkt.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:26"
+        },
+        {
+          "file": "source.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:27"
+        }
+      ]
+    },
+    {
+      "id": "BM-085-B03",
+      "text": "Ist keine Zeile fehlerhaft, wird der ganze Stapel auf Status V (plausibel) gesetzt und das gemeldet.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:29"
+        },
+        {
+          "file": "source.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:30"
+        },
+        {
+          "file": "source.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:32"
+        }
+      ]
+    },
+    {
+      "id": "BM-085-B04",
+      "text": "Sonst bleibt der Stapel unverändert und es wird nur die Anzahl der Pflichtfeldfehler ausgegeben.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:35"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:23"
+        },
+        "meaning": "Reportstart"
+      },
+      {
+        "id": "r",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:24"
+        },
+        "meaning": "Neue Vorlagezeilen des Stapels lesen"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "source.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:26"
+        },
+        "meaning": "Vorlagezeilen durchlaufen"
+      },
+      {
+        "id": "chk",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:27"
+        },
+        "meaning": "Pflichtfelder Materialart, Mengeneinheit, Warengruppe, Werk prüfen"
+      },
+      {
+        "id": "g",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:29"
+        },
+        "meaning": "Keine Pflichtfeldfehler?"
+      },
+      {
+        "id": "w",
+        "type": "write",
+        "anchor": {
+          "file": "source.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:30"
+        },
+        "meaning": "Stapel auf Status V (plausibel) setzen"
+      },
+      {
+        "id": "o1",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:32"
+        },
+        "meaning": "Freigabe melden"
+      },
+      {
+        "id": "o2",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:35"
+        },
+        "meaning": "Fehleranzahl ausgeben"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:36"
+        },
+        "meaning": "Lauf endet nach der Meldung"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "r",
+        "condition": "always"
+      },
+      {
+        "from": "r",
+        "to": "l",
+        "condition": "always"
+      },
+      {
+        "from": "l",
+        "to": "chk",
+        "condition": "next row"
+      },
+      {
+        "from": "chk",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l",
+        "to": "g",
+        "condition": "no more rows"
+      },
+      {
+        "from": "g",
+        "to": "w",
+        "condition": "lt_err IS INITIAL"
+      },
+      {
+        "from": "w",
+        "to": "o1",
+        "condition": "always"
+      },
+      {
+        "from": "g",
+        "to": "o2",
+        "condition": "else"
+      },
+      {
+        "from": "o1",
+        "to": "e",
+        "condition": "always"
+      },
+      {
+        "from": "o2",
+        "to": "e",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "source.abap:30 — kein Fachsatz „fehlerfreie Zeilen werden einzeln freigegeben“ (alles oder nichts: ein Fehler verhindert die Freigabe des ganzen Stapels).",
+    "gesamte Scheibe — kein Fachsatz „Materialien werden angelegt“ (nur der Status der Stagingtabelle wird gesetzt).",
+    "source.abap:35 — kein Fachsatz „fehlerhafte Materialien werden einzeln aufgelistet“ (nur die Anzahl wird ausgegeben)."
+  ],
+  "processDescription": "Ein Sachbearbeiter startet den Report für einen Stapel von Materialanlage-Vorlagen. Der Report liest alle neuen Vorlagezeilen (Status N) des Stapels und prüft je Zeile per Makro, ob Materialart, Basismengeneinheit, Warengruppe und Werk gefüllt sind; jedes leere Pflichtfeld wird vermerkt. Ist keine Zeile fehlerhaft, setzt er alle neuen Zeilen des Stapels auf Status V und meldet die Freigabe. Andernfalls bleibt der Stapel unverändert und nur die Anzahl der Pflichtfeldfehler wird ausgegeben. Materialien selbst legt der Report nicht an."
+}

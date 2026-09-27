@@ -1,0 +1,40 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten e_main (neu)",
+      "before": "—",
+      "after": "end zif_inbox_dispatch.abap:87 „Lauf endet nach dem Festschreiben des Logs“",
+      "why": "Implizites Ende von START-OF-SELECTION fehlte; cw0 hatte keine ausgehende Kante.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kanten cd",
+      "before": "cd->cf [always]",
+      "after": "e_nr->cf [always], e_d->cf [always]",
+      "why": "Konvention Aufrufe im Fall: Aufruf → Start des Ziels, end des Ziels → nächster Schritt (je Aufrufer eine Rückkante); die Direktkante Aufruf → Folgeknoten entfällt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten cf",
+      "before": "cf->deq [always]",
+      "after": "e_f1->deq [always], e_f2->deq [always]",
+      "why": "Konvention Aufrufe im Fall: Aufruf → Start des Ziels, end des Ziels → nächster Schritt (je Aufrufer eine Rückkante); die Direktkante Aufruf → Folgeknoten entfällt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten cl",
+      "before": "cl->cw2 [always]",
+      "after": "e_l->cw2 [always]",
+      "why": "Konvention Aufrufe im Fall: Aufruf → Start des Ziels, end des Ziels → nächster Schritt (je Aufrufer eine Rückkante); die Direktkante Aufruf → Folgeknoten entfällt.",
+      "category": "Kante"
+    }
+  ],
+  "doubts": [
+    "ENQUEUE_EZIF_INBOX mit Standard-_SCOPE 2: das COMMIT WORK bzw. ROLLBACK WORK in FINISH gibt die Sperre bereits frei, das DEQUEUE in Z. 76 ist dann wirkungslos. B14 bleibt fachlich vertretbar; nicht geändert."
+  ],
+  "notes": [
+    "a_nr (f01:20), a_ex (f01:37), a_ot (f01:50) bleiben als action: sie legen fachlich das Ergebnis „fehlerhaft“ fest (Returncode 8 mit Fehlertext), das in FINISH das Gateway gok und damit Status S/R/E steuert."
+  ]
+}

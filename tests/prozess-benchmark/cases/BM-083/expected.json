@@ -1,0 +1,194 @@
+{
+  "id": "BM-083",
+  "title": "Organisationseinheit und Kostenstelle eines Mitarbeiters zum Stichtag",
+  "classes": [
+    "K03"
+  ],
+  "classic_level": "B",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "HR_READ_INFOTYPE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 16,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:16"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-083-B01",
+      "text": "Die organisatorische Zuordnung (Infotyp 0001) des Mitarbeiters wird für genau den Stichtag gelesen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:16"
+        }
+      ]
+    },
+    {
+      "id": "BM-083-B02",
+      "text": "Ist der Mitarbeiter zum Stichtag keiner Organisationseinheit zugeordnet oder schlägt das Lesen fehl, endet der Baustein mit NOT_ASSIGNED.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:27"
+        },
+        {
+          "file": "source.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:28"
+        }
+      ]
+    },
+    {
+      "id": "BM-083-B03",
+      "text": "Sonst werden Organisationseinheit und Kostenstelle des gültigen Satzes zurückgegeben.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:32"
+        },
+        {
+          "file": "source.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:33"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 1,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:1"
+        },
+        "meaning": "Baustein-Einstieg"
+      },
+      {
+        "id": "rd",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:16"
+        },
+        "meaning": "Organisatorische Zuordnung (IT0001) zum Stichtag lesen"
+      },
+      {
+        "id": "g",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:27"
+        },
+        "meaning": "Keine Zuordnung gefunden?"
+      },
+      {
+        "id": "e1",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:28"
+        },
+        "meaning": "Abbruch: nicht zugeordnet"
+      },
+      {
+        "id": "e2",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:38"
+        },
+        "meaning": "Rückgabe an Aufrufer"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "rd",
+        "condition": "always"
+      },
+      {
+        "from": "rd",
+        "to": "g",
+        "condition": "always"
+      },
+      {
+        "from": "g",
+        "to": "e1",
+        "condition": "sy-subrc <> 0 OR lt_p0001 IS INITIAL"
+      },
+      {
+        "from": "g",
+        "to": "e2",
+        "condition": "else"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "gesamte Scheibe — kein Fachsatz „fehlende Kostenstelle wird aus der Planstelle ermittelt“ (nur auskommentierter Rest).",
+    "source.abap:16 — kein read-Knoten auf PA0001 (der Zugriff läuft über den Baustein, nicht über SELECT).",
+    "source.abap:33 — kein Fachsatz „leere Kostenstelle führt zu Fehler“ (eine leere Kostenstelle wird ungeprüft zurückgegeben)."
+  ],
+  "processDescription": "Andere Programme übergeben Personalnummer und Stichtag (Vorschlag: heute). Der Baustein liest die organisatorische Zuordnung des Mitarbeiters (Infotyp 0001) genau für diesen Tag. Findet er keinen gültigen Satz oder schlägt das Lesen fehl, endet er mit der Ausnahme NOT_ASSIGNED. Sonst gibt er Organisationseinheit und Kostenstelle des gefundenen Satzes zurück; eine leere Kostenstelle wird nicht weiter behandelt, der frühere Rückgriff auf die Planstelle ist auskommentiert."
+}

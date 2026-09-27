@@ -1,0 +1,158 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten u1_e3 (neu)",
+      "before": "—",
+      "after": "end mzvcerti01.abap:43 „Abbruch: Zertifikat existiert bereits“",
+      "why": "MESSAGE e003 (Typ E) im PAI beendet die Verarbeitung des Dialogschritts (das Bild wird mit der Meldung erneut gesendet); Konvention output + end auf derselben Zeile. u1_m3 hatte keine ausgehende Kante.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten u1_e4 (neu)",
+      "before": "—",
+      "after": "end mzvcerti01.abap:45 „Abbruch: Zertifikat existiert nicht“",
+      "why": "MESSAGE e004 (Typ E) im PAI beendet die Verarbeitung des Dialogschritts (das Bild wird mit der Meldung erneut gesendet); Konvention output + end auf derselben Zeile. u1_m4 hatte keine ausgehende Kante.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten cv_e1 (neu)",
+      "before": "—",
+      "after": "end mzvcertf01.abap:15 „Abbruch: Kreditor existiert nicht“",
+      "why": "MESSAGE e001 (Typ E) im PAI beendet die Verarbeitung des Dialogschritts (das Bild wird mit der Meldung erneut gesendet); Konvention output + end auf derselben Zeile. cv_m1 hatte keine ausgehende Kante.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten cv_e2 (neu)",
+      "before": "—",
+      "after": "end mzvcertf01.abap:18 „Abbruch: Kreditor gesperrt“",
+      "why": "MESSAGE e002 (Typ E) im PAI beendet die Verarbeitung des Dialogschritts (das Bild wird mit der Meldung erneut gesendet); Konvention output + end auf derselben Zeile. cv_m2 hatte keine ausgehende Kante.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten ca_e1 (neu)",
+      "before": "—",
+      "after": "end mzvcertf01.abap:43 „Abbruch: keine Berechtigung“",
+      "why": "MESSAGE e005 (Typ E) im PAI beendet die Verarbeitung des Dialogschritts (das Bild wird mit der Meldung erneut gesendet); Konvention output + end auf derselben Zeile. ca_m hatte keine ausgehende Kante.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten lk_e1 (neu)",
+      "before": "—",
+      "after": "end mzvcertf01.abap:60 „Abbruch: Zertifikat in Bearbeitung“",
+      "why": "MESSAGE e006 (Typ E) im PAI beendet die Verarbeitung des Dialogschritts (das Bild wird mit der Meldung erneut gesendet); Konvention output + end auf derselben Zeile. lk_m hatte keine ausgehende Kante.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten vd_e1 (neu)",
+      "before": "—",
+      "after": "end mzvcertf01.abap:86 „Abbruch: Zeitraum unplausibel“",
+      "why": "MESSAGE e007 (Typ E) im PAI beendet die Verarbeitung des Dialogschritts (das Bild wird mit der Meldung erneut gesendet); Konvention output + end auf derselben Zeile. vd_m1 hatte keine ausgehende Kante.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten vd_e2 (neu)",
+      "before": "—",
+      "after": "end mzvcertf01.abap:92 „Abbruch: Zertifikatsart unbekannt“",
+      "why": "MESSAGE e008 (Typ E) im PAI beendet die Verarbeitung des Dialogschritts (das Bild wird mit der Meldung erneut gesendet); Konvention output + end auf derselben Zeile. vd_m2 hatte keine ausgehende Kante.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten u1_a",
+      "before": "action mzvcerti01.abap:52 „Gespeicherte Daten ins Bild übernehmen“",
+      "after": "entfernt; überbrückt: u1_g3->u1_cs [gv_mode <> gc_create]",
+      "why": "zvcert = gs_old (Z. 52) ist eine reine Zuweisung; laut Autorenbrief kein Knoten. Inhalt bleibt in Fachsatz B06.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Knoten sv_ae",
+      "before": "action mzvcertf01.abap:115 „Status E (abgelaufen)“",
+      "after": "entfernt; überbrückt: sv_g->sv_w1 [zvcert-valid_to < sy-datum]",
+      "why": "Reine Zuweisung zvcert-status = E (f01:115); steuert keinen weiteren Fluss, laut Autorenbrief kein Knoten. Inhalt bleibt in Fachsatz B11.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Knoten sv_ag",
+      "before": "action mzvcertf01.abap:117 „Status G (gültig)“",
+      "after": "entfernt; überbrückt: sv_g->sv_w1 [else]",
+      "why": "Reine Zuweisung zvcert-status = G (f01:117); steuert keinen weiteren Fluss, laut Autorenbrief kein Knoten. Inhalt bleibt in Fachsatz B11.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Kanten x_c",
+      "before": "x_c->x_e [always]",
+      "after": "ul_e->x_e [always]",
+      "why": "Konvention Aufrufe im Fall: Aufruf → Start des Ziels, end des Ziels → nächster Schritt (je Aufrufer eine Rückkante); die Direktkante Aufruf → Folgeknoten entfällt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten u1_cv",
+      "before": "u1_cv->u1_ca [always]",
+      "after": "cv_e->u1_ca [always]",
+      "why": "Konvention Aufrufe im Fall: Aufruf → Start des Ziels, end des Ziels → nächster Schritt (je Aufrufer eine Rückkante); die Direktkante Aufruf → Folgeknoten entfällt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten u1_ca",
+      "before": "u1_ca->u1_r [always]",
+      "after": "ca_e->u1_r [always]",
+      "why": "Konvention Aufrufe im Fall: Aufruf → Start des Ziels, end des Ziels → nächster Schritt (je Aufrufer eine Rückkante); die Direktkante Aufruf → Folgeknoten entfällt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten u1_lk",
+      "before": "u1_lk->u1_g3 [always]",
+      "after": "lk_e->u1_g3 [always]",
+      "why": "Konvention Aufrufe im Fall: Aufruf → Start des Ziels, end des Ziels → nächster Schritt (je Aufrufer eine Rückkante); die Direktkante Aufruf → Folgeknoten entfällt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten u2_v",
+      "before": "u2_v->u2_sv [always]",
+      "after": "vd_e->u2_sv [always]",
+      "why": "Konvention Aufrufe im Fall: Aufruf → Start des Ziels, end des Ziels → nächster Schritt (je Aufrufer eine Rückkante); die Direktkante Aufruf → Folgeknoten entfällt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten u2_sv",
+      "before": "u2_sv->u2_u1 [always]",
+      "after": "sv_e->u2_u1 [always]",
+      "why": "Konvention Aufrufe im Fall: Aufruf → Start des Ziels, end des Ziels → nächster Schritt (je Aufrufer eine Rückkante); die Direktkante Aufruf → Folgeknoten entfällt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten u2_u1",
+      "before": "u2_u1->u2_l1 [always]",
+      "after": "ul_e->u2_l1 [always]",
+      "why": "Konvention Aufrufe im Fall: Aufruf → Start des Ziels, end des Ziels → nächster Schritt (je Aufrufer eine Rückkante); die Direktkante Aufruf → Folgeknoten entfällt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten u2_d",
+      "before": "u2_d->u2_u2 [always]",
+      "after": "dl_e1->u2_u2 [always], dl_e->u2_u2 [always]",
+      "why": "Konvention Aufrufe im Fall: Aufruf → Start des Ziels, end des Ziels → nächster Schritt (je Aufrufer eine Rückkante); die Direktkante Aufruf → Folgeknoten entfällt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten u2_u2",
+      "before": "u2_u2->u2_l2 [always]",
+      "after": "ul_e->u2_l2 [always]",
+      "why": "Konvention Aufrufe im Fall: Aufruf → Start des Ziels, end des Ziels → nächster Schritt (je Aufrufer eine Rückkante); die Direktkante Aufruf → Folgeknoten entfällt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten u2_u3",
+      "before": "u2_u3->u2_l3 [always]",
+      "after": "ul_e->u2_l3 [always]",
+      "why": "Konvention Aufrufe im Fall: Aufruf → Start des Ziels, end des Ziels → nächster Schritt (je Aufrufer eine Rückkante); die Direktkante Aufruf → Folgeknoten entfällt.",
+      "category": "Kante"
+    }
+  ],
+  "doubts": [],
+  "notes": [
+    "Die end-Knoten der E-Meldungen in den FORMs (cv_e1, cv_e2, ca_e1, lk_e1, vd_e1, vd_e2) erhalten keine Rückkante zum Aufrufer: die Meldung beendet den ganzen PAI-Schritt, nicht nur die FORM.",
+    "Gateways u1_g3 (Z. 51) und sv_g (f01:114) bleiben mit zwei Kanten zum selben Folgeknoten: die Zuweisungsknoten entfallen, die Verzweigung ist in B06/B11 fachlich beschrieben."
+  ]
+}

@@ -1,0 +1,1341 @@
+{
+  "id": "BM-035",
+  "title": "Zyklische ABC-Inventur: fällige Materialien, Belege anlegen, Differenzen bis Wertgrenze buchen",
+  "classes": [
+    "K01",
+    "K03",
+    "K04",
+    "K15",
+    "K18"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [
+    "ZMM_INV_RECOUNT wird in derselben LUW wie die Differenzbuchung geschrieben: rollt ein BAPI-Fehler auch die Vormerkungen des Belegs zurück, und wer schreibt Vormerkungen fest, wenn ein Beleg keine buchbare Position hat?"
+  ],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "MARC",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_mm_cycle_count.abap",
+        "line": 41,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_mm_cycle_count.abap:41"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "MARD",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_mm_cycle_count.abap",
+        "line": 41,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_mm_cycle_count.abap:41"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "T159C",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_mm_cycle_count.abap",
+        "line": 41,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_mm_cycle_count.abap:41"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_MATPHYSINV_CREATE_MULT",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_mm_cycle_count.abap",
+        "line": 73,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_mm_cycle_count.abap:73"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ISEG",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_mm_cycle_count.abap",
+        "line": 101,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_mm_cycle_count.abap:101"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "MBEW",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_mm_cycle_count.abap",
+        "line": 115,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_mm_cycle_count.abap:115"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZMM_INV_RECOUNT",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "zcl_mm_cycle_count.abap",
+        "line": 129,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_mm_cycle_count.abap:129"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_MATPHYSINV_POSTDIFF",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_mm_cycle_count.abap",
+        "line": 143,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_mm_cycle_count.abap:143"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_COMMIT",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_mm_cycle_count.abap",
+        "line": 87,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_mm_cycle_count.abap:87"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_ROLLBACK",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_mm_cycle_count.abap",
+        "line": 83,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_mm_cycle_count.abap:83"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZCL_MM_CYCLE_COUNT",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zmm_zyklusinventur.abap",
+        "line": 31,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zmm_zyklusinventur.abap:31"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-035-B01",
+      "text": "Beim Verlassen des Selektionsbilds wird geprüft, ob der Anwender im Werk Inventurbelege anlegen darf; sonst wird die Eingabe mit Fehlermeldung zurückgewiesen.",
+      "anchors": [
+        {
+          "file": "zmm_zyklusinventur.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_zyklusinventur.abap:23"
+        },
+        {
+          "file": "zmm_zyklusinventur.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_zyklusinventur.abap:26"
+        },
+        {
+          "file": "zmm_zyklusinventur.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_zyklusinventur.abap:27"
+        }
+      ]
+    },
+    {
+      "id": "BM-035-B02",
+      "text": "Im Modus Anlegen werden die Materialien des Werks mit Zykluskennzeichen gelesen, die am Lagerort frei verwendbaren Bestand haben und nicht zur Inventur gesperrt sind.",
+      "anchors": [
+        {
+          "file": "zmm_zyklusinventur.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_zyklusinventur.abap:33"
+        },
+        {
+          "file": "zcl_mm_cycle_count.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_cycle_count.abap:41"
+        }
+      ]
+    },
+    {
+      "id": "BM-035-B03",
+      "text": "Fällig ist ein Material, wenn es noch nie inventarisiert wurde oder seit der letzten Inventur mindestens 365 geteilt durch die Zahl der Inventuren pro Jahr seines Zykluskennzeichens Tage vergangen sind.",
+      "anchors": [
+        {
+          "file": "zcl_mm_cycle_count.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_cycle_count.abap:52"
+        },
+        {
+          "file": "zcl_mm_cycle_count.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_cycle_count.abap:54"
+        }
+      ]
+    },
+    {
+      "id": "BM-035-B04",
+      "text": "Ist nichts fällig, wird das gemeldet und die Verarbeitung beendet.",
+      "anchors": [
+        {
+          "file": "zmm_zyklusinventur.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_zyklusinventur.abap:36"
+        },
+        {
+          "file": "zmm_zyklusinventur.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_zyklusinventur.abap:37"
+        },
+        {
+          "file": "zmm_zyklusinventur.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_zyklusinventur.abap:38"
+        }
+      ]
+    },
+    {
+      "id": "BM-035-B05",
+      "text": "Für die fälligen Materialien werden Inventurbelege mit Referenz ZYKLUS zum Tagesdatum angelegt, aufgeteilt nach der eingegebenen Höchstzahl an Positionen je Beleg.",
+      "anchors": [
+        {
+          "file": "zcl_mm_cycle_count.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_cycle_count.abap:70"
+        },
+        {
+          "file": "zcl_mm_cycle_count.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_cycle_count.abap:73"
+        }
+      ]
+    },
+    {
+      "id": "BM-035-B06",
+      "text": "Meldet die Anlage einen Fehler, wird zurückgerollt und der Fehler protokolliert; sonst werden die Belege festgeschrieben und ihre Nummern protokolliert.",
+      "anchors": [
+        {
+          "file": "zcl_mm_cycle_count.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_cycle_count.abap:82"
+        },
+        {
+          "file": "zcl_mm_cycle_count.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_cycle_count.abap:83"
+        },
+        {
+          "file": "zcl_mm_cycle_count.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_cycle_count.abap:87"
+        }
+      ]
+    },
+    {
+      "id": "BM-035-B07",
+      "text": "Im Modus Buchen werden die gezählten, noch nicht gebuchten und nicht gelöschten Inventurpositionen des Lagerorts je Inventurbeleg verarbeitet.",
+      "anchors": [
+        {
+          "file": "zcl_mm_cycle_count.abap",
+          "line": 101,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_cycle_count.abap:101"
+        },
+        {
+          "file": "zcl_mm_cycle_count.abap",
+          "line": 111,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_cycle_count.abap:111"
+        }
+      ]
+    },
+    {
+      "id": "BM-035-B08",
+      "text": "Je Position wird der Bewertungspreis nach Preissteuerung (Standardpreis oder gleitender Durchschnittspreis) je Preiseinheit gelesen; ohne Bewertung wird die Position mit Warnung übersprungen.",
+      "anchors": [
+        {
+          "file": "zcl_mm_cycle_count.abap",
+          "line": 115,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_cycle_count.abap:115"
+        },
+        {
+          "file": "zcl_mm_cycle_count.abap",
+          "line": 121,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_cycle_count.abap:121"
+        }
+      ]
+    },
+    {
+      "id": "BM-035-B09",
+      "text": "Der Differenzwert ist der Betrag der Mengendifferenz mal Stückpreis.",
+      "anchors": [
+        {
+          "file": "zcl_mm_cycle_count.abap",
+          "line": 125,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_cycle_count.abap:125"
+        },
+        {
+          "file": "zcl_mm_cycle_count.abap",
+          "line": 126,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_cycle_count.abap:126"
+        }
+      ]
+    },
+    {
+      "id": "BM-035-B10",
+      "text": "Liegt er über der Wertgrenze, wird die Position nicht gebucht, sondern zur Nachzählung bzw. Freigabe durch das Controlling vorgemerkt und protokolliert.",
+      "anchors": [
+        {
+          "file": "zcl_mm_cycle_count.abap",
+          "line": 127,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_cycle_count.abap:127"
+        },
+        {
+          "file": "zcl_mm_cycle_count.abap",
+          "line": 129,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_cycle_count.abap:129"
+        }
+      ]
+    },
+    {
+      "id": "BM-035-B11",
+      "text": "Die übrigen Positionen eines Belegs werden gemeinsam als Inventurdifferenz zum Tagesdatum gebucht; Belege ohne buchbare Position werden übersprungen.",
+      "anchors": [
+        {
+          "file": "zcl_mm_cycle_count.abap",
+          "line": 140,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_cycle_count.abap:140"
+        },
+        {
+          "file": "zcl_mm_cycle_count.abap",
+          "line": 143,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_cycle_count.abap:143"
+        }
+      ]
+    },
+    {
+      "id": "BM-035-B12",
+      "text": "Scheitert die Buchung, wird zurückgerollt und der Beleg als fehlgeschlagen protokolliert; sonst wird festgeschrieben und die Zahl gebuchter Differenzen protokolliert.",
+      "anchors": [
+        {
+          "file": "zcl_mm_cycle_count.abap",
+          "line": 151,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_cycle_count.abap:151"
+        },
+        {
+          "file": "zcl_mm_cycle_count.abap",
+          "line": 152,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_cycle_count.abap:152"
+        },
+        {
+          "file": "zcl_mm_cycle_count.abap",
+          "line": 155,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_cycle_count.abap:155"
+        }
+      ]
+    },
+    {
+      "id": "BM-035-B13",
+      "text": "Am Ende wird das Protokoll mit Meldungstyp und Text als Liste ausgegeben.",
+      "anchors": [
+        {
+          "file": "zmm_zyklusinventur.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_zyklusinventur.abap:45"
+        },
+        {
+          "file": "zmm_zyklusinventur.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_zyklusinventur.abap:46"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "i",
+        "type": "start",
+        "anchor": {
+          "file": "zmm_zyklusinventur.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_zyklusinventur.abap:17"
+        },
+        "meaning": "Programmstart"
+      },
+      {
+        "id": "ai",
+        "type": "action",
+        "anchor": {
+          "file": "zmm_zyklusinventur.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_zyklusinventur.abap:18"
+        },
+        "meaning": "Berechtigungsprüfung ohne Auswertung"
+      },
+      {
+        "id": "ass",
+        "type": "start",
+        "anchor": {
+          "file": "zmm_zyklusinventur.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_zyklusinventur.abap:22"
+        },
+        "meaning": "Prüfung der Eingaben"
+      },
+      {
+        "id": "ac",
+        "type": "action",
+        "anchor": {
+          "file": "zmm_zyklusinventur.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_zyklusinventur.abap:23"
+        },
+        "meaning": "Inventurberechtigung für Werk prüfen"
+      },
+      {
+        "id": "ga",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_zyklusinventur.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_zyklusinventur.abap:26"
+        },
+        "meaning": "Berechtigt?"
+      },
+      {
+        "id": "ma",
+        "type": "output",
+        "anchor": {
+          "file": "zmm_zyklusinventur.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_zyklusinventur.abap:27"
+        },
+        "meaning": "Fehlermeldung, Eingabe zurückweisen"
+      },
+      {
+        "id": "xma",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_zyklusinventur.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_zyklusinventur.abap:27"
+        },
+        "meaning": "Selektionsbild mit Fehlermeldung erneut angezeigt"
+      },
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "zmm_zyklusinventur.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_zyklusinventur.abap:30"
+        },
+        "meaning": "Verarbeitung"
+      },
+      {
+        "id": "cs",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_zyklusinventur.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_zyklusinventur.abap:33"
+        },
+        "meaning": "Modus Anlegen oder Buchen?"
+      },
+      {
+        "id": "csd",
+        "type": "call",
+        "anchor": {
+          "file": "zmm_zyklusinventur.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_zyklusinventur.abap:35"
+        },
+        "meaning": "Fällige Materialien ermitteln"
+      },
+      {
+        "id": "sd",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_mm_cycle_count.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_cycle_count.abap:39"
+        },
+        "meaning": "Fälligkeitsermittlung"
+      },
+      {
+        "id": "q1",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_mm_cycle_count.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_cycle_count.abap:41"
+        },
+        "meaning": "Materialien mit Zykluskennzeichen und Bestand am Lagerort lesen"
+      },
+      {
+        "id": "l1",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_mm_cycle_count.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_cycle_count.abap:52"
+        },
+        "meaning": "Kandidaten durchlaufen"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_mm_cycle_count.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_cycle_count.abap:54"
+        },
+        "meaning": "Nie gezählt oder Intervall abgelaufen?"
+      },
+      {
+        "id": "gd",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_zyklusinventur.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_zyklusinventur.abap:36"
+        },
+        "meaning": "Fällige Materialien vorhanden?"
+      },
+      {
+        "id": "wd",
+        "type": "output",
+        "anchor": {
+          "file": "zmm_zyklusinventur.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_zyklusinventur.abap:37"
+        },
+        "meaning": "Hinweis: nichts fällig"
+      },
+      {
+        "id": "rd",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_zyklusinventur.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_zyklusinventur.abap:38"
+        },
+        "meaning": "Verarbeitung beenden"
+      },
+      {
+        "id": "ccd",
+        "type": "call",
+        "anchor": {
+          "file": "zmm_zyklusinventur.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_zyklusinventur.abap:40"
+        },
+        "meaning": "Inventurbelege anlegen"
+      },
+      {
+        "id": "cd",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_mm_cycle_count.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_cycle_count.abap:60"
+        },
+        "meaning": "Belegerzeugung"
+      },
+      {
+        "id": "bc",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_mm_cycle_count.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_cycle_count.abap:73"
+        },
+        "meaning": "Inventurbelege mit Positionsobergrenze anlegen"
+      },
+      {
+        "id": "gce",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_mm_cycle_count.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_cycle_count.abap:82"
+        },
+        "meaning": "Fehler bei Anlage?"
+      },
+      {
+        "id": "rbc",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_mm_cycle_count.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_cycle_count.abap:83"
+        },
+        "meaning": "Zurückrollen, Fehler protokollieren"
+      },
+      {
+        "id": "rce",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_mm_cycle_count.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_cycle_count.abap:85"
+        },
+        "meaning": "Anlage abgebrochen"
+      },
+      {
+        "id": "cmc",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_mm_cycle_count.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_cycle_count.abap:87"
+        },
+        "meaning": "Belege festschreiben, Belegnummern protokollieren"
+      },
+      {
+        "id": "ce",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_mm_cycle_count.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_cycle_count.abap:93"
+        },
+        "meaning": "Anlage fertig"
+      },
+      {
+        "id": "cpd",
+        "type": "call",
+        "anchor": {
+          "file": "zmm_zyklusinventur.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_zyklusinventur.abap:42"
+        },
+        "meaning": "Differenzen buchen"
+      },
+      {
+        "id": "pd",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_mm_cycle_count.abap",
+          "line": 95,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_cycle_count.abap:95"
+        },
+        "meaning": "Differenzbuchung"
+      },
+      {
+        "id": "q2",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_mm_cycle_count.abap",
+          "line": 101,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_cycle_count.abap:101"
+        },
+        "meaning": "Gezählte, nicht gebuchte, nicht gelöschte Inventurpositionen lesen"
+      },
+      {
+        "id": "lg",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_mm_cycle_count.abap",
+          "line": 111,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_cycle_count.abap:111"
+        },
+        "meaning": "Je Inventurbeleg"
+      },
+      {
+        "id": "lp",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_mm_cycle_count.abap",
+          "line": 114,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_cycle_count.abap:114"
+        },
+        "meaning": "Positionen des Belegs durchlaufen"
+      },
+      {
+        "id": "q3",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_mm_cycle_count.abap",
+          "line": 115,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_cycle_count.abap:115"
+        },
+        "meaning": "Bewertungspreis (Standard- oder gleitender Preis) lesen"
+      },
+      {
+        "id": "g3",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_mm_cycle_count.abap",
+          "line": 121,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_cycle_count.abap:121"
+        },
+        "meaning": "Bewertung vorhanden?"
+      },
+      {
+        "id": "a3",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_mm_cycle_count.abap",
+          "line": 126,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_cycle_count.abap:126"
+        },
+        "meaning": "Differenzwert = |Zählmenge − Buchbestand| × Stückpreis"
+      },
+      {
+        "id": "g4",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_mm_cycle_count.abap",
+          "line": 127,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_cycle_count.abap:127"
+        },
+        "meaning": "Über Wertgrenze?"
+      },
+      {
+        "id": "w4",
+        "type": "write",
+        "anchor": {
+          "file": "zcl_mm_cycle_count.abap",
+          "line": 129,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_cycle_count.abap:129"
+        },
+        "meaning": "Zur Nachzählung/Freigabe vormerken"
+      },
+      {
+        "id": "g5",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_mm_cycle_count.abap",
+          "line": 140,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_cycle_count.abap:140"
+        },
+        "meaning": "Buchbare Positionen im Beleg?"
+      },
+      {
+        "id": "bp",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_mm_cycle_count.abap",
+          "line": 143,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_cycle_count.abap:143"
+        },
+        "meaning": "Inventurdifferenzen buchen"
+      },
+      {
+        "id": "gpe",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_mm_cycle_count.abap",
+          "line": 151,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_cycle_count.abap:151"
+        },
+        "meaning": "Fehler bei Buchung?"
+      },
+      {
+        "id": "rbp",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_mm_cycle_count.abap",
+          "line": 152,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_cycle_count.abap:152"
+        },
+        "meaning": "Zurückrollen, Fehler protokollieren"
+      },
+      {
+        "id": "cmp",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_mm_cycle_count.abap",
+          "line": 155,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_cycle_count.abap:155"
+        },
+        "meaning": "Festschreiben, Anzahl protokollieren"
+      },
+      {
+        "id": "pe",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_mm_cycle_count.abap",
+          "line": 161,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_cycle_count.abap:161"
+        },
+        "meaning": "Buchung fertig"
+      },
+      {
+        "id": "lo",
+        "type": "loop",
+        "anchor": {
+          "file": "zmm_zyklusinventur.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_zyklusinventur.abap:45"
+        },
+        "meaning": "Protokoll durchlaufen"
+      },
+      {
+        "id": "wo",
+        "type": "output",
+        "anchor": {
+          "file": "zmm_zyklusinventur.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_zyklusinventur.abap:46"
+        },
+        "meaning": "Protokollzeile ausgeben"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_zyklusinventur.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_zyklusinventur.abap:47"
+        },
+        "meaning": "Liste fertig"
+      },
+      {
+        "id": "xsd",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_mm_cycle_count.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_mm_cycle_count.abap:58"
+        },
+        "meaning": "SELECT_DUE beendet, fällige Materialien zurück"
+      }
+    ],
+    "edges": [
+      {
+        "from": "i",
+        "to": "ai",
+        "condition": "always"
+      },
+      {
+        "from": "ai",
+        "to": "ass",
+        "condition": "always"
+      },
+      {
+        "from": "ass",
+        "to": "ac",
+        "condition": "always"
+      },
+      {
+        "from": "ac",
+        "to": "ga",
+        "condition": "always"
+      },
+      {
+        "from": "ga",
+        "to": "ma",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "ga",
+        "to": "s",
+        "condition": "else"
+      },
+      {
+        "from": "s",
+        "to": "cs",
+        "condition": "always"
+      },
+      {
+        "from": "cs",
+        "to": "csd",
+        "condition": "WHEN p_anl"
+      },
+      {
+        "from": "csd",
+        "to": "sd",
+        "condition": "always"
+      },
+      {
+        "from": "sd",
+        "to": "q1",
+        "condition": "always"
+      },
+      {
+        "from": "q1",
+        "to": "l1",
+        "condition": "always"
+      },
+      {
+        "from": "l1",
+        "to": "g1",
+        "condition": "next row"
+      },
+      {
+        "from": "g1",
+        "to": "l1",
+        "condition": "ls_cand-dlinv IS INITIAL OR sy-datum - ls_cand-dlinv >= 365 / ls_cand-anzin"
+      },
+      {
+        "from": "g1",
+        "to": "l1",
+        "condition": "else"
+      },
+      {
+        "from": "l1",
+        "to": "xsd",
+        "condition": "no more rows"
+      },
+      {
+        "from": "gd",
+        "to": "wd",
+        "condition": "lt_due IS INITIAL"
+      },
+      {
+        "from": "wd",
+        "to": "rd",
+        "condition": "always"
+      },
+      {
+        "from": "gd",
+        "to": "ccd",
+        "condition": "else"
+      },
+      {
+        "from": "ccd",
+        "to": "cd",
+        "condition": "always"
+      },
+      {
+        "from": "cd",
+        "to": "bc",
+        "condition": "always"
+      },
+      {
+        "from": "bc",
+        "to": "gce",
+        "condition": "always"
+      },
+      {
+        "from": "gce",
+        "to": "rbc",
+        "condition": "line_exists( lt_return[ type = 'E' ] )"
+      },
+      {
+        "from": "rbc",
+        "to": "rce",
+        "condition": "always"
+      },
+      {
+        "from": "rce",
+        "to": "lo",
+        "condition": "always"
+      },
+      {
+        "from": "gce",
+        "to": "cmc",
+        "condition": "else"
+      },
+      {
+        "from": "cmc",
+        "to": "ce",
+        "condition": "always"
+      },
+      {
+        "from": "ce",
+        "to": "lo",
+        "condition": "always"
+      },
+      {
+        "from": "cs",
+        "to": "cpd",
+        "condition": "WHEN p_buch"
+      },
+      {
+        "from": "cpd",
+        "to": "pd",
+        "condition": "always"
+      },
+      {
+        "from": "pd",
+        "to": "q2",
+        "condition": "always"
+      },
+      {
+        "from": "q2",
+        "to": "lg",
+        "condition": "always"
+      },
+      {
+        "from": "lg",
+        "to": "lp",
+        "condition": "next row"
+      },
+      {
+        "from": "lp",
+        "to": "q3",
+        "condition": "next row"
+      },
+      {
+        "from": "q3",
+        "to": "g3",
+        "condition": "always"
+      },
+      {
+        "from": "g3",
+        "to": "lp",
+        "condition": "sy-subrc <> 0 OR ls_mbew-peinh = 0"
+      },
+      {
+        "from": "g3",
+        "to": "a3",
+        "condition": "else"
+      },
+      {
+        "from": "a3",
+        "to": "g4",
+        "condition": "always"
+      },
+      {
+        "from": "g4",
+        "to": "w4",
+        "condition": "lv_wert > iv_limit"
+      },
+      {
+        "from": "w4",
+        "to": "lp",
+        "condition": "next iteration"
+      },
+      {
+        "from": "g4",
+        "to": "lp",
+        "condition": "else"
+      },
+      {
+        "from": "lp",
+        "to": "g5",
+        "condition": "no more rows"
+      },
+      {
+        "from": "g5",
+        "to": "lg",
+        "condition": "lt_items IS INITIAL"
+      },
+      {
+        "from": "g5",
+        "to": "bp",
+        "condition": "else"
+      },
+      {
+        "from": "bp",
+        "to": "gpe",
+        "condition": "always"
+      },
+      {
+        "from": "gpe",
+        "to": "rbp",
+        "condition": "line_exists( lt_return[ type = 'E' ] )"
+      },
+      {
+        "from": "gpe",
+        "to": "cmp",
+        "condition": "else"
+      },
+      {
+        "from": "rbp",
+        "to": "lg",
+        "condition": "next iteration"
+      },
+      {
+        "from": "cmp",
+        "to": "lg",
+        "condition": "next iteration"
+      },
+      {
+        "from": "lg",
+        "to": "pe",
+        "condition": "no more rows"
+      },
+      {
+        "from": "pe",
+        "to": "lo",
+        "condition": "always"
+      },
+      {
+        "from": "lo",
+        "to": "wo",
+        "condition": "next row"
+      },
+      {
+        "from": "wo",
+        "to": "lo",
+        "condition": "next iteration"
+      },
+      {
+        "from": "lo",
+        "to": "e",
+        "condition": "no more rows"
+      },
+      {
+        "from": "ma",
+        "to": "xma",
+        "condition": "always"
+      },
+      {
+        "from": "xsd",
+        "to": "gd",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zmm_zyklusinventur.abap:18 — kein Fachsatz „Ohne Buchungsberechtigung startet der Report nicht“ (das Ergebnis wird nie ausgewertet, und das Werk ist zu diesem Zeitpunkt noch leer)",
+    "zcl_mm_cycle_count.abap:129 — kein Fachsatz „Die Nachzählung wird automatisch als neuer Inventurbeleg angelegt“ (nur Vormerkung in der Z-Tabelle)",
+    "zcl_mm_cycle_count.abap:143 — kein Fachsatz „Die Differenzen werden mit Bewegungsgrund gebucht“ (es wird nur die Position übergeben)",
+    "zcl_mm_cycle_count.abap:41 — kein Fachsatz „Chargen werden einzeln inventarisiert“ (die Charge im Fälligkeitsergebnis bleibt leer)"
+  ],
+  "processDescription": "Die Lagerleitung startet den Report mit Werk, Lagerort, Modus (Anlegen oder Buchen), Wertgrenze und Höchstzahl an Positionen je Beleg. Eine Berechtigungsprüfung beim Programmstart wird nicht ausgewertet; wirksam ist erst die Prüfung der Inventurberechtigung für das Werk am Selektionsbild. Im Modus Anlegen liest der Report die Materialien mit Zykluskennzeichen, freiem Bestand und ohne Inventursperre am Lagerort und hält die fällig, die nie inventarisiert wurden oder deren letzte Inventur länger zurückliegt als das Intervall aus der Zahl der Inventuren pro Jahr. Ist nichts fällig, meldet er das; sonst legt er Inventurbelege mit Referenz ZYKLUS an, rollt bei Fehler zurück und schreibt sonst fest. Im Modus Buchen liest er je Inventurbeleg die gezählten, noch nicht gebuchten Positionen, bewertet jede Mengendifferenz mit dem Standard- bzw. gleitenden Preis und merkt Positionen über der Wertgrenze zur Nachzählung und Freigabe durch das Controlling vor. Die übrigen Positionen eines Belegs bucht er als Inventurdifferenz, rollt bei Fehler zurück und schreibt sonst fest. Zum Schluss gibt er das Protokoll als Liste aus."
+}

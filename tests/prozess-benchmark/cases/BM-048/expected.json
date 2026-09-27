@@ -1,0 +1,593 @@
+{
+  "id": "BM-048",
+  "title": "Restbuchwerte der Anlagen je Bewertungsbereich mit Nutzungsstatus als ALV",
+  "classes": [
+    "K01",
+    "K04",
+    "K02"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "ANLA",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 48,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:48"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ANLC",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 48,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:48"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "CL_SALV_TABLE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 96,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:96"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-048-B01",
+      "text": "Es werden alle nicht deaktivierten Anlagen der gewählten Buchungskreise und Anlagenklassen mit ihren Jahreswerten für Geschäftsjahr und Bewertungsbereich (Vorschlag 01) gelesen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:48"
+        }
+      ]
+    },
+    {
+      "id": "BM-048-B02",
+      "text": "Werden keine Anlagen gefunden, erhält der Anwender einen Hinweis und der Report endet.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:60"
+        },
+        {
+          "file": "source.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:61"
+        },
+        {
+          "file": "source.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:62"
+        }
+      ]
+    },
+    {
+      "id": "BM-048-B03",
+      "text": "Je Anlage werden der Anschaffungswert (kumulierter Stand plus wertmäßige Bewegungen des Jahres), die kumulierte AfA (normal, Sonder- und außerplanmäßig) und daraus der Restbuchwert berechnet.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:70"
+        },
+        {
+          "file": "source.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:72"
+        }
+      ]
+    },
+    {
+      "id": "BM-048-B04",
+      "text": "Anlagen mit Anschaffungswert, aber ohne Restbuchwert gelten als voll abgeschrieben; Anlagen ohne Aktivierungsdatum als nicht aktiviert; alle übrigen als in Nutzung.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:74"
+        },
+        {
+          "file": "source.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:75"
+        },
+        {
+          "file": "source.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:77"
+        },
+        {
+          "file": "source.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:79"
+        }
+      ]
+    },
+    {
+      "id": "BM-048-B05",
+      "text": "Ist die Option „nur Restbuchwert null“ gesetzt, werden Anlagen mit positivem Restbuchwert nicht in die Liste übernommen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:82"
+        }
+      ]
+    },
+    {
+      "id": "BM-048-B06",
+      "text": "Die Ergebnisliste wird als ALV mit allen Standardfunktionen angezeigt; kann das ALV nicht erzeugt werden, bricht der Report mit einer Fehlermeldung ab.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:88"
+        },
+        {
+          "file": "source.abap",
+          "line": 96,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:96"
+        },
+        {
+          "file": "source.abap",
+          "line": 100,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:100"
+        },
+        {
+          "file": "source.abap",
+          "line": 103,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:103"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:47"
+        },
+        "meaning": "Reportstart"
+      },
+      {
+        "id": "q",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:48"
+        },
+        "meaning": "Aktive Anlagen mit Jahreswerten des Bewertungsbereichs lesen"
+      },
+      {
+        "id": "g0",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:60"
+        },
+        "meaning": "Anlagen gefunden?"
+      },
+      {
+        "id": "m0",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:61"
+        },
+        "meaning": "Hinweis: keine Anlagen"
+      },
+      {
+        "id": "x0",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:62"
+        },
+        "meaning": "Verarbeitung beenden"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "source.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:65"
+        },
+        "meaning": "Anlagen durchlaufen"
+      },
+      {
+        "id": "rbw",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:72"
+        },
+        "meaning": "Restbuchwert aus Anschaffungswert und kumulierter AfA berechnen"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:74"
+        },
+        "meaning": "Nutzungsstatus bestimmen"
+      },
+      {
+        "id": "st1",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:75"
+        },
+        "meaning": "Status 'voll abgeschrieben'"
+      },
+      {
+        "id": "st2",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:77"
+        },
+        "meaning": "Status 'nicht aktiviert'"
+      },
+      {
+        "id": "st3",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:79"
+        },
+        "meaning": "Status 'in Nutzung'"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:82"
+        },
+        "meaning": "Nur Restbuchwert null gewünscht und Anlage hat Restwert?"
+      },
+      {
+        "id": "cd",
+        "type": "call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:88"
+        },
+        "meaning": "Ergebnisliste anzeigen"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:88"
+        },
+        "meaning": "Report fertig"
+      },
+      {
+        "id": "s2",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 91,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:91"
+        },
+        "meaning": "Anzeigeroutine"
+      },
+      {
+        "id": "fac",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 96,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:96"
+        },
+        "meaning": "ALV-Objekt zur Ergebnistabelle erzeugen"
+      },
+      {
+        "id": "mx",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 100,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:100"
+        },
+        "meaning": "Fehlermeldung bei ALV-Fehler"
+      },
+      {
+        "id": "xm",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 100,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:100"
+        },
+        "meaning": "Abbruch durch Fehlermeldung"
+      },
+      {
+        "id": "disp",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 103,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:103"
+        },
+        "meaning": "Anlagenliste als ALV anzeigen"
+      },
+      {
+        "id": "e2",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 104,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:104"
+        },
+        "meaning": "Anzeige beendet"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "q",
+        "condition": "always"
+      },
+      {
+        "from": "q",
+        "to": "g0",
+        "condition": "always"
+      },
+      {
+        "from": "g0",
+        "to": "m0",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "m0",
+        "to": "x0",
+        "condition": "always"
+      },
+      {
+        "from": "g0",
+        "to": "l",
+        "condition": "else"
+      },
+      {
+        "from": "l",
+        "to": "rbw",
+        "condition": "next row"
+      },
+      {
+        "from": "rbw",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "st1",
+        "condition": "ls_out-rbw <= 0 AND ls_out-ahk > 0"
+      },
+      {
+        "from": "g1",
+        "to": "st2",
+        "condition": "ls_raw-aktiv IS INITIAL"
+      },
+      {
+        "from": "g1",
+        "to": "st3",
+        "condition": "else"
+      },
+      {
+        "from": "st1",
+        "to": "g2",
+        "condition": "always"
+      },
+      {
+        "from": "st2",
+        "to": "g2",
+        "condition": "always"
+      },
+      {
+        "from": "st3",
+        "to": "g2",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "l",
+        "condition": "p_null = 'X' AND ls_out-rbw > 0"
+      },
+      {
+        "from": "g2",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l",
+        "to": "cd",
+        "condition": "no more rows"
+      },
+      {
+        "from": "cd",
+        "to": "s2",
+        "condition": "always"
+      },
+      {
+        "from": "s2",
+        "to": "fac",
+        "condition": "always"
+      },
+      {
+        "from": "fac",
+        "to": "mx",
+        "condition": "CATCH cx_salv_msg"
+      },
+      {
+        "from": "mx",
+        "to": "xm",
+        "condition": "always"
+      },
+      {
+        "from": "fac",
+        "to": "disp",
+        "condition": "always"
+      },
+      {
+        "from": "disp",
+        "to": "e2",
+        "condition": "always"
+      },
+      {
+        "from": "e2",
+        "to": "e",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "source.abap:75 — kein Fachsatz „voll abgeschriebene Anlagen werden deaktiviert oder als Abgang gebucht“ (nur Statustext in der Liste)",
+    "source.abap:48 — kein Fachsatz „alle Bewertungsbereiche werden ausgewertet“ (genau ein Bereich aus P_AFABE)",
+    "source.abap:72 — kein Fachsatz „Aufwertungen oder Zuschreibungen fließen in den Restbuchwert ein“ (nur Anschaffungswert, Jahresbewegungen und die sechs AfA-Felder)"
+  ],
+  "processDescription": "Die Anlagenbuchhaltung startet den Report mit Buchungskreisen, Anlagenklassen, Geschäftsjahr und Bewertungsbereich. Gelesen werden alle nicht deaktivierten Anlagen mit ihren Jahreswerten; gibt es keine, endet der Report mit einem Hinweis. Je Anlage werden Anschaffungswert, kumulierte AfA und Restbuchwert berechnet und ein Nutzungsstatus vergeben: voll abgeschrieben, nicht aktiviert oder in Nutzung. Mit der Option „nur Restbuchwert null“ bleiben Anlagen mit Restwert außen vor. Die Liste wird als ALV angezeigt; scheitert die ALV-Erzeugung, bricht der Report mit einer Fehlermeldung ab. Es wird nichts gebucht oder geändert."
+}

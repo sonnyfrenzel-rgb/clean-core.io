@@ -1,0 +1,26 @@
+{
+  "id": "BM-099",
+  "title": "Modulpool Lieferantenzertifikate: Einstieg, Detailbild, Sperre, Berechtigung, Sichern und Löschen",
+  "domain": "Querschnitt — Schnittstellen, Stammdaten, HR, Workflow, technische Jobs",
+  "band": "sehr komplex",
+  "loc": 400,
+  "constructs": [
+    "Modulpool mit PBO/PAI-Modulen",
+    "OK-Code-CASE",
+    "AT EXIT-COMMAND",
+    "LOOP AT SCREEN/MODIFY SCREEN",
+    "CALL SCREEN/LEAVE TO SCREEN/LEAVE PROGRAM",
+    "AUTHORITY-CHECK mit berechneter Aktivität",
+    "ENQUEUE/DEQUEUE",
+    "TABLES-Arbeitsbereich mit MODIFY/DELETE Kurzform",
+    "POPUP_TO_CONFIRM",
+    "MESSAGE Typ E im PAI",
+    "COMMIT WORK"
+  ],
+  "scenario": "Kundeneigene Dialogtransaktion aus einem QM-Audit: Einkauf und Qualitätssicherung pflegen je Lieferant und Zertifikatsart (z. B. ISO 9001, IATF) Nummer, Aussteller und Gültigkeit.",
+  "s4_issues": [
+    "Dynpro-Modulpools sind in ABAP Cloud nicht verfügbar; Neubau als Fiori-App (RAP) nötig",
+    "Direkter Lesezugriff auf LFA1 (Kreditor in S/4 über Geschäftspartner)",
+    "Obsolete Kurzformen MODIFY/DELETE mit TABLES-Arbeitsbereich"
+  ]
+}

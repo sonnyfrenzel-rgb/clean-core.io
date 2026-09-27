@@ -1,0 +1,59 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten x_per (neu)",
+      "before": "—",
+      "after": "end zfi_close_run_f01.abap:50 „CHECK_PERIODS beendet, Buchungskreisliste steht“; umgeleitet: l_t001->g_nobukrs [no more rows]; neu x_per->g_nobukrs [always]",
+      "why": "Brieftabelle: end = Pfadende inkl. „Ende des Blocks“ (implizites Ende auf der letzten Anweisung); im selben Fall haben Funktionsbaustein (fm_end) und Callback (e_recv) end-Knoten, die FORMs nicht. Vereinheitlicht: jede auslaufende FORM endet mit eigenem end-Knoten auf ENDFORM, Rückkehrkante von dort zum Knoten nach dem Aufruf.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten x_exec (neu)",
+      "before": "—",
+      "after": "end zfi_close_run_f02.abap:83 „EXECUTE_STEPS beendet (alle Schritte oder Abbruch)“; umgeleitet: o_crit->c_fin [always], l_steps->c_fin [no more rows]; neu x_exec->c_fin [always]",
+      "why": "Brieftabelle: end = Pfadende inkl. „Ende des Blocks“ (implizites Ende auf der letzten Anweisung); im selben Fall haben Funktionsbaustein (fm_end) und Callback (e_recv) end-Knoten, die FORMs nicht. Vereinheitlicht: jede auslaufende FORM endet mit eigenem end-Knoten auf ENDFORM, Rückkehrkante von dort zum Knoten nach dem Aufruf.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten x_accr (neu)",
+      "before": "—",
+      "after": "end zfi_close_run_f02.abap:174 „POST_ACCRUALS beendet, Ergebnis in gv_rc“; umgeleitet: l_accr->st [no more rows]; neu x_accr->st [always]",
+      "why": "Brieftabelle: end = Pfadende inkl. „Ende des Blocks“ (implizites Ende auf der letzten Anweisung); im selben Fall haben Funktionsbaustein (fm_end) und Callback (e_recv) end-Knoten, die FORMs nicht. Vereinheitlicht: jede auslaufende FORM endet mit eigenem end-Knoten auf ENDFORM, Rückkehrkante von dort zum Knoten nach dem Aufruf.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten x_sub (neu)",
+      "before": "—",
+      "after": "end zfi_close_run_f02.abap:207 „SUBMIT_PROGRAM beendet“; umgeleitet: rc0->st [always]; neu x_sub->st [always]",
+      "why": "Brieftabelle: end = Pfadende inkl. „Ende des Blocks“ (implizites Ende auf der letzten Anweisung); im selben Fall haben Funktionsbaustein (fm_end) und Callback (e_recv) end-Knoten, die FORMs nicht. Vereinheitlicht: jede auslaufende FORM endet mit eigenem end-Knoten auf ENDFORM, Rückkehrkante von dort zum Knoten nach dem Aufruf.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten x_par (neu)",
+      "before": "—",
+      "after": "end zfi_close_run_f02.abap:251 „RUN_PARALLEL beendet, Ergebnis in gv_rc“; umgeleitet: rc4_par->st [always], g_parres->st [else]; neu x_par->st [always]",
+      "why": "Brieftabelle: end = Pfadende inkl. „Ende des Blocks“ (implizites Ende auf der letzten Anweisung); im selben Fall haben Funktionsbaustein (fm_end) und Callback (e_recv) end-Knoten, die FORMs nicht. Vereinheitlicht: jede auslaufende FORM endet mit eigenem end-Knoten auf ENDFORM, Rückkehrkante von dort zum Knoten nach dem Aufruf.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten x_mail (neu)",
+      "before": "—",
+      "after": "end zfi_close_run_f01.abap:132 „SEND_MAIL beendet“; umgeleitet: g_mail->e_main [else], cw_mail->e_main [always], o_mailerr->e_main [always]; neu x_mail->x_fin [always]",
+      "why": "Brieftabelle: end = Pfadende inkl. „Ende des Blocks“ (implizites Ende auf der letzten Anweisung); im selben Fall haben Funktionsbaustein (fm_end) und Callback (e_recv) end-Knoten, die FORMs nicht. Vereinheitlicht: jede auslaufende FORM endet mit eigenem end-Knoten auf ENDFORM, Rückkehrkante von dort zum Knoten nach dem Aufruf.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten x_fin (neu)",
+      "before": "—",
+      "after": "end zfi_close_run_f01.abap:94 „FINISH_RUN beendet“; umgeleitet: —; neu x_fin->e_main [always]",
+      "why": "Brieftabelle: end = Pfadende inkl. „Ende des Blocks“ (implizites Ende auf der letzten Anweisung); im selben Fall haben Funktionsbaustein (fm_end) und Callback (e_recv) end-Knoten, die FORMs nicht. Vereinheitlicht: jede auslaufende FORM endet mit eigenem end-Knoten auf ENDFORM, Rückkehrkante von dort zum Knoten nach dem Aufruf.",
+      "category": "fehlender Knoten"
+    }
+  ],
+  "doubts": [
+    "Callback RECEIVE_RESULT (f_recv…e_recv) hat keine ausgehende Kante; die Task-Kante führt async_call -> fm_s -> … -> f_recv. Das ist vertretbar (der Callback läuft ereignisgesteuert während WAIT), eine Kante e_recv -> wait wäre aber ebenso begründbar. Nicht geändert.",
+    "WAIT UNTIL … UP TO 1800 SECONDS ist als action typisiert; die Brieftabelle kennt WAIT nicht, async nennt nur STARTING NEW TASK / IN BACKGROUND TASK / RECEIVE RESULTS. action ist vertretbar, nicht geändert."
+  ]
+}

@@ -1,0 +1,1165 @@
+{
+  "id": "BM-095",
+  "title": "Bestandsabgleich mit Fremd-WMS über EXEC SQL und Differenzbuchung",
+  "classes": [
+    "K13",
+    "K01",
+    "K03"
+  ],
+  "classic_level": "D",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "MARD",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zmm_wms_recon.abap",
+        "line": 79,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zmm_wms_recon.abap:79"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "CONVERSION_EXIT_MATN1_INPUT",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zmm_wms_recon.abap",
+        "line": 84,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zmm_wms_recon.abap:84"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_GOODSMVT_CREATE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zmm_wms_recon_f01.abap",
+        "line": 47,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zmm_wms_recon_f01.abap:47"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_COMMIT",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zmm_wms_recon_f01.abap",
+        "line": 62,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zmm_wms_recon_f01.abap:62"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_ROLLBACK",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zmm_wms_recon_f01.abap",
+        "line": 59,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zmm_wms_recon_f01.abap:59"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-095-B01",
+      "text": "Über die Datenbankverbindung zum Lagerverwaltungssystem wird eine Verbindung aufgebaut; scheitert sie, bricht der Lauf mit dem Verbindungsnamen ab.",
+      "anchors": [
+        {
+          "file": "zmm_wms_recon.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_wms_recon.abap:44"
+        },
+        {
+          "file": "zmm_wms_recon.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_wms_recon.abap:47"
+        },
+        {
+          "file": "zmm_wms_recon.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_wms_recon.abap:48"
+        }
+      ]
+    },
+    {
+      "id": "BM-095-B02",
+      "text": "Aus dem Lagerverwaltungssystem werden die Bestände je Artikel für Werk und Lagerort, über alle Lagerplätze summiert, abgeholt und die Verbindung danach getrennt.",
+      "anchors": [
+        {
+          "file": "zmm_wms_recon.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_wms_recon.abap:55"
+        },
+        {
+          "file": "zmm_wms_recon.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_wms_recon.abap:64"
+        },
+        {
+          "file": "zmm_wms_recon.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_wms_recon.abap:75"
+        }
+      ]
+    },
+    {
+      "id": "BM-095-B03",
+      "text": "Es werden die SAP-Lagerortbestände desselben Werks und Lagerorts gelesen.",
+      "anchors": [
+        {
+          "file": "zmm_wms_recon.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_wms_recon.abap:79"
+        }
+      ]
+    },
+    {
+      "id": "BM-095-B04",
+      "text": "Je WMS-Artikel wird die Artikelnummer ins Materialnummernformat gewandelt und der frei verwendbare SAP-Bestand nachgeschlagen; fehlt er, gilt er als null.",
+      "anchors": [
+        {
+          "file": "zmm_wms_recon.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_wms_recon.abap:84"
+        },
+        {
+          "file": "zmm_wms_recon.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_wms_recon.abap:92"
+        },
+        {
+          "file": "zmm_wms_recon.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_wms_recon.abap:93"
+        }
+      ]
+    },
+    {
+      "id": "BM-095-B05",
+      "text": "Die Differenz ist WMS-Bestand minus SAP-Bestand; die Toleranz ist der eingegebene Prozentsatz des SAP-Bestands.",
+      "anchors": [
+        {
+          "file": "zmm_wms_recon.abap",
+          "line": 96,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_wms_recon.abap:96"
+        },
+        {
+          "file": "zmm_wms_recon.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_wms_recon.abap:97"
+        }
+      ]
+    },
+    {
+      "id": "BM-095-B06",
+      "text": "Differenzen innerhalb der Toleranz werden ignoriert, alle anderen in die Differenzliste aufgenommen.",
+      "anchors": [
+        {
+          "file": "zmm_wms_recon.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_wms_recon.abap:98"
+        }
+      ]
+    },
+    {
+      "id": "BM-095-B07",
+      "text": "Ein höherer WMS-Bestand wird als Zugang mit Bewegungsart Z11, ein niedrigerer als Abgang mit Bewegungsart Z12 über den Betrag der Differenz vorgemerkt.",
+      "anchors": [
+        {
+          "file": "zmm_wms_recon.abap",
+          "line": 106,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_wms_recon.abap:106"
+        },
+        {
+          "file": "zmm_wms_recon_f01.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_wms_recon_f01.abap:15"
+        },
+        {
+          "file": "zmm_wms_recon_f01.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_wms_recon_f01.abap:16"
+        },
+        {
+          "file": "zmm_wms_recon_f01.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_wms_recon_f01.abap:20"
+        }
+      ]
+    },
+    {
+      "id": "BM-095-B08",
+      "text": "Nur mit gesetzter Buchungsoption werden die Zugänge und die Abgänge jeweils als eigener Materialbeleg mit heutigem Buchungsdatum gebucht.",
+      "anchors": [
+        {
+          "file": "zmm_wms_recon.abap",
+          "line": 109,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_wms_recon.abap:109"
+        },
+        {
+          "file": "zmm_wms_recon.abap",
+          "line": 110,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_wms_recon.abap:110"
+        },
+        {
+          "file": "zmm_wms_recon.abap",
+          "line": 111,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_wms_recon.abap:111"
+        },
+        {
+          "file": "zmm_wms_recon_f01.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_wms_recon_f01.abap:47"
+        }
+      ]
+    },
+    {
+      "id": "BM-095-B09",
+      "text": "Eine Gruppe ohne Positionen wird nicht gebucht.",
+      "anchors": [
+        {
+          "file": "zmm_wms_recon_f01.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_wms_recon_f01.abap:38"
+        },
+        {
+          "file": "zmm_wms_recon_f01.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_wms_recon_f01.abap:39"
+        }
+      ]
+    },
+    {
+      "id": "BM-095-B10",
+      "text": "Meldet die Buchung einen Fehler, wird sie verworfen und die Fehlermeldung ausgegeben; sonst wird sie festgeschrieben und die Materialbelegnummer ausgegeben.",
+      "anchors": [
+        {
+          "file": "zmm_wms_recon_f01.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_wms_recon_f01.abap:57"
+        },
+        {
+          "file": "zmm_wms_recon_f01.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_wms_recon_f01.abap:59"
+        },
+        {
+          "file": "zmm_wms_recon_f01.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_wms_recon_f01.abap:60"
+        },
+        {
+          "file": "zmm_wms_recon_f01.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_wms_recon_f01.abap:62"
+        },
+        {
+          "file": "zmm_wms_recon_f01.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_wms_recon_f01.abap:65"
+        }
+      ]
+    },
+    {
+      "id": "BM-095-B11",
+      "text": "Zum Schluss wird die Differenzliste mit Material, WMS-Bestand, SAP-Bestand und Differenz ausgegeben.",
+      "anchors": [
+        {
+          "file": "zmm_wms_recon.abap",
+          "line": 115,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_wms_recon.abap:115"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "zmm_wms_recon.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_wms_recon.abap:43"
+        },
+        "meaning": "Abgleich starten"
+      },
+      {
+        "id": "con",
+        "type": "action",
+        "anchor": {
+          "file": "zmm_wms_recon.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_wms_recon.abap:44"
+        },
+        "meaning": "Verbindung zur WMS-Datenbank aufbauen"
+      },
+      {
+        "id": "gcon",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_wms_recon.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_wms_recon.abap:47"
+        },
+        "meaning": "Verbindung fehlgeschlagen?"
+      },
+      {
+        "id": "mcon",
+        "type": "output",
+        "anchor": {
+          "file": "zmm_wms_recon.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_wms_recon.abap:48"
+        },
+        "meaning": "Abbruch mit Verbindungsname"
+      },
+      {
+        "id": "e_con",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_wms_recon.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_wms_recon.abap:48"
+        },
+        "meaning": "Lauf bricht ohne WMS-Verbindung ab"
+      },
+      {
+        "id": "setc",
+        "type": "action",
+        "anchor": {
+          "file": "zmm_wms_recon.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_wms_recon.abap:50"
+        },
+        "meaning": "WMS-Verbindung aktivieren"
+      },
+      {
+        "id": "open",
+        "type": "read",
+        "anchor": {
+          "file": "zmm_wms_recon.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_wms_recon.abap:55"
+        },
+        "meaning": "WMS-Bestände je Artikel für Werk/Lagerort öffnen"
+      },
+      {
+        "id": "lp",
+        "type": "loop",
+        "anchor": {
+          "file": "zmm_wms_recon.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_wms_recon.abap:63"
+        },
+        "meaning": "WMS-Zeilen abholen"
+      },
+      {
+        "id": "fetch",
+        "type": "read",
+        "anchor": {
+          "file": "zmm_wms_recon.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_wms_recon.abap:64"
+        },
+        "meaning": "Nächsten WMS-Artikel holen"
+      },
+      {
+        "id": "gf",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_wms_recon.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_wms_recon.abap:67"
+        },
+        "meaning": "Keine Zeile mehr?"
+      },
+      {
+        "id": "close",
+        "type": "action",
+        "anchor": {
+          "file": "zmm_wms_recon.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_wms_recon.abap:72"
+        },
+        "meaning": "Cursor schließen"
+      },
+      {
+        "id": "disc",
+        "type": "action",
+        "anchor": {
+          "file": "zmm_wms_recon.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_wms_recon.abap:75"
+        },
+        "meaning": "WMS-Verbindung trennen"
+      },
+      {
+        "id": "rm",
+        "type": "read",
+        "anchor": {
+          "file": "zmm_wms_recon.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_wms_recon.abap:79"
+        },
+        "meaning": "SAP-Lagerortbestände lesen"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "zmm_wms_recon.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_wms_recon.abap:83"
+        },
+        "meaning": "WMS-Artikel durchlaufen"
+      },
+      {
+        "id": "cv",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zmm_wms_recon.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_wms_recon.abap:84"
+        },
+        "meaning": "Artikelnummer ins Materialnummernformat wandeln"
+      },
+      {
+        "id": "rt",
+        "type": "read",
+        "anchor": {
+          "file": "zmm_wms_recon.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_wms_recon.abap:92"
+        },
+        "meaning": "SAP-Bestand zum Material nachschlagen"
+      },
+      {
+        "id": "gnf",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_wms_recon.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_wms_recon.abap:93"
+        },
+        "meaning": "Kein SAP-Bestandssatz?"
+      },
+      {
+        "id": "adiff",
+        "type": "action",
+        "anchor": {
+          "file": "zmm_wms_recon.abap",
+          "line": 96,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_wms_recon.abap:96"
+        },
+        "meaning": "Differenz WMS − SAP und Toleranz berechnen"
+      },
+      {
+        "id": "gtol",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_wms_recon.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_wms_recon.abap:98"
+        },
+        "meaning": "Innerhalb der Toleranz?"
+      },
+      {
+        "id": "cadd",
+        "type": "call",
+        "anchor": {
+          "file": "zmm_wms_recon.abap",
+          "line": 106,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_wms_recon.abap:106"
+        },
+        "meaning": "Differenz als Buchungsposition vormerken"
+      },
+      {
+        "id": "gpost",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_wms_recon.abap",
+          "line": 109,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_wms_recon.abap:109"
+        },
+        "meaning": "Buchen gewünscht?"
+      },
+      {
+        "id": "cp1",
+        "type": "call",
+        "anchor": {
+          "file": "zmm_wms_recon.abap",
+          "line": 110,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_wms_recon.abap:110"
+        },
+        "meaning": "Zugänge buchen"
+      },
+      {
+        "id": "cp2",
+        "type": "call",
+        "anchor": {
+          "file": "zmm_wms_recon.abap",
+          "line": 111,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_wms_recon.abap:111"
+        },
+        "meaning": "Abgänge buchen"
+      },
+      {
+        "id": "l2",
+        "type": "loop",
+        "anchor": {
+          "file": "zmm_wms_recon.abap",
+          "line": 114,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_wms_recon.abap:114"
+        },
+        "meaning": "Differenzen durchlaufen"
+      },
+      {
+        "id": "o",
+        "type": "output",
+        "anchor": {
+          "file": "zmm_wms_recon.abap",
+          "line": 115,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_wms_recon.abap:115"
+        },
+        "meaning": "Differenzliste ausgeben"
+      },
+      {
+        "id": "e_main",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_wms_recon.abap",
+          "line": 116,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_wms_recon.abap:116"
+        },
+        "meaning": "Lauf endet nach der Differenzliste"
+      },
+      {
+        "id": "s_a",
+        "type": "start",
+        "anchor": {
+          "file": "zmm_wms_recon_f01.abap",
+          "line": 8,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_wms_recon_f01.abap:8"
+        },
+        "meaning": "Position bilden"
+      },
+      {
+        "id": "gs",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_wms_recon_f01.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_wms_recon_f01.abap:15"
+        },
+        "meaning": "WMS-Bestand höher?"
+      },
+      {
+        "id": "a_in",
+        "type": "action",
+        "anchor": {
+          "file": "zmm_wms_recon_f01.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_wms_recon_f01.abap:16"
+        },
+        "meaning": "Zugang Z11 über Differenzmenge"
+      },
+      {
+        "id": "a_out",
+        "type": "action",
+        "anchor": {
+          "file": "zmm_wms_recon_f01.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_wms_recon_f01.abap:20"
+        },
+        "meaning": "Abgang Z12 über Betrag der Differenz"
+      },
+      {
+        "id": "e_a",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_wms_recon_f01.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_wms_recon_f01.abap:24"
+        },
+        "meaning": "Position vorgemerkt"
+      },
+      {
+        "id": "s_p",
+        "type": "start",
+        "anchor": {
+          "file": "zmm_wms_recon_f01.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_wms_recon_f01.abap:29"
+        },
+        "meaning": "Gruppe buchen"
+      },
+      {
+        "id": "gemp",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_wms_recon_f01.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_wms_recon_f01.abap:38"
+        },
+        "meaning": "Keine Positionen?"
+      },
+      {
+        "id": "e_p1",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_wms_recon_f01.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_wms_recon_f01.abap:39"
+        },
+        "meaning": "Nichts zu buchen"
+      },
+      {
+        "id": "bapi",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zmm_wms_recon_f01.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_wms_recon_f01.abap:47"
+        },
+        "meaning": "Materialbeleg mit Buchungsdatum heute buchen"
+      },
+      {
+        "id": "rr",
+        "type": "read",
+        "anchor": {
+          "file": "zmm_wms_recon_f01.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_wms_recon_f01.abap:57"
+        },
+        "meaning": "Fehlermeldung suchen"
+      },
+      {
+        "id": "gr",
+        "type": "gateway",
+        "anchor": {
+          "file": "zmm_wms_recon_f01.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_wms_recon_f01.abap:58"
+        },
+        "meaning": "Buchung fehlerhaft?"
+      },
+      {
+        "id": "rb",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zmm_wms_recon_f01.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_wms_recon_f01.abap:59"
+        },
+        "meaning": "Buchung verwerfen"
+      },
+      {
+        "id": "oerr",
+        "type": "output",
+        "anchor": {
+          "file": "zmm_wms_recon_f01.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_wms_recon_f01.abap:60"
+        },
+        "meaning": "Fehler ausgeben"
+      },
+      {
+        "id": "cm",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zmm_wms_recon_f01.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_wms_recon_f01.abap:62"
+        },
+        "meaning": "Buchung festschreiben"
+      },
+      {
+        "id": "ook",
+        "type": "output",
+        "anchor": {
+          "file": "zmm_wms_recon_f01.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_wms_recon_f01.abap:65"
+        },
+        "meaning": "Belegnummer ausgeben"
+      },
+      {
+        "id": "e_p2",
+        "type": "end",
+        "anchor": {
+          "file": "zmm_wms_recon_f01.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zmm_wms_recon_f01.abap:67"
+        },
+        "meaning": "Gruppe erledigt"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "con",
+        "condition": "always"
+      },
+      {
+        "from": "con",
+        "to": "gcon",
+        "condition": "always"
+      },
+      {
+        "from": "gcon",
+        "to": "mcon",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "gcon",
+        "to": "setc",
+        "condition": "else"
+      },
+      {
+        "from": "setc",
+        "to": "open",
+        "condition": "always"
+      },
+      {
+        "from": "open",
+        "to": "lp",
+        "condition": "always"
+      },
+      {
+        "from": "lp",
+        "to": "fetch",
+        "condition": "next row"
+      },
+      {
+        "from": "fetch",
+        "to": "gf",
+        "condition": "always"
+      },
+      {
+        "from": "gf",
+        "to": "close",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "gf",
+        "to": "lp",
+        "condition": "else"
+      },
+      {
+        "from": "close",
+        "to": "disc",
+        "condition": "always"
+      },
+      {
+        "from": "disc",
+        "to": "rm",
+        "condition": "always"
+      },
+      {
+        "from": "rm",
+        "to": "l",
+        "condition": "always"
+      },
+      {
+        "from": "l",
+        "to": "cv",
+        "condition": "next row"
+      },
+      {
+        "from": "cv",
+        "to": "rt",
+        "condition": "always"
+      },
+      {
+        "from": "rt",
+        "to": "gnf",
+        "condition": "always"
+      },
+      {
+        "from": "gnf",
+        "to": "adiff",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "gnf",
+        "to": "adiff",
+        "condition": "else"
+      },
+      {
+        "from": "adiff",
+        "to": "gtol",
+        "condition": "always"
+      },
+      {
+        "from": "gtol",
+        "to": "l",
+        "condition": "abs( gv_diff ) <= gv_tol"
+      },
+      {
+        "from": "gtol",
+        "to": "cadd",
+        "condition": "else"
+      },
+      {
+        "from": "cadd",
+        "to": "s_a",
+        "condition": "always"
+      },
+      {
+        "from": "l",
+        "to": "gpost",
+        "condition": "no more rows"
+      },
+      {
+        "from": "gpost",
+        "to": "cp1",
+        "condition": "p_post = 'X'"
+      },
+      {
+        "from": "gpost",
+        "to": "l2",
+        "condition": "else"
+      },
+      {
+        "from": "cp1",
+        "to": "s_p",
+        "condition": "always"
+      },
+      {
+        "from": "cp2",
+        "to": "s_p",
+        "condition": "always"
+      },
+      {
+        "from": "l2",
+        "to": "o",
+        "condition": "next row"
+      },
+      {
+        "from": "o",
+        "to": "l2",
+        "condition": "next iteration"
+      },
+      {
+        "from": "s_a",
+        "to": "gs",
+        "condition": "always"
+      },
+      {
+        "from": "gs",
+        "to": "a_in",
+        "condition": "pv_diff > 0"
+      },
+      {
+        "from": "gs",
+        "to": "a_out",
+        "condition": "else"
+      },
+      {
+        "from": "a_in",
+        "to": "e_a",
+        "condition": "always"
+      },
+      {
+        "from": "a_out",
+        "to": "e_a",
+        "condition": "always"
+      },
+      {
+        "from": "s_p",
+        "to": "gemp",
+        "condition": "always"
+      },
+      {
+        "from": "gemp",
+        "to": "e_p1",
+        "condition": "pt_items IS INITIAL"
+      },
+      {
+        "from": "gemp",
+        "to": "bapi",
+        "condition": "else"
+      },
+      {
+        "from": "bapi",
+        "to": "rr",
+        "condition": "always"
+      },
+      {
+        "from": "rr",
+        "to": "gr",
+        "condition": "always"
+      },
+      {
+        "from": "gr",
+        "to": "rb",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "rb",
+        "to": "oerr",
+        "condition": "always"
+      },
+      {
+        "from": "oerr",
+        "to": "e_p2",
+        "condition": "always"
+      },
+      {
+        "from": "gr",
+        "to": "cm",
+        "condition": "else"
+      },
+      {
+        "from": "cm",
+        "to": "ook",
+        "condition": "always"
+      },
+      {
+        "from": "ook",
+        "to": "e_p2",
+        "condition": "always"
+      },
+      {
+        "from": "mcon",
+        "to": "e_con",
+        "condition": "always"
+      },
+      {
+        "from": "l2",
+        "to": "e_main",
+        "condition": "no more rows"
+      },
+      {
+        "from": "e_a",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "e_p1",
+        "to": "cp2",
+        "condition": "always"
+      },
+      {
+        "from": "e_p2",
+        "to": "cp2",
+        "condition": "always"
+      },
+      {
+        "from": "e_p1",
+        "to": "l2",
+        "condition": "always"
+      },
+      {
+        "from": "e_p2",
+        "to": "l2",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "gesamte Scheibe — kein Fachsatz „SAP-Bestände ohne WMS-Gegenstück werden als Differenz erkannt“ (die Schleife läuft nur über WMS-Artikel).",
+    "zmm_wms_recon.abap:44 — kein Fachsatz „das WMS wird korrigiert“ (auf das WMS wird nur lesend zugegriffen).",
+    "zmm_wms_recon_f01.abap:47 — kein Fachsatz „Inventurbeleg wird angelegt“ (gebucht wird eine Warenbewegung mit kundeneigener Bewegungsart).",
+    "zmm_wms_recon.abap:84 — kein Fehlerpfad bei nicht wandelbarer Artikelnummer (sy-subrc wird nicht geprüft)."
+  ],
+  "processDescription": "Ein nächtlicher Job gleicht den Lagerortbestand mit einem externen Lagerverwaltungssystem ab. Er baut per Native SQL eine Verbindung zu dessen Datenbank auf und bricht ab, wenn sie scheitert. Er holt die über alle Lagerplätze summierten WMS-Bestände je Artikel für Werk und Lagerort und trennt die Verbindung wieder. Danach liest er die SAP-Lagerortbestände desselben Werks und Lagerorts. Je WMS-Artikel wandelt er die Artikelnummer ins Materialnummernformat, schlägt den frei verwendbaren SAP-Bestand nach (fehlend gilt als null) und berechnet Differenz und prozentuale Toleranz. Differenzen innerhalb der Toleranz ignoriert er; alle anderen nimmt er in die Differenzliste auf und merkt sie als Zugang Z11 oder Abgang Z12 vor. Mit gesetzter Buchungsoption bucht er Zugänge und Abgänge je als eigenen Materialbeleg, verwirft ihn bei Fehler und gibt Fehler oder Belegnummer aus. Zum Schluss gibt er die Differenzliste aus. SAP-Bestände ohne WMS-Gegenstück werden nicht betrachtet."
+}

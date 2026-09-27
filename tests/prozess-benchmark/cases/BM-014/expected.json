@@ -1,0 +1,1277 @@
+{
+  "id": "BM-014",
+  "title": "Faktura-Sammellauf je Verkaufsorganisation: SUBMIT RV60SBAT, Nachkontrolle über VBFA, Anwendungsprotokoll und Mail",
+  "classes": [
+    "K17",
+    "K01",
+    "K04",
+    "K12",
+    "K09"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "LIKP",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zsd_billing_run_f01.abap",
+        "line": 12,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_billing_run_f01.abap:12"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "VBUK",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zsd_billing_run_f01.abap",
+        "line": 12,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_billing_run_f01.abap:12"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ENQUEUE_EZSD_BILLRUN",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zsd_billing_run_f01.abap",
+        "line": 34,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_billing_run_f01.abap:34"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "RV60SBAT",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zsd_billing_run_f01.abap",
+        "line": 58,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_billing_run_f01.abap:58"
+      },
+      "identity": {
+        "objectType": "PROG"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "DEQUEUE_EZSD_BILLRUN",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zsd_billing_run_f01.abap",
+        "line": 67,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_billing_run_f01.abap:67"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "VBFA",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zsd_billing_run_f01.abap",
+        "line": 82,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_billing_run_f01.abap:82"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAL_LOG_CREATE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zsd_billing_run_f01.abap",
+        "line": 111,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_billing_run_f01.abap:111"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAL_LOG_MSG_ADD",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zsd_billing_run_f01.abap",
+        "line": 120,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_billing_run_f01.abap:120"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAL_DB_SAVE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zsd_billing_run_f01.abap",
+        "line": 129,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_billing_run_f01.abap:129"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "CL_BCS",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zsd_billing_run_f01.abap",
+        "line": 151,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_billing_run_f01.abap:151"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-014-B01",
+      "text": "Es werden Lieferungen der gewählten Verkaufsorganisationen und Versandstellen ermittelt, deren Warenausgang bis zum Fakturadatum gebucht ist, die noch nicht oder nur teilweise fakturiert sind und keine Fakturasperre haben.",
+      "anchors": [
+        {
+          "file": "zsd_billing_run_f01.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_billing_run_f01.abap:12"
+        }
+      ]
+    },
+    {
+      "id": "BM-014-B02",
+      "text": "Gibt es keine solchen Lieferungen, wird nur die Meldung 400 protokolliert und der Job endet.",
+      "anchors": [
+        {
+          "file": "zsd_billing_run.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_billing_run.abap:35"
+        },
+        {
+          "file": "zsd_billing_run.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_billing_run.abap:37"
+        },
+        {
+          "file": "zsd_billing_run.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_billing_run.abap:38"
+        }
+      ]
+    },
+    {
+      "id": "BM-014-B03",
+      "text": "Für jede betroffene Verkaufsorganisation wird ein Sammellauf durchgeführt.",
+      "anchors": [
+        {
+          "file": "zsd_billing_run.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_billing_run.abap:41"
+        },
+        {
+          "file": "zsd_billing_run.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_billing_run.abap:42"
+        }
+      ]
+    },
+    {
+      "id": "BM-014-B04",
+      "text": "Läuft für die Verkaufsorganisation bereits ein Sammellauf, wird sie mit Fehler 401 übersprungen.",
+      "anchors": [
+        {
+          "file": "zsd_billing_run_f01.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_billing_run_f01.abap:34"
+        },
+        {
+          "file": "zsd_billing_run_f01.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_billing_run_f01.abap:41"
+        },
+        {
+          "file": "zsd_billing_run_f01.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_billing_run_f01.abap:44"
+        }
+      ]
+    },
+    {
+      "id": "BM-014-B05",
+      "text": "Im Echtlauf wird der Standard-Faktura-Sammellauf für genau die ermittelten Lieferungen dieser Verkaufsorganisation zum Fakturadatum gestartet und das mit Meldung 402 protokolliert.",
+      "anchors": [
+        {
+          "file": "zsd_billing_run_f01.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_billing_run_f01.abap:57"
+        },
+        {
+          "file": "zsd_billing_run_f01.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_billing_run_f01.abap:58"
+        }
+      ]
+    },
+    {
+      "id": "BM-014-B06",
+      "text": "Im Testlauf wird nur protokolliert, wie viele Selektionszeilen übergeben würden.",
+      "anchors": [
+        {
+          "file": "zsd_billing_run_f01.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_billing_run_f01.abap:57"
+        }
+      ]
+    },
+    {
+      "id": "BM-014-B07",
+      "text": "Danach wird die Sperre der Verkaufsorganisation gelöst.",
+      "anchors": [
+        {
+          "file": "zsd_billing_run_f01.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_billing_run_f01.abap:67"
+        }
+      ]
+    },
+    {
+      "id": "BM-014-B08",
+      "text": "Im Echtlauf wird anschließend für jede ermittelte Lieferung geprüft, ob eine Rechnung als Folgebeleg existiert.",
+      "anchors": [
+        {
+          "file": "zsd_billing_run_f01.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_billing_run_f01.abap:80"
+        },
+        {
+          "file": "zsd_billing_run_f01.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_billing_run_f01.abap:82"
+        },
+        {
+          "file": "zsd_billing_run_f01.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_billing_run_f01.abap:88"
+        }
+      ]
+    },
+    {
+      "id": "BM-014-B09",
+      "text": "Jede Lieferung ohne Rechnung wird gezählt und mit Warnung 404 samt Auftraggeber protokolliert.",
+      "anchors": [
+        {
+          "file": "zsd_billing_run_f01.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_billing_run_f01.abap:90"
+        },
+        {
+          "file": "zsd_billing_run_f01.abap",
+          "line": 91,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_billing_run_f01.abap:91"
+        }
+      ]
+    },
+    {
+      "id": "BM-014-B10",
+      "text": "Alle gesammelten Meldungen werden in einem Anwendungsprotokoll ZSD/BILLRUN mit 90 Tagen Aufbewahrung gesichert und festgeschrieben.",
+      "anchors": [
+        {
+          "file": "zsd_billing_run_f01.abap",
+          "line": 111,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_billing_run_f01.abap:111"
+        },
+        {
+          "file": "zsd_billing_run_f01.abap",
+          "line": 120,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_billing_run_f01.abap:120"
+        },
+        {
+          "file": "zsd_billing_run_f01.abap",
+          "line": 129,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_billing_run_f01.abap:129"
+        },
+        {
+          "file": "zsd_billing_run_f01.abap",
+          "line": 134,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_billing_run_f01.abap:134"
+        }
+      ]
+    },
+    {
+      "id": "BM-014-B11",
+      "text": "Gibt es Lieferungen ohne Rechnung und ist eine Mailadresse angegeben, erhält diese eine Mail mit der Anzahl und dem Verweis auf das Protokoll.",
+      "anchors": [
+        {
+          "file": "zsd_billing_run.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_billing_run.abap:48"
+        },
+        {
+          "file": "zsd_billing_run_f01.abap",
+          "line": 152,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_billing_run_f01.abap:152"
+        },
+        {
+          "file": "zsd_billing_run_f01.abap",
+          "line": 159,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_billing_run_f01.abap:159"
+        },
+        {
+          "file": "zsd_billing_run_f01.abap",
+          "line": 160,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_billing_run_f01.abap:160"
+        }
+      ]
+    },
+    {
+      "id": "BM-014-B12",
+      "text": "Scheitert der Mailversand, wird nur eine Meldung ausgegeben.",
+      "anchors": [
+        {
+          "file": "zsd_billing_run_f01.abap",
+          "line": 162,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_billing_run_f01.abap:162"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_billing_run.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_billing_run.abap:33"
+        },
+        "meaning": "Jobstart"
+      },
+      {
+        "id": "c_read",
+        "type": "call",
+        "anchor": {
+          "file": "zsd_billing_run.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_billing_run.abap:34"
+        },
+        "meaning": "Fakturierbare Lieferungen ermitteln"
+      },
+      {
+        "id": "g_empty",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_billing_run.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_billing_run.abap:35"
+        },
+        "meaning": "Lieferungen gefunden?"
+      },
+      {
+        "id": "c_save1",
+        "type": "call",
+        "anchor": {
+          "file": "zsd_billing_run.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_billing_run.abap:37"
+        },
+        "meaning": "Protokoll „nichts zu tun“ sichern"
+      },
+      {
+        "id": "e1",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_billing_run.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_billing_run.abap:38"
+        },
+        "meaning": "Job ohne Lauf beenden"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "zsd_billing_run.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_billing_run.abap:41"
+        },
+        "meaning": "Je Verkaufsorganisation"
+      },
+      {
+        "id": "c_sam",
+        "type": "call",
+        "anchor": {
+          "file": "zsd_billing_run.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_billing_run.abap:42"
+        },
+        "meaning": "Sammellauf für die Verkaufsorganisation"
+      },
+      {
+        "id": "c_erg",
+        "type": "call",
+        "anchor": {
+          "file": "zsd_billing_run.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_billing_run.abap:45"
+        },
+        "meaning": "Lieferungen ohne Rechnung ermitteln"
+      },
+      {
+        "id": "c_save2",
+        "type": "call",
+        "anchor": {
+          "file": "zsd_billing_run.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_billing_run.abap:46"
+        },
+        "meaning": "Protokoll sichern"
+      },
+      {
+        "id": "g_mail",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_billing_run.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_billing_run.abap:48"
+        },
+        "meaning": "Lieferungen ohne Rechnung und Mailadresse angegeben?"
+      },
+      {
+        "id": "c_mail",
+        "type": "call",
+        "anchor": {
+          "file": "zsd_billing_run.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_billing_run.abap:49"
+        },
+        "meaning": "Fakturierung per Mail informieren"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_billing_run.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_billing_run.abap:50"
+        },
+        "meaning": "Job beendet"
+      },
+      {
+        "id": "ls",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_billing_run_f01.abap",
+          "line": 11,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_billing_run_f01.abap:11"
+        },
+        "meaning": "Lieferungsermittlung"
+      },
+      {
+        "id": "q",
+        "type": "read",
+        "anchor": {
+          "file": "zsd_billing_run_f01.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_billing_run_f01.abap:12"
+        },
+        "meaning": "Warenausgangsgebuchte, nicht voll fakturierte Lieferungen ohne Fakturasperre lesen"
+      },
+      {
+        "id": "le",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_billing_run_f01.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_billing_run_f01.abap:26"
+        },
+        "meaning": "Lieferungen und Verkaufsorganisationen ermittelt"
+      },
+      {
+        "id": "ss",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_billing_run_f01.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_billing_run_f01.abap:31"
+        },
+        "meaning": "Sammellauf einer Verkaufsorganisation"
+      },
+      {
+        "id": "enq",
+        "type": "lock",
+        "anchor": {
+          "file": "zsd_billing_run_f01.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_billing_run_f01.abap:34"
+        },
+        "meaning": "Sammellauf der Verkaufsorganisation sperren"
+      },
+      {
+        "id": "g_enq",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_billing_run_f01.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_billing_run_f01.abap:41"
+        },
+        "meaning": "Sperre erhalten?"
+      },
+      {
+        "id": "e_enq",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_billing_run_f01.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_billing_run_f01.abap:44"
+        },
+        "meaning": "Verkaufsorganisation übersprungen (Fehler 401)"
+      },
+      {
+        "id": "g_test",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_billing_run_f01.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_billing_run_f01.abap:57"
+        },
+        "meaning": "Echtlauf?"
+      },
+      {
+        "id": "sub",
+        "type": "external_program",
+        "anchor": {
+          "file": "zsd_billing_run_f01.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_billing_run_f01.abap:58"
+        },
+        "meaning": "Standard-Faktura-Sammellauf für die Lieferungen starten und zurückkehren"
+      },
+      {
+        "id": "deq",
+        "type": "lock",
+        "anchor": {
+          "file": "zsd_billing_run_f01.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_billing_run_f01.abap:67"
+        },
+        "meaning": "Sperre lösen"
+      },
+      {
+        "id": "se",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_billing_run_f01.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_billing_run_f01.abap:70"
+        },
+        "meaning": "Sammellauf beendet"
+      },
+      {
+        "id": "es",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_billing_run_f01.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_billing_run_f01.abap:77"
+        },
+        "meaning": "Nachkontrolle"
+      },
+      {
+        "id": "chk",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_billing_run_f01.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_billing_run_f01.abap:80"
+        },
+        "meaning": "Echtlauf?"
+      },
+      {
+        "id": "q_vbfa",
+        "type": "read",
+        "anchor": {
+          "file": "zsd_billing_run_f01.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_billing_run_f01.abap:82"
+        },
+        "meaning": "Rechnungen als Folgebelege der Lieferungen lesen"
+      },
+      {
+        "id": "l2",
+        "type": "loop",
+        "anchor": {
+          "file": "zsd_billing_run_f01.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_billing_run_f01.abap:87"
+        },
+        "meaning": "Je ausgewählter Lieferung"
+      },
+      {
+        "id": "rd",
+        "type": "read",
+        "anchor": {
+          "file": "zsd_billing_run_f01.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_billing_run_f01.abap:88"
+        },
+        "meaning": "Rechnung zur Lieferung nachschlagen"
+      },
+      {
+        "id": "g_rd",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_billing_run_f01.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_billing_run_f01.abap:90"
+        },
+        "meaning": "Keine Rechnung?"
+      },
+      {
+        "id": "cnt",
+        "type": "action",
+        "anchor": {
+          "file": "zsd_billing_run_f01.abap",
+          "line": 91,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_billing_run_f01.abap:91"
+        },
+        "meaning": "Lieferung ohne Rechnung zählen (Warnung 404)"
+      },
+      {
+        "id": "ee",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_billing_run_f01.abap",
+          "line": 96,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_billing_run_f01.abap:96"
+        },
+        "meaning": "Nachkontrolle beendet"
+      },
+      {
+        "id": "gs",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_billing_run_f01.abap",
+          "line": 101,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_billing_run_f01.abap:101"
+        },
+        "meaning": "Protokoll sichern"
+      },
+      {
+        "id": "bal1",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zsd_billing_run_f01.abap",
+          "line": 111,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_billing_run_f01.abap:111"
+        },
+        "meaning": "Anwendungsprotokoll ZSD/BILLRUN mit 90 Tagen Verfall anlegen"
+      },
+      {
+        "id": "l3",
+        "type": "loop",
+        "anchor": {
+          "file": "zsd_billing_run_f01.abap",
+          "line": 119,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_billing_run_f01.abap:119"
+        },
+        "meaning": "Gesammelte Meldungen"
+      },
+      {
+        "id": "bal2",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zsd_billing_run_f01.abap",
+          "line": 120,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_billing_run_f01.abap:120"
+        },
+        "meaning": "Meldung ins Protokoll"
+      },
+      {
+        "id": "bal3",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zsd_billing_run_f01.abap",
+          "line": 129,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_billing_run_f01.abap:129"
+        },
+        "meaning": "Protokoll auf der Datenbank sichern"
+      },
+      {
+        "id": "cm1",
+        "type": "transaction",
+        "anchor": {
+          "file": "zsd_billing_run_f01.abap",
+          "line": 134,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_billing_run_f01.abap:134"
+        },
+        "meaning": "Protokoll festschreiben"
+      },
+      {
+        "id": "ge",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_billing_run_f01.abap",
+          "line": 135,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_billing_run_f01.abap:135"
+        },
+        "meaning": "Protokoll gesichert"
+      },
+      {
+        "id": "ms",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_billing_run_f01.abap",
+          "line": 140,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_billing_run_f01.abap:140"
+        },
+        "meaning": "Mailversand"
+      },
+      {
+        "id": "doc",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zsd_billing_run_f01.abap",
+          "line": 152,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_billing_run_f01.abap:152"
+        },
+        "meaning": "Mailtext mit Anzahl Lieferungen ohne Rechnung erstellen"
+      },
+      {
+        "id": "send",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zsd_billing_run_f01.abap",
+          "line": 159,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_billing_run_f01.abap:159"
+        },
+        "meaning": "Mail an die angegebene Adresse senden"
+      },
+      {
+        "id": "cm2",
+        "type": "transaction",
+        "anchor": {
+          "file": "zsd_billing_run_f01.abap",
+          "line": 160,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_billing_run_f01.abap:160"
+        },
+        "meaning": "Versand festschreiben"
+      },
+      {
+        "id": "m_err",
+        "type": "output",
+        "anchor": {
+          "file": "zsd_billing_run_f01.abap",
+          "line": 162,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_billing_run_f01.abap:162"
+        },
+        "meaning": "Versandfehler melden"
+      },
+      {
+        "id": "me",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_billing_run_f01.abap",
+          "line": 164,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_billing_run_f01.abap:164"
+        },
+        "meaning": "Mailversand beendet"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "c_read",
+        "condition": "always"
+      },
+      {
+        "from": "c_read",
+        "to": "ls",
+        "condition": "always"
+      },
+      {
+        "from": "g_empty",
+        "to": "c_save1",
+        "condition": "gt_lief IS INITIAL"
+      },
+      {
+        "from": "c_save1",
+        "to": "gs",
+        "condition": "always"
+      },
+      {
+        "from": "g_empty",
+        "to": "l",
+        "condition": "else"
+      },
+      {
+        "from": "l",
+        "to": "c_sam",
+        "condition": "next row"
+      },
+      {
+        "from": "c_sam",
+        "to": "ss",
+        "condition": "always"
+      },
+      {
+        "from": "l",
+        "to": "c_erg",
+        "condition": "no more rows"
+      },
+      {
+        "from": "c_erg",
+        "to": "es",
+        "condition": "always"
+      },
+      {
+        "from": "c_save2",
+        "to": "gs",
+        "condition": "always"
+      },
+      {
+        "from": "g_mail",
+        "to": "c_mail",
+        "condition": "gv_fehler > 0 AND p_mail IS NOT INITIAL"
+      },
+      {
+        "from": "g_mail",
+        "to": "e",
+        "condition": "else"
+      },
+      {
+        "from": "c_mail",
+        "to": "ms",
+        "condition": "always"
+      },
+      {
+        "from": "ls",
+        "to": "q",
+        "condition": "always"
+      },
+      {
+        "from": "q",
+        "to": "le",
+        "condition": "always"
+      },
+      {
+        "from": "ss",
+        "to": "enq",
+        "condition": "always"
+      },
+      {
+        "from": "enq",
+        "to": "g_enq",
+        "condition": "always"
+      },
+      {
+        "from": "g_enq",
+        "to": "e_enq",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g_enq",
+        "to": "g_test",
+        "condition": "else"
+      },
+      {
+        "from": "g_test",
+        "to": "sub",
+        "condition": "p_test = abap_false"
+      },
+      {
+        "from": "g_test",
+        "to": "deq",
+        "condition": "else"
+      },
+      {
+        "from": "sub",
+        "to": "deq",
+        "condition": "always"
+      },
+      {
+        "from": "deq",
+        "to": "se",
+        "condition": "always"
+      },
+      {
+        "from": "es",
+        "to": "chk",
+        "condition": "always"
+      },
+      {
+        "from": "chk",
+        "to": "q_vbfa",
+        "condition": "p_test = abap_false"
+      },
+      {
+        "from": "chk",
+        "to": "ee",
+        "condition": "else"
+      },
+      {
+        "from": "q_vbfa",
+        "to": "l2",
+        "condition": "always"
+      },
+      {
+        "from": "l2",
+        "to": "rd",
+        "condition": "next row"
+      },
+      {
+        "from": "rd",
+        "to": "g_rd",
+        "condition": "always"
+      },
+      {
+        "from": "g_rd",
+        "to": "cnt",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g_rd",
+        "to": "l2",
+        "condition": "else"
+      },
+      {
+        "from": "cnt",
+        "to": "l2",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l2",
+        "to": "ee",
+        "condition": "no more rows"
+      },
+      {
+        "from": "gs",
+        "to": "bal1",
+        "condition": "always"
+      },
+      {
+        "from": "bal1",
+        "to": "l3",
+        "condition": "always"
+      },
+      {
+        "from": "l3",
+        "to": "bal2",
+        "condition": "next row"
+      },
+      {
+        "from": "bal2",
+        "to": "l3",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l3",
+        "to": "bal3",
+        "condition": "no more rows"
+      },
+      {
+        "from": "bal3",
+        "to": "cm1",
+        "condition": "always"
+      },
+      {
+        "from": "cm1",
+        "to": "ge",
+        "condition": "always"
+      },
+      {
+        "from": "ms",
+        "to": "doc",
+        "condition": "always"
+      },
+      {
+        "from": "doc",
+        "to": "send",
+        "condition": "always"
+      },
+      {
+        "from": "send",
+        "to": "cm2",
+        "condition": "always"
+      },
+      {
+        "from": "cm2",
+        "to": "me",
+        "condition": "always"
+      },
+      {
+        "from": "doc",
+        "to": "m_err",
+        "condition": "CATCH cx_bcs INTO lx_bcs"
+      },
+      {
+        "from": "send",
+        "to": "m_err",
+        "condition": "CATCH cx_bcs INTO lx_bcs"
+      },
+      {
+        "from": "m_err",
+        "to": "me",
+        "condition": "always"
+      },
+      {
+        "from": "le",
+        "to": "g_empty",
+        "condition": "always"
+      },
+      {
+        "from": "ge",
+        "to": "e1",
+        "condition": "always"
+      },
+      {
+        "from": "e_enq",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "se",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "ee",
+        "to": "c_save2",
+        "condition": "always"
+      },
+      {
+        "from": "ge",
+        "to": "g_mail",
+        "condition": "always"
+      },
+      {
+        "from": "me",
+        "to": "e",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zsd_billing_run_f01.abap:58 — kein Fachsatz „die Rechnungen werden an die Buchhaltung übergeben/gebucht“: was RV60SBAT tut, liegt außerhalb des Falls; der Report prüft nur den Belegfluss",
+    "zsd_billing_run_f01.abap:82 — kein Fachsatz „jede fakturierte Lieferung wird erkannt“: gesucht wird nur Folgebelegtyp M; andere Fakturatypen gelten als „ohne Rechnung“",
+    "zsd_billing_run_f01.abap:90 — kein Fachsatz „nur tatsächlich fehlgeschlagene Fakturen werden gemeldet“: auch Lieferungen einer wegen Sperre übersprungenen Verkaufsorganisation zählen als ohne Rechnung"
+  ],
+  "processDescription": "Der Report läuft nachts als Job mit Verkaufsorganisationen, optionalen Versandstellen, Fakturadatum, Testlaufkennzeichen und einer Mailadresse. Er ermittelt Lieferungen mit gebuchtem Warenausgang bis zum Fakturadatum, die noch nicht voll fakturiert sind und keine Fakturasperre haben. Ohne Treffer protokolliert er das und endet. Sonst führt er je Verkaufsorganisation einen Sammellauf durch: Er sperrt die Verkaufsorganisation gegen Doppelstart und überspringt sie mit Fehler, wenn schon ein Lauf aktiv ist. Im Echtlauf startet er den Standard-Sammellauf für genau diese Lieferungen und kehrt danach zurück; im Testlauf protokolliert er nur. Danach löst er die Sperre. Im Echtlauf prüft er anschließend über den Belegfluss, welche Lieferungen keine Rechnung (Typ M) erhalten haben, zählt und protokolliert sie. Alle Meldungen landen in einem Anwendungsprotokoll, das festgeschrieben wird. Gibt es Lieferungen ohne Rechnung und eine Mailadresse, verschickt er eine Mail mit der Anzahl; ein Versandfehler wird nur gemeldet."
+}

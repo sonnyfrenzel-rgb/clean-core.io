@@ -1,0 +1,77 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten emp",
+      "before": "—",
+      "after": "end zpp_mass_release.abap:23 „Dialogschritt abgebrochen, zurück ins Selektionsbild“",
+      "why": "MESSAGE TYPE E beendet den Pfad (Dialogschritt abgebrochen); Konvention: output + end auf derselben Zeile",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kante mp→emp",
+      "before": "—",
+      "after": "[always]",
+      "why": "Pfadende nach Fehlermeldung",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten ema",
+      "before": "—",
+      "after": "end zpp_mass_release.abap:29 „Dialogschritt abgebrochen, zurück ins Selektionsbild“",
+      "why": "MESSAGE TYPE E beendet den Pfad (Dialogschritt abgebrochen); Konvention: output + end auf derselben Zeile",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kante ma→ema",
+      "before": "—",
+      "after": "[always]",
+      "why": "Pfadende nach Fehlermeldung",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten e_pf",
+      "before": "—",
+      "after": "end zpp_mass_release_f02.abap:105 „Alle Aufträge des Pakets vermerkt, Rückkehr“",
+      "why": "Konvention: jeder auslaufende FORM hat einen eigenen end-Knoten auf ENDFORM; Rückkehr zum Aufrufer läuft über diesen",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kante l_pf→l_pak2",
+      "before": "l_pf→l_pak2 [no more rows]",
+      "after": "l_pf→e_pf [no more rows]",
+      "why": "Konvention: jeder auslaufende FORM hat einen eigenen end-Knoten auf ENDFORM; Rückkehr zum Aufrufer läuft über diesen",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante e_pf→l_pak2",
+      "before": "—",
+      "after": "[next iteration]",
+      "why": "Rückkehr aus paket_fehler: danach EXIT aus dem DO und weiter mit dem nächsten Paket",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten m_salv",
+      "before": "—",
+      "after": "output zpp_mass_release_f03.abap:98 „Hinweis: ALV konnte nicht erzeugt werden“",
+      "why": "Fehlerpfad CATCH cx_salv_msg mit Meldung s205 fehlte",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kante fac→m_salv",
+      "before": "—",
+      "after": "[cx_salv_msg]",
+      "why": "Ausnahme der SALV-Fabrik wird abgefangen",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante m_salv→e_aus",
+      "before": "—",
+      "after": "[always]",
+      "why": "nach ENDTRY endet der FORM",
+      "category": "Kante"
+    }
+  ],
+  "doubts": []
+}

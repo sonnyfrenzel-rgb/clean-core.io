@@ -1,0 +1,274 @@
+{
+  "id": "BM-021",
+  "title": "Wareneingangsliste je Werk aus MKPF/MSEG",
+  "classes": [
+    "K01"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "MKPF",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 21,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:21"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "MSEG",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 21,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:21"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-021-B01",
+      "text": "Es werden die Materialbelegpositionen des eingegebenen Werks mit der gewählten Bewegungsart (Vorschlag 101, Wareneingang zur Bestellung) im Buchungszeitraum selektiert.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:21"
+        }
+      ]
+    },
+    {
+      "id": "BM-021-B02",
+      "text": "Gibt es keine solchen Belege, erscheint der Hinweis, dass im Zeitraum keine Wareneingänge vorliegen, und der Report endet.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:28"
+        },
+        {
+          "file": "source.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:29"
+        },
+        {
+          "file": "source.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:30"
+        }
+      ]
+    },
+    {
+      "id": "BM-021-B03",
+      "text": "Sonst wird je Wareneingang eine Zeile mit Buchungsdatum, Materialbeleg, Material, Menge mit Einheit, Lieferant und Bestellung ausgegeben, sortiert nach Buchungsdatum.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:34"
+        },
+        {
+          "file": "source.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:35"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:20"
+        },
+        "meaning": "Reportstart"
+      },
+      {
+        "id": "q",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:21"
+        },
+        "meaning": "Materialbelege der Bewegungsart im Werk und Zeitraum lesen"
+      },
+      {
+        "id": "g",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:28"
+        },
+        "meaning": "Wareneingänge gefunden?"
+      },
+      {
+        "id": "m",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:29"
+        },
+        "meaning": "Hinweis: keine Wareneingänge"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:30"
+        },
+        "meaning": "Report beenden"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "source.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:34"
+        },
+        "meaning": "Wareneingänge durchlaufen"
+      },
+      {
+        "id": "o",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:35"
+        },
+        "meaning": "Wareneingangszeile ausgeben"
+      },
+      {
+        "id": "d",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:37"
+        },
+        "meaning": "Liste fertig"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "q",
+        "condition": "always"
+      },
+      {
+        "from": "q",
+        "to": "g",
+        "condition": "always"
+      },
+      {
+        "from": "g",
+        "to": "m",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "m",
+        "to": "e",
+        "condition": "always"
+      },
+      {
+        "from": "g",
+        "to": "l",
+        "condition": "else"
+      },
+      {
+        "from": "l",
+        "to": "o",
+        "condition": "next row"
+      },
+      {
+        "from": "o",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l",
+        "to": "d",
+        "condition": "no more rows"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "source.abap:21 — kein Fachsatz „Stornierte Wareneingänge werden herausgerechnet“ (gelesen wird nur die eine eingegebene Bewegungsart; Stornobewegungen wie 102 werden nicht gegengerechnet)",
+    "source.abap:35 — kein Fachsatz „Summen je Lieferant werden gebildet“ (es wird nur zeilenweise ausgegeben)",
+    "gesamte Scheibe — kein Fachsatz „Bestand wird gebucht oder verändert“ (reiner Lesereport)"
+  ],
+  "processDescription": "Ein Sachbearbeiter im Einkauf oder Wareneingang startet den Report mit einem Werk, einer Bewegungsart (Vorschlag 101) und einem Buchungszeitraum. Der Report liest dazu die Kopf- und Positionsdaten der Materialbelege. Findet er nichts, meldet er, dass im Zeitraum keine Wareneingänge vorliegen, und endet. Sonst sortiert er die Treffer nach Buchungsdatum und Belegnummer und gibt je Position Datum, Beleg, Material, Menge mit Einheit, Lieferant und Bestellung als Liste aus. Stornobewegungen werden nicht gegengerechnet; es wird nichts gebucht."
+}

@@ -1,0 +1,14 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "verbotener Schluss 1",
+      "before": "source.abap:21 — kein Fachsatz „Stornierte Wareneingänge werden herausgerechnet“ (Bewegungsart 102 wird nicht gelesen und nicht verrechnet)",
+      "after": "source.abap:21 — kein Fachsatz „Stornierte Wareneingänge werden herausgerechnet“ (gelesen wird nur die eine eingegebene Bewegungsart; Stornobewegungen wie 102 werden nicht gegengerechnet)",
+      "why": "Die Begründung „Bewegungsart 102 wird nicht gelesen“ ist falsch, wenn der Anwender 102 als p_bwart eingibt; der Schluss selbst bleibt richtig.",
+      "category": "verbotener Schluss"
+    }
+  ],
+  "doubts": []
+}

@@ -1,0 +1,1290 @@
+{
+  "id": "BM-073",
+  "title": "Freigabe von Wartungsplan-Aufträgen im Dialog (SALV) und im Hintergrund",
+  "classes": [
+    "K01",
+    "K04",
+    "K03",
+    "K12",
+    "K09"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "AUFK",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zpm_wp_freigabe_cl.abap",
+        "line": 49,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpm_wp_freigabe_cl.abap:49"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "AFIH",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zpm_wp_freigabe_cl.abap",
+        "line": 49,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpm_wp_freigabe_cl.abap:49"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "AFKO",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zpm_wp_freigabe_cl.abap",
+        "line": 49,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpm_wp_freigabe_cl.abap:49"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "JEST",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zpm_wp_freigabe_cl.abap",
+        "line": 62,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpm_wp_freigabe_cl.abap:62"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "EQUI",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zpm_wp_freigabe_cl.abap",
+        "line": 89,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpm_wp_freigabe_cl.abap:89"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_ALM_ORDER_MAINTAIN",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zpm_wp_freigabe_cl.abap",
+        "line": 122,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpm_wp_freigabe_cl.abap:122"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_ROLLBACK",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zpm_wp_freigabe_cl.abap",
+        "line": 128,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpm_wp_freigabe_cl.abap:128"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_COMMIT",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zpm_wp_freigabe_cl.abap",
+        "line": 131,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpm_wp_freigabe_cl.abap:131"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "CL_SALV_TABLE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zpm_wp_freigabe_cl.abap",
+        "line": 142,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zpm_wp_freigabe_cl.abap:142"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-073-B01",
+      "text": "Es werden Instandhaltungsaufträge des Planungswerks mit Wartungsplanbezug, der gewählten Auftragsart (Vorschlag PM02) und einem Eckstarttermin bis heute plus Horizonttage (Vorschlag 14) gelesen.",
+      "anchors": [
+        {
+          "file": "zpm_wp_freigabe.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_wp_freigabe.abap:24"
+        },
+        {
+          "file": "zpm_wp_freigabe_cl.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_wp_freigabe_cl.abap:49"
+        }
+      ]
+    },
+    {
+      "id": "BM-073-B02",
+      "text": "Nur Aufträge, deren Systemstatus EROF (eröffnet) aktiv ist, kommen in die Kandidatenliste.",
+      "anchors": [
+        {
+          "file": "zpm_wp_freigabe_cl.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_wp_freigabe_cl.abap:62"
+        },
+        {
+          "file": "zpm_wp_freigabe_cl.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_wp_freigabe_cl.abap:66"
+        }
+      ]
+    },
+    {
+      "id": "BM-073-B03",
+      "text": "Ist das Equipment des Auftrags inaktiv (Status INAK), wird der Auftrag mit „Equipment inaktiv - nicht freigeben“ gekennzeichnet, sonst als „freigebbar“.",
+      "anchors": [
+        {
+          "file": "zpm_wp_freigabe_cl.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_wp_freigabe_cl.abap:70"
+        },
+        {
+          "file": "zpm_wp_freigabe_cl.abap",
+          "line": 91,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_wp_freigabe_cl.abap:91"
+        },
+        {
+          "file": "zpm_wp_freigabe_cl.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_wp_freigabe_cl.abap:71"
+        }
+      ]
+    },
+    {
+      "id": "BM-073-B04",
+      "text": "Aufträge ohne Equipment gelten als freigebbar.",
+      "anchors": [
+        {
+          "file": "zpm_wp_freigabe_cl.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_wp_freigabe_cl.abap:87"
+        }
+      ]
+    },
+    {
+      "id": "BM-073-B05",
+      "text": "Ohne Kandidaten wird „Keine freizugebenden Wartungsauftraege“ gemeldet und der Lauf beendet.",
+      "anchors": [
+        {
+          "file": "zpm_wp_freigabe.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_wp_freigabe.abap:28"
+        },
+        {
+          "file": "zpm_wp_freigabe.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_wp_freigabe.abap:29"
+        },
+        {
+          "file": "zpm_wp_freigabe.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_wp_freigabe.abap:30"
+        }
+      ]
+    },
+    {
+      "id": "BM-073-B06",
+      "text": "Im Hintergrundlauf werden alle freigebbaren Kandidaten freigegeben, bevor die Liste ausgegeben wird.",
+      "anchors": [
+        {
+          "file": "zpm_wp_freigabe.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_wp_freigabe.abap:34"
+        },
+        {
+          "file": "zpm_wp_freigabe.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_wp_freigabe.abap:35"
+        },
+        {
+          "file": "zpm_wp_freigabe_cl.abap",
+          "line": 107,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_wp_freigabe_cl.abap:107"
+        }
+      ]
+    },
+    {
+      "id": "BM-073-B07",
+      "text": "Jeder freigebbare Auftrag wird einzeln freigegeben und gesichert; nicht freigebbare Zeilen werden übergangen.",
+      "anchors": [
+        {
+          "file": "zpm_wp_freigabe_cl.abap",
+          "line": 115,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_wp_freigabe_cl.abap:115"
+        },
+        {
+          "file": "zpm_wp_freigabe_cl.abap",
+          "line": 122,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_wp_freigabe_cl.abap:122"
+        }
+      ]
+    },
+    {
+      "id": "BM-073-B08",
+      "text": "Meldet die Freigabe einen Fehler oder Abbruch, wird zurückgerollt und „Freigabe fehlgeschlagen“ vermerkt; sonst wird festgeschrieben, „freigegeben“ vermerkt und die Zeile als nicht mehr freigebbar markiert.",
+      "anchors": [
+        {
+          "file": "zpm_wp_freigabe_cl.abap",
+          "line": 127,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_wp_freigabe_cl.abap:127"
+        },
+        {
+          "file": "zpm_wp_freigabe_cl.abap",
+          "line": 128,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_wp_freigabe_cl.abap:128"
+        },
+        {
+          "file": "zpm_wp_freigabe_cl.abap",
+          "line": 131,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_wp_freigabe_cl.abap:131"
+        }
+      ]
+    },
+    {
+      "id": "BM-073-B09",
+      "text": "Die Kandidatenliste wird als ALV mit der Zusatzfunktion „Freigeben“ angezeigt, im Hintergrund als Spoolliste.",
+      "anchors": [
+        {
+          "file": "zpm_wp_freigabe.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_wp_freigabe.abap:38"
+        },
+        {
+          "file": "zpm_wp_freigabe_cl.abap",
+          "line": 142,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_wp_freigabe_cl.abap:142"
+        },
+        {
+          "file": "zpm_wp_freigabe_cl.abap",
+          "line": 148,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_wp_freigabe_cl.abap:148"
+        },
+        {
+          "file": "zpm_wp_freigabe_cl.abap",
+          "line": 149,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_wp_freigabe_cl.abap:149"
+        }
+      ]
+    },
+    {
+      "id": "BM-073-B10",
+      "text": "Im Dialog gibt die Funktion „Freigeben“ die markierten Zeilen frei und frischt die Liste auf; ohne Markierung erscheint „Bitte Zeilen markieren“.",
+      "anchors": [
+        {
+          "file": "zpm_wp_freigabe_cl.abap",
+          "line": 154,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_wp_freigabe_cl.abap:154"
+        },
+        {
+          "file": "zpm_wp_freigabe_cl.abap",
+          "line": 157,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_wp_freigabe_cl.abap:157"
+        },
+        {
+          "file": "zpm_wp_freigabe_cl.abap",
+          "line": 158,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_wp_freigabe_cl.abap:158"
+        },
+        {
+          "file": "zpm_wp_freigabe_cl.abap",
+          "line": 161,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_wp_freigabe_cl.abap:161"
+        },
+        {
+          "file": "zpm_wp_freigabe_cl.abap",
+          "line": 162,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_wp_freigabe_cl.abap:162"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "zpm_wp_freigabe.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_wp_freigabe.abap:22"
+        },
+        "meaning": "Reportstart (Dialog oder Job)"
+      },
+      {
+        "id": "so",
+        "type": "call",
+        "anchor": {
+          "file": "zpm_wp_freigabe.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_wp_freigabe.abap:24"
+        },
+        "meaning": "Freizugebende Aufträge ermitteln"
+      },
+      {
+        "id": "m_sel",
+        "type": "start",
+        "anchor": {
+          "file": "zpm_wp_freigabe_cl.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_wp_freigabe_cl.abap:44"
+        },
+        "meaning": "Selektion"
+      },
+      {
+        "id": "q_sel",
+        "type": "read",
+        "anchor": {
+          "file": "zpm_wp_freigabe_cl.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_wp_freigabe_cl.abap:49"
+        },
+        "meaning": "Aufträge des Planungswerks mit Wartungsplanbezug, gewählter Auftragsart und Eckstart bis Horizont lesen"
+      },
+      {
+        "id": "l_sel",
+        "type": "loop",
+        "anchor": {
+          "file": "zpm_wp_freigabe_cl.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_wp_freigabe_cl.abap:59"
+        },
+        "meaning": "Je Auftrag"
+      },
+      {
+        "id": "q_jest",
+        "type": "read",
+        "anchor": {
+          "file": "zpm_wp_freigabe_cl.abap",
+          "line": 62,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_wp_freigabe_cl.abap:62"
+        },
+        "meaning": "Aktiven Status EROF (I0001) des Auftrags suchen"
+      },
+      {
+        "id": "g_jest",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpm_wp_freigabe_cl.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_wp_freigabe_cl.abap:66"
+        },
+        "meaning": "Auftrag noch nicht freigegeben (EROF)?"
+      },
+      {
+        "id": "c_eq",
+        "type": "call",
+        "anchor": {
+          "file": "zpm_wp_freigabe_cl.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_wp_freigabe_cl.abap:70"
+        },
+        "meaning": "Equipment auf Inaktivität prüfen"
+      },
+      {
+        "id": "m_eq",
+        "type": "start",
+        "anchor": {
+          "file": "zpm_wp_freigabe_cl.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_wp_freigabe_cl.abap:83"
+        },
+        "meaning": "Equipmentprüfung"
+      },
+      {
+        "id": "g_chk",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpm_wp_freigabe_cl.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_wp_freigabe_cl.abap:87"
+        },
+        "meaning": "Equipment angegeben?"
+      },
+      {
+        "id": "q_equi",
+        "type": "read",
+        "anchor": {
+          "file": "zpm_wp_freigabe_cl.abap",
+          "line": 89,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_wp_freigabe_cl.abap:89"
+        },
+        "meaning": "Objektnummer des Equipments lesen"
+      },
+      {
+        "id": "q_jest2",
+        "type": "read",
+        "anchor": {
+          "file": "zpm_wp_freigabe_cl.abap",
+          "line": 91,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_wp_freigabe_cl.abap:91"
+        },
+        "meaning": "Aktiven Status INAK (I0320) des Equipments suchen"
+      },
+      {
+        "id": "g_inak",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpm_wp_freigabe_cl.abap",
+          "line": 95,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_wp_freigabe_cl.abap:95"
+        },
+        "meaning": "Equipment inaktiv?"
+      },
+      {
+        "id": "a_inak",
+        "type": "action",
+        "anchor": {
+          "file": "zpm_wp_freigabe_cl.abap",
+          "line": 96,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_wp_freigabe_cl.abap:96"
+        },
+        "meaning": "Als inaktiv kennzeichnen"
+      },
+      {
+        "id": "e_eq",
+        "type": "end",
+        "anchor": {
+          "file": "zpm_wp_freigabe_cl.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_wp_freigabe_cl.abap:98"
+        },
+        "meaning": "Rückkehr"
+      },
+      {
+        "id": "g_ia",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpm_wp_freigabe_cl.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_wp_freigabe_cl.abap:71"
+        },
+        "meaning": "Equipment inaktiv? – dann „nicht freigeben“, sonst „freigebbar“"
+      },
+      {
+        "id": "e_sel",
+        "type": "end",
+        "anchor": {
+          "file": "zpm_wp_freigabe_cl.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_wp_freigabe_cl.abap:80"
+        },
+        "meaning": "Kandidatenliste fertig"
+      },
+      {
+        "id": "g0",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpm_wp_freigabe.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_wp_freigabe.abap:28"
+        },
+        "meaning": "Kandidaten vorhanden?"
+      },
+      {
+        "id": "m0",
+        "type": "output",
+        "anchor": {
+          "file": "zpm_wp_freigabe.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_wp_freigabe.abap:29"
+        },
+        "meaning": "Hinweis: nichts freizugeben"
+      },
+      {
+        "id": "e0",
+        "type": "end",
+        "anchor": {
+          "file": "zpm_wp_freigabe.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_wp_freigabe.abap:30"
+        },
+        "meaning": "Ende"
+      },
+      {
+        "id": "gb",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpm_wp_freigabe.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_wp_freigabe.abap:34"
+        },
+        "meaning": "Hintergrundlauf?"
+      },
+      {
+        "id": "c_rel",
+        "type": "call",
+        "anchor": {
+          "file": "zpm_wp_freigabe.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_wp_freigabe.abap:35"
+        },
+        "meaning": "Alle Kandidaten freigeben"
+      },
+      {
+        "id": "m_rel",
+        "type": "start",
+        "anchor": {
+          "file": "zpm_wp_freigabe_cl.abap",
+          "line": 101,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_wp_freigabe_cl.abap:101"
+        },
+        "meaning": "Freigabe"
+      },
+      {
+        "id": "g_all",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpm_wp_freigabe_cl.abap",
+          "line": 107,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_wp_freigabe_cl.abap:107"
+        },
+        "meaning": "Keine Auswahl übergeben = alle Zeilen?"
+      },
+      {
+        "id": "l_rel",
+        "type": "loop",
+        "anchor": {
+          "file": "zpm_wp_freigabe_cl.abap",
+          "line": 113,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_wp_freigabe_cl.abap:113"
+        },
+        "meaning": "Je ausgewählte Zeile"
+      },
+      {
+        "id": "g_frei",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpm_wp_freigabe_cl.abap",
+          "line": 115,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_wp_freigabe_cl.abap:115"
+        },
+        "meaning": "Zeile freigebbar?"
+      },
+      {
+        "id": "c_bapi",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zpm_wp_freigabe_cl.abap",
+          "line": 122,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_wp_freigabe_cl.abap:122"
+        },
+        "meaning": "IH-Auftrag freigeben und sichern"
+      },
+      {
+        "id": "g_err",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpm_wp_freigabe_cl.abap",
+          "line": 127,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_wp_freigabe_cl.abap:127"
+        },
+        "meaning": "Fehler oder Abbruch gemeldet?"
+      },
+      {
+        "id": "rb",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zpm_wp_freigabe_cl.abap",
+          "line": 128,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_wp_freigabe_cl.abap:128"
+        },
+        "meaning": "Zurückrollen, Status „Freigabe fehlgeschlagen“"
+      },
+      {
+        "id": "cm",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zpm_wp_freigabe_cl.abap",
+          "line": 131,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_wp_freigabe_cl.abap:131"
+        },
+        "meaning": "Festschreiben, Status „freigegeben“"
+      },
+      {
+        "id": "e_rel",
+        "type": "end",
+        "anchor": {
+          "file": "zpm_wp_freigabe_cl.abap",
+          "line": 138,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_wp_freigabe_cl.abap:138"
+        },
+        "meaning": "Rückkehr"
+      },
+      {
+        "id": "c_disp",
+        "type": "call",
+        "anchor": {
+          "file": "zpm_wp_freigabe.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_wp_freigabe.abap:38"
+        },
+        "meaning": "Ergebnisliste anzeigen (im Job: Spool)"
+      },
+      {
+        "id": "m_disp",
+        "type": "start",
+        "anchor": {
+          "file": "zpm_wp_freigabe_cl.abap",
+          "line": 141,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_wp_freigabe_cl.abap:141"
+        },
+        "meaning": "Anzeige"
+      },
+      {
+        "id": "fac",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zpm_wp_freigabe_cl.abap",
+          "line": 142,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_wp_freigabe_cl.abap:142"
+        },
+        "meaning": "ALV auf der Kandidatenliste erzeugen"
+      },
+      {
+        "id": "sh",
+        "type": "action",
+        "anchor": {
+          "file": "zpm_wp_freigabe_cl.abap",
+          "line": 148,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_wp_freigabe_cl.abap:148"
+        },
+        "meaning": "Behandler für die Drucktaste Freigeben registrieren"
+      },
+      {
+        "id": "disp",
+        "type": "output",
+        "anchor": {
+          "file": "zpm_wp_freigabe_cl.abap",
+          "line": 149,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_wp_freigabe_cl.abap:149"
+        },
+        "meaning": "Liste anzeigen"
+      },
+      {
+        "id": "e_disp",
+        "type": "end",
+        "anchor": {
+          "file": "zpm_wp_freigabe_cl.abap",
+          "line": 150,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_wp_freigabe_cl.abap:150"
+        },
+        "meaning": "Anzeige beendet, Rückkehr"
+      },
+      {
+        "id": "m_evt",
+        "type": "start",
+        "anchor": {
+          "file": "zpm_wp_freigabe_cl.abap",
+          "line": 153,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_wp_freigabe_cl.abap:153"
+        },
+        "meaning": "Benutzer drückt eine Zusatzfunktion im ALV"
+      },
+      {
+        "id": "cs",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpm_wp_freigabe_cl.abap",
+          "line": 154,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_wp_freigabe_cl.abap:154"
+        },
+        "meaning": "Welche Funktion?"
+      },
+      {
+        "id": "gsel",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zpm_wp_freigabe_cl.abap",
+          "line": 156,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_wp_freigabe_cl.abap:156"
+        },
+        "meaning": "Markierte Zeilen ermitteln"
+      },
+      {
+        "id": "g_sel",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpm_wp_freigabe_cl.abap",
+          "line": 157,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_wp_freigabe_cl.abap:157"
+        },
+        "meaning": "Zeilen markiert?"
+      },
+      {
+        "id": "msg",
+        "type": "output",
+        "anchor": {
+          "file": "zpm_wp_freigabe_cl.abap",
+          "line": 158,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_wp_freigabe_cl.abap:158"
+        },
+        "meaning": "Hinweis: bitte Zeilen markieren"
+      },
+      {
+        "id": "e_evt",
+        "type": "end",
+        "anchor": {
+          "file": "zpm_wp_freigabe_cl.abap",
+          "line": 159,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_wp_freigabe_cl.abap:159"
+        },
+        "meaning": "Zurück zur Liste"
+      },
+      {
+        "id": "c_rel2",
+        "type": "call",
+        "anchor": {
+          "file": "zpm_wp_freigabe_cl.abap",
+          "line": 161,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_wp_freigabe_cl.abap:161"
+        },
+        "meaning": "Markierte Zeilen freigeben"
+      },
+      {
+        "id": "rf",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zpm_wp_freigabe_cl.abap",
+          "line": 162,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_wp_freigabe_cl.abap:162"
+        },
+        "meaning": "Liste mit neuem Status auffrischen"
+      },
+      {
+        "id": "e_evt2",
+        "type": "end",
+        "anchor": {
+          "file": "zpm_wp_freigabe_cl.abap",
+          "line": 166,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_wp_freigabe_cl.abap:166"
+        },
+        "meaning": "Zurück zur Liste"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "so",
+        "condition": "always"
+      },
+      {
+        "from": "so",
+        "to": "m_sel",
+        "condition": "always"
+      },
+      {
+        "from": "m_sel",
+        "to": "q_sel",
+        "condition": "always"
+      },
+      {
+        "from": "q_sel",
+        "to": "l_sel",
+        "condition": "always"
+      },
+      {
+        "from": "l_sel",
+        "to": "q_jest",
+        "condition": "next row"
+      },
+      {
+        "from": "q_jest",
+        "to": "g_jest",
+        "condition": "always"
+      },
+      {
+        "from": "g_jest",
+        "to": "l_sel",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g_jest",
+        "to": "c_eq",
+        "condition": "else"
+      },
+      {
+        "from": "c_eq",
+        "to": "m_eq",
+        "condition": "always"
+      },
+      {
+        "from": "m_eq",
+        "to": "g_chk",
+        "condition": "always"
+      },
+      {
+        "from": "g_chk",
+        "to": "q_equi",
+        "condition": "iv_equnr IS NOT INITIAL"
+      },
+      {
+        "from": "g_chk",
+        "to": "e_eq",
+        "condition": "else"
+      },
+      {
+        "from": "q_equi",
+        "to": "q_jest2",
+        "condition": "always"
+      },
+      {
+        "from": "q_jest2",
+        "to": "g_inak",
+        "condition": "always"
+      },
+      {
+        "from": "g_inak",
+        "to": "a_inak",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "g_inak",
+        "to": "e_eq",
+        "condition": "else"
+      },
+      {
+        "from": "a_inak",
+        "to": "e_eq",
+        "condition": "always"
+      },
+      {
+        "from": "e_eq",
+        "to": "g_ia",
+        "condition": "always"
+      },
+      {
+        "from": "g_ia",
+        "to": "l_sel",
+        "condition": "lv_inakt = abap_true"
+      },
+      {
+        "from": "g_ia",
+        "to": "l_sel",
+        "condition": "else"
+      },
+      {
+        "from": "l_sel",
+        "to": "e_sel",
+        "condition": "no more rows"
+      },
+      {
+        "from": "e_sel",
+        "to": "g0",
+        "condition": "always"
+      },
+      {
+        "from": "g0",
+        "to": "m0",
+        "condition": "go_app->mt_rows IS INITIAL"
+      },
+      {
+        "from": "m0",
+        "to": "e0",
+        "condition": "always"
+      },
+      {
+        "from": "g0",
+        "to": "gb",
+        "condition": "else"
+      },
+      {
+        "from": "gb",
+        "to": "c_rel",
+        "condition": "sy-batch = abap_true"
+      },
+      {
+        "from": "gb",
+        "to": "c_disp",
+        "condition": "else"
+      },
+      {
+        "from": "c_rel",
+        "to": "m_rel",
+        "condition": "always"
+      },
+      {
+        "from": "m_rel",
+        "to": "g_all",
+        "condition": "always"
+      },
+      {
+        "from": "g_all",
+        "to": "l_rel",
+        "condition": "it_idx IS INITIAL"
+      },
+      {
+        "from": "g_all",
+        "to": "l_rel",
+        "condition": "else"
+      },
+      {
+        "from": "l_rel",
+        "to": "g_frei",
+        "condition": "next row"
+      },
+      {
+        "from": "g_frei",
+        "to": "c_bapi",
+        "condition": "sy-subrc = 0 AND <ls_row>-frei = abap_true"
+      },
+      {
+        "from": "g_frei",
+        "to": "l_rel",
+        "condition": "else"
+      },
+      {
+        "from": "c_bapi",
+        "to": "g_err",
+        "condition": "always"
+      },
+      {
+        "from": "g_err",
+        "to": "rb",
+        "condition": "line_exists( lt_return[ type = 'E' ] ) OR line_exists( lt_return[ type = 'A' ] )"
+      },
+      {
+        "from": "g_err",
+        "to": "cm",
+        "condition": "else"
+      },
+      {
+        "from": "rb",
+        "to": "l_rel",
+        "condition": "next iteration"
+      },
+      {
+        "from": "cm",
+        "to": "l_rel",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l_rel",
+        "to": "e_rel",
+        "condition": "no more rows"
+      },
+      {
+        "from": "e_rel",
+        "to": "c_disp",
+        "condition": "always"
+      },
+      {
+        "from": "e_rel",
+        "to": "rf",
+        "condition": "always"
+      },
+      {
+        "from": "c_disp",
+        "to": "m_disp",
+        "condition": "always"
+      },
+      {
+        "from": "m_disp",
+        "to": "fac",
+        "condition": "always"
+      },
+      {
+        "from": "fac",
+        "to": "sh",
+        "condition": "always"
+      },
+      {
+        "from": "sh",
+        "to": "disp",
+        "condition": "always"
+      },
+      {
+        "from": "m_evt",
+        "to": "cs",
+        "condition": "always"
+      },
+      {
+        "from": "cs",
+        "to": "gsel",
+        "condition": "WHEN 'ZFREI'"
+      },
+      {
+        "from": "cs",
+        "to": "e_evt2",
+        "condition": "WHEN OTHERS"
+      },
+      {
+        "from": "gsel",
+        "to": "g_sel",
+        "condition": "always"
+      },
+      {
+        "from": "g_sel",
+        "to": "msg",
+        "condition": "lt_sel IS INITIAL"
+      },
+      {
+        "from": "msg",
+        "to": "e_evt",
+        "condition": "always"
+      },
+      {
+        "from": "g_sel",
+        "to": "c_rel2",
+        "condition": "else"
+      },
+      {
+        "from": "c_rel2",
+        "to": "m_rel",
+        "condition": "always"
+      },
+      {
+        "from": "rf",
+        "to": "e_evt2",
+        "condition": "always"
+      },
+      {
+        "from": "disp",
+        "to": "e_disp",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zpm_wp_freigabe.abap:34 — kein Fachsatz „Im Dialog werden alle Aufträge automatisch freigegeben“ (im Dialog erst nach Markierung und Drucktaste)",
+    "zpm_wp_freigabe_cl.abap:87 — kein Fachsatz „Aufträge ohne Equipment werden nicht freigegeben“ (ohne Equipment gilt der Auftrag als freigebbar)",
+    "gesamte Scheibe — kein Fachsatz „Der Wartungsplan wird terminiert oder neue Aufträge werden erzeugt“ (der Report gibt nur vorhandene Aufträge frei)",
+    "zpm_wp_freigabe_cl.abap:49 — kein Fachsatz „Materialverfügbarkeit oder Kapazität werden vor der Freigabe geprüft“"
+  ],
+  "processDescription": "Die Instandhaltungsplanung startet den Report mit Planungswerk, Horizont und Auftragsarten, oder er läuft nachts als Job. Er liest die Aufträge mit Wartungsplanbezug, deren Eckstart im Horizont liegt, und behält nur solche im Status eröffnet. Für jeden Kandidaten prüft er, ob das Equipment inaktiv ist, und kennzeichnet ihn entsprechend als nicht freigebbar oder freigebbar. Ohne Kandidaten meldet er das und endet. Im Hintergrund gibt er sofort alle freigebbaren Aufträge frei; im Dialog zeigt er zunächst die Liste und gibt erst frei, wenn der Planer Zeilen markiert und „Freigeben“ drückt. Jede Freigabe erfolgt einzeln über die Auftrags-BAPI mit Sichern; bei Fehler wird zurückgerollt und „Freigabe fehlgeschlagen“ vermerkt, sonst festgeschrieben und „freigegeben“ vermerkt. Die Liste zeigt je Auftrag den Status; im Job landet sie im Spool."
+}

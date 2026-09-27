@@ -1,0 +1,608 @@
+{
+  "id": "BM-008",
+  "title": "Lieferung zum Auftrag per BAPI: Sperr- und Kreditprüfung, Commit nur ohne Fehler und außerhalb des Testlaufs",
+  "classes": [
+    "K03",
+    "K12",
+    "K01"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "VBAK",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 28,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:28"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "VBUK",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 41,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:41"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "VBAP",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 48,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:48"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_OUTB_DELIVERY_CREATE_SLS",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 63,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:63"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_ROLLBACK",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 77,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:77"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_COMMIT",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 80,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:80"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-008-B01",
+      "text": "Existiert der Auftrag nicht, wird die Fehlermeldung 301 zurückgegeben und keine Lieferung angelegt.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:28"
+        },
+        {
+          "file": "source.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:29"
+        },
+        {
+          "file": "source.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:32"
+        }
+      ]
+    },
+    {
+      "id": "BM-008-B02",
+      "text": "Hat der Auftrag eine Liefersperre, wird mit Meldung 302 und der Sperre abgebrochen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:34"
+        },
+        {
+          "file": "source.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:37"
+        }
+      ]
+    },
+    {
+      "id": "BM-008-B03",
+      "text": "Ist der Auftrag kreditgesperrt oder nur teilweise freigegeben (Kreditstatus B oder C), wird mit Meldung 303 abgebrochen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:41"
+        },
+        {
+          "file": "source.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:42"
+        },
+        {
+          "file": "source.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:45"
+        }
+      ]
+    },
+    {
+      "id": "BM-008-B04",
+      "text": "Liefervorlage sind alle nicht abgesagten Positionen mit ihrer vollen Auftragsmenge; gibt es keine, endet der Baustein mit der Warnung 304.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:48"
+        },
+        {
+          "file": "source.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:51"
+        },
+        {
+          "file": "source.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:54"
+        }
+      ]
+    },
+    {
+      "id": "BM-008-B05",
+      "text": "Zu diesen Positionen wird für die Versandstelle und das Stichtagsdatum eine Auslieferung angelegt.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:63"
+        }
+      ]
+    },
+    {
+      "id": "BM-008-B06",
+      "text": "Enthält das Ergebnis eine Fehlermeldung oder ist Testlauf gesetzt, wird die Lieferanlage zurückgerollt und keine Lieferungsnummer zurückgegeben.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:75"
+        },
+        {
+          "file": "source.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:76"
+        },
+        {
+          "file": "source.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:77"
+        }
+      ]
+    },
+    {
+      "id": "BM-008-B07",
+      "text": "Sonst wird die Lieferung synchron festgeschrieben und ihre Nummer zurückgegeben.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:80"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 1,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:1"
+        },
+        "meaning": "Lieferanlage zu einem Auftrag angefordert"
+      },
+      {
+        "id": "q1",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:28"
+        },
+        "meaning": "Liefersperre des Auftrags lesen"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:29"
+        },
+        "meaning": "Auftrag vorhanden?"
+      },
+      {
+        "id": "e1",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:32"
+        },
+        "meaning": "Ende: Auftrag unbekannt (Meldung 301)"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:34"
+        },
+        "meaning": "Liefersperre gesetzt?"
+      },
+      {
+        "id": "e2",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:37"
+        },
+        "meaning": "Ende: Auftrag liefergesperrt (Meldung 302)"
+      },
+      {
+        "id": "q2",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:41"
+        },
+        "meaning": "Kreditstatus des Auftrags lesen"
+      },
+      {
+        "id": "g3",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:42"
+        },
+        "meaning": "Kreditgesperrt?"
+      },
+      {
+        "id": "e3",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:45"
+        },
+        "meaning": "Ende: Kreditsperre (Meldung 303)"
+      },
+      {
+        "id": "q3",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:48"
+        },
+        "meaning": "Nicht abgesagte Positionen lesen"
+      },
+      {
+        "id": "g4",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:51"
+        },
+        "meaning": "Lieferbare Positionen vorhanden?"
+      },
+      {
+        "id": "e4",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:54"
+        },
+        "meaning": "Ende: nichts zu liefern (Warnung 304)"
+      },
+      {
+        "id": "bapi",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:63"
+        },
+        "meaning": "Auslieferung zum Auftrag anlegen"
+      },
+      {
+        "id": "rd",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:75"
+        },
+        "meaning": "Fehlermeldung im Ergebnis suchen"
+      },
+      {
+        "id": "g5",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:76"
+        },
+        "meaning": "Fehler oder Testlauf?"
+      },
+      {
+        "id": "rb",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:77"
+        },
+        "meaning": "Lieferanlage verwerfen"
+      },
+      {
+        "id": "cm",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:80"
+        },
+        "meaning": "Lieferung festschreiben (synchron)"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:84"
+        },
+        "meaning": "Lieferung und Meldungen zurückgeben"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "q1",
+        "condition": "always"
+      },
+      {
+        "from": "q1",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "e1",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g1",
+        "to": "g2",
+        "condition": "else"
+      },
+      {
+        "from": "g2",
+        "to": "e2",
+        "condition": "lv_lifsk IS NOT INITIAL"
+      },
+      {
+        "from": "g2",
+        "to": "q2",
+        "condition": "else"
+      },
+      {
+        "from": "q2",
+        "to": "g3",
+        "condition": "always"
+      },
+      {
+        "from": "g3",
+        "to": "e3",
+        "condition": "lv_cmgst = 'B' OR lv_cmgst = 'C'"
+      },
+      {
+        "from": "g3",
+        "to": "q3",
+        "condition": "else"
+      },
+      {
+        "from": "q3",
+        "to": "g4",
+        "condition": "always"
+      },
+      {
+        "from": "g4",
+        "to": "e4",
+        "condition": "lt_pos IS INITIAL"
+      },
+      {
+        "from": "g4",
+        "to": "bapi",
+        "condition": "else"
+      },
+      {
+        "from": "bapi",
+        "to": "rd",
+        "condition": "always"
+      },
+      {
+        "from": "rd",
+        "to": "g5",
+        "condition": "always"
+      },
+      {
+        "from": "g5",
+        "to": "rb",
+        "condition": "sy-subrc = 0 OR iv_testrun = abap_true"
+      },
+      {
+        "from": "g5",
+        "to": "cm",
+        "condition": "else"
+      },
+      {
+        "from": "rb",
+        "to": "e",
+        "condition": "always"
+      },
+      {
+        "from": "cm",
+        "to": "e",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "source.abap:48 — kein Fachsatz „es wird nur die offene Restmenge geliefert“: übergeben wird die volle Auftragsmenge, die Begrenzung auf die offene Menge leistet höchstens der Standard",
+    "source.abap:75 — kein Fachsatz „Abbruchmeldungen (Typ A) verhindern das Festschreiben“: gesucht wird nur Typ E",
+    "source.abap:42 — kein Fachsatz „Aufträge ohne Kreditprüfung werden abgelehnt“: nur die Status B und C halten auf, ein fehlender Statussatz nicht"
+  ],
+  "processDescription": "Der Funktionsbaustein wird vom Versandleitstand oder dem Nachtjob mit Auftrag, Versandstelle, Stichtag und Testlaufkennzeichen aufgerufen. Er prüft nacheinander, ob der Auftrag existiert, ob er eine Liefersperre hat und ob sein Kreditstatus nicht ok oder nur teilweise freigegeben ist; in jedem dieser Fälle gibt er eine Meldung zurück und legt nichts an. Dann liest er alle nicht abgesagten Positionen; gibt es keine, endet er mit einer Warnung. Andernfalls übergibt er diese Positionen mit ihrer vollen Auftragsmenge an den Standard-BAPI zur Anlage einer Auslieferung. Enthält die Rückmeldung einen Fehler oder ist Testlauf gesetzt, rollt er zurück und gibt keine Lieferungsnummer zurück. Sonst schreibt er die Lieferung synchron fest und gibt Lieferungsnummer und Anzahl der Lieferungen zurück."
+}

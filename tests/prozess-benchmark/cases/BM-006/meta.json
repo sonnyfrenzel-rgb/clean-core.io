@@ -1,0 +1,21 @@
+{
+  "id": "BM-006",
+  "title": "Rabattanalyse: Rabattkonditionen aus KONV je Auftrag summieren und mit Ampel anzeigen",
+  "domain": "SD / Order-to-Cash",
+  "band": "mittel",
+  "loc": 78,
+  "constructs": [
+    "REPORT",
+    "SELECT … FOR ALL ENTRIES",
+    "geschachtelte LOOP AT … WHERE",
+    "Offset-Zugriff kschl(1)",
+    "CL_SALV_TABLE mit TRY/CATCH",
+    "MESSAGE … DISPLAY LIKE"
+  ],
+  "scenario": "Vertriebscontrolling-Report, der je Kundenauftrag die gewährten Rabatte aus den Belegkonditionen summiert und Aufträge über einer Rabattquote rot markiert; typischer KONV-Leser bei der S/4-Analyse.",
+  "s4_issues": [
+    "KONV ist in S/4 durch PRCD_ELEMENTS ersetzt (KONV nur noch als Kompatibilitätsview, Performance)",
+    "direkter VBAK-Zugriff statt I_SalesDocument",
+    "Konditionsschlüssel hart kodiert (Z*, K007)"
+  ]
+}

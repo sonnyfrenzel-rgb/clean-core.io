@@ -1,0 +1,72 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten xlog (neu)",
+      "before": "—",
+      "after": "end zfi_ic_settle_f01.abap:35 „LOG_INIT beendet, Protokoll angelegt“; umgeleitet: gbalc->cread [else]; neu xlog->cread [always]",
+      "why": "Brieftabelle: end = Pfadende inkl. „Ende des Blocks“ (implizites Ende auf der letzten Anweisung); in BM-047–055 setzt derselbe Autor end-Knoten auf ENDFORM/ENDMETHOD. Vereinheitlicht: jede auslaufende FORM/jeder auslaufende Baustein endet mit eigenem end-Knoten, Rückkehrkante von dort zum Knoten nach dem Aufruf.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten xread (neu)",
+      "before": "—",
+      "after": "end zfi_ic_settle_f01.abap:65 „READ_SERVICES beendet“; umgeleitet: qt001->gempty [always]; neu xread->gempty [always]",
+      "why": "Brieftabelle: end = Pfadende inkl. „Ende des Blocks“ (implizites Ende auf der letzten Anweisung); in BM-047–055 setzt derselbe Autor end-Knoten auf ENDFORM/ENDMETHOD. Vereinheitlicht: jede auslaufende FORM/jeder auslaufende Baustein endet mit eigenem end-Knoten, Rückkehrkante von dort zum Knoten nach dem Aufruf.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten xpart (neu)",
+      "before": "—",
+      "after": "end zfi_ic_settle_f01.abap:182 „PROCESS_PARTNER beendet“; umgeleitet: genq->lpart [sy-subrc <> 0], deq->lpart [next iteration]; neu xpart->lpart [next iteration]",
+      "why": "Brieftabelle: end = Pfadende inkl. „Ende des Blocks“ (implizites Ende auf der letzten Anweisung); in BM-047–055 setzt derselbe Autor end-Knoten auf ENDFORM/ENDMETHOD. Vereinheitlicht: jede auslaufende FORM/jeder auslaufende Baustein endet mit eigenem end-Knoten, Rückkehrkante von dort zum Knoten nach dem Aufruf.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten xsave (neu)",
+      "before": "—",
+      "after": "end zfi_ic_settle_f01.abap:217 „LOG_SAVE beendet“; umgeleitet: gsave->cprot [else], osave->cprot [always]; neu xsave->cprot [always]",
+      "why": "Brieftabelle: end = Pfadende inkl. „Ende des Blocks“ (implizites Ende auf der letzten Anweisung); in BM-047–055 setzt derselbe Autor end-Knoten auf ENDFORM/ENDMETHOD. Vereinheitlicht: jede auslaufende FORM/jeder auslaufende Baustein endet mit eigenem end-Knoten, Rückkehrkante von dort zum Knoten nach dem Aufruf.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten xprot (neu)",
+      "before": "—",
+      "after": "end zfi_ic_settle_f01.abap:237 „WRITE_PROTOCOL beendet, Liste ausgegeben“; umgeleitet: osum->e [always]; neu xprot->e [always]",
+      "why": "Brieftabelle: end = Pfadende inkl. „Ende des Blocks“ (implizites Ende auf der letzten Anweisung); in BM-047–055 setzt derselbe Autor end-Knoten auf ENDFORM/ENDMETHOD. Vereinheitlicht: jede auslaufende FORM/jeder auslaufende Baustein endet mit eigenem end-Knoten, Rückkehrkante von dort zum Knoten nach dem Aufruf.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten xpost (neu)",
+      "before": "—",
+      "after": "end zfi_ic_settle_f02.abap:97 „POST_LOCAL beendet, Ergebnis in lv_ok/lv_belnr_l“; umgeleitet: grbtest->gpart [else], brb->gpart [always], gret->gpart [else], bcom->gpart [always]; neu xpost->gpart [always]",
+      "why": "Brieftabelle: end = Pfadende inkl. „Ende des Blocks“ (implizites Ende auf der letzten Anweisung); in BM-047–055 setzt derselbe Autor end-Knoten auf ENDFORM/ENDMETHOD. Vereinheitlicht: jede auslaufende FORM/jeder auslaufende Baustein endet mit eigenem end-Knoten, Rückkehrkante von dort zum Knoten nach dem Aufruf.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten xprt (neu)",
+      "before": "—",
+      "after": "end zfi_ic_settle_f02.abap:172 „POST_PARTNER beendet, Ergebnis in lv_ok“; umgeleitet: gpret->gprtok [sy-subrc = 0], gpret->gprtok [else], rclose->gprtok [always], grfc->gprtok [else]; neu xprt->gprtok [always]",
+      "why": "Brieftabelle: end = Pfadende inkl. „Ende des Blocks“ (implizites Ende auf der letzten Anweisung); in BM-047–055 setzt derselbe Autor end-Knoten auf ENDFORM/ENDMETHOD. Vereinheitlicht: jede auslaufende FORM/jeder auslaufende Baustein endet mit eigenem end-Knoten, Rückkehrkante von dort zum Knoten nach dem Aufruf.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten xupd (neu)",
+      "before": "—",
+      "after": "end zfi_ic_settle_f02.abap:203 „UPDATE_STATUS beendet“; umgeleitet: gutest->litem [else], cw->litem [next iteration], rw->litem [next iteration]; neu xupd->litem [next iteration]",
+      "why": "Brieftabelle: end = Pfadende inkl. „Ende des Blocks“ (implizites Ende auf der letzten Anweisung); in BM-047–055 setzt derselbe Autor end-Knoten auf ENDFORM/ENDMETHOD. Vereinheitlicht: jede auslaufende FORM/jeder auslaufende Baustein endet mit eigenem end-Knoten, Rückkehrkante von dort zum Knoten nach dem Aufruf.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten xfm (neu)",
+      "before": "—",
+      "after": "end z_fi_ic_post_partner.abap:131 „Baustein beendet, Ergebnis an den Aufrufer (RFC-Rückkehr)“; umgeleitet: fchk->grfc [always], frb->grfc [always], fcom->grfc [always]; neu xfm->grfc [always]",
+      "why": "Brieftabelle: end = Pfadende inkl. „Ende des Blocks“ (implizites Ende auf der letzten Anweisung); in BM-047–055 setzt derselbe Autor end-Knoten auf ENDFORM/ENDMETHOD. Vereinheitlicht: jede auslaufende FORM/jeder auslaufende Baustein endet mit eigenem end-Knoten, Rückkehrkante von dort zum Knoten nach dem Aufruf.",
+      "category": "fehlender Knoten"
+    }
+  ],
+  "doubts": [
+    "zfi_ic_settle_f01.abap:215 MESSAGE w013 steht in einer FORM, die aus START-OF-SELECTION gerufen wird. Nach der ABAP-Dokumentation verhält sich Meldungstyp W in den Reporting-Ereignissen wie E (Programmabbruch mit Meldung); dann würde WRITE_PROTOCOL bei gescheitertem BAL_DB_SAVE nicht mehr erreicht (osave wäre output+end statt osave->xsave). Nicht geändert, weil ich das Verhalten nicht sicher belegen kann."
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "id": "BM-016",
+  "title": "Massenänderung Kundenaufträge per Batch-Input VA02: Datei, Zeilenprüfung, CALL TRANSACTION, Protokoll",
+  "domain": "SD / Order-to-Cash",
+  "band": "sehr komplex",
+  "loc": 413,
+  "constructs": [
+    "REPORT mit TOP und drei Form-Includes",
+    "AT SELECTION-SCREEN mit MESSAGE E",
+    "OPEN/READ/CLOSE DATASET",
+    "GUI_UPLOAD",
+    "SPLIT … AT",
+    "Stringtemplate ALPHA = IN",
+    "Makros DEFINE bdc_dynpro/bdc_field",
+    "AUTHORITY-CHECK V_VBAK_VKO",
+    "CASE mit WHEN … OR …",
+    "ENQUEUE_EVVBAKE als Vorabprüfung",
+    "CALL TRANSACTION … USING … OPTIONS FROM … MESSAGES INTO",
+    "MESSAGE … INTO",
+    "BAL_LOG_CREATE/BAL_LOG_MSG_ADD/BAL_DB_SAVE",
+    "CL_SALV_TABLE"
+  ],
+  "scenario": "Werkzeug des Vertriebsinnendienstes für Massenpflege von Kundenaufträgen (Mengen, Absagegründe, Liefertermine, Liefersperren) aus einer CSV-Datei; typischer Batch-Input-Altbestand, der bei jeder S/4-Umstellung an geänderten Dynpros bricht.",
+  "s4_issues": [
+    "Batch-Input auf VA02 hängt an Dynpro-Folge und Feldnamen von SAPMV45A, die sich in S/4 ändern können",
+    "VBUP entfällt für SD-Belege: die Positionsprüfung findet in S/4 keine Positionen mehr und lehnt jede Positionsänderung ab",
+    "GUI_UPLOAD/OPEN DATASET ohne Pfadvalidierung (Logischer Dateiname)",
+    "Ziel: BAPI_SALESORDER_CHANGE bzw. API_SALES_ORDER_SRV statt BDC"
+  ]
+}

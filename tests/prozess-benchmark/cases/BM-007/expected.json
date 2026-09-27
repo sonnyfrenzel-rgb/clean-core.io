@@ -1,0 +1,487 @@
+{
+  "id": "BM-007",
+  "title": "Verfügbarkeitsprüfung je Auftrag: Fehlmengen offener Positionen per BAPI ermitteln",
+  "classes": [
+    "K09",
+    "K03",
+    "K04",
+    "K01"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "VBAP",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_sd_atp_check.abap",
+        "line": 34,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_sd_atp_check.abap:34"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "VBUP",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_sd_atp_check.abap",
+        "line": 34,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_sd_atp_check.abap:34"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_MATERIAL_AVAILABILITY",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_sd_atp_check.abap",
+        "line": 49,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_sd_atp_check.abap:49"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZCX_SD_ATP",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_sd_atp_check.abap",
+        "line": 41,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_sd_atp_check.abap:41"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-007-B01",
+      "text": "Zum Auftrag werden alle nicht abgesagten Positionen mit Material, Werk, Auftragsmenge und Lieferstatus gelesen.",
+      "anchors": [
+        {
+          "file": "zcl_sd_atp_check.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_atp_check.abap:34"
+        }
+      ]
+    },
+    {
+      "id": "BM-007-B02",
+      "text": "Hat der Auftrag keine solchen Positionen, bricht die Prüfung mit dem Fehler „keine Positionen“ ab.",
+      "anchors": [
+        {
+          "file": "zcl_sd_atp_check.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_atp_check.abap:40"
+        },
+        {
+          "file": "zcl_sd_atp_check.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_atp_check.abap:41"
+        }
+      ]
+    },
+    {
+      "id": "BM-007-B03",
+      "text": "Voll belieferte Positionen werden nicht geprüft.",
+      "anchors": [
+        {
+          "file": "zcl_sd_atp_check.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_atp_check.abap:45"
+        }
+      ]
+    },
+    {
+      "id": "BM-007-B04",
+      "text": "Für jede übrige Position wird die Verfügbarkeit des Materials im Werk mit der Prüfregel A ermittelt.",
+      "anchors": [
+        {
+          "file": "zcl_sd_atp_check.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_atp_check.abap:49"
+        }
+      ]
+    },
+    {
+      "id": "BM-007-B05",
+      "text": "Meldet die Verfügbarkeitsprüfung einen Fehler, bricht die gesamte Prüfung mit Angabe des Materials ab.",
+      "anchors": [
+        {
+          "file": "zcl_sd_atp_check.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_atp_check.abap:60"
+        },
+        {
+          "file": "zcl_sd_atp_check.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_atp_check.abap:61"
+        }
+      ]
+    },
+    {
+      "id": "BM-007-B06",
+      "text": "Als verfügbar zählen nur Mengen, die bis heute bestätigt sind.",
+      "anchors": [
+        {
+          "file": "zcl_sd_atp_check.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_atp_check.abap:66"
+        },
+        {
+          "file": "zcl_sd_atp_check.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_atp_check.abap:67"
+        }
+      ]
+    },
+    {
+      "id": "BM-007-B07",
+      "text": "Liegt die verfügbare Menge unter der Auftragsmenge, wird die Position mit Bedarf, verfügbarer Menge und Fehlmenge zurückgegeben.",
+      "anchors": [
+        {
+          "file": "zcl_sd_atp_check.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_atp_check.abap:69"
+        },
+        {
+          "file": "zcl_sd_atp_check.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_atp_check.abap:70"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_sd_atp_check.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_atp_check.abap:26"
+        },
+        "meaning": "Verfügbarkeitsprüfung für einen Auftrag"
+      },
+      {
+        "id": "q",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_sd_atp_check.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_atp_check.abap:34"
+        },
+        "meaning": "Nicht abgesagte Positionen mit Lieferstatus lesen"
+      },
+      {
+        "id": "g0",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_sd_atp_check.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_atp_check.abap:40"
+        },
+        "meaning": "Positionen gefunden?"
+      },
+      {
+        "id": "x0",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_sd_atp_check.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_atp_check.abap:41"
+        },
+        "meaning": "Abbruch: keine Positionen"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_sd_atp_check.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_atp_check.abap:44"
+        },
+        "meaning": "Je Position"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_sd_atp_check.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_atp_check.abap:45"
+        },
+        "meaning": "Position voll beliefert?"
+      },
+      {
+        "id": "atp",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_sd_atp_check.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_atp_check.abap:49"
+        },
+        "meaning": "Verfügbarkeit von Material im Werk prüfen"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_sd_atp_check.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_atp_check.abap:60"
+        },
+        "meaning": "Verfügbarkeitsprüfung fehlgeschlagen?"
+      },
+      {
+        "id": "x1",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_sd_atp_check.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_atp_check.abap:61"
+        },
+        "meaning": "Abbruch mit BAPI-Fehler und Material"
+      },
+      {
+        "id": "l2",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_sd_atp_check.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_atp_check.abap:66"
+        },
+        "meaning": "Bestätigte Mengen bis heute durchgehen"
+      },
+      {
+        "id": "sum",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_sd_atp_check.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_atp_check.abap:67"
+        },
+        "meaning": "Heute verfügbare Menge aufsummieren"
+      },
+      {
+        "id": "g3",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_sd_atp_check.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_atp_check.abap:69"
+        },
+        "meaning": "Verfügbare Menge kleiner als Auftragsmenge?"
+      },
+      {
+        "id": "fm",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_sd_atp_check.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_atp_check.abap:70"
+        },
+        "meaning": "Fehlmengensatz mit Bedarf, Verfügbarkeit und Differenz bilden"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_sd_atp_check.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_atp_check.abap:79"
+        },
+        "meaning": "Fehlmengenliste zurückgeben"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "q",
+        "condition": "always"
+      },
+      {
+        "from": "q",
+        "to": "g0",
+        "condition": "always"
+      },
+      {
+        "from": "g0",
+        "to": "x0",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g0",
+        "to": "l",
+        "condition": "else"
+      },
+      {
+        "from": "l",
+        "to": "g1",
+        "condition": "next row"
+      },
+      {
+        "from": "g1",
+        "to": "l",
+        "condition": "ls_item-lfsta = 'C'"
+      },
+      {
+        "from": "g1",
+        "to": "atp",
+        "condition": "else"
+      },
+      {
+        "from": "atp",
+        "to": "g2",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "x1",
+        "condition": "ls_return-type = 'E'"
+      },
+      {
+        "from": "g2",
+        "to": "l2",
+        "condition": "else"
+      },
+      {
+        "from": "l2",
+        "to": "sum",
+        "condition": "next row"
+      },
+      {
+        "from": "sum",
+        "to": "l2",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l2",
+        "to": "g3",
+        "condition": "no more rows"
+      },
+      {
+        "from": "g3",
+        "to": "fm",
+        "condition": "lv_avail < ls_item-kwmeng"
+      },
+      {
+        "from": "g3",
+        "to": "l",
+        "condition": "else"
+      },
+      {
+        "from": "fm",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l",
+        "to": "e",
+        "condition": "no more rows"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zcl_sd_atp_check.abap:49 — kein Fachsatz „Auftragspositionen werden neu bestätigt“: der BAPI simuliert nur, am Auftrag wird nichts geändert",
+    "zcl_sd_atp_check.abap:69 — kein Fachsatz „Fehlmenge gegenüber der offenen Restmenge“: verglichen wird die gesamte Auftragsmenge, bereits gelieferte Teilmengen werden nicht abgezogen",
+    "zcl_sd_atp_check.abap:61 — kein Fachsatz „fehlerhafte Positionen werden übersprungen“: ein BAPI-Fehler beendet die Prüfung des ganzen Auftrags"
+  ],
+  "processDescription": "Die Methode wird vom Innendienst-Cockpit mit einer Auftragsnummer aufgerufen. Sie liest alle nicht abgesagten Positionen des Auftrags zusammen mit ihrem Lieferstatus; gibt es keine, endet sie mit einer Ausnahme. Voll belieferte Positionen überspringt sie. Für jede andere Position ruft sie die Standard-Verfügbarkeitsprüfung für Material und Werk mit der Prüfregel A auf. Meldet diese einen Fehler, bricht die ganze Prüfung mit Angabe des Materials ab. Sonst summiert sie die bis heute bestätigten Mengen. Ist diese Summe kleiner als die Auftragsmenge, nimmt sie die Position mit Bedarf, verfügbarer Menge und Fehlmenge in die Rückgabeliste auf. Der Auftrag selbst wird nicht verändert."
+}

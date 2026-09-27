@@ -1,0 +1,30 @@
+{
+  "id": "BM-017",
+  "title": "Kommissionierung mit Gewichtssplit: Pakete je Versandstelle per aRFC, Split per BAPI, Kommissionierung per WS_DELIVERY_UPDATE",
+  "domain": "SD / Order-to-Cash",
+  "band": "sehr komplex",
+  "loc": 430,
+  "constructs": [
+    "REPORT mit Formroutinen",
+    "SELECT mit INNER JOIN LIKP/VBUK",
+    "AT END OF",
+    "CALL FUNCTION … STARTING NEW TASK … DESTINATION IN GROUP … PERFORMING … ON END OF TASK",
+    "RECEIVE RESULTS",
+    "WAIT UNTIL … UP TO",
+    "CASE sy-subrc mit Wiederholung in DO",
+    "remotefähiger Funktionsbaustein",
+    "ENQUEUE_EVVBLKE/DEQUEUE_EVVBLKE",
+    "NEW mit TRY/CATCH",
+    "BAPI_OUTB_DELIVERY_SPLIT_DEC",
+    "UNIT_CONVERSION_SIMPLE",
+    "WS_DELIVERY_UPDATE",
+    "FORMAT COLOR / WRITE-Liste"
+  ],
+  "scenario": "Nachtjob im Versand, der nicht kommissionierte Auslieferungen je Versandstelle parallel verarbeitet: zu schwere Lieferungen werden auf mehrere LKW gesplittet, danach wird mit voller Liefermenge kommissioniert.",
+  "s4_issues": [
+    "VBUK entfällt für SD-Belege: KOSTK/WBSTK stehen in S/4 in LIKP, der JOIN liefert keine Lieferungen mehr",
+    "WS_DELIVERY_UPDATE ist nicht freigegeben; Nachfolger BAPI_OUTB_DELIVERY_CONFIRM_DEC bzw. API_OUTBOUND_DELIVERY_SRV",
+    "aRFC-Parallelisierung über Servergruppen besser über bgRFC / Application Jobs",
+    "MARC-Zugriff und Materialnummernlänge (40) prüfen"
+  ]
+}

@@ -1,0 +1,34 @@
+{
+  "id": "BM-076",
+  "title": "Parallelisierte Massenfreigabe von Fertigungsaufträgen mit aRFC-Paketen und Anwendungs-Log",
+  "domain": "PP / PM / QM — Produktion, Instandhaltung, Qualität",
+  "band": "sehr komplex",
+  "loc": 478,
+  "constructs": [
+    "REPORT mit vier Includes",
+    "AT SELECTION-SCREEN mit AUTHORITY-CHECK",
+    "RETURN in START-OF-SELECTION mit folgendem END-OF-SELECTION",
+    "SELECT INNER JOIN AUFK/AFKO",
+    "STATUS_READ + READ TABLE auf Systemstatus",
+    "Paketbildung",
+    "SPBT_INITIALIZE",
+    "CALL FUNCTION … STARTING NEW TASK … DESTINATION IN GROUP … PERFORMING … ON END OF TASK",
+    "RECEIVE RESULTS FROM FUNCTION",
+    "WAIT UNTIL … UP TO … SECONDS",
+    "RFC-fähiger Paketbaustein mit ENQUEUE/DEQUEUE",
+    "BAPI_PRODORD_RELEASE",
+    "BAPI_TRANSACTION_COMMIT/ROLLBACK",
+    "BAL_LOG_CREATE/BAL_LOG_MSG_ADD/BAL_DB_SAVE",
+    "SWITCH/COND",
+    "CL_SALV_TABLE mit TRY/CATCH",
+    "WRITE-Summen im Hintergrund"
+  ],
+  "scenario": "Nächtlicher Freigabejob großer Werke, der die zu langsame COHV-Massenfreigabe durch eine eigene aRFC-Parallelisierung ersetzt; in Transformationsprojekten ein Klassiker für Performance-Eigenbau, der gegen Standard-Massenverarbeitung und Application Jobs abgewogen werden muss.",
+  "s4_issues": [
+    "Eigenbau-Parallelisierung über aRFC/Servergruppe statt Standard-Parallelverarbeitung bzw. Application Jobs",
+    "Direktzugriff AUFK/AFKO statt CDS I_ManufacturingOrder",
+    "Systemstatus-Nummern hart codiert (I0001, I0076)",
+    "REUSE/SALV- und WRITE-Ausgabe nicht Fiori-fähig",
+    "Anwendungs-Log-Objekt ZPP/MASSREL muss im Zielsystem angelegt sein"
+  ]
+}

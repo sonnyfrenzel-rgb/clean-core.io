@@ -1,0 +1,98 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten pla, fla, balc, xla (neu)",
+      "before": "s->pr [always]",
+      "after": "call zmm_sto_nachschub.abap:24 PERFORM log_anlegen, start zmm_sto_nachschub_f02.abap:5, opaque_call zmm_sto_nachschub_f02.abap:11 BAL_LOG_CREATE, end zmm_sto_nachschub_f02.abap:18; s->pla->fla->balc->xla->pr",
+      "why": "Der erste Schritt (Anwendungsprotokoll anlegen) fehlte, obwohl BAL_LOG_CREATE unter objects steht und die processDescription ihn nennt.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten xfr (neu)",
+      "before": "—",
+      "after": "end zmm_sto_nachschub_f01.abap:18 „ROUTE_LESEN beendet“; umgeleitet: qr->g0 [always] jetzt qr->xfr; neu xfr->g0 [always]",
+      "why": "Vereinheitlichung (wie im Gegencheck FI/CO): jeder auslaufende FORM/METHOD/MODULE/FUNCTION-Block endet mit eigenem end-Knoten auf ENDFORM/ENDMETHOD/ENDMODULE/ENDFUNCTION (Brieftabelle: end auch bei implizitem Blockende); die Rückkante führt von dort zum Knoten nach dem Aufruf.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten flm, balm, xlm, fls, bals, gls, cls, xls (neu)",
+      "before": "—",
+      "after": "FORM log_meldung (zmm_sto_nachschub_f02.abap:21, BAL_LOG_MSG_ADD_FREE_TEXT :30, Ende :37) und FORM log_sichern (zmm_sto_nachschub_f02.abap:40, BAL_DB_SAVE :43, IF sy-subrc = 0 :48, COMMIT WORK :49, Ende :51)",
+      "why": "Das Anwendungsprotokoll ist laut Programmkopf (Schritt 4) und processDescription Teil des Prozesses; die Fachsätze B03, B05, B10, B13 und B14 verankern Protokollaufrufe, das Skelett enthielt aber weder die Aufrufe noch die Routinen, und der Lauf sicherte das Protokoll im Skelett nie.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten plm0, pls0 (neu)",
+      "before": "g0->r0 [gt_route IS INITIAL]",
+      "after": "g0->plm0 [gt_route IS INITIAL], plm0->flm, xlm->pls0, pls0->fls, xls->r0",
+      "why": "Fachsatz B03 („Warnung protokolliert“) war im Skelett nicht abgebildet; zwischen Gateway und RETURN fehlten die Aufrufe log_meldung und log_sichern (Z. 27, 28).",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten pls1 (neu)",
+      "before": "l->pu [no more rows]",
+      "after": "call zmm_sto_nachschub.abap:42 PERFORM log_sichern; l->pls1 [no more rows], pls1->fls, xls->pu",
+      "why": "Der Aufruf PERFORM log_sichern nach der Filialschleife fehlte (PD: „Nach allen Filialen wird das Protokoll gesichert“).",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten plmp (neu)",
+      "before": "gr->lm [sy-subrc <> 0]",
+      "after": "call zmm_sto_nachschub_f01.abap:63 PERFORM log_meldung; gr->plmp [sy-subrc <> 0], plmp->flm, xlm->lm",
+      "why": "Fachsatz B05 verankert die Warnung auf Z. 63; der Fehlerzweig des RFC war im Skelett ohne Schritt.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten xfb (neu)",
+      "before": "—",
+      "after": "end zmm_sto_nachschub_f01.abap:101 „BEDARF_ERMITTELN beendet, Bedarf steht“; umgeleitet: lm->gn [no more rows] jetzt lm->xfb; neu xfb->gn [always]",
+      "why": "Vereinheitlichung (wie im Gegencheck FI/CO): jeder auslaufende FORM/METHOD/MODULE/FUNCTION-Block endet mit eigenem end-Knoten auf ENDFORM/ENDMETHOD/ENDMODULE/ENDFUNCTION (Brieftabelle: end auch bei implizitem Blockende); die Rückkante führt von dort zum Knoten nach dem Aufruf.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten plm1, plm2, plm3, pls (neu)",
+      "before": "ge->re1, gd->re2, gwa->fne (beide Zweige), gw->fne [else]",
+      "after": "call zmm_sto_nachschub_f01.abap:115/130/140/145 PERFORM log_meldung; ge->plm1, gd->plm2, gwa->plm3 [ls_res-wa = abap_false], gwa->pls [else], gw->pls [else], je ->flm; Rückkanten xlm->re1, xlm->re2, xlm->pls, xlm->fne",
+      "why": "Die Fachsätze B10, B13 und B14 verankern diese Protokollaufrufe; im Skelett führten die Zweige ohne Schritt direkt zu RETURN bzw. ENDFORM, der Gateway gwa hatte zwei gleichlautende Kanten ohne Unterschied.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten xfe (neu)",
+      "before": "fe1->cs3 [no more rows], fe1->cd3 [no more rows]",
+      "after": "end zcl_mm_sto_creator.abap:154 „FIRST_ERROR beendet, kein Fehler gefunden“; fe1->xfe [no more rows]; xfe->cs3 [always], xfe->cd3 [always] (je Aufrufer eine Rückkante)",
+      "why": "Vereinheitlichung (wie im Gegencheck FI/CO): jeder auslaufende FORM/METHOD/MODULE/FUNCTION-Block endet mit eigenem end-Knoten auf ENDFORM/ENDMETHOD/ENDMODULE/ENDFUNCTION (Brieftabelle: end auch bei implizitem Blockende); die Rückkante führt von dort zum Knoten nach dem Aufruf.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten xfu (neu)",
+      "before": "—",
+      "after": "end zmm_sto_nachschub_f02.abap:66 „UEBERGABE_FOLGEJOB beendet“; umgeleitet: cm2->eos [always] jetzt cm2->xfu; neu xfu->eos [always]",
+      "why": "Vereinheitlichung (wie im Gegencheck FI/CO): jeder auslaufende FORM/METHOD/MODULE/FUNCTION-Block endet mit eigenem end-Knoten auf ENDFORM/ENDMETHOD/ENDMODULE/ENDFUNCTION (Brieftabelle: end auch bei implizitem Blockende); die Rückkante führt von dort zum Knoten nach dem Aufruf.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten xli (neu)",
+      "before": "—",
+      "after": "end zmm_sto_nachschub_f02.abap:94 „LISTE_AUSGEBEN beendet“; neu xli->eend [always]; neu wsum->xli [always]; neuer end-Knoten eend zmm_sto_nachschub.abap:46 (implizites Ende von END-OF-SELECTION)",
+      "why": "Vereinheitlichung (wie im Gegencheck FI/CO): jeder auslaufende FORM/METHOD/MODULE/FUNCTION-Block endet mit eigenem end-Knoten auf ENDFORM/ENDMETHOD/ENDMODULE/ENDFUNCTION (Brieftabelle: end auch bei implizitem Blockende); die Rückkante führt von dort zum Knoten nach dem Aufruf.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Fachsatz BM-040-B14",
+      "before": "Jede Filiale wird mit Umlagerungsbestellung und Lieferung als Erfolg protokolliert und ins Ergebnis übernommen.",
+      "after": "Jede Filiale mit angelegter Lieferung wird – auch nach gescheitertem Warenausgang – mit Umlagerungsbestellung und Lieferung als Erfolg protokolliert und ins Ergebnis übernommen.",
+      "why": "Z. 144–146 werden nur erreicht, wenn UB und Lieferung angelegt sind (sonst RETURN in Z. 117/123/132); ein WA-Fehler verhindert die Erfolgsmeldung nicht, der Fehlertext wird in Z. 144 sogar überschrieben. „Jede Filiale“ war zu weit.",
+      "category": "Fachsatz"
+    },
+    {
+      "where": "verbotener Schluss 1",
+      "before": "zmm_sto_nachschub_f02.abap:62 — kein Fachsatz „Die Ergebnisliste zeigt im Echtlauf auch die Filialen mit Fehlern“ (sie werden vor END-OF-SELECTION aus dem Ergebnis gelöscht)",
+      "after": "zmm_sto_nachschub_f02.abap:62 — kein Fachsatz „Die Ergebnisliste zeigt im Echtlauf auch die Filialen, bei denen UB oder Lieferung scheiterten“ (sie werden vor END-OF-SELECTION aus dem Ergebnis gelöscht; nur Filialen mit WA-Fehler bleiben, mit Erfolgstext)",
+      "why": "Filialen mit gescheitertem Warenausgang haben eine Lieferung und bleiben in der Liste; der verbotene Schluss „auch die Filialen mit Fehlern“ wäre für sie zutreffend. Präzisiert auf UB-/Lieferungsfehler.",
+      "category": "verbotener Schluss"
+    }
+  ],
+  "doubts": []
+}

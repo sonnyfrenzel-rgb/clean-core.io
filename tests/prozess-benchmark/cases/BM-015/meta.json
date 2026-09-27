@@ -1,0 +1,25 @@
+{
+  "id": "BM-015",
+  "title": "Retoure mit Fakturabezug: Berechtigung, Rückgabefrist, Mengenprüfung gegen VBFA, Anlage per BAPI",
+  "domain": "SD / Order-to-Cash",
+  "band": "komplex",
+  "loc": 182,
+  "constructs": [
+    "FUNCTION als RFC-/Portal-Schnittstelle",
+    "AUTHORITY-CHECK mit Auswertung",
+    "FORM-Kaskade mit CHANGING bapiret2_t",
+    "Datumsarithmetik",
+    "SORTED TABLE / READ TABLE WITH TABLE KEY",
+    "SELECT SUM auf VBFA",
+    "BAPI_CUSTOMERRETURN_CREATE",
+    "INSERT auf Z-Tabelle vor BAPI_TRANSACTION_COMMIT",
+    "Simulationsmodus mit ROLLBACK"
+  ],
+  "scenario": "Baustein hinter einem Retourenportal: Kunden oder Innendienst melden Rücksendungen zu einer Rechnung, der Baustein prüft Frist und Mengen und legt den Retourenauftrag an.",
+  "s4_issues": [
+    "VBFA in S/4 mit geänderter Fortschreibung (Mengenfelder, keine Einträge für bestimmte Folgebelege); RFMNG-Einheit prüfen",
+    "direkte Zugriffe auf VBRK/VBRP statt I_BillingDocument/I_BillingDocumentItem",
+    "Retouren in S/4 über Advanced Returns Management (Auftragsart CBAR) empfohlen",
+    "Berechtigungsobjekt V_VBAK_AAT bleibt, Cloud: API_CUSTOMER_RETURN_SRV"
+  ]
+}

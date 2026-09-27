@@ -1,0 +1,29 @@
+{
+  "id": "BM-098",
+  "title": "Freigabe-Workflow für Bankverbindungsänderungen am Kreditor: Prüfbaustein, Workflow-Klasse, Agentenregel, Überwachung",
+  "domain": "Querschnitt — Schnittstellen, Stammdaten, HR, Workflow, technische Jobs",
+  "band": "sehr komplex",
+  "loc": 466,
+  "constructs": [
+    "Prüfbaustein Ereignisverknüpfung",
+    "CDHDR/CDPOS",
+    "Klasse mit IF_WORKFLOW",
+    "RAISE EXCEPTION TYPE",
+    "UPDATE LFB1/LFA1",
+    "DELETE/MODIFY LFBK",
+    "ASSIGN COMPONENT",
+    "Agentenregel ACTOR_TAB",
+    "RH_GET_LEADER",
+    "SAP_WAPI_WORKITEMS_TO_OBJECT",
+    "SAP_WAPI_FORWARD_WORKITEM",
+    "SO_NEW_DOCUMENT_SEND_API1",
+    "SELECT … UP TO 1 ROWS ORDER BY"
+  ],
+  "scenario": "Vier-Augen-Kontrolle nach einem Zahlungsbetrugsfall: Jede Änderung der Bankverbindung eines Kreditors sperrt die Zahlung, bis ein Freigeber zustimmt; bei Ablehnung wird die Änderung zurückgedreht.",
+  "s4_issues": [
+    "Kreditorenstamm in S/4 über den Geschäftspartner; Änderungsbelegobjekt KRED und Ereignis KRED-CHANGED prüfen",
+    "Direkte Schreibzugriffe auf LFB1, LFA1 und LFBK",
+    "Zurückdrehen über CDPOS statt über API",
+    "Standard-Alternative: Dual Control für sensible Felder (Transaktion FK08/BP)"
+  ]
+}

@@ -1,0 +1,324 @@
+{
+  "id": "BM-063",
+  "title": "Störmeldung für ein Equipment per BAPI anlegen",
+  "classes": [
+    "K03",
+    "K12"
+  ],
+  "classic_level": "B",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "BAPI_ALM_NOTIF_CREATE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 14,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:14"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_ALM_NOTIF_SAVE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 26,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:26"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_COMMIT",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 31,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:31"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-063-B01",
+      "text": "Für das eingegebene Equipment wird eine Störmeldung der Meldungsart M2 mit Kurztext und Priorität angelegt.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 11,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:11"
+        },
+        {
+          "file": "source.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:14"
+        }
+      ]
+    },
+    {
+      "id": "BM-063-B02",
+      "text": "Meldet das Anlegen einen Fehler, wird „Meldung konnte nicht angelegt werden“ ausgegeben und die Verarbeitung ohne Speichern beendet.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:22"
+        },
+        {
+          "file": "source.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:23"
+        },
+        {
+          "file": "source.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:24"
+        }
+      ]
+    },
+    {
+      "id": "BM-063-B03",
+      "text": "Andernfalls wird die Meldung gesichert und die Transaktion mit Warten auf die Verbuchung festgeschrieben.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:26"
+        },
+        {
+          "file": "source.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:31"
+        }
+      ]
+    },
+    {
+      "id": "BM-063-B04",
+      "text": "Zum Schluss wird die Meldungsnummer ausgegeben.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:34"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 10,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:10"
+        },
+        "meaning": "Reportstart"
+      },
+      {
+        "id": "c1",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:14"
+        },
+        "meaning": "Störmeldung M2 für Equipment mit Kurztext und Priorität anlegen (vorläufig)"
+      },
+      {
+        "id": "g",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:22"
+        },
+        "meaning": "Fehler beim Anlegen?"
+      },
+      {
+        "id": "m",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:23"
+        },
+        "meaning": "Fehlermeldung ausgeben"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:24"
+        },
+        "meaning": "Abbruch ohne Speichern"
+      },
+      {
+        "id": "c2",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:26"
+        },
+        "meaning": "Meldung endgültig nummerieren und sichern"
+      },
+      {
+        "id": "cm",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:31"
+        },
+        "meaning": "Commit mit Warten auf die Verbuchung"
+      },
+      {
+        "id": "o",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:34"
+        },
+        "meaning": "Meldungsnummer ausgeben"
+      },
+      {
+        "id": "e_end",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:34"
+        },
+        "meaning": "Report beendet"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "c1",
+        "condition": "always"
+      },
+      {
+        "from": "c1",
+        "to": "g",
+        "condition": "always"
+      },
+      {
+        "from": "g",
+        "to": "m",
+        "condition": "line_exists( lt_return[ type = 'E' ] )"
+      },
+      {
+        "from": "m",
+        "to": "e",
+        "condition": "always"
+      },
+      {
+        "from": "g",
+        "to": "c2",
+        "condition": "else"
+      },
+      {
+        "from": "c2",
+        "to": "cm",
+        "condition": "always"
+      },
+      {
+        "from": "cm",
+        "to": "o",
+        "condition": "always"
+      },
+      {
+        "from": "o",
+        "to": "e_end",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "source.abap:26 — kein Fachsatz „Schlägt das Sichern fehl, wird nicht festgeschrieben“ (das RETURN des Sicherns wird nicht geprüft; Commit und Erfolgsausgabe folgen unbedingt)",
+    "gesamte Scheibe — kein Fachsatz „Zur Meldung wird ein Instandhaltungsauftrag angelegt“ (es wird nur die Meldung angelegt)",
+    "source.abap:34 — kein Fachsatz „Die Meldung ist nachweislich gespeichert“ (die Ausgabe belegt nur das Durchlaufen, nicht den Verbuchungserfolg)"
+  ],
+  "processDescription": "Ein Leitstandsmitarbeiter startet den Report mit Equipment, Kurztext und Priorität. Der Report legt über die Meldungs-BAPI eine Störmeldung der Art M2 an. Enthält die Rückmeldung der BAPI einen Fehler, gibt er eine Fehlermeldung aus und endet, ohne zu speichern. Sonst sichert er die Meldung, schreibt die Transaktion mit Warten auf die Verbuchung fest und gibt die Meldungsnummer aus. Ob das Sichern selbst Fehler gemeldet hat, wird nicht geprüft."
+}

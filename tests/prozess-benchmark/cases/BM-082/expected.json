@@ -1,0 +1,265 @@
+{
+  "id": "BM-082",
+  "title": "Überstundengrenzen löschen mit Berechtigungsprüfung je Personalbereich",
+  "classes": [
+    "K15"
+  ],
+  "classic_level": "B",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "ZHR_OVT_LIMIT",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "source.abap",
+        "line": 21,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:21"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-082-B01",
+      "text": "Vor dem Löschen wird geprüft, ob der Benutzer Überstundengrenzen des angegebenen Personalbereichs löschen darf; sonst endet der Baustein mit NO_AUTHORITY.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:14"
+        },
+        {
+          "file": "source.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:17"
+        },
+        {
+          "file": "source.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:18"
+        }
+      ]
+    },
+    {
+      "id": "BM-082-B02",
+      "text": "Alle Überstundengrenzen des Personalbereichs mit Beginn ab dem Stichtag werden gelöscht.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:21"
+        }
+      ]
+    },
+    {
+      "id": "BM-082-B03",
+      "text": "Gab es keine solchen Einträge, endet der Baustein mit NOT_FOUND.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:24"
+        },
+        {
+          "file": "source.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:25"
+        }
+      ]
+    },
+    {
+      "id": "BM-082-B04",
+      "text": "Sonst wird die Anzahl der gelöschten Einträge zurückgegeben.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:27"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 1,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:1"
+        },
+        "meaning": "Baustein-Einstieg"
+      },
+      {
+        "id": "auth",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:14"
+        },
+        "meaning": "Löschberechtigung für den Personalbereich prüfen"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:17"
+        },
+        "meaning": "Berechtigung fehlt?"
+      },
+      {
+        "id": "e1",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:18"
+        },
+        "meaning": "Abbruch ohne Berechtigung"
+      },
+      {
+        "id": "del",
+        "type": "write",
+        "anchor": {
+          "file": "source.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:21"
+        },
+        "meaning": "Überstundengrenzen ab Stichtag löschen"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:24"
+        },
+        "meaning": "Nichts gelöscht?"
+      },
+      {
+        "id": "e2",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:25"
+        },
+        "meaning": "Abbruch: keine Einträge"
+      },
+      {
+        "id": "e3",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:29"
+        },
+        "meaning": "Anzahl gelöschter Einträge zurückgeben"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "auth",
+        "condition": "always"
+      },
+      {
+        "from": "auth",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "e1",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g1",
+        "to": "del",
+        "condition": "else"
+      },
+      {
+        "from": "del",
+        "to": "g2",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "e2",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g2",
+        "to": "e3",
+        "condition": "else"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "source.abap:21 — kein Fachsatz „Löschung ist festgeschrieben“ (kein COMMIT im Baustein; der Aufrufer entscheidet).",
+    "source.abap:14 — kein Fachsatz über eine Prüfung je Personalnummer (P_ORGIN); geprüft wird ein Kundenobjekt auf Personalbereich.",
+    "source.abap:21 — kein Fachsatz „Grenzen vor dem Stichtag werden gelöscht“ (Bedingung ist begda >= Stichtag)."
+  ],
+  "processDescription": "Ein Pflegedialog der Personalabteilung ruft den Baustein mit Personalbereich und Stichtag auf. Zuerst prüft der Baustein über das kundeneigene Berechtigungsobjekt Z_HR_OVT, ob der Benutzer für diesen Personalbereich löschen darf; fehlt die Berechtigung, endet er mit der Ausnahme NO_AUTHORITY. Danach löscht er alle Überstundengrenzen des Personalbereichs, deren Beginn am oder nach dem Stichtag liegt. Wurde nichts gelöscht, endet er mit NOT_FOUND, sonst gibt er die Anzahl der gelöschten Einträge zurück. Ein COMMIT setzt der Baustein nicht; ob die Löschung festgeschrieben wird, entscheidet der Aufrufer."
+}

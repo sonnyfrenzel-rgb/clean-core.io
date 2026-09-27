@@ -1,0 +1,488 @@
+{
+  "id": "BM-086",
+  "title": "IDoc-Eingang Kreditlimit: Segmentschleife schreibt KNKK direkt",
+  "classes": [
+    "K01",
+    "K12"
+  ],
+  "classic_level": "D",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "KNKK",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 49,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:49"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "KNKK",
+      "owner": "SAP",
+      "usage": "write",
+      "anchor": {
+        "file": "source.abap",
+        "line": 64,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:64"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-086-B01",
+      "text": "Jedes IDoc des Pakets wird nur verarbeitet, wenn es den Nachrichtentyp ZCREDLIM trägt; sonst bricht der Baustein mit WRONG_FUNCTION_CALLED ab.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:38"
+        },
+        {
+          "file": "source.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:39"
+        }
+      ]
+    },
+    {
+      "id": "BM-086-B02",
+      "text": "Die Segmente des IDocs werden der Reihe nach ausgewertet; das Kopfsegment liefert die Kundennummer.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:43"
+        },
+        {
+          "file": "source.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:44"
+        },
+        {
+          "file": "source.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:46"
+        }
+      ]
+    },
+    {
+      "id": "BM-086-B03",
+      "text": "Je Kreditsegment wird der vorhandene Kreditstammsatz des Kunden im genannten Kreditkontrollbereich gelesen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:49"
+        }
+      ]
+    },
+    {
+      "id": "BM-086-B04",
+      "text": "Fehlt der Kreditstammsatz oder ist das gelieferte Limit negativ, wird das IDoc als fehlerhaft markiert und die weiteren Segmente werden übersprungen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:52"
+        },
+        {
+          "file": "source.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:56"
+        }
+      ]
+    },
+    {
+      "id": "BM-086-B05",
+      "text": "Sonst wird das neue Kreditlimit mit heutigem Prüfdatum, Änderer und Änderungsdatum direkt in den Kreditstammsatz geschrieben.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:60"
+        },
+        {
+          "file": "source.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:64"
+        }
+      ]
+    },
+    {
+      "id": "BM-086-B06",
+      "text": "Ein fehlerfreies IDoc erhält Status 53 (Anwendungsbeleg gebucht).",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:72"
+        },
+        {
+          "file": "source.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:73"
+        }
+      ]
+    },
+    {
+      "id": "BM-086-B07",
+      "text": "Ein fehlerhaftes IDoc erhält Status 51 mit der Kundennummer in der Meldung, und das Workflow-Ergebnis meldet einen Fehler.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:78"
+        },
+        {
+          "file": "source.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:83"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 1,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:1"
+        },
+        "meaning": "IDoc-Eingang ZCREDLIM"
+      },
+      {
+        "id": "l1",
+        "type": "loop",
+        "anchor": {
+          "file": "source.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:37"
+        },
+        "meaning": "IDocs des Pakets durchlaufen"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:38"
+        },
+        "meaning": "Falscher Nachrichtentyp?"
+      },
+      {
+        "id": "e1",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:39"
+        },
+        "meaning": "Abbruch: falscher Baustein"
+      },
+      {
+        "id": "l2",
+        "type": "loop",
+        "anchor": {
+          "file": "source.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:43"
+        },
+        "meaning": "Segmente des IDocs durchlaufen"
+      },
+      {
+        "id": "c",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:44"
+        },
+        "meaning": "Segmenttyp unterscheiden"
+      },
+      {
+        "id": "r",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:49"
+        },
+        "meaning": "Kreditstammsatz Kunde/Kreditkontrollbereich lesen"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:52"
+        },
+        "meaning": "Kreditstammsatz fehlt?"
+      },
+      {
+        "id": "g3",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:56"
+        },
+        "meaning": "Negatives Limit?"
+      },
+      {
+        "id": "w",
+        "type": "write",
+        "anchor": {
+          "file": "source.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:64"
+        },
+        "meaning": "Neues Kreditlimit mit Prüfdatum in KNKK schreiben"
+      },
+      {
+        "id": "g4",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:72"
+        },
+        "meaning": "IDoc fehlerfrei?"
+      },
+      {
+        "id": "st53",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:73"
+        },
+        "meaning": "Status 53 (verbucht) setzen"
+      },
+      {
+        "id": "st51",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:78"
+        },
+        "meaning": "Status 51 (Fehler) setzen, Workflow-Fehlerergebnis"
+      },
+      {
+        "id": "e2",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:90"
+        },
+        "meaning": "Statussätze an ALE zurückgeben"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "l1",
+        "condition": "always"
+      },
+      {
+        "from": "l1",
+        "to": "g1",
+        "condition": "next row"
+      },
+      {
+        "from": "g1",
+        "to": "e1",
+        "condition": "ls_edidc-mestyp <> 'ZCREDLIM'"
+      },
+      {
+        "from": "g1",
+        "to": "l2",
+        "condition": "else"
+      },
+      {
+        "from": "l2",
+        "to": "c",
+        "condition": "next row"
+      },
+      {
+        "from": "c",
+        "to": "r",
+        "condition": "WHEN 'ZE1CREDIT'"
+      },
+      {
+        "from": "c",
+        "to": "l2",
+        "condition": "else"
+      },
+      {
+        "from": "r",
+        "to": "g2",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "g4",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g2",
+        "to": "g3",
+        "condition": "else"
+      },
+      {
+        "from": "g3",
+        "to": "g4",
+        "condition": "ls_e1item-klimk < 0"
+      },
+      {
+        "from": "g3",
+        "to": "w",
+        "condition": "else"
+      },
+      {
+        "from": "w",
+        "to": "l2",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l2",
+        "to": "g4",
+        "condition": "no more rows"
+      },
+      {
+        "from": "g4",
+        "to": "st53",
+        "condition": "lv_error IS INITIAL"
+      },
+      {
+        "from": "g4",
+        "to": "st51",
+        "condition": "else"
+      },
+      {
+        "from": "st53",
+        "to": "l1",
+        "condition": "next iteration"
+      },
+      {
+        "from": "st51",
+        "to": "l1",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l1",
+        "to": "e2",
+        "condition": "no more rows"
+      },
+      {
+        "from": "c",
+        "to": "l2",
+        "condition": "WHEN 'ZE1CREDHD'"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "source.abap:64 — kein Fachsatz „bei einem Fehler im IDoc wird kein Limit geändert“ (vorher verarbeitete Kreditsegmente bleiben geschrieben; kein Rollback).",
+    "gesamte Scheibe — kein Fachsatz über die Risikoklasse (Segment ZE1CREDRK nur auskommentiert).",
+    "source.abap:64 — kein Fachsatz „Kreditlimit wird im SAP Credit Management gepflegt“ (direktes Schreiben der klassischen Tabelle KNKK).",
+    "source.abap:44 — kein Fehlerpfad für unbekannte Segmente (sie werden stillschweigend übergangen)."
+  ],
+  "processDescription": "Die ALE-Eingangsverarbeitung übergibt dem Baustein ein Paket von IDocs mit neuen Kreditlimits einer Auskunftei. Für jedes IDoc prüft er zuerst den Nachrichtentyp und bricht bei einem anderen als ZCREDLIM ab. Dann wertet er die Segmente aus: Das Kopfsegment liefert die Kundennummer, jedes Kreditsegment Kreditkontrollbereich und Limit. Je Kreditsegment liest er den bestehenden Kreditstammsatz; fehlt er oder ist das Limit negativ, markiert er das IDoc als fehlerhaft und überspringt dessen restliche Segmente. Sonst schreibt er das neue Limit mit Prüfdatum, Änderer und Änderungsdatum direkt in die Tabelle KNKK, ohne Sperre. Anschließend setzt er für das IDoc Status 53 oder – bei Fehler – Status 51 mit Kundennummer und meldet dem Workflow ein Fehlerergebnis. Bereits geschriebene Limits eines später fehlerhaften IDocs bleiben bestehen; unbekannte Segmente werden ignoriert."
+}

@@ -1,0 +1,49 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Kante new→chk",
+      "before": "new->chk [always]",
+      "after": "entfällt; ke->chk [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks; Rückkante vom end des Blocks → Folgeschritt; keine Direktkante Aufruf → Folgeschritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante chk→cs",
+      "before": "chk->cs [always]",
+      "after": "entfällt; e_nf->cs [always], e_bl->cs [always], ce->cs [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks; Rückkante vom end des Blocks → Folgeschritt; keine Direktkante Aufruf → Folgeschritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante c_exp→cs_tol",
+      "before": "c_exp->cs_tol [always]",
+      "after": "entfällt; ge->cs_tol [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks; Rückkante vom end des Blocks → Folgeschritt; keine Direktkante Aufruf → Folgeschritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante nt→e",
+      "before": "nt->e [always]",
+      "after": "entfällt; ne->e [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks; Rückkante vom end des Blocks → Folgeschritt; keine Direktkante Aufruf → Folgeschritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Fachsatz BM-013-B10",
+      "before": "Jedes Prüfergebnis mit Obligo, Limit und Benutzer wird zur Protokollierung mit dem Auftrag verbucht.",
+      "after": "Nur wenn ein Kreditstammsatz existiert und der Kunde nicht im Kreditmanagement gesperrt ist, wird das Prüfergebnis (Sperren oder in Ordnung) mit Obligo, Limit und Benutzer zur Protokollierung mit dem Auftrag verbucht; Aufträge ohne Kreditstammsatz und Ablehnungen werden nicht protokolliert. (Anker zusätzlich zcl_sd_credit_check.abap:60 und :66)",
+      "why": "Die beiden RETURN (Zeile 60 ohne Kreditstammsatz, Zeile 66 bei gesperrtem Kunden) verlassen check vor dem Verbuchungsaufruf in Zeile 86; nicht jedes Prüfergebnis wird protokolliert.",
+      "category": "Fachsatz"
+    },
+    {
+      "where": "Verbotener Schluss (mv45afzz_credit.abap:28)",
+      "before": "mv45afzz_credit.abap:28 — kein Fachsatz „der Kreditmanager wird zum neuen Auftrag benachrichtigt“: bei der Anlage ist die Auftragsnummer in diesem Exit noch nicht vergeben, der Objektschlüssel ist dann leer",
+      "after": "mv45afzz_credit.abap:28 — kein Fachsatz „der Kreditmanager wird zum neuen Auftrag benachrichtigt“: bei der Anlage ist die endgültige Auftragsnummer in USEREXIT_SAVE_DOCUMENT_PREPARE noch nicht vergeben, der Objektschlüssel des Ereignisses verweist dann nicht auf den gesicherten Auftrag",
+      "why": "Die Begründung „Objektschlüssel ist leer“ ist nicht belegt: beim Anlegen trägt VBAK-VBELN vor der Nummernvergabe eine vorläufige Nummer. Der Schluss selbst bleibt richtig.",
+      "category": "verbotener Schluss"
+    }
+  ],
+  "doubts": []
+}

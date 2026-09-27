@@ -1,0 +1,2211 @@
+{
+  "id": "BM-017",
+  "title": "Kommissionierung mit Gewichtssplit: Pakete je Versandstelle per aRFC, Split per BAPI, Kommissionierung per WS_DELIVERY_UPDATE",
+  "classes": [
+    "K12",
+    "K03",
+    "K09",
+    "K01",
+    "K04",
+    "K18"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "LIKP",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zsd_pick_split.abap",
+        "line": 38,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_pick_split.abap:38"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "VBUK",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zsd_pick_split.abap",
+        "line": 38,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_pick_split.abap:38"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "Z_SD_PICK_SPLIT_RFC",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zsd_pick_split.abap",
+        "line": 84,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zsd_pick_split.abap:84"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ENQUEUE_EVVBLKE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "z_sd_pick_split_rfc.abap",
+        "line": 21,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_sd_pick_split_rfc.abap:21"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZCL_SD_PICK_SPLIT",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "z_sd_pick_split_rfc.abap",
+        "line": 35,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_sd_pick_split_rfc.abap:35"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_OUTB_DELIVERY_SPLIT_DEC",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "z_sd_pick_split_rfc.abap",
+        "line": 51,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_sd_pick_split_rfc.abap:51"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_ROLLBACK",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "z_sd_pick_split_rfc.abap",
+        "line": 61,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_sd_pick_split_rfc.abap:61"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_COMMIT",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "z_sd_pick_split_rfc.abap",
+        "line": 69,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_sd_pick_split_rfc.abap:69"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "DEQUEUE_EVVBLKE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "z_sd_pick_split_rfc.abap",
+        "line": 40,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_sd_pick_split_rfc.abap:40"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "LIPS",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_sd_pick_split.abap",
+        "line": 48,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_sd_pick_split.abap:48"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "UNIT_CONVERSION_SIMPLE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_sd_pick_split.abap",
+        "line": 59,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_sd_pick_split.abap:59"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "MARC",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_sd_pick_split.abap",
+        "line": 110,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_sd_pick_split.abap:110"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "WS_DELIVERY_UPDATE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_sd_pick_split.abap",
+        "line": 142,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_sd_pick_split.abap:142"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-017-B01",
+      "text": "Der Job liest Auslieferungen der Lieferart LF der gewählten Versandstellen und Liefertermine, die noch nicht kommissioniert sind und keinen vollständigen Warenausgang haben.",
+      "anchors": [
+        {
+          "file": "zsd_pick_split.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_pick_split.abap:38"
+        }
+      ]
+    },
+    {
+      "id": "BM-017-B02",
+      "text": "Ohne solche Lieferungen endet der Job mit einem Hinweis.",
+      "anchors": [
+        {
+          "file": "zsd_pick_split.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_pick_split.abap:47"
+        },
+        {
+          "file": "zsd_pick_split.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_pick_split.abap:48"
+        },
+        {
+          "file": "zsd_pick_split.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_pick_split.abap:49"
+        }
+      ]
+    },
+    {
+      "id": "BM-017-B03",
+      "text": "Die Lieferungen einer Versandstelle bilden jeweils ein Paket, das asynchron in der angegebenen Servergruppe verarbeitet wird.",
+      "anchors": [
+        {
+          "file": "zsd_pick_split.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_pick_split.abap:56"
+        },
+        {
+          "file": "zsd_pick_split.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_pick_split.abap:57"
+        },
+        {
+          "file": "zsd_pick_split.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_pick_split.abap:84"
+        }
+      ]
+    },
+    {
+      "id": "BM-017-B04",
+      "text": "Sind keine Workprozesse frei, wartet der Job bis zu 5 Sekunden auf einen freien Platz und startet das Paket erneut.",
+      "anchors": [
+        {
+          "file": "zsd_pick_split.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_pick_split.abap:97"
+        },
+        {
+          "file": "zsd_pick_split.abap",
+          "line": 103,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_pick_split.abap:103"
+        }
+      ]
+    },
+    {
+      "id": "BM-017-B05",
+      "text": "Bei einem Kommunikations- oder Systemfehler wird das Paket nach einem Hinweis im eigenen Prozess synchron verarbeitet.",
+      "anchors": [
+        {
+          "file": "zsd_pick_split.abap",
+          "line": 105,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_pick_split.abap:105"
+        },
+        {
+          "file": "zsd_pick_split.abap",
+          "line": 106,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_pick_split.abap:106"
+        },
+        {
+          "file": "zsd_pick_split.abap",
+          "line": 118,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_pick_split.abap:118"
+        }
+      ]
+    },
+    {
+      "id": "BM-017-B06",
+      "text": "Die Ergebnisse jedes Pakets werden bei seiner Rückmeldung übernommen; eine fehlerhafte Rückmeldung wird als Fehlerzeile vermerkt.",
+      "anchors": [
+        {
+          "file": "zsd_pick_split.abap",
+          "line": 134,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_pick_split.abap:134"
+        },
+        {
+          "file": "zsd_pick_split.abap",
+          "line": 140,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_pick_split.abap:140"
+        }
+      ]
+    },
+    {
+      "id": "BM-017-B07",
+      "text": "Der Job wartet höchstens 10 Minuten auf alle Pakete; fehlen danach Rückmeldungen, erscheint ein Hinweis und die Liste bleibt unvollständig.",
+      "anchors": [
+        {
+          "file": "zsd_pick_split.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_pick_split.abap:63"
+        },
+        {
+          "file": "zsd_pick_split.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_pick_split.abap:64"
+        },
+        {
+          "file": "zsd_pick_split.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_pick_split.abap:65"
+        }
+      ]
+    },
+    {
+      "id": "BM-017-B08",
+      "text": "Am Ende wird je Lieferung eine farbige Liste mit neuer Lieferung, Status und Text ausgegeben.",
+      "anchors": [
+        {
+          "file": "zsd_pick_split.abap",
+          "line": 156,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_pick_split.abap:156"
+        },
+        {
+          "file": "zsd_pick_split.abap",
+          "line": 167,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_pick_split.abap:167"
+        }
+      ]
+    },
+    {
+      "id": "BM-017-B09",
+      "text": "Im Paket wird jede Lieferung gesperrt; ist sie in Bearbeitung, wird sie mit Fehler übersprungen.",
+      "anchors": [
+        {
+          "file": "z_sd_pick_split_rfc.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_pick_split_rfc.abap:21"
+        },
+        {
+          "file": "z_sd_pick_split_rfc.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_pick_split_rfc.abap:28"
+        }
+      ]
+    },
+    {
+      "id": "BM-017-B10",
+      "text": "Für die Lieferung werden alle Positionen mit Liefermenge und Bruttogewicht gelesen; ohne Positionen wird die Lieferung mit Fehler übersprungen und entsperrt.",
+      "anchors": [
+        {
+          "file": "zcl_sd_pick_split.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_pick_split.abap:48"
+        },
+        {
+          "file": "zcl_sd_pick_split.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_pick_split.abap:52"
+        },
+        {
+          "file": "z_sd_pick_split_rfc.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_pick_split_rfc.abap:40"
+        }
+      ]
+    },
+    {
+      "id": "BM-017-B11",
+      "text": "Gewichte in anderen Einheiten werden in kg umgerechnet; scheitert die Umrechnung, wird die Lieferung mit Fehler übersprungen.",
+      "anchors": [
+        {
+          "file": "zcl_sd_pick_split.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_pick_split.abap:59"
+        },
+        {
+          "file": "zcl_sd_pick_split.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_pick_split.abap:68"
+        }
+      ]
+    },
+    {
+      "id": "BM-017-B12",
+      "text": "In Positionsreihenfolge werden Positionen auf den LKW geladen, solange das Maximalgewicht nicht überschritten wird; die erste Position bleibt immer in der Lieferung, auch wenn sie allein zu schwer ist.",
+      "anchors": [
+        {
+          "file": "zcl_sd_pick_split.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_pick_split.abap:83"
+        },
+        {
+          "file": "zcl_sd_pick_split.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_pick_split.abap:84"
+        }
+      ]
+    },
+    {
+      "id": "BM-017-B13",
+      "text": "Jede Position, die das Maximalgewicht überschreiten würde, wird mit voller Menge zum Split vorgemerkt.",
+      "anchors": [
+        {
+          "file": "zcl_sd_pick_split.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_pick_split.abap:83"
+        }
+      ]
+    },
+    {
+      "id": "BM-017-B14",
+      "text": "Im Echtlauf werden die vorgemerkten Positionen in eine neue Lieferung ausgelagert.",
+      "anchors": [
+        {
+          "file": "z_sd_pick_split_rfc.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_pick_split_rfc.abap:49"
+        },
+        {
+          "file": "z_sd_pick_split_rfc.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_pick_split_rfc.abap:51"
+        }
+      ]
+    },
+    {
+      "id": "BM-017-B15",
+      "text": "Scheitert der Split, wird er verworfen, die Lieferung mit der Fehlermeldung vermerkt und entsperrt, und sie wird nicht kommissioniert.",
+      "anchors": [
+        {
+          "file": "z_sd_pick_split_rfc.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_pick_split_rfc.abap:59"
+        },
+        {
+          "file": "z_sd_pick_split_rfc.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_pick_split_rfc.abap:60"
+        },
+        {
+          "file": "z_sd_pick_split_rfc.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_pick_split_rfc.abap:61"
+        },
+        {
+          "file": "z_sd_pick_split_rfc.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_pick_split_rfc.abap:64"
+        }
+      ]
+    },
+    {
+      "id": "BM-017-B16",
+      "text": "Gelingt er, wird er festgeschrieben und die ausgelagerten Positionen werden nicht mehr kommissioniert.",
+      "anchors": [
+        {
+          "file": "z_sd_pick_split_rfc.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_pick_split_rfc.abap:69"
+        },
+        {
+          "file": "z_sd_pick_split_rfc.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_pick_split_rfc.abap:72"
+        }
+      ]
+    },
+    {
+      "id": "BM-017-B17",
+      "text": "Chargenpflichtige Positionen ohne Charge werden nicht kommissioniert, sondern nur gezählt.",
+      "anchors": [
+        {
+          "file": "zcl_sd_pick_split.abap",
+          "line": 110,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_pick_split.abap:110"
+        },
+        {
+          "file": "zcl_sd_pick_split.abap",
+          "line": 113,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_pick_split.abap:113"
+        }
+      ]
+    },
+    {
+      "id": "BM-017-B18",
+      "text": "Ist keine Position kommissionierbar oder ist Testlauf gesetzt, wird nur ein Text mit den Anzahlen zurückgegeben.",
+      "anchors": [
+        {
+          "file": "zcl_sd_pick_split.abap",
+          "line": 128,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_pick_split.abap:128"
+        },
+        {
+          "file": "zcl_sd_pick_split.abap",
+          "line": 133,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_pick_split.abap:133"
+        }
+      ]
+    },
+    {
+      "id": "BM-017-B19",
+      "text": "Sonst wird für die übrigen Positionen die volle Liefermenge als Kommissioniermenge synchron gebucht und festgeschrieben.",
+      "anchors": [
+        {
+          "file": "zcl_sd_pick_split.abap",
+          "line": 142,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_pick_split.abap:142"
+        }
+      ]
+    },
+    {
+      "id": "BM-017-B20",
+      "text": "Das Ergebnis lautet „fehlgeschlagen“ oder nennt kommissionierte Positionen und offene Positionen ohne Charge.",
+      "anchors": [
+        {
+          "file": "zcl_sd_pick_split.abap",
+          "line": 157,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_pick_split.abap:157"
+        }
+      ]
+    },
+    {
+      "id": "BM-017-B21",
+      "text": "Eine gesplittete Lieferung wird mit neuer Lieferungsnummer als Warnung gemeldet, ein nur im Testlauf erkannter Split ebenfalls als Warnung, sonst als Erfolg; danach wird die Lieferung entsperrt.",
+      "anchors": [
+        {
+          "file": "z_sd_pick_split_rfc.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_pick_split_rfc.abap:79"
+        },
+        {
+          "file": "z_sd_pick_split_rfc.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_pick_split_rfc.abap:82"
+        },
+        {
+          "file": "z_sd_pick_split_rfc.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_pick_split_rfc.abap:90"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "sos",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_pick_split.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_pick_split.abap:36"
+        },
+        "meaning": "Jobstart"
+      },
+      {
+        "id": "q",
+        "type": "read",
+        "anchor": {
+          "file": "zsd_pick_split.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_pick_split.abap:38"
+        },
+        "meaning": "Nicht kommissionierte Auslieferungen (LF) ohne Warenausgang lesen"
+      },
+      {
+        "id": "g0",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_pick_split.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_pick_split.abap:47"
+        },
+        "meaning": "Lieferungen gefunden?"
+      },
+      {
+        "id": "m700",
+        "type": "output",
+        "anchor": {
+          "file": "zsd_pick_split.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_pick_split.abap:48"
+        },
+        "meaning": "Hinweis: nichts zu tun"
+      },
+      {
+        "id": "e0",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_pick_split.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_pick_split.abap:49"
+        },
+        "meaning": "Job ohne Verarbeitung beenden"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "zsd_pick_split.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_pick_split.abap:54"
+        },
+        "meaning": "Lieferungen nach Versandstelle"
+      },
+      {
+        "id": "atend",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_pick_split.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_pick_split.abap:56"
+        },
+        "meaning": "Letzte Lieferung der Versandstelle?"
+      },
+      {
+        "id": "c_ps",
+        "type": "call",
+        "anchor": {
+          "file": "zsd_pick_split.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_pick_split.abap:57"
+        },
+        "meaning": "Paket der Versandstelle starten"
+      },
+      {
+        "id": "wt",
+        "type": "action",
+        "anchor": {
+          "file": "zsd_pick_split.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_pick_split.abap:63"
+        },
+        "meaning": "Bis zu 10 Minuten auf alle Rückmeldungen warten"
+      },
+      {
+        "id": "g_run",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_pick_split.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_pick_split.abap:64"
+        },
+        "meaning": "Noch Pakete ohne Rückmeldung?"
+      },
+      {
+        "id": "m701",
+        "type": "output",
+        "anchor": {
+          "file": "zsd_pick_split.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_pick_split.abap:65"
+        },
+        "meaning": "Hinweis: Pakete ohne Rückmeldung"
+      },
+      {
+        "id": "c_la",
+        "type": "call",
+        "anchor": {
+          "file": "zsd_pick_split.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_pick_split.abap:68"
+        },
+        "meaning": "Ergebnisliste ausgeben"
+      },
+      {
+        "id": "e_end",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_pick_split.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_pick_split.abap:68"
+        },
+        "meaning": "Job beendet"
+      },
+      {
+        "id": "ps",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_pick_split.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_pick_split.abap:77"
+        },
+        "meaning": "Paketstart"
+      },
+      {
+        "id": "do",
+        "type": "loop",
+        "anchor": {
+          "file": "zsd_pick_split.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_pick_split.abap:80"
+        },
+        "meaning": "Startversuche"
+      },
+      {
+        "id": "task",
+        "type": "async",
+        "anchor": {
+          "file": "zsd_pick_split.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_pick_split.abap:84"
+        },
+        "meaning": "Paket asynchron in der Servergruppe verarbeiten"
+      },
+      {
+        "id": "cs",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_pick_split.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_pick_split.abap:97"
+        },
+        "meaning": "Start erfolgreich, Ressourcenengpass oder Kommunikationsfehler?"
+      },
+      {
+        "id": "cnt",
+        "type": "action",
+        "anchor": {
+          "file": "zsd_pick_split.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_pick_split.abap:99"
+        },
+        "meaning": "Laufende Pakete zählen"
+      },
+      {
+        "id": "wait",
+        "type": "action",
+        "anchor": {
+          "file": "zsd_pick_split.abap",
+          "line": 103,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_pick_split.abap:103"
+        },
+        "meaning": "Auf freien Platz warten, dann erneut starten"
+      },
+      {
+        "id": "m702",
+        "type": "output",
+        "anchor": {
+          "file": "zsd_pick_split.abap",
+          "line": 105,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_pick_split.abap:105"
+        },
+        "meaning": "Hinweis Kommunikationsfehler"
+      },
+      {
+        "id": "c_lok",
+        "type": "call",
+        "anchor": {
+          "file": "zsd_pick_split.abap",
+          "line": 106,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_pick_split.abap:106"
+        },
+        "meaning": "Paket lokal verarbeiten"
+      },
+      {
+        "id": "pe",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_pick_split.abap",
+          "line": 110,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_pick_split.abap:110"
+        },
+        "meaning": "Paket gestartet oder lokal erledigt"
+      },
+      {
+        "id": "pls",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_pick_split.abap",
+          "line": 115,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_pick_split.abap:115"
+        },
+        "meaning": "Lokale Verarbeitung"
+      },
+      {
+        "id": "sync",
+        "type": "call",
+        "anchor": {
+          "file": "zsd_pick_split.abap",
+          "line": 118,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_pick_split.abap:118"
+        },
+        "meaning": "Paket synchron im eigenen Prozess verarbeiten"
+      },
+      {
+        "id": "ple",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_pick_split.abap",
+          "line": 126,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_pick_split.abap:126"
+        },
+        "meaning": "Ergebnisse übernommen"
+      },
+      {
+        "id": "es",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_pick_split.abap",
+          "line": 131,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_pick_split.abap:131"
+        },
+        "meaning": "Rückmeldung eines Pakets"
+      },
+      {
+        "id": "recv",
+        "type": "async",
+        "anchor": {
+          "file": "zsd_pick_split.abap",
+          "line": 134,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_pick_split.abap:134"
+        },
+        "meaning": "Ergebnisse des Pakets abholen"
+      },
+      {
+        "id": "g_recv",
+        "type": "gateway",
+        "anchor": {
+          "file": "zsd_pick_split.abap",
+          "line": 140,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_pick_split.abap:140"
+        },
+        "meaning": "Rückmeldung fehlerhaft?"
+      },
+      {
+        "id": "dec",
+        "type": "action",
+        "anchor": {
+          "file": "zsd_pick_split.abap",
+          "line": 147,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_pick_split.abap:147"
+        },
+        "meaning": "Paket als beendet zählen"
+      },
+      {
+        "id": "ee",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_pick_split.abap",
+          "line": 148,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_pick_split.abap:148"
+        },
+        "meaning": "Rückmeldung verarbeitet"
+      },
+      {
+        "id": "ls",
+        "type": "start",
+        "anchor": {
+          "file": "zsd_pick_split.abap",
+          "line": 153,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_pick_split.abap:153"
+        },
+        "meaning": "Listausgabe"
+      },
+      {
+        "id": "hdr",
+        "type": "output",
+        "anchor": {
+          "file": "zsd_pick_split.abap",
+          "line": 156,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_pick_split.abap:156"
+        },
+        "meaning": "Listkopf ausgeben"
+      },
+      {
+        "id": "l_out",
+        "type": "loop",
+        "anchor": {
+          "file": "zsd_pick_split.abap",
+          "line": 158,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_pick_split.abap:158"
+        },
+        "meaning": "Je Ergebnis"
+      },
+      {
+        "id": "o",
+        "type": "output",
+        "anchor": {
+          "file": "zsd_pick_split.abap",
+          "line": 167,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_pick_split.abap:167"
+        },
+        "meaning": "Lieferung, neue Lieferung, Status und Text farbig ausgeben"
+      },
+      {
+        "id": "lse",
+        "type": "end",
+        "anchor": {
+          "file": "zsd_pick_split.abap",
+          "line": 171,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zsd_pick_split.abap:171"
+        },
+        "meaning": "Liste fertig"
+      },
+      {
+        "id": "fs",
+        "type": "start",
+        "anchor": {
+          "file": "z_sd_pick_split_rfc.abap",
+          "line": 1,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_pick_split_rfc.abap:1"
+        },
+        "meaning": "Paketverarbeitung"
+      },
+      {
+        "id": "rl",
+        "type": "loop",
+        "anchor": {
+          "file": "z_sd_pick_split_rfc.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_pick_split_rfc.abap:19"
+        },
+        "meaning": "Je Lieferung des Pakets"
+      },
+      {
+        "id": "enq",
+        "type": "lock",
+        "anchor": {
+          "file": "z_sd_pick_split_rfc.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_pick_split_rfc.abap:21"
+        },
+        "meaning": "Lieferung sperren"
+      },
+      {
+        "id": "g_enq",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_sd_pick_split_rfc.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_pick_split_rfc.abap:28"
+        },
+        "meaning": "Lieferung in Bearbeitung?"
+      },
+      {
+        "id": "new",
+        "type": "call",
+        "anchor": {
+          "file": "z_sd_pick_split_rfc.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_pick_split_rfc.abap:35"
+        },
+        "meaning": "Lieferpositionen und Gewichte laden"
+      },
+      {
+        "id": "deq1",
+        "type": "lock",
+        "anchor": {
+          "file": "z_sd_pick_split_rfc.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_pick_split_rfc.abap:40"
+        },
+        "meaning": "Sperre nach Ladefehler lösen"
+      },
+      {
+        "id": "ds",
+        "type": "call",
+        "anchor": {
+          "file": "z_sd_pick_split_rfc.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_pick_split_rfc.abap:46"
+        },
+        "meaning": "Splitpositionen bestimmen"
+      },
+      {
+        "id": "g_split",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_sd_pick_split_rfc.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_pick_split_rfc.abap:49"
+        },
+        "meaning": "Split nötig und Echtlauf?"
+      },
+      {
+        "id": "bapi",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "z_sd_pick_split_rfc.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_pick_split_rfc.abap:51"
+        },
+        "meaning": "Splitpositionen in eine neue Lieferung auslagern"
+      },
+      {
+        "id": "rd",
+        "type": "read",
+        "anchor": {
+          "file": "z_sd_pick_split_rfc.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_pick_split_rfc.abap:59"
+        },
+        "meaning": "Fehlermeldung des Splits suchen"
+      },
+      {
+        "id": "g_err",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_sd_pick_split_rfc.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_pick_split_rfc.abap:60"
+        },
+        "meaning": "Split fehlgeschlagen?"
+      },
+      {
+        "id": "rb",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "z_sd_pick_split_rfc.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_pick_split_rfc.abap:61"
+        },
+        "meaning": "Split verwerfen"
+      },
+      {
+        "id": "deq2",
+        "type": "lock",
+        "anchor": {
+          "file": "z_sd_pick_split_rfc.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_pick_split_rfc.abap:64"
+        },
+        "meaning": "Sperre nach Splitfehler lösen"
+      },
+      {
+        "id": "cm",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "z_sd_pick_split_rfc.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_pick_split_rfc.abap:69"
+        },
+        "meaning": "Split festschreiben"
+      },
+      {
+        "id": "rm",
+        "type": "call",
+        "anchor": {
+          "file": "z_sd_pick_split_rfc.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_pick_split_rfc.abap:72"
+        },
+        "meaning": "Ausgelagerte Positionen aus der Kommissionierung nehmen"
+      },
+      {
+        "id": "pk",
+        "type": "call",
+        "anchor": {
+          "file": "z_sd_pick_split_rfc.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_pick_split_rfc.abap:76"
+        },
+        "meaning": "Verbleibende Positionen kommissionieren"
+      },
+      {
+        "id": "g_res",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_sd_pick_split_rfc.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_pick_split_rfc.abap:79"
+        },
+        "meaning": "Neue Lieferung entstanden?"
+      },
+      {
+        "id": "deq3",
+        "type": "lock",
+        "anchor": {
+          "file": "z_sd_pick_split_rfc.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_pick_split_rfc.abap:90"
+        },
+        "meaning": "Lieferung entsperren"
+      },
+      {
+        "id": "fe",
+        "type": "end",
+        "anchor": {
+          "file": "z_sd_pick_split_rfc.abap",
+          "line": 94,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_sd_pick_split_rfc.abap:94"
+        },
+        "meaning": "Ergebnisse des Pakets zurück"
+      },
+      {
+        "id": "cs0",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_sd_pick_split.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_pick_split.abap:42"
+        },
+        "meaning": "Lieferung laden"
+      },
+      {
+        "id": "q_lips",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_sd_pick_split.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_pick_split.abap:48"
+        },
+        "meaning": "Positionen mit Liefermenge größer null und Bruttogewicht lesen"
+      },
+      {
+        "id": "g_nf",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_sd_pick_split.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_pick_split.abap:52"
+        },
+        "meaning": "Positionen vorhanden?"
+      },
+      {
+        "id": "x_nf",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_sd_pick_split.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_pick_split.abap:53"
+        },
+        "meaning": "Ausnahme: keine Positionen"
+      },
+      {
+        "id": "l_conv",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_sd_pick_split.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_pick_split.abap:58"
+        },
+        "meaning": "Positionen mit Gewichtseinheit ungleich kg"
+      },
+      {
+        "id": "conv",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_sd_pick_split.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_pick_split.abap:59"
+        },
+        "meaning": "Bruttogewicht in kg umrechnen"
+      },
+      {
+        "id": "g_conv",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_sd_pick_split.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_pick_split.abap:68"
+        },
+        "meaning": "Umrechnung gescheitert?"
+      },
+      {
+        "id": "x_conv",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_sd_pick_split.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_pick_split.abap:69"
+        },
+        "meaning": "Ausnahme: Gewichtseinheit"
+      },
+      {
+        "id": "ce",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_sd_pick_split.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_pick_split.abap:74"
+        },
+        "meaning": "Lieferung geladen"
+      },
+      {
+        "id": "dss",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_sd_pick_split.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_pick_split.abap:77"
+        },
+        "meaning": "Splitbestimmung"
+      },
+      {
+        "id": "l_d",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_sd_pick_split.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_pick_split.abap:81"
+        },
+        "meaning": "Positionen in Positionsreihenfolge"
+      },
+      {
+        "id": "g_d",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_sd_pick_split.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_pick_split.abap:83"
+        },
+        "meaning": "Passt die Position noch auf den LKW?"
+      },
+      {
+        "id": "a_sum",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_sd_pick_split.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_pick_split.abap:84"
+        },
+        "meaning": "Ladegewicht erhöhen"
+      },
+      {
+        "id": "dse",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_sd_pick_split.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_pick_split.abap:92"
+        },
+        "meaning": "Splitliste zurück"
+      },
+      {
+        "id": "rms",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_sd_pick_split.abap",
+          "line": 95,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_pick_split.abap:95"
+        },
+        "meaning": "Ausgelagerte Positionen entfernen"
+      },
+      {
+        "id": "rme",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_sd_pick_split.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_pick_split.abap:99"
+        },
+        "meaning": "Positionsliste bereinigt"
+      },
+      {
+        "id": "pks",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_sd_pick_split.abap",
+          "line": 102,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_pick_split.abap:102"
+        },
+        "meaning": "Kommissionierung"
+      },
+      {
+        "id": "l_p",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_sd_pick_split.abap",
+          "line": 109,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_pick_split.abap:109"
+        },
+        "meaning": "Je verbleibender Position"
+      },
+      {
+        "id": "q_marc",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_sd_pick_split.abap",
+          "line": 110,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_pick_split.abap:110"
+        },
+        "meaning": "Chargenpflicht des Materials im Werk lesen"
+      },
+      {
+        "id": "g_ch",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_sd_pick_split.abap",
+          "line": 113,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_pick_split.abap:113"
+        },
+        "meaning": "Chargenpflichtig ohne Charge?"
+      },
+      {
+        "id": "g_empty",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_sd_pick_split.abap",
+          "line": 128,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_pick_split.abap:128"
+        },
+        "meaning": "Keine Position kommissionierbar?"
+      },
+      {
+        "id": "e_empty",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_sd_pick_split.abap",
+          "line": 130,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_pick_split.abap:130"
+        },
+        "meaning": "Nichts kommissioniert"
+      },
+      {
+        "id": "g_test",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_sd_pick_split.abap",
+          "line": 133,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_pick_split.abap:133"
+        },
+        "meaning": "Testlauf?"
+      },
+      {
+        "id": "e_test",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_sd_pick_split.abap",
+          "line": 136,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_pick_split.abap:136"
+        },
+        "meaning": "Nur Anzahl kommissionierbarer Positionen melden"
+      },
+      {
+        "id": "wsd",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_sd_pick_split.abap",
+          "line": 142,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_pick_split.abap:142"
+        },
+        "meaning": "Kommissioniermenge = Liefermenge buchen, synchron mit Commit"
+      },
+      {
+        "id": "g_wsd",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_sd_pick_split.abap",
+          "line": 157,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_pick_split.abap:157"
+        },
+        "meaning": "Kommissionierung fehlgeschlagen?"
+      },
+      {
+        "id": "pke",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_sd_pick_split.abap",
+          "line": 163,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_sd_pick_split.abap:163"
+        },
+        "meaning": "Ergebnistext zurück"
+      }
+    ],
+    "edges": [
+      {
+        "from": "sos",
+        "to": "q",
+        "condition": "always"
+      },
+      {
+        "from": "q",
+        "to": "g0",
+        "condition": "always"
+      },
+      {
+        "from": "g0",
+        "to": "m700",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "m700",
+        "to": "e0",
+        "condition": "always"
+      },
+      {
+        "from": "g0",
+        "to": "l",
+        "condition": "else"
+      },
+      {
+        "from": "l",
+        "to": "atend",
+        "condition": "next row"
+      },
+      {
+        "from": "atend",
+        "to": "c_ps",
+        "condition": "AT END OF vstel"
+      },
+      {
+        "from": "atend",
+        "to": "l",
+        "condition": "else"
+      },
+      {
+        "from": "c_ps",
+        "to": "ps",
+        "condition": "always"
+      },
+      {
+        "from": "l",
+        "to": "wt",
+        "condition": "no more rows"
+      },
+      {
+        "from": "wt",
+        "to": "g_run",
+        "condition": "always"
+      },
+      {
+        "from": "g_run",
+        "to": "m701",
+        "condition": "gv_running > 0"
+      },
+      {
+        "from": "m701",
+        "to": "c_la",
+        "condition": "always"
+      },
+      {
+        "from": "g_run",
+        "to": "c_la",
+        "condition": "else"
+      },
+      {
+        "from": "c_la",
+        "to": "ls",
+        "condition": "always"
+      },
+      {
+        "from": "ps",
+        "to": "do",
+        "condition": "always"
+      },
+      {
+        "from": "do",
+        "to": "task",
+        "condition": "next row"
+      },
+      {
+        "from": "task",
+        "to": "cs",
+        "condition": "always"
+      },
+      {
+        "from": "task",
+        "to": "es",
+        "condition": "PERFORMING ergebnis_empfangen ON END OF TASK"
+      },
+      {
+        "from": "cs",
+        "to": "cnt",
+        "condition": "WHEN 0"
+      },
+      {
+        "from": "cnt",
+        "to": "pe",
+        "condition": "always"
+      },
+      {
+        "from": "cs",
+        "to": "wait",
+        "condition": "WHEN 1"
+      },
+      {
+        "from": "wait",
+        "to": "do",
+        "condition": "next iteration"
+      },
+      {
+        "from": "cs",
+        "to": "m702",
+        "condition": "WHEN OTHERS"
+      },
+      {
+        "from": "m702",
+        "to": "c_lok",
+        "condition": "always"
+      },
+      {
+        "from": "c_lok",
+        "to": "pls",
+        "condition": "always"
+      },
+      {
+        "from": "pls",
+        "to": "sync",
+        "condition": "always"
+      },
+      {
+        "from": "sync",
+        "to": "fs",
+        "condition": "always"
+      },
+      {
+        "from": "es",
+        "to": "recv",
+        "condition": "always"
+      },
+      {
+        "from": "recv",
+        "to": "g_recv",
+        "condition": "always"
+      },
+      {
+        "from": "g_recv",
+        "to": "dec",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g_recv",
+        "to": "dec",
+        "condition": "else"
+      },
+      {
+        "from": "dec",
+        "to": "ee",
+        "condition": "always"
+      },
+      {
+        "from": "ls",
+        "to": "hdr",
+        "condition": "always"
+      },
+      {
+        "from": "hdr",
+        "to": "l_out",
+        "condition": "always"
+      },
+      {
+        "from": "l_out",
+        "to": "o",
+        "condition": "next row"
+      },
+      {
+        "from": "o",
+        "to": "l_out",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l_out",
+        "to": "lse",
+        "condition": "no more rows"
+      },
+      {
+        "from": "fs",
+        "to": "rl",
+        "condition": "always"
+      },
+      {
+        "from": "rl",
+        "to": "enq",
+        "condition": "next row"
+      },
+      {
+        "from": "enq",
+        "to": "g_enq",
+        "condition": "always"
+      },
+      {
+        "from": "g_enq",
+        "to": "rl",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g_enq",
+        "to": "new",
+        "condition": "else"
+      },
+      {
+        "from": "new",
+        "to": "cs0",
+        "condition": "always"
+      },
+      {
+        "from": "deq1",
+        "to": "rl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "ds",
+        "to": "dss",
+        "condition": "always"
+      },
+      {
+        "from": "g_split",
+        "to": "bapi",
+        "condition": "lt_split IS NOT INITIAL AND iv_test = abap_false"
+      },
+      {
+        "from": "g_split",
+        "to": "pk",
+        "condition": "else"
+      },
+      {
+        "from": "bapi",
+        "to": "rd",
+        "condition": "always"
+      },
+      {
+        "from": "rd",
+        "to": "g_err",
+        "condition": "always"
+      },
+      {
+        "from": "g_err",
+        "to": "rb",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "rb",
+        "to": "deq2",
+        "condition": "always"
+      },
+      {
+        "from": "deq2",
+        "to": "rl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "g_err",
+        "to": "cm",
+        "condition": "else"
+      },
+      {
+        "from": "cm",
+        "to": "rm",
+        "condition": "always"
+      },
+      {
+        "from": "rm",
+        "to": "rms",
+        "condition": "always"
+      },
+      {
+        "from": "pk",
+        "to": "pks",
+        "condition": "always"
+      },
+      {
+        "from": "g_res",
+        "to": "deq3",
+        "condition": "lv_neu IS NOT INITIAL"
+      },
+      {
+        "from": "deq3",
+        "to": "rl",
+        "condition": "next iteration"
+      },
+      {
+        "from": "rl",
+        "to": "fe",
+        "condition": "no more rows"
+      },
+      {
+        "from": "cs0",
+        "to": "q_lips",
+        "condition": "always"
+      },
+      {
+        "from": "q_lips",
+        "to": "g_nf",
+        "condition": "always"
+      },
+      {
+        "from": "g_nf",
+        "to": "x_nf",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g_nf",
+        "to": "l_conv",
+        "condition": "else"
+      },
+      {
+        "from": "l_conv",
+        "to": "conv",
+        "condition": "next row"
+      },
+      {
+        "from": "conv",
+        "to": "g_conv",
+        "condition": "always"
+      },
+      {
+        "from": "g_conv",
+        "to": "x_conv",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g_conv",
+        "to": "l_conv",
+        "condition": "else"
+      },
+      {
+        "from": "l_conv",
+        "to": "ce",
+        "condition": "no more rows"
+      },
+      {
+        "from": "dss",
+        "to": "l_d",
+        "condition": "always"
+      },
+      {
+        "from": "l_d",
+        "to": "g_d",
+        "condition": "next row"
+      },
+      {
+        "from": "g_d",
+        "to": "a_sum",
+        "condition": "lv_sum = 0 OR lv_sum + ls_item-brgew <= mv_maxgw"
+      },
+      {
+        "from": "g_d",
+        "to": "l_d",
+        "condition": "else"
+      },
+      {
+        "from": "a_sum",
+        "to": "l_d",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l_d",
+        "to": "dse",
+        "condition": "no more rows"
+      },
+      {
+        "from": "rms",
+        "to": "rme",
+        "condition": "always"
+      },
+      {
+        "from": "pks",
+        "to": "l_p",
+        "condition": "always"
+      },
+      {
+        "from": "l_p",
+        "to": "q_marc",
+        "condition": "next row"
+      },
+      {
+        "from": "q_marc",
+        "to": "g_ch",
+        "condition": "always"
+      },
+      {
+        "from": "g_ch",
+        "to": "l_p",
+        "condition": "lv_xchpf = abap_true AND ls_item-charg IS INITIAL"
+      },
+      {
+        "from": "g_ch",
+        "to": "l_p",
+        "condition": "else"
+      },
+      {
+        "from": "l_p",
+        "to": "g_empty",
+        "condition": "no more rows"
+      },
+      {
+        "from": "g_empty",
+        "to": "e_empty",
+        "condition": "lt_vbpok IS INITIAL"
+      },
+      {
+        "from": "g_empty",
+        "to": "g_test",
+        "condition": "else"
+      },
+      {
+        "from": "g_test",
+        "to": "e_test",
+        "condition": "iv_test = abap_true"
+      },
+      {
+        "from": "g_test",
+        "to": "wsd",
+        "condition": "else"
+      },
+      {
+        "from": "wsd",
+        "to": "g_wsd",
+        "condition": "always"
+      },
+      {
+        "from": "g_wsd",
+        "to": "pke",
+        "condition": "sy-subrc <> 0 OR lv_error = abap_true"
+      },
+      {
+        "from": "g_wsd",
+        "to": "pke",
+        "condition": "else"
+      },
+      {
+        "from": "pe",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "lse",
+        "to": "e_end",
+        "condition": "always"
+      },
+      {
+        "from": "ple",
+        "to": "pe",
+        "condition": "always"
+      },
+      {
+        "from": "fe",
+        "to": "ple",
+        "condition": "always"
+      },
+      {
+        "from": "dse",
+        "to": "g_split",
+        "condition": "always"
+      },
+      {
+        "from": "rme",
+        "to": "pk",
+        "condition": "always"
+      },
+      {
+        "from": "e_empty",
+        "to": "g_res",
+        "condition": "always"
+      },
+      {
+        "from": "e_test",
+        "to": "g_res",
+        "condition": "always"
+      },
+      {
+        "from": "pke",
+        "to": "g_res",
+        "condition": "always"
+      },
+      {
+        "from": "ce",
+        "to": "ds",
+        "condition": "always"
+      },
+      {
+        "from": "x_nf",
+        "to": "deq1",
+        "condition": "CATCH zcx_sd_pick INTO DATA(lx_pick)"
+      },
+      {
+        "from": "x_conv",
+        "to": "deq1",
+        "condition": "CATCH zcx_sd_pick INTO DATA(lx_pick)"
+      },
+      {
+        "from": "task",
+        "to": "fs",
+        "condition": "always"
+      },
+      {
+        "from": "g_res",
+        "to": "deq3",
+        "condition": "lt_split IS NOT INITIAL"
+      },
+      {
+        "from": "g_res",
+        "to": "deq3",
+        "condition": "else"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zcl_sd_pick_split.abap:113 — kein Fachsatz „die Charge wird im Lager ermittelt“: die Position wird übersprungen und bleibt unkommissioniert, der Kommentar im Code beschreibt nichts, was geschieht",
+    "z_sd_pick_split_rfc.abap:76 — kein Fachsatz „im Testlauf werden nur die nach dem Split verbleibenden Positionen betrachtet“: im Testlauf wird nicht ausgelagert, gezählt werden alle Positionen",
+    "zcl_sd_pick_split.abap:83 — kein Fachsatz „keine Lieferung überschreitet das Maximalgewicht“: eine erste Position über dem Maximum bleibt, und die neue Lieferung wird nicht erneut geprüft",
+    "zsd_pick_split.abap:63 — kein Fachsatz „die Liste enthält alle Lieferungen“: nach 10 Minuten wird ohne ausstehende Pakete ausgegeben"
+  ],
+  "processDescription": "Der Report läuft nachts als Job mit Versandstellen, Lieferterminen, einem LKW-Maximalgewicht, der Zahl paralleler Pakete, einer Servergruppe und dem Testlaufkennzeichen. Er liest nicht kommissionierte Auslieferungen ohne vollständigen Warenausgang und endet mit einem Hinweis, wenn es keine gibt. Je Versandstelle startet er ein Paket asynchron in der Servergruppe; fehlen freie Prozesse, wartet er kurz und versucht es erneut, bei Kommunikationsfehlern verarbeitet er das Paket lokal. Im Paket wird jede Lieferung gesperrt, ihre Positionen werden mit Gewicht in kg geladen, und in Positionsreihenfolge wird bestimmt, welche Positionen das Maximalgewicht überschreiten würden. Im Echtlauf werden diese per BAPI in eine neue Lieferung ausgelagert; ein Fehler verwirft den Split und überspringt die Lieferung. Danach werden die verbleibenden Positionen mit voller Liefermenge kommissioniert, außer chargenpflichtigen Positionen ohne Charge; im Testlauf werden nur Anzahlen gemeldet. Jede Lieferung erhält eine Ergebniszeile und wird entsperrt. Der Report wartet höchstens zehn Minuten auf alle Pakete und gibt dann eine farbige Ergebnisliste aus."
+}

@@ -1,0 +1,124 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten e_si (neu)",
+      "before": "—",
+      "after": "end zhr_emp_export.abap:23 „Selektionsbild vorbelegt“",
+      "why": "Ende des INITIALIZATION-Blocks fehlte (implizites Ende auf der letzten Anweisung Z. 23).",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten af",
+      "before": "action zhr_emp_export.abap:23 „Dateiname mit Tagesdatum vorschlagen“",
+      "after": "entfernt; überbrückt: si->e_si [always]",
+      "why": "CONCATENATE … INTO p_file (Z. 23) ist eine reine Zuweisung des Vorschlagswerts; laut Autorenbrief kein Knoten. Inhalt bleibt in Fachsatz B01.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Knoten a_full",
+      "before": "action zhr_emp_export_f01.abap:35 „Alle Mitarbeiter übernehmen“",
+      "after": "entfernt; überbrückt: g_se2->e_se2 [gv_last_run IS INITIAL]",
+      "why": "gt_pernr = lt_tmp (f01:35) ist eine reine Tabellenzuweisung; laut Autorenbrief kein Knoten. Inhalt bleibt in Fachsatz B05.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Knoten a_delta",
+      "before": "action zhr_emp_export_f01.abap:59 „Nur geänderte Mitarbeiter übernehmen“",
+      "after": "entfernt; überbrückt: r5->e_se [always]",
+      "why": "gt_pernr = lt_chg (f01:59) ist eine reine Tabellenzuweisung; laut Autorenbrief kein Knoten. Inhalt bleibt in Fachsatz B06.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Knoten e_menq (neu)",
+      "before": "—",
+      "after": "end zhr_emp_export.abap:35 „Lauf bricht ab, weil ein Export läuft“",
+      "why": "MESSAGE e050 in START-OF-SELECTION beendet den Lauf; Konvention output + end auf derselben Zeile. menq hatte keine ausgehende Kante.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten e_main (neu)",
+      "before": "—",
+      "after": "end zhr_emp_export.abap:65 „Lauf endet nach Freigabe der Sperre“",
+      "why": "Implizites Ende von START-OF-SELECTION fehlte; deq hatte keine ausgehende Kante.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten r_adr (neu)",
+      "before": "—",
+      "after": "read zhr_emp_export_f01.abap:170 „Ständige Anschrift nachschlagen“",
+      "why": "READ TABLE lt_p0006 (f01:170) ist eine Nachschlage-Entscheidung: g_adr wertet ihr sy-subrc aus (Brief: READ TABLE, wenn fachlich eine Nachschlage-Entscheidung; gleiches Muster wie beim Autor andernorts).",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kanten a_d/a_u -> g_adr",
+      "before": "a_d->g_adr, a_u->g_adr [always]",
+      "after": "a_d->r_adr, a_u->r_adr, r_adr->g_adr [always]",
+      "why": "Neuer Knoten r_adr zwischen Satzart und Anschriftsprüfung.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten clast",
+      "before": "clast->csel [always]",
+      "after": "e_lr->csel [always]",
+      "why": "Konvention Aufrufe im Fall: Aufruf → Start des Ziels, end des Ziels → nächster Schritt (je Aufrufer eine Rückkante); die Direktkante Aufruf → Folgeknoten entfällt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten csel",
+      "before": "csel->gemp [always]",
+      "after": "e_se1->gemp [always], e_se2->gemp [always], e_se->gemp [always]",
+      "why": "Konvention Aufrufe im Fall: Aufruf → Start des Ziels, end des Ziels → nächster Schritt (je Aufrufer eine Rückkante); die Direktkante Aufruf → Folgeknoten entfällt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten cread",
+      "before": "cread->l [next iteration]",
+      "after": "e_au->l [next iteration], e_adr->l [next iteration], e_re->l [next iteration]",
+      "why": "Konvention Aufrufe im Fall: Aufruf → Start des Ziels, end des Ziels → nächster Schritt (je Aufrufer eine Rückkante); die Direktkante Aufruf → Folgeknoten entfällt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten cprev",
+      "before": "cprev->etest [always]",
+      "after": "e_pv->etest [always]",
+      "why": "Konvention Aufrufe im Fall: Aufruf → Start des Ziels, end des Ziels → nächster Schritt (je Aufrufer eine Rückkante); die Direktkante Aufruf → Folgeknoten entfällt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten cfile",
+      "before": "cfile->crfc [always]",
+      "after": "e_op->crfc [always], e_wf->crfc [always]",
+      "why": "Konvention Aufrufe im Fall: Aufruf → Start des Ziels, end des Ziels → nächster Schritt (je Aufrufer eine Rückkante); die Direktkante Aufruf → Folgeknoten entfällt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten crfc",
+      "before": "crfc->clog [always]",
+      "after": "e_ts0->clog [always], e_ts->clog [always]",
+      "why": "Konvention Aufrufe im Fall: Aufruf → Start des Ziels, end des Ziels → nächster Schritt (je Aufrufer eine Rückkante); die Direktkante Aufruf → Folgeknoten entfällt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten clog",
+      "before": "clog->gerr [always]",
+      "after": "e_wl->gerr [always]",
+      "why": "Konvention Aufrufe im Fall: Aufruf → Start des Ziels, end des Ziels → nächster Schritt (je Aufrufer eine Rückkante); die Direktkante Aufruf → Folgeknoten entfällt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten cmail",
+      "before": "cmail->cw [always]",
+      "after": "e_ml->cw [always]",
+      "why": "Konvention Aufrufe im Fall: Aufruf → Start des Ziels, end des Ziels → nächster Schritt (je Aufrufer eine Rückkante); die Direktkante Aufruf → Folgeknoten entfällt.",
+      "category": "Kante"
+    }
+  ],
+  "doubts": [],
+  "notes": [
+    "a_d/a_u (f01:155/157) bleiben: die Satzart legt fachlich fest, ob der Mitarbeiter als Austritt geliefert wird, und steuert das Gateway g_adr sowie die Deaktivierung in der Zeiterfassung.",
+    "a_fok (f02:50) und a_rok (f02:76) bleiben: sie legen den Erfolg von Datei bzw. RFC fest, auf den g_wl in WRITE_LOG verzweigt.",
+    "a_s/a_e (f03:18/20) bleiben: der Laufstatus S bestimmt, welcher Lauf beim nächsten Delta als Stichtag gilt (GET_LAST_RUN liest nur Status S)."
+  ]
+}

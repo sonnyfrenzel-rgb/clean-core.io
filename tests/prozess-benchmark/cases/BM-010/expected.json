@@ -1,0 +1,662 @@
+{
+  "id": "BM-010",
+  "title": "Auftragssperre bei überfälligen Posten: BSID summieren, KNA1 direkt ändern",
+  "classes": [
+    "K01",
+    "K12",
+    "K18"
+  ],
+  "classic_level": "D",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "BSID",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 34,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:34"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "KNA1",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 49,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:49"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ENQUEUE_EXKNA1",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 58,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:58"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "KNA1",
+      "owner": "SAP",
+      "usage": "write",
+      "anchor": {
+        "file": "source.abap",
+        "line": 69,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:69"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "DEQUEUE_EXKNA1",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 70,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:70"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-010-B01",
+      "text": "Es werden die offenen Soll-Posten ohne Sonderhauptbuchkennzeichen der ausgewählten Buchungskreise und Kunden gelesen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:34"
+        }
+      ]
+    },
+    {
+      "id": "BM-010-B02",
+      "text": "Nur Posten, deren Fälligkeit (Basisdatum plus Skontotage 1) mehr als die eingegebene Anzahl Tage zurückliegt, werden je Kunde aufsummiert.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:41"
+        },
+        {
+          "file": "source.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:44"
+        }
+      ]
+    },
+    {
+      "id": "BM-010-B03",
+      "text": "Kunden, deren überfällige Summe unter dem Mindestbetrag liegt, bleiben unberührt.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:48"
+        }
+      ]
+    },
+    {
+      "id": "BM-010-B04",
+      "text": "Hat der Kunde bereits eine Auftragssperre, wird das nur protokolliert.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:49"
+        },
+        {
+          "file": "source.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:50"
+        },
+        {
+          "file": "source.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:51"
+        }
+      ]
+    },
+    {
+      "id": "BM-010-B05",
+      "text": "Im Testlauf werden die Sperrkandidaten mit Betrag nur aufgelistet.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:54"
+        },
+        {
+          "file": "source.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:55"
+        }
+      ]
+    },
+    {
+      "id": "BM-010-B06",
+      "text": "Im Echtlauf wird der Kundenstamm gesperrt; ist er gerade in Bearbeitung, wird der Kunde übersprungen und der Bearbeiter protokolliert.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:58"
+        },
+        {
+          "file": "source.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:65"
+        },
+        {
+          "file": "source.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:66"
+        }
+      ]
+    },
+    {
+      "id": "BM-010-B07",
+      "text": "Sonst erhält der Kunde die zentrale Auftragssperre 07, die Kundensperre wird wieder freigegeben und der Vorgang protokolliert.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:69"
+        },
+        {
+          "file": "source.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:70"
+        },
+        {
+          "file": "source.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:73"
+        }
+      ]
+    },
+    {
+      "id": "BM-010-B08",
+      "text": "Am Ende werden alle gesetzten Sperren festgeschrieben.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:76"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:32"
+        },
+        "meaning": "Jobstart"
+      },
+      {
+        "id": "q1",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:34"
+        },
+        "meaning": "Offene Soll-Posten der Kunden lesen"
+      },
+      {
+        "id": "l1",
+        "type": "loop",
+        "anchor": {
+          "file": "source.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:40"
+        },
+        "meaning": "Je offener Posten"
+      },
+      {
+        "id": "c1",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:41"
+        },
+        "meaning": "Mehr als p_tage überfällig?"
+      },
+      {
+        "id": "col",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:44"
+        },
+        "meaning": "Überfälligen Betrag je Kunde summieren"
+      },
+      {
+        "id": "l2",
+        "type": "loop",
+        "anchor": {
+          "file": "source.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:47"
+        },
+        "meaning": "Je Kunde"
+      },
+      {
+        "id": "c2",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:48"
+        },
+        "meaning": "Mindestbetrag erreicht?"
+      },
+      {
+        "id": "q2",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:49"
+        },
+        "meaning": "Bestehende Auftragssperre lesen"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:50"
+        },
+        "meaning": "Schon gesperrt?"
+      },
+      {
+        "id": "o1",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:51"
+        },
+        "meaning": "Bereits gesperrt protokollieren"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:54"
+        },
+        "meaning": "Testlauf?"
+      },
+      {
+        "id": "o2",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:55"
+        },
+        "meaning": "Sperrkandidat im Testlauf protokollieren"
+      },
+      {
+        "id": "enq",
+        "type": "lock",
+        "anchor": {
+          "file": "source.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:58"
+        },
+        "meaning": "Kundenstamm sperren"
+      },
+      {
+        "id": "g3",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:65"
+        },
+        "meaning": "Sperre erhalten?"
+      },
+      {
+        "id": "o3",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:66"
+        },
+        "meaning": "Kunde in Bearbeitung protokollieren"
+      },
+      {
+        "id": "w",
+        "type": "write",
+        "anchor": {
+          "file": "source.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:69"
+        },
+        "meaning": "Auftragssperre 07 im Kundenstamm setzen"
+      },
+      {
+        "id": "deq",
+        "type": "lock",
+        "anchor": {
+          "file": "source.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:70"
+        },
+        "meaning": "Kundenstamm entsperren"
+      },
+      {
+        "id": "o4",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:73"
+        },
+        "meaning": "Gesetzte Sperre protokollieren"
+      },
+      {
+        "id": "cm",
+        "type": "transaction",
+        "anchor": {
+          "file": "source.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:76"
+        },
+        "meaning": "Gesetzte Sperren festschreiben"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:76"
+        },
+        "meaning": "Job beendet"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "q1",
+        "condition": "always"
+      },
+      {
+        "from": "q1",
+        "to": "l1",
+        "condition": "always"
+      },
+      {
+        "from": "l1",
+        "to": "c1",
+        "condition": "next row"
+      },
+      {
+        "from": "c1",
+        "to": "col",
+        "condition": "gs_op-zfbdt + gs_op-zbd1t < sy-datum - p_tage"
+      },
+      {
+        "from": "c1",
+        "to": "l1",
+        "condition": "else"
+      },
+      {
+        "from": "col",
+        "to": "l1",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l1",
+        "to": "l2",
+        "condition": "no more rows"
+      },
+      {
+        "from": "l2",
+        "to": "c2",
+        "condition": "next row"
+      },
+      {
+        "from": "c2",
+        "to": "q2",
+        "condition": "gs_sum-betrag >= p_minbt"
+      },
+      {
+        "from": "c2",
+        "to": "l2",
+        "condition": "else"
+      },
+      {
+        "from": "q2",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "o1",
+        "condition": "gv_aufsd IS NOT INITIAL"
+      },
+      {
+        "from": "o1",
+        "to": "l2",
+        "condition": "next iteration"
+      },
+      {
+        "from": "g1",
+        "to": "g2",
+        "condition": "else"
+      },
+      {
+        "from": "g2",
+        "to": "o2",
+        "condition": "p_test = abap_true"
+      },
+      {
+        "from": "o2",
+        "to": "l2",
+        "condition": "next iteration"
+      },
+      {
+        "from": "g2",
+        "to": "enq",
+        "condition": "else"
+      },
+      {
+        "from": "enq",
+        "to": "g3",
+        "condition": "always"
+      },
+      {
+        "from": "g3",
+        "to": "o3",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "o3",
+        "to": "l2",
+        "condition": "next iteration"
+      },
+      {
+        "from": "g3",
+        "to": "w",
+        "condition": "else"
+      },
+      {
+        "from": "w",
+        "to": "deq",
+        "condition": "always"
+      },
+      {
+        "from": "deq",
+        "to": "o4",
+        "condition": "always"
+      },
+      {
+        "from": "o4",
+        "to": "l2",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l2",
+        "to": "cm",
+        "condition": "no more rows"
+      },
+      {
+        "from": "cm",
+        "to": "e",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "source.abap:34 — kein Fachsatz „Gutschriften und Zahlungen werden gegengerechnet“: es werden nur Soll-Posten (SHKZG = 'S') gelesen",
+    "source.abap:44 — kein Fachsatz „je Buchungskreis und Währung summiert“: summiert wird nur je Kunde über alle ausgewählten Buchungskreise in Hauswährungsbeträgen",
+    "source.abap:69 — kein Fachsatz „die Sperre wird mit Änderungsbeleg im Business Partner gesetzt“: das UPDATE schreibt direkt in KNA1",
+    "gesamte Scheibe — kein Fachsatz „Kunden werden wieder entsperrt, wenn die Posten bezahlt sind“: der Report setzt nur Sperren"
+  ],
+  "processDescription": "Der Report läuft täglich nachts als Job, mit Buchungskreisen, optionalen Kunden, Überfälligkeitstagen, Mindestbetrag und Testlaufkennzeichen. Er liest die offenen Soll-Posten der Kunden ohne Sonderhauptbuchvorgänge. Posten, deren Fälligkeit mehr als die eingegebenen Tage zurückliegt, summiert er je Kunde. Für jeden Kunden, dessen Summe den Mindestbetrag erreicht, prüft er die zentrale Auftragssperre; ist schon eine gesetzt, protokolliert er das. Im Testlauf listet er die Kandidaten nur auf. Im Echtlauf sperrt er den Kundenstamm, überspringt den Kunden mit Protokoll, wenn dieser gerade bearbeitet wird, und setzt sonst die Auftragssperre 07 direkt im Kundenstamm, gibt die Sperre frei und protokolliert. Am Ende schreibt er alle Änderungen mit einem COMMIT fest. Gutschriften werden nicht gegengerechnet und Beträge verschiedener Buchungskreise werden ohne Währungsumrechnung addiert."
+}

@@ -1,0 +1,23 @@
+{
+  "id": "BM-070",
+  "title": "Mehrstufige Stücklistenprüfung der Lagerkomponenten (Klasse)",
+  "domain": "PP / PM / QM — Produktion, Instandhaltung, Qualität",
+  "band": "mittel",
+  "loc": 100,
+  "constructs": [
+    "Globale Klasse",
+    "CS_BOM_EXPL_MAT_V2",
+    "RAISE EXCEPTION TYPE",
+    "LOOP AT … WHERE",
+    "SELECT SINGLE MARC/MARA",
+    "IF/ELSEIF",
+    "funktionale Methode",
+    "Inline-Deklaration"
+  ],
+  "scenario": "Prüfklasse der Arbeitsvorbereitung, die vor der Freigabe neuer Produktvarianten die mehrstufige Stückliste auf nicht angelegte, gelöschte, nicht disponierte oder gesperrte Komponenten untersucht; aufgerufen aus Workflow und Report.",
+  "s4_issues": [
+    "Direktzugriff MARC/MARA statt CDS I_ProductPlant / I_Product",
+    "CS_BOM_EXPL_MAT_V2 nicht für Cloud freigegeben",
+    "Materialstatus-Werte hart codiert"
+  ]
+}

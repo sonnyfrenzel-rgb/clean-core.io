@@ -1,0 +1,24 @@
+{
+  "id": "BM-046",
+  "title": "Mahnsperre auf offene Posten mit offenem Klärungsfall setzen",
+  "domain": "FI/CO / Record-to-Report",
+  "band": "mittel",
+  "loc": 109,
+  "constructs": [
+    "REPORT",
+    "SELECT-OPTIONS",
+    "SELECT FOR ALL ENTRIES",
+    "READ TABLE BINARY SEARCH",
+    "CONTINUE",
+    "FI_ITEMS_MASS_CHANGE",
+    "UPDATE Z-Tabelle",
+    "COMMIT WORK",
+    "Testlauf-Schalter"
+  ],
+  "scenario": "Vor dem Mahnlauf F150 lässt die Debitorenbuchhaltung strittige Posten (Reklamation im Klärungsfall-Tool) automatisch mahnsperren, damit keine Mahnung an reklamierende Kunden geht.",
+  "s4_issues": [
+    "BSID ist in S/4HANA Kompatibilitäts-View",
+    "FI_ITEMS_MASS_CHANGE arbeitet intern per Batch-Input auf FB02 und ist nicht freigegeben",
+    "Z-Tabelle ZFI_KLAERFALL statt Standard-Klärungsfall (FSCM Dispute Management)"
+  ]
+}

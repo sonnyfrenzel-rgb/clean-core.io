@@ -1,0 +1,94 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten re_e",
+      "before": "—",
+      "after": "end zcl_pm_breakdown_processor.abap:284 „Ereignis ausgelöst, Rückkehr“",
+      "why": "Konvention: jede auslaufende METHOD hat einen eigenen end-Knoten auf ENDMETHOD; Rückkehr zum Aufrufer läuft über diesen",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kante re_c→p_dq2",
+      "before": "re_c→p_dq2 [always]",
+      "after": "re_c→re_e [always]",
+      "why": "Konvention: jede auslaufende METHOD hat einen eigenen end-Knoten auf ENDMETHOD; Rückkehr zum Aufrufer läuft über diesen",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante re_e→p_dq2",
+      "before": "—",
+      "after": "[always]",
+      "why": "Rückkante vom Methodenende nach raise_event( )",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante co_x→p_dq1",
+      "before": "co_x→p_dq1 [always]",
+      "after": "co_x→p_dq1 [zcx_pm_breakdown]",
+      "why": "Nachtrag zu den Konventionen: Kante vom RAISE-end in den CATCH-Zweig des Aufrufers trägt den Ausnahmenamen als Bedingung",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante rn_x1→w_gl",
+      "before": "rn_x1→w_gl [always]",
+      "after": "rn_x1→w_gl [zcx_pm_breakdown]",
+      "why": "Nachtrag zu den Konventionen: Kante vom RAISE-end in den CATCH-Zweig des Aufrufers trägt den Ausnahmenamen als Bedingung",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante rn_x2→w_gl",
+      "before": "rn_x2→w_gl [always]",
+      "after": "rn_x2→w_gl [zcx_pm_breakdown]",
+      "why": "Nachtrag zu den Konventionen: Kante vom RAISE-end in den CATCH-Zweig des Aufrufers trägt den Ausnahmenamen als Bedingung",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante p_x1→w_gl",
+      "before": "p_x1→w_gl [always]",
+      "after": "p_x1→w_gl [zcx_pm_breakdown]",
+      "why": "Nachtrag zu den Konventionen: Kante vom RAISE-end in den CATCH-Zweig des Aufrufers trägt den Ausnahmenamen als Bedingung",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante p_x2→w_gl",
+      "before": "p_x2→w_gl [always]",
+      "after": "p_x2→w_gl [zcx_pm_breakdown]",
+      "why": "Nachtrag zu den Konventionen: Kante vom RAISE-end in den CATCH-Zweig des Aufrufers trägt den Ausnahmenamen als Bedingung",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante rn_x1→r_err",
+      "before": "rn_x1→r_err [always]",
+      "after": "rn_x1→r_err [zcx_pm_breakdown]",
+      "why": "Nachtrag zu den Konventionen: Kante vom RAISE-end in den CATCH-Zweig des Aufrufers trägt den Ausnahmenamen als Bedingung",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante rn_x2→r_err",
+      "before": "rn_x2→r_err [always]",
+      "after": "rn_x2→r_err [zcx_pm_breakdown]",
+      "why": "Nachtrag zu den Konventionen: Kante vom RAISE-end in den CATCH-Zweig des Aufrufers trägt den Ausnahmenamen als Bedingung",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante p_x1→r_err",
+      "before": "p_x1→r_err [always]",
+      "after": "p_x1→r_err [zcx_pm_breakdown]",
+      "why": "Nachtrag zu den Konventionen: Kante vom RAISE-end in den CATCH-Zweig des Aufrufers trägt den Ausnahmenamen als Bedingung",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante p_x2→r_err",
+      "before": "p_x2→r_err [always]",
+      "after": "p_x2→r_err [zcx_pm_breakdown]",
+      "why": "Nachtrag zu den Konventionen: Kante vom RAISE-end in den CATCH-Zweig des Aufrufers trägt den Ausnahmenamen als Bedingung",
+      "category": "Kante"
+    }
+  ],
+  "doubts": [
+    "zcl_pm_breakdown_processor.abap:82 — Sperrbaustein ENQUEUE_EIQMEL (vom Autor als unverifiziert gemeldet) halte ich für den Standard-Sperrbaustein der Meldung (Sperrobjekt EIQMEL, Parameter QMNUM); nicht gegen ein System geprüft.",
+    "Ausnahme-Enden (RAISE EXCEPTION in read_notification/process) führen per Kante direkt in die CATCH-Behandler beider Aufrufer (w_gl, r_err); das ist semantisch richtig, weil process die Ausnahmen aus read_notification und der Sperre nicht selbst fängt; die Ausnahme aus create_order fängt process selbst (co_x→p_dq1) und reicht sie weiter (p_x2). Keine CLEANUP-Blöcke vorhanden."
+  ]
+}

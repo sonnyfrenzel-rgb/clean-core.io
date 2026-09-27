@@ -1,0 +1,105 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten e_fx (neu)",
+      "before": "—",
+      "after": "end zcvi_precheck_f01.abap:85 „Bereinigung beendet“",
+      "why": "Implizites Ende von FORM APPLY_FIXES fehlte (Konvention: end auf ENDFORM).",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten e_alm (neu)",
+      "before": "—",
+      "after": "end zcvi_precheck_f01.abap:101 „Report bricht bei ALV-Fehler ab“",
+      "why": "MESSAGE … TYPE E beendet den Lauf; Konvention output + end auf derselben Zeile. m_alv hatte keine ausgehende Kante.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten e_al (neu)",
+      "before": "—",
+      "after": "end zcvi_precheck_f01.abap:105 „Anzeige beendet“",
+      "why": "Implizites Ende von FORM DISPLAY_ALV fehlte; alv_d hatte keine ausgehende Kante.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Knoten e_main (neu)",
+      "before": "—",
+      "after": "end zcvi_precheck.abap:83 „Report endet nach der Anzeige“",
+      "why": "Implizites Ende von START-OF-SELECTION (letzte Anweisung Z. 83) fehlte; Rückkehr aus DISPLAY_ALV braucht ein Ziel.",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kanten cc",
+      "before": "cc->ca [always]",
+      "after": "e_ct1->ca [always], e_ct->ca [always]",
+      "why": "Konvention Aufrufe im Fall: Aufruf → Start des Ziels, end des Ziels → nächster Schritt (je Aufrufer eine Rückkante); die Direktkante Aufruf → Folgeknoten entfällt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten ca",
+      "before": "ca->cv [always]",
+      "after": "e_ad->cv [always]",
+      "why": "Konvention Aufrufe im Fall: Aufruf → Start des Ziels, end des Ziels → nächster Schritt (je Aufrufer eine Rückkante); die Direktkante Aufruf → Folgeknoten entfällt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten cv",
+      "before": "cv->l [next iteration]",
+      "after": "e_ac->l [next iteration]",
+      "why": "Konvention Aufrufe im Fall: Aufruf → Start des Ziels, end des Ziels → nächster Schritt (je Aufrufer eine Rückkante); die Direktkante Aufruf → Folgeknoten entfällt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten cf",
+      "before": "cf->cd [always]",
+      "after": "e_fx->cd [always]",
+      "why": "Konvention Aufrufe im Fall: Aufruf → Start des Ziels, end des Ziels → nächster Schritt (je Aufrufer eine Rückkante); die Direktkante Aufruf → Folgeknoten entfällt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten cd",
+      "before": "—",
+      "after": "e_al->e_main [always]",
+      "why": "Konvention Aufrufe im Fall: Aufruf → Start des Ziels, end des Ziels → nächster Schritt (je Aufrufer eine Rückkante); die Direktkante Aufruf → Folgeknoten entfällt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten i1",
+      "before": "i1->e_ct1 [always]",
+      "after": "e_ai->e_ct1 [always]",
+      "why": "Konvention Aufrufe im Fall: Aufruf → Start des Ziels, end des Ziels → nächster Schritt (je Aufrufer eine Rückkante); die Direktkante Aufruf → Folgeknoten entfällt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten i2",
+      "before": "i2->g_ct3 [always]",
+      "after": "e_ai->g_ct3 [always]",
+      "why": "Konvention Aufrufe im Fall: Aufruf → Start des Ziels, end des Ziels → nächster Schritt (je Aufrufer eine Rückkante); die Direktkante Aufruf → Folgeknoten entfällt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten i3",
+      "before": "i3->e_ct [always]",
+      "after": "e_ai->e_ct [always]",
+      "why": "Konvention Aufrufe im Fall: Aufruf → Start des Ziels, end des Ziels → nächster Schritt (je Aufrufer eine Rückkante); die Direktkante Aufruf → Folgeknoten entfällt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten i4",
+      "before": "i4->e_ad [always]",
+      "after": "e_ai->e_ad [always]",
+      "why": "Konvention Aufrufe im Fall: Aufruf → Start des Ziels, end des Ziels → nächster Schritt (je Aufrufer eine Rückkante); die Direktkante Aufruf → Folgeknoten entfällt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kanten i5",
+      "before": "i5->e_ac [always]",
+      "after": "e_ai->e_ac [always]",
+      "why": "Konvention Aufrufe im Fall: Aufruf → Start des Ziels, end des Ziels → nächster Schritt (je Aufrufer eine Rückkante); die Direktkante Aufruf → Folgeknoten entfällt.",
+      "category": "Kante"
+    }
+  ],
+  "doubts": []
+}

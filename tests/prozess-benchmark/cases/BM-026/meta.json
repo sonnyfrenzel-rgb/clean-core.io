@@ -1,0 +1,22 @@
+{
+  "id": "BM-026",
+  "title": "Freigegebene Bestellanforderungen je Lieferant in Bestellungen umsetzen (BAPI_PO_CREATE1)",
+  "domain": "MM / Procure-to-Pay, Bestandsführung, Lager (WM/EWM)",
+  "band": "mittel",
+  "loc": 95,
+  "constructs": [
+    "REPORT mit Testlauf",
+    "SELECT *",
+    "Gruppierung über SORTED TABLE",
+    "BAPI_PO_CREATE1",
+    "BAPI_TRANSACTION_COMMIT/ROLLBACK",
+    "CONTINUE",
+    "LEAVE LIST-PROCESSING"
+  ],
+  "scenario": "Automatische Bestellerzeugung als Ersatz für ME59N, weil der Kunde feste Kopfwerte braucht; läuft nachts als Job im Werk.",
+  "s4_issues": [
+    "EBAN-Lesen bleibt möglich, Nachfolger I_PurchaseRequisitionItemAPI01",
+    "Harter Buchungskreis und Einkäufergruppe",
+    "Nur Typ E wird ausgewertet, Typ A nicht"
+  ]
+}

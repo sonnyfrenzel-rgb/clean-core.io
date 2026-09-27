@@ -1,0 +1,130 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten g4 (zsd_mass_va02_f02.abap:58)",
+      "before": "gateway „Position erledigt?“ mit g3->g4 [else], g4->ce05 [lv_gbsta = 'C'], g4->l [else]",
+      "after": "entfällt; g3->ce05 [lv_gbsta = 'C'], g3->l [else]",
+      "why": "Vereinheitlichte Konvention: ELSEIF ist eine Bedingungskante des ursprünglichen Gateways, kein eigenes Gateway.",
+      "category": "überflüssiger Knoten"
+    },
+    {
+      "where": "Kante c_read→g_empty",
+      "before": "c_read->g_empty [always]",
+      "after": "entfällt; e_open->g_empty [always], e_upl->g_empty [always], de->g_empty [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks; Rückkante vom end des Blocks → Folgeschritt; keine Direktkante Aufruf → Folgeschritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante c_logc→c_chk",
+      "before": "c_logc->c_chk [always]",
+      "after": "entfällt; lce->c_chk [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks; Rückkante vom end des Blocks → Folgeschritt; keine Direktkante Aufruf → Folgeschritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante c_chk→c_exe",
+      "before": "c_chk->c_exe [always]",
+      "after": "entfällt; ze->c_exe [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks; Rückkante vom end des Blocks → Folgeschritt; keine Direktkante Aufruf → Folgeschritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante c_exe→c_logs",
+      "before": "c_exe->c_logs [always]",
+      "after": "entfällt; xe->c_logs [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks; Rückkante vom end des Blocks → Folgeschritt; keine Direktkante Aufruf → Folgeschritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante c_logs→c_show",
+      "before": "c_logs->c_show [always]",
+      "after": "entfällt; lse->c_show [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks; Rückkante vom end des Blocks → Folgeschritt; keine Direktkante Aufruf → Folgeschritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante c_show→e_end",
+      "before": "c_show->e_end [always]",
+      "after": "entfällt; e_alv->e_end [always], re->e_end [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks; Rückkante vom end des Blocks → Folgeschritt; keine Direktkante Aufruf → Folgeschritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante c_bdc→ct",
+      "before": "c_bdc->ct [always]",
+      "after": "entfällt; be->ct [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks; Rückkante vom end des Blocks → Folgeschritt; keine Direktkante Aufruf → Folgeschritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante ce01→l",
+      "before": "ce01->l [next iteration]",
+      "after": "entfällt; fe->l [next iteration]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks; Rückkante vom end des Blocks → Folgeschritt; keine Direktkante Aufruf → Folgeschritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante ce07→l2",
+      "before": "ce07->l2 [next iteration]",
+      "after": "entfällt; fe->l2 [next iteration]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks; Rückkante vom end des Blocks → Folgeschritt; keine Direktkante Aufruf → Folgeschritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante ce02→l",
+      "before": "ce02->l [next iteration]",
+      "after": "entfällt; Rückkehr über fe->l [next iteration] (gemeinsame Rückkante aller Aufrufer in dieser Schleife)",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks; Rückkante vom end des Blocks → Folgeschritt; keine Direktkante.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante ce03→l",
+      "before": "ce03->l [next iteration]",
+      "after": "entfällt; Rückkehr über fe->l [next iteration] (gemeinsame Rückkante aller Aufrufer in dieser Schleife)",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks; Rückkante vom end des Blocks → Folgeschritt; keine Direktkante.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante ce04→l",
+      "before": "ce04->l [next iteration]",
+      "after": "entfällt; Rückkehr über fe->l [next iteration] (gemeinsame Rückkante aller Aufrufer in dieser Schleife)",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks; Rückkante vom end des Blocks → Folgeschritt; keine Direktkante.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante ce05→l",
+      "before": "ce05->l [next iteration]",
+      "after": "entfällt; Rückkehr über fe->l [next iteration] (gemeinsame Rückkante aller Aufrufer in dieser Schleife)",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks; Rückkante vom end des Blocks → Folgeschritt; keine Direktkante.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante ce06→l",
+      "before": "ce06->l [next iteration]",
+      "after": "entfällt; Rückkehr über fe->l [next iteration] (gemeinsame Rückkante aller Aufrufer in dieser Schleife)",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks; Rückkante vom end des Blocks → Folgeschritt; keine Direktkante.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante cz→l2",
+      "before": "cz->l2 [next iteration]",
+      "after": "entfällt; Rückkehr über fe->l2 [next iteration] (gemeinsame Rückkante aller Aufrufer in dieser Schleife)",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks; Rückkante vom end des Blocks → Folgeschritt; keine Direktkante.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante ce08→l2",
+      "before": "ce08->l2 [next iteration]",
+      "after": "entfällt; Rückkehr über fe->l2 [next iteration] (gemeinsame Rückkante aller Aufrufer in dieser Schleife)",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks; Rückkante vom end des Blocks → Folgeschritt; keine Direktkante.",
+      "category": "Kante"
+    }
+  ],
+  "doubts": [
+    "DO ohne Zählschleife (zsd_mass_va02_f01.abap:22) wird nur über EXIT verlassen: die Ausgangskante g_eof->lp heißt wörtlich „sy-subrc <> 0“ und führt nach ENDDO/CLOSE DATASET/DELETE zur Zeilenschleife lp — semantisch richtig; die Validator-Warnung ist beabsichtigt.",
+    "INITIALIZATION p_mode = 'N' ist ein reiner UI-Default (identisch mit DEFAULT 'N') und bleibt ohne Knoten.",
+    "Falle „Sperre vor VA02 freigegeben“ geprüft: ENQUEUE_EVVBAKE (f03:27) und DEQUEUE_EVVBAKE (f03:39) liegen vor CALL TRANSACTION (f03:46); der verbotene Schluss „Auftrag bleibt bis zur Änderung gesperrt“ ist richtig."
+  ]
+}

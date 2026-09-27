@@ -1,0 +1,75 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Kante c_ums→g_empty",
+      "before": "c_ums->g_empty [always]",
+      "after": "entfällt; ue->g_empty [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks; Rückkante vom end des Blocks → Folgeschritt; keine Direktkante Aufruf → Folgeschritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante new→l",
+      "before": "new->l [always]",
+      "after": "entfällt; ce->l [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks; Rückkante vom end des Blocks → Folgeschritt; keine Direktkante Aufruf → Folgeschritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante c_ka→l",
+      "before": "c_ka->l [next iteration]",
+      "after": "entfällt; e_b->l [next iteration], e_t->l [next iteration], ke->l [next iteration]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks; Rückkante vom end des Blocks → Folgeschritt; keine Direktkante Aufruf → Folgeschritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante c_aus→e_end",
+      "before": "c_aus->e_end [always]",
+      "after": "entfällt; ae->e_end [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks; Rückkante vom end des Blocks → Folgeschritt; keine Direktkante Aufruf → Folgeschritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante calc→g_b",
+      "before": "calc->g_b [always]",
+      "after": "entfällt; e_rel->g_b [always], e_bel->g_b [always], e_conv->g_b [always], e_min->g_b [always], cae->g_b [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks; Rückkante vom end des Blocks → Folgeschritt; keine Direktkante Aufruf → Folgeschritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante c_gs→ke",
+      "before": "c_gs->ke [always]",
+      "after": "entfällt; ge->ke [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks; Rückkante vom end des Blocks → Folgeschritt; keine Direktkante Aufruf → Folgeschritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante new→merr",
+      "before": "new->merr [CATCH zcx_sd_bonus INTO gx_bonus]",
+      "after": "entfällt; x_st->merr [CATCH zcx_sd_bonus INTO gx_bonus]",
+      "why": "Der Konstruktor liegt im Fall; die Ausnahme entsteht am RAISE-EXCEPTION-Ende x_st und läuft von dort in den CATCH-Zweig.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten rb",
+      "before": "transaction",
+      "after": "opaque_call",
+      "why": "Vereinheitlichte Konvention: BAPI_TRANSACTION_COMMIT/_ROLLBACK sind opaque_call.",
+      "category": "Knotenart"
+    },
+    {
+      "where": "Knoten cm",
+      "before": "transaction",
+      "after": "opaque_call",
+      "why": "Vereinheitlichte Konvention: BAPI_TRANSACTION_COMMIT/_ROLLBACK sind opaque_call.",
+      "category": "Knotenart"
+    }
+  ],
+  "doubts": [
+    "INITIALIZATION p_gjahr = sy-datum(4) - 1 bleibt modelliert (a_ini, BM-020-B01): die Vorbelegung auf das Vorjahr ist eine fachliche Regel des Jahresbonuslaufs, anders als die reinen UI-Defaults in BM-011/BM-016.",
+    "DO mit EXIT bei Cursorende (zsd_bonus_run_f01.abap:40): g_eof->ue [sy-subrc <> 0] führt nach ENDDO/CLOSE zum ENDFORM — semantisch richtig, die Validator-Warnung ist beabsichtigt.",
+    "Falle „Bonusbeleg vor Belegnummer“ geprüft: ls_bel-vbeln = cv_vbeln (f01:132) wird vor BAPI_SALESORDER_CREATEFROMDAT2 (f01:139) gefüllt, IN UPDATE TASK übernimmt die Werte zum Aufrufzeitpunkt — VBELN ist im Bonusbeleg leer; der verbotene Schluss stimmt.",
+    "Nicht geändert: gt_umsatz ist je Regulierer UND Belegwährung gruppiert; ein Kunde mit Umsätzen in zwei Währungen wird zweimal gerechnet, die zweite Zeile scheitert im Echtlauf an der Doppelabrechnungsprüfung (Bonusbeleg der ersten Zeile ist dann festgeschrieben). Die Sollantwort behauptet nichts Gegenteiliges."
+  ]
+}

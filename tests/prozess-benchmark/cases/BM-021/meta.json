@@ -1,0 +1,19 @@
+{
+  "id": "BM-021",
+  "title": "Wareneingangsliste je Werk aus MKPF/MSEG",
+  "domain": "MM / Procure-to-Pay, Bestandsführung, Lager (WM/EWM)",
+  "band": "einfach",
+  "loc": 37,
+  "constructs": [
+    "REPORT",
+    "SELECT-OPTIONS",
+    "SELECT ... INNER JOIN",
+    "MESSAGE TYPE S DISPLAY LIKE W",
+    "LOOP/WRITE-Liste"
+  ],
+  "scenario": "Klassischer Listreport aus dem Einkauf, der in fast jedem ECC-System neben MB51 existiert; in der S/4-Analyse fällt er wegen des MKPF/MSEG-Joins auf.",
+  "s4_issues": [
+    "MKPF/MSEG in S/4HANA nur noch Kompatibilitätsviews auf MATDOC (Lesen funktioniert, Performance und Nachfolger I_MaterialDocumentItem_2 prüfen)",
+    "MATNR auf 40 Stellen verlängert (Listausgabe)"
+  ]
+}

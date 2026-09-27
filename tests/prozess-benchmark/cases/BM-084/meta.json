@@ -1,0 +1,20 @@
+{
+  "id": "BM-084",
+  "title": "Workflow-Ereignis bei Änderung eines Kreditors mit Bankverbindung",
+  "domain": "Querschnitt — Schnittstellen, Stammdaten, HR, Workflow, technische Jobs",
+  "band": "einfach",
+  "loc": 30,
+  "constructs": [
+    "FUNCTION",
+    "SELECT LFBK",
+    "EXIT",
+    "SWE_EVENT_CREATE",
+    "MESSAGE Typ W"
+  ],
+  "scenario": "Baustein, der aus dem Kreditorenstamm-Exit vor dem Sichern aufgerufen wird und ein Freigabe-Workflow-Ereignis auslöst; typisch für Vier-Augen-Kontrollen bei Bankdaten.",
+  "s4_issues": [
+    "Kreditorenpflege läuft in S/4 über den Geschäftspartner (BP); der Exit SAPMF02K wird nicht mehr durchlaufen",
+    "Direkter Lesezugriff auf LFBK statt BP-API",
+    "Kundeneigener BOR-Objekttyp ZLFA1"
+  ]
+}

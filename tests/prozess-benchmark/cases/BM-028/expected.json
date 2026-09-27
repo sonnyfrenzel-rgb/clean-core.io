@@ -1,0 +1,663 @@
+{
+  "id": "BM-028",
+  "title": "Umlagerung Werk an Werk (301) aus Dienstleisterdatei mit Bestandsvorprüfung",
+  "classes": [
+    "K01",
+    "K03"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "MARD",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 55,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:55"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_GOODSMVT_CREATE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 80,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:80"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_ROLLBACK",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 96,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:96"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_COMMIT",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 99,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:99"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-028-B01",
+      "text": "Die nächtliche Umlagerungsdatei des Logistikdienstleisters wird vom Applikationsserver gelesen; ist sie nicht lesbar, bricht der Lauf mit Fehlermeldung ab.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:36"
+        },
+        {
+          "file": "source.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:37"
+        },
+        {
+          "file": "source.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:38"
+        }
+      ]
+    },
+    {
+      "id": "BM-028-B02",
+      "text": "Jede Zeile liefert Material, abgebendes Werk und Lagerort, empfangendes Werk und Lagerort, Menge (Dezimalkomma wird umgesetzt) und Charge.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:41"
+        },
+        {
+          "file": "source.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:45"
+        }
+      ]
+    },
+    {
+      "id": "BM-028-B03",
+      "text": "Vor jeder Buchung wird der frei verwendbare Bestand am abgebenden Lagerort gelesen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:55"
+        }
+      ]
+    },
+    {
+      "id": "BM-028-B04",
+      "text": "Fehlt das Lagerortsegment oder reicht der Bestand nicht für die Menge, wird die Zeile mit dem vorhandenen Bestand protokolliert und nicht gebucht.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:59"
+        },
+        {
+          "file": "source.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:60"
+        }
+      ]
+    },
+    {
+      "id": "BM-028-B05",
+      "text": "Sonst wird je Zeile eine Umlagerung Werk an Werk mit Bewegungsart 301 zum Tagesdatum gebucht, im Testlauf nur simuliert.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:74"
+        },
+        {
+          "file": "source.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:80"
+        }
+      ]
+    },
+    {
+      "id": "BM-028-B06",
+      "text": "Meldet die Buchung einen Fehler oder Abbruch, wird zurückgerollt und der Fehlertext protokolliert.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:92"
+        },
+        {
+          "file": "source.abap",
+          "line": 95,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:95"
+        },
+        {
+          "file": "source.abap",
+          "line": 96,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:96"
+        },
+        {
+          "file": "source.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:97"
+        }
+      ]
+    },
+    {
+      "id": "BM-028-B07",
+      "text": "Im Echtlauf wird die Buchung festgeschrieben und der Materialbeleg mit Jahr protokolliert.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:99"
+        },
+        {
+          "file": "source.abap",
+          "line": 102,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:102"
+        }
+      ]
+    },
+    {
+      "id": "BM-028-B08",
+      "text": "Im Testlauf wird die fehlerfreie Prüfung je Zeile protokolliert.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 105,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:105"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:35"
+        },
+        "meaning": "Reportstart"
+      },
+      {
+        "id": "of",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:36"
+        },
+        "meaning": "Umlagerungsdatei öffnen"
+      },
+      {
+        "id": "go",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:37"
+        },
+        "meaning": "Datei lesbar?"
+      },
+      {
+        "id": "mo",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:38"
+        },
+        "meaning": "Abbruch: Datei nicht lesbar"
+      },
+      {
+        "id": "xo",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:38"
+        },
+        "meaning": "Lauf abgebrochen, Datei nicht lesbar"
+      },
+      {
+        "id": "d",
+        "type": "loop",
+        "anchor": {
+          "file": "source.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:40"
+        },
+        "meaning": "Dateizeilen lesen"
+      },
+      {
+        "id": "rd",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:41"
+        },
+        "meaning": "Nächste Umlagerungszeile lesen"
+      },
+      {
+        "id": "ge",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:42"
+        },
+        "meaning": "Dateiende?"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "source.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:53"
+        },
+        "meaning": "Umlagerungen durchlaufen"
+      },
+      {
+        "id": "qm",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:55"
+        },
+        "meaning": "Frei verwendbaren Bestand am abgebenden Lagerort lesen"
+      },
+      {
+        "id": "gb",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:59"
+        },
+        "meaning": "Bestand fehlt oder reicht nicht?"
+      },
+      {
+        "id": "wb",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:60"
+        },
+        "meaning": "Zeile mit unzureichendem Bestand protokollieren"
+      },
+      {
+        "id": "b",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:80"
+        },
+        "meaning": "Umlagerung 301 buchen bzw. simulieren"
+      },
+      {
+        "id": "lr",
+        "type": "loop",
+        "anchor": {
+          "file": "source.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:92"
+        },
+        "meaning": "Rückmeldungen nach Fehler/Abbruch durchsuchen"
+      },
+      {
+        "id": "gr",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 95,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:95"
+        },
+        "meaning": "Fehler gefunden / Echtlauf / Testlauf?"
+      },
+      {
+        "id": "rb",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 96,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:96"
+        },
+        "meaning": "Zurückrollen"
+      },
+      {
+        "id": "wr",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:97"
+        },
+        "meaning": "Fehlertext protokollieren"
+      },
+      {
+        "id": "c",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:99"
+        },
+        "meaning": "Materialbeleg festschreiben"
+      },
+      {
+        "id": "wc",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 102,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:102"
+        },
+        "meaning": "Materialbeleg protokollieren"
+      },
+      {
+        "id": "wt",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 105,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:105"
+        },
+        "meaning": "Testlauf-Ergebnis protokollieren"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 107,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:107"
+        },
+        "meaning": "Alle Umlagerungen verarbeitet"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "of",
+        "condition": "always"
+      },
+      {
+        "from": "of",
+        "to": "go",
+        "condition": "always"
+      },
+      {
+        "from": "go",
+        "to": "mo",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "go",
+        "to": "d",
+        "condition": "else"
+      },
+      {
+        "from": "d",
+        "to": "rd",
+        "condition": "next row"
+      },
+      {
+        "from": "rd",
+        "to": "ge",
+        "condition": "always"
+      },
+      {
+        "from": "ge",
+        "to": "l",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "ge",
+        "to": "d",
+        "condition": "else"
+      },
+      {
+        "from": "l",
+        "to": "qm",
+        "condition": "next row"
+      },
+      {
+        "from": "qm",
+        "to": "gb",
+        "condition": "always"
+      },
+      {
+        "from": "gb",
+        "to": "wb",
+        "condition": "sy-subrc <> 0 OR gv_labst < gs_line-menge"
+      },
+      {
+        "from": "wb",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "gb",
+        "to": "b",
+        "condition": "else"
+      },
+      {
+        "from": "b",
+        "to": "lr",
+        "condition": "always"
+      },
+      {
+        "from": "lr",
+        "to": "gr",
+        "condition": "next row"
+      },
+      {
+        "from": "lr",
+        "to": "gr",
+        "condition": "no more rows"
+      },
+      {
+        "from": "gr",
+        "to": "rb",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "rb",
+        "to": "wr",
+        "condition": "always"
+      },
+      {
+        "from": "wr",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "gr",
+        "to": "c",
+        "condition": "p_test IS INITIAL"
+      },
+      {
+        "from": "c",
+        "to": "wc",
+        "condition": "always"
+      },
+      {
+        "from": "wc",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "gr",
+        "to": "wt",
+        "condition": "else"
+      },
+      {
+        "from": "wt",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l",
+        "to": "e",
+        "condition": "no more rows"
+      },
+      {
+        "from": "mo",
+        "to": "xo",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "source.abap:55 — kein Fachsatz „Der Chargenbestand wird geprüft“ (geprüft wird der Lagerortbestand ohne Charge)",
+    "source.abap:51 — kein Fachsatz „Die Datei wird nach der Verarbeitung archiviert oder gelöscht“ (sie wird nur geschlossen)",
+    "source.abap:80 — kein Fachsatz „Alle Zeilen werden in einem Materialbeleg gebucht“ (ein Beleg je Zeile)",
+    "gesamte Scheibe — kein Fachsatz „Bereits gebuchte Zeilen werden bei Wiederholung erkannt“ (keine Dublettenprüfung)"
+  ],
+  "processDescription": "Nachts liefert der Logistikdienstleister eine CSV-Datei mit Umlagerungen auf den Applikationsserver; der Report wird mit Dateipfad und Testlauf-Schalter gestartet. Ist die Datei nicht lesbar, bricht er ab. Sonst liest er Zeile für Zeile Material, abgebendes und empfangendes Werk und Lagerort, Menge und Charge. Für jede Zeile prüft er vorab, ob am abgebenden Lagerort genug frei verwendbarer Bestand vorhanden ist; wenn nicht, protokolliert er die Zeile und bucht sie nicht. Andernfalls bucht er eine Umlagerung Werk an Werk (301) mit BAPI_GOODSMVT_CREATE, im Testlauf nur als Simulation. Bei Fehler oder Abbruch wird zurückgerollt und der Fehlertext protokolliert; im Echtlauf wird festgeschrieben und der Materialbeleg ausgegeben, im Testlauf die fehlerfreie Prüfung. Eine Dublettenprüfung oder Archivierung der Datei gibt es nicht."
+}

@@ -1,0 +1,281 @@
+{
+  "id": "BM-043",
+  "title": "Validierungs-Exit: Kontierung auf gesperrte oder ungültige Kostenstelle ablehnen",
+  "classes": [
+    "K16",
+    "K01"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "CSKS",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 13,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:13"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-043-B01",
+      "text": "Jede Kontierungszeile gilt zunächst als gültig; ohne Kostenstelle bleibt es dabei.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 10,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:10"
+        },
+        {
+          "file": "source.abap",
+          "line": 11,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:11"
+        }
+      ]
+    },
+    {
+      "id": "BM-043-B02",
+      "text": "Zur kontierten Kostenstelle wird der Stammsatz gelesen, der am Buchungsdatum im Kostenrechnungskreis gültig ist.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 13,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:13"
+        }
+      ]
+    },
+    {
+      "id": "BM-043-B03",
+      "text": "Gibt es zum Buchungsdatum keine gültige Kostenstelle, schlägt die Validierung fehl.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:18"
+        },
+        {
+          "file": "source.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:20"
+        }
+      ]
+    },
+    {
+      "id": "BM-043-B04",
+      "text": "Ist die Kostenstelle für Ist-Primärkosten gesperrt, schlägt die Validierung ebenfalls fehl.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:18"
+        },
+        {
+          "file": "source.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:22"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 9,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:9"
+        },
+        "meaning": "Validierungs-Exit U920"
+      },
+      {
+        "id": "ok",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 10,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:10"
+        },
+        "meaning": "Ergebnis zunächst auf gültig setzen"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 11,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:11"
+        },
+        "meaning": "Kostenstelle kontiert?"
+      },
+      {
+        "id": "q",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 13,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:13"
+        },
+        "meaning": "Kostenstelle zum Buchungsdatum lesen"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:18"
+        },
+        "meaning": "Kostenstelle ungültig bzw. für Primärkosten gesperrt?"
+      },
+      {
+        "id": "f1",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:20"
+        },
+        "meaning": "Validierung scheitert: Kostenstelle nicht gültig"
+      },
+      {
+        "id": "f2",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:22"
+        },
+        "meaning": "Validierung scheitert: Kostenstelle gesperrt"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:24"
+        },
+        "meaning": "Ergebnis an Validierung zurück"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "ok",
+        "condition": "always"
+      },
+      {
+        "from": "ok",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "q",
+        "condition": "cobl-kostl IS NOT INITIAL"
+      },
+      {
+        "from": "g1",
+        "to": "e",
+        "condition": "else"
+      },
+      {
+        "from": "q",
+        "to": "g2",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "f1",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g2",
+        "to": "f2",
+        "condition": "lv_bkzkp = 'X'"
+      },
+      {
+        "from": "g2",
+        "to": "e",
+        "condition": "else"
+      },
+      {
+        "from": "f1",
+        "to": "e",
+        "condition": "always"
+      },
+      {
+        "from": "f2",
+        "to": "e",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "source.abap:20 — kein Fachsatz „Fehlermeldung wird ausgegeben“ (der Exit setzt nur B_RESULT; Meldung und Meldungstyp stehen in der Validierung, nicht im Code)",
+    "source.abap:22 — kein Fachsatz „Kostenstelle wird gesperrt“ (das Sperrkennzeichen wird nur gelesen)",
+    "source.abap:11 — kein Fachsatz „Buchungen ohne Kostenstelle werden abgelehnt“ (sie gelten als gültig)"
+  ],
+  "processDescription": "Die FI-Validierung ruft den Exit U920 für jede Kontierungszeile auf. Das Ergebnis wird zunächst auf gültig gesetzt; ist keine Kostenstelle kontiert, endet der Exit damit. Sonst wird die Kostenstelle gelesen, die am Buchungsdatum im Kostenrechnungskreis gültig ist. Fehlt sie, oder ist sie für Ist-Primärkosten gesperrt, meldet der Exit ungültig zurück. Welche Meldung der Anwender sieht und ob die Buchung abgebrochen wird, entscheidet die im Customizing gepflegte Validierung, nicht dieser Code."
+}

@@ -1,0 +1,2386 @@
+{
+  "id": "BM-079",
+  "title": "Störmeldung zu Instandhaltungsauftrag: Ereignisempfänger, Klasse, CMMS-RFC und TECO-Lauf",
+  "classes": [
+    "K09",
+    "K12",
+    "K03",
+    "K16",
+    "K04"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [
+    "Ist gewollt, dass die Fehlermeldung bei reinen A-Meldungen in CREATE_ORDER (lt_return[ type = 'E' ]) zu einem Laufzeitfehler führen kann?",
+    "Die Ausnahmeklasse ZCX_PM_BREAKDOWN trägt keine Fachlogik und ist im Skelett nicht abgebildet."
+  ],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "QMEL",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "z_pm_notif_created_rec.abap",
+        "line": 29,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_pm_notif_created_rec.abap:29"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZCL_PM_BREAKDOWN_PROCESSOR",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "z_pm_notif_created_rec.abap",
+        "line": 37,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_pm_notif_created_rec.abap:37"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "QMIH",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_pm_breakdown_processor.abap",
+        "line": 134,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_pm_breakdown_processor.abap:134"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ENQUEUE_EIQMEL",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_pm_breakdown_processor.abap",
+        "line": 82,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_pm_breakdown_processor.abap:82"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "DEQUEUE_EIQMEL",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_pm_breakdown_processor.abap",
+        "line": 106,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_pm_breakdown_processor.abap:106"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "EQUZ",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_pm_breakdown_processor.abap",
+        "line": 158,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_pm_breakdown_processor.abap:158"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ILOA",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_pm_breakdown_processor.abap",
+        "line": 158,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_pm_breakdown_processor.abap:158"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_ALM_ORDER_MAINTAIN",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_pm_breakdown_processor.abap",
+        "line": 197,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_pm_breakdown_processor.abap:197"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_COMMIT",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_pm_breakdown_processor.abap",
+        "line": 212,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_pm_breakdown_processor.abap:212"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_ROLLBACK",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_pm_breakdown_processor.abap",
+        "line": 206,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_pm_breakdown_processor.abap:206"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "Z_CMMS_ORDER_SYNC",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_pm_breakdown_processor.abap",
+        "line": 251,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_pm_breakdown_processor.abap:251"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZPM_CMMS_QUEUE",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "zcl_pm_breakdown_processor.abap",
+        "line": 268,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_pm_breakdown_processor.abap:268"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "SAP_WAPI_CREATE_EVENT",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_pm_breakdown_processor.abap",
+        "line": 278,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_pm_breakdown_processor.abap:278"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "AUFK",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_pm_breakdown_processor.abap",
+        "line": 294,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_pm_breakdown_processor.abap:294"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "AFIH",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_pm_breakdown_processor.abap",
+        "line": 294,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_pm_breakdown_processor.abap:294"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "JEST",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_pm_breakdown_processor.abap",
+        "line": 303,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_pm_breakdown_processor.abap:303"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-079-B01",
+      "text": "Wird eine Meldung angelegt, prüft der Ereignisempfänger, ob es eine Störmeldung (M2) mit Priorität 1 ist; alle anderen Meldungen werden ignoriert.",
+      "anchors": [
+        {
+          "file": "z_pm_notif_created_rec.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_pm_notif_created_rec.abap:29"
+        },
+        {
+          "file": "z_pm_notif_created_rec.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_pm_notif_created_rec.abap:31"
+        },
+        {
+          "file": "z_pm_notif_created_rec.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_pm_notif_created_rec.abap:32"
+        }
+      ]
+    },
+    {
+      "id": "BM-079-B02",
+      "text": "Passende Störmeldungen werden sofort in einen Instandhaltungsauftrag überführt.",
+      "anchors": [
+        {
+          "file": "z_pm_notif_created_rec.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_pm_notif_created_rec.abap:37"
+        }
+      ]
+    },
+    {
+      "id": "BM-079-B03",
+      "text": "Scheitert die Verarbeitung wegen einer Sperre, meldet der Empfänger einen vorübergehenden Fehler, damit das Ereignis erneut zugestellt wird; bei jedem anderen Fehler meldet er einen endgültigen Fehler.",
+      "anchors": [
+        {
+          "file": "z_pm_notif_created_rec.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_pm_notif_created_rec.abap:40"
+        },
+        {
+          "file": "z_pm_notif_created_rec.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_pm_notif_created_rec.abap:42"
+        },
+        {
+          "file": "z_pm_notif_created_rec.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_pm_notif_created_rec.abap:44"
+        }
+      ]
+    },
+    {
+      "id": "BM-079-B04",
+      "text": "Die Meldung wird mit Art, Priorität, Kurztext, Auftragsbezug, Equipment, Planungswerk und Planergruppe gelesen; fehlt sie oder ist sie keine Störmeldung, wird die Verarbeitung mit Fehler abgebrochen.",
+      "anchors": [
+        {
+          "file": "zcl_pm_breakdown_processor.abap",
+          "line": 134,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_breakdown_processor.abap:134"
+        },
+        {
+          "file": "zcl_pm_breakdown_processor.abap",
+          "line": 140,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_breakdown_processor.abap:140"
+        },
+        {
+          "file": "zcl_pm_breakdown_processor.abap",
+          "line": 145,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_breakdown_processor.abap:145"
+        }
+      ]
+    },
+    {
+      "id": "BM-079-B05",
+      "text": "Hat die Meldung bereits einen Auftrag, wird nur „hat bereits Auftrag“ zurückgemeldet.",
+      "anchors": [
+        {
+          "file": "zcl_pm_breakdown_processor.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_breakdown_processor.abap:77"
+        },
+        {
+          "file": "zcl_pm_breakdown_processor.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_breakdown_processor.abap:79"
+        }
+      ]
+    },
+    {
+      "id": "BM-079-B06",
+      "text": "Die Meldung wird gesperrt; ist sie bereits gesperrt, wird mit „gesperrt“ abgebrochen.",
+      "anchors": [
+        {
+          "file": "zcl_pm_breakdown_processor.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_breakdown_processor.abap:82"
+        },
+        {
+          "file": "zcl_pm_breakdown_processor.abap",
+          "line": 89,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_breakdown_processor.abap:89"
+        },
+        {
+          "file": "zcl_pm_breakdown_processor.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_breakdown_processor.abap:90"
+        }
+      ]
+    },
+    {
+      "id": "BM-079-B07",
+      "text": "Eine Anlage gilt als kritisch, wenn das aktuelle Zeitsegment ihres Equipments das ABC-Kennzeichen A trägt; ohne Equipment ist sie unkritisch.",
+      "anchors": [
+        {
+          "file": "zcl_pm_breakdown_processor.abap",
+          "line": 95,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_breakdown_processor.abap:95"
+        },
+        {
+          "file": "zcl_pm_breakdown_processor.abap",
+          "line": 156,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_breakdown_processor.abap:156"
+        },
+        {
+          "file": "zcl_pm_breakdown_processor.abap",
+          "line": 158,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_breakdown_processor.abap:158"
+        },
+        {
+          "file": "zcl_pm_breakdown_processor.abap",
+          "line": 164,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_breakdown_processor.abap:164"
+        }
+      ]
+    },
+    {
+      "id": "BM-079-B08",
+      "text": "Der Auftrag erhält bei kritischer Anlage Priorität 1, sonst Priorität 2.",
+      "anchors": [
+        {
+          "file": "zcl_pm_breakdown_processor.abap",
+          "line": 96,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_breakdown_processor.abap:96"
+        },
+        {
+          "file": "zcl_pm_breakdown_processor.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_breakdown_processor.abap:97"
+        },
+        {
+          "file": "zcl_pm_breakdown_processor.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_breakdown_processor.abap:99"
+        }
+      ]
+    },
+    {
+      "id": "BM-079-B09",
+      "text": "Es wird ein Instandhaltungsauftrag der Art PM01 mit Bezug zur Meldung, Equipment, Planungswerk, Planergruppe, Priorität, dem Meldungstext und Starttermin heute angelegt, mit einem Vorgang „Stoerungsbeseitigung“ (Steuerschlüssel PM01).",
+      "anchors": [
+        {
+          "file": "zcl_pm_breakdown_processor.abap",
+          "line": 103,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_breakdown_processor.abap:103"
+        },
+        {
+          "file": "zcl_pm_breakdown_processor.abap",
+          "line": 197,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_breakdown_processor.abap:197"
+        }
+      ]
+    },
+    {
+      "id": "BM-079-B10",
+      "text": "Scheitert die Anlage, wird zurückgerollt, die Meldungssperre aufgehoben und die Verarbeitung mit Fehler abgebrochen; sonst wird festgeschrieben und die neue Auftragsnummer übernommen.",
+      "anchors": [
+        {
+          "file": "zcl_pm_breakdown_processor.abap",
+          "line": 205,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_breakdown_processor.abap:205"
+        },
+        {
+          "file": "zcl_pm_breakdown_processor.abap",
+          "line": 206,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_breakdown_processor.abap:206"
+        },
+        {
+          "file": "zcl_pm_breakdown_processor.abap",
+          "line": 106,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_breakdown_processor.abap:106"
+        },
+        {
+          "file": "zcl_pm_breakdown_processor.abap",
+          "line": 212,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_breakdown_processor.abap:212"
+        }
+      ]
+    },
+    {
+      "id": "BM-079-B11",
+      "text": "Bei kritischer Anlage wird der Auftrag sofort freigegeben; das Ergebnis „freigegeben“ oder „Freigabe fehlgeschlagen“ wird im Rückgabetext vermerkt.",
+      "anchors": [
+        {
+          "file": "zcl_pm_breakdown_processor.abap",
+          "line": 114,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_breakdown_processor.abap:114"
+        },
+        {
+          "file": "zcl_pm_breakdown_processor.abap",
+          "line": 229,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_breakdown_processor.abap:229"
+        },
+        {
+          "file": "zcl_pm_breakdown_processor.abap",
+          "line": 116,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_breakdown_processor.abap:116"
+        }
+      ]
+    },
+    {
+      "id": "BM-079-B12",
+      "text": "Bei kritischer Anlage wird der Auftrag zusätzlich synchron an das CMMS des Anlagenlieferanten übergeben; scheitert die Übergabe, wird er mit Fehlertext für den Nachversand vorgemerkt.",
+      "anchors": [
+        {
+          "file": "zcl_pm_breakdown_processor.abap",
+          "line": 121,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_breakdown_processor.abap:121"
+        },
+        {
+          "file": "zcl_pm_breakdown_processor.abap",
+          "line": 251,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_breakdown_processor.abap:251"
+        },
+        {
+          "file": "zcl_pm_breakdown_processor.abap",
+          "line": 261,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_breakdown_processor.abap:261"
+        },
+        {
+          "file": "zcl_pm_breakdown_processor.abap",
+          "line": 268,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_breakdown_processor.abap:268"
+        }
+      ]
+    },
+    {
+      "id": "BM-079-B13",
+      "text": "Für jeden angelegten Auftrag wird das Workflow-Ereignis ZBREAKDOWN ausgelöst.",
+      "anchors": [
+        {
+          "file": "zcl_pm_breakdown_processor.abap",
+          "line": 125,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_breakdown_processor.abap:125"
+        },
+        {
+          "file": "zcl_pm_breakdown_processor.abap",
+          "line": 278,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_breakdown_processor.abap:278"
+        }
+      ]
+    },
+    {
+      "id": "BM-079-B14",
+      "text": "Zum Schluss wird die Meldungssperre aufgehoben.",
+      "anchors": [
+        {
+          "file": "zcl_pm_breakdown_processor.abap",
+          "line": 127,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_breakdown_processor.abap:127"
+        }
+      ]
+    },
+    {
+      "id": "BM-079-B15",
+      "text": "Im Nachverarbeitungsmodus liest der Report die Störmeldungen M2 mit Priorität 1 ohne Auftrag der letzten Tage (Vorschlag 3) im Planungswerk; ohne Treffer gibt er einen Hinweis aus.",
+      "anchors": [
+        {
+          "file": "zpm_breakdown_run.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_breakdown_run.abap:34"
+        },
+        {
+          "file": "zpm_breakdown_run.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_breakdown_run.abap:35"
+        },
+        {
+          "file": "zpm_breakdown_run.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_breakdown_run.abap:44"
+        }
+      ]
+    },
+    {
+      "id": "BM-079-B16",
+      "text": "Jede Meldung wird verarbeitet und das Ergebnis grün, ein Fehler rot mit Text ausgegeben.",
+      "anchors": [
+        {
+          "file": "zpm_breakdown_run.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_breakdown_run.abap:51"
+        },
+        {
+          "file": "zpm_breakdown_run.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_breakdown_run.abap:52"
+        },
+        {
+          "file": "zpm_breakdown_run.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_breakdown_run.abap:55"
+        }
+      ]
+    },
+    {
+      "id": "BM-079-B17",
+      "text": "Im TECO-Modus werden die Aufträge der Art PM01 mit Meldungsbezug im Planungswerk gelesen.",
+      "anchors": [
+        {
+          "file": "zpm_breakdown_run.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_breakdown_run.abap:28"
+        },
+        {
+          "file": "zcl_pm_breakdown_processor.abap",
+          "line": 294,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_breakdown_processor.abap:294"
+        }
+      ]
+    },
+    {
+      "id": "BM-079-B18",
+      "text": "Nur rückgemeldete, noch nicht technisch abgeschlossene Aufträge werden technisch abgeschlossen; bei Fehler wird zurückgerollt, sonst festgeschrieben und gezählt.",
+      "anchors": [
+        {
+          "file": "zcl_pm_breakdown_processor.abap",
+          "line": 303,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_breakdown_processor.abap:303"
+        },
+        {
+          "file": "zcl_pm_breakdown_processor.abap",
+          "line": 311,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_breakdown_processor.abap:311"
+        },
+        {
+          "file": "zcl_pm_breakdown_processor.abap",
+          "line": 324,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_breakdown_processor.abap:324"
+        },
+        {
+          "file": "zcl_pm_breakdown_processor.abap",
+          "line": 328,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_breakdown_processor.abap:328"
+        }
+      ]
+    },
+    {
+      "id": "BM-079-B19",
+      "text": "Die Zahl der abgeschlossenen Aufträge wird ausgegeben.",
+      "anchors": [
+        {
+          "file": "zpm_breakdown_run.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_breakdown_run.abap:30"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "w_s",
+        "type": "start",
+        "anchor": {
+          "file": "z_pm_notif_created_rec.abap",
+          "line": 1,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_pm_notif_created_rec.abap:1"
+        },
+        "meaning": "Ereignis: Meldung angelegt"
+      },
+      {
+        "id": "w_q",
+        "type": "read",
+        "anchor": {
+          "file": "z_pm_notif_created_rec.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_pm_notif_created_rec.abap:29"
+        },
+        "meaning": "Meldungsart und Priorität lesen"
+      },
+      {
+        "id": "w_g",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_pm_notif_created_rec.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_pm_notif_created_rec.abap:31"
+        },
+        "meaning": "Störmeldung M2 mit Priorität 1?"
+      },
+      {
+        "id": "w_e",
+        "type": "end",
+        "anchor": {
+          "file": "z_pm_notif_created_rec.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_pm_notif_created_rec.abap:32"
+        },
+        "meaning": "Nicht zuständig"
+      },
+      {
+        "id": "w_c",
+        "type": "call",
+        "anchor": {
+          "file": "z_pm_notif_created_rec.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_pm_notif_created_rec.abap:37"
+        },
+        "meaning": "Meldung verarbeiten"
+      },
+      {
+        "id": "w_gl",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_pm_notif_created_rec.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_pm_notif_created_rec.abap:40"
+        },
+        "meaning": "Fehlergrund Sperre?"
+      },
+      {
+        "id": "w_tmp",
+        "type": "end",
+        "anchor": {
+          "file": "z_pm_notif_created_rec.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_pm_notif_created_rec.abap:42"
+        },
+        "meaning": "TEMP_ERROR – Ereignis wird erneut zugestellt"
+      },
+      {
+        "id": "w_any",
+        "type": "end",
+        "anchor": {
+          "file": "z_pm_notif_created_rec.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_pm_notif_created_rec.abap:44"
+        },
+        "meaning": "ANY_ERROR – Ereigniszustellung fehlerhaft"
+      },
+      {
+        "id": "w_done",
+        "type": "end",
+        "anchor": {
+          "file": "z_pm_notif_created_rec.abap",
+          "line": 47,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_pm_notif_created_rec.abap:47"
+        },
+        "meaning": "Verarbeitet"
+      },
+      {
+        "id": "r_s",
+        "type": "start",
+        "anchor": {
+          "file": "zpm_breakdown_run.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_breakdown_run.abap:25"
+        },
+        "meaning": "Nachverarbeitung oder TECO-Lauf starten"
+      },
+      {
+        "id": "r_g",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpm_breakdown_run.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_breakdown_run.abap:28"
+        },
+        "meaning": "TECO-Lauf gewählt?"
+      },
+      {
+        "id": "r_cc",
+        "type": "call",
+        "anchor": {
+          "file": "zpm_breakdown_run.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_breakdown_run.abap:29"
+        },
+        "meaning": "Rückgemeldete Störaufträge abschließen"
+      },
+      {
+        "id": "r_w1",
+        "type": "output",
+        "anchor": {
+          "file": "zpm_breakdown_run.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_breakdown_run.abap:30"
+        },
+        "meaning": "Anzahl abgeschlossener Aufträge ausgeben"
+      },
+      {
+        "id": "r_e1",
+        "type": "end",
+        "anchor": {
+          "file": "zpm_breakdown_run.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_breakdown_run.abap:31"
+        },
+        "meaning": "Ende TECO-Lauf"
+      },
+      {
+        "id": "r_q",
+        "type": "read",
+        "anchor": {
+          "file": "zpm_breakdown_run.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_breakdown_run.abap:35"
+        },
+        "meaning": "Störmeldungen M2/Prio 1 ohne Auftrag der letzten Tage im Planungswerk lesen"
+      },
+      {
+        "id": "r_g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zpm_breakdown_run.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_breakdown_run.abap:44"
+        },
+        "meaning": "Liegengebliebene Meldungen vorhanden?"
+      },
+      {
+        "id": "r_w2",
+        "type": "output",
+        "anchor": {
+          "file": "zpm_breakdown_run.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_breakdown_run.abap:45"
+        },
+        "meaning": "Hinweis ausgeben"
+      },
+      {
+        "id": "r_e2",
+        "type": "end",
+        "anchor": {
+          "file": "zpm_breakdown_run.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_breakdown_run.abap:46"
+        },
+        "meaning": "Ende"
+      },
+      {
+        "id": "r_l",
+        "type": "loop",
+        "anchor": {
+          "file": "zpm_breakdown_run.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_breakdown_run.abap:49"
+        },
+        "meaning": "Je Meldung"
+      },
+      {
+        "id": "r_c",
+        "type": "call",
+        "anchor": {
+          "file": "zpm_breakdown_run.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_breakdown_run.abap:51"
+        },
+        "meaning": "Meldung verarbeiten"
+      },
+      {
+        "id": "r_ok",
+        "type": "output",
+        "anchor": {
+          "file": "zpm_breakdown_run.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_breakdown_run.abap:52"
+        },
+        "meaning": "Ergebnis grün ausgeben"
+      },
+      {
+        "id": "r_err",
+        "type": "output",
+        "anchor": {
+          "file": "zpm_breakdown_run.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_breakdown_run.abap:55"
+        },
+        "meaning": "Fehlertext rot ausgeben"
+      },
+      {
+        "id": "r_done",
+        "type": "end",
+        "anchor": {
+          "file": "zpm_breakdown_run.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zpm_breakdown_run.abap:57"
+        },
+        "meaning": "Liste fertig"
+      },
+      {
+        "id": "p_s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_pm_breakdown_processor.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_breakdown_processor.abap:69"
+        },
+        "meaning": "Störmeldung in IH-Auftrag überführen"
+      },
+      {
+        "id": "p_rn",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_pm_breakdown_processor.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_breakdown_processor.abap:75"
+        },
+        "meaning": "Meldung lesen und prüfen"
+      },
+      {
+        "id": "rn_s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_pm_breakdown_processor.abap",
+          "line": 133,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_breakdown_processor.abap:133"
+        },
+        "meaning": "Meldung lesen"
+      },
+      {
+        "id": "rn_q",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_pm_breakdown_processor.abap",
+          "line": 134,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_breakdown_processor.abap:134"
+        },
+        "meaning": "Meldungskopf mit Equipment, Planungswerk und Planergruppe lesen"
+      },
+      {
+        "id": "rn_g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_pm_breakdown_processor.abap",
+          "line": 140,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_breakdown_processor.abap:140"
+        },
+        "meaning": "Meldung gefunden?"
+      },
+      {
+        "id": "rn_x1",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_pm_breakdown_processor.abap",
+          "line": 141,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_breakdown_processor.abap:141"
+        },
+        "meaning": "Ausnahme: Meldung nicht gefunden"
+      },
+      {
+        "id": "rn_g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_pm_breakdown_processor.abap",
+          "line": 145,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_breakdown_processor.abap:145"
+        },
+        "meaning": "Störmeldung M2?"
+      },
+      {
+        "id": "rn_x2",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_pm_breakdown_processor.abap",
+          "line": 146,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_breakdown_processor.abap:146"
+        },
+        "meaning": "Ausnahme: keine Störmeldung"
+      },
+      {
+        "id": "rn_e",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_pm_breakdown_processor.abap",
+          "line": 149,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_breakdown_processor.abap:149"
+        },
+        "meaning": "Meldungsdaten zurück"
+      },
+      {
+        "id": "p_g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_pm_breakdown_processor.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_breakdown_processor.abap:77"
+        },
+        "meaning": "Meldung hat schon einen Auftrag?"
+      },
+      {
+        "id": "p_e1",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_pm_breakdown_processor.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_breakdown_processor.abap:79"
+        },
+        "meaning": "Hinweis „hat bereits Auftrag“ zurück"
+      },
+      {
+        "id": "p_lk",
+        "type": "lock",
+        "anchor": {
+          "file": "zcl_pm_breakdown_processor.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_breakdown_processor.abap:82"
+        },
+        "meaning": "Meldung sperren"
+      },
+      {
+        "id": "p_g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_pm_breakdown_processor.abap",
+          "line": 89,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_breakdown_processor.abap:89"
+        },
+        "meaning": "Sperre erhalten?"
+      },
+      {
+        "id": "p_x1",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_pm_breakdown_processor.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_breakdown_processor.abap:90"
+        },
+        "meaning": "Ausnahme: Meldung gesperrt"
+      },
+      {
+        "id": "p_ic",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_pm_breakdown_processor.abap",
+          "line": 95,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_breakdown_processor.abap:95"
+        },
+        "meaning": "Anlagenkritikalität ermitteln"
+      },
+      {
+        "id": "ic_s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_pm_breakdown_processor.abap",
+          "line": 152,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_breakdown_processor.abap:152"
+        },
+        "meaning": "Kritikalität"
+      },
+      {
+        "id": "ic_chk",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_pm_breakdown_processor.abap",
+          "line": 156,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_breakdown_processor.abap:156"
+        },
+        "meaning": "Equipment vorhanden?"
+      },
+      {
+        "id": "ic_q",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_pm_breakdown_processor.abap",
+          "line": 158,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_breakdown_processor.abap:158"
+        },
+        "meaning": "ABC-Kennzeichen des aktuellen Equipment-Zeitsegments lesen"
+      },
+      {
+        "id": "ic_g",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_pm_breakdown_processor.abap",
+          "line": 164,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_breakdown_processor.abap:164"
+        },
+        "meaning": "ABC-Kennzeichen A?"
+      },
+      {
+        "id": "ic_a",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_pm_breakdown_processor.abap",
+          "line": 165,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_breakdown_processor.abap:165"
+        },
+        "meaning": "Als kritisch einstufen"
+      },
+      {
+        "id": "ic_e",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_pm_breakdown_processor.abap",
+          "line": 167,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_breakdown_processor.abap:167"
+        },
+        "meaning": "Kritikalität zurück"
+      },
+      {
+        "id": "p_g3",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_pm_breakdown_processor.abap",
+          "line": 96,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_breakdown_processor.abap:96"
+        },
+        "meaning": "Kritisch? – Auftragspriorität 1, sonst 2"
+      },
+      {
+        "id": "p_co",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_pm_breakdown_processor.abap",
+          "line": 103,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_breakdown_processor.abap:103"
+        },
+        "meaning": "Auftrag anlegen"
+      },
+      {
+        "id": "co_s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_pm_breakdown_processor.abap",
+          "line": 170,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_breakdown_processor.abap:170"
+        },
+        "meaning": "Auftragsanlage"
+      },
+      {
+        "id": "co_c",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_pm_breakdown_processor.abap",
+          "line": 197,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_breakdown_processor.abap:197"
+        },
+        "meaning": "IH-Auftrag PM01 mit Meldungsbezug, Equipment, Planungswerk, Priorität, Kurztext und Vorgang 0010 anlegen und sichern"
+      },
+      {
+        "id": "co_g",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_pm_breakdown_processor.abap",
+          "line": 205,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_breakdown_processor.abap:205"
+        },
+        "meaning": "Fehler oder Abbruch?"
+      },
+      {
+        "id": "co_rb",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_pm_breakdown_processor.abap",
+          "line": 206,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_breakdown_processor.abap:206"
+        },
+        "meaning": "Zurückrollen"
+      },
+      {
+        "id": "co_x",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_pm_breakdown_processor.abap",
+          "line": 207,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_breakdown_processor.abap:207"
+        },
+        "meaning": "Ausnahme: Auftrag nicht angelegt"
+      },
+      {
+        "id": "co_cm",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_pm_breakdown_processor.abap",
+          "line": 212,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_breakdown_processor.abap:212"
+        },
+        "meaning": "Festschreiben"
+      },
+      {
+        "id": "co_e",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_pm_breakdown_processor.abap",
+          "line": 218,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_breakdown_processor.abap:218"
+        },
+        "meaning": "Neue Auftragsnummer zurück"
+      },
+      {
+        "id": "p_dq1",
+        "type": "lock",
+        "anchor": {
+          "file": "zcl_pm_breakdown_processor.abap",
+          "line": 106,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_breakdown_processor.abap:106"
+        },
+        "meaning": "Meldungssperre aufheben"
+      },
+      {
+        "id": "p_x2",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_pm_breakdown_processor.abap",
+          "line": 109,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_breakdown_processor.abap:109"
+        },
+        "meaning": "Ausnahme weiterreichen"
+      },
+      {
+        "id": "p_g4",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_pm_breakdown_processor.abap",
+          "line": 114,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_breakdown_processor.abap:114"
+        },
+        "meaning": "Kritische Anlage?"
+      },
+      {
+        "id": "p_ro",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_pm_breakdown_processor.abap",
+          "line": 115,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_breakdown_processor.abap:115"
+        },
+        "meaning": "Auftrag freigeben"
+      },
+      {
+        "id": "ro_s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_pm_breakdown_processor.abap",
+          "line": 221,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_breakdown_processor.abap:221"
+        },
+        "meaning": "Freigabe"
+      },
+      {
+        "id": "ro_c",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_pm_breakdown_processor.abap",
+          "line": 229,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_breakdown_processor.abap:229"
+        },
+        "meaning": "Auftrag freigeben und sichern"
+      },
+      {
+        "id": "ro_g",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_pm_breakdown_processor.abap",
+          "line": 234,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_breakdown_processor.abap:234"
+        },
+        "meaning": "Fehler?"
+      },
+      {
+        "id": "ro_rb",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_pm_breakdown_processor.abap",
+          "line": 235,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_breakdown_processor.abap:235"
+        },
+        "meaning": "Zurückrollen, nicht freigegeben"
+      },
+      {
+        "id": "ro_cm",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_pm_breakdown_processor.abap",
+          "line": 238,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_breakdown_processor.abap:238"
+        },
+        "meaning": "Festschreiben, freigegeben"
+      },
+      {
+        "id": "ro_e",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_pm_breakdown_processor.abap",
+          "line": 243,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_breakdown_processor.abap:243"
+        },
+        "meaning": "Freigabeergebnis zurück (im Text vermerkt)"
+      },
+      {
+        "id": "p_sc",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_pm_breakdown_processor.abap",
+          "line": 121,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_breakdown_processor.abap:121"
+        },
+        "meaning": "CMMS informieren"
+      },
+      {
+        "id": "sc_s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_pm_breakdown_processor.abap",
+          "line": 246,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_breakdown_processor.abap:246"
+        },
+        "meaning": "CMMS-Abgleich"
+      },
+      {
+        "id": "sc_rfc",
+        "type": "rfc",
+        "anchor": {
+          "file": "zcl_pm_breakdown_processor.abap",
+          "line": 251,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_breakdown_processor.abap:251"
+        },
+        "meaning": "Auftrag, Equipment und Text synchron an das CMMS übergeben"
+      },
+      {
+        "id": "sc_g",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_pm_breakdown_processor.abap",
+          "line": 261,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_breakdown_processor.abap:261"
+        },
+        "meaning": "Übergabe gescheitert?"
+      },
+      {
+        "id": "sc_w",
+        "type": "write",
+        "anchor": {
+          "file": "zcl_pm_breakdown_processor.abap",
+          "line": 268,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_breakdown_processor.abap:268"
+        },
+        "meaning": "Auftrag mit Fehlertext zum Nachversand vormerken"
+      },
+      {
+        "id": "sc_cw",
+        "type": "transaction",
+        "anchor": {
+          "file": "zcl_pm_breakdown_processor.abap",
+          "line": 269,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_breakdown_processor.abap:269"
+        },
+        "meaning": "Vormerkung festschreiben"
+      },
+      {
+        "id": "sc_e",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_pm_breakdown_processor.abap",
+          "line": 271,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_breakdown_processor.abap:271"
+        },
+        "meaning": "Rückkehr"
+      },
+      {
+        "id": "p_re",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_pm_breakdown_processor.abap",
+          "line": 125,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_breakdown_processor.abap:125"
+        },
+        "meaning": "Workflow-Ereignis auslösen"
+      },
+      {
+        "id": "re_s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_pm_breakdown_processor.abap",
+          "line": 274,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_breakdown_processor.abap:274"
+        },
+        "meaning": "Ereignis"
+      },
+      {
+        "id": "re_c",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_pm_breakdown_processor.abap",
+          "line": 278,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_breakdown_processor.abap:278"
+        },
+        "meaning": "Ereignis ZBREAKDOWN zum IH-Auftrag (BUS2007) mit Commit auslösen"
+      },
+      {
+        "id": "re_e",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_pm_breakdown_processor.abap",
+          "line": 284,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_breakdown_processor.abap:284"
+        },
+        "meaning": "Ereignis ausgelöst, Rückkehr"
+      },
+      {
+        "id": "p_dq2",
+        "type": "lock",
+        "anchor": {
+          "file": "zcl_pm_breakdown_processor.abap",
+          "line": 127,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_breakdown_processor.abap:127"
+        },
+        "meaning": "Meldungssperre aufheben"
+      },
+      {
+        "id": "p_e",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_pm_breakdown_processor.abap",
+          "line": 130,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_breakdown_processor.abap:130"
+        },
+        "meaning": "Ergebnistext zurück"
+      },
+      {
+        "id": "cc_s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_pm_breakdown_processor.abap",
+          "line": 287,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_breakdown_processor.abap:287"
+        },
+        "meaning": "TECO-Lauf"
+      },
+      {
+        "id": "cc_q",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_pm_breakdown_processor.abap",
+          "line": 294,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_breakdown_processor.abap:294"
+        },
+        "meaning": "IH-Aufträge PM01 mit Meldungsbezug im Planungswerk lesen"
+      },
+      {
+        "id": "cc_l",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_pm_breakdown_processor.abap",
+          "line": 301,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_breakdown_processor.abap:301"
+        },
+        "meaning": "Je Auftrag"
+      },
+      {
+        "id": "cc_q1",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_pm_breakdown_processor.abap",
+          "line": 303,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_breakdown_processor.abap:303"
+        },
+        "meaning": "Aktiven Status rückgemeldet (I0009) suchen"
+      },
+      {
+        "id": "cc_g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_pm_breakdown_processor.abap",
+          "line": 308,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_breakdown_processor.abap:308"
+        },
+        "meaning": "Rückgemeldet?"
+      },
+      {
+        "id": "cc_q2",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_pm_breakdown_processor.abap",
+          "line": 311,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_breakdown_processor.abap:311"
+        },
+        "meaning": "Aktiven Status technisch abgeschlossen (I0045) suchen"
+      },
+      {
+        "id": "cc_g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_pm_breakdown_processor.abap",
+          "line": 316,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_breakdown_processor.abap:316"
+        },
+        "meaning": "Schon technisch abgeschlossen?"
+      },
+      {
+        "id": "cc_c",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_pm_breakdown_processor.abap",
+          "line": 324,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_breakdown_processor.abap:324"
+        },
+        "meaning": "Auftrag technisch abschließen und sichern"
+      },
+      {
+        "id": "cc_g3",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_pm_breakdown_processor.abap",
+          "line": 328,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_breakdown_processor.abap:328"
+        },
+        "meaning": "Fehler?"
+      },
+      {
+        "id": "cc_rb",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_pm_breakdown_processor.abap",
+          "line": 329,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_breakdown_processor.abap:329"
+        },
+        "meaning": "Zurückrollen"
+      },
+      {
+        "id": "cc_cm",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_pm_breakdown_processor.abap",
+          "line": 331,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_breakdown_processor.abap:331"
+        },
+        "meaning": "Festschreiben und zählen"
+      },
+      {
+        "id": "cc_e",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_pm_breakdown_processor.abap",
+          "line": 337,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pm_breakdown_processor.abap:337"
+        },
+        "meaning": "Anzahl zurück"
+      }
+    ],
+    "edges": [
+      {
+        "from": "w_s",
+        "to": "w_q",
+        "condition": "always"
+      },
+      {
+        "from": "w_q",
+        "to": "w_g",
+        "condition": "always"
+      },
+      {
+        "from": "w_g",
+        "to": "w_e",
+        "condition": "sy-subrc <> 0 OR lv_qmart <> 'M2' OR lv_priok <> '1'"
+      },
+      {
+        "from": "w_g",
+        "to": "w_c",
+        "condition": "else"
+      },
+      {
+        "from": "w_c",
+        "to": "p_s",
+        "condition": "always"
+      },
+      {
+        "from": "w_gl",
+        "to": "w_tmp",
+        "condition": "lv_text CS 'gesperrt'"
+      },
+      {
+        "from": "w_gl",
+        "to": "w_any",
+        "condition": "else"
+      },
+      {
+        "from": "r_s",
+        "to": "r_g",
+        "condition": "always"
+      },
+      {
+        "from": "r_g",
+        "to": "r_cc",
+        "condition": "p_teco = abap_true"
+      },
+      {
+        "from": "r_cc",
+        "to": "cc_s",
+        "condition": "always"
+      },
+      {
+        "from": "cc_e",
+        "to": "r_w1",
+        "condition": "always"
+      },
+      {
+        "from": "r_w1",
+        "to": "r_e1",
+        "condition": "always"
+      },
+      {
+        "from": "r_g",
+        "to": "r_q",
+        "condition": "else"
+      },
+      {
+        "from": "r_q",
+        "to": "r_g2",
+        "condition": "always"
+      },
+      {
+        "from": "r_g2",
+        "to": "r_w2",
+        "condition": "gt_qmnum IS INITIAL"
+      },
+      {
+        "from": "r_w2",
+        "to": "r_e2",
+        "condition": "always"
+      },
+      {
+        "from": "r_g2",
+        "to": "r_l",
+        "condition": "else"
+      },
+      {
+        "from": "r_l",
+        "to": "r_c",
+        "condition": "next row"
+      },
+      {
+        "from": "r_c",
+        "to": "p_s",
+        "condition": "always"
+      },
+      {
+        "from": "r_ok",
+        "to": "r_l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "r_err",
+        "to": "r_l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "r_l",
+        "to": "r_done",
+        "condition": "no more rows"
+      },
+      {
+        "from": "p_s",
+        "to": "p_rn",
+        "condition": "always"
+      },
+      {
+        "from": "p_rn",
+        "to": "rn_s",
+        "condition": "always"
+      },
+      {
+        "from": "rn_s",
+        "to": "rn_q",
+        "condition": "always"
+      },
+      {
+        "from": "rn_q",
+        "to": "rn_g1",
+        "condition": "always"
+      },
+      {
+        "from": "rn_g1",
+        "to": "rn_x1",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "rn_g1",
+        "to": "rn_g2",
+        "condition": "else"
+      },
+      {
+        "from": "rn_g2",
+        "to": "rn_x2",
+        "condition": "rs_notif-qmart <> 'M2'"
+      },
+      {
+        "from": "rn_g2",
+        "to": "rn_e",
+        "condition": "else"
+      },
+      {
+        "from": "rn_e",
+        "to": "p_g1",
+        "condition": "always"
+      },
+      {
+        "from": "p_g1",
+        "to": "p_e1",
+        "condition": "ls_notif-aufnr IS NOT INITIAL"
+      },
+      {
+        "from": "p_g1",
+        "to": "p_lk",
+        "condition": "else"
+      },
+      {
+        "from": "p_lk",
+        "to": "p_g2",
+        "condition": "always"
+      },
+      {
+        "from": "p_g2",
+        "to": "p_x1",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "p_g2",
+        "to": "p_ic",
+        "condition": "else"
+      },
+      {
+        "from": "p_ic",
+        "to": "ic_s",
+        "condition": "always"
+      },
+      {
+        "from": "ic_s",
+        "to": "ic_chk",
+        "condition": "always"
+      },
+      {
+        "from": "ic_chk",
+        "to": "ic_q",
+        "condition": "iv_equnr IS NOT INITIAL"
+      },
+      {
+        "from": "ic_chk",
+        "to": "ic_e",
+        "condition": "else"
+      },
+      {
+        "from": "ic_q",
+        "to": "ic_g",
+        "condition": "always"
+      },
+      {
+        "from": "ic_g",
+        "to": "ic_a",
+        "condition": "lv_abckz = 'A'"
+      },
+      {
+        "from": "ic_g",
+        "to": "ic_e",
+        "condition": "else"
+      },
+      {
+        "from": "ic_a",
+        "to": "ic_e",
+        "condition": "always"
+      },
+      {
+        "from": "ic_e",
+        "to": "p_g3",
+        "condition": "always"
+      },
+      {
+        "from": "p_g3",
+        "to": "p_co",
+        "condition": "lv_crit = abap_true"
+      },
+      {
+        "from": "p_g3",
+        "to": "p_co",
+        "condition": "else"
+      },
+      {
+        "from": "p_co",
+        "to": "co_s",
+        "condition": "always"
+      },
+      {
+        "from": "co_s",
+        "to": "co_c",
+        "condition": "always"
+      },
+      {
+        "from": "co_c",
+        "to": "co_g",
+        "condition": "always"
+      },
+      {
+        "from": "co_g",
+        "to": "co_rb",
+        "condition": "line_exists( lt_return[ type = 'E' ] ) OR line_exists( lt_return[ type = 'A' ] )"
+      },
+      {
+        "from": "co_rb",
+        "to": "co_x",
+        "condition": "always"
+      },
+      {
+        "from": "co_g",
+        "to": "co_cm",
+        "condition": "else"
+      },
+      {
+        "from": "co_cm",
+        "to": "co_e",
+        "condition": "always"
+      },
+      {
+        "from": "co_x",
+        "to": "p_dq1",
+        "condition": "zcx_pm_breakdown"
+      },
+      {
+        "from": "p_dq1",
+        "to": "p_x2",
+        "condition": "always"
+      },
+      {
+        "from": "co_e",
+        "to": "p_g4",
+        "condition": "always"
+      },
+      {
+        "from": "p_g4",
+        "to": "p_ro",
+        "condition": "lv_crit = abap_true"
+      },
+      {
+        "from": "p_g4",
+        "to": "p_re",
+        "condition": "else"
+      },
+      {
+        "from": "p_ro",
+        "to": "ro_s",
+        "condition": "always"
+      },
+      {
+        "from": "ro_s",
+        "to": "ro_c",
+        "condition": "always"
+      },
+      {
+        "from": "ro_c",
+        "to": "ro_g",
+        "condition": "always"
+      },
+      {
+        "from": "ro_g",
+        "to": "ro_rb",
+        "condition": "line_exists( lt_return[ type = 'E' ] )"
+      },
+      {
+        "from": "ro_g",
+        "to": "ro_cm",
+        "condition": "else"
+      },
+      {
+        "from": "ro_rb",
+        "to": "ro_e",
+        "condition": "always"
+      },
+      {
+        "from": "ro_cm",
+        "to": "ro_e",
+        "condition": "always"
+      },
+      {
+        "from": "ro_e",
+        "to": "p_sc",
+        "condition": "always"
+      },
+      {
+        "from": "p_sc",
+        "to": "sc_s",
+        "condition": "always"
+      },
+      {
+        "from": "sc_s",
+        "to": "sc_rfc",
+        "condition": "always"
+      },
+      {
+        "from": "sc_rfc",
+        "to": "sc_g",
+        "condition": "always"
+      },
+      {
+        "from": "sc_g",
+        "to": "sc_w",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "sc_w",
+        "to": "sc_cw",
+        "condition": "always"
+      },
+      {
+        "from": "sc_cw",
+        "to": "sc_e",
+        "condition": "always"
+      },
+      {
+        "from": "sc_g",
+        "to": "sc_e",
+        "condition": "else"
+      },
+      {
+        "from": "sc_e",
+        "to": "p_re",
+        "condition": "always"
+      },
+      {
+        "from": "p_re",
+        "to": "re_s",
+        "condition": "always"
+      },
+      {
+        "from": "re_s",
+        "to": "re_c",
+        "condition": "always"
+      },
+      {
+        "from": "re_c",
+        "to": "re_e",
+        "condition": "always"
+      },
+      {
+        "from": "p_dq2",
+        "to": "p_e",
+        "condition": "always"
+      },
+      {
+        "from": "p_e",
+        "to": "w_done",
+        "condition": "always"
+      },
+      {
+        "from": "p_e1",
+        "to": "w_done",
+        "condition": "always"
+      },
+      {
+        "from": "p_e",
+        "to": "r_ok",
+        "condition": "always"
+      },
+      {
+        "from": "p_e1",
+        "to": "r_ok",
+        "condition": "always"
+      },
+      {
+        "from": "rn_x1",
+        "to": "w_gl",
+        "condition": "zcx_pm_breakdown"
+      },
+      {
+        "from": "rn_x2",
+        "to": "w_gl",
+        "condition": "zcx_pm_breakdown"
+      },
+      {
+        "from": "p_x1",
+        "to": "w_gl",
+        "condition": "zcx_pm_breakdown"
+      },
+      {
+        "from": "p_x2",
+        "to": "w_gl",
+        "condition": "zcx_pm_breakdown"
+      },
+      {
+        "from": "rn_x1",
+        "to": "r_err",
+        "condition": "zcx_pm_breakdown"
+      },
+      {
+        "from": "rn_x2",
+        "to": "r_err",
+        "condition": "zcx_pm_breakdown"
+      },
+      {
+        "from": "p_x1",
+        "to": "r_err",
+        "condition": "zcx_pm_breakdown"
+      },
+      {
+        "from": "p_x2",
+        "to": "r_err",
+        "condition": "zcx_pm_breakdown"
+      },
+      {
+        "from": "cc_s",
+        "to": "cc_q",
+        "condition": "always"
+      },
+      {
+        "from": "cc_q",
+        "to": "cc_l",
+        "condition": "always"
+      },
+      {
+        "from": "cc_l",
+        "to": "cc_q1",
+        "condition": "next row"
+      },
+      {
+        "from": "cc_q1",
+        "to": "cc_g1",
+        "condition": "always"
+      },
+      {
+        "from": "cc_g1",
+        "to": "cc_l",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "cc_g1",
+        "to": "cc_q2",
+        "condition": "else"
+      },
+      {
+        "from": "cc_q2",
+        "to": "cc_g2",
+        "condition": "always"
+      },
+      {
+        "from": "cc_g2",
+        "to": "cc_l",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "cc_g2",
+        "to": "cc_c",
+        "condition": "else"
+      },
+      {
+        "from": "cc_c",
+        "to": "cc_g3",
+        "condition": "always"
+      },
+      {
+        "from": "cc_g3",
+        "to": "cc_rb",
+        "condition": "line_exists( lt_return[ type = 'E' ] )"
+      },
+      {
+        "from": "cc_g3",
+        "to": "cc_cm",
+        "condition": "else"
+      },
+      {
+        "from": "cc_rb",
+        "to": "cc_l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "cc_cm",
+        "to": "cc_l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "cc_l",
+        "to": "cc_e",
+        "condition": "no more rows"
+      },
+      {
+        "from": "re_e",
+        "to": "p_dq2",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zcl_pm_breakdown_processor.abap:96 — kein Fachsatz „Der Auftrag übernimmt die Priorität der Meldung“ (die Priorität folgt der Anlagenkritikalität: 1 oder 2, obwohl die Meldung Priorität 1 hat)",
+    "zcl_pm_breakdown_processor.abap:251 — kein Fachsatz „Nicht übertragene Aufträge werden automatisch erneut gesendet“ (der Code merkt sie nur in ZPM_CMMS_QUEUE vor; der Nachversand-Job ist nicht Teil des Falls)",
+    "zcl_pm_breakdown_processor.abap:294 — kein Fachsatz „Die Meldung wird beim TECO abgeschlossen“ (abgeschlossen wird nur der Auftrag)",
+    "zcl_pm_breakdown_processor.abap:115 — kein Fachsatz „Scheitert die Freigabe, wird der Auftrag gelöscht oder die Verarbeitung abgebrochen“ (der Fehlschlag wird nur im Text vermerkt, CMMS-Übergabe und Ereignis folgen trotzdem)"
+  ],
+  "processDescription": "Legt jemand eine Störmeldung mit Priorität 1 an, löst SAP ein Ereignis aus, dessen Empfänger die Meldung sofort weiterverarbeitet; ein Report verarbeitet liegengebliebene Meldungen der letzten Tage nach oder schließt im zweiten Modus rückgemeldete Störaufträge technisch ab. Die Verarbeitung liest die Meldung, bricht ab, wenn sie fehlt oder keine Störmeldung ist, und tut nichts, wenn schon ein Auftrag existiert. Sie sperrt die Meldung – ist sie gesperrt, bekommt der Ereignisempfänger einen vorübergehenden Fehler und das Ereignis wird erneut zugestellt. Anhand des ABC-Kennzeichens der Anlage bestimmt sie die Auftragspriorität und legt einen IH-Auftrag PM01 mit Meldungsbezug und einem Vorgang an; bei Fehler rollt sie zurück, hebt die Sperre auf und bricht ab. Bei kritischer Anlage gibt sie den Auftrag sofort frei und übergibt ihn synchron an das CMMS des Anlagenlieferanten; scheitert das, merkt sie ihn zum Nachversand vor. Für jeden neuen Auftrag löst sie ein Workflow-Ereignis aus und hebt die Sperre auf. Im TECO-Modus schließt der Report alle rückgemeldeten, noch offenen Störaufträge des Planungswerks technisch ab und gibt die Anzahl aus."
+}

@@ -1,0 +1,27 @@
+{
+  "id": "BM-040",
+  "title": "Filialnachschub per Umlagerungsbestellung: S032-Bestand, POS-Abverkauf per RFC, UB, Auslieferung und Warenausgang",
+  "domain": "MM / Procure-to-Pay, Bestandsführung, Lager (WM/EWM)",
+  "band": "sehr komplex",
+  "loc": 474,
+  "constructs": [
+    "REPORT mit TOP/F01/F02-Includes und globaler Klasse",
+    "INITIALIZATION / START-/END-OF-SELECTION",
+    "SELECT auf Infostruktur S032",
+    "SELECT SUM mit JOIN EKKO/EKPO",
+    "CALL FUNCTION … DESTINATION (synchroner RFC) mit MESSAGE-Ausnahmen",
+    "BAPI_PO_CREATE1 (UB), BAPI_OUTB_DELIVERY_CREATE_STO, WS_DELIVERY_UPDATE",
+    "Methodenaufruf in IF-Bedingung",
+    "EXPORT … TO DATABASE indx",
+    "Anwendungsprotokoll BAL_*",
+    "WRITE-Liste mit FORMAT COLOR"
+  ],
+  "scenario": "Filialnachschub eines Handelsunternehmens über Umlagerungsbestellungen aus dem Zentrallager, angebunden an ein externes Kassensystem; in der Transformation Kandidat für Standard-Nachschub (Retail Replenishment) oder eine Side-by-Side-Lösung.",
+  "s4_issues": [
+    "S032-Infostruktur ist in S/4HANA veraltet (LIS-Nachfolger: CDS/Embedded Analytics, Bestand aus MATDOC)",
+    "Direkte EKKO/EKPO-Summen, Nachfolger I_PurchaseOrderItemAPI01",
+    "WS_DELIVERY_UPDATE ist nicht freigegeben",
+    "EXPORT TO DATABASE INDX als Job-Schnittstelle",
+    "RFC zu Kassensystem über Destination"
+  ]
+}

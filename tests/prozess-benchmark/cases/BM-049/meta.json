@@ -1,0 +1,22 @@
+{
+  "id": "BM-049",
+  "title": "BTE 00001025: Eingangsrechnungen von EU-Lieferanten auf USt-IdNr. und EU-Steuerkennzeichen prüfen",
+  "domain": "FI/CO / Record-to-Report",
+  "band": "mittel",
+  "loc": 63,
+  "constructs": [
+    "FUNCTION (Business Transaction Event, P&S 00001025)",
+    "TABLES-Parameter",
+    "LOOP AT ... WHERE",
+    "READ TABLE WITH KEY",
+    "SELECT SINGLE INTO (...)",
+    "verschachtelte LOOPs",
+    "MESSAGE TYPE E"
+  ],
+  "scenario": "Über FIBF als Produkt ZFI_EUTAX registrierter Publish-&-Subscribe-Baustein, der beim Buchen jeder Kreditorenrechnung die innergemeinschaftliche Steuerlogik erzwingt; typischer Fund in Konzernen mit mehreren EU-Buchungskreisen.",
+  "s4_issues": [
+    "BTE-Bausteine sind in S/4HANA Private Cloud weiter möglich, in Public Cloud nicht (Nachfolger: Validierungs-BAdI)",
+    "Direkte Lesezugriffe auf LFA1 (Business Partner-Konzept, I_Supplier), T005, T001",
+    "SELECT SINGLE je Belegzeile innerhalb der Buchung"
+  ]
+}

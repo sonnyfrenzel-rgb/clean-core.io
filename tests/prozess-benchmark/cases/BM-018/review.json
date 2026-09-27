@@ -1,0 +1,95 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Quelltext zsd_reprice_f01.abap:21",
+      "before": "AND u~absta <> 'C'.",
+      "after": "AND u~abstk <> 'C'.",
+      "why": "VBUK hat kein Feld ABSTA (das ist der Absagestatus der Position in VBUP); der Gesamtabsagestatus des Belegs heißt VBUK-ABSTK (so auch in meta.json s4_issues). Syntaxfehler behoben, Zeilenzahl unverändert, keine Anker betroffen.",
+      "category": "Quelltext"
+    },
+    {
+      "where": "Kante c_read→g_empty",
+      "before": "c_read->g_empty [always]",
+      "after": "entfällt; re->g_empty [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks; Rückkante vom end des Blocks → Folgeschritt; keine Direktkante Aufruf → Folgeschritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante c_nb→l",
+      "before": "c_nb->l [next iteration]",
+      "after": "entfällt; e_z7->l [next iteration], e_enq->l [next iteration], e_err->l [next iteration], e_test->l [next iteration], ne->l [next iteration]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks; Rückkante vom end des Blocks → Folgeschritt; keine Direktkante Aufruf → Folgeschritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante c_aus→e_end",
+      "before": "c_aus->e_end [always]",
+      "after": "entfällt; ae->e_end [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks; Rückkante vom end des Blocks → Folgeschritt; keine Direktkante Aufruf → Folgeschritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante c_ks1→enq",
+      "before": "c_ks1->enq [always]",
+      "after": "entfällt; kse->enq [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks; Rückkante vom end des Blocks → Folgeschritt; keine Direktkante Aufruf → Folgeschritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante c_ks2→g_nw",
+      "before": "c_ks2->g_nw [always]",
+      "after": "entfällt; kse->g_nw [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks; Rückkante vom end des Blocks → Folgeschritt; keine Direktkante Aufruf → Folgeschritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Kante c_sp→g_gesp",
+      "before": "c_sp->g_gesp [always]",
+      "after": "entfällt; pe->g_gesp [always]",
+      "why": "Vereinheitlichte Konvention: Aufruf → Start des Blocks; Rückkante vom end des Blocks → Folgeschritt; keine Direktkante Aufruf → Folgeschritt.",
+      "category": "Kante"
+    },
+    {
+      "where": "Knoten rb1",
+      "before": "transaction",
+      "after": "opaque_call",
+      "why": "Vereinheitlichte Konvention: BAPI_TRANSACTION_COMMIT/_ROLLBACK sind opaque_call; transaction nur an COMMIT WORK (cm, zsd_reprice.abap:77 bleibt transaction).",
+      "category": "Knotenart"
+    },
+    {
+      "where": "Knoten rb2",
+      "before": "transaction",
+      "after": "opaque_call",
+      "why": "Vereinheitlichte Konvention: BAPI_TRANSACTION_COMMIT/_ROLLBACK sind opaque_call; transaction nur an COMMIT WORK (cm, zsd_reprice.abap:77 bleibt transaction).",
+      "category": "Knotenart"
+    },
+    {
+      "where": "Knoten rb3",
+      "before": "transaction",
+      "after": "opaque_call",
+      "why": "Vereinheitlichte Konvention: BAPI_TRANSACTION_COMMIT/_ROLLBACK sind opaque_call; transaction nur an COMMIT WORK (cm, zsd_reprice.abap:77 bleibt transaction).",
+      "category": "Knotenart"
+    },
+    {
+      "where": "Knoten cm1",
+      "before": "transaction",
+      "after": "opaque_call",
+      "why": "Vereinheitlichte Konvention: BAPI_TRANSACTION_COMMIT/_ROLLBACK sind opaque_call; transaction nur an COMMIT WORK (cm, zsd_reprice.abap:77 bleibt transaction).",
+      "category": "Knotenart"
+    },
+    {
+      "where": "Knoten cm2",
+      "before": "transaction",
+      "after": "opaque_call",
+      "why": "Vereinheitlichte Konvention: BAPI_TRANSACTION_COMMIT/_ROLLBACK sind opaque_call; transaction nur an COMMIT WORK (cm, zsd_reprice.abap:77 bleibt transaction).",
+      "category": "Knotenart"
+    }
+  ],
+  "doubts": [
+    "SELECT … UP TO 1 ROWS … ORDER BY prio DESCENDING … ENDSELECT mit leerem Körper (mv45afzz_pricing.abap:54): Modell l_kamp->g_kamp [no more rows] ohne Körperkante ist semantisch richtig — nach ENDSELECT ist sy-subrc = 0, wenn eine Zeile gelesen wurde; die Validator-Warnung ist beabsichtigt.",
+    "Nicht geändert, nur Hinweis: ENQUEUE_EVVBAKE (f01:52) wird mit Standard-_SCOPE 2 gesetzt; mit BAPI_TRANSACTION_COMMIT (f01:104) geht die Sperre an die Verbuchung über und ist danach für den Report nicht mehr gehalten — preissperre_setzen läuft also ohne eigene Sperre, der DEQUEUE in Zeile 151 ist dann wirkungslos. Die Sollantwort behauptet nichts Gegenteiliges.",
+    "Der Verbuchungsbaustein us ist über cm->us (COMMIT WORK löst die Verbuchung aus) angebunden, nicht über eine Aufruf-/Rückkante an upd; bei IN UPDATE TASK ist das die richtige Semantik, die Direktkante cm->c_aus bleibt (asynchrone Verbuchung)."
+  ]
+}

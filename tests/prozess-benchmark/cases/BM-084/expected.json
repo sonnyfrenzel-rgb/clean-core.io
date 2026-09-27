@@ -1,0 +1,281 @@
+{
+  "id": "BM-084",
+  "title": "Workflow-Ereignis bei Änderung eines Kreditors mit Bankverbindung",
+  "classes": [
+    "K03",
+    "K01"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "LFBK",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 12,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:12"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "SWE_EVENT_CREATE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 19,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:19"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-084-B01",
+      "text": "Es werden die bereits gespeicherten Bankverbindungen des Kreditors gelesen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:12"
+        }
+      ]
+    },
+    {
+      "id": "BM-084-B02",
+      "text": "Hat der Kreditor noch keine gespeicherte Bankverbindung, wird kein Workflow angestoßen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:14"
+        },
+        {
+          "file": "source.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:15"
+        }
+      ]
+    },
+    {
+      "id": "BM-084-B03",
+      "text": "Sonst wird für den Kreditor das Workflow-Ereignis BANKCHANGED ausgelöst.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:19"
+        }
+      ]
+    },
+    {
+      "id": "BM-084-B04",
+      "text": "Kann das Ereignis nicht erzeugt werden, erscheint eine Warnung mit der Kreditornummer; das Sichern wird nicht verhindert.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:27"
+        },
+        {
+          "file": "source.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:28"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 1,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:1"
+        },
+        "meaning": "Aufruf aus Kreditoren-Exit"
+      },
+      {
+        "id": "r",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:12"
+        },
+        "meaning": "Gespeicherte Bankverbindungen des Kreditors lesen"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:14"
+        },
+        "meaning": "Keine Bankverbindung gespeichert?"
+      },
+      {
+        "id": "e1",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:15"
+        },
+        "meaning": "Ohne Workflow verlassen"
+      },
+      {
+        "id": "ev",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:19"
+        },
+        "meaning": "Ereignis BANKCHANGED für den Kreditor auslösen"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:27"
+        },
+        "meaning": "Ereignis nicht erzeugt?"
+      },
+      {
+        "id": "m",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:28"
+        },
+        "meaning": "Warnung ausgeben"
+      },
+      {
+        "id": "e2",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:30"
+        },
+        "meaning": "Rückkehr in den Exit"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "r",
+        "condition": "always"
+      },
+      {
+        "from": "r",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "e1",
+        "condition": "lines( lt_lfbk_old ) = 0"
+      },
+      {
+        "from": "g1",
+        "to": "ev",
+        "condition": "else"
+      },
+      {
+        "from": "ev",
+        "to": "g2",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "m",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g2",
+        "to": "e2",
+        "condition": "else"
+      },
+      {
+        "from": "m",
+        "to": "e2",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "source.abap:19 — kein Fachsatz „nur bei geänderter Bankverbindung“ (der Code vergleicht keine Bankdaten; jede Änderung eines Kreditors mit gespeicherter Bank löst das Ereignis aus, trotz Kommentar).",
+    "source.abap:19 — kein Fachsatz „Freigabe-Workflow ist gestartet“ (das Ereignis wird erst mit dem COMMIT des Aufrufers wirksam; hier kein COMMIT).",
+    "source.abap:28 — kein Fachsatz „Sichern wird abgelehnt“ (Warnung, kein Fehler)."
+  ],
+  "processDescription": "Beim Sichern eines Kreditors ruft der Kundenexit den Baustein mit den Kreditor-Kopfdaten auf. Er liest die bereits gespeicherten Bankverbindungen des Kreditors. Gibt es keine, verlässt er sich ohne Workflow – bei Neuanlagen wird also nichts ausgelöst. Sonst löst er für den Kreditor das Ereignis BANKCHANGED des kundeneigenen Objekttyps ZLFA1 aus, an dem ein Freigabe-Workflow hängen soll. Obwohl der Kommentar von geänderten Bankverbindungen spricht, prüft der Code nicht, ob sich die Bankdaten tatsächlich ändern. Scheitert die Ereigniserzeugung, erscheint lediglich eine Warnung; das Sichern läuft weiter, wirksam wird das Ereignis erst mit dem COMMIT des Aufrufers."
+}

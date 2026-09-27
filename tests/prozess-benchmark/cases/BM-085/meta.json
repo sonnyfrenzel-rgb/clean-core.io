@@ -1,0 +1,18 @@
+{
+  "id": "BM-085",
+  "title": "Pflichtfeldprüfung einer Materialanlage-Vorlage per Makro",
+  "domain": "Querschnitt — Schnittstellen, Stammdaten, HR, Workflow, technische Jobs",
+  "band": "einfach",
+  "loc": 36,
+  "constructs": [
+    "DEFINE/END-OF-DEFINITION",
+    "Makro-Kettensatz",
+    "SELECT Z-Stagingtabelle",
+    "UPDATE Z-Tabelle"
+  ],
+  "scenario": "Vorstufe einer Materialstamm-Massenanlage: Fachbereiche liefern Vorlagen in eine Stagingtabelle, dieser Report gibt einen Stapel nur frei, wenn alle Pflichtfelder gefüllt sind.",
+  "s4_issues": [
+    "Makros sind in ABAP Cloud nicht erlaubt und erschweren die Analyse",
+    "Materialnummernlänge (40 Stellen) in der Stagingtabelle prüfen"
+  ]
+}

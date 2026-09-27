@@ -1,0 +1,22 @@
+{
+  "id": "BM-009",
+  "title": "Nachrichtenprogramm Auftragsbestätigung per E-Mail: Rückgabecode nach Versandfehler hängt am Protokollaufruf",
+  "domain": "SD / Order-to-Cash",
+  "band": "mittel",
+  "loc": 80,
+  "constructs": [
+    "Nachrichten-Verarbeitungsroutine FORM entry USING return_code us_screen",
+    "TABLES nast",
+    "SELECT SINGLE mit INNER JOIN",
+    "Stringtemplates",
+    "SO_NEW_DOCUMENT_SEND_API1",
+    "NAST_PROTOCOL_UPDATE",
+    "return_code = sy-subrc"
+  ],
+  "scenario": "Kundeneigenes Verarbeitungsprogramm einer Nachrichtenart, das beim Sichern eines Kundenauftrags eine Auftragsbestätigung per E-Mail verschickt; Standardmuster aus der Output-Steuerung (NAST/RSNAST00).",
+  "s4_issues": [
+    "NAST-basierte Output-Steuerung ist in S/4 für Kundenaufträge durch das Output Management (BRF+) abgelöst",
+    "SO_NEW_DOCUMENT_SEND_API1 ist obsolet, Nachfolger CL_BCS",
+    "direkter Zugriff auf KNA1/ADR6 statt Business-Partner-API"
+  ]
+}

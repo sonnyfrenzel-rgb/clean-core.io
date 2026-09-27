@@ -1,0 +1,21 @@
+{
+  "id": "BM-028",
+  "title": "Umlagerung Werk an Werk (301) aus Dienstleisterdatei mit Bestandsvorprüfung",
+  "domain": "MM / Procure-to-Pay, Bestandsführung, Lager (WM/EWM)",
+  "band": "mittel",
+  "loc": 107,
+  "constructs": [
+    "OPEN/READ/CLOSE DATASET",
+    "SPLIT/TRANSLATE",
+    "SELECT SINGLE",
+    "BAPI_GOODSMVT_CREATE GM_CODE 04",
+    "BAPI_TRANSACTION_COMMIT/ROLLBACK",
+    "LOOP … WHERE type CA als Suche"
+  ],
+  "scenario": "Dateischnittstelle zu einem externen Lager, wie sie viele Kunden vor EWM oder einer Cloud-Integration betreiben; wird in der Transformation meist auf eine API-Schnittstelle umgestellt.",
+  "s4_issues": [
+    "Dateischnittstelle auf Applikationsserver (OPEN DATASET) in Private Cloud nur eingeschränkt, Integration über API/CPI empfohlen",
+    "MARD-Bestand in S/4 aus MATDOC abgeleitet",
+    "MATNR 40 Zeichen im Dateiformat"
+  ]
+}

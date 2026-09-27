@@ -1,0 +1,32 @@
+{
+  "id": "BM-080",
+  "title": "Automatische Chargenfreigabe: Ergebnisbewertung, Verwendungsentscheid, Chargenklassifizierung und QS-Mail",
+  "domain": "PP / PM / QM — Produktion, Instandhaltung, Qualität",
+  "band": "sehr komplex",
+  "loc": 515,
+  "constructs": [
+    "REPORT mit Includes und lokaler Klasse",
+    "CLASS … DEFINITION DEFERRED",
+    "funktionale Methode mit EXPORTING-Parameter",
+    "SORTED TABLE / READ TABLE WITH TABLE KEY",
+    "Offset-Zugriff auf Steuerkennzeichen",
+    "IF/ELSEIF",
+    "ENQUEUE_EQQALS1/DEQUEUE_EQQALS1",
+    "CASE",
+    "BAPI_INSPLOT_SETUSAGEDECISION",
+    "BAPI_OBJCL_GETDETAIL/BAPI_OBJCL_CHANGE",
+    "BAPI_BATCH_CHANGE",
+    "CL_BCS mit Verteilerliste",
+    "INSERT Z-Protokoll + COMMIT WORK",
+    "REUSE_ALV_GRID_DISPLAY",
+    "RETURN in START-OF-SELECTION"
+  ],
+  "scenario": "GMP-getriebener QM-Job eines Chemie- oder Pharmawerks, der Prüflose mit Charge automatisch bewertet, entscheidet, die Chargenklassifizierung und den Chargenzustand fortschreibt und die QS bei Rückweisungen per Mail informiert; typischer Fall für Materialnummernlänge, Klassifizierungs-BAPIs und Validierungspflichten bei der Umstellung.",
+  "s4_issues": [
+    "Objektschlüssel MCH1 mit festem Offset +18 – bricht mit 40-stelliger Materialnummer",
+    "Direktzugriffe QALS/QAMV/QAMR statt CDS",
+    "QALS-STAT35 statt Statusschnittstelle",
+    "REUSE_ALV_GRID_DISPLAY nicht Fiori-fähig",
+    "Mehrere COMMIT WORK je Prüflos (VE, Klassifizierung, Charge, Mail, Protokoll) – keine atomare Freigabe"
+  ]
+}

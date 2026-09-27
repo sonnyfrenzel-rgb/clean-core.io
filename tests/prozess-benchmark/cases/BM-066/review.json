@@ -1,0 +1,21 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "korrigiert",
+  "changes": [
+    {
+      "where": "Knoten e_end",
+      "before": "—",
+      "after": "end source.abap:92 „Report beendet“",
+      "why": "Pfadende des Ereignisblocks START-OF-SELECTION fehlte (Validator-Warnung); nach Autorenbrief bei implizitem Ende end auf der letzten Anweisung",
+      "category": "fehlender Knoten"
+    },
+    {
+      "where": "Kante sum→e_end",
+      "before": "—",
+      "after": "[always]",
+      "why": "Ende des Ereignisblocks",
+      "category": "Kante"
+    }
+  ],
+  "doubts": []
+}

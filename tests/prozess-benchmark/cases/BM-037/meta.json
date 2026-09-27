@@ -1,0 +1,28 @@
+{
+  "id": "BM-037",
+  "title": "Niederstwertprüfung zum Bilanzstichtag mit Gängigkeitsabschlag und Preisänderung per MR21-Batch-Input",
+  "domain": "MM / Procure-to-Pay, Bestandsführung, Lager (WM/EWM)",
+  "band": "sehr komplex",
+  "loc": 418,
+  "constructs": [
+    "REPORT mit TOP/SEL/F01/F02-Includes",
+    "INITIALIZATION / AT SELECTION-SCREEN / START-/END-OF-SELECTION",
+    "AUTHORITY-CHECK",
+    "SELECT JOIN mit FOR ALL ENTRIES",
+    "SELECT … UP TO 1 ROWS … ENDSELECT",
+    "SELECT SUM mit RANGES",
+    "Makros für Batch-Input",
+    "CALL TRANSACTION USING … OPTIONS FROM … MESSAGES INTO",
+    "ENQUEUE/DEQUEUE als Sperrprobe",
+    "MODIFY Z-Tabelle, COMMIT WORK",
+    "REUSE_ALV mit User-Command",
+    "CALL TRANSACTION … AND SKIP FIRST SCREEN"
+  ],
+  "scenario": "Jahresabschlussreport der Bestandsbewertung (HGB-Niederstwert), in vielen deutschen ECC-Systemen als Eigenentwicklung neben der Standard-Niederstwertermittlung (MRN0/MRN1) im Einsatz.",
+  "s4_issues": [
+    "MBEW-Preise in S/4 mit Material Ledger (Pflicht) aus ACDOCA/CKMLCR; Preisänderung MR21 bleibt, Batch-Input ist nicht Clean Core",
+    "MKPF/MSEG-Join für Verbrauch, in S/4 MATDOC",
+    "Standard-Niederstwertverfahren (Balance Sheet Valuation) als Alternative",
+    "MATNR 40 Zeichen in der BDC-Mappe"
+  ]
+}

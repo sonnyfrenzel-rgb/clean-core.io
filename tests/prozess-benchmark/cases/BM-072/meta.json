@@ -1,0 +1,27 @@
+{
+  "id": "BM-072",
+  "title": "Planaufträge mit Material- und Fehlteilprüfung in Fertigungsaufträge umsetzen",
+  "domain": "PP / PM / QM — Produktion, Instandhaltung, Qualität",
+  "band": "komplex",
+  "loc": 241,
+  "constructs": [
+    "REPORT mit TOP/F01-Include",
+    "AT SELECTION-SCREEN mit AUTHORITY-CHECK",
+    "SELECT PLAF/MARC/RESB",
+    "SELECT SUM( ) MARD",
+    "DELETE interne Tabelle nach Schalter",
+    "LOOP … EXIT",
+    "BAPI_PRODORD_CREATE_FROM_PLORD",
+    "BAPI_PRODORD_RELEASE",
+    "BAPI_TRANSACTION_COMMIT/ROLLBACK",
+    "VALUE #( ) / String-Templates",
+    "REUSE_ALV_GRID_DISPLAY mit Ampel"
+  ],
+  "scenario": "Täglicher Dispositionsjob, der CO41 ersetzt: fixierte Planaufträge im Horizont werden nach einfacher Material- und Fehlteilprüfung umgesetzt und optional sofort freigegeben; typischer Kandidat für die Ablösung durch Standard-Massenumsetzung und MRP Live.",
+  "s4_issues": [
+    "MARD-Bestand per SUM statt MATDOC/NSDM-Kompatibilitätsview bzw. CDS I_StockQuantityCurrentValue",
+    "Direktzugriff PLAF/RESB statt CDS I_PlannedOrder / I_PlannedOrderComponent",
+    "REUSE_ALV_GRID_DISPLAY nicht Fiori-fähig",
+    "Fehlteilprüfung ohne ATP – fachlich zu überprüfen gegen S/4-Verfügbarkeitsprüfung"
+  ]
+}

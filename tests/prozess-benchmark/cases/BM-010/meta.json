@@ -1,0 +1,23 @@
+{
+  "id": "BM-010",
+  "title": "Auftragssperre bei überfälligen Posten: BSID summieren, KNA1 direkt ändern",
+  "domain": "SD / Order-to-Cash",
+  "band": "mittel",
+  "loc": 76,
+  "constructs": [
+    "REPORT als Nachtjob",
+    "SELECT auf BSID",
+    "CHECK mit Rechenausdruck",
+    "COLLECT",
+    "ENQUEUE_EXKNA1/DEQUEUE_EXKNA1",
+    "UPDATE kna1",
+    "Testlauf-Checkbox",
+    "COMMIT WORK"
+  ],
+  "scenario": "Nachtjob aus dem Forderungsmanagement, der Kunden mit überfälligen Posten über einem Mindestbetrag für neue Aufträge sperrt; schreibt direkt in den Kundenstamm.",
+  "s4_issues": [
+    "BSID ist in S/4 nur noch Kompatibilitätsview auf ACDOCA",
+    "direktes UPDATE auf KNA1 umgeht Business Partner/CVI-Synchronisation und Änderungsbelege",
+    "Kreditmanagement/Sperren in S/4 über FSCM bzw. Business-Partner-API"
+  ]
+}

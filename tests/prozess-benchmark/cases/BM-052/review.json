@@ -1,0 +1,8 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "ok",
+  "changes": [],
+  "doubts": [
+    "zfi_bankstmt_f01.abap:34: Der Gateway gcr hat nur eine Kante gcr->dl [next iteration] statt je einer Kante für Bedingung und Sonst-Zweig (beide führen zurück zur Schleife). Vertretbar, nicht geändert."
+  ]
+}

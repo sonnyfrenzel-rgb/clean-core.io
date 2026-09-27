@@ -1,0 +1,26 @@
+{
+  "id": "BM-052",
+  "title": "Kontoauszugsdatei einlesen und Zahlungseingänge per Posting Interface gegen Debitorenposten ausgleichen",
+  "domain": "FI/CO / Record-to-Report",
+  "band": "komplex",
+  "loc": 271,
+  "constructs": [
+    "REPORT mit INCLUDE",
+    "OPEN DATASET FOR INPUT / READ DATASET / CLOSE DATASET",
+    "DO mit EXIT und CONTINUE",
+    "SPLIT",
+    "SELECT SINGLE TVARVC",
+    "FIND REGEX",
+    "REDUCE",
+    "VALUE FOR",
+    "POSTING_INTERFACE_START/CLEARING/END",
+    "REUSE_ALV_GRID_DISPLAY"
+  ],
+  "scenario": "Eigenbau-Ersatz für den elektronischen Kontoauszug FF.5: die Hausbank liefert eine CSV-Datei, Zahlungseingänge werden über die Rechnungsnummer im Verwendungszweck den offenen Posten zugeordnet und per FB05 im Batch-Input ausgeglichen.",
+  "s4_issues": [
+    "POSTING_INTERFACE_* arbeitet per Batch-Input auf FB05 und ist in S/4HANA Cloud nicht verfügbar",
+    "BSID ist Kompatibilitäts-View",
+    "Standard: Bank Statement Import / Fiori Reprocess Bank Statement Items statt Eigenbau",
+    "Datei auf dem Applikationsserver"
+  ]
+}

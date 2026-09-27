@@ -1,0 +1,18 @@
+{
+  "id": "BM-022",
+  "title": "Gesperrter und QM-Bestand eines Materials im Werk (Funktionsbaustein)",
+  "domain": "MM / Procure-to-Pay, Bestandsführung, Lager (WM/EWM)",
+  "band": "einfach",
+  "loc": 33,
+  "constructs": [
+    "FUNCTION",
+    "SELECT * INTO TABLE",
+    "RAISE Ausnahme",
+    "LOOP-Summierung"
+  ],
+  "scenario": "Kleiner RFC-fähiger Lesebaustein, den ein Z-Dispo-Cockpit oder ein externes Planungstool nutzt; typischer Kandidat für einen Ersatz durch eine CDS-Sicht.",
+  "s4_issues": [
+    "MARD in S/4HANA: Bestandsmengen werden aus MATDOC abgeleitet (MARD ist Proxy-Objekt mit NSDM_V_MARD), SELECT * teuer",
+    "Nachfolger-Lesemodell I_MaterialStock_2 prüfen"
+  ]
+}

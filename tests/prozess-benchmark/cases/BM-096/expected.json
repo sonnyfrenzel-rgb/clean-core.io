@@ -1,0 +1,1932 @@
+{
+  "id": "BM-096",
+  "title": "IDoc-Eingang Materialstamm aus MDM-Hub: Segmentmapping, Serialisierung, BAPI je Werk",
+  "classes": [
+    "K03",
+    "K12",
+    "K14",
+    "K01"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "CONVERSION_EXIT_MATN1_INPUT",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "lzmatmas_inf01.abap",
+        "line": 31,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzmatmas_inf01.abap:31"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZMM_IDOC_SERIAL",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "lzmatmas_inf02.abap",
+        "line": 16,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzmatmas_inf02.abap:16"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZMM_IDOC_SERIAL",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "lzmatmas_inf02.abap",
+        "line": 154,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzmatmas_inf02.abap:154"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "T134",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "lzmatmas_inf02.abap",
+        "line": 43,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzmatmas_inf02.abap:43"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "T001W",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "lzmatmas_inf02.abap",
+        "line": 52,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzmatmas_inf02.abap:52"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ENQUEUE_EMMARAE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "lzmatmas_inf02.abap",
+        "line": 75,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzmatmas_inf02.abap:75"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_MATERIAL_SAVEDATA",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "lzmatmas_inf02.abap",
+        "line": 88,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzmatmas_inf02.abap:88"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_COMMIT",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "lzmatmas_inf02.abap",
+        "line": 132,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzmatmas_inf02.abap:132"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_ROLLBACK",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "lzmatmas_inf02.abap",
+        "line": 136,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzmatmas_inf02.abap:136"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "DEQUEUE_EMMARAE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "lzmatmas_inf02.abap",
+        "line": 139,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lzmatmas_inf02.abap:139"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-096-B01",
+      "text": "Jedes IDoc des Pakets wird nur mit dem Nachrichtentyp ZMATMAS verarbeitet; ein anderer Typ bricht den Baustein ab.",
+      "anchors": [
+        {
+          "file": "z_idoc_input_zmatmas.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zmatmas.abap:32"
+        },
+        {
+          "file": "z_idoc_input_zmatmas.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zmatmas.abap:33"
+        }
+      ]
+    },
+    {
+      "id": "BM-096-B02",
+      "text": "Die Segmente des IDocs werden in die Daten für die Materialpflege übertragen; unbekannte Segmente werden ignoriert.",
+      "anchors": [
+        {
+          "file": "z_idoc_input_zmatmas.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zmatmas.abap:37"
+        },
+        {
+          "file": "lzmatmas_inf01.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmatmas_inf01.abap:26"
+        },
+        {
+          "file": "lzmatmas_inf01.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmatmas_inf01.abap:27"
+        }
+      ]
+    },
+    {
+      "id": "BM-096-B03",
+      "text": "Aus dem Kopfsegment werden die ins interne Format gewandelte Materialnummer, Branche und Materialart sowie Warengruppe, Basismengeneinheit, alte Materialnummer, Nettogewicht mit Einheit und Produkthierarchie übernommen.",
+      "anchors": [
+        {
+          "file": "lzmatmas_inf01.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmatmas_inf01.abap:31"
+        },
+        {
+          "file": "lzmatmas_inf01.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmatmas_inf01.abap:39"
+        },
+        {
+          "file": "lzmatmas_inf01.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmatmas_inf01.abap:42"
+        }
+      ]
+    },
+    {
+      "id": "BM-096-B04",
+      "text": "Kurztexte werden je Sprache übernommen.",
+      "anchors": [
+        {
+          "file": "lzmatmas_inf01.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmatmas_inf01.abap:52"
+        }
+      ]
+    },
+    {
+      "id": "BM-096-B05",
+      "text": "Je Werkssegment werden Dispomerkmal, Disponent, Einkäufergruppe, Beschaffungsart und Profit-Center übernommen.",
+      "anchors": [
+        {
+          "file": "lzmatmas_inf01.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmatmas_inf01.abap:59"
+        }
+      ]
+    },
+    {
+      "id": "BM-096-B06",
+      "text": "Alternative Mengeneinheiten werden mit Zähler und Nenner der Umrechnung übernommen.",
+      "anchors": [
+        {
+          "file": "lzmatmas_inf01.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmatmas_inf01.abap:69"
+        }
+      ]
+    },
+    {
+      "id": "BM-096-B07",
+      "text": "Die Kundenfelder Designverantwortung und RoHS-Kennzeichen werden als Erweiterung übergeben.",
+      "anchors": [
+        {
+          "file": "lzmatmas_inf01.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmatmas_inf01.abap:81"
+        }
+      ]
+    },
+    {
+      "id": "BM-096-B08",
+      "text": "Ist für das Material bereits ein jüngeres IDoc verbucht (später erstellt nach Datum und Uhrzeit), wird dieses IDoc mit Status 68 und Warnung übersprungen.",
+      "anchors": [
+        {
+          "file": "lzmatmas_inf02.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmatmas_inf02.abap:16"
+        },
+        {
+          "file": "lzmatmas_inf02.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmatmas_inf02.abap:22"
+        },
+        {
+          "file": "z_idoc_input_zmatmas.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zmatmas.abap:42"
+        },
+        {
+          "file": "z_idoc_input_zmatmas.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zmatmas.abap:43"
+        }
+      ]
+    },
+    {
+      "id": "BM-096-B09",
+      "text": "Fehlt die Materialnummer, ist das IDoc fehlerhaft (Meldung 001).",
+      "anchors": [
+        {
+          "file": "lzmatmas_inf02.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmatmas_inf02.abap:37"
+        },
+        {
+          "file": "lzmatmas_inf02.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmatmas_inf02.abap:38"
+        }
+      ]
+    },
+    {
+      "id": "BM-096-B10",
+      "text": "Ist die Materialart nicht definiert, ist das IDoc fehlerhaft (Meldung 002).",
+      "anchors": [
+        {
+          "file": "lzmatmas_inf02.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmatmas_inf02.abap:43"
+        },
+        {
+          "file": "lzmatmas_inf02.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmatmas_inf02.abap:46"
+        }
+      ]
+    },
+    {
+      "id": "BM-096-B11",
+      "text": "Ist eines der gelieferten Werke nicht definiert, ist das IDoc fehlerhaft (Meldung 003 mit Werk und Material).",
+      "anchors": [
+        {
+          "file": "lzmatmas_inf02.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmatmas_inf02.abap:52"
+        },
+        {
+          "file": "lzmatmas_inf02.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmatmas_inf02.abap:55"
+        }
+      ]
+    },
+    {
+      "id": "BM-096-B12",
+      "text": "Nur ein fehlerfrei geprüftes IDoc wird verbucht.",
+      "anchors": [
+        {
+          "file": "z_idoc_input_zmatmas.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zmatmas.abap:49"
+        },
+        {
+          "file": "z_idoc_input_zmatmas.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zmatmas.abap:50"
+        }
+      ]
+    },
+    {
+      "id": "BM-096-B13",
+      "text": "Vor der Verbuchung wird das Material gesperrt; ist es gesperrt, ist das IDoc fehlerhaft (Meldung 004 mit dem sperrenden Benutzer).",
+      "anchors": [
+        {
+          "file": "lzmatmas_inf02.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmatmas_inf02.abap:75"
+        },
+        {
+          "file": "lzmatmas_inf02.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmatmas_inf02.abap:82"
+        },
+        {
+          "file": "lzmatmas_inf02.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmatmas_inf02.abap:83"
+        }
+      ]
+    },
+    {
+      "id": "BM-096-B14",
+      "text": "Zuerst werden Mandantendaten, Kurztexte, Mengeneinheiten und Kundenfelder angelegt oder geändert; ein Fehler dabei macht das IDoc fehlerhaft (Meldung 005).",
+      "anchors": [
+        {
+          "file": "lzmatmas_inf02.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmatmas_inf02.abap:88"
+        },
+        {
+          "file": "lzmatmas_inf02.abap",
+          "line": 101,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmatmas_inf02.abap:101"
+        },
+        {
+          "file": "lzmatmas_inf02.abap",
+          "line": 102,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmatmas_inf02.abap:102"
+        }
+      ]
+    },
+    {
+      "id": "BM-096-B15",
+      "text": "Danach werden je Werk die Werksdaten mit Disposition- und Einkaufssicht gepflegt; beim ersten fehlerhaften Werk wird abgebrochen (Meldung 006).",
+      "anchors": [
+        {
+          "file": "lzmatmas_inf02.abap",
+          "line": 105,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmatmas_inf02.abap:105"
+        },
+        {
+          "file": "lzmatmas_inf02.abap",
+          "line": 116,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmatmas_inf02.abap:116"
+        },
+        {
+          "file": "lzmatmas_inf02.abap",
+          "line": 123,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmatmas_inf02.abap:123"
+        },
+        {
+          "file": "lzmatmas_inf02.abap",
+          "line": 124,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmatmas_inf02.abap:124"
+        }
+      ]
+    },
+    {
+      "id": "BM-096-B16",
+      "text": "Sind alle Aufrufe fehlerfrei, wird die Materialpflege festgeschrieben, sonst vollständig verworfen; danach wird die Sperre freigegeben.",
+      "anchors": [
+        {
+          "file": "lzmatmas_inf02.abap",
+          "line": 131,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmatmas_inf02.abap:131"
+        },
+        {
+          "file": "lzmatmas_inf02.abap",
+          "line": 132,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmatmas_inf02.abap:132"
+        },
+        {
+          "file": "lzmatmas_inf02.abap",
+          "line": 136,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmatmas_inf02.abap:136"
+        },
+        {
+          "file": "lzmatmas_inf02.abap",
+          "line": 139,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmatmas_inf02.abap:139"
+        }
+      ]
+    },
+    {
+      "id": "BM-096-B17",
+      "text": "Nach erfolgreicher Verbuchung werden IDoc-Nummer und Erstellzeitpunkt als letzter Stand des Materials gespeichert und das IDoc erhält Status 53 mit der Materialnummer.",
+      "anchors": [
+        {
+          "file": "z_idoc_input_zmatmas.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zmatmas.abap:54"
+        },
+        {
+          "file": "lzmatmas_inf02.abap",
+          "line": 154,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmatmas_inf02.abap:154"
+        },
+        {
+          "file": "z_idoc_input_zmatmas.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zmatmas.abap:55"
+        },
+        {
+          "file": "lzmatmas_inf02.abap",
+          "line": 170,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmatmas_inf02.abap:170"
+        }
+      ]
+    },
+    {
+      "id": "BM-096-B18",
+      "text": "Ein fehlerhaftes IDoc erhält Status 51 mit der vermerkten Fehlermeldung, und das Workflow-Ergebnis meldet einen Fehler.",
+      "anchors": [
+        {
+          "file": "z_idoc_input_zmatmas.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zmatmas.abap:59"
+        },
+        {
+          "file": "lzmatmas_inf02.abap",
+          "line": 178,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmatmas_inf02.abap:178"
+        },
+        {
+          "file": "z_idoc_input_zmatmas.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zmatmas.abap:61"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "z_idoc_input_zmatmas.abap",
+          "line": 1,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zmatmas.abap:1"
+        },
+        "meaning": "IDoc-Paket ZMATMAS empfangen"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "z_idoc_input_zmatmas.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zmatmas.abap:31"
+        },
+        "meaning": "IDocs durchlaufen"
+      },
+      {
+        "id": "gmt",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_idoc_input_zmatmas.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zmatmas.abap:32"
+        },
+        "meaning": "Falscher Nachrichtentyp?"
+      },
+      {
+        "id": "er",
+        "type": "end",
+        "anchor": {
+          "file": "z_idoc_input_zmatmas.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zmatmas.abap:33"
+        },
+        "meaning": "Abbruch: falscher Baustein"
+      },
+      {
+        "id": "cpar",
+        "type": "call",
+        "anchor": {
+          "file": "z_idoc_input_zmatmas.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zmatmas.abap:37"
+        },
+        "meaning": "Segmente auswerten"
+      },
+      {
+        "id": "cser",
+        "type": "call",
+        "anchor": {
+          "file": "z_idoc_input_zmatmas.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zmatmas.abap:40"
+        },
+        "meaning": "Serialisierung prüfen"
+      },
+      {
+        "id": "gskip",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_idoc_input_zmatmas.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zmatmas.abap:42"
+        },
+        "meaning": "Veraltetes IDoc?"
+      },
+      {
+        "id": "cs68",
+        "type": "call",
+        "anchor": {
+          "file": "z_idoc_input_zmatmas.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zmatmas.abap:43"
+        },
+        "meaning": "Status 68 (übersprungen) setzen"
+      },
+      {
+        "id": "cval",
+        "type": "call",
+        "anchor": {
+          "file": "z_idoc_input_zmatmas.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zmatmas.abap:48"
+        },
+        "meaning": "Stammdaten prüfen"
+      },
+      {
+        "id": "ge1",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_idoc_input_zmatmas.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zmatmas.abap:49"
+        },
+        "meaning": "Prüfung fehlerfrei?"
+      },
+      {
+        "id": "cpost",
+        "type": "call",
+        "anchor": {
+          "file": "z_idoc_input_zmatmas.abap",
+          "line": 50,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zmatmas.abap:50"
+        },
+        "meaning": "Material verbuchen"
+      },
+      {
+        "id": "ge2",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_idoc_input_zmatmas.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zmatmas.abap:53"
+        },
+        "meaning": "Verbuchung fehlerfrei?"
+      },
+      {
+        "id": "cupd",
+        "type": "call",
+        "anchor": {
+          "file": "z_idoc_input_zmatmas.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zmatmas.abap:54"
+        },
+        "meaning": "Serialisierungsstand fortschreiben"
+      },
+      {
+        "id": "cs53",
+        "type": "call",
+        "anchor": {
+          "file": "z_idoc_input_zmatmas.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zmatmas.abap:55"
+        },
+        "meaning": "Status 53 setzen"
+      },
+      {
+        "id": "cs51",
+        "type": "call",
+        "anchor": {
+          "file": "z_idoc_input_zmatmas.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zmatmas.abap:59"
+        },
+        "meaning": "Status 51 setzen"
+      },
+      {
+        "id": "awf",
+        "type": "action",
+        "anchor": {
+          "file": "z_idoc_input_zmatmas.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zmatmas.abap:61"
+        },
+        "meaning": "Workflow-Fehlerergebnis melden"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "z_idoc_input_zmatmas.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zmatmas.abap:67"
+        },
+        "meaning": "Status an ALE zurückgeben"
+      },
+      {
+        "id": "s_p",
+        "type": "start",
+        "anchor": {
+          "file": "lzmatmas_inf01.abap",
+          "line": 11,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmatmas_inf01.abap:11"
+        },
+        "meaning": "Segmentauswertung"
+      },
+      {
+        "id": "lp",
+        "type": "loop",
+        "anchor": {
+          "file": "lzmatmas_inf01.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmatmas_inf01.abap:26"
+        },
+        "meaning": "Segmente des IDocs durchlaufen"
+      },
+      {
+        "id": "cp",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzmatmas_inf01.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmatmas_inf01.abap:27"
+        },
+        "meaning": "Segmenttyp unterscheiden"
+      },
+      {
+        "id": "cv",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "lzmatmas_inf01.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmatmas_inf01.abap:31"
+        },
+        "meaning": "Materialnummer ins interne Format wandeln"
+      },
+      {
+        "id": "e_p",
+        "type": "end",
+        "anchor": {
+          "file": "lzmatmas_inf01.abap",
+          "line": 96,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmatmas_inf01.abap:96"
+        },
+        "meaning": "Buchungsdaten vollständig"
+      },
+      {
+        "id": "s_s",
+        "type": "start",
+        "anchor": {
+          "file": "lzmatmas_inf02.abap",
+          "line": 11,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmatmas_inf02.abap:11"
+        },
+        "meaning": "Serialisierungsprüfung"
+      },
+      {
+        "id": "r_s",
+        "type": "read",
+        "anchor": {
+          "file": "lzmatmas_inf02.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmatmas_inf02.abap:16"
+        },
+        "meaning": "Zuletzt verbuchtes IDoc des Materials lesen"
+      },
+      {
+        "id": "g_s1",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzmatmas_inf02.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmatmas_inf02.abap:18"
+        },
+        "meaning": "Noch kein IDoc verbucht?"
+      },
+      {
+        "id": "e_s1",
+        "type": "end",
+        "anchor": {
+          "file": "lzmatmas_inf02.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmatmas_inf02.abap:19"
+        },
+        "meaning": "Nicht überspringen"
+      },
+      {
+        "id": "g_s2",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzmatmas_inf02.abap",
+          "line": 22,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmatmas_inf02.abap:22"
+        },
+        "meaning": "Verbuchtes IDoc jünger?"
+      },
+      {
+        "id": "a_s",
+        "type": "action",
+        "anchor": {
+          "file": "lzmatmas_inf02.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmatmas_inf02.abap:25"
+        },
+        "meaning": "IDoc als veraltet kennzeichnen"
+      },
+      {
+        "id": "e_s2",
+        "type": "end",
+        "anchor": {
+          "file": "lzmatmas_inf02.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmatmas_inf02.abap:27"
+        },
+        "meaning": "Ergebnis zurückgeben"
+      },
+      {
+        "id": "s_v",
+        "type": "start",
+        "anchor": {
+          "file": "lzmatmas_inf02.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmatmas_inf02.abap:32"
+        },
+        "meaning": "Prüfung"
+      },
+      {
+        "id": "g_v1",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzmatmas_inf02.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmatmas_inf02.abap:37"
+        },
+        "meaning": "Materialnummer leer?"
+      },
+      {
+        "id": "ce1",
+        "type": "call",
+        "anchor": {
+          "file": "lzmatmas_inf02.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmatmas_inf02.abap:38"
+        },
+        "meaning": "Fehler 001 vermerken"
+      },
+      {
+        "id": "e_v1",
+        "type": "end",
+        "anchor": {
+          "file": "lzmatmas_inf02.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmatmas_inf02.abap:40"
+        },
+        "meaning": "Prüfung abbrechen"
+      },
+      {
+        "id": "r_v1",
+        "type": "read",
+        "anchor": {
+          "file": "lzmatmas_inf02.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmatmas_inf02.abap:43"
+        },
+        "meaning": "Materialart prüfen"
+      },
+      {
+        "id": "g_v2",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzmatmas_inf02.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmatmas_inf02.abap:45"
+        },
+        "meaning": "Materialart unbekannt?"
+      },
+      {
+        "id": "ce2",
+        "type": "call",
+        "anchor": {
+          "file": "lzmatmas_inf02.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmatmas_inf02.abap:46"
+        },
+        "meaning": "Fehler 002 vermerken"
+      },
+      {
+        "id": "e_v2",
+        "type": "end",
+        "anchor": {
+          "file": "lzmatmas_inf02.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmatmas_inf02.abap:48"
+        },
+        "meaning": "Prüfung abbrechen"
+      },
+      {
+        "id": "l_v",
+        "type": "loop",
+        "anchor": {
+          "file": "lzmatmas_inf02.abap",
+          "line": 51,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmatmas_inf02.abap:51"
+        },
+        "meaning": "Werke durchlaufen"
+      },
+      {
+        "id": "r_v2",
+        "type": "read",
+        "anchor": {
+          "file": "lzmatmas_inf02.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmatmas_inf02.abap:52"
+        },
+        "meaning": "Werk prüfen"
+      },
+      {
+        "id": "g_v3",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzmatmas_inf02.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmatmas_inf02.abap:54"
+        },
+        "meaning": "Werk unbekannt?"
+      },
+      {
+        "id": "ce3",
+        "type": "call",
+        "anchor": {
+          "file": "lzmatmas_inf02.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmatmas_inf02.abap:55"
+        },
+        "meaning": "Fehler 003 vermerken"
+      },
+      {
+        "id": "e_v3",
+        "type": "end",
+        "anchor": {
+          "file": "lzmatmas_inf02.abap",
+          "line": 57,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmatmas_inf02.abap:57"
+        },
+        "meaning": "Prüfung abbrechen"
+      },
+      {
+        "id": "e_v",
+        "type": "end",
+        "anchor": {
+          "file": "lzmatmas_inf02.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmatmas_inf02.abap:60"
+        },
+        "meaning": "Prüfung bestanden"
+      },
+      {
+        "id": "s_m",
+        "type": "start",
+        "anchor": {
+          "file": "lzmatmas_inf02.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmatmas_inf02.abap:69"
+        },
+        "meaning": "Verbuchung"
+      },
+      {
+        "id": "enq",
+        "type": "lock",
+        "anchor": {
+          "file": "lzmatmas_inf02.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmatmas_inf02.abap:75"
+        },
+        "meaning": "Material sperren"
+      },
+      {
+        "id": "g_m1",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzmatmas_inf02.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmatmas_inf02.abap:82"
+        },
+        "meaning": "Material gesperrt?"
+      },
+      {
+        "id": "ce4",
+        "type": "call",
+        "anchor": {
+          "file": "lzmatmas_inf02.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmatmas_inf02.abap:83"
+        },
+        "meaning": "Fehler 004 mit Sperrer vermerken"
+      },
+      {
+        "id": "e_m1",
+        "type": "end",
+        "anchor": {
+          "file": "lzmatmas_inf02.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmatmas_inf02.abap:85"
+        },
+        "meaning": "Verbuchung abbrechen"
+      },
+      {
+        "id": "b1",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "lzmatmas_inf02.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmatmas_inf02.abap:88"
+        },
+        "meaning": "Mandantendaten, Texte, Mengeneinheiten und Kundenfelder pflegen"
+      },
+      {
+        "id": "g_m2",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzmatmas_inf02.abap",
+          "line": 101,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmatmas_inf02.abap:101"
+        },
+        "meaning": "Fehler auf Mandantenebene?"
+      },
+      {
+        "id": "ce5",
+        "type": "call",
+        "anchor": {
+          "file": "lzmatmas_inf02.abap",
+          "line": 102,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmatmas_inf02.abap:102"
+        },
+        "meaning": "Fehler 005 mit BAPI-Meldung vermerken"
+      },
+      {
+        "id": "l_m",
+        "type": "loop",
+        "anchor": {
+          "file": "lzmatmas_inf02.abap",
+          "line": 105,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmatmas_inf02.abap:105"
+        },
+        "meaning": "Werke durchlaufen"
+      },
+      {
+        "id": "b2",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "lzmatmas_inf02.abap",
+          "line": 116,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmatmas_inf02.abap:116"
+        },
+        "meaning": "Werksdaten mit Dispo- und Einkaufssicht pflegen"
+      },
+      {
+        "id": "g_m3",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzmatmas_inf02.abap",
+          "line": 123,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmatmas_inf02.abap:123"
+        },
+        "meaning": "Fehler im Werk?"
+      },
+      {
+        "id": "ce6",
+        "type": "call",
+        "anchor": {
+          "file": "lzmatmas_inf02.abap",
+          "line": 124,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmatmas_inf02.abap:124"
+        },
+        "meaning": "Fehler 006 mit Werk vermerken, Werksschleife verlassen"
+      },
+      {
+        "id": "g_m4",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzmatmas_inf02.abap",
+          "line": 131,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmatmas_inf02.abap:131"
+        },
+        "meaning": "Alles fehlerfrei?"
+      },
+      {
+        "id": "cm",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "lzmatmas_inf02.abap",
+          "line": 132,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmatmas_inf02.abap:132"
+        },
+        "meaning": "Materialpflege festschreiben"
+      },
+      {
+        "id": "rb",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "lzmatmas_inf02.abap",
+          "line": 136,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmatmas_inf02.abap:136"
+        },
+        "meaning": "Materialpflege vollständig verwerfen"
+      },
+      {
+        "id": "deq",
+        "type": "lock",
+        "anchor": {
+          "file": "lzmatmas_inf02.abap",
+          "line": 139,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmatmas_inf02.abap:139"
+        },
+        "meaning": "Sperre freigeben"
+      },
+      {
+        "id": "e_m",
+        "type": "end",
+        "anchor": {
+          "file": "lzmatmas_inf02.abap",
+          "line": 142,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmatmas_inf02.abap:142"
+        },
+        "meaning": "Verbuchung beendet"
+      },
+      {
+        "id": "s_u",
+        "type": "start",
+        "anchor": {
+          "file": "lzmatmas_inf02.abap",
+          "line": 147,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmatmas_inf02.abap:147"
+        },
+        "meaning": "Serialisierung fortschreiben"
+      },
+      {
+        "id": "w_u",
+        "type": "write",
+        "anchor": {
+          "file": "lzmatmas_inf02.abap",
+          "line": 154,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmatmas_inf02.abap:154"
+        },
+        "meaning": "IDoc-Nummer und Erstellzeit als letzten Stand des Materials speichern"
+      },
+      {
+        "id": "e_u",
+        "type": "end",
+        "anchor": {
+          "file": "lzmatmas_inf02.abap",
+          "line": 155,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmatmas_inf02.abap:155"
+        },
+        "meaning": "Fertig"
+      },
+      {
+        "id": "s_st",
+        "type": "start",
+        "anchor": {
+          "file": "lzmatmas_inf02.abap",
+          "line": 160,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmatmas_inf02.abap:160"
+        },
+        "meaning": "Statussatz bilden"
+      },
+      {
+        "id": "c_st",
+        "type": "gateway",
+        "anchor": {
+          "file": "lzmatmas_inf02.abap",
+          "line": 168,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmatmas_inf02.abap:168"
+        },
+        "meaning": "Status unterscheiden"
+      },
+      {
+        "id": "e_st",
+        "type": "end",
+        "anchor": {
+          "file": "lzmatmas_inf02.abap",
+          "line": 184,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmatmas_inf02.abap:184"
+        },
+        "meaning": "Statussatz angehängt"
+      },
+      {
+        "id": "s_e",
+        "type": "start",
+        "anchor": {
+          "file": "lzmatmas_inf02.abap",
+          "line": 189,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmatmas_inf02.abap:189"
+        },
+        "meaning": "Fehler vermerken"
+      },
+      {
+        "id": "e_e",
+        "type": "end",
+        "anchor": {
+          "file": "lzmatmas_inf02.abap",
+          "line": 195,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lzmatmas_inf02.abap:195"
+        },
+        "meaning": "Fehler vermerkt"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "l",
+        "condition": "always"
+      },
+      {
+        "from": "l",
+        "to": "gmt",
+        "condition": "next row"
+      },
+      {
+        "from": "gmt",
+        "to": "er",
+        "condition": "gs_edidc-mestyp <> 'ZMATMAS'"
+      },
+      {
+        "from": "gmt",
+        "to": "cpar",
+        "condition": "else"
+      },
+      {
+        "from": "cpar",
+        "to": "s_p",
+        "condition": "always"
+      },
+      {
+        "from": "cser",
+        "to": "s_s",
+        "condition": "always"
+      },
+      {
+        "from": "gskip",
+        "to": "cs68",
+        "condition": "gv_skip = 'X'"
+      },
+      {
+        "from": "cs68",
+        "to": "s_st",
+        "condition": "always"
+      },
+      {
+        "from": "gskip",
+        "to": "cval",
+        "condition": "else"
+      },
+      {
+        "from": "cval",
+        "to": "s_v",
+        "condition": "always"
+      },
+      {
+        "from": "ge1",
+        "to": "cpost",
+        "condition": "gv_error IS INITIAL"
+      },
+      {
+        "from": "ge1",
+        "to": "ge2",
+        "condition": "else"
+      },
+      {
+        "from": "cpost",
+        "to": "s_m",
+        "condition": "always"
+      },
+      {
+        "from": "ge2",
+        "to": "cupd",
+        "condition": "gv_error IS INITIAL"
+      },
+      {
+        "from": "cupd",
+        "to": "s_u",
+        "condition": "always"
+      },
+      {
+        "from": "cs53",
+        "to": "s_st",
+        "condition": "always"
+      },
+      {
+        "from": "ge2",
+        "to": "cs51",
+        "condition": "else"
+      },
+      {
+        "from": "cs51",
+        "to": "s_st",
+        "condition": "always"
+      },
+      {
+        "from": "awf",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l",
+        "to": "e",
+        "condition": "no more rows"
+      },
+      {
+        "from": "s_p",
+        "to": "lp",
+        "condition": "always"
+      },
+      {
+        "from": "lp",
+        "to": "cp",
+        "condition": "next row"
+      },
+      {
+        "from": "cp",
+        "to": "cv",
+        "condition": "WHEN 'ZE1MARAM'"
+      },
+      {
+        "from": "cp",
+        "to": "lp",
+        "condition": "else"
+      },
+      {
+        "from": "lp",
+        "to": "e_p",
+        "condition": "no more rows"
+      },
+      {
+        "from": "s_s",
+        "to": "r_s",
+        "condition": "always"
+      },
+      {
+        "from": "r_s",
+        "to": "g_s1",
+        "condition": "always"
+      },
+      {
+        "from": "g_s1",
+        "to": "e_s1",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g_s1",
+        "to": "g_s2",
+        "condition": "else"
+      },
+      {
+        "from": "g_s2",
+        "to": "a_s",
+        "condition": "ls_serial-credat > ps_edidc-credat OR ( ls_serial-credat = ps_edidc-credat AND ls_serial-cretim > ps_edidc-cretim )"
+      },
+      {
+        "from": "g_s2",
+        "to": "e_s2",
+        "condition": "else"
+      },
+      {
+        "from": "a_s",
+        "to": "e_s2",
+        "condition": "always"
+      },
+      {
+        "from": "s_v",
+        "to": "g_v1",
+        "condition": "always"
+      },
+      {
+        "from": "g_v1",
+        "to": "ce1",
+        "condition": "gs_head-material IS INITIAL"
+      },
+      {
+        "from": "ce1",
+        "to": "s_e",
+        "condition": "always"
+      },
+      {
+        "from": "g_v1",
+        "to": "r_v1",
+        "condition": "else"
+      },
+      {
+        "from": "r_v1",
+        "to": "g_v2",
+        "condition": "always"
+      },
+      {
+        "from": "g_v2",
+        "to": "ce2",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "ce2",
+        "to": "s_e",
+        "condition": "always"
+      },
+      {
+        "from": "g_v2",
+        "to": "l_v",
+        "condition": "else"
+      },
+      {
+        "from": "l_v",
+        "to": "r_v2",
+        "condition": "next row"
+      },
+      {
+        "from": "r_v2",
+        "to": "g_v3",
+        "condition": "always"
+      },
+      {
+        "from": "g_v3",
+        "to": "ce3",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "ce3",
+        "to": "s_e",
+        "condition": "always"
+      },
+      {
+        "from": "g_v3",
+        "to": "l_v",
+        "condition": "else"
+      },
+      {
+        "from": "l_v",
+        "to": "e_v",
+        "condition": "no more rows"
+      },
+      {
+        "from": "s_m",
+        "to": "enq",
+        "condition": "always"
+      },
+      {
+        "from": "enq",
+        "to": "g_m1",
+        "condition": "always"
+      },
+      {
+        "from": "g_m1",
+        "to": "ce4",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "ce4",
+        "to": "s_e",
+        "condition": "always"
+      },
+      {
+        "from": "g_m1",
+        "to": "b1",
+        "condition": "else"
+      },
+      {
+        "from": "b1",
+        "to": "g_m2",
+        "condition": "always"
+      },
+      {
+        "from": "g_m2",
+        "to": "ce5",
+        "condition": "ls_return-type CA 'EA'"
+      },
+      {
+        "from": "ce5",
+        "to": "s_e",
+        "condition": "always"
+      },
+      {
+        "from": "g_m2",
+        "to": "l_m",
+        "condition": "else"
+      },
+      {
+        "from": "l_m",
+        "to": "b2",
+        "condition": "next row"
+      },
+      {
+        "from": "b2",
+        "to": "g_m3",
+        "condition": "always"
+      },
+      {
+        "from": "g_m3",
+        "to": "ce6",
+        "condition": "ls_return-type CA 'EA'"
+      },
+      {
+        "from": "ce6",
+        "to": "s_e",
+        "condition": "always"
+      },
+      {
+        "from": "g_m3",
+        "to": "l_m",
+        "condition": "else"
+      },
+      {
+        "from": "l_m",
+        "to": "g_m4",
+        "condition": "no more rows"
+      },
+      {
+        "from": "g_m4",
+        "to": "cm",
+        "condition": "pv_error IS INITIAL"
+      },
+      {
+        "from": "g_m4",
+        "to": "rb",
+        "condition": "else"
+      },
+      {
+        "from": "cm",
+        "to": "deq",
+        "condition": "always"
+      },
+      {
+        "from": "rb",
+        "to": "deq",
+        "condition": "always"
+      },
+      {
+        "from": "deq",
+        "to": "e_m",
+        "condition": "always"
+      },
+      {
+        "from": "s_u",
+        "to": "w_u",
+        "condition": "always"
+      },
+      {
+        "from": "w_u",
+        "to": "e_u",
+        "condition": "always"
+      },
+      {
+        "from": "s_st",
+        "to": "c_st",
+        "condition": "always"
+      },
+      {
+        "from": "s_e",
+        "to": "e_e",
+        "condition": "always"
+      },
+      {
+        "from": "cv",
+        "to": "lp",
+        "condition": "next iteration"
+      },
+      {
+        "from": "cp",
+        "to": "lp",
+        "condition": "WHEN 'ZE1MAKTM'"
+      },
+      {
+        "from": "cp",
+        "to": "lp",
+        "condition": "WHEN 'ZE1MARCM'"
+      },
+      {
+        "from": "cp",
+        "to": "lp",
+        "condition": "WHEN 'ZE1MARMM'"
+      },
+      {
+        "from": "cp",
+        "to": "lp",
+        "condition": "WHEN 'ZE1ZMAT'"
+      },
+      {
+        "from": "c_st",
+        "to": "e_st",
+        "condition": "WHEN gc_status_ok"
+      },
+      {
+        "from": "c_st",
+        "to": "e_st",
+        "condition": "WHEN gc_status_skip"
+      },
+      {
+        "from": "c_st",
+        "to": "e_st",
+        "condition": "WHEN OTHERS"
+      },
+      {
+        "from": "e_p",
+        "to": "cser",
+        "condition": "always"
+      },
+      {
+        "from": "e_s1",
+        "to": "gskip",
+        "condition": "always"
+      },
+      {
+        "from": "e_s2",
+        "to": "gskip",
+        "condition": "always"
+      },
+      {
+        "from": "e_st",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "e_v1",
+        "to": "ge1",
+        "condition": "always"
+      },
+      {
+        "from": "e_v2",
+        "to": "ge1",
+        "condition": "always"
+      },
+      {
+        "from": "e_v3",
+        "to": "ge1",
+        "condition": "always"
+      },
+      {
+        "from": "e_v",
+        "to": "ge1",
+        "condition": "always"
+      },
+      {
+        "from": "e_m1",
+        "to": "ge2",
+        "condition": "always"
+      },
+      {
+        "from": "e_m",
+        "to": "ge2",
+        "condition": "always"
+      },
+      {
+        "from": "e_u",
+        "to": "cs53",
+        "condition": "always"
+      },
+      {
+        "from": "e_st",
+        "to": "awf",
+        "condition": "always"
+      },
+      {
+        "from": "e_e",
+        "to": "e_v1",
+        "condition": "always"
+      },
+      {
+        "from": "e_e",
+        "to": "e_v2",
+        "condition": "always"
+      },
+      {
+        "from": "e_e",
+        "to": "e_v3",
+        "condition": "always"
+      },
+      {
+        "from": "e_e",
+        "to": "e_m1",
+        "condition": "always"
+      },
+      {
+        "from": "e_e",
+        "to": "g_m4",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "lzmatmas_inf02.abap:136 — kein Fachsatz „bereits gepflegte Werke bleiben bei einem Werksfehler erhalten“ (alle Aufrufe liegen in einer LUW und werden gemeinsam verworfen).",
+    "gesamte Scheibe — kein Fachsatz über die Einkaufssperre (Feld pur_status nur auskommentiert).",
+    "lzmatmas_inf02.abap:83 — kein Fachsatz „ein gesperrtes Material wird automatisch später erneut versucht“ (Status 51; Nachbearbeitung nur manuell bzw. per Job außerhalb des Falls).",
+    "lzmatmas_inf01.abap:31 — kein Fehlerpfad für eine nicht wandelbare Materialnummer (sy-subrc wird nicht geprüft; erst die Prüfung auf leere Nummer greift)."
+  ],
+  "processDescription": "Die ALE-Eingangsverarbeitung übergibt dem Baustein ein Paket von Materialstamm-IDocs aus dem MDM-Hub. Ein anderer Nachrichtentyp als ZMATMAS bricht ab. Je IDoc werden zuerst die Segmente in die Daten der Materialpflege übertragen: Materialnummer (ins interne Format gewandelt), Branche, Materialart und Mandantendaten, Kurztexte je Sprache, Werksdaten je Werk, alternative Mengeneinheiten und die Kundenfelder Designverantwortung und RoHS; unbekannte Segmente werden ignoriert. Danach prüft der Baustein, ob für das Material bereits ein jüngeres IDoc verbucht wurde, und überspringt in diesem Fall das ältere mit Status 68. Die Prüfung verlangt eine Materialnummer, eine definierte Materialart und definierte Werke. Ein fehlerfreies IDoc wird verbucht: Das Material wird gesperrt, zuerst werden Mandantendaten, Texte, Mengeneinheiten und Kundenfelder und danach je Werk die Werksdaten gepflegt; beim ersten Fehler wird abgebrochen. Nur wenn alles fehlerfrei ist, wird festgeschrieben, sonst alles verworfen; danach wird die Sperre gelöst. Erfolgreiche IDocs schreiben den Serialisierungsstand fort und erhalten Status 53, fehlerhafte Status 51 mit der vermerkten Meldung und ein Workflow-Fehlerergebnis."
+}

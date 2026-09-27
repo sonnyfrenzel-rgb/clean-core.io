@@ -1,0 +1,2856 @@
+{
+  "id": "BM-056",
+  "title": "Intercompany-Abrechnung als Hintergrundjob mit lokaler Ausgangsbuchung und synchroner Partnerbuchung per RFC",
+  "classes": [
+    "K01"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [
+    "Aufruf Z_FI_IC_POST_PARTNER: Ziel liegt im Fall, der Aufruf ist aber ein synchroner RFC mit DESTINATION – im Skelett als rfc geführt, mit Kante in den Baustein und Rückkanten zur Auswertung von sy-subrc.",
+    "Rückkehr aus FORM-Routinen und dem RFC-Baustein ohne eigene end-Knoten bei implizitem Blockende; nur RETURN/MESSAGE-Abbrüche sind end-Knoten."
+  ],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "ZFI_IC_SERV",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zfi_ic_settle_f01.abap",
+        "line": 44,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zfi_ic_settle_f01.abap:44"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "T001",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zfi_ic_settle_f01.abap",
+        "line": 58,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zfi_ic_settle_f01.abap:58"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZFI_IC_DEST",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zfi_ic_settle_f01.abap",
+        "line": 98,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zfi_ic_settle_f01.abap:98"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ENQUEUE_EZFI_IC_PART",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zfi_ic_settle_f01.abap",
+        "line": 83,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zfi_ic_settle_f01.abap:83"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "DEQUEUE_EZFI_IC_PART",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zfi_ic_settle_f01.abap",
+        "line": 176,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zfi_ic_settle_f01.abap:176"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "CONVERT_TO_LOCAL_CURRENCY",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zfi_ic_settle_f01.abap",
+        "line": 118,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zfi_ic_settle_f01.abap:118"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_ACC_DOCUMENT_CHECK",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zfi_ic_settle_f02.abap",
+        "line": 54,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zfi_ic_settle_f02.abap:54"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_ACC_DOCUMENT_POST",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zfi_ic_settle_f02.abap",
+        "line": 63,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zfi_ic_settle_f02.abap:63"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_ROLLBACK",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zfi_ic_settle_f02.abap",
+        "line": 83,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zfi_ic_settle_f02.abap:83"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_COMMIT",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zfi_ic_settle_f02.abap",
+        "line": 87,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zfi_ic_settle_f02.abap:87"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "Z_FI_IC_POST_PARTNER",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zfi_ic_settle_f02.abap",
+        "line": 125,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zfi_ic_settle_f02.abap:125"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "RFC_CONNECTION_CLOSE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zfi_ic_settle_f02.abap",
+        "line": 163,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zfi_ic_settle_f02.abap:163"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZFI_IC_SERV",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "zfi_ic_settle_f02.abap",
+        "line": 187,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zfi_ic_settle_f02.abap:187"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAL_LOG_CREATE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zfi_ic_settle_f01.abap",
+        "line": 23,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zfi_ic_settle_f01.abap:23"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAL_LOG_MSG_ADD",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zfi_ic_settle_f01.abap",
+        "line": 193,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zfi_ic_settle_f01.abap:193"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAL_DB_SAVE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zfi_ic_settle_f01.abap",
+        "line": 206,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zfi_ic_settle_f01.abap:206"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZFI_IC_INBOX",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "z_fi_ic_post_partner.abap",
+        "line": 36,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_fi_ic_post_partner.abap:36"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZFI_IC_ACCMAP",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "z_fi_ic_post_partner.abap",
+        "line": 53,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_fi_ic_post_partner.abap:53"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_ACC_DOCUMENT_CHECK",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "z_fi_ic_post_partner.abap",
+        "line": 89,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_fi_ic_post_partner.abap:89"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_ACC_DOCUMENT_POST",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "z_fi_ic_post_partner.abap",
+        "line": 98,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_fi_ic_post_partner.abap:98"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_ROLLBACK",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "z_fi_ic_post_partner.abap",
+        "line": 111,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_fi_ic_post_partner.abap:111"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZFI_IC_INBOX",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "z_fi_ic_post_partner.abap",
+        "line": 124,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_fi_ic_post_partner.abap:124"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_COMMIT",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "z_fi_ic_post_partner.abap",
+        "line": 125,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_fi_ic_post_partner.abap:125"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-056-B01",
+      "text": "Ein Echtlauf ist nur als Hintergrundjob zulässig; wird er im Dialog ohne Testlauf-Kennzeichen gestartet, bricht die Verarbeitung mit einer Fehlermeldung ab.",
+      "anchors": [
+        {
+          "file": "zfi_ic_settle.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle.abap:28"
+        },
+        {
+          "file": "zfi_ic_settle.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle.abap:29"
+        }
+      ]
+    },
+    {
+      "id": "BM-056-B02",
+      "text": "Zu Beginn wird ein Anwendungsprotokoll mit Buchungskreis, Geschäftsjahr und Periode als externer Nummer angelegt; gelingt das nicht, wird der Lauf abgebrochen.",
+      "anchors": [
+        {
+          "file": "zfi_ic_settle_f01.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f01.abap:23"
+        },
+        {
+          "file": "zfi_ic_settle_f01.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f01.abap:31"
+        },
+        {
+          "file": "zfi_ic_settle_f01.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f01.abap:33"
+        }
+      ]
+    },
+    {
+      "id": "BM-056-B03",
+      "text": "Es werden die offenen und die fehlerhaften Intercompany-Leistungen des Buchungskreises für Geschäftsjahr und Periode zu den selektierten Partnergesellschaften gelesen.",
+      "anchors": [
+        {
+          "file": "zfi_ic_settle_f01.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f01.abap:44"
+        }
+      ]
+    },
+    {
+      "id": "BM-056-B04",
+      "text": "Die Hauswährung des leistenden Buchungskreises wird ermittelt.",
+      "anchors": [
+        {
+          "file": "zfi_ic_settle_f01.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f01.abap:58"
+        }
+      ]
+    },
+    {
+      "id": "BM-056-B05",
+      "text": "Gibt es keine abzurechnenden Leistungen, wird ein Hinweis ausgegeben und der Lauf ohne Verarbeitung beendet.",
+      "anchors": [
+        {
+          "file": "zfi_ic_settle.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle.abap:35"
+        },
+        {
+          "file": "zfi_ic_settle.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle.abap:36"
+        },
+        {
+          "file": "zfi_ic_settle.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle.abap:37"
+        }
+      ]
+    },
+    {
+      "id": "BM-056-B06",
+      "text": "Die Leistungen werden je Partnergesellschaft abgerechnet.",
+      "anchors": [
+        {
+          "file": "zfi_ic_settle.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle.abap:41"
+        },
+        {
+          "file": "zfi_ic_settle.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle.abap:42"
+        }
+      ]
+    },
+    {
+      "id": "BM-056-B07",
+      "text": "Vor der Abrechnung eines Partners wird eine exklusive Sperre auf Buchungskreis und Partnergesellschaft gesetzt; ist der Partner bereits gesperrt, wird er mit einer Warnung im Protokoll übersprungen.",
+      "anchors": [
+        {
+          "file": "zfi_ic_settle_f01.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f01.abap:83"
+        },
+        {
+          "file": "zfi_ic_settle_f01.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f01.abap:92"
+        }
+      ]
+    },
+    {
+      "id": "BM-056-B08",
+      "text": "Aus dem Customizing werden RFC-Destination, Aufschlagsatz, IC-Debitor und Erlöskonto des Partners gelesen; fehlt der Eintrag oder die Destination, werden die Leistungen dieses Partners nicht verarbeitet und ein Fehler protokolliert.",
+      "anchors": [
+        {
+          "file": "zfi_ic_settle_f01.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f01.abap:98"
+        },
+        {
+          "file": "zfi_ic_settle_f01.abap",
+          "line": 101,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f01.abap:101"
+        }
+      ]
+    },
+    {
+      "id": "BM-056-B09",
+      "text": "Der Verrechnungspreis jeder Leistung ergibt sich aus dem Leistungswert zuzüglich des prozentualen Aufschlags aus dem Customizing.",
+      "anchors": [
+        {
+          "file": "zfi_ic_settle_f01.abap",
+          "line": 113,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f01.abap:113"
+        }
+      ]
+    },
+    {
+      "id": "BM-056-B10",
+      "text": "Hat eine Leistung bereits einen lokalen Beleg aus einem früheren Lauf, wird lokal nicht erneut gebucht, sondern nur die Partnerbuchung wiederholt.",
+      "anchors": [
+        {
+          "file": "zfi_ic_settle_f01.abap",
+          "line": 116,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f01.abap:116"
+        }
+      ]
+    },
+    {
+      "id": "BM-056-B11",
+      "text": "Weicht die Leistungswährung von der Hauswährung ab, wird der Verrechnungspreis zum Buchungsdatum mit Kurstyp M in Hauswährung umgerechnet.",
+      "anchors": [
+        {
+          "file": "zfi_ic_settle_f01.abap",
+          "line": 117,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f01.abap:117"
+        },
+        {
+          "file": "zfi_ic_settle_f01.abap",
+          "line": 118,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f01.abap:118"
+        }
+      ]
+    },
+    {
+      "id": "BM-056-B12",
+      "text": "Fehlt ein Umrechnungskurs, wird die Leistung weder lokal noch beim Partner gebucht und bleibt im Fehlerstatus.",
+      "anchors": [
+        {
+          "file": "zfi_ic_settle_f01.abap",
+          "line": 134,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f01.abap:134"
+        },
+        {
+          "file": "zfi_ic_settle_f01.abap",
+          "line": 146,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f01.abap:146"
+        }
+      ]
+    },
+    {
+      "id": "BM-056-B13",
+      "text": "Lokal wird eine Ausgangsrechnung an den IC-Debitor gegen das IC-Erlöskonto mit der Partnergesellschaft als Partner in Beleg- und Hauswährung gebildet; im Testlauf wird sie nur geprüft.",
+      "anchors": [
+        {
+          "file": "zfi_ic_settle_f02.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f02.abap:53"
+        },
+        {
+          "file": "zfi_ic_settle_f02.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f02.abap:54"
+        },
+        {
+          "file": "zfi_ic_settle_f02.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f02.abap:63"
+        }
+      ]
+    },
+    {
+      "id": "BM-056-B14",
+      "text": "Meldet die Buchungsschnittstelle einen Fehler, gilt die lokale Buchung als gescheitert und wird im Echtlauf zurückgerollt.",
+      "anchors": [
+        {
+          "file": "zfi_ic_settle_f02.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f02.abap:75"
+        },
+        {
+          "file": "zfi_ic_settle_f02.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f02.abap:76"
+        },
+        {
+          "file": "zfi_ic_settle_f02.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f02.abap:82"
+        },
+        {
+          "file": "zfi_ic_settle_f02.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f02.abap:83"
+        }
+      ]
+    },
+    {
+      "id": "BM-056-B15",
+      "text": "Erst der anschließende Commit schreibt den lokalen Beleg fort; seine Belegnummer wird dem Partner als Referenz mitgegeben.",
+      "anchors": [
+        {
+          "file": "zfi_ic_settle_f02.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f02.abap:87"
+        }
+      ]
+    },
+    {
+      "id": "BM-056-B16",
+      "text": "Nur wenn die lokale Seite gebucht oder im Testlauf buchbar ist, wird die Gegenbuchung synchron per RFC über die Destination des Partners in dessen System angestoßen.",
+      "anchors": [
+        {
+          "file": "zfi_ic_settle_f01.abap",
+          "line": 157,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f01.abap:157"
+        },
+        {
+          "file": "zfi_ic_settle_f02.abap",
+          "line": 125,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f02.abap:125"
+        }
+      ]
+    },
+    {
+      "id": "BM-056-B17",
+      "text": "Im Partnersystem wird zuerst geprüft, ob die Leistung dort schon eingegangen ist; dann wird die vorhandene Belegnummer zurückgegeben, ohne erneut zu buchen.",
+      "anchors": [
+        {
+          "file": "z_fi_ic_post_partner.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_fi_ic_post_partner.abap:36"
+        },
+        {
+          "file": "z_fi_ic_post_partner.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_fi_ic_post_partner.abap:40"
+        },
+        {
+          "file": "z_fi_ic_post_partner.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_fi_ic_post_partner.abap:49"
+        }
+      ]
+    },
+    {
+      "id": "BM-056-B18",
+      "text": "Fehlt im Partnersystem die IC-Kontenfindung für die sendende Gesellschaft, wird ein Fehler zurückgemeldet.",
+      "anchors": [
+        {
+          "file": "z_fi_ic_post_partner.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_fi_ic_post_partner.abap:53"
+        },
+        {
+          "file": "z_fi_ic_post_partner.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_fi_ic_post_partner.abap:56"
+        },
+        {
+          "file": "z_fi_ic_post_partner.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_fi_ic_post_partner.abap:63"
+        }
+      ]
+    },
+    {
+      "id": "BM-056-B19",
+      "text": "Im Testlauf prüft das Partnersystem den Eingangsbeleg nur.",
+      "anchors": [
+        {
+          "file": "z_fi_ic_post_partner.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_fi_ic_post_partner.abap:88"
+        },
+        {
+          "file": "z_fi_ic_post_partner.abap",
+          "line": 89,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_fi_ic_post_partner.abap:89"
+        }
+      ]
+    },
+    {
+      "id": "BM-056-B20",
+      "text": "Im Echtlauf bucht das Partnersystem IC-Aufwand auf Kostenstelle an den IC-Kreditor mit der lokalen Belegnummer als Referenz.",
+      "anchors": [
+        {
+          "file": "z_fi_ic_post_partner.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_fi_ic_post_partner.abap:98"
+        }
+      ]
+    },
+    {
+      "id": "BM-056-B21",
+      "text": "Meldet die Buchung im Partnersystem einen Fehler, wird sie dort zurückgerollt; sonst werden Eingangsvermerk und Beleg gemeinsam festgeschrieben.",
+      "anchors": [
+        {
+          "file": "z_fi_ic_post_partner.abap",
+          "line": 109,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_fi_ic_post_partner.abap:109"
+        },
+        {
+          "file": "z_fi_ic_post_partner.abap",
+          "line": 110,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_fi_ic_post_partner.abap:110"
+        },
+        {
+          "file": "z_fi_ic_post_partner.abap",
+          "line": 111,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_fi_ic_post_partner.abap:111"
+        },
+        {
+          "file": "z_fi_ic_post_partner.abap",
+          "line": 124,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_fi_ic_post_partner.abap:124"
+        },
+        {
+          "file": "z_fi_ic_post_partner.abap",
+          "line": 125,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_fi_ic_post_partner.abap:125"
+        }
+      ]
+    },
+    {
+      "id": "BM-056-B22",
+      "text": "Bricht die RFC-Verbindung ab oder tritt im Partnersystem ein Systemfehler auf, wird der Fehler protokolliert und die Verbindung geschlossen.",
+      "anchors": [
+        {
+          "file": "zfi_ic_settle_f02.abap",
+          "line": 146,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f02.abap:146"
+        },
+        {
+          "file": "zfi_ic_settle_f02.abap",
+          "line": 163,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f02.abap:163"
+        }
+      ]
+    },
+    {
+      "id": "BM-056-B23",
+      "text": "Meldet der Partner einen Fehler zurück, gilt die Partnerbuchung als gescheitert und der Fehler wird protokolliert.",
+      "anchors": [
+        {
+          "file": "zfi_ic_settle_f02.abap",
+          "line": 148,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f02.abap:148"
+        },
+        {
+          "file": "zfi_ic_settle_f02.abap",
+          "line": 149,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f02.abap:149"
+        }
+      ]
+    },
+    {
+      "id": "BM-056-B24",
+      "text": "Nur wenn auch die Partnerbuchung gelingt, erhält die Leistung den Status P; sonst bleibt sie im Status E, wobei ein bereits gebuchter lokaler Beleg bestehen bleibt.",
+      "anchors": [
+        {
+          "file": "zfi_ic_settle_f01.abap",
+          "line": 160,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f01.abap:160"
+        },
+        {
+          "file": "zfi_ic_settle_f01.abap",
+          "line": 161,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f01.abap:161"
+        },
+        {
+          "file": "zfi_ic_settle_f01.abap",
+          "line": 167,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f01.abap:167"
+        }
+      ]
+    },
+    {
+      "id": "BM-056-B25",
+      "text": "Im Echtlauf werden Status, lokale und Partner-Belegnummer an der Leistung fortgeschrieben und festgeschrieben; der Testlauf schreibt nichts fort.",
+      "anchors": [
+        {
+          "file": "zfi_ic_settle_f02.abap",
+          "line": 185,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f02.abap:185"
+        },
+        {
+          "file": "zfi_ic_settle_f02.abap",
+          "line": 187,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f02.abap:187"
+        },
+        {
+          "file": "zfi_ic_settle_f02.abap",
+          "line": 196,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f02.abap:196"
+        },
+        {
+          "file": "zfi_ic_settle_f02.abap",
+          "line": 197,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f02.abap:197"
+        }
+      ]
+    },
+    {
+      "id": "BM-056-B26",
+      "text": "Scheitert die Statusfortschreibung, wird sie zurückgerollt und ein Fehler protokolliert.",
+      "anchors": [
+        {
+          "file": "zfi_ic_settle_f02.abap",
+          "line": 199,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f02.abap:199"
+        }
+      ]
+    },
+    {
+      "id": "BM-056-B27",
+      "text": "Nach der Verarbeitung eines Partners wird seine Sperre wieder freigegeben.",
+      "anchors": [
+        {
+          "file": "zfi_ic_settle_f01.abap",
+          "line": 176,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f01.abap:176"
+        }
+      ]
+    },
+    {
+      "id": "BM-056-B28",
+      "text": "Alle gesammelten Meldungen werden ins Anwendungsprotokoll übernommen und dieses gespeichert; scheitert das Speichern, erscheint eine Warnung.",
+      "anchors": [
+        {
+          "file": "zfi_ic_settle_f01.abap",
+          "line": 192,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f01.abap:192"
+        },
+        {
+          "file": "zfi_ic_settle_f01.abap",
+          "line": 193,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f01.abap:193"
+        },
+        {
+          "file": "zfi_ic_settle_f01.abap",
+          "line": 206,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f01.abap:206"
+        },
+        {
+          "file": "zfi_ic_settle_f01.abap",
+          "line": 214,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f01.abap:214"
+        },
+        {
+          "file": "zfi_ic_settle_f01.abap",
+          "line": 215,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f01.abap:215"
+        }
+      ]
+    },
+    {
+      "id": "BM-056-B29",
+      "text": "Zum Schluss wird eine Liste mit Status und Belegnummern je Leistung sowie der Zahl beidseitig gebuchter und nicht abgeschlossener Leistungen ausgegeben.",
+      "anchors": [
+        {
+          "file": "zfi_ic_settle_f01.abap",
+          "line": 227,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f01.abap:227"
+        },
+        {
+          "file": "zfi_ic_settle_f01.abap",
+          "line": 231,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f01.abap:231"
+        },
+        {
+          "file": "zfi_ic_settle_f01.abap",
+          "line": 235,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f01.abap:235"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "zfi_ic_settle.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle.abap:24"
+        },
+        "meaning": "Start des Abrechnungsjobs (START-OF-SELECTION)"
+      },
+      {
+        "id": "gbatch",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_ic_settle.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle.abap:28"
+        },
+        "meaning": "Echtlauf im Dialog gestartet?"
+      },
+      {
+        "id": "obatch",
+        "type": "output",
+        "anchor": {
+          "file": "zfi_ic_settle.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle.abap:29"
+        },
+        "meaning": "Fehlermeldung: Echtlauf nur im Hintergrund"
+      },
+      {
+        "id": "ebatch",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_ic_settle.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle.abap:29"
+        },
+        "meaning": "Abbruch durch Fehlermeldung"
+      },
+      {
+        "id": "clog",
+        "type": "call",
+        "anchor": {
+          "file": "zfi_ic_settle.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle.abap:32"
+        },
+        "meaning": "Anwendungsprotokoll anlegen (LOG_INIT)"
+      },
+      {
+        "id": "cread",
+        "type": "call",
+        "anchor": {
+          "file": "zfi_ic_settle.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle.abap:34"
+        },
+        "meaning": "IC-Leistungen lesen (READ_SERVICES)"
+      },
+      {
+        "id": "gempty",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_ic_settle.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle.abap:35"
+        },
+        "meaning": "Keine abzurechnenden Leistungen?"
+      },
+      {
+        "id": "oempty",
+        "type": "output",
+        "anchor": {
+          "file": "zfi_ic_settle.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle.abap:36"
+        },
+        "meaning": "Hinweis: keine offenen IC-Leistungen"
+      },
+      {
+        "id": "eempty",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_ic_settle.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle.abap:37"
+        },
+        "meaning": "Lauf ohne Verarbeitung beendet"
+      },
+      {
+        "id": "lpart",
+        "type": "loop",
+        "anchor": {
+          "file": "zfi_ic_settle.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle.abap:41"
+        },
+        "meaning": "Partnergesellschaften durchlaufen"
+      },
+      {
+        "id": "cpart",
+        "type": "call",
+        "anchor": {
+          "file": "zfi_ic_settle.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle.abap:42"
+        },
+        "meaning": "Partner abrechnen (PROCESS_PARTNER)"
+      },
+      {
+        "id": "csave",
+        "type": "call",
+        "anchor": {
+          "file": "zfi_ic_settle.abap",
+          "line": 45,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle.abap:45"
+        },
+        "meaning": "Protokoll sichern (LOG_SAVE)"
+      },
+      {
+        "id": "cprot",
+        "type": "call",
+        "anchor": {
+          "file": "zfi_ic_settle.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle.abap:46"
+        },
+        "meaning": "Ergebnisliste ausgeben (WRITE_PROTOCOL)"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_ic_settle.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle.abap:46"
+        },
+        "meaning": "Lauf beendet"
+      },
+      {
+        "id": "flog",
+        "type": "start",
+        "anchor": {
+          "file": "zfi_ic_settle_f01.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f01.abap:12"
+        },
+        "meaning": "FORM LOG_INIT"
+      },
+      {
+        "id": "balc",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zfi_ic_settle_f01.abap",
+          "line": 23,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f01.abap:23"
+        },
+        "meaning": "Anwendungsprotokoll ZFI_IC/SETTLE anlegen"
+      },
+      {
+        "id": "gbalc",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_ic_settle_f01.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f01.abap:31"
+        },
+        "meaning": "Protokoll nicht angelegt?"
+      },
+      {
+        "id": "obalc",
+        "type": "output",
+        "anchor": {
+          "file": "zfi_ic_settle_f01.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f01.abap:33"
+        },
+        "meaning": "Abbruchmeldung: kein Protokoll"
+      },
+      {
+        "id": "eabort",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_ic_settle_f01.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f01.abap:33"
+        },
+        "meaning": "Programmabbruch (Nachricht Typ A)"
+      },
+      {
+        "id": "xlog",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_ic_settle_f01.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f01.abap:35"
+        },
+        "meaning": "LOG_INIT beendet, Protokoll angelegt"
+      },
+      {
+        "id": "fread",
+        "type": "start",
+        "anchor": {
+          "file": "zfi_ic_settle_f01.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f01.abap:42"
+        },
+        "meaning": "FORM READ_SERVICES"
+      },
+      {
+        "id": "qserv",
+        "type": "read",
+        "anchor": {
+          "file": "zfi_ic_settle_f01.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f01.abap:44"
+        },
+        "meaning": "Offene und fehlerhafte IC-Leistungen der Periode lesen"
+      },
+      {
+        "id": "qt001",
+        "type": "read",
+        "anchor": {
+          "file": "zfi_ic_settle_f01.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f01.abap:58"
+        },
+        "meaning": "Hauswährung des Buchungskreises lesen"
+      },
+      {
+        "id": "xread",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_ic_settle_f01.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f01.abap:65"
+        },
+        "meaning": "READ_SERVICES beendet"
+      },
+      {
+        "id": "fpart",
+        "type": "start",
+        "anchor": {
+          "file": "zfi_ic_settle_f01.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f01.abap:72"
+        },
+        "meaning": "FORM PROCESS_PARTNER"
+      },
+      {
+        "id": "enq",
+        "type": "lock",
+        "anchor": {
+          "file": "zfi_ic_settle_f01.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f01.abap:83"
+        },
+        "meaning": "Partner exklusiv sperren"
+      },
+      {
+        "id": "genq",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_ic_settle_f01.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f01.abap:92"
+        },
+        "meaning": "Sperre nicht erhalten?"
+      },
+      {
+        "id": "qdest",
+        "type": "read",
+        "anchor": {
+          "file": "zfi_ic_settle_f01.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f01.abap:98"
+        },
+        "meaning": "RFC-Destination und Verrechnungskonditionen lesen"
+      },
+      {
+        "id": "gdest",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_ic_settle_f01.abap",
+          "line": 101,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f01.abap:101"
+        },
+        "meaning": "Customizing oder Destination fehlt?"
+      },
+      {
+        "id": "litem",
+        "type": "loop",
+        "anchor": {
+          "file": "zfi_ic_settle_f01.abap",
+          "line": 106,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f01.abap:106"
+        },
+        "meaning": "Leistungen des Partners durchlaufen"
+      },
+      {
+        "id": "price",
+        "type": "action",
+        "anchor": {
+          "file": "zfi_ic_settle_f01.abap",
+          "line": 113,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f01.abap:113"
+        },
+        "meaning": "Verrechnungspreis mit Aufschlag berechnen"
+      },
+      {
+        "id": "gnew",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_ic_settle_f01.abap",
+          "line": 116,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f01.abap:116"
+        },
+        "meaning": "Noch kein lokaler Beleg?"
+      },
+      {
+        "id": "gcur",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_ic_settle_f01.abap",
+          "line": 117,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f01.abap:117"
+        },
+        "meaning": "Leistungswährung ungleich Hauswährung?"
+      },
+      {
+        "id": "conv",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zfi_ic_settle_f01.abap",
+          "line": 118,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f01.abap:118"
+        },
+        "meaning": "Verrechnungspreis in Hauswährung umrechnen (Kurstyp M)"
+      },
+      {
+        "id": "gconv",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_ic_settle_f01.abap",
+          "line": 134,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f01.abap:134"
+        },
+        "meaning": "Kein Kurs gefunden?"
+      },
+      {
+        "id": "gok1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_ic_settle_f01.abap",
+          "line": 146,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f01.abap:146"
+        },
+        "meaning": "Umrechnung in Ordnung?"
+      },
+      {
+        "id": "cpost",
+        "type": "call",
+        "anchor": {
+          "file": "zfi_ic_settle_f01.abap",
+          "line": 147,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f01.abap:147"
+        },
+        "meaning": "Lokale Ausgangsbuchung (POST_LOCAL)"
+      },
+      {
+        "id": "gpart",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_ic_settle_f01.abap",
+          "line": 157,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f01.abap:157"
+        },
+        "meaning": "Lokale Seite in Ordnung?"
+      },
+      {
+        "id": "cprt",
+        "type": "call",
+        "anchor": {
+          "file": "zfi_ic_settle_f01.abap",
+          "line": 158,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f01.abap:158"
+        },
+        "meaning": "Partnerbuchung (POST_PARTNER)"
+      },
+      {
+        "id": "gprtok",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_ic_settle_f01.abap",
+          "line": 160,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f01.abap:160"
+        },
+        "meaning": "Partnerbuchung erfolgreich?"
+      },
+      {
+        "id": "setp",
+        "type": "action",
+        "anchor": {
+          "file": "zfi_ic_settle_f01.abap",
+          "line": 161,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f01.abap:161"
+        },
+        "meaning": "Status P (beidseitig gebucht) festlegen"
+      },
+      {
+        "id": "cupd",
+        "type": "call",
+        "anchor": {
+          "file": "zfi_ic_settle_f01.abap",
+          "line": 167,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f01.abap:167"
+        },
+        "meaning": "Status fortschreiben (UPDATE_STATUS)"
+      },
+      {
+        "id": "deq",
+        "type": "lock",
+        "anchor": {
+          "file": "zfi_ic_settle_f01.abap",
+          "line": 176,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f01.abap:176"
+        },
+        "meaning": "Partnersperre freigeben"
+      },
+      {
+        "id": "xpart",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_ic_settle_f01.abap",
+          "line": 182,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f01.abap:182"
+        },
+        "meaning": "PROCESS_PARTNER beendet"
+      },
+      {
+        "id": "fsave",
+        "type": "start",
+        "anchor": {
+          "file": "zfi_ic_settle_f01.abap",
+          "line": 189,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f01.abap:189"
+        },
+        "meaning": "FORM LOG_SAVE"
+      },
+      {
+        "id": "lmsg",
+        "type": "loop",
+        "anchor": {
+          "file": "zfi_ic_settle_f01.abap",
+          "line": 192,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f01.abap:192"
+        },
+        "meaning": "Gesammelte Meldungen durchlaufen"
+      },
+      {
+        "id": "baladd",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zfi_ic_settle_f01.abap",
+          "line": 193,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f01.abap:193"
+        },
+        "meaning": "Meldung ins Anwendungsprotokoll übernehmen"
+      },
+      {
+        "id": "balsave",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zfi_ic_settle_f01.abap",
+          "line": 206,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f01.abap:206"
+        },
+        "meaning": "Anwendungsprotokoll speichern"
+      },
+      {
+        "id": "gsave",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_ic_settle_f01.abap",
+          "line": 214,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f01.abap:214"
+        },
+        "meaning": "Speichern fehlgeschlagen?"
+      },
+      {
+        "id": "osave",
+        "type": "output",
+        "anchor": {
+          "file": "zfi_ic_settle_f01.abap",
+          "line": 215,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f01.abap:215"
+        },
+        "meaning": "Warnung: Protokoll nicht gespeichert"
+      },
+      {
+        "id": "xsave",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_ic_settle_f01.abap",
+          "line": 217,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f01.abap:217"
+        },
+        "meaning": "LOG_SAVE beendet"
+      },
+      {
+        "id": "fprot",
+        "type": "start",
+        "anchor": {
+          "file": "zfi_ic_settle_f01.abap",
+          "line": 224,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f01.abap:224"
+        },
+        "meaning": "FORM WRITE_PROTOCOL"
+      },
+      {
+        "id": "ohead",
+        "type": "output",
+        "anchor": {
+          "file": "zfi_ic_settle_f01.abap",
+          "line": 227,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f01.abap:227"
+        },
+        "meaning": "Listkopf mit Selektion und Testlauf-Kennzeichen"
+      },
+      {
+        "id": "lprot",
+        "type": "loop",
+        "anchor": {
+          "file": "zfi_ic_settle_f01.abap",
+          "line": 230,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f01.abap:230"
+        },
+        "meaning": "Protokollzeilen durchlaufen"
+      },
+      {
+        "id": "oprot",
+        "type": "output",
+        "anchor": {
+          "file": "zfi_ic_settle_f01.abap",
+          "line": 231,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f01.abap:231"
+        },
+        "meaning": "Leistung mit Status und Belegnummern listen"
+      },
+      {
+        "id": "osum",
+        "type": "output",
+        "anchor": {
+          "file": "zfi_ic_settle_f01.abap",
+          "line": 235,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f01.abap:235"
+        },
+        "meaning": "Anzahl gebuchter und offener Leistungen ausgeben"
+      },
+      {
+        "id": "xprot",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_ic_settle_f01.abap",
+          "line": 237,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f01.abap:237"
+        },
+        "meaning": "WRITE_PROTOCOL beendet, Liste ausgegeben"
+      },
+      {
+        "id": "fpost",
+        "type": "start",
+        "anchor": {
+          "file": "zfi_ic_settle_f02.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f02.abap:12"
+        },
+        "meaning": "FORM POST_LOCAL"
+      },
+      {
+        "id": "gptest",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_ic_settle_f02.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f02.abap:53"
+        },
+        "meaning": "Testlauf?"
+      },
+      {
+        "id": "bchk",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zfi_ic_settle_f02.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f02.abap:54"
+        },
+        "meaning": "Ausgangsbeleg nur prüfen"
+      },
+      {
+        "id": "bpost",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zfi_ic_settle_f02.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f02.abap:63"
+        },
+        "meaning": "Ausgangsbeleg zur Buchung vorbereiten (wirksam erst mit Commit)"
+      },
+      {
+        "id": "rret",
+        "type": "read",
+        "anchor": {
+          "file": "zfi_ic_settle_f02.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f02.abap:75"
+        },
+        "meaning": "Fehlermeldung in der BAPI-Rückgabe suchen"
+      },
+      {
+        "id": "gret",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_ic_settle_f02.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f02.abap:76"
+        },
+        "meaning": "BAPI meldet Fehler / Echtlauf ohne Fehler?"
+      },
+      {
+        "id": "grbtest",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_ic_settle_f02.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f02.abap:82"
+        },
+        "meaning": "Echtlauf?"
+      },
+      {
+        "id": "brb",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zfi_ic_settle_f02.abap",
+          "line": 83,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f02.abap:83"
+        },
+        "meaning": "Lokale Buchung zurückrollen"
+      },
+      {
+        "id": "bcom",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zfi_ic_settle_f02.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f02.abap:87"
+        },
+        "meaning": "Lokalen Beleg festschreiben (Commit mit Warten)"
+      },
+      {
+        "id": "xpost",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_ic_settle_f02.abap",
+          "line": 97,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f02.abap:97"
+        },
+        "meaning": "POST_LOCAL beendet, Ergebnis in lv_ok/lv_belnr_l"
+      },
+      {
+        "id": "fprt",
+        "type": "start",
+        "anchor": {
+          "file": "zfi_ic_settle_f02.abap",
+          "line": 104,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f02.abap:104"
+        },
+        "meaning": "FORM POST_PARTNER"
+      },
+      {
+        "id": "rfc",
+        "type": "rfc",
+        "anchor": {
+          "file": "zfi_ic_settle_f02.abap",
+          "line": 125,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f02.abap:125"
+        },
+        "meaning": "Eingangsbuchung im Partnersystem synchron per RFC anstoßen"
+      },
+      {
+        "id": "grfc",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_ic_settle_f02.abap",
+          "line": 146,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f02.abap:146"
+        },
+        "meaning": "Ergebnis des RFC-Aufrufs"
+      },
+      {
+        "id": "rpret",
+        "type": "read",
+        "anchor": {
+          "file": "zfi_ic_settle_f02.abap",
+          "line": 148,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f02.abap:148"
+        },
+        "meaning": "Fehlermeldung in der Partner-Rückgabe suchen"
+      },
+      {
+        "id": "gpret",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_ic_settle_f02.abap",
+          "line": 149,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f02.abap:149"
+        },
+        "meaning": "Partner meldet Fehler?"
+      },
+      {
+        "id": "rclose",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zfi_ic_settle_f02.abap",
+          "line": 163,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f02.abap:163"
+        },
+        "meaning": "RFC-Verbindung nach Kommunikations-/Systemfehler schließen"
+      },
+      {
+        "id": "xprt",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_ic_settle_f02.abap",
+          "line": 172,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f02.abap:172"
+        },
+        "meaning": "POST_PARTNER beendet, Ergebnis in lv_ok"
+      },
+      {
+        "id": "fupd",
+        "type": "start",
+        "anchor": {
+          "file": "zfi_ic_settle_f02.abap",
+          "line": 179,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f02.abap:179"
+        },
+        "meaning": "FORM UPDATE_STATUS"
+      },
+      {
+        "id": "gutest",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_ic_settle_f02.abap",
+          "line": 185,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f02.abap:185"
+        },
+        "meaning": "Kein Testlauf? (CHECK)"
+      },
+      {
+        "id": "wupd",
+        "type": "write",
+        "anchor": {
+          "file": "zfi_ic_settle_f02.abap",
+          "line": 187,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f02.abap:187"
+        },
+        "meaning": "Status und Belegnummern an der Leistung fortschreiben"
+      },
+      {
+        "id": "gupd",
+        "type": "gateway",
+        "anchor": {
+          "file": "zfi_ic_settle_f02.abap",
+          "line": 196,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f02.abap:196"
+        },
+        "meaning": "Fortschreibung erfolgreich?"
+      },
+      {
+        "id": "cw",
+        "type": "transaction",
+        "anchor": {
+          "file": "zfi_ic_settle_f02.abap",
+          "line": 197,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f02.abap:197"
+        },
+        "meaning": "Statusänderung festschreiben"
+      },
+      {
+        "id": "rw",
+        "type": "transaction",
+        "anchor": {
+          "file": "zfi_ic_settle_f02.abap",
+          "line": 199,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f02.abap:199"
+        },
+        "meaning": "Statusänderung zurückrollen"
+      },
+      {
+        "id": "xupd",
+        "type": "end",
+        "anchor": {
+          "file": "zfi_ic_settle_f02.abap",
+          "line": 203,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zfi_ic_settle_f02.abap:203"
+        },
+        "meaning": "UPDATE_STATUS beendet"
+      },
+      {
+        "id": "fm",
+        "type": "start",
+        "anchor": {
+          "file": "z_fi_ic_post_partner.abap",
+          "line": 1,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_fi_ic_post_partner.abap:1"
+        },
+        "meaning": "RFC-Baustein Z_FI_IC_POST_PARTNER im Partnersystem"
+      },
+      {
+        "id": "fq1",
+        "type": "read",
+        "anchor": {
+          "file": "z_fi_ic_post_partner.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_fi_ic_post_partner.abap:36"
+        },
+        "meaning": "Eingangsvermerk der Leistung suchen"
+      },
+      {
+        "id": "fg1",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_fi_ic_post_partner.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_fi_ic_post_partner.abap:40"
+        },
+        "meaning": "Leistung bereits eingegangen?"
+      },
+      {
+        "id": "fe1",
+        "type": "end",
+        "anchor": {
+          "file": "z_fi_ic_post_partner.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_fi_ic_post_partner.abap:49"
+        },
+        "meaning": "Vorhandene Belegnummer zurückgeben, nicht erneut buchen"
+      },
+      {
+        "id": "fq2",
+        "type": "read",
+        "anchor": {
+          "file": "z_fi_ic_post_partner.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_fi_ic_post_partner.abap:53"
+        },
+        "meaning": "IC-Kontenfindung für den Sender lesen"
+      },
+      {
+        "id": "fg2",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_fi_ic_post_partner.abap",
+          "line": 56,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_fi_ic_post_partner.abap:56"
+        },
+        "meaning": "Kontenfindung fehlt?"
+      },
+      {
+        "id": "fe2",
+        "type": "end",
+        "anchor": {
+          "file": "z_fi_ic_post_partner.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_fi_ic_post_partner.abap:63"
+        },
+        "meaning": "Fehler zurückmelden"
+      },
+      {
+        "id": "fg3",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_fi_ic_post_partner.abap",
+          "line": 88,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_fi_ic_post_partner.abap:88"
+        },
+        "meaning": "Testlauf?"
+      },
+      {
+        "id": "fchk",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "z_fi_ic_post_partner.abap",
+          "line": 89,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_fi_ic_post_partner.abap:89"
+        },
+        "meaning": "Eingangsbeleg nur prüfen"
+      },
+      {
+        "id": "fpost2",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "z_fi_ic_post_partner.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_fi_ic_post_partner.abap:98"
+        },
+        "meaning": "Eingangsbeleg Aufwand an IC-Kreditor vorbereiten"
+      },
+      {
+        "id": "fr",
+        "type": "read",
+        "anchor": {
+          "file": "z_fi_ic_post_partner.abap",
+          "line": 109,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_fi_ic_post_partner.abap:109"
+        },
+        "meaning": "Fehlermeldung in der BAPI-Rückgabe suchen"
+      },
+      {
+        "id": "fg4",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_fi_ic_post_partner.abap",
+          "line": 110,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_fi_ic_post_partner.abap:110"
+        },
+        "meaning": "BAPI meldet Fehler?"
+      },
+      {
+        "id": "frb",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "z_fi_ic_post_partner.abap",
+          "line": 111,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_fi_ic_post_partner.abap:111"
+        },
+        "meaning": "Partnerbuchung zurückrollen"
+      },
+      {
+        "id": "fins",
+        "type": "write",
+        "anchor": {
+          "file": "z_fi_ic_post_partner.abap",
+          "line": 124,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_fi_ic_post_partner.abap:124"
+        },
+        "meaning": "Eingangsvermerk anlegen"
+      },
+      {
+        "id": "fcom",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "z_fi_ic_post_partner.abap",
+          "line": 125,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_fi_ic_post_partner.abap:125"
+        },
+        "meaning": "Eingangsbeleg und Vermerk gemeinsam festschreiben"
+      },
+      {
+        "id": "xfm",
+        "type": "end",
+        "anchor": {
+          "file": "z_fi_ic_post_partner.abap",
+          "line": 131,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_fi_ic_post_partner.abap:131"
+        },
+        "meaning": "Baustein beendet, Ergebnis an den Aufrufer (RFC-Rückkehr)"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "gbatch",
+        "condition": "always"
+      },
+      {
+        "from": "gbatch",
+        "to": "obatch",
+        "condition": "sy-batch IS INITIAL AND p_test IS INITIAL"
+      },
+      {
+        "from": "obatch",
+        "to": "ebatch",
+        "condition": "always"
+      },
+      {
+        "from": "gbatch",
+        "to": "clog",
+        "condition": "else"
+      },
+      {
+        "from": "clog",
+        "to": "flog",
+        "condition": "always"
+      },
+      {
+        "from": "flog",
+        "to": "balc",
+        "condition": "always"
+      },
+      {
+        "from": "balc",
+        "to": "gbalc",
+        "condition": "always"
+      },
+      {
+        "from": "gbalc",
+        "to": "obalc",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "obalc",
+        "to": "eabort",
+        "condition": "always"
+      },
+      {
+        "from": "gbalc",
+        "to": "xlog",
+        "condition": "else"
+      },
+      {
+        "from": "cread",
+        "to": "fread",
+        "condition": "always"
+      },
+      {
+        "from": "fread",
+        "to": "qserv",
+        "condition": "always"
+      },
+      {
+        "from": "qserv",
+        "to": "qt001",
+        "condition": "always"
+      },
+      {
+        "from": "qt001",
+        "to": "xread",
+        "condition": "always"
+      },
+      {
+        "from": "gempty",
+        "to": "oempty",
+        "condition": "gt_serv IS INITIAL"
+      },
+      {
+        "from": "oempty",
+        "to": "eempty",
+        "condition": "always"
+      },
+      {
+        "from": "gempty",
+        "to": "lpart",
+        "condition": "else"
+      },
+      {
+        "from": "lpart",
+        "to": "cpart",
+        "condition": "next row"
+      },
+      {
+        "from": "cpart",
+        "to": "fpart",
+        "condition": "always"
+      },
+      {
+        "from": "fpart",
+        "to": "enq",
+        "condition": "always"
+      },
+      {
+        "from": "enq",
+        "to": "genq",
+        "condition": "always"
+      },
+      {
+        "from": "genq",
+        "to": "xpart",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "genq",
+        "to": "qdest",
+        "condition": "else"
+      },
+      {
+        "from": "qdest",
+        "to": "gdest",
+        "condition": "always"
+      },
+      {
+        "from": "gdest",
+        "to": "deq",
+        "condition": "sy-subrc <> 0 OR gs_dest-rfcdest IS INITIAL"
+      },
+      {
+        "from": "gdest",
+        "to": "litem",
+        "condition": "else"
+      },
+      {
+        "from": "litem",
+        "to": "price",
+        "condition": "next row"
+      },
+      {
+        "from": "price",
+        "to": "gnew",
+        "condition": "always"
+      },
+      {
+        "from": "gnew",
+        "to": "gcur",
+        "condition": "gs_serv-belnr_l IS INITIAL"
+      },
+      {
+        "from": "gnew",
+        "to": "gpart",
+        "condition": "else"
+      },
+      {
+        "from": "gcur",
+        "to": "conv",
+        "condition": "gs_serv-waers <> gv_waers_l"
+      },
+      {
+        "from": "gcur",
+        "to": "gok1",
+        "condition": "else"
+      },
+      {
+        "from": "conv",
+        "to": "gconv",
+        "condition": "always"
+      },
+      {
+        "from": "gconv",
+        "to": "gok1",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "gconv",
+        "to": "gok1",
+        "condition": "else"
+      },
+      {
+        "from": "gok1",
+        "to": "cpost",
+        "condition": "lv_ok = abap_true"
+      },
+      {
+        "from": "gok1",
+        "to": "gpart",
+        "condition": "else"
+      },
+      {
+        "from": "cpost",
+        "to": "fpost",
+        "condition": "always"
+      },
+      {
+        "from": "fpost",
+        "to": "gptest",
+        "condition": "always"
+      },
+      {
+        "from": "gptest",
+        "to": "bchk",
+        "condition": "p_test = abap_true"
+      },
+      {
+        "from": "gptest",
+        "to": "bpost",
+        "condition": "else"
+      },
+      {
+        "from": "bchk",
+        "to": "rret",
+        "condition": "always"
+      },
+      {
+        "from": "bpost",
+        "to": "rret",
+        "condition": "always"
+      },
+      {
+        "from": "rret",
+        "to": "gret",
+        "condition": "always"
+      },
+      {
+        "from": "gret",
+        "to": "grbtest",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "grbtest",
+        "to": "brb",
+        "condition": "p_test IS INITIAL"
+      },
+      {
+        "from": "grbtest",
+        "to": "xpost",
+        "condition": "else"
+      },
+      {
+        "from": "brb",
+        "to": "xpost",
+        "condition": "always"
+      },
+      {
+        "from": "gret",
+        "to": "bcom",
+        "condition": "p_test IS INITIAL"
+      },
+      {
+        "from": "gret",
+        "to": "xpost",
+        "condition": "else"
+      },
+      {
+        "from": "bcom",
+        "to": "xpost",
+        "condition": "always"
+      },
+      {
+        "from": "gpart",
+        "to": "cprt",
+        "condition": "lv_ok = abap_true"
+      },
+      {
+        "from": "gpart",
+        "to": "cupd",
+        "condition": "else"
+      },
+      {
+        "from": "cprt",
+        "to": "fprt",
+        "condition": "always"
+      },
+      {
+        "from": "fprt",
+        "to": "rfc",
+        "condition": "always"
+      },
+      {
+        "from": "rfc",
+        "to": "fm",
+        "condition": "always"
+      },
+      {
+        "from": "fm",
+        "to": "fq1",
+        "condition": "always"
+      },
+      {
+        "from": "fq1",
+        "to": "fg1",
+        "condition": "always"
+      },
+      {
+        "from": "fg1",
+        "to": "fe1",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "fg1",
+        "to": "fq2",
+        "condition": "else"
+      },
+      {
+        "from": "fq2",
+        "to": "fg2",
+        "condition": "always"
+      },
+      {
+        "from": "fg2",
+        "to": "fe2",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "fg2",
+        "to": "fg3",
+        "condition": "else"
+      },
+      {
+        "from": "fg3",
+        "to": "fchk",
+        "condition": "iv_test = abap_true"
+      },
+      {
+        "from": "fg3",
+        "to": "fpost2",
+        "condition": "else"
+      },
+      {
+        "from": "fpost2",
+        "to": "fr",
+        "condition": "always"
+      },
+      {
+        "from": "fr",
+        "to": "fg4",
+        "condition": "always"
+      },
+      {
+        "from": "fg4",
+        "to": "frb",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "fg4",
+        "to": "fins",
+        "condition": "else"
+      },
+      {
+        "from": "fins",
+        "to": "fcom",
+        "condition": "always"
+      },
+      {
+        "from": "fe1",
+        "to": "grfc",
+        "condition": "always"
+      },
+      {
+        "from": "fe2",
+        "to": "grfc",
+        "condition": "always"
+      },
+      {
+        "from": "fchk",
+        "to": "xfm",
+        "condition": "always"
+      },
+      {
+        "from": "frb",
+        "to": "xfm",
+        "condition": "always"
+      },
+      {
+        "from": "fcom",
+        "to": "xfm",
+        "condition": "always"
+      },
+      {
+        "from": "grfc",
+        "to": "rpret",
+        "condition": "WHEN 0"
+      },
+      {
+        "from": "grfc",
+        "to": "rclose",
+        "condition": "WHEN 1 OR 2"
+      },
+      {
+        "from": "grfc",
+        "to": "xprt",
+        "condition": "else"
+      },
+      {
+        "from": "rpret",
+        "to": "gpret",
+        "condition": "always"
+      },
+      {
+        "from": "gpret",
+        "to": "xprt",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "gpret",
+        "to": "xprt",
+        "condition": "else"
+      },
+      {
+        "from": "rclose",
+        "to": "xprt",
+        "condition": "always"
+      },
+      {
+        "from": "gprtok",
+        "to": "setp",
+        "condition": "lv_ok = abap_true"
+      },
+      {
+        "from": "gprtok",
+        "to": "cupd",
+        "condition": "else"
+      },
+      {
+        "from": "setp",
+        "to": "cupd",
+        "condition": "always"
+      },
+      {
+        "from": "cupd",
+        "to": "fupd",
+        "condition": "always"
+      },
+      {
+        "from": "fupd",
+        "to": "gutest",
+        "condition": "always"
+      },
+      {
+        "from": "gutest",
+        "to": "wupd",
+        "condition": "p_test IS INITIAL"
+      },
+      {
+        "from": "gutest",
+        "to": "xupd",
+        "condition": "else"
+      },
+      {
+        "from": "wupd",
+        "to": "gupd",
+        "condition": "always"
+      },
+      {
+        "from": "gupd",
+        "to": "cw",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "gupd",
+        "to": "rw",
+        "condition": "else"
+      },
+      {
+        "from": "cw",
+        "to": "xupd",
+        "condition": "always"
+      },
+      {
+        "from": "rw",
+        "to": "xupd",
+        "condition": "always"
+      },
+      {
+        "from": "litem",
+        "to": "deq",
+        "condition": "no more rows"
+      },
+      {
+        "from": "deq",
+        "to": "xpart",
+        "condition": "always"
+      },
+      {
+        "from": "lpart",
+        "to": "csave",
+        "condition": "no more rows"
+      },
+      {
+        "from": "csave",
+        "to": "fsave",
+        "condition": "always"
+      },
+      {
+        "from": "fsave",
+        "to": "lmsg",
+        "condition": "always"
+      },
+      {
+        "from": "lmsg",
+        "to": "baladd",
+        "condition": "next row"
+      },
+      {
+        "from": "baladd",
+        "to": "lmsg",
+        "condition": "next iteration"
+      },
+      {
+        "from": "lmsg",
+        "to": "balsave",
+        "condition": "no more rows"
+      },
+      {
+        "from": "balsave",
+        "to": "gsave",
+        "condition": "always"
+      },
+      {
+        "from": "gsave",
+        "to": "osave",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "gsave",
+        "to": "xsave",
+        "condition": "else"
+      },
+      {
+        "from": "osave",
+        "to": "xsave",
+        "condition": "always"
+      },
+      {
+        "from": "cprot",
+        "to": "fprot",
+        "condition": "always"
+      },
+      {
+        "from": "fprot",
+        "to": "ohead",
+        "condition": "always"
+      },
+      {
+        "from": "ohead",
+        "to": "lprot",
+        "condition": "always"
+      },
+      {
+        "from": "lprot",
+        "to": "oprot",
+        "condition": "next row"
+      },
+      {
+        "from": "oprot",
+        "to": "lprot",
+        "condition": "next iteration"
+      },
+      {
+        "from": "lprot",
+        "to": "osum",
+        "condition": "no more rows"
+      },
+      {
+        "from": "osum",
+        "to": "xprot",
+        "condition": "always"
+      },
+      {
+        "from": "xlog",
+        "to": "cread",
+        "condition": "always"
+      },
+      {
+        "from": "xread",
+        "to": "gempty",
+        "condition": "always"
+      },
+      {
+        "from": "xpart",
+        "to": "lpart",
+        "condition": "next iteration"
+      },
+      {
+        "from": "xsave",
+        "to": "cprot",
+        "condition": "always"
+      },
+      {
+        "from": "xprot",
+        "to": "e",
+        "condition": "always"
+      },
+      {
+        "from": "xpost",
+        "to": "gpart",
+        "condition": "always"
+      },
+      {
+        "from": "xprt",
+        "to": "gprtok",
+        "condition": "always"
+      },
+      {
+        "from": "xupd",
+        "to": "litem",
+        "condition": "next iteration"
+      },
+      {
+        "from": "xfm",
+        "to": "grfc",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zfi_ic_settle_f02.abap:75 — kein Fachsatz „auch Abbruchmeldungen (Typ A) der Buchungsschnittstelle verhindern die lokale Buchung“ (gesucht wird nur Typ E)",
+    "zfi_ic_settle_f02.abap:125 — kein Fachsatz „die Partnerbuchung läuft asynchron bzw. entkoppelt über eine Warteschlange“ (synchroner RFC; die asynchrone Variante ist auskommentiert)",
+    "zfi_ic_settle_f01.abap:167 — kein Fachsatz „scheitert die Partnerbuchung, wird der lokale Beleg storniert“ (der lokale Beleg ist bereits festgeschrieben und bleibt stehen; nur der Status bleibt E)",
+    "zfi_ic_settle_f01.abap:44 — kein Fachsatz „offene Posten der IC-Debitoren (BSID) werden abgerechnet“ (der BSID-Zugriff ist auskommentiert, Quelle ist ZFI_IC_SERV)"
+  ],
+  "processDescription": "Der Report ZFI_IC_SETTLE läuft als Hintergrundjob je Buchungskreis, Geschäftsjahr und Periode; im Dialog ist nur ein Testlauf erlaubt. Er legt ein Anwendungsprotokoll an, liest die offenen und fehlerhaften Intercompany-Leistungen aus ZFI_IC_SERV sowie die Hauswährung und beendet sich mit einem Hinweis, wenn nichts abzurechnen ist. Je Partnergesellschaft wird eine exklusive Sperre gesetzt und aus dem Customizing die RFC-Destination mit Aufschlagsatz, IC-Debitor und Erlöskonto gelesen; ist der Partner gesperrt oder fehlt das Customizing, wird er mit Protokollmeldung übersprungen. Für jede Leistung wird der Verrechnungspreis mit Aufschlag berechnet. Hat die Leistung noch keinen lokalen Beleg, wird der Preis bei Fremdwährung mit Kurstyp M in Hauswährung umgerechnet; fehlt der Kurs, bleibt die Leistung im Status E. Sonst wird die Ausgangsrechnung IC-Debitor an IC-Erlös über BAPI_ACC_DOCUMENT_POST gebildet und erst mit BAPI_TRANSACTION_COMMIT festgeschrieben, bei Fehlern zurückgerollt; im Testlauf wird nur geprüft. Leistungen mit vorhandenem lokalem Beleg werden lokal nicht erneut gebucht. Danach wird beim Partner synchron per RFC der Baustein Z_FI_IC_POST_PARTNER gerufen, der Doppelbuchungen über einen Eingangsvermerk erkennt, die Kontenfindung prüft und Aufwand an IC-Kreditor bucht, wobei Beleg und Eingangsvermerk gemeinsam festgeschrieben werden. Kommunikations- und Systemfehler des RFC werden protokolliert und die Verbindung geschlossen. Nur bei erfolgreicher Partnerbuchung erhält die Leistung den Status P; scheitert die Partnerseite, bleibt der lokale Beleg bestehen und die Leistung im Status E, sodass ein späterer Lauf nur die Partnerseite wiederholt. Im Echtlauf werden Status und Belegnummern fortgeschrieben und festgeschrieben, danach wird die Partnersperre gelöst. Am Ende werden alle Meldungen im Anwendungsprotokoll gespeichert und eine Ergebnisliste mit Status, Belegnummern und Summenzeilen ausgegeben."
+}

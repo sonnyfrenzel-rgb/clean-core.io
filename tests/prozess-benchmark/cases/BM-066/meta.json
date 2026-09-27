@@ -1,0 +1,22 @@
+{
+  "id": "BM-066",
+  "title": "Massenrückmeldung von Fertigungsaufträgen aus einer MES-Datei",
+  "domain": "PP / PM / QM — Produktion, Instandhaltung, Qualität",
+  "band": "mittel",
+  "loc": 92,
+  "constructs": [
+    "OPEN/READ/CLOSE DATASET",
+    "DO … EXIT",
+    "SPLIT",
+    "ALPHA = IN",
+    "BAPI_PRODORDCONF_CREATE_TT mit TESTRUN",
+    "BAPI_TRANSACTION_ROLLBACK/COMMIT je Zeile",
+    "WRITE-Protokoll"
+  ],
+  "scenario": "Hintergrund- oder Dialogreport, der die von einem MES auf den Applikationsserver gelegte Rückmeldedatei zeilenweise als Fertigungsauftragsrückmeldungen bucht; Standardkandidat für die Ablösung durch eine API-basierte MES-Anbindung.",
+  "s4_issues": [
+    "Dateischnittstelle über den Applikationsserver (OPEN DATASET) – in Cloud-Szenarien nicht zulässig",
+    "Keine Dublettenprüfung – eine zweimal eingelesene Datei bucht doppelt",
+    "Listausgabe WRITE"
+  ]
+}

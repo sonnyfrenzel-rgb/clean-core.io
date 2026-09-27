@@ -1,0 +1,25 @@
+{
+  "id": "BM-093",
+  "title": "Überstundenmonitor: Ist gegen Soll je Monat mit Workflow-Alarm an die Führungskraft",
+  "domain": "Querschnitt — Schnittstellen, Stammdaten, HR, Workflow, technische Jobs",
+  "band": "komplex",
+  "loc": 246,
+  "constructs": [
+    "Report + globale Klasse",
+    "CREATE OBJECT",
+    "funktionaler Methodenaufruf",
+    "HR_CHECK_AUTHORITY_INFTY",
+    "HR_READ_INFOTYPE",
+    "SELECT SUM PA2002/PA2005",
+    "READ TABLE Grenzwert",
+    "IF/ELSEIF-Ampel",
+    "SWE_EVENT_CREATE",
+    "REUSE_ALV_GRID_DISPLAY"
+  ],
+  "scenario": "Monatlicher Lauf der Personalabteilung nach einer Betriebsvereinbarung zur Arbeitszeit: Mitarbeiter über der Überstundengrenze ihres Personalbereichs werden rot markiert und der Führungskraft per Workflow gemeldet.",
+  "s4_issues": [
+    "Direkte Lesezugriffe auf PA0001/PA2002/PA2005 umgehen die HR-Berechtigungslogik teilweise",
+    "HR_READ_INFOTYPE/HR_CHECK_AUTHORITY_INFTY sind klassische APIs",
+    "Bei Wechsel auf SuccessFactors Time Tracking liegen die Zeitdaten nicht mehr in PA2002"
+  ]
+}

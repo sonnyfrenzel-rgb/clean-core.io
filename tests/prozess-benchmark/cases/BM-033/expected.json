@@ -1,0 +1,1330 @@
+{
+  "id": "BM-033",
+  "title": "IDoc-Eingang Wareneingang vom Logistikdienstleister mit Bestell- und Dublettenprüfung",
+  "classes": [
+    "K01",
+    "K03",
+    "K12"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [
+    "BAPI_TRANSACTION_ROLLBACK bei Massenverarbeitung: werden damit auch die WE-Buchungen früherer IDocs desselben Pakets zurückgerollt, die bereits Status 53 erhalten haben?"
+  ],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "EKKO",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "lz_idoc_zwegr_f01.abap",
+        "line": 39,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lz_idoc_zwegr_f01.abap:39"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "EKPO",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "lz_idoc_zwegr_f01.abap",
+        "line": 49,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lz_idoc_zwegr_f01.abap:49"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZMM_3PL_WE",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "lz_idoc_zwegr_f01.abap",
+        "line": 64,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lz_idoc_zwegr_f01.abap:64"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZMM_3PL_WE",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "z_idoc_input_zwegr.abap",
+        "line": 66,
+        "token": null,
+        "expressionPath": null,
+        "raw": "z_idoc_input_zwegr.abap:66"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_GOODSMVT_CREATE",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "lz_idoc_zwegr_f01.abap",
+        "line": 105,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lz_idoc_zwegr_f01.abap:105"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_ROLLBACK",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "lz_idoc_zwegr_f01.abap",
+        "line": 118,
+        "token": null,
+        "expressionPath": null,
+        "raw": "lz_idoc_zwegr_f01.abap:118"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-033-B01",
+      "text": "Der Baustein verarbeitet nur Wareneingangsmeldungen des Nachrichtentyps ZWEGR; wird er für einen anderen Typ gerufen, bricht er mit Ausnahme ab.",
+      "anchors": [
+        {
+          "file": "z_idoc_input_zwegr.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zwegr.abap:33"
+        },
+        {
+          "file": "z_idoc_input_zwegr.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zwegr.abap:34"
+        }
+      ]
+    },
+    {
+      "id": "BM-033-B02",
+      "text": "Jedes IDoc des Pakets wird einzeln verarbeitet.",
+      "anchors": [
+        {
+          "file": "z_idoc_input_zwegr.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zwegr.abap:37"
+        }
+      ]
+    },
+    {
+      "id": "BM-033-B03",
+      "text": "Aus dem Kopfsegment werden Lieferschein, Bestellnummer und Buchungs- und Belegdatum übernommen, aus den Positionssegmenten Bestellposition, Menge, Charge und Lagerort; unbekannte Segmente werden ignoriert.",
+      "anchors": [
+        {
+          "file": "lz_idoc_zwegr_f01.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lz_idoc_zwegr_f01.abap:14"
+        },
+        {
+          "file": "lz_idoc_zwegr_f01.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lz_idoc_zwegr_f01.abap:16"
+        },
+        {
+          "file": "lz_idoc_zwegr_f01.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lz_idoc_zwegr_f01.abap:18"
+        }
+      ]
+    },
+    {
+      "id": "BM-033-B04",
+      "text": "Fehlen Bestellnummer oder Positionen, ist das IDoc fehlerhaft.",
+      "anchors": [
+        {
+          "file": "lz_idoc_zwegr_f01.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lz_idoc_zwegr_f01.abap:25"
+        },
+        {
+          "file": "lz_idoc_zwegr_f01.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lz_idoc_zwegr_f01.abap:26"
+        },
+        {
+          "file": "lz_idoc_zwegr_f01.abap",
+          "line": 27,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lz_idoc_zwegr_f01.abap:27"
+        }
+      ]
+    },
+    {
+      "id": "BM-033-B05",
+      "text": "Die Bestellung muss existieren und darf nicht gelöscht sein; ihr Lieferant wird für die weitere Verarbeitung übernommen.",
+      "anchors": [
+        {
+          "file": "lz_idoc_zwegr_f01.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lz_idoc_zwegr_f01.abap:39"
+        },
+        {
+          "file": "lz_idoc_zwegr_f01.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lz_idoc_zwegr_f01.abap:41"
+        },
+        {
+          "file": "lz_idoc_zwegr_f01.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lz_idoc_zwegr_f01.abap:46"
+        }
+      ]
+    },
+    {
+      "id": "BM-033-B06",
+      "text": "Jede gemeldete Position muss als Bestellposition existieren, darf nicht gelöscht und nicht endgeliefert sein; die erste nicht offene Position macht das IDoc fehlerhaft.",
+      "anchors": [
+        {
+          "file": "lz_idoc_zwegr_f01.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lz_idoc_zwegr_f01.abap:49"
+        },
+        {
+          "file": "lz_idoc_zwegr_f01.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lz_idoc_zwegr_f01.abap:52"
+        },
+        {
+          "file": "lz_idoc_zwegr_f01.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lz_idoc_zwegr_f01.abap:55"
+        }
+      ]
+    },
+    {
+      "id": "BM-033-B07",
+      "text": "Wurde der Lieferschein dieses Lieferanten bereits gebucht, wird das IDoc als Dublette mit dem früheren Materialbeleg abgelehnt.",
+      "anchors": [
+        {
+          "file": "lz_idoc_zwegr_f01.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lz_idoc_zwegr_f01.abap:64"
+        },
+        {
+          "file": "lz_idoc_zwegr_f01.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lz_idoc_zwegr_f01.abap:67"
+        },
+        {
+          "file": "lz_idoc_zwegr_f01.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lz_idoc_zwegr_f01.abap:68"
+        },
+        {
+          "file": "lz_idoc_zwegr_f01.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lz_idoc_zwegr_f01.abap:69"
+        }
+      ]
+    },
+    {
+      "id": "BM-033-B08",
+      "text": "Sonst wird ein Wareneingang zur Bestellung (Bewegungsart 101) mit Lieferschein als Referenz und je Position Menge, Charge und Lagerort gebucht.",
+      "anchors": [
+        {
+          "file": "lz_idoc_zwegr_f01.abap",
+          "line": 87,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lz_idoc_zwegr_f01.abap:87"
+        },
+        {
+          "file": "lz_idoc_zwegr_f01.abap",
+          "line": 95,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lz_idoc_zwegr_f01.abap:95"
+        },
+        {
+          "file": "lz_idoc_zwegr_f01.abap",
+          "line": 105,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lz_idoc_zwegr_f01.abap:105"
+        }
+      ]
+    },
+    {
+      "id": "BM-033-B09",
+      "text": "Meldet die Buchung einen Fehler oder entsteht kein Materialbeleg, wird zurückgerollt und der Fehlertext übernommen.",
+      "anchors": [
+        {
+          "file": "lz_idoc_zwegr_f01.abap",
+          "line": 117,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lz_idoc_zwegr_f01.abap:117"
+        },
+        {
+          "file": "lz_idoc_zwegr_f01.abap",
+          "line": 118,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lz_idoc_zwegr_f01.abap:118"
+        }
+      ]
+    },
+    {
+      "id": "BM-033-B10",
+      "text": "Ein fehlerhaftes IDoc erhält Status 51 mit dem Fehlertext und wird dem Workflow als Fehler-IDoc gemeldet.",
+      "anchors": [
+        {
+          "file": "z_idoc_input_zwegr.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zwegr.abap:58"
+        },
+        {
+          "file": "z_idoc_input_zwegr.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zwegr.abap:59"
+        },
+        {
+          "file": "z_idoc_input_zwegr.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zwegr.abap:61"
+        }
+      ]
+    },
+    {
+      "id": "BM-033-B11",
+      "text": "Ein erfolgreich gebuchtes IDoc registriert Lieferschein, Lieferant, Materialbeleg und IDoc-Nummer für die Dublettenprüfung und erhält Status 53 mit der Materialbelegnummer.",
+      "anchors": [
+        {
+          "file": "z_idoc_input_zwegr.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zwegr.abap:66"
+        },
+        {
+          "file": "z_idoc_input_zwegr.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zwegr.abap:73"
+        },
+        {
+          "file": "lz_idoc_zwegr_f01.abap",
+          "line": 131,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lz_idoc_zwegr_f01.abap:131"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "z_idoc_input_zwegr.abap",
+          "line": 1,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zwegr.abap:1"
+        },
+        "meaning": "IDoc-Eingang ZWEGR"
+      },
+      {
+        "id": "gm",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_idoc_input_zwegr.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zwegr.abap:33"
+        },
+        "meaning": "Richtiger Nachrichtentyp?"
+      },
+      {
+        "id": "rw",
+        "type": "end",
+        "anchor": {
+          "file": "z_idoc_input_zwegr.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zwegr.abap:34"
+        },
+        "meaning": "Falscher Baustein aufgerufen"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "z_idoc_input_zwegr.abap",
+          "line": 37,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zwegr.abap:37"
+        },
+        "meaning": "IDocs des Pakets durchlaufen"
+      },
+      {
+        "id": "p1",
+        "type": "call",
+        "anchor": {
+          "file": "z_idoc_input_zwegr.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zwegr.abap:40"
+        },
+        "meaning": "Segmente auswerten"
+      },
+      {
+        "id": "f1",
+        "type": "start",
+        "anchor": {
+          "file": "lz_idoc_zwegr_f01.abap",
+          "line": 5,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lz_idoc_zwegr_f01.abap:5"
+        },
+        "meaning": "Segmentauswertung"
+      },
+      {
+        "id": "l1",
+        "type": "loop",
+        "anchor": {
+          "file": "lz_idoc_zwegr_f01.abap",
+          "line": 13,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lz_idoc_zwegr_f01.abap:13"
+        },
+        "meaning": "Datensätze des IDocs durchlaufen"
+      },
+      {
+        "id": "c1",
+        "type": "gateway",
+        "anchor": {
+          "file": "lz_idoc_zwegr_f01.abap",
+          "line": 14,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lz_idoc_zwegr_f01.abap:14"
+        },
+        "meaning": "Segmentart?"
+      },
+      {
+        "id": "a1h",
+        "type": "action",
+        "anchor": {
+          "file": "lz_idoc_zwegr_f01.abap",
+          "line": 16,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lz_idoc_zwegr_f01.abap:16"
+        },
+        "meaning": "Kopf: Lieferschein, Bestellung, Datum übernehmen"
+      },
+      {
+        "id": "a1i",
+        "type": "action",
+        "anchor": {
+          "file": "lz_idoc_zwegr_f01.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lz_idoc_zwegr_f01.abap:18"
+        },
+        "meaning": "Position sammeln"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "lz_idoc_zwegr_f01.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lz_idoc_zwegr_f01.abap:25"
+        },
+        "meaning": "Bestellung und Positionen vorhanden?"
+      },
+      {
+        "id": "e1",
+        "type": "action",
+        "anchor": {
+          "file": "lz_idoc_zwegr_f01.abap",
+          "line": 26,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lz_idoc_zwegr_f01.abap:26"
+        },
+        "meaning": "Fehler: Segmente fehlen"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_idoc_input_zwegr.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zwegr.abap:43"
+        },
+        "meaning": "Bisher fehlerfrei?"
+      },
+      {
+        "id": "p2",
+        "type": "call",
+        "anchor": {
+          "file": "z_idoc_input_zwegr.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zwegr.abap:44"
+        },
+        "meaning": "Bestellung prüfen"
+      },
+      {
+        "id": "f2",
+        "type": "start",
+        "anchor": {
+          "file": "lz_idoc_zwegr_f01.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lz_idoc_zwegr_f01.abap:32"
+        },
+        "meaning": "Bestellprüfung"
+      },
+      {
+        "id": "q2",
+        "type": "read",
+        "anchor": {
+          "file": "lz_idoc_zwegr_f01.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lz_idoc_zwegr_f01.abap:39"
+        },
+        "meaning": "Bestellkopf lesen"
+      },
+      {
+        "id": "g2a",
+        "type": "gateway",
+        "anchor": {
+          "file": "lz_idoc_zwegr_f01.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lz_idoc_zwegr_f01.abap:41"
+        },
+        "meaning": "Bestellung vorhanden und nicht gelöscht?"
+      },
+      {
+        "id": "r2a",
+        "type": "end",
+        "anchor": {
+          "file": "lz_idoc_zwegr_f01.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lz_idoc_zwegr_f01.abap:44"
+        },
+        "meaning": "Fehler: Bestellung unbekannt oder gelöscht"
+      },
+      {
+        "id": "a2",
+        "type": "action",
+        "anchor": {
+          "file": "lz_idoc_zwegr_f01.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lz_idoc_zwegr_f01.abap:46"
+        },
+        "meaning": "Lieferant aus der Bestellung übernehmen"
+      },
+      {
+        "id": "l2",
+        "type": "loop",
+        "anchor": {
+          "file": "lz_idoc_zwegr_f01.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lz_idoc_zwegr_f01.abap:48"
+        },
+        "meaning": "Positionen prüfen"
+      },
+      {
+        "id": "q2b",
+        "type": "read",
+        "anchor": {
+          "file": "lz_idoc_zwegr_f01.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lz_idoc_zwegr_f01.abap:49"
+        },
+        "meaning": "Bestellposition lesen"
+      },
+      {
+        "id": "g2b",
+        "type": "gateway",
+        "anchor": {
+          "file": "lz_idoc_zwegr_f01.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lz_idoc_zwegr_f01.abap:52"
+        },
+        "meaning": "Position offen?"
+      },
+      {
+        "id": "r2b",
+        "type": "end",
+        "anchor": {
+          "file": "lz_idoc_zwegr_f01.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lz_idoc_zwegr_f01.abap:55"
+        },
+        "meaning": "Fehler: Position nicht offen"
+      },
+      {
+        "id": "g3",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_idoc_input_zwegr.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zwegr.abap:48"
+        },
+        "meaning": "Bisher fehlerfrei?"
+      },
+      {
+        "id": "p3",
+        "type": "call",
+        "anchor": {
+          "file": "z_idoc_input_zwegr.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zwegr.abap:49"
+        },
+        "meaning": "Dublette prüfen"
+      },
+      {
+        "id": "f3",
+        "type": "start",
+        "anchor": {
+          "file": "lz_idoc_zwegr_f01.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lz_idoc_zwegr_f01.abap:61"
+        },
+        "meaning": "Dublettenprüfung"
+      },
+      {
+        "id": "q3",
+        "type": "read",
+        "anchor": {
+          "file": "lz_idoc_zwegr_f01.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lz_idoc_zwegr_f01.abap:64"
+        },
+        "meaning": "Früheren WE zum Lieferschein suchen"
+      },
+      {
+        "id": "g3a",
+        "type": "gateway",
+        "anchor": {
+          "file": "lz_idoc_zwegr_f01.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lz_idoc_zwegr_f01.abap:67"
+        },
+        "meaning": "Lieferschein schon gebucht?"
+      },
+      {
+        "id": "e3",
+        "type": "action",
+        "anchor": {
+          "file": "lz_idoc_zwegr_f01.abap",
+          "line": 68,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lz_idoc_zwegr_f01.abap:68"
+        },
+        "meaning": "Fehler: Dublette mit Materialbeleg"
+      },
+      {
+        "id": "g4",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_idoc_input_zwegr.abap",
+          "line": 52,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zwegr.abap:52"
+        },
+        "meaning": "Bisher fehlerfrei?"
+      },
+      {
+        "id": "p4",
+        "type": "call",
+        "anchor": {
+          "file": "z_idoc_input_zwegr.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zwegr.abap:53"
+        },
+        "meaning": "Wareneingang buchen"
+      },
+      {
+        "id": "f4",
+        "type": "start",
+        "anchor": {
+          "file": "lz_idoc_zwegr_f01.abap",
+          "line": 74,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lz_idoc_zwegr_f01.abap:74"
+        },
+        "meaning": "WE-Buchung"
+      },
+      {
+        "id": "l4",
+        "type": "loop",
+        "anchor": {
+          "file": "lz_idoc_zwegr_f01.abap",
+          "line": 93,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lz_idoc_zwegr_f01.abap:93"
+        },
+        "meaning": "Buchungspositionen bilden"
+      },
+      {
+        "id": "a4",
+        "type": "action",
+        "anchor": {
+          "file": "lz_idoc_zwegr_f01.abap",
+          "line": 95,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lz_idoc_zwegr_f01.abap:95"
+        },
+        "meaning": "Position WE zur Bestellung (101) mit Menge, Charge, Lagerort"
+      },
+      {
+        "id": "b4",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "lz_idoc_zwegr_f01.abap",
+          "line": 105,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lz_idoc_zwegr_f01.abap:105"
+        },
+        "meaning": "Wareneingang buchen"
+      },
+      {
+        "id": "g4a",
+        "type": "gateway",
+        "anchor": {
+          "file": "lz_idoc_zwegr_f01.abap",
+          "line": 117,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lz_idoc_zwegr_f01.abap:117"
+        },
+        "meaning": "Buchung fehlgeschlagen?"
+      },
+      {
+        "id": "rb4",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "lz_idoc_zwegr_f01.abap",
+          "line": 118,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lz_idoc_zwegr_f01.abap:118"
+        },
+        "meaning": "Zurückrollen, Fehlertext übernehmen"
+      },
+      {
+        "id": "g5",
+        "type": "gateway",
+        "anchor": {
+          "file": "z_idoc_input_zwegr.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zwegr.abap:58"
+        },
+        "meaning": "IDoc fehlerhaft?"
+      },
+      {
+        "id": "p5e",
+        "type": "call",
+        "anchor": {
+          "file": "z_idoc_input_zwegr.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zwegr.abap:59"
+        },
+        "meaning": "Status 51 setzen"
+      },
+      {
+        "id": "w5",
+        "type": "write",
+        "anchor": {
+          "file": "z_idoc_input_zwegr.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zwegr.abap:66"
+        },
+        "meaning": "Lieferschein mit Materialbeleg registrieren"
+      },
+      {
+        "id": "p5s",
+        "type": "call",
+        "anchor": {
+          "file": "z_idoc_input_zwegr.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zwegr.abap:73"
+        },
+        "meaning": "Status 53 setzen"
+      },
+      {
+        "id": "f5",
+        "type": "start",
+        "anchor": {
+          "file": "lz_idoc_zwegr_f01.abap",
+          "line": 125,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lz_idoc_zwegr_f01.abap:125"
+        },
+        "meaning": "Statusroutine"
+      },
+      {
+        "id": "a5",
+        "type": "action",
+        "anchor": {
+          "file": "lz_idoc_zwegr_f01.abap",
+          "line": 131,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lz_idoc_zwegr_f01.abap:131"
+        },
+        "meaning": "Statussatz mit Meldung bilden"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "z_idoc_input_zwegr.abap",
+          "line": 84,
+          "token": null,
+          "expressionPath": null,
+          "raw": "z_idoc_input_zwegr.abap:84"
+        },
+        "meaning": "Paket verarbeitet"
+      },
+      {
+        "id": "x1",
+        "type": "end",
+        "anchor": {
+          "file": "lz_idoc_zwegr_f01.abap",
+          "line": 29,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lz_idoc_zwegr_f01.abap:29"
+        },
+        "meaning": "SEGMENTE_LESEN beendet"
+      },
+      {
+        "id": "x2",
+        "type": "end",
+        "anchor": {
+          "file": "lz_idoc_zwegr_f01.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lz_idoc_zwegr_f01.abap:58"
+        },
+        "meaning": "PRUEFEN_BESTELLUNG beendet, alle Positionen offen"
+      },
+      {
+        "id": "x3",
+        "type": "end",
+        "anchor": {
+          "file": "lz_idoc_zwegr_f01.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lz_idoc_zwegr_f01.abap:71"
+        },
+        "meaning": "PRUEFEN_DUBLETTE beendet"
+      },
+      {
+        "id": "x4",
+        "type": "end",
+        "anchor": {
+          "file": "lz_idoc_zwegr_f01.abap",
+          "line": 122,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lz_idoc_zwegr_f01.abap:122"
+        },
+        "meaning": "BUCHEN_WE beendet"
+      },
+      {
+        "id": "x5",
+        "type": "end",
+        "anchor": {
+          "file": "lz_idoc_zwegr_f01.abap",
+          "line": 138,
+          "token": null,
+          "expressionPath": null,
+          "raw": "lz_idoc_zwegr_f01.abap:138"
+        },
+        "meaning": "STATUS_SETZEN beendet"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "gm",
+        "condition": "always"
+      },
+      {
+        "from": "gm",
+        "to": "rw",
+        "condition": "idoc_contrl-mestyp <> 'ZWEGR'"
+      },
+      {
+        "from": "gm",
+        "to": "l",
+        "condition": "else"
+      },
+      {
+        "from": "l",
+        "to": "p1",
+        "condition": "next row"
+      },
+      {
+        "from": "p1",
+        "to": "f1",
+        "condition": "always"
+      },
+      {
+        "from": "f1",
+        "to": "l1",
+        "condition": "always"
+      },
+      {
+        "from": "l1",
+        "to": "c1",
+        "condition": "next row"
+      },
+      {
+        "from": "c1",
+        "to": "a1h",
+        "condition": "WHEN 'Z1WEGRH'"
+      },
+      {
+        "from": "c1",
+        "to": "a1i",
+        "condition": "WHEN 'Z1WEGRI'"
+      },
+      {
+        "from": "c1",
+        "to": "l1",
+        "condition": "WHEN OTHERS"
+      },
+      {
+        "from": "a1h",
+        "to": "l1",
+        "condition": "next iteration"
+      },
+      {
+        "from": "a1i",
+        "to": "l1",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l1",
+        "to": "g1",
+        "condition": "no more rows"
+      },
+      {
+        "from": "g1",
+        "to": "e1",
+        "condition": "ps_head-ebeln IS INITIAL OR pt_pos[] IS INITIAL"
+      },
+      {
+        "from": "g1",
+        "to": "x1",
+        "condition": "else"
+      },
+      {
+        "from": "e1",
+        "to": "x1",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "p2",
+        "condition": "lv_error = abap_false"
+      },
+      {
+        "from": "g2",
+        "to": "g3",
+        "condition": "else"
+      },
+      {
+        "from": "p2",
+        "to": "f2",
+        "condition": "always"
+      },
+      {
+        "from": "f2",
+        "to": "q2",
+        "condition": "always"
+      },
+      {
+        "from": "q2",
+        "to": "g2a",
+        "condition": "always"
+      },
+      {
+        "from": "g2a",
+        "to": "r2a",
+        "condition": "sy-subrc <> 0 OR ls_ekko-loekz <> space"
+      },
+      {
+        "from": "r2a",
+        "to": "g3",
+        "condition": "always"
+      },
+      {
+        "from": "g2a",
+        "to": "a2",
+        "condition": "else"
+      },
+      {
+        "from": "a2",
+        "to": "l2",
+        "condition": "always"
+      },
+      {
+        "from": "l2",
+        "to": "q2b",
+        "condition": "next row"
+      },
+      {
+        "from": "q2b",
+        "to": "g2b",
+        "condition": "always"
+      },
+      {
+        "from": "g2b",
+        "to": "r2b",
+        "condition": "sy-subrc <> 0 OR ls_ekpo-loekz <> space OR ls_ekpo-elikz = 'X'"
+      },
+      {
+        "from": "g2b",
+        "to": "l2",
+        "condition": "else"
+      },
+      {
+        "from": "r2b",
+        "to": "g3",
+        "condition": "always"
+      },
+      {
+        "from": "l2",
+        "to": "x2",
+        "condition": "no more rows"
+      },
+      {
+        "from": "g3",
+        "to": "p3",
+        "condition": "lv_error = abap_false"
+      },
+      {
+        "from": "g3",
+        "to": "g4",
+        "condition": "else"
+      },
+      {
+        "from": "p3",
+        "to": "f3",
+        "condition": "always"
+      },
+      {
+        "from": "f3",
+        "to": "q3",
+        "condition": "always"
+      },
+      {
+        "from": "q3",
+        "to": "g3a",
+        "condition": "always"
+      },
+      {
+        "from": "g3a",
+        "to": "e3",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "g3a",
+        "to": "x3",
+        "condition": "else"
+      },
+      {
+        "from": "e3",
+        "to": "x3",
+        "condition": "always"
+      },
+      {
+        "from": "g4",
+        "to": "p4",
+        "condition": "lv_error = abap_false"
+      },
+      {
+        "from": "g4",
+        "to": "g5",
+        "condition": "else"
+      },
+      {
+        "from": "p4",
+        "to": "f4",
+        "condition": "always"
+      },
+      {
+        "from": "f4",
+        "to": "l4",
+        "condition": "always"
+      },
+      {
+        "from": "l4",
+        "to": "a4",
+        "condition": "next row"
+      },
+      {
+        "from": "a4",
+        "to": "l4",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l4",
+        "to": "b4",
+        "condition": "no more rows"
+      },
+      {
+        "from": "b4",
+        "to": "g4a",
+        "condition": "always"
+      },
+      {
+        "from": "g4a",
+        "to": "rb4",
+        "condition": "sy-subrc = 0 OR pv_mblnr IS INITIAL"
+      },
+      {
+        "from": "g4a",
+        "to": "x4",
+        "condition": "else"
+      },
+      {
+        "from": "rb4",
+        "to": "x4",
+        "condition": "always"
+      },
+      {
+        "from": "g5",
+        "to": "p5e",
+        "condition": "lv_error = abap_true"
+      },
+      {
+        "from": "g5",
+        "to": "w5",
+        "condition": "else"
+      },
+      {
+        "from": "p5e",
+        "to": "f5",
+        "condition": "always"
+      },
+      {
+        "from": "w5",
+        "to": "p5s",
+        "condition": "always"
+      },
+      {
+        "from": "p5s",
+        "to": "f5",
+        "condition": "always"
+      },
+      {
+        "from": "f5",
+        "to": "a5",
+        "condition": "always"
+      },
+      {
+        "from": "a5",
+        "to": "x5",
+        "condition": "always"
+      },
+      {
+        "from": "l",
+        "to": "e",
+        "condition": "no more rows"
+      },
+      {
+        "from": "x1",
+        "to": "g2",
+        "condition": "always"
+      },
+      {
+        "from": "x2",
+        "to": "g3",
+        "condition": "always"
+      },
+      {
+        "from": "x3",
+        "to": "g4",
+        "condition": "always"
+      },
+      {
+        "from": "x4",
+        "to": "g5",
+        "condition": "always"
+      },
+      {
+        "from": "x5",
+        "to": "l",
+        "condition": "next iteration"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "lz_idoc_zwegr_f01.abap:105 — kein Fachsatz „Der Wareneingang wird sofort festgeschrieben“ (kein Commit im Baustein; das macht die ALE-Schicht)",
+    "lz_idoc_zwegr_f01.abap:52 — kein Fachsatz „Überlieferungen werden abgelehnt“ (die Menge wird nicht gegen die offene Bestellmenge geprüft)",
+    "lz_idoc_zwegr_f01.abap:14 — kein Fachsatz „Unbekannte Segmente führen zu Status 51“ (sie werden ignoriert)",
+    "z_idoc_input_zwegr.abap:66 — kein Fachsatz „Die Bestellung wird als erledigt markiert“ (es wird nur die eigene Registrierungstabelle geschrieben)"
+  ],
+  "processDescription": "Der Logistikdienstleister meldet jeden Wareneingang als IDoc ZWEGR; die ALE-Eingangsverarbeitung ruft den Baustein mit einem oder mehreren IDocs. Ist der Nachrichtentyp falsch, bricht er ab. Für jedes IDoc liest er das Kopfsegment (Lieferschein, Bestellung, Daten) und die Positionssegmente (Bestellposition, Menge, Charge, Lagerort) und ignoriert unbekannte Segmente. Fehlen Bestellung oder Positionen, ist das IDoc fehlerhaft. Danach prüft er nacheinander, ob die Bestellung existiert und nicht gelöscht ist (und übernimmt ihren Lieferanten), ob jede Position offen ist und ob derselbe Lieferschein des Lieferanten schon gebucht wurde; der erste Fehler beendet die Prüfungen. Sind alle Prüfungen bestanden, bucht er einen Wareneingang zur Bestellung mit Bewegungsart 101; bei Fehler rollt er zurück. Fehlerhafte IDocs erhalten Status 51 und werden dem Workflow als Fehler gemeldet, erfolgreiche werden mit Materialbeleg in der Dublettentabelle registriert und erhalten Status 53. Festgeschrieben wird durch die ALE-Schicht."
+}

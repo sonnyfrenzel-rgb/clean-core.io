@@ -1,0 +1,26 @@
+{
+  "id": "BM-055",
+  "title": "Leistungsverrechnung aus kundeneigener Zeiterfassung auf Kostenstellen und Innenaufträge",
+  "domain": "FI/CO / Record-to-Report",
+  "band": "komplex",
+  "loc": 245,
+  "constructs": [
+    "REPORT als Starter",
+    "globale Klasse mit RETURNING/CHANGING",
+    "SELECT SINGLE mit Gültigkeitszeitraum",
+    "COLLECT",
+    "ENQUEUE/DEQUEUE auf Z-Sperrobjekt",
+    "BAPI_ACC_ACTIVITY_ALLOC_CHECK/POST",
+    "READ TABLE WITH KEY",
+    "IF/ELSEIF/ELSE",
+    "UPDATE Z-Tabelle",
+    "COMMIT WORK und BAPI_TRANSACTION_COMMIT"
+  ],
+  "scenario": "Monatlicher Hintergrundjob im Controlling: Stunden aus einer selbst gebauten Zeiterfassung (statt CATS) werden als Leistungsmengen vom Sender-Kostenstelle auf Empfänger-Kostenstellen oder Innenaufträge verrechnet (KB21N-Äquivalent).",
+  "s4_issues": [
+    "Direkte Lesezugriffe auf CSKS und CSLA (I_CostCenter, I_CostCenterActivityType)",
+    "BAPI_ACC_ACTIVITY_ALLOC_POST nicht für ABAP Cloud freigegeben",
+    "Z-Zeiterfassung statt CATS/Standard-Zeiterfassung",
+    "Z-Sperrobjekt EZCO_TIMESHEET"
+  ]
+}

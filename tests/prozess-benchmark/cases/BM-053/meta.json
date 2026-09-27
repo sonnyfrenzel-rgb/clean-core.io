@@ -1,0 +1,25 @@
+{
+  "id": "BM-053",
+  "title": "CO-PA-Merkmalsableitung im Kundenexit: Vertriebsregion, Segment und Key-Account-Manager",
+  "domain": "FI/CO / Record-to-Report",
+  "band": "komplex",
+  "loc": 165,
+  "constructs": [
+    "CMOD/SMOD-Exit EXIT_SAPLKEDRCOPA_001 (COPA0005) mit INCLUDE ZXKKEU11",
+    "CHECK im Funktionsbaustein",
+    "CASE i_step_id",
+    "statische Klassenmethoden mit CHANGING und RETURNING",
+    "HASHED-Puffertabelle",
+    "READ TABLE WITH TABLE KEY",
+    "SELECT SINGLE INTO (...)",
+    "SELECT ORDER BY INTO TABLE",
+    "18-stellige Materialnummer"
+  ],
+  "scenario": "Kundenexit in der Ergebnisrechnung, den die Ableitungsstrategie (KEDR) bei jeder Übergabe eines Belegs in CO-PA für die Schritte U-REG, U-SEG und U-KAM aufruft; Standardbaustein bei fast jeder kalkulatorischen Ergebnisrechnung.",
+  "s4_issues": [
+    "Kalkulatorische Ergebnisrechnung und CMOD-Exit COPA0005 sind in S/4HANA Cloud nicht verfügbar (Nachfolger: Margin Analysis mit BAdI-Ableitung)",
+    "Materialnummer in 18-stelliger Variable abgeschnitten (S/4: MATNR 40 Zeichen)",
+    "Direkte Lesezugriffe auf KNA1, KNVV, KNVP, MARA (Business Partner, I_Customer, I_Product)",
+    "Operating-Concern-Struktur CE1ZGO1 fest verdrahtet"
+  ]
+}

@@ -1,0 +1,658 @@
+{
+  "id": "BM-047",
+  "title": "Periodische Aufwandsabgrenzungen aus Z-Tabelle per BAPI buchen",
+  "classes": [
+    "K02",
+    "K03",
+    "K12",
+    "K15"
+  ],
+  "classic_level": "B",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "ZFI_ACCRUAL",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_fi_accrual.abap",
+        "line": 38,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_fi_accrual.abap:38"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZFI_ACCRUAL",
+      "owner": "customer",
+      "usage": "write",
+      "anchor": {
+        "file": "zcl_fi_accrual.abap",
+        "line": 94,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_fi_accrual.abap:94"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_ACC_DOCUMENT_CHECK",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_fi_accrual.abap",
+        "line": 65,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_fi_accrual.abap:65"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_ACC_DOCUMENT_POST",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_fi_accrual.abap",
+        "line": 73,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_fi_accrual.abap:73"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_ROLLBACK",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_fi_accrual.abap",
+        "line": 86,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_fi_accrual.abap:86"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_COMMIT",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_fi_accrual.abap",
+        "line": 95,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_fi_accrual.abap:95"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "RP_LAST_DAY_OF_MONTHS",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_fi_accrual.abap",
+        "line": 105,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_fi_accrual.abap:105"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-047-B01",
+      "text": "Vor dem Buchen wird geprüft, ob der Anwender im Buchungskreis Belege anlegen darf; ohne Berechtigung endet die Methode mit einer Fehlermeldung.",
+      "anchors": [
+        {
+          "file": "zcl_fi_accrual.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_accrual.abap:28"
+        },
+        {
+          "file": "zcl_fi_accrual.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_accrual.abap:31"
+        },
+        {
+          "file": "zcl_fi_accrual.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_accrual.abap:34"
+        }
+      ]
+    },
+    {
+      "id": "BM-047-B02",
+      "text": "Es werden die Abgrenzungen des Buchungskreises für Geschäftsjahr und Periode gelesen, die noch keine Belegnummer haben.",
+      "anchors": [
+        {
+          "file": "zcl_fi_accrual.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_accrual.abap:38"
+        }
+      ]
+    },
+    {
+      "id": "BM-047-B03",
+      "text": "Als Beleg- und Buchungsdatum dient der letzte Kalendertag des Periodenmonats; Geschäftsjahr und Kalenderjahr werden dabei gleichgesetzt.",
+      "anchors": [
+        {
+          "file": "zcl_fi_accrual.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_accrual.abap:44"
+        },
+        {
+          "file": "zcl_fi_accrual.abap",
+          "line": 105,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_accrual.abap:105"
+        }
+      ]
+    },
+    {
+      "id": "BM-047-B04",
+      "text": "Je Abgrenzung wird ein Sachkontenbeleg der Belegart SA gebildet: Soll auf das Aufwandskonto mit Kostenstelle, Haben auf das Abgrenzungskonto, jeweils mit dem Abgrenzungsbetrag.",
+      "anchors": [
+        {
+          "file": "zcl_fi_accrual.abap",
+          "line": 55,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_accrual.abap:55"
+        },
+        {
+          "file": "zcl_fi_accrual.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_accrual.abap:59"
+        }
+      ]
+    },
+    {
+      "id": "BM-047-B05",
+      "text": "Im Testlauf wird der Beleg nur geprüft, im Echtlauf zur Buchung übergeben; alle Rückmeldungen gehen an den Aufrufer.",
+      "anchors": [
+        {
+          "file": "zcl_fi_accrual.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_accrual.abap:64"
+        },
+        {
+          "file": "zcl_fi_accrual.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_accrual.abap:65"
+        },
+        {
+          "file": "zcl_fi_accrual.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_accrual.abap:73"
+        }
+      ]
+    },
+    {
+      "id": "BM-047-B06",
+      "text": "Liefert die Prüfung oder Buchung eine Fehler- oder Abbruchmeldung, wird zurückgerollt und mit der nächsten Abgrenzung fortgefahren.",
+      "anchors": [
+        {
+          "file": "zcl_fi_accrual.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_accrual.abap:85"
+        },
+        {
+          "file": "zcl_fi_accrual.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_accrual.abap:86"
+        }
+      ]
+    },
+    {
+      "id": "BM-047-B07",
+      "text": "Im Echtlauf werden Belegnummer und ein Stornodatum zum Folgetag in die Abgrenzung zurückgeschrieben und zusammen mit der Buchung per Commit mit Warten festgeschrieben.",
+      "anchors": [
+        {
+          "file": "zcl_fi_accrual.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_accrual.abap:90"
+        },
+        {
+          "file": "zcl_fi_accrual.abap",
+          "line": 94,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_accrual.abap:94"
+        },
+        {
+          "file": "zcl_fi_accrual.abap",
+          "line": 95,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_accrual.abap:95"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_fi_accrual.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_accrual.abap:19"
+        },
+        "meaning": "Abgrenzungen einer Periode buchen"
+      },
+      {
+        "id": "auth",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_fi_accrual.abap",
+          "line": 28,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_accrual.abap:28"
+        },
+        "meaning": "Buchungsberechtigung für den Buchungskreis prüfen"
+      },
+      {
+        "id": "ga",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_fi_accrual.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_accrual.abap:31"
+        },
+        "meaning": "Berechtigung fehlt?"
+      },
+      {
+        "id": "xa",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_fi_accrual.abap",
+          "line": 34,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_accrual.abap:34"
+        },
+        "meaning": "Mit Fehlermeldung zurück"
+      },
+      {
+        "id": "q",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_fi_accrual.abap",
+          "line": 38,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_accrual.abap:38"
+        },
+        "meaning": "Ungebuchte Abgrenzungen der Periode lesen"
+      },
+      {
+        "id": "cd",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_fi_accrual.abap",
+          "line": 44,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_accrual.abap:44"
+        },
+        "meaning": "Buchungsdatum als Monatsletzten bestimmen"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_fi_accrual.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_accrual.abap:46"
+        },
+        "meaning": "Abgrenzungen durchlaufen"
+      },
+      {
+        "id": "gt",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_fi_accrual.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_accrual.abap:64"
+        },
+        "meaning": "Testlauf?"
+      },
+      {
+        "id": "chk",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_fi_accrual.abap",
+          "line": 65,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_accrual.abap:65"
+        },
+        "meaning": "Beleg nur prüfen"
+      },
+      {
+        "id": "post",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_fi_accrual.abap",
+          "line": 73,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_accrual.abap:73"
+        },
+        "meaning": "Beleg zur Buchung übergeben"
+      },
+      {
+        "id": "ge",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_fi_accrual.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_accrual.abap:85"
+        },
+        "meaning": "Fehler- oder Abbruchmeldung?"
+      },
+      {
+        "id": "rb",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_fi_accrual.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_accrual.abap:86"
+        },
+        "meaning": "Buchung zurückrollen"
+      },
+      {
+        "id": "ct",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_fi_accrual.abap",
+          "line": 90,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_accrual.abap:90"
+        },
+        "meaning": "Echtlauf?"
+      },
+      {
+        "id": "w",
+        "type": "write",
+        "anchor": {
+          "file": "zcl_fi_accrual.abap",
+          "line": 94,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_accrual.abap:94"
+        },
+        "meaning": "Belegnummer und Stornodatum in Abgrenzung zurückschreiben"
+      },
+      {
+        "id": "cm",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_fi_accrual.abap",
+          "line": 95,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_accrual.abap:95"
+        },
+        "meaning": "Buchung und Rückschreibung festschreiben (COMMIT mit Warten)"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_fi_accrual.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_accrual.abap:99"
+        },
+        "meaning": "Meldungen an Aufrufer zurück"
+      },
+      {
+        "id": "s2",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_fi_accrual.abap",
+          "line": 101,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_accrual.abap:101"
+        },
+        "meaning": "Monatsletzten berechnen"
+      },
+      {
+        "id": "c2",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_fi_accrual.abap",
+          "line": 105,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_accrual.abap:105"
+        },
+        "meaning": "Letzten Kalendertag des Monats ermitteln"
+      },
+      {
+        "id": "e2",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_fi_accrual.abap",
+          "line": 112,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_fi_accrual.abap:112"
+        },
+        "meaning": "Datum zurück"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "auth",
+        "condition": "always"
+      },
+      {
+        "from": "auth",
+        "to": "ga",
+        "condition": "always"
+      },
+      {
+        "from": "ga",
+        "to": "xa",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "ga",
+        "to": "q",
+        "condition": "else"
+      },
+      {
+        "from": "q",
+        "to": "cd",
+        "condition": "always"
+      },
+      {
+        "from": "cd",
+        "to": "s2",
+        "condition": "always"
+      },
+      {
+        "from": "s2",
+        "to": "c2",
+        "condition": "always"
+      },
+      {
+        "from": "c2",
+        "to": "e2",
+        "condition": "always"
+      },
+      {
+        "from": "e2",
+        "to": "l",
+        "condition": "always"
+      },
+      {
+        "from": "l",
+        "to": "gt",
+        "condition": "next row"
+      },
+      {
+        "from": "gt",
+        "to": "chk",
+        "condition": "iv_test = abap_true"
+      },
+      {
+        "from": "gt",
+        "to": "post",
+        "condition": "else"
+      },
+      {
+        "from": "chk",
+        "to": "ge",
+        "condition": "always"
+      },
+      {
+        "from": "post",
+        "to": "ge",
+        "condition": "always"
+      },
+      {
+        "from": "ge",
+        "to": "rb",
+        "condition": "line_exists( lt_ret[ type = 'E' ] ) OR line_exists( lt_ret[ type = 'A' ] )"
+      },
+      {
+        "from": "rb",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "ge",
+        "to": "ct",
+        "condition": "else"
+      },
+      {
+        "from": "ct",
+        "to": "l",
+        "condition": "else"
+      },
+      {
+        "from": "ct",
+        "to": "w",
+        "condition": "iv_test = abap_false"
+      },
+      {
+        "from": "w",
+        "to": "cm",
+        "condition": "always"
+      },
+      {
+        "from": "cm",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l",
+        "to": "e",
+        "condition": "no more rows"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zcl_fi_accrual.abap:73 — kein Fachsatz „Beleg ist gebucht“ an dieser Stelle (erst BAPI_TRANSACTION_COMMIT schreibt fest)",
+    "zcl_fi_accrual.abap:94 — kein Fachsatz „die Abgrenzung wird zum Folgetag storniert“ (es wird nur ein Datum gespeichert, kein Storno ausgeführt)",
+    "zcl_fi_accrual.abap:44 — kein Fachsatz „Buchungsdatum ist das Periodenende laut Geschäftsjahresvariante“ (Kalendermonat, keine Variantenlogik)"
+  ],
+  "processDescription": "Ein Abschlussprogramm ruft die Methode mit Buchungskreis, Geschäftsjahr, Periode und Testkennzeichen auf. Nach der Berechtigungsprüfung werden die noch ungebuchten Abgrenzungen der Periode gelesen und das Buchungsdatum als letzter Kalendertag des Monats bestimmt. Je Abgrenzung wird ein zweizeiliger Sachkontenbeleg (Aufwand an Abgrenzung) aufgebaut. Im Testlauf wird er nur geprüft, im Echtlauf zur Buchung übergeben. Bei Fehlern wird zurückgerollt und die nächste Abgrenzung bearbeitet. Im Echtlauf werden Belegnummer und Stornodatum in die Z-Tabelle geschrieben und mit der Buchung gemeinsam festgeschrieben. Alle BAPI-Meldungen gehen an den Aufrufer zurück."
+}

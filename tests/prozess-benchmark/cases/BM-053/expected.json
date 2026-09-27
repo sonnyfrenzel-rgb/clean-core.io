@@ -1,0 +1,1255 @@
+{
+  "id": "BM-053",
+  "title": "CO-PA-Merkmalsableitung im Kundenexit: Vertriebsregion, Segment und Key-Account-Manager",
+  "classes": [
+    "K16",
+    "K01",
+    "K02"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "EXIT_SAPLKEDRCOPA_001",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "exit_saplkedrcopa_001.abap",
+        "line": 1,
+        "token": null,
+        "expressionPath": null,
+        "raw": "exit_saplkedrcopa_001.abap:1"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "KNVP",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zxkkeu11.abap",
+        "line": 24,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zxkkeu11.abap:24"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "KNA1",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_co_pa_derive.abap",
+        "line": 46,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_co_pa_derive.abap:46"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZCO_REGION_MAP",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_co_pa_derive.abap",
+        "line": 53,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_co_pa_derive.abap:53"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "MARA",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_co_pa_derive.abap",
+        "line": 78,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_co_pa_derive.abap:78"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "KNVV",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_co_pa_derive.abap",
+        "line": 85,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_co_pa_derive.abap:85"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZCO_SEGMAP",
+      "owner": "customer",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_co_pa_derive.abap",
+        "line": 92,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_co_pa_derive.abap:92"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZCL_CO_PA_DERIVE",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zxkkeu11.abap",
+        "line": 17,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zxkkeu11.abap:17"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-053-B01",
+      "text": "Der Ergebnisposten wird zunächst unverändert zurückgegeben; nur für den Ergebnisbereich ZGO1 wird der Exit aktiv.",
+      "anchors": [
+        {
+          "file": "zxkkeu11.abap",
+          "line": 10,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zxkkeu11.abap:10"
+        },
+        {
+          "file": "zxkkeu11.abap",
+          "line": 11,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zxkkeu11.abap:11"
+        },
+        {
+          "file": "zxkkeu11.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zxkkeu11.abap:12"
+        }
+      ]
+    },
+    {
+      "id": "BM-053-B02",
+      "text": "Welche Merkmale abgeleitet werden, hängt vom Ableitungsschritt ab: Vertriebsregion (U-REG), Ergebnissegment (U-SEG) oder Key-Account-Manager (U-KAM); andere Schritte ändern nichts.",
+      "anchors": [
+        {
+          "file": "zxkkeu11.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zxkkeu11.abap:15"
+        }
+      ]
+    },
+    {
+      "id": "BM-053-B03",
+      "text": "Ohne Kunde im Ergebnisposten, etwa bei Sachkontenbuchungen, bleibt die Vertriebsregion leer, ohne dass die Ableitung scheitert.",
+      "anchors": [
+        {
+          "file": "zcl_co_pa_derive.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_pa_derive.abap:33"
+        },
+        {
+          "file": "zcl_co_pa_derive.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_pa_derive.abap:36"
+        }
+      ]
+    },
+    {
+      "id": "BM-053-B04",
+      "text": "Wurde die Region eines Kunden in derselben Sitzung schon ermittelt, wird sie aus dem Puffer übernommen.",
+      "anchors": [
+        {
+          "file": "zcl_co_pa_derive.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_pa_derive.abap:39"
+        },
+        {
+          "file": "zcl_co_pa_derive.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_pa_derive.abap:40"
+        },
+        {
+          "file": "zcl_co_pa_derive.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_pa_derive.abap:43"
+        }
+      ]
+    },
+    {
+      "id": "BM-053-B05",
+      "text": "Sonst werden Land und Region aus dem Kundenstamm gelesen; existiert der Kunde nicht, scheitert die Ableitung.",
+      "anchors": [
+        {
+          "file": "zcl_co_pa_derive.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_pa_derive.abap:46"
+        },
+        {
+          "file": "zcl_co_pa_derive.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_pa_derive.abap:48"
+        },
+        {
+          "file": "zcl_co_pa_derive.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_pa_derive.abap:49"
+        }
+      ]
+    },
+    {
+      "id": "BM-053-B06",
+      "text": "Aus der kundeneigenen Regionszuordnung wird der zum Ableitungsdatum gültige Eintrag gesucht, wobei ein Eintrag für die genaue Region vor dem landesweiten Eintrag '*' und der jüngste Gültigkeitsbeginn zuerst gilt.",
+      "anchors": [
+        {
+          "file": "zcl_co_pa_derive.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_pa_derive.abap:53"
+        },
+        {
+          "file": "zcl_co_pa_derive.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_pa_derive.abap:61"
+        }
+      ]
+    },
+    {
+      "id": "BM-053-B07",
+      "text": "Ist keine Zuordnung gepflegt, wird die Auffangregion SONST gesetzt; die ermittelte Region wird in den Ergebnisposten geschrieben und für den Kunden gepuffert.",
+      "anchors": [
+        {
+          "file": "zcl_co_pa_derive.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_pa_derive.abap:58"
+        },
+        {
+          "file": "zcl_co_pa_derive.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_pa_derive.abap:59"
+        },
+        {
+          "file": "zcl_co_pa_derive.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_pa_derive.abap:64"
+        }
+      ]
+    },
+    {
+      "id": "BM-053-B08",
+      "text": "Für das Segment werden Sparte und Materialgruppe des Materials gelesen; die Materialnummer wird dabei auf 18 Stellen gekürzt.",
+      "anchors": [
+        {
+          "file": "zcl_co_pa_derive.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_pa_derive.abap:76"
+        },
+        {
+          "file": "zcl_co_pa_derive.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_pa_derive.abap:77"
+        },
+        {
+          "file": "zcl_co_pa_derive.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_pa_derive.abap:78"
+        }
+      ]
+    },
+    {
+      "id": "BM-053-B09",
+      "text": "Liefert das Material keine Sparte, gilt die Sparte des Ergebnispostens.",
+      "anchors": [
+        {
+          "file": "zcl_co_pa_derive.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_pa_derive.abap:81"
+        },
+        {
+          "file": "zcl_co_pa_derive.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_pa_derive.abap:82"
+        }
+      ]
+    },
+    {
+      "id": "BM-053-B10",
+      "text": "Das Segment wird zuerst über Kundengruppe des Vertriebsbereichs und Sparte bestimmt, ersatzweise über die Materialgruppe; findet sich keine Zuordnung, scheitert die Ableitung.",
+      "anchors": [
+        {
+          "file": "zcl_co_pa_derive.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_pa_derive.abap:85"
+        },
+        {
+          "file": "zcl_co_pa_derive.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_pa_derive.abap:92"
+        },
+        {
+          "file": "zcl_co_pa_derive.abap",
+          "line": 95,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_pa_derive.abap:95"
+        },
+        {
+          "file": "zcl_co_pa_derive.abap",
+          "line": 96,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_pa_derive.abap:96"
+        },
+        {
+          "file": "zcl_co_pa_derive.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_pa_derive.abap:99"
+        },
+        {
+          "file": "zcl_co_pa_derive.abap",
+          "line": 100,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_pa_derive.abap:100"
+        }
+      ]
+    },
+    {
+      "id": "BM-053-B11",
+      "text": "Als Key-Account-Manager wird der Partner mit der Rolle ZM im Vertriebsbereich des Kunden übernommen; fehlt er, bleibt das Merkmal leer, ohne Fehler.",
+      "anchors": [
+        {
+          "file": "zxkkeu11.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zxkkeu11.abap:24"
+        },
+        {
+          "file": "zxkkeu11.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zxkkeu11.abap:30"
+        },
+        {
+          "file": "zxkkeu11.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zxkkeu11.abap:31"
+        }
+      ]
+    },
+    {
+      "id": "BM-053-B12",
+      "text": "Ist ein Ableitungsschritt gescheitert, wird das der Ableitungsstrategie als Fehler gemeldet; der Ergebnisposten mit den abgeleiteten Merkmalen wird in jedem Fall zurückgegeben.",
+      "anchors": [
+        {
+          "file": "zxkkeu11.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zxkkeu11.abap:39"
+        },
+        {
+          "file": "zxkkeu11.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zxkkeu11.abap:40"
+        },
+        {
+          "file": "zxkkeu11.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zxkkeu11.abap:42"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "exit_saplkedrcopa_001.abap",
+          "line": 1,
+          "token": null,
+          "expressionPath": null,
+          "raw": "exit_saplkedrcopa_001.abap:1"
+        },
+        "meaning": "Kundenexit der CO-PA-Merkmalsableitung"
+      },
+      {
+        "id": "a0",
+        "type": "action",
+        "anchor": {
+          "file": "zxkkeu11.abap",
+          "line": 10,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zxkkeu11.abap:10"
+        },
+        "meaning": "Ergebnisposten unverändert vorbelegen"
+      },
+      {
+        "id": "g0",
+        "type": "gateway",
+        "anchor": {
+          "file": "zxkkeu11.abap",
+          "line": 11,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zxkkeu11.abap:11"
+        },
+        "meaning": "Ergebnisbereich ZGO1?"
+      },
+      {
+        "id": "act",
+        "type": "action",
+        "anchor": {
+          "file": "zxkkeu11.abap",
+          "line": 12,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zxkkeu11.abap:12"
+        },
+        "meaning": "Exit als aktiv melden"
+      },
+      {
+        "id": "gc",
+        "type": "gateway",
+        "anchor": {
+          "file": "zxkkeu11.abap",
+          "line": 15,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zxkkeu11.abap:15"
+        },
+        "meaning": "Welcher Ableitungsschritt?"
+      },
+      {
+        "id": "c1",
+        "type": "call",
+        "anchor": {
+          "file": "zxkkeu11.abap",
+          "line": 17,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zxkkeu11.abap:17"
+        },
+        "meaning": "Vertriebsregion ableiten"
+      },
+      {
+        "id": "s1",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_co_pa_derive.abap",
+          "line": 25,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_pa_derive.abap:25"
+        },
+        "meaning": "Regionsableitung"
+      },
+      {
+        "id": "g11",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_co_pa_derive.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_pa_derive.abap:33"
+        },
+        "meaning": "Kein Kunde im Ergebnisposten?"
+      },
+      {
+        "id": "x11",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_co_pa_derive.abap",
+          "line": 36,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_pa_derive.abap:36"
+        },
+        "meaning": "Ohne Region, ohne Fehler zurück"
+      },
+      {
+        "id": "r12",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_co_pa_derive.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_pa_derive.abap:39"
+        },
+        "meaning": "Region des Kunden im Puffer nachschlagen"
+      },
+      {
+        "id": "g12",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_co_pa_derive.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_pa_derive.abap:40"
+        },
+        "meaning": "Kunde bereits gepuffert?"
+      },
+      {
+        "id": "x12",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_co_pa_derive.abap",
+          "line": 43,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_pa_derive.abap:43"
+        },
+        "meaning": "Gepufferte Region übernommen"
+      },
+      {
+        "id": "q13",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_co_pa_derive.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_pa_derive.abap:46"
+        },
+        "meaning": "Land und Region des Kunden lesen"
+      },
+      {
+        "id": "g13",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_co_pa_derive.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_pa_derive.abap:48"
+        },
+        "meaning": "Kunde nicht gefunden?"
+      },
+      {
+        "id": "x13",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_co_pa_derive.abap",
+          "line": 49,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_pa_derive.abap:49"
+        },
+        "meaning": "Ableitung fehlgeschlagen"
+      },
+      {
+        "id": "q14",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_co_pa_derive.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_pa_derive.abap:53"
+        },
+        "meaning": "Gültige Regionszuordnung zum Ableitungsdatum lesen"
+      },
+      {
+        "id": "g14",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_co_pa_derive.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_pa_derive.abap:58"
+        },
+        "meaning": "Keine Zuordnung gepflegt?"
+      },
+      {
+        "id": "a14",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_co_pa_derive.abap",
+          "line": 59,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_pa_derive.abap:59"
+        },
+        "meaning": "Auffangregion SONST setzen"
+      },
+      {
+        "id": "a15",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_co_pa_derive.abap",
+          "line": 61,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_pa_derive.abap:61"
+        },
+        "meaning": "Spezifischste, jüngste Zuordnung übernehmen"
+      },
+      {
+        "id": "a16",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_co_pa_derive.abap",
+          "line": 64,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_pa_derive.abap:64"
+        },
+        "meaning": "Vertriebsregion in Ergebnisposten setzen und puffern"
+      },
+      {
+        "id": "e1",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_co_pa_derive.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_pa_derive.abap:67"
+        },
+        "meaning": "Region abgeleitet"
+      },
+      {
+        "id": "c2",
+        "type": "call",
+        "anchor": {
+          "file": "zxkkeu11.abap",
+          "line": 21,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zxkkeu11.abap:21"
+        },
+        "meaning": "Ergebnissegment ableiten"
+      },
+      {
+        "id": "s2",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_co_pa_derive.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_pa_derive.abap:69"
+        },
+        "meaning": "Segmentableitung"
+      },
+      {
+        "id": "g21",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_co_pa_derive.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_pa_derive.abap:77"
+        },
+        "meaning": "Material vorhanden?"
+      },
+      {
+        "id": "q21",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_co_pa_derive.abap",
+          "line": 78,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_pa_derive.abap:78"
+        },
+        "meaning": "Sparte und Materialgruppe des Materials lesen"
+      },
+      {
+        "id": "g22",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_co_pa_derive.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_pa_derive.abap:81"
+        },
+        "meaning": "Keine Sparte aus Material?"
+      },
+      {
+        "id": "a22",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_co_pa_derive.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_pa_derive.abap:82"
+        },
+        "meaning": "Sparte aus Ergebnisposten übernehmen"
+      },
+      {
+        "id": "q23",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_co_pa_derive.abap",
+          "line": 85,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_pa_derive.abap:85"
+        },
+        "meaning": "Kundengruppe im Vertriebsbereich lesen"
+      },
+      {
+        "id": "q24",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_co_pa_derive.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_pa_derive.abap:92"
+        },
+        "meaning": "Segment zu Kundengruppe und Sparte lesen"
+      },
+      {
+        "id": "g24",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_co_pa_derive.abap",
+          "line": 95,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_pa_derive.abap:95"
+        },
+        "meaning": "Keine Zuordnung nach Kundengruppe/Sparte?"
+      },
+      {
+        "id": "q25",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_co_pa_derive.abap",
+          "line": 96,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_pa_derive.abap:96"
+        },
+        "meaning": "Segment zur Materialgruppe lesen"
+      },
+      {
+        "id": "g25",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_co_pa_derive.abap",
+          "line": 99,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_pa_derive.abap:99"
+        },
+        "meaning": "Auch keine Zuordnung nach Materialgruppe?"
+      },
+      {
+        "id": "a25",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_co_pa_derive.abap",
+          "line": 100,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_pa_derive.abap:100"
+        },
+        "meaning": "Ableitung als fehlgeschlagen kennzeichnen"
+      },
+      {
+        "id": "e2",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_co_pa_derive.abap",
+          "line": 103,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_co_pa_derive.abap:103"
+        },
+        "meaning": "Segmentableitung beendet"
+      },
+      {
+        "id": "q3",
+        "type": "read",
+        "anchor": {
+          "file": "zxkkeu11.abap",
+          "line": 24,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zxkkeu11.abap:24"
+        },
+        "meaning": "Key-Account-Manager (Partnerrolle ZM) lesen"
+      },
+      {
+        "id": "g3",
+        "type": "gateway",
+        "anchor": {
+          "file": "zxkkeu11.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zxkkeu11.abap:30"
+        },
+        "meaning": "KAM gepflegt?"
+      },
+      {
+        "id": "a3",
+        "type": "action",
+        "anchor": {
+          "file": "zxkkeu11.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zxkkeu11.abap:31"
+        },
+        "meaning": "KAM in Ergebnisposten setzen"
+      },
+      {
+        "id": "gok",
+        "type": "gateway",
+        "anchor": {
+          "file": "zxkkeu11.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zxkkeu11.abap:39"
+        },
+        "meaning": "Ableitung fehlgeschlagen?"
+      },
+      {
+        "id": "af",
+        "type": "action",
+        "anchor": {
+          "file": "zxkkeu11.abap",
+          "line": 40,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zxkkeu11.abap:40"
+        },
+        "meaning": "Fehler an Ableitung melden"
+      },
+      {
+        "id": "ar",
+        "type": "action",
+        "anchor": {
+          "file": "zxkkeu11.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zxkkeu11.abap:42"
+        },
+        "meaning": "Abgeleiteten Ergebnisposten zurückgeben"
+      },
+      {
+        "id": "e",
+        "type": "end",
+        "anchor": {
+          "file": "exit_saplkedrcopa_001.abap",
+          "line": 18,
+          "token": null,
+          "expressionPath": null,
+          "raw": "exit_saplkedrcopa_001.abap:18"
+        },
+        "meaning": "Exit beendet"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "a0",
+        "condition": "always"
+      },
+      {
+        "from": "a0",
+        "to": "g0",
+        "condition": "always"
+      },
+      {
+        "from": "g0",
+        "to": "act",
+        "condition": "i_operating_concern = 'ZGO1'"
+      },
+      {
+        "from": "g0",
+        "to": "e",
+        "condition": "else"
+      },
+      {
+        "from": "act",
+        "to": "gc",
+        "condition": "always"
+      },
+      {
+        "from": "gc",
+        "to": "c1",
+        "condition": "WHEN 'U-REG'"
+      },
+      {
+        "from": "gc",
+        "to": "c2",
+        "condition": "WHEN 'U-SEG'"
+      },
+      {
+        "from": "gc",
+        "to": "q3",
+        "condition": "WHEN 'U-KAM'"
+      },
+      {
+        "from": "gc",
+        "to": "gok",
+        "condition": "else"
+      },
+      {
+        "from": "c1",
+        "to": "s1",
+        "condition": "always"
+      },
+      {
+        "from": "s1",
+        "to": "g11",
+        "condition": "always"
+      },
+      {
+        "from": "g11",
+        "to": "x11",
+        "condition": "cs_item-kndnr IS INITIAL"
+      },
+      {
+        "from": "g11",
+        "to": "r12",
+        "condition": "else"
+      },
+      {
+        "from": "r12",
+        "to": "g12",
+        "condition": "always"
+      },
+      {
+        "from": "g12",
+        "to": "x12",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "g12",
+        "to": "q13",
+        "condition": "else"
+      },
+      {
+        "from": "q13",
+        "to": "g13",
+        "condition": "always"
+      },
+      {
+        "from": "g13",
+        "to": "x13",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g13",
+        "to": "q14",
+        "condition": "else"
+      },
+      {
+        "from": "q14",
+        "to": "g14",
+        "condition": "always"
+      },
+      {
+        "from": "g14",
+        "to": "a14",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g14",
+        "to": "a15",
+        "condition": "else"
+      },
+      {
+        "from": "a14",
+        "to": "a16",
+        "condition": "always"
+      },
+      {
+        "from": "a15",
+        "to": "a16",
+        "condition": "always"
+      },
+      {
+        "from": "a16",
+        "to": "e1",
+        "condition": "always"
+      },
+      {
+        "from": "x11",
+        "to": "gok",
+        "condition": "always"
+      },
+      {
+        "from": "x12",
+        "to": "gok",
+        "condition": "always"
+      },
+      {
+        "from": "x13",
+        "to": "gok",
+        "condition": "always"
+      },
+      {
+        "from": "e1",
+        "to": "gok",
+        "condition": "always"
+      },
+      {
+        "from": "c2",
+        "to": "s2",
+        "condition": "always"
+      },
+      {
+        "from": "s2",
+        "to": "g21",
+        "condition": "always"
+      },
+      {
+        "from": "g21",
+        "to": "q21",
+        "condition": "lv_matnr IS NOT INITIAL"
+      },
+      {
+        "from": "g21",
+        "to": "g22",
+        "condition": "else"
+      },
+      {
+        "from": "q21",
+        "to": "g22",
+        "condition": "always"
+      },
+      {
+        "from": "g22",
+        "to": "a22",
+        "condition": "lv_spart IS INITIAL"
+      },
+      {
+        "from": "g22",
+        "to": "q23",
+        "condition": "else"
+      },
+      {
+        "from": "a22",
+        "to": "q23",
+        "condition": "always"
+      },
+      {
+        "from": "q23",
+        "to": "q24",
+        "condition": "always"
+      },
+      {
+        "from": "q24",
+        "to": "g24",
+        "condition": "always"
+      },
+      {
+        "from": "g24",
+        "to": "q25",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g24",
+        "to": "e2",
+        "condition": "else"
+      },
+      {
+        "from": "q25",
+        "to": "g25",
+        "condition": "always"
+      },
+      {
+        "from": "g25",
+        "to": "a25",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g25",
+        "to": "e2",
+        "condition": "else"
+      },
+      {
+        "from": "a25",
+        "to": "e2",
+        "condition": "always"
+      },
+      {
+        "from": "e2",
+        "to": "gok",
+        "condition": "always"
+      },
+      {
+        "from": "q3",
+        "to": "g3",
+        "condition": "always"
+      },
+      {
+        "from": "g3",
+        "to": "a3",
+        "condition": "sy-subrc = 0"
+      },
+      {
+        "from": "g3",
+        "to": "gok",
+        "condition": "else"
+      },
+      {
+        "from": "a3",
+        "to": "gok",
+        "condition": "always"
+      },
+      {
+        "from": "gok",
+        "to": "af",
+        "condition": "lv_ok = abap_false"
+      },
+      {
+        "from": "gok",
+        "to": "ar",
+        "condition": "else"
+      },
+      {
+        "from": "af",
+        "to": "ar",
+        "condition": "always"
+      },
+      {
+        "from": "ar",
+        "to": "e",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "zxkkeu11.abap:40 — kein Fachsatz „die Buchung wird abgelehnt“ (der Exit meldet nur E_FAILED; was daraus folgt, regelt die Ableitungsstrategie)",
+    "zxkkeu11.abap:24 — kein Fachsatz „fehlender Key-Account-Manager führt zu einem Fehler“ (lv_ok wird immer auf wahr gesetzt)",
+    "zcl_co_pa_derive.abap:76 — kein Fachsatz „die vollständige Materialnummer wird verwendet“ (Kürzung auf 18 Zeichen)",
+    "zcl_co_pa_derive.abap:64 — kein Fachsatz „die Region wird im Kundenstamm gespeichert“ (nur Ergebnisposten und Sitzungspuffer)"
+  ],
+  "processDescription": "Die CO-PA-Ableitung ruft den Kundenexit bei jeder Übergabe eines Belegs in die Ergebnisrechnung für die als Benutzerexit angelegten Schritte auf. Der Exit gibt den Ergebnisposten zunächst unverändert zurück und wird nur für den Ergebnisbereich ZGO1 aktiv. Im Schritt U-REG wird die Vertriebsregion aus Land und Region des Kunden über eine datumsabhängige Zuordnungstabelle bestimmt, mit Puffer je Kunde und Auffangregion SONST; ohne Kunde bleibt sie leer, bei unbekanntem Kunden scheitert die Ableitung. Im Schritt U-SEG wird das Ergebnissegment aus Kundengruppe und Sparte oder ersatzweise aus der Materialgruppe bestimmt; ohne Treffer scheitert die Ableitung. Im Schritt U-KAM wird der Key-Account-Manager aus der Partnerrolle ZM übernommen, sein Fehlen ist kein Fehler. Gescheiterte Schritte werden als Fehler gemeldet, der Ergebnisposten mit den abgeleiteten Merkmalen wird immer zurückgegeben."
+}

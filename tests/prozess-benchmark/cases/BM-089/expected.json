@@ -1,0 +1,667 @@
+{
+  "id": "BM-089",
+  "title": "PLM-Brücke: freigegebene Teile per RFC holen und als Material anlegen oder ändern",
+  "classes": [
+    "K03",
+    "K12",
+    "K01"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "Z_PLM_GET_RELEASED_PARTS",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 20,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:20"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "MARA",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "source.abap",
+        "line": 39,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:39"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_MATERIAL_SAVEDATA",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 60,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:60"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_COMMIT",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 79,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:79"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "BAPI_TRANSACTION_ROLLBACK",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 70,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:70"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "Z_PLM_CONFIRM_TRANSFER",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "source.abap",
+        "line": 82,
+        "token": null,
+        "expressionPath": null,
+        "raw": "source.abap:82"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-089-B01",
+      "text": "Aus dem PLM-System werden per RFC alle seit dem Stichtag freigegebenen Teile abgeholt.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:20"
+        }
+      ]
+    },
+    {
+      "id": "BM-089-B02",
+      "text": "Bei einem Kommunikations- oder Systemfehler wird die Fehlermeldung ausgegeben und der Lauf beendet.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:30"
+        },
+        {
+          "file": "source.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:31"
+        },
+        {
+          "file": "source.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:32"
+        }
+      ]
+    },
+    {
+      "id": "BM-089-B03",
+      "text": "Je Teil wird geprüft, ob die Teilenummer bereits als Material existiert.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:39"
+        }
+      ]
+    },
+    {
+      "id": "BM-089-B04",
+      "text": "Neue Teile werden als Halbfabrikat der Branche Maschinenbau angelegt, bestehende nur in den Grunddaten geändert.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:41"
+        },
+        {
+          "file": "source.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:42"
+        },
+        {
+          "file": "source.abap",
+          "line": 46,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:46"
+        }
+      ]
+    },
+    {
+      "id": "BM-089-B05",
+      "text": "Übernommen werden Basismengeneinheit, Nettogewicht in Kilogramm, die PLM-Nummer als alte Materialnummer und der deutsche Kurztext.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 48,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:48"
+        },
+        {
+          "file": "source.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:60"
+        }
+      ]
+    },
+    {
+      "id": "BM-089-B06",
+      "text": "Meldet die Materialpflege einen Fehler oder Abbruch, wird verworfen und die Meldung mit Teilenummer ausgegeben.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:69"
+        },
+        {
+          "file": "source.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:70"
+        },
+        {
+          "file": "source.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:71"
+        }
+      ]
+    },
+    {
+      "id": "BM-089-B07",
+      "text": "Im Testmodus wird auch eine erfolgreiche Pflege wieder verworfen.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:76"
+        },
+        {
+          "file": "source.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:77"
+        }
+      ]
+    },
+    {
+      "id": "BM-089-B08",
+      "text": "Im Echtlauf wird die Pflege festgeschrieben und die Übernahme mit Materialnummer an das PLM zurückgemeldet.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:79"
+        },
+        {
+          "file": "source.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:82"
+        }
+      ]
+    },
+    {
+      "id": "BM-089-B09",
+      "text": "Zum Schluss werden die Anzahl verarbeiteter und fehlerhafter Teile ausgegeben.",
+      "anchors": [
+        {
+          "file": "source.abap",
+          "line": 94,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:94"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "source.abap",
+          "line": 19,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:19"
+        },
+        "meaning": "Jobstart"
+      },
+      {
+        "id": "rfc1",
+        "type": "rfc",
+        "anchor": {
+          "file": "source.abap",
+          "line": 20,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:20"
+        },
+        "meaning": "Freigegebene Teile seit Stichtag aus PLM holen"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 30,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:30"
+        },
+        "meaning": "RFC-Fehler?"
+      },
+      {
+        "id": "o1",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 31,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:31"
+        },
+        "meaning": "Kommunikationsfehler ausgeben"
+      },
+      {
+        "id": "e1",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 32,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:32"
+        },
+        "meaning": "Lauf beenden"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "source.abap",
+          "line": 35,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:35"
+        },
+        "meaning": "PLM-Teile durchlaufen"
+      },
+      {
+        "id": "r",
+        "type": "read",
+        "anchor": {
+          "file": "source.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:39"
+        },
+        "meaning": "Prüfen, ob Material schon existiert"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 41,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:41"
+        },
+        "meaning": "Material neu?"
+      },
+      {
+        "id": "anew",
+        "type": "action",
+        "anchor": {
+          "file": "source.abap",
+          "line": 42,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:42"
+        },
+        "meaning": "Anlage als Halbfabrikat (Branche M, Art HALB) vorsehen"
+      },
+      {
+        "id": "bapi",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 60,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:60"
+        },
+        "meaning": "Material mit Mengeneinheit, Gewicht, PLM-Nummer und Text anlegen/ändern"
+      },
+      {
+        "id": "g3",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 69,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:69"
+        },
+        "meaning": "BAPI-Fehler?"
+      },
+      {
+        "id": "rb1",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 70,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:70"
+        },
+        "meaning": "Änderung verwerfen"
+      },
+      {
+        "id": "oerr",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 71,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:71"
+        },
+        "meaning": "Fehlermeldung je Teil ausgeben"
+      },
+      {
+        "id": "g4",
+        "type": "gateway",
+        "anchor": {
+          "file": "source.abap",
+          "line": 76,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:76"
+        },
+        "meaning": "Testmodus?"
+      },
+      {
+        "id": "rb2",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 77,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:77"
+        },
+        "meaning": "Im Test verwerfen"
+      },
+      {
+        "id": "cm",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "source.abap",
+          "line": 79,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:79"
+        },
+        "meaning": "Materialänderung festschreiben"
+      },
+      {
+        "id": "rfc2",
+        "type": "rfc",
+        "anchor": {
+          "file": "source.abap",
+          "line": 82,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:82"
+        },
+        "meaning": "Übernahme an PLM zurückmelden"
+      },
+      {
+        "id": "osum",
+        "type": "output",
+        "anchor": {
+          "file": "source.abap",
+          "line": 94,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:94"
+        },
+        "meaning": "Zähler ausgeben"
+      },
+      {
+        "id": "e2",
+        "type": "end",
+        "anchor": {
+          "file": "source.abap",
+          "line": 94,
+          "token": null,
+          "expressionPath": null,
+          "raw": "source.abap:94"
+        },
+        "meaning": "Lauf endet nach der Zählerausgabe"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "rfc1",
+        "condition": "always"
+      },
+      {
+        "from": "rfc1",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "o1",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "o1",
+        "to": "e1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "l",
+        "condition": "else"
+      },
+      {
+        "from": "l",
+        "to": "r",
+        "condition": "next row"
+      },
+      {
+        "from": "r",
+        "to": "g2",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "anew",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "anew",
+        "to": "bapi",
+        "condition": "always"
+      },
+      {
+        "from": "bapi",
+        "to": "g3",
+        "condition": "always"
+      },
+      {
+        "from": "g3",
+        "to": "rb1",
+        "condition": "ls_return-type CA 'EA'"
+      },
+      {
+        "from": "rb1",
+        "to": "oerr",
+        "condition": "always"
+      },
+      {
+        "from": "oerr",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "g3",
+        "to": "g4",
+        "condition": "else"
+      },
+      {
+        "from": "g4",
+        "to": "rb2",
+        "condition": "p_test = 'X'"
+      },
+      {
+        "from": "rb2",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "g4",
+        "to": "cm",
+        "condition": "else"
+      },
+      {
+        "from": "cm",
+        "to": "rfc2",
+        "condition": "always"
+      },
+      {
+        "from": "rfc2",
+        "to": "l",
+        "condition": "next iteration"
+      },
+      {
+        "from": "l",
+        "to": "osum",
+        "condition": "no more rows"
+      },
+      {
+        "from": "g2",
+        "to": "bapi",
+        "condition": "else"
+      },
+      {
+        "from": "osum",
+        "to": "e2",
+        "condition": "always"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "source.abap:82 — kein Fachsatz „scheitert die Rückmeldung, wird das gemeldet oder wiederholt“ (sy-subrc wird nicht ausgewertet).",
+    "source.abap:94 — kein Fachsatz „im Testmodus wird nichts gezählt“ (auch simulierte Teile zählen als verarbeitet).",
+    "source.abap:38 — kein Fachsatz „Teilenummer wird ins Materialnummernformat konvertiert“ (direkte Zuweisung ohne Konvertierungsexit).",
+    "source.abap:60 — kein Fachsatz über Werks- oder Buchhaltungsdaten (nur Mandantenebene und Kurztext)."
+  ],
+  "processDescription": "Ein Nachtjob koppelt das PLM-System an den Materialstamm. Er holt per RFC alle seit dem Stichtag freigegebenen Teile; bei einem Kommunikationsfehler gibt er die Meldung aus und endet. Für jedes Teil prüft er, ob die Teilenummer bereits als Material existiert: neue Teile werden als Halbfabrikat der Branche Maschinenbau angelegt, bestehende nur in den Grunddaten geändert. Übernommen werden Basismengeneinheit, Nettogewicht in Kilogramm, PLM-Nummer als alte Materialnummer und deutscher Kurztext. Meldet die Materialpflege einen Fehler, verwirft er die Änderung und gibt die Meldung mit Teilenummer aus. Im Testmodus verwirft er auch erfolgreiche Pflegen. Im Echtlauf schreibt er fest und meldet die Übernahme per RFC an das PLM zurück, ohne das Ergebnis dieser Rückmeldung zu prüfen. Am Ende gibt er die Zähler aus."
+}

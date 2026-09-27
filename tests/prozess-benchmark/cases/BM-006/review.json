@@ -1,0 +1,8 @@
+{
+  "reviewer": "gegencheck",
+  "verdict": "ok",
+  "changes": [],
+  "doubts": [
+    "meta.json s4_issues: „KONV nur noch als Kompatibilitätsview“ ist ungenau — KONV bleibt in S/4 als Tabelle bestehen, wird aber nicht mehr befüllt (Hinweis 2220005; Zugriff über PRCD_ELEMENTS bzw. V_KONV). Die Sollantwort ist davon nicht betroffen; meta.json nicht geändert."
+  ]
+}

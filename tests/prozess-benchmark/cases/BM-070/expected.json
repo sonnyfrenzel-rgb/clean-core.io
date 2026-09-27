@@ -1,0 +1,551 @@
+{
+  "id": "BM-070",
+  "title": "Mehrstufige Stücklistenprüfung der Lagerkomponenten (Klasse)",
+  "classes": [
+    "K02",
+    "K03",
+    "K01"
+  ],
+  "classic_level": "C",
+  "known_worst_level": null,
+  "cloud_api_surface": null,
+  "beleggrad": "konstruiert",
+  "independence": [
+    "autor"
+  ],
+  "independenceRaw": null,
+  "status": "candidate",
+  "scope": null,
+  "convergence": null,
+  "answerFields": {},
+  "openReviewerQuestions": [],
+  "cloud_artefact": null,
+  "expectedByProfile": null,
+  "findings": [],
+  "securityFindings": [],
+  "declaredEmpty": {
+    "findings": false,
+    "objects": false
+  },
+  "objects": [
+    {
+      "name": "CS_BOM_EXPL_MAT_V2",
+      "owner": "SAP",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_pp_bom_check.abap",
+        "line": 39,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_pp_bom_check.abap:39"
+      },
+      "identity": {
+        "objectType": "FUNC"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "MARC",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_pp_bom_check.abap",
+        "line": 63,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_pp_bom_check.abap:63"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "MARA",
+      "owner": "SAP",
+      "usage": "read",
+      "anchor": {
+        "file": "zcl_pp_bom_check.abap",
+        "line": 92,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_pp_bom_check.abap:92"
+      },
+      "identity": {
+        "objectType": "TABL"
+      },
+      "successors": null,
+      "successorStatus": null
+    },
+    {
+      "name": "ZCX_PP_BOM_ERROR",
+      "owner": "customer",
+      "usage": "call",
+      "anchor": {
+        "file": "zcl_pp_bom_check.abap",
+        "line": 54,
+        "token": null,
+        "expressionPath": null,
+        "raw": "zcl_pp_bom_check.abap:54"
+      },
+      "identity": {
+        "objectType": "CLAS"
+      },
+      "successors": null,
+      "successorStatus": null
+    }
+  ],
+  "businessStatements": [
+    {
+      "id": "BM-070-B01",
+      "text": "Die Stückliste des Materials wird zum Stichtag im Werk mehrstufig mit der Anwendung PP01 für die Menge 1 aufgelöst.",
+      "anchors": [
+        {
+          "file": "zcl_pp_bom_check.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_bom_check.abap:39"
+        }
+      ]
+    },
+    {
+      "id": "BM-070-B02",
+      "text": "Lässt sie sich nicht auflösen (Material oder Stückliste fehlt), wird die Prüfung mit einer Ausnahme abgebrochen.",
+      "anchors": [
+        {
+          "file": "zcl_pp_bom_check.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_bom_check.abap:53"
+        },
+        {
+          "file": "zcl_pp_bom_check.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_bom_check.abap:54"
+        }
+      ]
+    },
+    {
+      "id": "BM-070-B03",
+      "text": "Geprüft werden nur Lagerpositionen, jeweils mit ihrer Stücklistenstufe.",
+      "anchors": [
+        {
+          "file": "zcl_pp_bom_check.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_bom_check.abap:58"
+        }
+      ]
+    },
+    {
+      "id": "BM-070-B04",
+      "text": "Ist eine Komponente im Werk nicht angelegt, wird „Komponente im Werk nicht angelegt“ vermerkt und die Komponente nicht weiter geprüft.",
+      "anchors": [
+        {
+          "file": "zcl_pp_bom_check.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_bom_check.abap:63"
+        },
+        {
+          "file": "zcl_pp_bom_check.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_bom_check.abap:66"
+        },
+        {
+          "file": "zcl_pp_bom_check.abap",
+          "line": 67,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_bom_check.abap:67"
+        }
+      ]
+    },
+    {
+      "id": "BM-070-B05",
+      "text": "Eine zum Löschen vorgemerkte Komponente wird vermerkt; andernfalls wird eine Komponente mit Dispomerkmal ND als nicht disponiert vermerkt.",
+      "anchors": [
+        {
+          "file": "zcl_pp_bom_check.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_bom_check.abap:72"
+        },
+        {
+          "file": "zcl_pp_bom_check.abap",
+          "line": 75,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_bom_check.abap:75"
+        }
+      ]
+    },
+    {
+      "id": "BM-070-B06",
+      "text": "Hat die Komponente den werksübergreifenden Materialstatus 01 oder Z9, wird sie zusätzlich als werksübergreifend gesperrt vermerkt.",
+      "anchors": [
+        {
+          "file": "zcl_pp_bom_check.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_bom_check.abap:80"
+        },
+        {
+          "file": "zcl_pp_bom_check.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_bom_check.abap:92"
+        },
+        {
+          "file": "zcl_pp_bom_check.abap",
+          "line": 95,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_bom_check.abap:95"
+        },
+        {
+          "file": "zcl_pp_bom_check.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_bom_check.abap:81"
+        }
+      ]
+    },
+    {
+      "id": "BM-070-B07",
+      "text": "Die Methode gibt die Liste aller Befunde zurück.",
+      "anchors": [
+        {
+          "file": "zcl_pp_bom_check.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_bom_check.abap:86"
+        }
+      ]
+    }
+  ],
+  "skeleton": {
+    "nodes": [
+      {
+        "id": "s",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_pp_bom_check.abap",
+          "line": 33,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_bom_check.abap:33"
+        },
+        "meaning": "Einstieg: Komponenten prüfen"
+      },
+      {
+        "id": "c",
+        "type": "opaque_call",
+        "anchor": {
+          "file": "zcl_pp_bom_check.abap",
+          "line": 39,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_bom_check.abap:39"
+        },
+        "meaning": "Stückliste zum Stichtag mehrstufig mit Anwendung PP01 auflösen"
+      },
+      {
+        "id": "g1",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_pp_bom_check.abap",
+          "line": 53,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_bom_check.abap:53"
+        },
+        "meaning": "Auflösung erfolgreich?"
+      },
+      {
+        "id": "e1",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_pp_bom_check.abap",
+          "line": 54,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_bom_check.abap:54"
+        },
+        "meaning": "Ausnahme: Stückliste nicht auflösbar"
+      },
+      {
+        "id": "l",
+        "type": "loop",
+        "anchor": {
+          "file": "zcl_pp_bom_check.abap",
+          "line": 58,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_bom_check.abap:58"
+        },
+        "meaning": "Je Lagerposition der aufgelösten Stückliste"
+      },
+      {
+        "id": "qm",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_pp_bom_check.abap",
+          "line": 63,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_bom_check.abap:63"
+        },
+        "meaning": "Werksdaten der Komponente lesen"
+      },
+      {
+        "id": "g2",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_pp_bom_check.abap",
+          "line": 66,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_bom_check.abap:66"
+        },
+        "meaning": "Komponente im Werk angelegt?"
+      },
+      {
+        "id": "g3",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_pp_bom_check.abap",
+          "line": 72,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_bom_check.abap:72"
+        },
+        "meaning": "Zum Löschen vorgemerkt?"
+      },
+      {
+        "id": "cb",
+        "type": "call",
+        "anchor": {
+          "file": "zcl_pp_bom_check.abap",
+          "line": 80,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_bom_check.abap:80"
+        },
+        "meaning": "Werksübergreifende Sperre prüfen"
+      },
+      {
+        "id": "s2",
+        "type": "start",
+        "anchor": {
+          "file": "zcl_pp_bom_check.abap",
+          "line": 89,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_bom_check.abap:89"
+        },
+        "meaning": "Einstieg Sperrprüfung"
+      },
+      {
+        "id": "q2",
+        "type": "read",
+        "anchor": {
+          "file": "zcl_pp_bom_check.abap",
+          "line": 92,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_bom_check.abap:92"
+        },
+        "meaning": "Werksübergreifenden Materialstatus lesen"
+      },
+      {
+        "id": "g6",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_pp_bom_check.abap",
+          "line": 95,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_bom_check.abap:95"
+        },
+        "meaning": "Status 01 oder Z9?"
+      },
+      {
+        "id": "a",
+        "type": "action",
+        "anchor": {
+          "file": "zcl_pp_bom_check.abap",
+          "line": 96,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_bom_check.abap:96"
+        },
+        "meaning": "Als gesperrt kennzeichnen"
+      },
+      {
+        "id": "e2",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_pp_bom_check.abap",
+          "line": 98,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_bom_check.abap:98"
+        },
+        "meaning": "Rückkehr aus Sperrprüfung"
+      },
+      {
+        "id": "g5",
+        "type": "gateway",
+        "anchor": {
+          "file": "zcl_pp_bom_check.abap",
+          "line": 81,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_bom_check.abap:81"
+        },
+        "meaning": "Komponente gesperrt?"
+      },
+      {
+        "id": "done",
+        "type": "end",
+        "anchor": {
+          "file": "zcl_pp_bom_check.abap",
+          "line": 86,
+          "token": null,
+          "expressionPath": null,
+          "raw": "zcl_pp_bom_check.abap:86"
+        },
+        "meaning": "Befundliste zurückgeben"
+      }
+    ],
+    "edges": [
+      {
+        "from": "s",
+        "to": "c",
+        "condition": "always"
+      },
+      {
+        "from": "c",
+        "to": "g1",
+        "condition": "always"
+      },
+      {
+        "from": "g1",
+        "to": "e1",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g1",
+        "to": "l",
+        "condition": "else"
+      },
+      {
+        "from": "l",
+        "to": "qm",
+        "condition": "next row"
+      },
+      {
+        "from": "qm",
+        "to": "g2",
+        "condition": "always"
+      },
+      {
+        "from": "g2",
+        "to": "l",
+        "condition": "sy-subrc <> 0"
+      },
+      {
+        "from": "g2",
+        "to": "g3",
+        "condition": "else"
+      },
+      {
+        "from": "g3",
+        "to": "cb",
+        "condition": "ls_marc-lvorm = 'X'"
+      },
+      {
+        "from": "cb",
+        "to": "s2",
+        "condition": "always"
+      },
+      {
+        "from": "s2",
+        "to": "q2",
+        "condition": "always"
+      },
+      {
+        "from": "q2",
+        "to": "g6",
+        "condition": "always"
+      },
+      {
+        "from": "g6",
+        "to": "a",
+        "condition": "lv_mstae = '01' OR lv_mstae = 'Z9'"
+      },
+      {
+        "from": "g6",
+        "to": "e2",
+        "condition": "else"
+      },
+      {
+        "from": "a",
+        "to": "e2",
+        "condition": "always"
+      },
+      {
+        "from": "e2",
+        "to": "g5",
+        "condition": "always"
+      },
+      {
+        "from": "g5",
+        "to": "l",
+        "condition": "lv_gesperrt = abap_true"
+      },
+      {
+        "from": "g5",
+        "to": "l",
+        "condition": "else"
+      },
+      {
+        "from": "l",
+        "to": "done",
+        "condition": "no more rows"
+      },
+      {
+        "from": "g3",
+        "to": "cb",
+        "condition": "ls_marc-dismm = 'ND'"
+      },
+      {
+        "from": "g3",
+        "to": "cb",
+        "condition": "else"
+      }
+    ]
+  },
+  "forbiddenConclusions": [
+    "gesamte Scheibe — kein Fachsatz „Fehlerhafte Komponenten werden korrigiert oder die Stückliste geändert“ (die Klasse liest nur und liefert Befunde)",
+    "zcl_pp_bom_check.abap:75 — kein Fachsatz „Eine gelöschte Komponente wird zusätzlich auf ND geprüft“ (ELSEIF: ND wird nur geprüft, wenn keine Löschvormerkung vorliegt)",
+    "zcl_pp_bom_check.abap:58 — kein Fachsatz „Alle Stücklistenpositionen werden geprüft“ (nur Lagerpositionen)"
+  ],
+  "processDescription": "Die Arbeitsvorbereitung ruft die Prüfung mit Material, Werk und Stichtag auf. Die Methode löst die Stückliste mehrstufig auf; gelingt das nicht, bricht sie mit einer Ausnahme ab. Für jede Lagerposition liest sie die Werksdaten der Komponente. Fehlen sie, vermerkt sie „nicht angelegt“ und geht zur nächsten Komponente. Sonst vermerkt sie eine Löschvormerkung oder – wenn keine vorliegt – das Dispomerkmal ND. Zusätzlich prüft sie über den werksübergreifenden Materialstatus 01 oder Z9, ob die Komponente gesperrt ist, und vermerkt das. Am Ende gibt sie die Befundliste zurück, ohne Daten zu ändern."
+}
