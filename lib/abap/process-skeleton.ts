@@ -3,6 +3,7 @@ import { type Block, type BlockStructure } from './block-structure';
 import { type Branch, type ControlFlowReport } from './control-flow';
 import { type CallGraphReport } from './call-graph';
 import { databaseWriteIn } from './open-sql-discrimination';
+import { readReferenceTypes, resolveMethodTarget } from './method-resolution';
 import { buildProcessFacts, type ProcessFacts } from './process-facts';
 import { readLuwStates, type LuwEvent, type UpdateRegistration } from './luw-states';
 import {
@@ -1306,23 +1307,7 @@ class SkeletonBuilder {
    * And then counts, over the whole source, how often each method is called.
    */
   private readMethodCallSites(): void {
-    const add = (variable: string, type: string) => {
-      const name = variable.toUpperCase().replace(/^ME->/, '');
-      const set = this.refTypes.get(name) ?? new Set<string>();
-      set.add(type.toUpperCase());
-      this.refTypes.set(name, set);
-    };
-    for (const statement of this.statements) {
-      if (statement.nativeSql) continue;
-      const code = maskLiterals(statement.text);
-      for (const m of code.matchAll(/([\w/]+)\s+TYPE\s+REF\s+TO\s+([\w/]+)/gi)) add(m[1], m[2]);
-      const inline = /^(?:DATA|FINAL)\(([\w/]+)\)\s*=\s*(?:NEW|CAST)\s+([\w/]+)\(/i.exec(code);
-      if (inline) add(inline[1], inline[2]);
-      const assigned = /^((?:ME->)?[\w/]+)\s*=\s*(?:NEW|CAST)\s+([\w/]+)\(/i.exec(code);
-      if (assigned) add(assigned[1], assigned[2]);
-      const created = /^CREATE\s+OBJECT\s+((?:ME->)?[\w/]+)\s+TYPE\s+([\w/]+)/i.exec(code);
-      if (created) add(created[1], created[2]);
-    }
+    this.refTypes = readReferenceTypes(this.statements);
     for (const statement of this.statements) {
       for (const call of this.methodCallsIn(statement)) {
         if (call.key) this.methodCallSites.set(call.key, [...(this.methodCallSites.get(call.key) ?? []), statement.index]);
@@ -1341,6 +1326,9 @@ class SkeletonBuilder {
    * implement `run` and a call `lo->run( )` on a reference this source does not
    * type is `ambiguous`, and an ambiguous call is drawn opaque rather than
    * pointed at one of the two (brief of 27.09.2026, D2).
+   *
+   * The rule itself lives in `method-resolution.ts`, shared with the business
+   * statements (QA b7e191a72212); the skeleton lets the name decide alone.
    */
   private resolveMethod(
     qualifier: string | null,
@@ -1348,45 +1336,15 @@ class SkeletonBuilder {
     name: string,
     index: number,
   ): { key: string | null; ambiguous: boolean } {
-    const byName = (impl: MethodImpl) => impl.name === name || impl.short === name;
-    const unique = (found: MethodImpl[]) => (found.length === 1
-      ? { key: found[0].key, ambiguous: false }
-      : { key: null, ambiguous: found.length > 1 });
-
-    let cls: string | null = null;
-    const q = qualifier?.toUpperCase() ?? null;
-    if (op === '=>' && q) cls = q;
-    else if (op === null || q === 'ME') cls = this.classOf(index);
-    else if (q && q !== ')' && q !== 'SUPER') {
-      const types = this.refTypes.get(q);
-      if (types?.size === 1) cls = [...types][0];
-    }
-
-    if (q === 'SUPER') {
-      const own = this.classOf(index);
-      cls = own ? this.superOf.get(own) ?? null : null;
-    }
-
-    if (cls) {
-      // Up the chain the source writes: a method the class inherits is still
-      // the class's method. QA review of be3f06343260 (045fbec9b5a4): the
-      // qualifier is never dropped — a class that is known and implements
-      // nothing of this name, itself or through a superclass, is answered
-      // with "not here", not with another class's method of the same name.
-      const seen = new Set<string>();
-      for (let at: string | undefined = cls; at && !seen.has(at); at = this.superOf.get(at)) {
-        seen.add(at);
-        const own = this.methodImpls.filter((impl) => impl.cls === at && impl.name === name);
-        if (own.length) return unique(own);
-        const alias = this.methodImpls.filter((impl) => impl.cls === at && byName(impl));
-        if (alias.length) return unique(alias);
-      }
-      // An interface reference: the implementations write `lif_x~m`.
-      const viaInterface = this.methodImpls.filter((impl) => impl.name === `${cls}~${name}`);
-      if (viaInterface.length) return unique(viaInterface);
-      return { key: null, ambiguous: false };
-    }
-    return unique(this.methodImpls.filter(byName));
+    const { key, ambiguous } = resolveMethodTarget(
+      { impls: this.methodImpls, superOf: this.superOf, refTypes: this.refTypes },
+      qualifier,
+      op,
+      name,
+      this.classOf(index),
+      { byNameAlone: true },
+    );
+    return { key, ambiguous };
   }
 
   /**

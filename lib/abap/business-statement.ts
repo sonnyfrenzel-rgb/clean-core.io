@@ -55,6 +55,7 @@ import { readStatements, type AbapStatement, type SourceRange } from './statemen
 import { genitivePhrase, isKnownField, nounPhrase, tableTerm, termFor, type BusinessTerm } from './business-glossary';
 import { buildProcessFacts } from './process-facts';
 import { readLuwStates, type LuwModel } from './luw-states';
+import { readReferenceTypes, resolveMethodTarget, type ClassModel, type MethodTarget } from './method-resolution';
 
 /**
  * Ein Vorbehalt **an** einer Aussage — nie an ihrer Stelle.
@@ -1305,8 +1306,15 @@ function definedInSource(statement: AbapStatement, statements: readonly AbapStat
   if (perform) return !/\bIN\s+PROGRAM\b/i.test(text) && routineHead(statements, 'FORM', perform[1]) !== null;
   const fn = /^CALL\s+FUNCTION\s+'([^']+)'/i.exec(text);
   if (fn) return routineHead(statements, 'FUNCTION', fn[1]) !== null;
-  const method = /(?:->|=>)([A-Za-z0-9_]+)\s*\(|^CALL\s+METHOD\s+\S*?(?:->|=>)?([A-Za-z0-9_]+)(?:\s|$|\()/i.exec(text);
-  if (method) return routineHead(statements, 'METHOD', method[1] ?? method[2]) !== null;
+  // Eine Methode nur, wenn feststeht, dass der Aufruf die lokale
+  // Implementierung meint (QA b7e191a72212) — sonst kann ein fremdes
+  // `lo_external->save( )` festschreiben, und „kein COMMIT WORK" wäre falsch.
+  const explicit = /^CALL\s+METHOD\s+(?:(\S*?)(->|=>))?([A-Za-z0-9_]+)(?:\s|$|\()/i.exec(text);
+  if (explicit) {
+    return methodImplementation(statements, explicit[1] ?? '', (explicit[2] as '->' | '=>' | undefined) ?? null, explicit[3], statement.index) !== null;
+  }
+  const method = /([A-Za-z0-9_/<>]+)(->|=>)([A-Za-z0-9_]+)\s*\(/.exec(text);
+  if (method) return methodImplementation(statements, method[1], method[2] as '->' | '=>', method[3], statement.index) !== null;
   return false;
 }
 
@@ -1329,30 +1337,116 @@ function routineHead(
   );
 }
 
+/** Die Klassen des Quelltexts, einmal je Quelle gelesen: Methoden, Oberklassen, Referenztypen. */
+interface LocalClasses {
+  model: ClassModel;
+  heads: Map<string, AbapStatement>;
+  /** Die Klasse, in deren `IMPLEMENTATION` eine Anweisung steht — je Index. */
+  ownClass: (string | null)[];
+}
+
+const CLASS_CACHE = new WeakMap<readonly AbapStatement[], LocalClasses>();
+
+/** Die Klasse der Methoden, die ohne `CLASS … IMPLEMENTATION` im Ausschnitt stehen. Kein ABAP-Name. */
+const UNNAMED_CLASS = '(AUSSCHNITT)';
+
+function localClasses(statements: readonly AbapStatement[]): LocalClasses {
+  const cached = CLASS_CACHE.get(statements);
+  if (cached) return cached;
+  const impls: MethodTarget[] = [];
+  const heads = new Map<string, AbapStatement>();
+  const superOf = new Map<string, string>();
+  const ownClass: (string | null)[] = [];
+  let current: string | null = null;
+  // Methoden ohne umgebendes `CLASS … IMPLEMENTATION` — ein Web-Dynpro-
+  // Controller, eine aus dem Class Builder kopierte Klasse — gehören zu einer
+  // Klasse, die der Ausschnitt nicht nennt, aber zu **einer**: der, in der sie
+  // alle stehen.
+  let loose = false;
+  for (const statement of statements) {
+    const keyword = statement.keyword.toUpperCase();
+    const opener = /^CLASS\s+([A-Za-z0-9_/]+)\s+(DEFINITION|IMPLEMENTATION)\b/i.exec(statement.text);
+    if (opener) {
+      const parent = /\bINHERITING\s+FROM\s+([A-Za-z0-9_/]+)/i.exec(statement.text);
+      if (parent) superOf.set(opener[1].toUpperCase(), parent[1].toUpperCase());
+      // `CLASS x DEFINITION DEFERRED.` öffnet nichts.
+      if (opener[2].toUpperCase() === 'IMPLEMENTATION') current = opener[1].toUpperCase();
+    } else if (keyword === 'ENDCLASS') current = null;
+    else if (keyword === 'METHOD' && current === null) loose = true;
+    const cls = current ?? (loose ? UNNAMED_CLASS : null);
+    ownClass[statement.index] = cls;
+    if (keyword === 'ENDMETHOD') loose = false;
+    if (cls && keyword === 'METHOD') {
+      const name = /^METHOD\s+([A-Za-z0-9_/~]+)/i.exec(statement.text)?.[1]?.toUpperCase();
+      const key = name ? `${cls}=>${name}` : null;
+      if (name && key && !heads.has(key)) {
+        const tilde = name.lastIndexOf('~');
+        impls.push({ key, cls, name, short: tilde < 0 ? name : name.slice(tilde + 1) });
+        heads.set(key, statement);
+      }
+    }
+  }
+  const classes = { model: { impls, superOf, refTypes: readReferenceTypes(statements) }, heads, ownClass };
+  CLASS_CACHE.set(statements, classes);
+  return classes;
+}
+
 /**
  * Die Implementierung einer aufgerufenen Methode im gelieferten Code — oder
- * `null`, wenn sie dort nicht steht.
+ * `null`, wenn sie dort nicht steht **oder nicht feststeht, dass sie gemeint
+ * ist**.
  *
- * Ein statischer Aufruf `klasse=>m( )` zählt nur, wenn `klasse` selbst im
- * Ausschnitt definiert ist: ein `cl_salv_table=>factory( )` ist nicht die
- * lokale Methode `factory`, die zufällig gleich heißt. `super->m( )` meint die
- * Oberklasse, also nicht die Redefinition, in der der Aufruf steht.
+ * Die Auflösung ist die des Skeletts (`method-resolution.ts`): die Klasse
+ * kommt aus dem Aufruf — `klasse=>m`, `me->m`, `super->m`, oder `lo->m` mit
+ * dem Typ, mit dem `lo` deklariert ist —, dann die Vererbungskette hinauf.
+ * Anders als das Skelett entscheidet der Name hier nie allein: ein
+ * `lo_external->save( )` auf einem Objekt, dessen Klasse der Ausschnitt nicht
+ * nennt, ist nicht die lokale Methode `save`, die zufällig gleich heißt, und
+ * bekommt deren Wirkung nicht zugeschrieben (QA b7e191a72212).
+ *
+ * `owner` ist, was vor dem letzten Pfeil steht; eine Kette `lo->mo_sub->m`
+ * wird am letzten Glied gelesen.
  */
-function methodImplementation(statements: readonly AbapStatement[], owner: string, name: string): AbapStatement | null {
-  const lower = owner.toLowerCase();
-  if (lower === 'super') {
-    const all = statements.filter((other) => other.keyword.toUpperCase() === 'METHOD' && new RegExp(`^METHOD\\s+(?:\\S+~)?${escapeForRegExp(name)}$`, 'i').test(other.text));
-    return all.length > 1 ? all[0] : null;
-  }
-  const staticCall = statements.some((other) => other.text.toLowerCase().includes(`${lower}=>${name.toLowerCase()}`));
-  if (staticCall && lower !== 'me') {
-    const local = statements.some((other) => {
-      const definition = /^CLASS\s+([A-Za-z0-9_/]+)\s+(?:DEFINITION|IMPLEMENTATION)\b/i.exec(other.text);
-      return definition !== null && definition[1].toLowerCase() === lower;
-    });
-    if (!local) return null;
-  }
-  return routineHead(statements, 'METHOD', name);
+function methodImplementation(
+  statements: readonly AbapStatement[],
+  owner: string,
+  op: '->' | '=>' | null,
+  name: string,
+  at: number,
+): AbapStatement | null {
+  return resolveCall(statements, owner, op, name, at).head;
+}
+
+function resolveCall(
+  statements: readonly AbapStatement[],
+  owner: string,
+  op: '->' | '=>' | null,
+  name: string,
+  at: number,
+): { head: AbapStatement | null; note: string | null } {
+  const classes = localClasses(statements);
+  const segments = owner.split(/->|=>/);
+  const last = segments[segments.length - 1] ?? '';
+  // `wd_this` ist im Web Dynpro der Controller selbst — wie `me`.
+  const self = /^wd_this$/i.test(last) ? 'me' : last;
+  const qualifier = op === null ? null : /^[A-Za-z0-9_/]+$/.test(self) ? self : ')';
+  const { key, byClass } = resolveMethodTarget(classes.model, qualifier, op, name, classes.ownClass[at] ?? null, {
+    byNameAlone: false,
+  });
+  const head = key ? classes.heads.get(key) ?? null : null;
+  if (head) return { head, note: null };
+  // Steht die Klasse nicht fest, der Ausschnitt implementiert aber eine
+  // gleichnamige Methode, ist das Verhalten nicht „nicht belegt" — es ist nur
+  // offen, welche Implementierung läuft (eine Referenz mit zwei Typen, ein
+  // Objekt ohne Deklaration im Ausschnitt).
+  const wanted = name.toUpperCase();
+  const namesake = !byClass && classes.model.impls.some((impl) => impl.name === wanted || impl.short === wanted);
+  return {
+    head: null,
+    note: namesake
+      ? `Welche Implementierung von ${name} hier läuft, legt der gelieferte Code an dieser Stelle nicht fest.`
+      : 'Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.',
+  };
 }
 
 /**
@@ -2086,7 +2180,7 @@ function sentenceFor(
     }
     const method = /^CALL\s+METHOD\s+(\S+)/i.exec(text);
     if (method) {
-      const called = /^(?:(.*?)(?:->|=>))?([A-Za-z0-9_]+)$/.exec(method[1]);
+      const called = /^(?:(.*?)(->|=>))?([A-Za-z0-9_]+)$/.exec(method[1]);
       if (!called) {
         // `CALL METHOD (lv_name)` oder `obj->(lv_name)`: der Name steht erst zur Laufzeit fest.
         const receiving = /\b(?:RECEIVING|IMPORTING)\s+\w+\s*=\s*(\S+)/i.exec(text);
@@ -2099,12 +2193,13 @@ function sentenceFor(
         };
       }
       const owner = called[1] ?? '';
-      const head = methodImplementation(statements, owner, called[2]);
+      const op = (called[2] as '->' | '=>' | undefined) ?? null;
+      const { head, note } = resolveCall(statements, owner, op, called[3], statement.index);
       const effects = head ? routineEffects(statements, head) : [];
       return {
         anchors,
-        core: `Die Methode ${called[2]}${owner ? ` von ${owner}` : ''} wird aufgerufen${effects.length > 0 ? `; sie ${enumerate(effects)}` : ''}.`,
-        notes: head ? [] : ['Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.'],
+        core: `Die Methode ${called[3]}${owner ? ` von ${owner}` : ''} wird aufgerufen${effects.length > 0 ? `; sie ${enumerate(effects)}` : ''}.`,
+        notes: note ? [note] : [],
         tag: 'call',
       };
     }
@@ -2340,15 +2435,15 @@ function sentenceFor(
   // Ein Methodenaufruf, ob mit oder ohne Zuweisung: `lv_x = cls=>meth( … )`,
   // `obj->meth( … )`, `super->route( … )`. Was die Methode tut, steht nur dann
   // fest, wenn sie im gelieferten Code definiert ist — sonst wird es gesagt.
-  const method = /([A-Za-z0-9_/<>]+)(?:=>|->)([A-Za-z0-9_]+)\s*\(/.exec(text);
+  const method = /([A-Za-z0-9_/<>]+)(=>|->)([A-Za-z0-9_]+)\s*\(/.exec(text);
   if (method) {
     const owner = method[1];
-    const name = method[2];
+    const name = method[3];
     // F7: „nicht belegt" nur, wenn die Methode wirklich fehlt. Bis hierher
     // prüfte ein Muster auf `METHODS name` — in einem Template-String, in dem
     // `\s` zu `s` und `\b` zu einem Backspace wurde; es traf nie, und jede
     // Methode galt als fehlend, auch die im selben Quelltext implementierten.
-    const head = methodImplementation(statements, owner, name);
+    const { head, note } = resolveCall(statements, owner, method[2] as '->' | '=>', name, statement.index);
     // F8: der Empfänger steht **links vom Gleichheitszeichen** — nicht vor dem
     // `=>` eines statischen Aufrufs. `/^([A-Za-z0-9_()]+)\s*=/` las in
     // `cl_salv_table=>factory( … )` das `=` des Pfeils und nannte die Klasse
@@ -2365,7 +2460,7 @@ function sentenceFor(
     return {
       anchors,
       core,
-      notes: head ? [] : ['Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.'],
+      notes: note ? [note] : [],
       tag: 'method',
     };
   }

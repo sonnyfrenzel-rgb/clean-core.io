@@ -900,3 +900,44 @@ test('QA d7a7d3a66683 — „es wird nichts geschrieben" nur, wo die Quellreihen
   ohneAussage('Include', waechter(...danach, "UPDATE zbeleg SET status = 'X' WHERE id = gv_id."));
 });
 
+test('QA b7e191a72212 — eine lokale Wirkung nur, wenn der Empfänger die lokale Klasse ist', () => {
+  const klassen = [
+    'REPORT z_b7e.',
+    'CLASS lcl_log DEFINITION.',
+    '  PUBLIC SECTION.',
+    '    METHODS save.',
+    'ENDCLASS.',
+    'CLASS lcl_kind DEFINITION INHERITING FROM lcl_log.',
+    'ENDCLASS.',
+    'CLASS lcl_log IMPLEMENTATION.',
+    '  METHOD save.',
+    "    UPDATE zlog SET status = 'S' WHERE id = '1'.",
+    '  ENDMETHOD.',
+    'ENDCLASS.',
+    'DATA lo_fremd TYPE REF TO zcl_extern.',
+    'DATA lo_kind TYPE REF TO lcl_kind.',
+    'START-OF-SELECTION.',
+  ];
+  const code = quelle(...klassen, '  lo_fremd->save( ).', '  CALL METHOD lo_fremd->save.', '  lo_kind->save( ).', '  lo_offen->save( ).');
+  const zeile = (n: number) => satzAn(code, klassen.length + n).join(' ');
+
+  // Eine fremde Klasse: nicht die lokale `save`, die zufällig gleich heißt.
+  for (const fremd of [zeile(1), zeile(2)]) {
+    expect(fremd).toContain('Die Methode save von lo_fremd wird aufgerufen');
+    expect(fremd).not.toContain('ZLOG');
+    expect(fremd).toContain('im gelieferten Code nicht belegt');
+  }
+  // Eine lokale Kindklasse erbt `save` — die Wirkung gehört ihr.
+  expect(zeile(3)).toContain('Die Methode save von lo_kind wird aufgerufen; sie ändert ZLOG');
+  // Ein Objekt ohne Deklaration: offen, welche Implementierung läuft — keine Wirkung.
+  expect(zeile(4)).not.toContain('ZLOG');
+  expect(zeile(4)).toContain('Welche Implementierung von save hier läuft');
+
+  // Und die negative Aussage an der Datenbankänderung davor: ein fremder
+  // Aufruf danach kann festschreiben, also kein „kein COMMIT WORK".
+  const mitFremd = quelle(...klassen, "  UPDATE zbeleg SET status = 'X' WHERE id = gv_id.", '  lo_fremd->save( ).');
+  expect(satzAn(mitFremd, klassen.length + 1).join(' ')).not.toContain('kein COMMIT WORK');
+  const mitLokal = quelle(...klassen, "  UPDATE zbeleg SET status = 'X' WHERE id = gv_id.", '  lo_kind->save( ).');
+  expect(satzAn(mitLokal, klassen.length + 1).join(' ')).toContain('kein COMMIT WORK');
+});
+
