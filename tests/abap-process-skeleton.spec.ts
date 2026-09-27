@@ -2323,6 +2323,49 @@ test.describe('ADR-054 — events in sub-processes and at early exits', () => {
     expect(xml.match(/<bpmn:startEvent /g)).toHaveLength(2);
   });
 
+  test('an early STOP and an EXIT outside a loop end on their own lines too, with the condition on the flow', () => {
+    // QA review of b29fab3c2773 (7a0cc3ecbbbb): the rule names RETURN, EXIT
+    // outside a loop and STOP, and only RETURN had a test of its own.
+    const source = [
+      'REPORT zadr054_stop.', //                                                     1
+      'PARAMETERS: p_werks TYPE werks_d, p_test AS CHECKBOX.', //                   2
+      'START-OF-SELECTION.', //                                                     3
+      '  PERFORM check_plant.', //                                                  4
+      '  IF p_test = abap_true.', //                                                5
+      '    STOP.', //                                                               6
+      '  ENDIF.', //                                                                7
+      "  UPDATE zplant_run SET done = 'X' WHERE werks = @p_werks.", //               8
+      'END-OF-SELECTION.', //                                                       9
+      "  WRITE / 'end'.", //                                                        10
+      'FORM check_plant.', //                                                       11
+      '  SELECT SINGLE * FROM t001w INTO @DATA(ls_w) WHERE werks = @p_werks.', //   12
+      '  IF sy-dbcnt = 0.', //                                                      13
+      '    EXIT.', //                                                               14
+      '  ENDIF.', //                                                                15
+      '  INSERT zplant_log FROM @( VALUE #( werks = p_werks ) ).', //                16
+      "  CALL FUNCTION 'Z_PLANT_NOTIFY'.", //                                       17
+      'ENDFORM.', //                                                                18
+    ].join('\n');
+    const skeleton = buildProcessSkeleton(source);
+    const early = skeleton.nodes.filter((n) => n.detail?.early === true)
+      .sort((a, b) => (a.anchor?.lineStart ?? 0) - (b.anchor?.lineStart ?? 0));
+    expect(early.map((n) => [n.kind, n.label, n.anchor?.lineStart, n.region, n.detail?.routine])).toEqual([
+      ['end', 'STOP', 6, 'entry:START-OF-SELECTION@3', 'START-OF-SELECTION'],
+      ['end', 'EXIT', 14, 'form:CHECK_PLANT', 'CHECK_PLANT'],
+    ]);
+    const into = (id: string) => skeleton.edges.filter((e) => e.to === id)
+      .map((e) => [e.kind, e.condition, e.reason, skeleton.nodes.find((n) => n.id === e.from)?.kind]);
+    expect(into(early[0].id)).toEqual([['conditional', 'p_test = abap_true', 'stop', 'gateway']]);
+    expect(into(early[1].id)).toEqual([['conditional', 'sy-dbcnt = 0', 'return', 'gateway']]);
+    // The normal ends stay where the blocks end.
+    const endLine = (key: string) => {
+      const region = skeleton.regions.find((r) => r.key === key);
+      return skeleton.nodes.find((n) => n.id === region?.endNodeId)?.anchor?.lineStart;
+    };
+    expect(endLine('entry:START-OF-SELECTION@3')).toBe(8);
+    expect(endLine('form:CHECK_PLANT')).toBe(18);
+  });
+
   test('an early RETURN ends on its own line, and the flow into it carries the condition', () => {
     const skeleton = buildProcessSkeleton(RELEASE);
     const early = skeleton.nodes.filter((n) => n.detail?.early === true);
