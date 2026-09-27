@@ -763,3 +763,33 @@ test('17.9 — die Sätze sagen nicht, was der Code an ihrem Anker nicht trägt'
   // FOR ALL ENTRIES liest zu den Einträgen einer Tabelle, nicht „die Kunden".
   expect(satzAn(code, 14).join(' ')).toContain('zu den Einträgen aus gt_schluessel');
 });
+
+test('weitere Aussagen, die der Code nicht trägt: Auflösung, LOOP … WHERE, ASSIGN, TRANSLATE, SUBMIT VIA JOB', () => {
+  const code = quelle(
+    'REPORT z_weitere.',
+    'START-OF-SELECTION.',
+    "  SELECT SINGLE low FROM tvarvc INTO gv_tab WHERE name = 'Z_QUELLE'.",
+    '  IF sy-subrc <> 0.',
+    "    gv_tab = 'ZVORSCHLAG'.",
+    '  ENDIF.',
+    '  SELECT SINGLE wert FROM (gv_tab) INTO gv_wert.',
+    "  LOOP AT gt_pos INTO gs_pos WHERE kz = 'L'.",
+    '  ENDLOOP.',
+    '  ASSIGN gs_pos TO <ls_pos>.',
+    '  TRANSLATE gv_name TO UPPER CASE.',
+    "  SUBMIT zfolge VIA JOB gv_job NUMBER gv_nummer AND RETURN.",
+  );
+  // Ein Literal neben einem gelesenen Wert ist ein Vorschlag, keine Festlegung.
+  const dynamisch = satzAn(code, 7).join(' ');
+  expect(dynamisch).not.toContain('festgelegt');
+  expect(dynamisch).not.toContain('entscheidet die Eingabe');
+  expect(dynamisch).toContain('steht erst zur Laufzeit in gv_tab fest');
+
+  const schleife = satzAn(code, 8).join(' ');
+  expect(schleife).not.toContain('Jede Zeile');
+  expect(schleife).toContain('bei denen das Feld kz gleich L ist');
+
+  expect(satzAn(code, 10).join(' ')).not.toContain('anderen Programms');
+  expect(satzAn(code, 11).join(' ')).not.toMatch(/Eingabe/);
+  expect(satzAn(code, 12).join(' ')).toContain('Hintergrundjobs');
+});

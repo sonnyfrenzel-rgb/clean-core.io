@@ -164,10 +164,46 @@ export function resolveValue(
         seen.add(value);
         found = { value, from: 'assignment', line: statement.lineStart };
       }
+      continue;
     }
+    // Wird die Variable auch **anders** gefüllt — aus einer Tabelle gelesen,
+    // von einem Aufruf zurückgegeben, aus einem anderen Feld kopiert —, dann
+    // ist ein Literal daneben nur einer von mehreren möglichen Werten, oft
+    // der Vorschlag für den Fall, dass nichts gepflegt ist. Es als „festgelegt"
+    // auszugeben hieße, den Rückfall für die Regel zu halten.
+    if (writesVariable(text, needle)) seen.add(`\u0000${statement.index}`);
   }
   if (seen.size > 1) return { value: null, from: 'unresolved', line: null };
   return found;
+}
+
+/**
+ * Woher ein erst zur Laufzeit bekannter Name kommt — nur so weit, wie der
+ * Code es zeigt. „Entscheidet die Eingabe" steht nur bei einem Feld des
+ * Selektionsbilds; ein Importparameter kommt vom Aufrufer; alles andere
+ * (gelesen aus einer Pflegetabelle, berechnet) steht einfach erst zur
+ * Laufzeit fest.
+ */
+function runtimeNote(what: string, variable: string, statements: readonly AbapStatement[], verb = 'ist'): string {
+  const name = plain(variable).toLowerCase();
+  const declared = statements.some((statement) =>
+    new RegExp(`^(?:PARAMETERS|SELECT-OPTIONS)\\s+${escapeForRegExp(name)}\\b`, 'i').test(statement.text),
+  );
+  if (fromSelectionScreen(name) || declared) return `${what} das ${verb}, entscheidet die Eingabe zur Laufzeit.`;
+  if (/^(?:iv|im|i|is|it)_/i.test(name)) return `${what} das ${verb}, entscheidet der Aufrufer zur Laufzeit.`;
+  return `${what} das ${verb}, steht erst zur Laufzeit in ${plain(variable)} fest.`;
+}
+
+/** Ob eine Anweisung die Variable `needle` anders als mit einem Literal füllt. */
+function writesVariable(text: string, needle: string): boolean {
+  const name = escapeForRegExp(needle);
+  const target = `@?(?:DATA\\()?${name}\\)?(?![\\w-])`;
+  if (new RegExp(`^(?:DATA\\()?${name}\\)?\\s*=\\s*(?!'[^']*'\\s*$|\`[^\`]*\`\\s*$)\\S`, 'i').test(text)) return true;
+  if (new RegExp(`\\bINTO\\s+(?:TABLE\\s+|CORRESPONDING\\s+FIELDS\\s+OF\\s+)?${target}`, 'i').test(text)) return true;
+  if (new RegExp(`\\b(?:IMPORTING|CHANGING|RECEIVING)\\b.*\\b\\w+\\s*=\\s*${target}`, 'i').test(text)) return true;
+  if (new RegExp(`^MOVE\\s+.+\\s+TO\\s+${target}`, 'i').test(text)) return true;
+  if (new RegExp(`^GET\\s+PARAMETER\\s+ID\\s+\\S+\\s+FIELD\\s+${target}`, 'i').test(text)) return true;
+  return false;
 }
 
 // ---------------------------------------------------------------------------
@@ -708,7 +744,7 @@ function selectSentence(statement: AbapStatement, statements: readonly AbapState
         `Die Tabelle ist über ${resolved.from === 'constant' ? 'die Konstante' : 'die Zuweisung'} in Zeile ${resolved.line} festgelegt.`,
       );
     } else {
-      notes.push('Welche Tabelle das ist, entscheidet die Eingabe zur Laufzeit.');
+      notes.push(runtimeNote('Welche Tabelle', rawFrom ?? '', statements));
     }
   }
 
@@ -737,7 +773,7 @@ function selectSentence(statement: AbapStatement, statements: readonly AbapState
 
   if (/\bCOUNT\s*\(/i.test(text)) {
     if (dynamicPredicate) {
-      notes.push('Welche Sätze das sind, entscheidet die Eingabe zur Laufzeit.');
+      notes.push(runtimeNote('Welche Sätze', where ? where[1].trim() : '', statements, 'sind'));
     }
     return {
       anchors,
@@ -754,7 +790,7 @@ function selectSentence(statement: AbapStatement, statements: readonly AbapState
     notes.push('Die Mandantenbegrenzung steht ausdrücklich im Prädikat, nicht in der Automatik.');
   }
   if (dynamicPredicate) {
-    notes.push('Welche Sätze das sind, entscheidet die Eingabe zur Laufzeit.');
+    notes.push(runtimeNote('Welche Sätze', where ? where[1].trim() : '', statements, 'sind'));
   }
 
   const list = SELECT_LIST.exec(text);
@@ -1884,6 +1920,17 @@ function sentenceFor(
 
   if (keyword === 'SUBMIT') {
     const name = /^SUBMIT\s+([A-Za-z0-9_/]+)/i.exec(text);
+    // Mit VIA JOB läuft das Programm nicht hier, sondern wird als Schritt
+    // eines Hintergrundjobs eingeplant; gestartet wird es erst mit dem Job.
+    const job = /\bVIA\s+JOB\s+('[^']*'|\S+)/i.exec(text);
+    if (job) {
+      return {
+        anchors,
+        core: `Das Programm ${name ? name[1] : ''} wird als Schritt des Hintergrundjobs ${literalOf(job[1]) ?? plain(job[1])} eingeplant.`.replace(/\s+/g, ' '),
+        notes: ['Was das Programm im Job tut, ist nicht Teil dieses Satzes.'],
+        tag: 'submit',
+      };
+    }
     return {
       anchors,
       core: `Das Kindprogramm ${name ? name[1] : ''} wird gestartet.`.replace(/\s+/g, ' '),
@@ -1958,7 +2005,7 @@ function sentenceFor(
       } else if (resolved.from === 'assignment') {
         core = `Es wird genau der zuvor in Zeile ${resolved.line} zugewiesene Funktionsbaustein ${name} aufgerufen.`;
       } else if (resolved.from === 'unresolved') {
-        notes.push('Welcher Baustein das ist, entscheidet die Eingabe zur Laufzeit.');
+        notes.push(runtimeNote('Welcher Baustein', plain(fn[1]), statements));
       }
       if (/\bIN\s+UPDATE\s+TASK\b/i.test(text)) {
         core = `Der Baustein ${name} wird zur Verbuchung registriert.`;
@@ -2152,10 +2199,29 @@ function sentenceFor(
     if (/\bCOMPONENT\b/i.test(text)) {
       return { anchors, core: 'Eine Komponente der Struktur wird an das Feldsymbol gebunden.', tag: 'assign' };
     }
+    // Nur `ASSIGN ('(PROGRAMM)FELD') …` greift in den Speicher eines anderen
+    // Programms. Ein gewöhnliches ASSIGN bindet ein Feld dieses Programms.
+    const source = /^ASSIGN\s+(\([^)]*\)|\S+)\s+TO\s+(\S+)/i.exec(text);
+    const dynamic = source && /^\(/.test(source[1]) ? source[1].slice(1, -1).trim() : null;
+    const dynamicValue = dynamic ? (literalOf(dynamic) ?? resolveValue(dynamic, statements, statement.index).value) : null;
+    if (dynamic && dynamicValue && /^\(\S+\)/.test(dynamicValue)) {
+      return {
+        anchors,
+        core: 'Ein Feld aus dem Programmspeicher eines anderen Programms wird gebunden.',
+        notes: ['Ob es dort existiert, entscheidet der Aufrufkontext zur Laufzeit.'],
+        tag: 'assign',
+      };
+    }
+    if (dynamic) {
+      return {
+        anchors,
+        core: `Ein erst zur Laufzeit benanntes Feld wird an ${source ? plain(source[2]) : 'das Feldsymbol'} gebunden.`,
+        tag: 'assign',
+      };
+    }
     return {
       anchors,
-      core: 'Ein Feld aus dem Programmspeicher eines anderen Programms wird gebunden.',
-      notes: ['Ob es dort existiert, entscheidet der Aufrufkontext zur Laufzeit.'],
+      core: source ? `${plain(source[1])} wird an das Feldsymbol ${source[2].replace(/[.,]$/, '')} gebunden.` : 'Ein Feld wird an ein Feldsymbol gebunden.',
       tag: 'assign',
     };
   }
@@ -2209,11 +2275,22 @@ function sentenceFor(
     }
   }
 
-  if (keyword === 'TRANSLATE' && /\bUPPER\s+CASE\b/i.test(text)) {
+  if (keyword === 'TRANSLATE' && /\b(?:UPPER|LOWER)\s+CASE\b/i.test(text)) {
+    // „Die Eingabe" nur für ein Feld des Selektionsbilds; „keine Ablehnung"
+    // nur, wenn im Rest der Einheit wirklich nichts ablehnen kann (F6).
+    const field = /^TRANSLATE\s+(\S+)/i.exec(text)?.[1] ?? '';
+    const input =
+      fromSelectionScreen(field) ||
+      statements.some((other) => new RegExp(`^PARAMETERS\\s+${escapeForRegExp(plain(field))}\\b`, 'i').test(other.text));
+    const unit = processingUnit(statements, stack, statement.index);
+    const rejecting = statements
+      .slice(statement.index + 1, unit.end)
+      .some((other) => /^(?:MESSAGE|RAISE|RETURN|LEAVE|CHECK|EXIT|STOP)\b/i.test(other.text));
+    const upper = /\bUPPER\s+CASE\b/i.test(text);
     return {
       anchors,
-      core: 'Die Eingabe wird in Großbuchstaben gewandelt.',
-      notes: ['Eine Ablehnung der Eingabe gibt es nicht.'],
+      core: `${input ? 'Die Eingabe' : `Der Inhalt von ${plain(field)}`} wird in ${upper ? 'Großbuchstaben' : 'Kleinbuchstaben'} gewandelt.`,
+      notes: input && !rejecting ? ['Eine Ablehnung der Eingabe gibt es nicht.'] : [],
       tag: 'translate',
     };
   }
@@ -2252,11 +2329,32 @@ function sentenceFor(
   }
 
   if (keyword === 'READ' && /^READ\s+TABLE\b/i.test(text)) {
-    return { anchors, core: 'In der Tabelle wird nach einer passenden Zeile gesucht.', tag: 'read' };
+    const table = /^READ\s+TABLE\s+(\S+)/i.exec(text);
+    return {
+      anchors,
+      core: `In der Tabelle ${table ? `${plain(table[1])} ` : ''}wird nach einer passenden Zeile gesucht.`,
+      tag: 'read',
+    };
   }
 
   if (keyword === 'LOOP') {
     const over = /^LOOP\s+AT\s+(\S+)/i.exec(text);
+    if (over && /^SCREEN$/i.test(over[1])) {
+      return { anchors, core: 'Jedes Element des Bildes wird einzeln bearbeitet.', tag: 'loop' };
+    }
+    // „Jede Zeile" ist falsch, sobald ein WHERE die Schleife einschränkt —
+    // dann läuft sie nur über die passenden Zeilen, und genau das sagt der Satz.
+    const where = /\bWHERE\s+(.+?)(?:\s+(?:GROUP\s+BY|ASSIGNING|INTO|REFERENCE\s+INTO|TRANSPORTING|FROM|TO|USING\s+KEY)\b|$)/i.exec(text);
+    if (over && where) {
+      return {
+        anchors,
+        core: `Die Zeilen aus ${plain(over[1])}, bei denen ${conditionClause(where[1])}, werden einzeln verarbeitet.`,
+        tag: 'loop',
+      };
+    }
+    if (over && /\bGROUP\s+BY\b/i.test(text)) {
+      return { anchors, core: `Die Zeilen aus ${plain(over[1])} werden gruppenweise verarbeitet.`, tag: 'loop' };
+    }
     return {
       anchors,
       core: `Jede Zeile ${over ? `aus ${plain(over[1])} ` : ''}wird einzeln verarbeitet.`,
