@@ -50,6 +50,14 @@ export default function ProcessStepList({
 
   const roving = active ?? elements[0]?.id ?? null;
 
+  // ADR-054: a start or an end event is listed — it is where the process begins
+  // or ends, and it has a line — but it is not a step, so it takes no step
+  // number and the numbers of the steps around it do not move.
+  const stepNumbers = new Map<string, number>();
+  for (const element of elements) {
+    if (!element.event) stepNumbers.set(element.id, stepNumbers.size + 1);
+  }
+
   return (
     <ul
       role="listbox"
@@ -58,7 +66,7 @@ export default function ProcessStepList({
       onKeyDown={onKeyDown}
       className="max-h-[420px] overflow-y-auto rounded-cc-card border border-cc-line bg-cc-surface md:max-h-[520px]"
     >
-      {elements.map((element, index) => {
+      {elements.map((element) => {
         const isSelected = element.id === selected;
         return (
           <li
@@ -84,7 +92,9 @@ export default function ProcessStepList({
             )}
           >
             <span className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
-              <span className="font-cc-mono text-[11px] font-semibold text-cc-ink-muted">{index + 1}</span>
+              <span className="font-cc-mono text-[11px] font-semibold text-cc-ink-muted">
+                {stepNumbers.get(element.id) ?? ''}
+              </span>
               <span className="text-[11px] font-semibold tracking-[0.06em] text-cc-ink-muted uppercase">
                 {element.kind}
               </span>

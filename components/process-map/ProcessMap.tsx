@@ -8,7 +8,7 @@ import { useProcessRules } from '@/hooks/useProcessRules';
 import { useProcessOverlays } from '@/hooks/useProcessOverlays';
 import type { UsageReport } from '@/lib/abap/usage-model';
 import { UNANCHORED } from '@/lib/process-naming';
-import { elementsOfPlane, type ProcessMapElement, type ProcessMapModel } from '@/lib/process-map';
+import { EARLY_END_WORD, elementsOfPlane, type ProcessMapElement, type ProcessMapModel } from '@/lib/process-map';
 import {
   buildNavigation,
   buildOverlays,
@@ -352,6 +352,7 @@ export default function ProcessMap({
       accessibleName: e.accessibleName,
       unanchored: e.anchor === null,
       unanchoredLabel: UNANCHORED,
+      earlyLabel: e.early ? EARLY_END_WORD : null,
     }])),
     [model],
   );

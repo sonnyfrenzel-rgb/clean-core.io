@@ -6,7 +6,7 @@ import { saveDraft } from './draft-save';
 import 'bpmn-js/dist/assets/bpmn-js.css';
 import 'bpmn-js/dist/assets/bpmn-font/css/bpmn-embedded.css';
 import './process-map.css';
-import { parseBpmn } from '@/lib/process-map';
+import { EARLY_END_WORD, parseBpmn } from '@/lib/process-map';
 import {
   bpmnlintHints,
   cleanCoreHints,
@@ -446,7 +446,8 @@ export default function BpmnEditor({
     return parsed.elements.map((element) => ({
       id: element.id,
       label: labels.get(element.id) || element.name || element.id,
-      kind: KIND_WORDS[element.tag] ?? 'Step',
+      // ADR-054: an early end keeps its word in the editor too.
+      kind: element.tag === 'endEvent' && element.trace?.early ? EARLY_END_WORD : (KIND_WORDS[element.tag] ?? 'Step'),
       drawn: element.trace === null,
     }));
   }, [draftXml, labels]);

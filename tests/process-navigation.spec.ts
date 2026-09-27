@@ -44,8 +44,11 @@ import { buildAbapEvidence } from '../lib/abap/evidence-model';
  * > **At the 1.000-line example, every step is reachable in at most three
  * > actions, by keyboard as by mouse.**
  *
- * So this file counts them. Not three of them: **all 77 flow nodes of that
- * example, one at a time, in the browser, on both paths.** The count is
+ * So this file counts them. Not three of them: **all 87 flow nodes of that
+ * example — its 50 steps and the 37 start and end events around them — one at
+ * a time, in the browser, on both paths.** (ADR-054: an event is not a step and
+ * is counted apart; it is measured all the same, because a reader who wants to
+ * see where a routine ends has to get there too.) The count is
  * asserted per node and the worst case is asserted at the end, which is the
  * only way a claim like that survives the next change to the tree.
  *
@@ -122,9 +125,15 @@ test.describe('the outline of the 1.000-line example', () => {
     // of that level with them; two routines that used to collapse into one step
     // stand as phases beside them. The depth the reader has to walk is measured
     // further down and is **unchanged**: three actions, never more.
-    expect(model.elements).toHaveLength(77);
+    //
+    // 87 since ADR-054, on the same 16 levels: each of the nine routine planes
+    // begins at a start event of its own now, and the `EXIT` in SELECT_ITEMS
+    // ends at an early end on its own line. Ten events, not ten steps — the
+    // step counts further down leave them out — but every one of them is an
+    // element with a line and an address, like the events that were there.
+    expect(model.elements).toHaveLength(87);
     expect(model.planes).toHaveLength(16);
-    expect(model.traceability.anchored).toBe(77);
+    expect(model.traceability.anchored).toBe(87);
     expect(model.traceability.unanchored).toBe(0);
 
     expect(nav.order, 'an element of the model is not in the outline').toHaveLength(model.elements.length);
@@ -253,14 +262,17 @@ test.describe('the parts of the navigation say what the file says', () => {
       nav.order.map((id) => [nav.entries.get(id)?.outline ?? '', id]),
     );
 
-    // 7.5 is the message inside `IF p_upd = abap_true` inside `IF sy-subrc <> 0`.
-    const target = byOutline.get('7.5') as string;
+    // ADR-054: the level begins at its own start event now, `7.1`, and every
+    // address after it moved one on. 7.6 is the message inside
+    // `IF p_upd = abap_true` inside `IF sy-subrc <> 0`.
+    const target = byOutline.get('7.6') as string;
     const on = pathsToHere(model, nav, 'nd-151-0', target);
     const lit = [...on].map((id) => nav.entries.get(id)?.outline).sort();
-    expect(lit).toEqual(['7.1', '7.3', '7.4', '7.5']);
-    // 7.2 is the other arm of the first decision and 7.6 is past the target.
-    expect(lit).not.toContain('7.2');
-    expect(lit).not.toContain('7.6');
+    // The start event is on every way there — it is where the level begins.
+    expect(lit).toEqual(['7.1', '7.2', '7.4', '7.5', '7.6']);
+    // 7.3 is the other arm of the first decision and 7.7 is past the target.
+    expect(lit).not.toContain('7.3');
+    expect(lit).not.toContain('7.7');
   });
 
   test('the problem line of a level says what is not determined, and nothing else', () => {
@@ -333,11 +345,17 @@ test.describe('the parts of the navigation say what the file says', () => {
     // `REMOTE_CREDIT_CHECK` is a level of its own now, so the routine the guard
     // closes has one address more under it. The guard still dims its own step
     // and what it opens, and still nothing after it.
-    expect(dimmed.filter((outline) => outline?.startsWith('14.'))).toHaveLength(6);
+    // 7 since ADR-054: the routine's plane begins at a start event, `14.1`,
+    // which does not run either when the routine does not.
+    expect(dimmed.filter((outline) => outline?.startsWith('14.'))).toHaveLength(7);
     expect(dimmed, 'the step after the guard was declared unreachable').not.toContain('15');
     expect(dimmed).not.toContain('16');
     expect(rfc.sentence).toContain('p_rfc off');
-    expect(rfc.sentence).toContain(`${rfc.excluded.size} of ${nav.order.length}`);
+    // ADR-054: the sentence counts steps, and a start or an end is not one.
+    const isStep = (id: string) => !model.elements.find((element) => element.id === id)?.event;
+    expect(rfc.sentence).toContain(
+      `${[...rfc.excluded].filter(isStep).length} of ${nav.order.filter(isStep).length} steps`,
+    );
 
     // A fork is walked as a fork: the arm the switch closes, and what only that
     // arm reaches, are out.
@@ -345,14 +363,15 @@ test.describe('the parts of the navigation say what the file says', () => {
     const bdc = runVariant(model, nav, switches, withoutBdc);
     // 16.5 until roadmap 2.17 (b): the step sits inside the `LOOP AT gt_orders`
     // of `PROCESS_ACTIONS`, and that loop is a level of its own now, so its
-    // address grew a segment. Which step it is did not change.
-    expect([...bdc.excluded].map((id) => nav.entries.get(id)?.outline)).toContain('16.1.3');
+    // address grew a segment. Which step it is did not change. 16.2.3 since
+    // ADR-054: `PROCESS_ACTIONS` begins at its own start event, `16.1`.
+    expect([...bdc.excluded].map((id) => nav.entries.get(id)?.outline)).toContain('16.2.3');
 
     // And the positions the code declares are themselves a run: `p_upd` is
     // `DEFAULT ' '`, so two steps inside the authority check do not run.
     const asDeclared = runVariant(model, nav, switches, declared);
     expect([...asDeclared.excluded].map((id) => nav.entries.get(id)?.outline).sort())
-      .toEqual(['16.1.3', '19', '7.4', '7.5']);
+      .toEqual(['16.2.3', '19', '7.5', '7.6']);
     expect(asDeclared.sentence).toContain('the run the code declares');
   });
 
@@ -434,7 +453,8 @@ test.describe('the parts of the navigation say what the file says', () => {
     const off = runVariant(model, nav, switches, new Map([['p_log', false]]));
     expect([...off.excluded].map((id) => model.elements.find((e) => e.id === id)?.technicalName))
       .toEqual(['WRITE_LOG']);
-    expect(off.sentence).toContain('1 of 6 steps do not run');
+    // ADR-054: of six elements, the start and the end are not steps — 1 of 4.
+    expect(off.sentence).toContain('1 of 4 steps do not run');
   });
 
   test('an overlay marks with a text identifier and changes no flow', () => {
@@ -485,7 +505,7 @@ test.describe('the parts of the navigation say what the file says', () => {
 });
 
 /* ------------------------------------------------------------------ *
- * The acceptance, in the browser, on all 77 steps.
+ * The acceptance, in the browser, on all 87 elements — 50 steps and 37 events.
  * ------------------------------------------------------------------ */
 
 const STAMP = Date.now();
@@ -651,7 +671,7 @@ test.describe('every step of the 1.000-line example, in at most three actions', 
     }
   });
 
-  test('the measured acceptance: 77 steps, mouse and keyboard, both at most three', async ({ page }) => {
+  test('the measured acceptance: 50 steps and 37 events, mouse and keyboard, both at most three', async ({ page }) => {
     test.setTimeout(900 * 1000);
     await page.setViewportSize({ width: 1600, height: 1100 });
     await signIn(page);
@@ -723,7 +743,10 @@ test.describe('every step of the 1.000-line example, in at most three actions', 
     }
 
     /* ---- the measurement, stated ---- */
-    expect(counts.length, 'not every step of the example was measured').toBe(77);
+    // ADR-054: steps and events apart — the events are measured, never counted as steps.
+    const isEvent = (id: string) => model.elements.find((element) => element.id === id)?.event === true;
+    expect(counts.length, 'not every element of the example was measured').toBe(87);
+    expect(counts.filter((count) => !isEvent(count.id)), 'the steps of the example').toHaveLength(50);
     const worstMouse = Math.max(...counts.map((count) => count.mouse));
     const worstKeyboard = Math.max(...counts.map((count) => count.keyboard));
     const over = counts.filter((count) => count.mouse > 3 || count.keyboard > 3);
@@ -732,7 +755,8 @@ test.describe('every step of the 1.000-line example, in at most three actions', 
     // than only asserted: a green tick says "at most three", the line says what
     // it actually took.
     console.log(
-      `2.9 acceptance — ${counts.length} steps on ${nav.planes.size} levels: `
+      `2.9 acceptance — ${counts.filter((c) => !isEvent(c.id)).length} steps and `
+      + `${counts.filter((c) => isEvent(c.id)).length} events on ${nav.planes.size} levels: `
       + `mouse ${Math.min(...counts.map((c) => c.mouse))}–${worstMouse}, `
       + `keyboard ${Math.min(...counts.map((c) => c.keyboard))}–${worstKeyboard}.`,
     );

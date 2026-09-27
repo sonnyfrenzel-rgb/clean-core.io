@@ -530,10 +530,13 @@ export function planeProblems(
     `${unanchored.length} not determined`,
   ].join(' · ');
 
+  // ADR-054: a start or an end event is where the level begins or ends, not a
+  // step of it. "Every one of the 3 steps" must not count the two events.
+  const steps = elements.filter((element) => !element.event).length;
   const determined = unanchored.length === 0;
   const first = determined
-    ? `Every one of the ${plural(elements.length, 'step', 'steps')} on this level carries a line anchor.`
-    : `${unanchored.length} of ${plural(elements.length, 'step', 'steps')} carry no line anchor${
+    ? `Every one of the ${plural(steps, 'step', 'steps')} on this level carries a line anchor.`
+    : `${unanchored.length} of ${plural(elements.length, 'element', 'elements')} carry no line anchor${
       reasons.length ? ` — ${reasons.join(' ')}` : '.'
     }`;
   const second = hardCoded.length === 0
@@ -887,9 +890,14 @@ export function runVariant(
   const where = changed.length === 0
     ? 'Showing the run the code declares, with every switch where the source sets it'
     : `Showing the run with ${positionsWord}`;
-  const sentence = excluded.size === 0
+  // ADR-054: the sentence counts steps, and an event is not one — the element
+  // set `excluded` still holds the events, so the map marks them out as well.
+  const isStep = (id: string) => !byId.get(id)?.event;
+  const excludedSteps = [...excluded].filter(isStep).length;
+  const allSteps = nav.order.filter(isStep).length;
+  const sentence = excludedSteps === 0
     ? `${where}: every step runs.`
-    : `${where}: ${excluded.size} of ${nav.order.length} steps do not run.`;
+    : `${where}: ${excludedSteps} of ${allSteps} steps do not run.`;
 
   return { changed, excluded, sentence };
 }
@@ -902,8 +910,8 @@ export interface MiniMapRow {
   plane: string | null;
   label: string;
   outline: string;
-  /** One cell per element of the level, in flow order. */
-  cells: Array<{ id: string; outline: string; decision: boolean; unanchored: boolean }>;
+  /** One cell per element of the level, in flow order. `event` marks a start or end — not a step (ADR-054). */
+  cells: Array<{ id: string; outline: string; decision: boolean; unanchored: boolean; event: boolean }>;
 }
 
 /**
@@ -932,6 +940,7 @@ export function miniMap(model: ProcessMapModel, nav: ProcessNavigation): MiniMap
           outline: nav.entries.get(id)?.outline ?? '',
           decision: !!element && DECISION_TAGS.has(element.tag),
           unanchored: !!element && element.anchor === null,
+          event: !!element && element.event,
         };
       }),
     });

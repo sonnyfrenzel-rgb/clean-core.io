@@ -158,8 +158,14 @@ test.describe('7.8 / §16 V6 — comparability per element', () => {
     // `Z_BUSINESS_PARTNER_SYNC.txt` is the popup §5.8 draws as a user task, and
     // a user task is business-comparable like the ALV one beside it — **+1
     // `business-comparable`**, nothing else moved.
+    //
+    // 344 since ADR-054 (27.09.2026), all of it **+36 `structural`** and nothing
+    // reclassified: 25 routines drawn as a plane of their own begin at a start
+    // event inside that plane, and 11 early exits (`RETURN`, `EXIT`, `CHECK`)
+    // end at an end event of their own. Events are structure — they are never
+    // compared, never a step and never carry a standard candidate.
     expect(byClass).toEqual({
-      structural: 109,
+      structural: 145,
       technical: 104,
       'business-comparable': 71,
       unknown: 24,
@@ -184,7 +190,8 @@ test.describe('7.8 / §16 V6 — comparability per element', () => {
     // in `Z_ORDER_INTEGRITY_CHECK.txt`, which had no entry point until then and
     // therefore no elements: its end event, its `WRITE` and the boundary event
     // its `IF sy-subrc <> 0` folds into.
-    expect(byKind['end']).toEqual({ structural: 77 });
+    // 88 since ADR-054: eleven early exits end on their own line.
+    expect(byKind['end']).toEqual({ structural: 88 });
     expect(byKind['end-error']).toEqual({ technical: 10 });
     expect(byKind['output']).toEqual({ structural: 20 });
     expect(byKind['error-boundary']).toEqual({ technical: 22 });
@@ -266,13 +273,16 @@ test.describe('7.8 / §16 V6 — comparability per element', () => {
     // 27 until roadmap 2.17 (b): nine of this program's eleven `LOOP AT` bodies
     // are levels of their own now, and a level ends at an end event anchored at
     // its `ENDLOOP`.
-    expect(ends.length).toBe(36);
+    // 37 since ADR-054: the `EXIT` in SELECT_ITEMS (L252) ends early, on its
+    // own line.
+    expect(ends.length).toBe(37);
     expect(errorEnds.length).toBe(4);
     // 105 since 2.15: one of this program's five technical gateways sat behind a
     // `CALL FUNCTION … EXCEPTIONS` that already carried a boundary event, and
     // the two of them are now one element. 114 since 2.17 (b) — nine loop-body
-    // regions, each with an end event of its own.
-    expect(skeleton.nodes.length).toBe(114);
+    // regions, each with an end event of its own. 124 since ADR-054 — nine
+    // plane starts and one early end.
+    expect(skeleton.nodes.length).toBe(124);
     const verdicts = classifyElements(skeleton.nodes.map(comparable), skeleton.edges);
     for (const node of ends) {
       expect(verdicts.get(node.id)!.mayCarryStandardCandidate).toBe(false);

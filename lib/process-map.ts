@@ -50,6 +50,8 @@ export interface ReconstructionTrace {
   lineEnd: number | null;
   /** `@unanchoredReason`, when the element carries no line range. */
   unanchoredReason: string | null;
+  /** `@early` — ADR-054: an end event of an early exit, not the normal end. */
+  early: boolean;
 }
 
 /**
@@ -221,6 +223,7 @@ export function parseBpmn(xml: string): ParsedBpmn {
           lineStart: number(attrs.lineStart),
           lineEnd: number(attrs.lineEnd),
           unanchoredReason: attrs.anchored === 'false' ? (attrs.unanchoredReason ?? '') : null,
+          early: attrs.early === 'true',
         };
       }
     }
@@ -279,6 +282,21 @@ export function kindWord(tag: string): string {
   return KIND_WORDS[tag] ?? 'Step';
 }
 
+/**
+ * ADR-054. What an end event of an early exit is called — the word that tells
+ * a reader this is not the way the level normally ends. `End` stays first, so
+ * the two ends of a level sort and read as a pair.
+ */
+export const EARLY_END_WORD = 'End (early)';
+
+/** Start and end events: where a level begins and ends. Never a step (ADR-054). */
+const EVENT_TAGS = new Set(['startEvent', 'endEvent']);
+
+/** True for a start or an end event — the elements no counter of steps may count. */
+export function isEventTag(tag: string): boolean {
+  return EVENT_TAGS.has(tag);
+}
+
 const DECISION_TAGS = new Set(['exclusiveGateway', 'parallelGateway']);
 const ACTIVITY_TAGS = new Set([
   'task',
@@ -329,6 +347,10 @@ export interface ProcessMapElement {
   opensPlane: string | null;
   /** The lane 2.4 proposed for this node, or null. A proposal, never a mandate. */
   lane: string | null;
+  /** ADR-054: a start or an end event. Shown, anchored and navigable — never counted as a step. */
+  event: boolean;
+  /** ADR-054: an end event of an early exit (`cc:trace/@early`), shown as `EARLY_END_WORD`. */
+  early: boolean;
   branches: ProcessMapBranch[];
   /** Art, Titel, Anker und Herkunft in one line — `DESIGN.md` §5.7. */
   accessibleName: string;
@@ -513,10 +535,11 @@ export function buildProcessMapModel({ bpmn, named, fileName }: ProcessMapInput)
     const anchor = element.trace && element.trace.lineStart !== null && element.trace.lineEnd !== null
       ? { lineStart: element.trace.lineStart, lineEnd: element.trace.lineEnd }
       : null;
+    const early = element.tag === 'endEvent' && element.trace?.early === true;
     return {
       id: element.id,
       tag: element.tag,
-      kind: kindWord(element.tag),
+      kind: early ? EARLY_END_WORD : kindWord(element.tag),
       technicalName,
       businessName,
       label,
@@ -531,6 +554,8 @@ export function buildProcessMapModel({ bpmn, named, fileName }: ProcessMapInput)
       plane: element.plane,
       opensPlane: element.tag === 'subProcess' ? element.id : null,
       lane: nodeId ? (laneOfNode.get(nodeId) ?? null) : null,
+      event: isEventTag(element.tag),
+      early,
       branches: [] as ProcessMapBranch[],
     };
   });

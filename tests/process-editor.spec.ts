@@ -86,10 +86,12 @@ test.describe('the four rules of roadmap 3.3', () => {
 
     // Every element of this example carries a line anchor — the navigation spec
     // asserts the same 77 of 77 (64 until roadmap 2.17 (b) gave nine loop bodies
-    // a plane of their own) — so the two rules about a missing anchor have
-    // nothing to say, and saying nothing is the right answer rather than a gap.
+    // a plane of their own; 87 since ADR-054 gave nine routine planes a start
+    // event and one early exit an end of its own, each anchored at its line) —
+    // so the two rules about a missing anchor have nothing to say, and saying
+    // nothing is the right answer rather than a gap.
     expect(model.traceability.unanchored).toBe(0);
-    expect(model.traceability.anchored).toBe(77);
+    expect(model.traceability.anchored).toBe(87);
     expect(counts.byRule.get(TASK_WITHOUT_ANCHOR) ?? 0).toBe(0);
     expect(counts.byRule.get(DEVIATES_WITHOUT_STATE) ?? 0).toBe(0);
 

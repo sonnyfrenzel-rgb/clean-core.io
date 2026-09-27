@@ -70,7 +70,8 @@ export default function ProcessMiniMap({
                     : found.has(cell.id) ? 'found'
                       : excluded.has(cell.id) ? 'out'
                         : cell.unanchored ? 'unanchored'
-                          : cell.decision ? 'decision' : 'step'
+                          : cell.event ? 'event'
+                            : cell.decision ? 'decision' : 'step'
                 }
                 aria-label={`${cell.outline} in ${row.label}`}
                 tabIndex={-1}

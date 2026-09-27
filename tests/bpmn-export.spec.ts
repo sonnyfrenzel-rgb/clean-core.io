@@ -154,19 +154,29 @@ const SHIPPED: Array<[string, number, number, number, number, number, number, nu
   // sub-processes / 8→16 planes; the data store count went 8→8 with two
   // routines that used to collapse into a read and a write now standing as
   // phases (see `abap-process-skeleton.spec.ts`).
-  [LEGACY, 77, 74, 15, 16, 8, 1, 1],
+  //
+  // ADR-054 (27.09.2026) moved every row with a routine drawn as a plane, and
+  // again one way only. Each such plane starts at a `startEvent` of its own now
+  // (one flow node and one flow each), and each early exit inside a plane ends
+  // at an `endEvent` of its own (one flow node, no flow — the flow that went to
+  // the normal end goes there). Sub-processes, planes, stores and pools do not
+  // move. LEGACY 9 planes + 1 early end: 77→87 / 74→83. PO 9 planes + 8 early
+  // ends on the exported planes (two more sit in routines drawn as one step):
+  // 71→88 / 72→81. BP_SYNC and STOCK two planes, EXPENSE, INVOICE and SALES
+  // one; ORDER_INTEGRITY has none and does not move.
+  [LEGACY, 87, 83, 15, 16, 8, 1, 1],
   // 27.09.2026 (D4): the information popup in END-OF-SELECTION is a user task
   // now — one flow node and one flow more (17→18, 13→14).
-  ['Z_BUSINESS_PARTNER_SYNC.txt', 18, 14, 3, 4, 3, 0, 0],
-  ['Z_EMPLOYEE_EXPENSE_VAL.txt', 13, 12, 2, 3, 0, 0, 0],
-  ['Z_INVOICE_EXTRACTOR.txt', 13, 10, 2, 3, 2, 0, 0],
-  ['Z_MATERIAL_STOCK_CALC.txt', 16, 14, 4, 5, 4, 0, 0],
-  [PO, 71, 72, 9, 10, 11, 0, 0],
+  ['Z_BUSINESS_PARTNER_SYNC.txt', 20, 16, 3, 4, 3, 0, 0],
+  ['Z_EMPLOYEE_EXPENSE_VAL.txt', 14, 13, 2, 3, 0, 0, 0],
+  ['Z_INVOICE_EXTRACTOR.txt', 14, 11, 2, 3, 2, 0, 0],
+  ['Z_MATERIAL_STOCK_CALC.txt', 18, 16, 4, 5, 4, 0, 0],
+  [PO, 88, 81, 9, 10, 11, 0, 0],
   // Roadmap 2.14: the file's `FORM` is now the entry point it never had, so
   // the export has something to write. 0→5 flow nodes / 0→4 flows / 0→3 data
   // stores; still one plane and no pool.
   ['Z_ORDER_INTEGRITY_CHECK.txt', 5, 4, 0, 1, 3, 0, 0],
-  ['Z_SALES_ORDER_CREATOR.txt', 13, 11, 2, 3, 0, 0, 0],
+  ['Z_SALES_ORDER_CREATOR.txt', 14, 12, 2, 3, 0, 0, 0],
 ];
 
 test.describe('the eight programs this product ships', () => {
@@ -383,7 +393,9 @@ test.describe('a syntactically valid model is never presented as an evidenced as
     // 77 since 2.17 (b): nine `LOOP AT` bodies became planes of their own, and a
     // plane ends at an end event anchored at its `ENDLOOP`. Still every element
     // of the file, and still every one of them anchored.
-    expect(String(note?.text)).toContain('77 of 77 elements carry a line anchor.');
+    // 87 since ADR-054: nine planes start at a start event anchored at their
+    // `FORM` line, and the `EXIT` in SELECT_ITEMS ends on its own line.
+    expect(String(note?.text)).toContain('87 of 87 elements carry a line anchor.');
     expect(diIndex(parsed.rootElement).get('note-reconstruction')).toBe(1);
 
     // No promise about a target tool (roadmap 4.3 has not happened).
@@ -406,7 +418,10 @@ test.describe('the palette, as BPMN', () => {
     // 2.17 (b): the phase holds its end event and the iteration, and the
     // iteration holds what happens per order — one plane deeper, because a
     // multi-instance marker belongs on the element that **contains** the body.
-    expect(inside.map((e) => e.name)).toEqual(['PROCESS_ACTIONS', 'LOOP AT gt_orders']);
+    // ADR-054: and it begins at a start event of its own, anchored at
+    // `FORM process_actions` — the first of the two `PROCESS_ACTIONS` here.
+    expect(inside.map((e) => e.name)).toEqual(['PROCESS_ACTIONS', 'PROCESS_ACTIONS', 'LOOP AT gt_orders']);
+    expect(inside.map((e) => e.$type).slice(0, 2)).toEqual(['bpmn:StartEvent', 'bpmn:EndEvent']);
     const iteration = inside.find((e) => e.name === 'LOOP AT gt_orders') as ModdleElement;
     expect(iteration.$type).toBe('bpmn:SubProcess');
     expect(list<ModdleElement>(iteration.loopCharacteristics ? [iteration.loopCharacteristics as ModdleElement] : [])
@@ -731,10 +746,12 @@ test.describe('the palette, as BPMN', () => {
     const subs = countOf(a.rootElement).elements.filter((e) => e.$type === 'bpmn:SubProcess');
     expect(subs.map((s) => s.id)).toEqual(['nd-2-0', 'nd-3-1']);
     const ids = (s: ModdleElement) => list<ModdleElement>(s.flowElements).filter((e) => e.$instanceOf('bpmn:FlowNode')).map((e) => e.id);
-    expect(ids(subs[0])).toEqual(['nd-11-0', 'nd-5-0', 'nd-6-0', 'nd-7-0', 'nd-8-0', 'nd-10-0']);
-    expect(ids(subs[1])).toEqual(['nd-3-1__nd-11-0', 'nd-3-1__nd-5-0', 'nd-3-1__nd-6-0', 'nd-3-1__nd-7-0', 'nd-3-1__nd-8-0', 'nd-3-1__nd-10-0']);
+    // ADR-054: each copy begins at the start event of the plane, `nd-4-0` on
+    // the `FORM post.` line, prefixed like every other element of the copy.
+    expect(ids(subs[0])).toEqual(['nd-4-0', 'nd-11-0', 'nd-5-0', 'nd-6-0', 'nd-7-0', 'nd-8-0', 'nd-10-0']);
+    expect(ids(subs[1])).toEqual(['nd-3-1__nd-4-0', 'nd-3-1__nd-11-0', 'nd-3-1__nd-5-0', 'nd-3-1__nd-6-0', 'nd-3-1__nd-7-0', 'nd-3-1__nd-8-0', 'nd-3-1__nd-10-0']);
     // The second copy still names the skeleton node it was drawn from.
-    expect(traceOf(list<ModdleElement>(subs[1].flowElements)[0])?.node).toBe('nd-11-0');
+    expect(traceOf(list<ModdleElement>(subs[1].flowElements)[0])?.node).toBe('nd-4-0');
 
     const b = await parser.fromXML(buildBpmnExportFromSource(recursive, { processName: 'r', sourceFileName: 'r.abap' }).xml);
     expect(b.warnings.map((w) => w.message)).toEqual([]);
@@ -1202,5 +1219,83 @@ test.describe('roadmap 2.17 — the palette rows the file did not have', () => {
     const hints = cleanCoreHints({ xml: exported.xml, labels });
     const byRule = countHints(hints).byRule;
     expect(byRule.get(GATEWAY_WITHOUT_CONDITION) ?? 0).toBe(0);
+  });
+});
+
+/* ================================================================== *
+ * ADR-054 — start events in sub-processes, one end per early exit
+ * ================================================================== */
+
+test.describe('ADR-054 — the events are valid BPMN, survive a round trip and never overlap', () => {
+  const EARLY = [
+    'REPORT zadr054_export.',
+    'START-OF-SELECTION.',
+    '  PERFORM release_order.',
+    'FORM release_order.',
+    '  SELECT SINGLE * FROM vbak INTO @DATA(ls_vbak) WHERE vbeln = @p_vbeln.',
+    '  IF ls_vbak-lifsk IS NOT INITIAL.',
+    '    RETURN.',
+    '  ENDIF.',
+    '  CHECK ls_vbak-netwr > 0.',
+    "  UPDATE vbak SET lifsk = ' ' WHERE vbeln = @p_vbeln.",
+    "  CALL FUNCTION 'Z_NOTIFY_SALES'.",
+    'ENDFORM.',
+  ].join('\n');
+
+  test('a sub-process holds its start event and one end event per way out', async () => {
+    const parser = await moddle();
+    const parsed = await parser.fromXML(buildBpmnExportFromSource(EARLY, OPTIONS('zadr054.abap')).xml);
+    expect(parsed.warnings.map((w) => w.message)).toEqual([]);
+    const { elements } = countOf(parsed.rootElement);
+    const sub = elements.find((e) => e.$type === 'bpmn:SubProcess' && e.name === 'RELEASE_ORDER') as ModdleElement;
+    const inside = list<ModdleElement>(sub.flowElements);
+    expect(inside.filter((e) => e.$type === 'bpmn:StartEvent').map((e) => traceOf(e)?.lineStart)).toEqual(['4']);
+    const ends = inside.filter((e) => e.$type === 'bpmn:EndEvent');
+    expect(ends.map((e) => [e.name, traceOf(e)?.lineStart, traceOf(e)?.early ?? null])).toEqual([
+      ['RELEASE_ORDER', '12', null],
+      ['RELEASE_ORDER (RETURN)', '7', 'true'],
+      ['RELEASE_ORDER (CHECK)', '9', 'true'],
+    ]);
+    // The condition stands on the flow into each early end, verbatim.
+    const into = (end: ModdleElement) => list<ModdleElement>(end.incoming)
+      .map((f) => (f.conditionExpression as { body?: string } | undefined)?.body ?? null);
+    expect(into(ends[1])).toEqual(['ls_vbak-lifsk IS NOT INITIAL']);
+    expect(into(ends[2])).toEqual(['NOT ( ls_vbak-netwr > 0 )']);
+  });
+
+  test('the file survives a round trip through bpmn-moddle, events included', async () => {
+    const parser = await moddle();
+    for (const file of [LEGACY, PO]) {
+      const first = await parser.fromXML(buildBpmnExportFromSource(read(file), OPTIONS(file)).xml);
+      const { xml } = await parser.toXML(first.rootElement);
+      const second = await parser.fromXML(xml);
+      expect(second.warnings.map((w) => w.message), file).toEqual([]);
+      const types = (definitions: ModdleElement) => countOf(definitions).elements
+        .filter((e) => e.$type === 'bpmn:StartEvent' || e.$type === 'bpmn:EndEvent')
+        .map((e) => `${e.$type} ${e.id} ${traceOf(e)?.early ?? ''}`);
+      expect(types(second.rootElement), file).toEqual(types(first.rootElement));
+    }
+  });
+
+  test('no start or end event overlaps another shape on its plane', async () => {
+    const parser = await moddle();
+    for (const file of [...SHIPPED.map((row) => row[0]), 'zadr054.abap']) {
+      const source = file === 'zadr054.abap' ? EARLY : read(file);
+      const parsed = await parser.fromXML(buildBpmnExportFromSource(source, OPTIONS(file)).xml);
+      for (const diagram of list<ModdleElement>(parsed.rootElement.diagrams)) {
+        const shapes = list<ModdleElement>((diagram.plane as ModdleElement).planeElement)
+          .filter((d) => d.$type === 'bpmndi:BPMNShape')
+          .map((d) => ({ element: d.bpmnElement as ModdleElement, b: d.bounds as { x: number; y: number; width: number; height: number } }))
+          .filter((s) => s.element.$instanceOf('bpmn:FlowNode') && s.element.$type !== 'bpmn:BoundaryEvent');
+        for (const event of shapes.filter((s) => /^bpmn:(?:Start|End)Event$/.test(s.element.$type))) {
+          for (const other of shapes) {
+            if (other === event) continue;
+            const apart = event.b.x + event.b.width <= other.b.x || other.b.x + other.b.width <= event.b.x
+              || event.b.y + event.b.height <= other.b.y || other.b.y + other.b.height <= event.b.y;
+            expect(apart, `${file}: ${event.element.id} overlaps ${other.element.id}`).toBe(true);
+          }
+        }
+      }
+    }
   });
 });

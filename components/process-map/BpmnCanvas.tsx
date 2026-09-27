@@ -24,6 +24,8 @@ import './process-map.css';
  *     `ProcessMap`, so the map and the step list navigate identically.
  *   - **An element without a line anchor says so**, in a word under the shape
  *     and in a dashed outline — never only in a colour.
+ *   - **An early end says so** (ADR-054), in a word above the circle: an end
+ *     event in the middle of a routine looks like its normal end otherwise.
  *
  * The buttons are found back through `[data-map-node]` rather than kept in a
  * second structure beside the DOM: the diagram is the external system here, and
@@ -41,6 +43,8 @@ export interface BpmnCanvasNode {
   unanchored: boolean;
   /** The word shown under an unanchored shape. */
   unanchoredLabel: string;
+  /** ADR-054: the word shown above an early end, or null for every other element. */
+  earlyLabel?: string | null;
 }
 
 export interface BpmnCanvasProps {
@@ -234,6 +238,13 @@ export default function BpmnCanvas({
           badge.className = 'cc-map-unanchored-badge';
           badge.textContent = node.unanchoredLabel;
           button.appendChild(badge);
+        }
+
+        if (node.earlyLabel) {
+          const early = document.createElement('span');
+          early.className = 'cc-map-early-badge';
+          early.textContent = node.earlyLabel;
+          button.appendChild(early);
         }
 
         button.addEventListener('click', () => {

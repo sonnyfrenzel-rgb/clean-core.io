@@ -336,7 +336,9 @@ export function codeReadStage(project: Project | null, tables: ReadonlySet<strin
 export function processStage(skeleton: ProcessSkeleton): FirstLookStage {
   const steps = skeleton.nodes.filter((n) => !NOT_A_STEP.has(n.kind)).length;
   const decisions = gatewaysOf(skeleton).length;
-  const starts = skeleton.nodes.filter((n) => n.kind === 'start').length;
+  // ADR-054: the start event inside a sub-process is where that plane begins,
+  // not a way the process can be started — only the entries' starts count.
+  const starts = skeleton.nodes.filter((n) => n.kind === 'start' && n.detail?.subProcess !== true).length;
   const ends = skeleton.nodes.filter((n) => n.kind === 'end' || n.kind === 'end-error').length;
   const includesNotRead = skeleton.notes.filter((n) => n.reason === 'include-not-read').length;
 

@@ -843,7 +843,9 @@ function stepOf(
   if (carrier.kind === 'program') return { stepId: null, notDrawn: null };
 
   const node: SkeletonNode | undefined = skeleton.nodes.find(
-    (n) => n.anchor?.lineStart === carrier.lineStart && !(n.detail && 'collapsedFrom' in n.detail),
+    // ADR-054: a start or an end event is never the step a change is about.
+    (n) => n.anchor?.lineStart === carrier.lineStart && !(n.detail && 'collapsedFrom' in n.detail)
+      && n.kind !== 'start' && n.kind !== 'end',
   );
   if (node) return { stepId: node.id, notDrawn: null };
 

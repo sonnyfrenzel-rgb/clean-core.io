@@ -74,9 +74,19 @@ import {
  * the steps. See `buildLanes`.
  */
 export type SkeletonNodeKind =
-  /** Start event — a classic event block, or the implicit `START-OF-SELECTION`. */
+  /**
+   * Start event — a classic event block, or the implicit `START-OF-SELECTION`;
+   * since ADR-054 also the beginning of a routine that is drawn as a plane of
+   * its own (`detail.subProcess`), anchored at its `FORM`/`METHOD` line and
+   * living only inside that plane. See `addSubProcessStarts`.
+   */
   | 'start'
-  /** End event — the normal end of an entry or of a sub-process. */
+  /**
+   * End event — the normal end of an entry or of a sub-process, anchored at its
+   * closing word; since ADR-054 also an **early** end (`detail.early`): a
+   * `RETURN`, an `EXIT` outside a loop, a `STOP` or a `CHECK` that leaves the
+   * block while something drawn would still have followed. See `leaveEarly`.
+   */
   | 'end'
   /** Error end event — `MESSAGE … TYPE 'E'/'A'/'X'`, `RAISE`, `LEAVE PROGRAM`. */
   | 'end-error'
@@ -510,6 +520,15 @@ const SWITCH_CONSTANTS = new Set([
 const FLOW_BLOCKS = new Set(['if', 'case', 'loop', 'do', 'while', 'select', 'try', 'at', 'provide']);
 
 /**
+ * ADR-054. The statements that hand control to the next arm of the construct
+ * around them: falling through one of them means leaving that construct.
+ */
+const ARM_HEADERS = new Set(['ELSE', 'ELSEIF', 'WHEN', 'CATCH', 'CLEANUP']);
+
+/** ADR-054. Falling through one of these runs the loop again — something still follows. */
+const LOOP_CLOSERS = new Set(['ENDLOOP', 'ENDDO', 'ENDWHILE', 'ENDSELECT', 'ENDPROVIDE']);
+
+/**
  * The flow blocks `walkLoop` opens, and therefore the ones an `EXIT`, a
  * `CONTINUE` or a `CHECK` inside them acts on (`ctx.loops`). Roadmap 2.17 (b)
  * asks which loop a statement leaves, and this is the list that answers it.
@@ -930,6 +949,13 @@ class SkeletonBuilder {
   /** The statements, over the whole source, whose calls resolve to each method — for entries and helpers. */
   private methodCallSites = new Map<string, number[]>();
   private methodCallCache = new Map<number, MethodCall[]>();
+  /**
+   * ADR-054. Every early end the walk drew, with the statement it stands on —
+   * `settleEarlyEnds` decides afterwards which of them really skip something.
+   */
+  private earlyEnds: Array<{ node: SkeletonNode; statementIndex: number; region: SkeletonRegion }> = [];
+  /** ADR-054. The last statement index each region's walk covers — where its normal end takes over. */
+  private regionLast = new Map<string, number>();
 
   constructor(
     private statements: AbapStatement[],
@@ -962,12 +988,18 @@ class SkeletonBuilder {
     const entries = this.readEntryPoints();
     for (const entry of entries) this.buildEntryRegion(entry);
     for (const entry of this.deferredModuleEntries()) this.buildEntryRegion(entry);
+    // ADR-054, once every region is walked: an early end is only early where
+    // something drawn would still have followed it.
+    this.settleEarlyEnds();
     this.collapseSmallRegions();
     this.applyGuards();
     // Roadmap 2.15: after the guards, so a folded run switch is already on its
     // flow when the conditions of a gateway are read — and before the notes,
     // which are counted over the graph this pass leaves behind.
     this.foldTechnicalGateways();
+    // ADR-054, after the fold, so what the fold decides is exactly what it
+    // decided before a plane had a start event of its own.
+    this.addSubProcessStarts();
     this.noteUnreachableSteps();
     // Roadmap 2.16, last: a lane holds node ids, and `foldTechnicalGateways`
     // is the pass that can still drop one.
@@ -2077,6 +2109,7 @@ class SkeletonBuilder {
     region.endNodeId = end.id;
 
     const from = entry.implicit ? entry.statement.index : entry.statement.index + 1;
+    this.regionLast.set(region.key, entry.lastIndex);
     const exits = this.walkRange(from, entry.lastIndex, {
       region, container, loops: [], loopBreaks: [],
     }, [{ from: start.id, condition: '', kind: 'sequence' }]);
@@ -2141,13 +2174,16 @@ class SkeletonBuilder {
     const [from, to] = bodyRange(block);
     const guarded = this.readGuard(from, to, region);
     const before = this.nodes.length;
+    this.regionLast.set(region.key, to);
     this.expanding.push(name);
     const exits = this.walkRange(guarded, to, {
       region, container: name, loops: [], loopBreaks: [],
     }, []);
     this.expanding.pop();
-    // A sub-process has no start event of its own — the call site is where it
-    // begins — so its first node is the one nothing inside the region points at.
+    // The walk gives a sub-process no start event — the call site is where it
+    // begins, and `addSubProcessStarts` adds one only once it is known that the
+    // routine is drawn as a plane of its own (ADR-054) — so its first node is
+    // the one nothing inside the region points at.
     // It is looked up by region and not by position: a `PERFORM` inside this
     // routine builds the region it opens *before* it adds its own call site, so
     // the node at `before` can belong to a routine one level down.
@@ -2691,7 +2727,9 @@ class SkeletonBuilder {
     }
     if (statement.keyword === 'RETURN' || statement.keyword === 'EXIT' || statement.keyword === 'STOP') {
       const reason: SkeletonEdgeReason = statement.keyword === 'STOP' ? 'stop' : 'return';
-      this.leaveTo(incoming, ctx.region.endNodeId, 'sequence', reason);
+      // ADR-054: each flow keeps the kind it arrived with — a `RETURN` straight
+      // in an `IF` arm is that arm, conditional, with the condition on it.
+      this.leaveEarly(statement, incoming, ctx, null, reason);
       return { exits: [], outputRun: null };
     }
 
@@ -2859,6 +2897,146 @@ class SkeletonBuilder {
   }
 
   /**
+   * ADR-054 — an end event of its own for every early exit.
+   *
+   * `RETURN`, `EXIT` outside a loop, `STOP` and a `CHECK` that leaves the
+   * routine or the event block used to lead to the one normal end at the
+   * block's closing word, so a map showed a routine with five ways out as a
+   * routine with one. Now each of them ends on its own statement, as SAP
+   * Signavio models it and as the process benchmark expects it
+   * (`tests/prozess-benchmark/`).
+   *
+   * Rule 6 holds: the label is the keyword the source writes, the routine it
+   * leaves travels in `detail.routine`, and the **condition** travels verbatim
+   * on the flow into the event — the event itself says no phrase. `detail.early`
+   * is what lets a view call it an early end rather than the normal one.
+   *
+   * Two things keep it from becoming clutter. Nothing reaching the statement
+   * means nothing is drawn: a second `RETURN` straight behind a first one in the
+   * same branch has no way in, and no second event. And an exit with nothing
+   * drawn between it and the block's end is no early exit at all — that is
+   * decided once the walk is complete, in `settleEarlyEnds`.
+   */
+  private leaveEarly(
+    statement: AbapStatement,
+    incoming: Exit[],
+    ctx: WalkContext,
+    kind: SkeletonEdgeKind | null,
+    reason: SkeletonEdgeReason,
+  ): void {
+    if (!incoming.length) return;
+    const keyword = statement.keyword.toUpperCase();
+    const node = this.addNode('end', keyword, anchorOf(statement), ctx.region, ctx.container, {
+      detail: { early: true, exit: keyword, routine: ctx.container ?? ctx.region.label },
+    });
+    for (const exit of incoming) {
+      this.edges.push({ from: exit.from, to: node.id, kind: kind ?? exit.kind, condition: exit.condition, reason });
+    }
+    this.earlyEnds.push({ node, statementIndex: statement.index, region: ctx.region });
+  }
+
+  /**
+   * ADR-054, "kein Gewirr". An early end whose statement stands directly before
+   * the block's end — nothing drawn in between — is the normal end, and its
+   * flows go back to it. Decided on the complete walk, because whether anything
+   * is drawn after a statement is only known once the statements after it have
+   * been walked.
+   */
+  private settleEarlyEnds(): void {
+    if (!this.earlyEnds.length) return;
+    const drawn = new Map<string, Set<number>>();
+    for (const node of this.nodes) {
+      if (!node.anchor || node.detail?.early === true) continue;
+      const own = drawn.get(node.region);
+      if (own) own.add(node.anchor.statementIndex);
+      else drawn.set(node.region, new Set([node.anchor.statementIndex]));
+    }
+    const dropped = new Set<string>();
+    for (const { node, statementIndex, region } of this.earlyEnds) {
+      const last = this.regionLast.get(region.key);
+      if (last === undefined || !region.endNodeId) continue;
+      if (this.skipsSomething(statementIndex, last, drawn.get(region.key) ?? new Set())) continue;
+      for (const edge of this.edges) if (edge.to === node.id) edge.to = region.endNodeId;
+      dropped.add(node.id);
+    }
+    if (dropped.size) this.nodes = this.nodes.filter((n) => !dropped.has(n.id));
+  }
+
+  /**
+   * Does leaving at `index` skip anything this region draws? The way the
+   * program would have gone without the exit is followed statement by
+   * statement: an arm header leaves its construct, a loop's closing word runs
+   * the loop again (so the exit skips the rest of it), a flow block counts with
+   * everything inside it, and a container is stepped over as `walkRange` steps
+   * over it.
+   */
+  private skipsSomething(index: number, last: number, drawn: ReadonlySet<number>): boolean {
+    let j = index + 1;
+    while (j <= last) {
+      const block = this.blockAt.get(j);
+      if (block) {
+        if (FLOW_BLOCKS.has(block.kind)) {
+          for (let k = j; k <= Math.min(block.closeIndex, last); k++) if (drawn.has(k)) return true;
+        }
+        j = Math.max(j + 1, block.closeIndex + 1);
+        continue;
+      }
+      const keyword = this.statements[j].keyword.toUpperCase();
+      if (ARM_HEADERS.has(keyword)) {
+        const enclosing = this.structure.enclosing[j] ?? [];
+        const owner = enclosing[enclosing.length - 1];
+        if (owner && owner.closeIndex > j) {
+          j = owner.closeIndex;
+          continue;
+        }
+      }
+      if (LOOP_CLOSERS.has(keyword)) return true;
+      if (drawn.has(j)) return true;
+      j += 1;
+    }
+    return false;
+  }
+
+  /**
+   * ADR-054 — a start event inside every plane a reader can open.
+   *
+   * A routine the map draws as a sub-process with a plane of its own gets a
+   * start event there, anchored at its `FORM`/`METHOD` line, so every level
+   * that opens has a visible beginning and a visible end, as Signavio draws
+   * one. It lives **only** in the routine's region: the caller still sees one
+   * box, which is what the call site is.
+   *
+   * "A plane of its own" is exactly what `lib/bpmn/model.ts` expands: a call
+   * site of kind `sub-process` with `expandsTo`. A routine `collapseSmallRegions`
+   * turned into the one step it does, a business-rule task, a technical helper
+   * (no region at all) and the body of a multi-instance `LOOP AT` get none.
+   */
+  private addSubProcessStarts(): void {
+    const planes = new Set<string>();
+    for (const node of this.nodes) {
+      if (node.kind === 'sub-process' && node.expandsTo) planes.add(node.expandsTo);
+    }
+    for (const region of this.regions) {
+      if (region.kind !== 'sub-process' || region.multiInstance || !planes.has(region.key)) continue;
+      if (!region.anchor || !/^(?:form|method):/.test(region.key)) continue;
+      const end = this.nodes.find((n) => n.id === region.endNodeId);
+      const first = this.nodes.findIndex((n) => n.region === region.key);
+      const start = this.addNode('start', region.label, region.anchor, region, end?.container ?? region.label, {
+        detail: { subProcess: true },
+      });
+      // `addNode` appends; the start goes before the first node of its region,
+      // so the file lists a plane in the order it is read.
+      if (first >= 0) {
+        this.nodes.pop();
+        this.nodes.splice(first, 0, start);
+      }
+      const to = region.entryNodeId ?? region.endNodeId;
+      if (to) this.edges.push({ from: start.id, to, kind: 'sequence', condition: '' });
+      region.entryNodeId = start.id;
+    }
+  }
+
+  /**
    * Rule 5. `CHECK` is not one edge with three meanings.
    *
    * Inside a `LOOP` the false path ends the iteration; inside a `FORM` it leaves
@@ -2878,9 +3056,9 @@ class SkeletonBuilder {
     if (ctx.loops.length) {
       this.leaveTo(falsePath, ctx.loops[ctx.loops.length - 1], 'loop-back', 'check-leaves-loop');
     } else if (ctx.region.kind === 'sub-process') {
-      this.leaveTo(falsePath, ctx.region.endNodeId, 'conditional', 'check-leaves-form');
+      this.leaveEarly(statement, falsePath, ctx, 'conditional', 'check-leaves-form');
     } else {
-      this.leaveTo(falsePath, ctx.region.endNodeId, 'conditional', 'check-leaves-event');
+      this.leaveEarly(statement, falsePath, ctx, 'conditional', 'check-leaves-event');
     }
     return { exits: [{ from: gateway.id, condition, kind: 'conditional' }] };
   }
@@ -3193,7 +3371,11 @@ class SkeletonBuilder {
         // multi-instance marker off the only element that can carry it — the one
         // that contains the body. §5.8 collapses a `FORM`, never a loop.
         if (region.multiInstance) continue;
-        const inner = (inRegion.get(region.key) ?? []).filter((n) => n.id !== region.endNodeId);
+        // ADR-054: an early end is an end event, not an element of the routine —
+        // it takes the place the flow to the normal end had, and counting it
+        // would turn a small routine into a phase because it has two exits.
+        const inner = (inRegion.get(region.key) ?? [])
+          .filter((n) => n.id !== region.endNodeId && n.detail?.early !== true);
         const callers = callersOf.get(region.key) ?? [];
         if (!callers.length) continue;
         // Roadmap 2.17 (b): a routine that iterates a business table is a phase,

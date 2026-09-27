@@ -237,6 +237,14 @@ export function isMultiInstanceLoop(node: SkeletonNode): boolean {
   return node.kind === 'loop' && node.detail?.multiInstance === true;
 }
 
+/**
+ * ADR-054 — an end event of an early exit (`RETURN`, `EXIT`, `STOP`, `CHECK`)
+ * rather than the normal end at the closing word. The skeleton decided it.
+ */
+export function isEarlyEnd(node: SkeletonNode): boolean {
+  return node.kind === 'end' && node.detail?.early === true;
+}
+
 function tagOf(node: SkeletonNode): BpmnTag {
   // A multi-instance `LOOP AT` whose body draws no element is the other half of
   // §5.8's row — *eine Aktivität* with the marker, and no plane behind it.
@@ -278,6 +286,12 @@ function nameOf(node: SkeletonNode): string {
   if (!node.expandsTo && node.kind === 'read') return `SELECT ${node.label}`;
   if (!node.expandsTo && node.kind === 'write' && typeof node.detail?.operation === 'string') {
     return `${node.detail.operation} ${node.label}`;
+  }
+  // ADR-054: an early end is named by the routine it leaves and the keyword it
+  // leaves by — two tokens of the source, so the normal end (`CHECK_ORDER`) and
+  // the early one (`CHECK_ORDER (RETURN)`) are told apart without a phrase.
+  if (isEarlyEnd(node) && typeof node.detail?.routine === 'string' && node.detail.routine) {
+    return `${node.detail.routine} (${node.label})`;
   }
   return node.label;
 }

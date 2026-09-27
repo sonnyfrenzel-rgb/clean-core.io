@@ -7,6 +7,12 @@ import {
   type ProcessSkeleton,
   type SkeletonNode,
 } from '../lib/abap/process-skeleton';
+import { deriveBusinessRules } from '../lib/abap/business-rule-set';
+import { preAnsweredQuestion } from '../lib/ask-this-case';
+import { buildBpmnExportFromSource } from '../lib/bpmn/export';
+import { processStage } from '../lib/first-look';
+import { buildProcessMapModel, EARLY_END_WORD } from '../lib/process-map';
+import { applyNaming, namingContextOf } from '../lib/process-naming';
 
 /**
  * The process skeleton — roadmap 2.3.
@@ -70,16 +76,28 @@ const SHIPPED: Array<[string, number, number, number, number, number, number, nu
   // and one region per loop everywhere else. Not one step was dropped and not
   // one was added: every node of every loop body is still in the skeleton, one
   // plane further in.
-  [LEGACY, 114, 116, 32, 4, 19, 323, 6, 1],
+  //
+  // ADR-054 (27.09.2026) moved them a third time, again in one direction. Every
+  // routine drawn as a plane of its own gets a start event inside that plane,
+  // anchored at its `FORM` line, with one flow to what it did first: one node
+  // and one edge per such routine. And every early exit — `RETURN`, `EXIT`
+  // outside a loop, `STOP`, a `CHECK` that leaves the block — with something
+  // drawn after it ends on its own end event: one node each, and no edge, since
+  // the flow that led to the normal end now leads there. LEGACY 9 planes and 1
+  // early exit (`EXIT` in SELECT_ITEMS, L252): 114→124 / 116→125. PO 9 planes
+  // and 10 early exits: 110→129 / 116→125. BP_SYNC and STOCK two planes each,
+  // EXPENSE, INVOICE and SALES one. ORDER_INTEGRITY has no plane and no early
+  // exit and keeps its numbers.
+  [LEGACY, 124, 125, 32, 4, 19, 323, 6, 1],
   // 27.09.2026 (D4): `MESSAGE '…' TYPE 'I'` in END-OF-SELECTION is a dialog
   // box the user confirms — §5.8's popup, a user task. One node more, and the
   // arm of the `IF` that used to run straight into the end now runs through
   // it: 17→18 nodes, 14→15 edges.
-  ['Z_BUSINESS_PARTNER_SYNC.txt', 18, 15, 5, 2, 0, 0, 1, 0],
-  ['Z_EMPLOYEE_EXPENSE_VAL.txt', 13, 12, 3, 1, 0, 0, 1, 0],
-  ['Z_INVOICE_EXTRACTOR.txt', 17, 13, 4, 1, 0, 0, 0, 0],
-  ['Z_MATERIAL_STOCK_CALC.txt', 18, 15, 6, 1, 0, 0, 0, 0],
-  [PO, 110, 116, 23, 1, 13, 147, 0, 0],
+  ['Z_BUSINESS_PARTNER_SYNC.txt', 20, 17, 5, 2, 0, 0, 1, 0],
+  ['Z_EMPLOYEE_EXPENSE_VAL.txt', 14, 13, 3, 1, 0, 0, 1, 0],
+  ['Z_INVOICE_EXTRACTOR.txt', 18, 14, 4, 1, 0, 0, 0, 0],
+  ['Z_MATERIAL_STOCK_CALC.txt', 20, 17, 6, 1, 0, 0, 0, 0],
+  [PO, 129, 125, 23, 1, 13, 147, 0, 0],
   // Roadmap 2.14: this one had **no** entry point and drew nothing at all.
   // Its only routine with an effect is a `FORM` no `PERFORM` reaches, which
   // is the source saying its caller is outside this file — so it is the
@@ -87,7 +105,7 @@ const SHIPPED: Array<[string, number, number, number, number, number, number, nu
   // five nodes are the ones that were always in it. 0→5 nodes / 0→5 edges /
   // 0→1 region / 0→1 entry / 1→0 unreached routines / 15→0 unreached lines.
   ['Z_ORDER_INTEGRITY_CHECK.txt', 5, 5, 1, 1, 0, 0, 0, 0],
-  ['Z_SALES_ORDER_CREATOR.txt', 13, 11, 3, 1, 0, 0, 1, 0],
+  ['Z_SALES_ORDER_CREATOR.txt', 14, 12, 3, 1, 0, 0, 1, 0],
 ];
 
 test.describe('the eight programs this product ships', () => {
@@ -125,13 +143,18 @@ test.describe('the eight programs this product ships', () => {
     // `DESIGN.md` §5.8 measures its palette against this program. These are the
     // elements it produces without a model being asked anything.
     expect(countKinds(skeletonOf(LEGACY))).toEqual({
-      start: 4,
+      // ADR-054: 4 → 13. The four event blocks, and one start inside each of
+      // the nine routines drawn as a plane of their own — the `sub-process`
+      // count below. The entries are still four (rule 4, further down).
+      start: 13,
       // 2.17 (b): 23 → 34. Each of the eleven `LOOP AT` bodies is a region of
       // its own now, and a region ends at an end node — anchored at its
       // `ENDLOOP`, which is a line of the source like any other. Nine of the
       // eleven; the two whose body is a calculation draw no element inside and
       // get no plane, so they get no end event either.
-      end: 32,
+      // ADR-054: 32 → 33, the `EXIT` in SELECT_ITEMS (L252), which leaves the
+      // routine before its read and its loop.
+      end: 33,
       'end-error': 4,
       // 2.15: 28 → 23. Five gateways here decided on a return code behind a
       // call, a read or a write; four of them became the boundary event on that
@@ -162,8 +185,11 @@ test.describe('the eight programs this product ships', () => {
 
   test(`${PO} — the palette, element for element`, () => {
     expect(countKinds(skeletonOf(PO))).toEqual({
-      start: 1,
-      end: 23,
+      // ADR-054: 1 → 10 and 23 → 33 — a start inside each of the nine planes,
+      // and ten early exits (five `RETURN`, five `CHECK`) that each end on
+      // their own statement now instead of at the routine's `ENDFORM`.
+      start: 10,
+      end: 33,
       'end-error': 3,
       // 2.15, and this is the program the step was written for: 13 of its 31
       // gateways were `IF sy-subrc …` directly behind a `SELECT`, a
@@ -481,7 +507,9 @@ test.describe('rule 3 — what comes back, and what does not', () => {
 test.describe('rule 4 — the starts, and the order they run in', () => {
   test('the shipped report starts four times, and they are the event blocks', () => {
     const skeleton = skeletonOf(LEGACY);
-    const starts = skeleton.nodes.filter((n) => n.kind === 'start');
+    // ADR-054: the start event inside a sub-process is where that plane begins,
+    // not a way into the program — it says so in `detail.subProcess`.
+    const starts = skeleton.nodes.filter((n) => n.kind === 'start' && n.detail?.subProcess !== true);
     expect(starts.map((n) => [n.label, n.anchor?.lineStart])).toEqual([
       ['INITIALIZATION', 151],
       ['AT SELECTION-SCREEN', 158],
@@ -602,7 +630,17 @@ test.describe('rule 5 — CHECK leaves three different things', () => {
     const event = reasons.filter((e) => e.reason === 'check-leaves-event');
     expect(event, 'the three CHECKs in START-OF-SELECTION').toHaveLength(3);
     const entry = skeleton.regions.find((r) => r.kind === 'entry');
-    expect(new Set(event.map((e) => e.to))).toEqual(new Set([entry?.endNodeId]));
+    // ADR-054: each of the three leaves the block early — steps follow every
+    // one of them — so each ends on an end event of its own, on its own line,
+    // inside the entry, and the normal end is not one of them.
+    const ends = event.map((e) => skeleton.nodes.find((n) => n.id === e.to));
+    expect(ends.map((n) => [n?.kind, n?.label, n?.anchor?.lineStart, n?.detail?.early])).toEqual([
+      ['end', 'CHECK', 45, true],
+      ['end', 'CHECK', 49, true],
+      ['end', 'CHECK', 52, true],
+    ]);
+    expect(ends.every((n) => n?.region === entry?.key)).toBe(true);
+    expect(event.map((e) => e.to)).not.toContain(entry?.endNodeId);
     expect(event[0].condition).toBe('NOT ( gv_rejected = abap_false )');
 
     const form = reasons.filter((e) => e.reason === 'check-leaves-form');
@@ -1347,11 +1385,13 @@ test.describe('roadmap 2.16 — lanes', () => {
       'nothing folded the authority check onto the read',
     ).not.toContain(111);
     // And no node was added anywhere: the counts are the ones 2.15 left behind.
-    expect(skeleton.nodes).toHaveLength(110);
+    // 110 → 129 with ADR-054 — nine plane starts and ten early ends, none of
+    // them a lane's doing.
+    expect(skeleton.nodes).toHaveLength(129);
     // 105 → 114 with 2.17 (b) — nine loop-body regions, each with an end event.
     // `Z_MM_PO_APPROVAL` has no `LOOP AT` at all and is untouched, which is what
-    // makes it the right program for this assertion.
-    expect(skeletonOf(LEGACY).nodes).toHaveLength(114);
+    // makes it the right program for this assertion. 114 → 124 with ADR-054.
+    expect(skeletonOf(LEGACY).nodes).toHaveLength(124);
   });
 });
 
@@ -2225,5 +2265,155 @@ test.describe('§5.8 and the engine — the four defects of 27.09.2026', () => {
     expect(at(20).map((n) => [n.kind, n.expandsTo ?? null])).toEqual([['call-opaque', null]]);
     // LCL_A inherits `audit` from LCL_BASE: that one.
     expect(at(21).map((n) => n.expandsTo)).toEqual(['method:LCL_BASE=>AUDIT']);
+  });
+});
+
+/* ================================================================== *
+ * ADR-054 — a start in every plane, an end for every early exit
+ * ================================================================== */
+
+test.describe('ADR-054 — events in sub-processes and at early exits', () => {
+  /**
+   * Written for this block, not taken from an example: a report that performs
+   * one routine with an effect of its own, and that routine leaves early when a
+   * delivery block is set. Line numbers are the array index plus one.
+   */
+  const RELEASE = [
+    'REPORT zadr054_release.', //                                                  1
+    'PARAMETERS p_vbeln TYPE vbeln.', //                                           2
+    'START-OF-SELECTION.', //                                                      3
+    '  PERFORM release_order.', //                                                 4
+    "  WRITE / 'done'.", //                                                        5
+    'FORM release_order.', //                                                      6
+    '  SELECT SINGLE * FROM vbak INTO @DATA(ls_vbak) WHERE vbeln = @p_vbeln.', //  7
+    '  IF ls_vbak-lifsk IS NOT INITIAL.', //                                       8
+    '    RETURN.', //                                                              9
+    '  ENDIF.', //                                                                 10
+    "  UPDATE vbak SET lifsk = ' ' WHERE vbeln = @p_vbeln.", //                     11
+    "  CALL FUNCTION 'Z_NOTIFY_SALES'.", //                                        12
+    'ENDFORM.', //                                                                 13
+  ].join('\n');
+
+  const mapOf = (source: string) => buildProcessMapModel({
+    bpmn: buildBpmnExportFromSource(source, { processName: 'r', sourceFileName: 'r.abap' }),
+    named: applyNaming(namingContextOf(source), null, 'no-key'),
+    fileName: 'r.abap',
+  });
+
+  test('a routine drawn as a plane starts at its FORM line, inside the plane and nowhere else', () => {
+    const skeleton = buildProcessSkeleton(RELEASE);
+    const region = skeleton.regions.find((r) => r.key === 'form:RELEASE_ORDER');
+    const caller = skeleton.nodes.find((n) => n.expandsTo === 'form:RELEASE_ORDER');
+    expect(caller?.kind, 'the routine is a sub-process with a plane of its own').toBe('sub-process');
+
+    const starts = skeleton.nodes.filter((n) => n.kind === 'start');
+    const inside = starts.filter((n) => n.region === 'form:RELEASE_ORDER');
+    expect(inside.map((n) => [n.label, n.anchor?.lineStart, n.detail?.subProcess])).toEqual([
+      ['RELEASE_ORDER', 6, true],
+    ]);
+    // The caller's level keeps exactly the one start it had: the event block.
+    expect(starts.filter((n) => n.region === caller?.region).map((n) => n.label)).toEqual(['START-OF-SELECTION']);
+    // It is the region's entry, and it leads to what the routine does first.
+    expect(region?.entryNodeId).toBe(inside[0].id);
+    const first = skeleton.edges.filter((e) => e.from === inside[0].id)
+      .map((e) => skeleton.nodes.find((n) => n.id === e.to));
+    expect(first.map((n) => [n?.kind, n?.anchor?.lineStart])).toEqual([['read', 7]]);
+
+    // In the file it is a `startEvent` inside the `subProcess`; the top plane
+    // still holds one box for the routine and one start for the program.
+    const xml = buildBpmnExportFromSource(RELEASE, { processName: 'r', sourceFileName: 'r.abap' }).xml;
+    const sub = new RegExp(`<bpmn:subProcess id="${caller?.id}"[\\s\\S]*?</bpmn:subProcess>`).exec(xml)?.[0] ?? '';
+    expect(sub.match(/<bpmn:startEvent /g)).toHaveLength(1);
+    expect(xml.match(/<bpmn:startEvent /g)).toHaveLength(2);
+  });
+
+  test('an early RETURN ends on its own line, and the flow into it carries the condition', () => {
+    const skeleton = buildProcessSkeleton(RELEASE);
+    const early = skeleton.nodes.filter((n) => n.detail?.early === true);
+    expect(early.map((n) => [n.kind, n.label, n.anchor?.lineStart, n.region, n.detail?.routine])).toEqual([
+      ['end', 'RETURN', 9, 'form:RELEASE_ORDER', 'RELEASE_ORDER'],
+    ]);
+    const into = skeleton.edges.filter((e) => e.to === early[0].id);
+    expect(into.map((e) => [e.kind, e.condition, e.reason])).toEqual([
+      ['conditional', 'ls_vbak-lifsk IS NOT INITIAL', 'return'],
+    ]);
+    expect(skeleton.nodes.find((n) => n.id === into[0].from)?.kind).toBe('gateway');
+    // The normal end at ENDFORM is still there, and still the region's end.
+    const region = skeleton.regions.find((r) => r.key === 'form:RELEASE_ORDER');
+    expect(skeleton.nodes.find((n) => n.id === region?.endNodeId)?.anchor?.lineStart).toBe(13);
+
+    // On the map it is called what it is, and named by the routine it leaves.
+    const model = mapOf(RELEASE);
+    expect(model.elements.filter((e) => e.early).map((e) => [e.kind, e.technicalName, e.event])).toEqual([
+      [EARLY_END_WORD, 'RELEASE_ORDER (RETURN)', true],
+    ]);
+    expect(model.elements.filter((e) => e.tag === 'endEvent' && !e.early).every((e) => e.kind === 'End')).toBe(true);
+  });
+
+  test('an exit with nothing drawn after it is the normal end, not a second one', () => {
+    const source = [
+      'REPORT zadr054_late.',
+      'START-OF-SELECTION.',
+      '  PERFORM post.',
+      'FORM post.',
+      "  UPDATE zlog SET x = 'X'.",
+      "  CALL FUNCTION 'Z_NOTIFY'.",
+      '  SELECT SINGLE * FROM mara INTO @DATA(ls_mara).',
+      '  IF ls_mara-lvorm = abap_true.',
+      '    RETURN.',
+      '    RETURN.',
+      '  ENDIF.',
+      '  CLEAR ls_mara.',
+      'ENDFORM.',
+    ].join('\n');
+    const skeleton = buildProcessSkeleton(source);
+    expect(skeleton.nodes.filter((n) => n.detail?.early === true), 'no early end before ENDFORM').toEqual([]);
+    const region = skeleton.regions.find((r) => r.key === 'form:POST');
+    // Two RETURNs in one branch: the second has no way in, so there is one
+    // flow, and it goes to the one end the routine has.
+    const returns = skeleton.edges.filter((e) => e.reason === 'return');
+    expect(returns.map((e) => e.to)).toEqual([region?.endNodeId]);
+    expect(skeleton.nodes.filter((n) => n.kind === 'end' && n.region === 'form:POST')).toHaveLength(1);
+  });
+
+  test('two RETURNs in one branch before more steps are one early end', () => {
+    const source = RELEASE.replace('    RETURN.', '    RETURN.\n    RETURN.');
+    expect(buildProcessSkeleton(source).nodes.filter((n) => n.detail?.early === true)).toHaveLength(1);
+  });
+
+  test('a routine small enough to be one step gets no start event', () => {
+    const source = [
+      'REPORT zadr054_small.',
+      'START-OF-SELECTION.',
+      '  PERFORM log_it.',
+      'FORM log_it.',
+      "  UPDATE zlog SET x = 'X'.",
+      'ENDFORM.',
+    ].join('\n');
+    const skeleton = buildProcessSkeleton(source);
+    const caller = skeleton.nodes.find((n) => n.expandsTo === 'form:LOG_IT');
+    expect([caller?.kind, caller?.collapsed]).toEqual(['write', true]);
+    expect(skeleton.nodes.filter((n) => n.kind === 'start').map((n) => n.label)).toEqual(['START-OF-SELECTION']);
+  });
+
+  test('events are not steps: first look, "Ask this case" and the map count what they counted', () => {
+    const skeleton = buildProcessSkeleton(RELEASE);
+    const stage = processStage(skeleton);
+    const figure = (key: string) => stage.figures.find((f) => f.key === key)?.value;
+    // Steps: the sub-process, the WRITE, the read, the write and the call —
+    // not the two starts and not the three ends.
+    expect(figure('steps')).toBe('5');
+    expect(figure('decisions')).toBe('1');
+    // One way into the program; the plane's start is not a second one.
+    expect(figure('starts')).toBe('1');
+    expect(figure('ends')).toBe('3');
+
+    const answer = preAnsweredQuestion(skeleton, deriveBusinessRules(RELEASE));
+    if (answer.kind !== 'answered') throw new Error('the IF should be answered in advance');
+    expect(skeleton.nodes.find((n) => n.id === answer.nodeId)?.kind).toBe('gateway');
+    const ending = answer.branches.find((b) => b.condition === 'ls_vbak-lifsk IS NOT INITIAL');
+    expect([ending?.target, ending?.endsFlow]).toEqual(['RETURN', true]);
+
+    expect(mapOf(RELEASE).overview).toBe('Process with 5 steps and 1 decision.');
   });
 });

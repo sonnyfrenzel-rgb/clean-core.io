@@ -102,9 +102,34 @@
 }
 
 /*
+ * ADR-054 — an early end says so in a word, above the circle (bpmn-js writes the
+ * event's name under it). An end event looks the same whether it is the normal
+ * end or an exit in the middle of a routine, and a reader must be able to tell
+ * the two apart without opening the code card.
+ */
+.cc-map-early-badge {
+  position: absolute;
+  left: 50%;
+  bottom: 100%;
+  transform: translateX(-50%);
+  margin-bottom: 2px;
+  display: inline-block;
+  border: 1px solid var(--cc-neutral-border);
+  border-radius: 4px;
+  background: var(--cc-surface);
+  padding: 0 4px;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 14px;
+  color: var(--cc-ink-muted);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+/*
  * The mini map — one cell per step, one row per level.
  *
- * Six states and every one of them differs in shape or fill as well as in
+ * Seven states and every one of them differs in shape or fill as well as in
  * colour, because a map made only of hues says nothing on a printout or to a
  * reader who cannot tell two of them apart. The cell is 8 px and is never the
  * only way to a step: everything it can reach, the outline beside it can reach
@@ -124,6 +149,13 @@
 
 .cc-minimap-cell[data-state='step'] {
   background: var(--cc-line);
+}
+
+.cc-minimap-cell[data-state='event'] {
+  /* ADR-054: a start or an end is not a step — a round cell, like the event. */
+  background: var(--cc-surface);
+  border-color: var(--cc-ink-muted);
+  border-radius: 50%;
 }
 
 .cc-minimap-cell[data-state='decision'] {
