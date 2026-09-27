@@ -922,6 +922,8 @@ class SkeletonBuilder {
   private methodImpls: MethodImpl[] = [];
   /** Classes and interfaces this source defines or implements, upper-cased. */
   private classNames = new Set<string>();
+  /** `CLASS x DEFINITION INHERITING FROM y`: the superclass each local class names. */
+  private superOf = new Map<string, string>();
   /** `lo_x TYPE REF TO lcl_y` and its relatives: the class a reference variable holds. */
   private refTypes = new Map<string, Set<string>>();
   /** The statements, over the whole source, whose calls resolve to each method — for entries and helpers. */
@@ -1269,6 +1271,8 @@ class SkeletonBuilder {
       if (block.kind === 'class' || block.kind === 'interface') {
         const name = /^(?:CLASS|INTERFACE)\s+([\w/]+)/i.exec(opener.text);
         if (name) this.classNames.add(name[1].toUpperCase());
+        const parent = /\bINHERITING\s+FROM\s+([\w/]+)/i.exec(opener.text);
+        if (name && parent) this.superOf.set(name[1].toUpperCase(), parent[1].toUpperCase());
         continue;
       }
       if (block.kind !== 'method') continue;
@@ -1358,17 +1362,29 @@ class SkeletonBuilder {
       if (types?.size === 1) cls = [...types][0];
     }
 
+    if (q === 'SUPER') {
+      const own = this.classOf(index);
+      cls = own ? this.superOf.get(own) ?? null : null;
+    }
+
     if (cls) {
-      const own = this.methodImpls.filter((impl) => impl.cls === cls && impl.name === name);
-      if (own.length) return unique(own);
-      const alias = this.methodImpls.filter((impl) => impl.cls === cls && byName(impl));
-      if (alias.length) return unique(alias);
+      // Up the chain the source writes: a method the class inherits is still
+      // the class's method. QA review of be3f06343260 (045fbec9b5a4): the
+      // qualifier is never dropped — a class that is known and implements
+      // nothing of this name, itself or through a superclass, is answered
+      // with "not here", not with another class's method of the same name.
+      const seen = new Set<string>();
+      for (let at: string | undefined = cls; at && !seen.has(at); at = this.superOf.get(at)) {
+        seen.add(at);
+        const own = this.methodImpls.filter((impl) => impl.cls === at && impl.name === name);
+        if (own.length) return unique(own);
+        const alias = this.methodImpls.filter((impl) => impl.cls === at && byName(impl));
+        if (alias.length) return unique(alias);
+      }
       // An interface reference: the implementations write `lif_x~m`.
       const viaInterface = this.methodImpls.filter((impl) => impl.name === `${cls}~${name}`);
       if (viaInterface.length) return unique(viaInterface);
-      // A class this source does not define — `cl_salv_table=>factory` — is
-      // not answered by a local method that happens to share the name.
-      if (!this.classNames.has(cls)) return { key: null, ambiguous: false };
+      return { key: null, ambiguous: false };
     }
     return unique(this.methodImpls.filter(byName));
   }

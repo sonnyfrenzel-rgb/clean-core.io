@@ -2190,4 +2190,40 @@ test.describe('§5.8 and the engine — the four defects of 27.09.2026', () => {
     expect(global.nodes.find((n) => n.anchor?.lineStart === 7)?.expandsTo).toBe('method:ZCL_CC_POST=>POST');
     expect(global.nodes.find((n) => n.anchor?.lineStart === 12)?.expandsTo).toBe('method:ZCL_CC_POST=>POST');
   });
+
+  test('D2 — a call that names its class is answered by that class and its superclasses, never by a namesake', () => {
+    // QA review of be3f06343260 (045fbec9b5a4): `lcl_a=>run( )` on a class that
+    // implements no `run` fell through to the name-only lookup and opened
+    // LCL_B's method. The qualifier is the source saying which class; an
+    // inherited method answers it, an unrelated one does not.
+    const skeleton = buildProcessSkeleton([
+      'CLASS lcl_base DEFINITION.',
+      '  PUBLIC SECTION. CLASS-METHODS audit.',
+      'ENDCLASS.',
+      'CLASS lcl_a DEFINITION INHERITING FROM lcl_base.',
+      'ENDCLASS.',
+      'CLASS lcl_b DEFINITION.',
+      '  PUBLIC SECTION. CLASS-METHODS run.',
+      'ENDCLASS.',
+      'CLASS lcl_base IMPLEMENTATION.',
+      '  METHOD audit.',
+      '    INSERT zsd_audit FROM ls_audit.',
+      '  ENDMETHOD.',
+      'ENDCLASS.',
+      'CLASS lcl_b IMPLEMENTATION.',
+      '  METHOD run.',
+      '    UPDATE zsd_b SET x = 1.',
+      '  ENDMETHOD.',
+      'ENDCLASS.',
+      'START-OF-SELECTION.',
+      '  lcl_a=>run( ).',
+      '  lcl_a=>audit( ).',
+    ].join('\n'));
+    // The implicit end of START-OF-SELECTION sits on its last statement, line 21.
+    const at = (line: number) => skeleton.nodes.filter((n) => n.anchor?.lineStart === line && n.kind !== 'end');
+    // LCL_A has no `run`, itself or by inheritance: not LCL_B's.
+    expect(at(20).map((n) => [n.kind, n.expandsTo ?? null])).toEqual([['call-opaque', null]]);
+    // LCL_A inherits `audit` from LCL_BASE: that one.
+    expect(at(21).map((n) => n.expandsTo)).toEqual(['method:LCL_BASE=>AUDIT']);
+  });
 });
