@@ -1,0 +1,170 @@
+{
+ "id": "BM-009",
+ "urteile": [
+  {
+   "id": "BM-009-B01",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "X/Z ohne Fehler 010 und nur \"protokoll aufgerufen\", Y vollständig."
+  },
+  {
+   "id": "BM-009-B02",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "X/Z nur Feld smtp_addr und Rückgabecode, Y nennt Standardadresse und Fehler 011."
+  },
+  {
+   "id": "BM-009-B03",
+   "X": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "kurz": "Nur Y beschreibt den Mailinhalt."
+  },
+  {
+   "id": "BM-009-B04",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "X/Z ohne Empfängeradresse und Probeausgabe-Bezug, Y trifft."
+  },
+  {
+   "id": "BM-009-B05",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein"
+    ]
+   },
+   "kurz": "X/Z nur Bausteinaufruf, Y sagt E-Mail-Versand."
+  },
+  {
+   "id": "BM-009-B06",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "abweichend",
+    "mangel": [
+     "falsch"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Y behauptet Fehlerwert als Rückgabecode (falsch), X/Z verschweigen die Rückgabecode-Falle."
+  },
+  {
+   "id": "BM-009-B07",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein"
+    ]
+   },
+   "kurz": "Nur Y sagt Aktualisierung des Nachrichtenprotokolls."
+  }
+ ],
+ "verboten_verletzt": [
+  {
+   "variante": "Y",
+   "satz": "Tritt beim Versenden der E-Mail ein Fehler auf, wird das Unterprogramm PROTOKOLL mit der Meldung 013 und der E-Mail-Adresse aufgerufen und der Rückgabecode auf den Fehlerwert gesetzt.",
+   "grund": "Rückgabecode stammt aus dem Protokollaufruf, ein Versandfehler markiert die Nachricht nicht als fehlerhaft"
+  }
+ ],
+ "soll_zweifel": []
+}

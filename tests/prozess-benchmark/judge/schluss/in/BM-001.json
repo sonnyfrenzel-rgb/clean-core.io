@@ -1,0 +1,89 @@
+{
+ "id": "BM-001",
+ "titel": "Offene Kundenaufträge: VBAK lesen, Gesamtstatus je Beleg aus VBUK",
+ "prozess": "Der Report wird im Dialog oder als Job mit Verkaufsorganisationen (Pflicht) und einem optionalen Erfassungsdatumsbereich gestartet. Er liest alle Kundenaufträge (Belegtyp C) dieser Selektion aus dem Auftragskopf. Für jeden Auftrag liest er einzeln den Gesamtbearbeitungsstatus aus der Statustabelle VBUK. Ist der Auftrag vollständig erledigt (Status C), wird er übersprungen. Alle anderen Aufträge, also offene und teilweise bearbeitete, erscheinen mit Auftragsnummer, Auftraggeber, Nettowert, Währung und Status in einer Liste. Findet die Statuslesung keinen Satz, bleibt der Status des vorher gelesenen Auftrags stehen, sodass die Filterung dann auf einem fremden Wert beruht. Es wird nichts geschrieben.",
+ "verboten": [
+  "source.abap:22 — kein Fachsatz „nur vollständig unbearbeitete Aufträge werden gelistet“: teilweise bearbeitete Aufträge (Status B) bleiben in der Liste, der strengere CHECK ist auskommentiert",
+  "source.abap:19 — kein Fachsatz „Aufträge ohne Statussatz gelten als offen“: gv_gbstk wird nicht zurückgesetzt, ohne VBUK-Treffer wirkt der Status des vorigen Auftrags weiter",
+  "gesamte Scheibe — kein Fachsatz „offene Aufträge werden abgeschlossen oder geändert“: der Report liest und listet nur"
+ ],
+ "saetze": [
+  {
+   "id": "BM-001-B01",
+   "soll": "Es werden Kundenaufträge (Belegtyp C) der eingegebenen Verkaufsorganisationen und Erfassungsdaten selektiert.",
+   "zeilen": [
+    14
+   ],
+   "code": [
+    "14:   SELECT * FROM vbak INTO TABLE gt_auftr"
+   ],
+   "X": [
+    "Es werden Aufträge selektiert."
+   ],
+   "Y": [
+    "Es werden Aufträge selektiert."
+   ],
+   "Z": [
+    "Aus der Tabelle VBAK werden alle Verkaufsbelege mit dem Belegtyp 'C' gelesen, deren Verkaufsorganisation und Erfassungsdatum den vorgegebenen Selektionskriterien entsprechen."
+   ]
+  },
+  {
+   "id": "BM-001-B02",
+   "soll": "Für jeden Auftrag wird der Gesamtbearbeitungsstatus aus dem Belegstatus nachgelesen.",
+   "zeilen": [
+    19
+   ],
+   "code": [
+    "19:     SELECT SINGLE gbstk FROM vbuk INTO gv_gbstk"
+   ],
+   "X": [
+    "gbstk des Satzes wird gelesen."
+   ],
+   "Y": [
+    "Das Feld gbstk aus vbuk wird gelesen."
+   ],
+   "Z": [
+    "Aus der Tabelle VBUK wird anhand der Belegnummer der Gesamtbearbeitungsstatus des Kundenauftrags gelesen."
+   ]
+  },
+  {
+   "id": "BM-001-B03",
+   "soll": "Vollständig erledigte Aufträge (Gesamtstatus C) werden übersprungen.",
+   "zeilen": [
+    22
+   ],
+   "code": [
+    "22:     IF gv_gbstk = 'C'."
+   ],
+   "X": [],
+   "Y": [
+    "Wenn das Feld gv_gbstk gleich C ist, wird der Schleifendurchlauf übersprungen."
+   ],
+   "Z": [
+    "Ist der Gesamtbearbeitungsstatus gleich 'C', wird der aktuelle Beleg übersprungen und mit dem nächsten Kundenauftrag fortgefahren."
+   ]
+  },
+  {
+   "id": "BM-001-B04",
+   "soll": "Alle übrigen Aufträge werden mit Auftragsnummer, Auftraggeber, Nettowert, Währung und Status als Liste ausgegeben.",
+   "zeilen": [
+    25
+   ],
+   "code": [
+    "25:     WRITE: / gs_auftr-vbeln, gs_auftr-kunnr, gs_auftr-netwr,"
+   ],
+   "X": [
+    "Bei Treffern werden Belegnummer, Kundennummer, Nettowert, gs_auftr-waerk und gv_gbstk als Liste ausgegeben.",
+    "Belegnummer wird ausgegeben.",
+    "Kundennummer wird ausgegeben.",
+    "Nettowert wird ausgegeben."
+   ],
+   "Y": [
+    "Bei Treffern werden Belegnummer, Kundennummer, Nettowert, Belegwährung und gv_gbstk als Liste ausgegeben."
+   ],
+   "Z": [
+    "Die Belegnummer, die Kundennummer, der Nettowert, der Währungsschlüssel und der Gesamtbearbeitungsstatus werden auf der Ausgabeliste ausgegeben."
+   ]
+  }
+ ]
+}

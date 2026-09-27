@@ -1,0 +1,274 @@
+{
+ "id": "BM-034",
+ "urteile": [
+  {
+   "id": "BM-034-B01",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "kurz": "X/Y nur Unterprogramm- und BAL-Aufrufe, Z nennt Protokoll mit 90 Tagen."
+  },
+  {
+   "id": "BM-034-B02",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "kurz": "X/Y nur Tabellenzugriffe, Z nennt aktive Lieferanten und offene Entnahmen."
+  },
+  {
+   "id": "BM-034-B03",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "kurz": "X/Y nur Tabellensuche, Z sagt Verwerfen ohne Vereinbarung."
+  },
+  {
+   "id": "BM-034-B04",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "falsch"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "kurz": "X behauptet \"nichts geschrieben\" trotz Protokollsicherung, Y/Z vollständig."
+  },
+  {
+   "id": "BM-034-B05",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "kurz": "X/Y nur Schleife, Z schweigt; keiner nennt die Summe."
+  },
+  {
+   "id": "BM-034-B06",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "kurz": "X/Y nur Variablenvergleich, Z sagt Verschieben unter Mindestbetrag."
+  },
+  {
+   "id": "BM-034-B07",
+   "X": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "kurz": "Nur Z beschreibt die CSV-Aufstellung."
+  },
+  {
+   "id": "BM-034-B08",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": [
+     "redundant"
+    ]
+   },
+   "kurz": "X/Y nur log_meldung, Z nennt Fehlerprotokoll und Überspringen."
+  },
+  {
+   "id": "BM-034-B09",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "kurz": "X/Y nur Parameterbedingung, Z sagt Start von RMVKON00."
+  },
+  {
+   "id": "BM-034-B10",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "kurz": "X/Y nur Zählen und log_meldung, Z beschreibt Erfolg/Fehler."
+  },
+  {
+   "id": "BM-034-B11",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "kurz": "Nur Z nennt \"nur Aufstellung erzeugt\"."
+  },
+  {
+   "id": "BM-034-B12",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "kurz": "X/Y nur BAL-Aufrufe, Z sagt Protokoll gespeichert."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

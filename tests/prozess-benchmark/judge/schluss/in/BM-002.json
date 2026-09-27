@@ -1,0 +1,101 @@
+{
+ "id": "BM-002",
+ "titel": "MV45AFZZ: Versandbedingung für Key Accounts beim Anlegen vorbelegen",
+ "prozess": "Der Exit wird vom Standard-Kundenauftrag (VA01/VA02) beim Übernehmen der Kopffelder aufgerufen. Er wirkt nur beim Anlegen (Transaktionstyp H); beim Ändern endet er sofort. Beim Anlegen liest er die Kundengruppe des Auftraggebers im Vertriebsbereich des Auftrags. Ist der Kunde ein Key Account (Kundengruppe KA), werden die Versandbedingung Express und das kundeneigene Key-Account-Kennzeichen im Auftragskopf gesetzt. Ist er es nicht oder fehlt der Vertriebsbereichssatz, erhält nur ein Freilieferungsauftrag (ZFD) den Auftragsgrund Z01. Die frühere Vorbelegung einer Liefersperre ist auskommentiert. Gespeichert werden die Werte erst mit dem Auftrag durch den Standard.",
+ "verboten": [
+  "source.abap:25 — kein Fachsatz „Auftrag erhält eine Liefersperre“: die Zuweisung von LIFSK ist auskommentiert",
+  "source.abap:19 — kein write-Knoten auf VBAK: der Exit füllt nur den Arbeitsbereich, gespeichert wird später vom Standard-Auftrag",
+  "source.abap:21 — kein Fachsatz „Key Accounts mit Auftragsart ZFD erhalten Auftragsgrund Z01“: der ELSEIF-Zweig greift nur, wenn der Kunde kein Key Account ist"
+ ],
+ "saetze": [
+  {
+   "id": "BM-002-B01",
+   "soll": "Der Exit wirkt nur beim Anlegen eines Kundenauftrags, nicht beim Ändern oder Anzeigen.",
+   "zeilen": [
+    11
+   ],
+   "code": [
+    "11:   CHECK t180-trtyp = 'H'.          \"nur beim Anlegen"
+   ],
+   "X": [
+    "Nur wenn das Feld t180-trtyp gleich H ist, geht es weiter; sonst wird das Unterprogramm userexit_move_field_to_vbak an dieser Stelle verlassen."
+   ],
+   "Y": [
+    "Nur t180-trtyp mit dem Wert H gehen weiter; kleinere werden übersprungen, die Schleife läuft weiter."
+   ],
+   "Z": [
+    "Die Verarbeitung wird nur fortgeführt, wenn der Transaktionstyp t180-trtyp den Wert 'H' hat; andernfalls wird die Bearbeitung abgebrochen."
+   ]
+  },
+  {
+   "id": "BM-002-B02",
+   "soll": "Die Kundengruppe des Auftraggebers wird für Verkaufsorganisation, Vertriebsweg und Sparte des Auftrags nachgelesen.",
+   "zeilen": [
+    13
+   ],
+   "code": [
+    "13:   SELECT SINGLE kdgrp FROM knvv INTO lv_kdgrp"
+   ],
+   "X": [
+    "Das Feld kdgrp des Kunden wird gelesen."
+   ],
+   "Y": [
+    "kdgrp des Kunden wird gelesen."
+   ],
+   "Z": [
+    "Aus der Tabelle KNVV wird das Feld kdgrp anhand der Kundennummer vbak-kunnr, der Verkaufsorganisation vbak-vkorg, des Vertriebswegs vbak-vtweg und der Sparte vbak-spart gelesen."
+   ]
+  },
+  {
+   "id": "BM-002-B03",
+   "soll": "Ist der Auftraggeber ein Key Account (Kundengruppe KA), erhält der Auftrag die Versandbedingung Express (10) und das Key-Account-Kennzeichen.",
+   "zeilen": [
+    18,
+    19
+   ],
+   "code": [
+    "18:   IF sy-subrc = 0 AND lv_kdgrp = 'KA'.",
+    "19:     vbak-vsbed = '10'.             \"Express"
+   ],
+   "X": [
+    "Wenn ein Treffer vorliegt und das Feld lv_kdgrp gleich KA ist, wird das Feld vbak-vsbed auf 10 gesetzt und das Feld vbak-zzkeyacc auf X gesetzt.",
+    "Wenn ein Treffer vorliegt und das Feld lv_kdgrp gleich KA ist, wird das Feld vbak-vsbed auf 10 gesetzt.",
+    "Wenn ein Treffer vorliegt und das Feld lv_kdgrp gleich KA ist, wird das Feld vbak-zzkeyacc auf X gesetzt."
+   ],
+   "Y": [
+    "Für sy-subrc = 0 AND lv_kdgrp = 'KA' wird die vbak-vsbed auf 10 gesetzt und die vbak-zzkeyacc auf X gesetzt.",
+    "Für sy-subrc = 0 AND lv_kdgrp = 'KA' wird die vbak-vsbed auf 10 gesetzt und die vbak-zzkeyacc auf X gesetzt, sonst die vbak-augru auf Z01 gesetzt.",
+    "sy-subrc = 0 AND lv_kdgrp = 'KA' setzen die vbak-vsbed auf 10.",
+    "Es wird die vbak-vsbed auf 10 gesetzt und die vbak-zzkeyacc auf X gesetzt.",
+    "sy-subrc = 0 AND lv_kdgrp = 'KA' setzen die vbak-zzkeyacc auf X."
+   ],
+   "Z": [
+    "Wurde ein Eintrag in der Tabelle KNVV gefunden und hat die Kundengruppe den Wert 'KA', werden im Verkaufsbelegkopf VBAK die Versandbedingung vsbed auf '10' und das Kennzeichen zzkeyacc auf 'X' gesetzt."
+   ]
+  },
+  {
+   "id": "BM-002-B04",
+   "soll": "Andernfalls erhält ein Freilieferungsauftrag (Auftragsart ZFD) den Auftragsgrund Z01.",
+   "zeilen": [
+    21,
+    22
+   ],
+   "code": [
+    "21:   ELSEIF vbak-auart = 'ZFD'.",
+    "22:     vbak-augru = 'Z01'.            \"Freilieferung: Auftragsgrund Muster"
+   ],
+   "X": [
+    "Für Auftragsarten mit dem Wert ZFD wird das Feld vbak-augru auf Z01 gesetzt.",
+    "Auftragsarten mit dem Wert ZFD setzen das Feld vbak-augru auf Z01."
+   ],
+   "Y": [
+    "Für sy-subrc = 0 AND lv_kdgrp = 'KA' wird die vbak-vsbed auf 10 gesetzt und die vbak-zzkeyacc auf X gesetzt, sonst die vbak-augru auf Z01 gesetzt.",
+    "Für Auftragsarten mit dem Wert ZFD wird die vbak-augru auf Z01 gesetzt.",
+    "Auftragsarten mit dem Wert ZFD setzen die vbak-augru auf Z01."
+   ],
+   "Z": [
+    "Wenn die vorherige Bedingung nicht erfüllt ist und die Verkaufsbelegart vbak-auart gleich 'ZFD' ist, wird im Verkaufsbelegkopf VBAK der Auftragsgrund augru auf 'Z01' gesetzt."
+   ]
+  }
+ ]
+}

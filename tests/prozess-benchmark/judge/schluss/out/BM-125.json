@@ -1,0 +1,79 @@
+{
+ "id": "BM-125",
+ "urteile": [
+  {
+   "id": "BM-125-B01",
+   "X": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "X nennt Produktart 51A und Fälligkeit; Y/Z ohne Produktart und nur Feldname delfz."
+  },
+  {
+   "id": "BM-125-B02",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "X nennt Hinweis und Ende des Laufs; Y/Z nur Textausgabe ohne Beenden."
+  },
+  {
+   "id": "BM-125-B03",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "falsch"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "kurz": "X deutet die Währung wgschft1 fälschlich als Betrag; Y/Z nur Feldnamen."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

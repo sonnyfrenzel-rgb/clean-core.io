@@ -1,0 +1,102 @@
+{
+ "id": "BM-081",
+ "urteile": [
+  {
+   "id": "BM-081-B01",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "X und Z zählen nur Sätze je mestype ohne Bezug auf Änderungszeiger/unverarbeitet, Y nennt BDCP2 mit PROCESS initial."
+  },
+  {
+   "id": "BM-081-B02",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "grammatik",
+     "falsch"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "grammatik"
+    ]
+   },
+   "kurz": "X enthält neben dem passenden Satz den widersprüchlichen 'Bei Treffern ... ausgegeben', Y fachlich sauber, Z korrekt aber technisch."
+  },
+  {
+   "id": "BM-081-B03",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "X nennt nur 'eine Meldung', Z eine Fehlermeldung ohne Rückstau, Y Fehlermeldung mit 'Rückstau'."
+  },
+  {
+   "id": "BM-081-B04",
+   "X": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "kurz": "Alle geben Nachrichtentyp und Anzahl aus; X und Z mit Variablennamen und Füllsätzen."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

@@ -1,0 +1,147 @@
+{
+ "id": "BM-187",
+ "urteile": [
+  {
+   "id": "BM-187-B01",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "kurz": "X/Z nennen Lesen und Einzelschleife technisch; Y nur das Lesen."
+  },
+  {
+   "id": "BM-187-B02",
+   "X": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Y nennt Meldung 001 und Weitergehen; Z ohne Meldung."
+  },
+  {
+   "id": "BM-187-B03",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "kurz": "Y nennt Auftrags- und Liefersperre fachlich; X/Z Feldnamen."
+  },
+  {
+   "id": "BM-187-B04",
+   "X": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Y nennt Meldung 002; Z nur Überspringen."
+  },
+  {
+   "id": "BM-187-B05",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "zu_allgemein"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "zu_allgemein"
+    ]
+   },
+   "kurz": "Nur Y nennt die Zählung anderer Leihgeräte im Status A."
+  },
+  {
+   "id": "BM-187-B06",
+   "X": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "kurz": "Nur Y nennt Meldung 003 ab drei Geräten."
+  },
+  {
+   "id": "BM-187-B07",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Nur Y nennt fehlgeschlagenen Schlüssel und Fehlermeldung."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

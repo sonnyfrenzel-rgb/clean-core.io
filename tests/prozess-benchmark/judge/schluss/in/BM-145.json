@@ -1,0 +1,100 @@
+{
+ "id": "BM-145",
+ "titel": "Personalentwicklung: Liste ablaufender Qualifikationen mit Schalter und Benutzer-Hintertür",
+ "prozess": "Ein Report der Personalentwicklung listet Qualifikationen von Mitarbeitern, deren Gültigkeit bald endet. Zuerst liest er einen Aktivierungsschalter aus der Variablentabelle; ist dieser nicht gesetzt, endet er mit einem Hinweis. Für den fest im Code genannten Benutzer HRADMIN01 läuft die Auswertung unabhängig vom Schalter. Dann liest er die Zuordnungen Person–Qualifikation in Planvariante 01, deren Ende zwischen heute und heute plus eingegebener Tageszahl liegt. Jede Zuordnung wird mit Personalnummer, Qualifikations-ID und Ablaufdatum ausgegeben. Es wird nichts geändert und niemand benachrichtigt.",
+ "verboten": [
+  "source.abap:22 — kein Fachsatz „Mitarbeiter oder Vorgesetzte werden benachrichtigt“ oder „Schulungen werden gebucht“ (nur Liste)",
+  "source.abap:13 — kein Fachsatz „die Auswertung ist durch eine Berechtigungsprüfung geschützt“ (Benutzername fest im Code, kein AUTHORITY-CHECK)",
+  "source.abap:18 — kein Fachsatz „bereits abgelaufene Qualifikationen werden gelistet“ (Ablaufdatum ab heute)"
+ ],
+ "saetze": [
+  {
+   "id": "BM-145-B01",
+   "soll": "Ob die Auswertung laufen darf, entscheidet ein Schalter in der Variablentabelle.",
+   "zeilen": [
+    11
+   ],
+   "code": [
+    "11:   SELECT SINGLE low FROM tvarvc INTO lv_active"
+   ],
+   "X": [
+    "Aus der Tabelle TVARVC wird das Feld LOW für den Eintrag mit dem Namen 'ZPE_QUALI_EXPIRY_ACTIVE', dem Typ 'P' und der Nummer '0000' gelesen."
+   ],
+   "Y": [
+    "low des Satzes wird gelesen."
+   ],
+   "Z": [
+    "Das Feld low des Variableneintrags wird gelesen."
+   ]
+  },
+  {
+   "id": "BM-145-B02",
+   "soll": "Ist der Schalter nicht gesetzt, endet das Programm mit einem Hinweis — außer für den fest eingetragenen Benutzer HRADMIN01, für den die Auswertung immer läuft.",
+   "zeilen": [
+    13,
+    14,
+    15
+   ],
+   "code": [
+    "13:   IF lv_active <> 'X' AND sy-uname <> 'HRADMIN01'.",
+    "14:     MESSAGE s020(zpe).",
+    "15:     LEAVE PROGRAM."
+   ],
+   "X": [
+    "Ist der aus der Tabelle TVARVC gelesene Wert ungleich 'X' und der aktuelle Benutzername ungleich 'HRADMIN01', wird die Meldung 020 der Nachrichtenklasse ZPE ausgegeben und die Verarbeitung beendet."
+   ],
+   "Y": [
+    "Für lv_active <> 'X' AND sy-uname <> 'HRADMIN01' wird eine Meldung ausgegeben und die Screenfolge beendet.",
+    "Eine Meldung wird ausgegeben.",
+    "Es wird eine Meldung ausgegeben und die Screenfolge beendet.",
+    "Die Screenfolge wird beendet."
+   ],
+   "Z": [
+    "Wenn das Feld lv_active nicht gesetzt ist und das Feld sy-uname ungleich HRADMIN01 ist, wird eine Statusmeldung ausgegeben und das Programm beendet.",
+    "Die Statusmeldung 020(ZPE) wird ausgegeben.",
+    "Das Programm wird beendet."
+   ]
+  },
+  {
+   "id": "BM-145-B03",
+   "soll": "Es werden die Qualifikationszuordnungen von Personen gelesen, deren Gültigkeit zwischen heute und dem Ende des eingegebenen Zeitfensters endet.",
+   "zeilen": [
+    18
+   ],
+   "code": [
+    "18:   SELECT * FROM hrp1001 INTO TABLE lt_q"
+   ],
+   "X": [
+    "Aus der Tabelle HRP1001 werden alle Datensätze mit der Planvariante '01', dem Objekttyp 'P', dem Verknüpfungskennzeichen 'A' und der Verknüpfung '032' gelesen, deren Endedatum (ENDDA) zwischen dem aktuellen Tagesdatum und dem Tagesdatum zuzüglich der angegebenen Tage (standardmäßig 60) liegt."
+   ],
+   "Y": [
+    "Es werden Sätze aus hrp1001 selektiert."
+   ],
+   "Z": [
+    "Es werden Sätze aus hrp1001 selektiert."
+   ]
+  },
+  {
+   "id": "BM-145-B04",
+   "soll": "Jede ablaufende Qualifikation wird mit Personalnummer, Qualifikations-ID und Ablaufdatum ausgegeben.",
+   "zeilen": [
+    22
+   ],
+   "code": [
+    "22:     WRITE: / ls_q-objid, ls_q-sobid, ls_q-endda."
+   ],
+   "X": [
+    "Für jeden ermittelten Datensatz der Tabelle HRP1001 werden die Felder OBJID, SOBID und ENDDA zeilenweise ausgegeben."
+   ],
+   "Y": [
+    "Bei Treffern werden ls_q-objid, ls_q-sobid und ls_q-endda als Liste ausgegeben.",
+    "ls_q-objid wird ausgegeben.",
+    "ls_q-sobid wird ausgegeben.",
+    "ls_q-endda wird ausgegeben."
+   ],
+   "Z": [
+    "Bei Treffern werden ls_q-objid, ls_q-sobid und ls_q-endda als Liste ausgegeben."
+   ]
+  }
+ ]
+}

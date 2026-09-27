@@ -1,0 +1,102 @@
+{
+ "id": "BM-183",
+ "urteile": [
+  {
+   "id": "BM-183-B01",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "kurz": "Y nennt Lesezugriff auf den Tarifspeicher; X/Z nur Methodenaufruf."
+  },
+  {
+   "id": "BM-183-B02",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "falsch",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Nur Y nennt Neuaufbau bei fehlender/inkonsistenter Version; Z mit unsinniger Zuweisung."
+  },
+  {
+   "id": "BM-183-B03",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "kurz": "Y nennt Tarifsatz zur Route; X/Z nur Methodenaufruf."
+  },
+  {
+   "id": "BM-183-B04",
+   "X": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "kurz": "Nur Y nennt Ausnahme kein_tarif."
+  },
+  {
+   "id": "BM-183-B05",
+   "X": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "kurz": "Nur Y nennt die Preisformel mit 1000-kg-Grenze."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

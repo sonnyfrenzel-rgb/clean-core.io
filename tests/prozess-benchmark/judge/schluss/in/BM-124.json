@@ -1,0 +1,87 @@
+{
+ "id": "BM-124",
+ "titel": "FSCM-Kreditmanagement: Auftragswert gegen Kreditlimit des Segments prüfen (UKMBP_CMS_SGM, xsdbool)",
+ "prozess": "Das Web-Shop-Backend ruft die Methode mit Geschäftspartner, Kreditsegment, bisherigem Obligo und dem Wert des neuen Auftrags auf. Die Methode liest das Kreditlimit des Partners im Segment samt Sperrkennzeichen und Limitgültigkeit. Fehlen diese Daten, bricht sie mit einer Ausnahme „kein Segment“ ab. Ist der Partner gesperrt, kehrt sie sofort mit „nicht freigegeben“ zurück. Andernfalls gibt sie den Auftrag frei, wenn das Limit unbefristet oder noch gültig ist und Obligo plus Auftragswert das Limit nicht übersteigen; sonst meldet sie „nicht freigegeben“. Das Obligo wird nicht selbst ermittelt, und es wird nichts geschrieben.",
+ "verboten": [
+  "source.abap:16 — kein Fachsatz „das aktuelle Obligo wird aus dem Kreditmanagement ermittelt“: das Obligo kommt vom Aufrufer, es wird nur das Limit gelesen",
+  "source.abap:26 — kein Fachsatz „der gesperrte Partner löst eine Ausnahme aus“: die Methode kehrt ohne Ausnahme mit „nicht freigegeben“ zurück",
+  "gesamte Scheibe — kein Fachsatz „der Auftrag wird gesperrt oder ein Kreditfall angelegt“: die Methode liefert nur Ja/Nein"
+ ],
+ "saetze": [
+  {
+   "id": "BM-124-B01",
+   "soll": "Für den Geschäftspartner werden im angegebenen Kreditsegment Kreditlimit, Sperrkennzeichen und Limitgültigkeit gelesen.",
+   "zeilen": [
+    16
+   ],
+   "code": [
+    "16:     SELECT SINGLE credit_limit, xblocked, limit_valid_date"
+   ],
+   "X": [
+    "Das Ergebnis enthält credit_limit, xblocked und limit_valid_date.",
+    "credit_limit, xblocked und limit_valid_date des Satzes werden gelesen."
+   ],
+   "Y": [
+    "Das Ergebnis enthält credit_limit, xblocked und limit_valid_date.",
+    "Die Felder credit_limit, xblocked und limit_valid_date aus ukmbp_cms_sgm werden gelesen."
+   ],
+   "Z": [
+    "Aus der Tabelle UKMBP_CMS_SGM werden die Felder CREDIT_LIMIT, XBLOCKED und LIMIT_VALID_DATE zum übergebenen Geschäftspartner und Kreditsegment gelesen."
+   ]
+  },
+  {
+   "id": "BM-124-B02",
+   "soll": "Hat der Partner im Segment keine Kreditdaten, wird die Prüfung mit einer Ausnahme „kein Segment“ abgebrochen.",
+   "zeilen": [
+    21,
+    22
+   ],
+   "code": [
+    "21:     IF sy-subrc <> 0.",
+    "22:       RAISE EXCEPTION TYPE zcx_fscm_credit"
+   ],
+   "X": [],
+   "Y": [],
+   "Z": [
+    "Wird in der Tabelle UKMBP_CMS_SGM kein Datensatz gefunden, wird eine Ausnahme vom Typ ZCX_FSCM_CREDIT mit der Text-ID no_segment ausgelöst."
+   ]
+  },
+  {
+   "id": "BM-124-B03",
+   "soll": "Ist der Partner im Kreditmanagement gesperrt, wird der Auftrag ohne weitere Prüfung abgelehnt.",
+   "zeilen": [
+    25,
+    26
+   ],
+   "code": [
+    "25:     IF ls_sgm-xblocked = abap_true.",
+    "26:       RETURN.   \"gesperrt: rv_ok bleibt initial"
+   ],
+   "X": [
+    "Für ls_sgm-xblocked mit dem Wert abap_true wird der Block verlassen.",
+    "Bei ls_sgm-xblocked gleich abap_true wird der Block verlassen."
+   ],
+   "Y": [
+    "Wenn das Feld ls_sgm-xblocked gesetzt ist, wird der Block verlassen."
+   ],
+   "Z": [
+    "Ist das Feld XBLOCKED gleich abap_true, wird die Verarbeitung beendet und der Rückgabewert bleibt initial."
+   ]
+  },
+  {
+   "id": "BM-124-B04",
+   "soll": "Sonst wird der Auftrag freigegeben, wenn das Limit unbefristet oder noch gültig ist und das übergebene Obligo zusammen mit dem Auftragswert das Kreditlimit nicht übersteigt.",
+   "zeilen": [
+    28
+   ],
+   "code": [
+    "28:     rv_ok = xsdbool( ( ls_sgm-limit_valid_date IS INITIAL"
+   ],
+   "X": [],
+   "Y": [],
+   "Z": [
+    "Der Rückgabewert wird als wahr gesetzt, wenn das Gültigkeitsdatum LIMIT_VALID_DATE initial oder größer oder gleich dem Tagesdatum ist und die Summe aus Obligo und Auftragswert kleiner oder gleich dem Kreditlimit CREDIT_LIMIT ist; andernfalls wird er auf falsch gesetzt."
+   ]
+  }
+ ]
+}

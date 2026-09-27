@@ -1,0 +1,600 @@
+{
+ "id": "BM-076",
+ "titel": "Parallelisierte Massenfreigabe von Fertigungsaufträgen mit aRFC-Paketen und Anwendungs-Log",
+ "prozess": "Der Report läuft nachts als Job je Werk und ersetzt die langsame Massenfreigabe. Im Selektionsbild prüft er Paketgröße und Berechtigung. Er liest die Fertigungsaufträge des Werks und der Auftragsart mit Eckstart bis zum Horizont und behält nur eröffnete Aufträge ohne Löschvormerkung, sortiert nach Eckstart. Gibt es keine, meldet er das, schreibt aber im Abschluss trotzdem ein leeres Log. Die Aufträge teilt er in Pakete. Bei Parallelverarbeitung initialisiert er die Servergruppe – ist sie nicht verfügbar, arbeitet er seriell – und startet jedes Paket als asynchrone Task; fehlen freie Prozesse, wartet er kurz und versucht es erneut, andere Startfehler vermerkt er für alle Aufträge des Pakets. Jede Task sperrt jeden Auftrag, überspringt gesperrte mit Status L, vermerkt im Testlauf nur Status T und gibt sonst einzeln frei, mit Rollback und Status E bei Fehler oder Commit und Status S bei Erfolg, und hebt die Sperre wieder auf. Die Ergebnisse jeder Task holt ein Rückruf ab; der Report wartet, bis alle Pakete zurück sind. Zum Schluss schreibt er alle Ergebnisse ins Anwendungs-Log und gibt im Hintergrund Summen ins Spool, im Dialog die Ergebnisliste als ALV aus.",
+ "verboten": [
+  "zpp_mass_release_f02.abap:30 — kein Fachsatz „Die Zahl paralleler Tasks wird auf das Maximum begrenzt“ (GV_FREE wird gekappt, aber danach nirgends verwendet; gestartet wird, solange die Servergruppe Ressourcen hat)",
+  "zpp_mass_release.abap:36 — kein Fachsatz „Ohne Aufträge endet der Report ohne Protokoll“ (RETURN verlässt nur START-OF-SELECTION; END-OF-SELECTION schreibt Log und Ausgabe trotzdem)",
+  "z_pp_release_package.abap:45 — kein Fachsatz „Ein Paket wird gemeinsam freigegeben oder gemeinsam verworfen“ (jeder Auftrag hat eine eigene LUW)",
+  "gesamte Scheibe — kein Fachsatz „Materialverfügbarkeit oder Kapazität werden vor der Freigabe geprüft“ (geprüft werden nur Systemstatus EROF und Löschvormerkung; weitere Prüfungen liegen allenfalls in der BAPI/im Customizing)"
+ ],
+ "saetze": [
+  {
+   "id": "BM-076-B01",
+   "soll": "Eine Paketgröße außerhalb von 1 bis 500 wird im Selektionsbild mit einer Fehlermeldung zurückgewiesen.",
+   "zeilen": [
+    22,
+    23
+   ],
+   "code": [
+    "22:   IF p_paket < 1 OR p_paket > 500.",
+    "23:     MESSAGE e201."
+   ],
+   "X": [
+    "Wenn das Feld p_paket kleiner als 1 ist oder das Feld p_paket größer als 500 ist, wird eine Fehlermeldung ausgegeben.",
+    "Die Fehlermeldung 201 wird ausgegeben."
+   ],
+   "Y": [
+    "Liegt die vorgegebene Paketgröße unter 1 oder über 500, wird die Fehlermeldung E201 ausgegeben."
+   ],
+   "Z": [
+    "Für p_paket < 1 OR p_paket > 500 wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-076-B02",
+   "soll": "Ohne Berechtigung für Werk und Auftragsart bleibt der Benutzer mit einer Fehlermeldung im Selektionsbild.",
+   "zeilen": [
+    25,
+    28,
+    29
+   ],
+   "code": [
+    "25:   AUTHORITY-CHECK OBJECT 'C_AFKO_AWK'",
+    "28:   IF sy-subrc <> 0.",
+    "29:     MESSAGE e202 WITH p_werks p_auart."
+   ],
+   "X": [
+    "Die Berechtigung auf C_AFKO_AWK wird geprüft.",
+    "Ohne Berechtigung auf C_AFKO_AWK für den eingegebenen Werk wird eine Fehlermeldung ausgegeben.",
+    "Die Fehlermeldung 202 wird ausgegeben."
+   ],
+   "Y": [
+    "Es wird geprüft, ob für das Werk und die Auftragsart die Berechtigung für das Objekt C_AFKO_AWK vorliegt.",
+    "Fehlt die Berechtigung für Werk und Auftragsart, wird die Fehlermeldung E202 ausgegeben."
+   ],
+   "Z": [
+    "Die Berechtigung auf C_AFKO_AWK wird geprüft.",
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-076-B03",
+   "soll": "Selektiert werden Fertigungsaufträge des Werks und der Auftragsart zu den gewählten Fertigungssteuerern und Aufträgen, deren Eckstarttermin bis zum Horizont (Vorschlag heute plus drei Tage) reicht.",
+   "zeilen": [
+    19,
+    137
+   ],
+   "code": [
+    "19:   p_bis = sy-datum + 3.",
+    "137:   SELECT a~aufnr a~objnr k~gstrp"
+   ],
+   "X": [
+    "Das Ergebnis enthält Auftragsnummer, objnr und gstrp.",
+    "Es werden Auftragsstammsätze mit dem eingegebenen Werk und dem eingegebenen Auftragsart selektiert."
+   ],
+   "Y": [
+    "Beim Initialisieren wird das Bis-Datum auf das Tagesdatum zuzüglich 3 Tage vorbesetzt.",
+    "Aus den Tabellen AUFK und AFKO werden Auftragsnummer, Objektnummer und Eckstarttermin anhand von Werk, Auftragsart, Auftragsnummernbereich, Fertigungssteuerer und einem Eckstarttermin bis einschließlich des Bis-Datums gelesen."
+   ],
+   "Z": [
+    "Es werden Sätze aus aufk mit dem eingegebenen a~werks und dem eingegebenen Auftragsart selektiert."
+   ]
+  },
+  {
+   "id": "BM-076-B04",
+   "soll": "Übernommen werden nur Aufträge, deren Systemstatus lesbar ist, die eröffnet (EROF) und nicht zum Löschen vorgemerkt sind; sie werden nach Eckstart sortiert.",
+   "zeilen": [
+    149,
+    163,
+    168,
+    172,
+    177
+   ],
+   "code": [
+    "149:     CALL FUNCTION 'STATUS_READ'",
+    "163:     IF sy-subrc = 0.",
+    "168:     IF sy-subrc = 0.",
+    "172:     IF lv_erof = abap_true AND lv_lvm = abap_false.",
+    "177:   SORT gt_orders BY gstrp aufnr."
+   ],
+   "X": [
+    "Der Funktionsbaustein STATUS_READ wird aufgerufen.",
+    "Wenn das Feld lv_erof gesetzt ist und das Feld lv_lvm nicht gesetzt ist, wird eine Zeile aufgenommen."
+   ],
+   "Y": [
+    "Über den Funktionsbaustein STATUS_READ werden die aktiven Status zur Objektnummer des Auftrags gelesen.",
+    "Befindet sich der Systemstatus I0001 für eröffnet unter den aktiven Status, wird dies vermerkt.",
+    "Befindet sich der Status I0076 für Löschvormerkung unter den aktiven Status, wird dies vermerkt.",
+    "Ist der Auftrag eröffnet und liegt keine Löschvormerkung vor, wird er in die Liste der freizugebenden Aufträge aufgenommen."
+   ],
+   "Z": [
+    "Der Funktionsbaustein STATUS_READ wird aufgerufen.",
+    "Für lv_erof = abap_true AND lv_lvm = abap_false wird eine Zeile aufgenommen."
+   ]
+  },
+  {
+   "id": "BM-076-B05",
+   "soll": "Gibt es keine solchen Aufträge, wird ein Hinweis ausgegeben; die Verarbeitung springt zum Abschluss, der trotzdem ein (leeres) Protokoll schreibt und ausgibt.",
+   "zeilen": [
+    34,
+    35,
+    36,
+    47
+   ],
+   "code": [
+    "34:   IF gt_orders IS INITIAL.",
+    "35:     MESSAGE s203.",
+    "36:     RETURN.",
+    "47: END-OF-SELECTION."
+   ],
+   "X": [
+    "Ist die Tabelle gt_orders leer, wird eine Statusmeldung ausgegeben und der Block verlassen.",
+    "Die Statusmeldung 203 wird ausgegeben."
+   ],
+   "Y": [
+    "Wurden keine Fertigungsaufträge gefunden, wird die Information S203 ausgegeben und das Programm beendet."
+   ],
+   "Z": [
+    "Ohne Treffer wird eine Meldung ausgegeben und der Block verlassen.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "Eine Meldung wird ausgegeben.",
+    "Es wird eine Meldung ausgegeben und der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-076-B06",
+   "soll": "Die Aufträge werden in Pakete mit der gewählten Größe (Vorschlag 50) aufgeteilt, ein Rest bildet ein eigenes Paket.",
+   "zeilen": [
+    189,
+    192,
+    201
+   ],
+   "code": [
+    "189:   LOOP AT gt_orders INTO ls_order.",
+    "192:     IF lines( gs_paket-orders ) >= p_paket.",
+    "201:   IF gs_paket-orders IS NOT INITIAL."
+   ],
+   "X": [
+    "Jede Zeile aus gt_orders wird einzeln verarbeitet.",
+    "Wenn die Bedingung „lines( gs_paket-orders ) >= p_paket“ erfüllt ist, wird eine Zeile aufgenommen.",
+    "Ist das Feld gs_paket-orders nicht leer, wird eine Zeile aufgenommen."
+   ],
+   "Y": [],
+   "Z": [
+    "Jede Zeile aus gt_orders wird einzeln verarbeitet.",
+    "Für lines( gs_paket-orders ) >= p_paket wird eine Zeile aufgenommen.",
+    "Mit einer nicht leeren gs_paket-orders wird eine Zeile aufgenommen."
+   ]
+  },
+  {
+   "id": "BM-076-B07",
+   "soll": "Je nach Schalter werden die Pakete parallel verteilt oder seriell verarbeitet.",
+   "zeilen": [
+    41,
+    42,
+    44
+   ],
+   "code": [
+    "41:   IF p_para = abap_true.",
+    "42:     PERFORM verteilen.",
+    "44:     PERFORM seriell."
+   ],
+   "X": [
+    "Wenn das Feld p_para gesetzt ist, wird verteilen aufgerufen, sonst seriell aufgerufen.",
+    "Das Unterprogramm verteilen wird aufgerufen; es ruft SPBT_INITIALIZE und Z_PP_RELEASE_PACKAGE auf und gibt eine Meldung aus.",
+    "Das Unterprogramm seriell wird aufgerufen; es ruft Z_PP_RELEASE_PACKAGE auf."
+   ],
+   "Y": [
+    "Ist die Parallelverarbeitung angewählt, wird die verteilte Verarbeitung aufgerufen.",
+    "Ist die Parallelverarbeitung nicht angewählt, wird die serielle Verarbeitung im selben Prozess gestartet."
+   ],
+   "Z": [
+    "Für p_para mit dem Wert abap_true wird verteilen aufgerufen.",
+    "Für p_para mit dem Wert abap_true wird verteilen aufgerufen, sonst seriell aufgerufen.",
+    "Das Unterprogramm verteilen wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Für andere p_para wird seriell aufgerufen.",
+    "Das Unterprogramm seriell wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-076-B08",
+   "soll": "Für die Parallelverarbeitung wird die gewählte Servergruppe initialisiert; ist sie nicht verfügbar, wird das gemeldet und ersatzweise seriell verarbeitet.",
+   "zeilen": [
+    215,
+    229,
+    231,
+    232
+   ],
+   "code": [
+    "215:   CALL FUNCTION 'SPBT_INITIALIZE'",
+    "229:   IF sy-subrc <> 0 AND sy-subrc <> 3.",
+    "231:     MESSAGE s204 WITH p_group.",
+    "232:     PERFORM seriell."
+   ],
+   "X": [
+    "Der Code übergibt p_group an SPBT_INITIALIZE und übernimmt dessen Ausgabe nach gv_max.",
+    "Wenn der Aufruf von SPBT_INITIALIZE scheitert und der Rückgabewert (sy-subrc) ungleich 3 ist, wird eine Statusmeldung ausgegeben, seriell aufgerufen und der Block verlassen.",
+    "Die Statusmeldung 204 wird ausgegeben.",
+    "Das Unterprogramm seriell wird aufgerufen; es ruft Z_PP_RELEASE_PACKAGE auf."
+   ],
+   "Y": [
+    "Über den Funktionsbaustein SPBT_INITIALIZE wird die Servergruppe initialisiert und die Anzahl freier Workprozesse ermittelt.",
+    "Schlägt die Initialisierung der Servergruppe fehl, wird die Hinweisnachricht S204 ausgegeben und die Verarbeitung ersatzweise seriell durchgeführt."
+   ],
+   "Z": [
+    "Der Code übergibt p_group an SPBT_INITIALIZE und übernimmt dessen Ausgabe nach gv_max.",
+    "Das konvertierte Ergebnis wird in gv_max übernommen.",
+    "Für sy-subrc <> 0 AND sy-subrc <> 3 wird eine Meldung ausgegeben, seriell aufgerufen und der Block verlassen.",
+    "Eine Meldung wird ausgegeben.",
+    "Es wird eine Meldung ausgegeben, seriell aufgerufen und der Block verlassen.",
+    "Das Unterprogramm seriell wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-076-B09",
+   "soll": "Jedes Paket wird als eigene asynchrone Task in der Servergruppe gestartet; deren Ergebnis wird beim Task-Ende über einen Rückruf abgeholt.",
+   "zeilen": [
+    240,
+    244
+   ],
+   "code": [
+    "240:   LOOP AT gt_pakete INTO gs_paket.",
+    "244:       CALL FUNCTION 'Z_PP_RELEASE_PACKAGE'"
+   ],
+   "X": [
+    "Jede Zeile aus gt_pakete wird einzeln verarbeitet.",
+    "Der Baustein Z_PP_RELEASE_PACKAGE wird asynchron in einer eigenen Task gestartet. Ein Ergebnis liegt zu diesem Zeitpunkt nicht vor."
+   ],
+   "Y": [
+    "Die gebildeten Pakete werden nacheinander zur Verteilung durchlaufen.",
+    "Über den Funktionsbaustein Z_PP_RELEASE_PACKAGE wird ein Auftragspaket asynchron auf der Servergruppe gestartet."
+   ],
+   "Z": [
+    "Jede Zeile aus gt_pakete wird einzeln verarbeitet.",
+    "Der Baustein Z_PP_RELEASE_PACKAGE wird asynchron in einer eigenen Task gestartet. Ein Ergebnis liegt zu diesem Zeitpunkt nicht vor."
+   ]
+  },
+  {
+   "id": "BM-076-B10",
+   "soll": "Sind keine freien Prozesse verfügbar, wird bis zu fünf Sekunden auf zurückkommende Pakete gewartet und der Start wiederholt.",
+   "zeilen": [
+    257,
+    263
+   ],
+   "code": [
+    "257:       CASE sy-subrc.",
+    "263:           WAIT UNTIL gv_recv >= gv_sent UP TO 5 SECONDS."
+   ],
+   "X": [],
+   "Y": [
+    "Konnte das Paket erfolgreich gestartet werden, wird der Zähler der gesendeten Pakete erhöht und die Wiederholungsschleife beendet.",
+    "Sind keine Ressourcen frei, wird bis zu 5 Sekunden auf Rückmeldungen gewartet, bevor der Start erneut versucht wird.",
+    "Tritt beim Starten ein System- oder Kommunikationsfehler auf, wird der Fehler protokolliert und die Wiederholungsschleife für dieses Paket beendet."
+   ],
+   "Z": []
+  },
+  {
+   "id": "BM-076-B11",
+   "soll": "Scheitert der Start eines Pakets aus Kommunikations- oder Systemgründen, werden alle seine Aufträge als „nicht gestartet“ mit Fehlerstatus vermerkt.",
+   "zeilen": [
+    265,
+    307
+   ],
+   "code": [
+    "265:           PERFORM paket_fehler USING gs_paket gv_msg.",
+    "307:   LOOP AT is_paket-orders INTO ls_aufnr."
+   ],
+   "X": [
+    "Das Unterprogramm paket_fehler wird aufgerufen.",
+    "Es wird paket_fehler aufgerufen und die Schleife verlassen.",
+    "Jede Zeile aus is_paket-orders wird einzeln verarbeitet."
+   ],
+   "Y": [
+    "Tritt beim Starten ein System- oder Kommunikationsfehler auf, wird der Fehler protokolliert und die Wiederholungsschleife für dieses Paket beendet."
+   ],
+   "Z": [
+    "Das Unterprogramm paket_fehler wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Es wird paket_fehler aufgerufen und der Block verlassen.",
+    "Jede Zeile aus is_paket-orders wird einzeln verarbeitet."
+   ]
+  },
+  {
+   "id": "BM-076-B12",
+   "soll": "Nach dem Start aller Pakete wird gewartet, bis alle gestarteten Pakete zurückgemeldet haben.",
+   "zeilen": [
+    272
+   ],
+   "code": [
+    "272:   WAIT UNTIL gv_recv >= gv_sent."
+   ],
+   "X": [],
+   "Y": [
+    "Nach dem Absenden aller Pakete wird gewartet, bis sämtliche Rückmeldungen eingetroffen sind."
+   ],
+   "Z": []
+  },
+  {
+   "id": "BM-076-B13",
+   "soll": "Beim Ende einer Task werden deren Ergebnisse übernommen; bricht die Task ab, wird ein Fehler mit Taskname und Meldung vermerkt.",
+   "zeilen": [
+    282,
+    291,
+    294
+   ],
+   "code": [
+    "282:   RECEIVE RESULTS FROM FUNCTION 'Z_PP_RELEASE_PACKAGE'",
+    "291:   IF sy-subrc <> 0.",
+    "294:     RETURN."
+   ],
+   "X": [
+    "Scheitert die Rückmeldung der parallelen Task, wird eine Zeile aufgenommen und der Block verlassen."
+   ],
+   "Y": [],
+   "Z": [
+    "Ohne Treffer wird eine Zeile aufgenommen und der Block verlassen.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "Es wird eine Zeile aufgenommen und der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-076-B14",
+   "soll": "In der seriellen Verarbeitung wird jedes Paket synchron im eigenen Prozess freigegeben.",
+   "zeilen": [
+    319,
+    321
+   ],
+   "code": [
+    "319:   LOOP AT gt_pakete INTO gs_paket.",
+    "321:     CALL FUNCTION 'Z_PP_RELEASE_PACKAGE'"
+   ],
+   "X": [
+    "Jede Zeile aus gt_pakete wird einzeln verarbeitet.",
+    "Der Funktionsbaustein Z_PP_RELEASE_PACKAGE wird aufgerufen.",
+    "Es wird Z_PP_RELEASE_PACKAGE aufgerufen und eine Zeile aufgenommen."
+   ],
+   "Y": [
+    "Bei serieller Verarbeitung wird für jedes Paket der Funktionsbaustein Z_PP_RELEASE_PACKAGE synchron aufgerufen und das Ergebnis gesammelt."
+   ],
+   "Z": [
+    "Jede Zeile aus gt_pakete wird einzeln verarbeitet.",
+    "Der Funktionsbaustein Z_PP_RELEASE_PACKAGE wird aufgerufen.",
+    "Es wird Z_PP_RELEASE_PACKAGE aufgerufen und eine Zeile aufgenommen."
+   ]
+  },
+  {
+   "id": "BM-076-B15",
+   "soll": "Im Paket wird jeder Auftrag gesperrt; ist er bereits gesperrt, wird er mit Status L und dem sperrenden Benutzer vermerkt und übersprungen.",
+   "zeilen": [
+    67,
+    74
+   ],
+   "code": [
+    "67:     CALL FUNCTION 'ENQUEUE_ESORDER'",
+    "74:     IF sy-subrc <> 0."
+   ],
+   "X": [
+    "Der Funktionsbaustein ENQUEUE_ESORDER wird aufgerufen.",
+    "Ist die Sperre über ENQUEUE_ESORDER nicht zu erhalten, wird der Status auf L gesetzt, eine Zeile aufgenommen und der Schleifendurchlauf übersprungen.",
+    "Wenn die Sperre über ENQUEUE_ESORDER nicht zu erhalten ist, wird der Status auf L gesetzt."
+   ],
+   "Y": [
+    "Über den Funktionsbaustein ENQUEUE_ESORDER wird eine Sperre auf die Auftragsnummer gesetzt.",
+    "Schlägt die Sperrung fehl, wird der Sperrstatus L mit dem sperrenden Benutzer in das Ergebnis geschrieben und mit dem nächsten Auftrag fortgefahren."
+   ],
+   "Z": [
+    "Der Funktionsbaustein ENQUEUE_ESORDER wird aufgerufen.",
+    "Ohne Treffer wird die Status auf L gesetzt und eine Zeile aufgenommen.",
+    "sy-subrc ungleich 0 setzen die Status auf L."
+   ]
+  },
+  {
+   "id": "BM-076-B16",
+   "soll": "Im Testlauf (Vorschlag) wird der Auftrag nur mit Status T „Testlauf - nicht freigegeben“ vermerkt und die Sperre aufgehoben.",
+   "zeilen": [
+    81,
+    85
+   ],
+   "code": [
+    "81:     IF iv_test = abap_true.",
+    "85:       CALL FUNCTION 'DEQUEUE_ESORDER'"
+   ],
+   "X": [
+    "Wenn das Feld iv_test gesetzt ist, wird der Status auf T gesetzt, der Text auf Testlauf - nicht freigegeben gesetzt, eine Zeile aufgenommen, DEQUEUE_ESORDER aufgerufen und der Schleifendurchlauf übersprungen.",
+    "Wenn das Feld iv_test gesetzt ist, wird der Status auf T gesetzt.",
+    "Wenn das Feld iv_test gesetzt ist, wird der Text auf Testlauf - nicht freigegeben gesetzt.",
+    "Der Funktionsbaustein DEQUEUE_ESORDER wird aufgerufen."
+   ],
+   "Y": [
+    "Ist der Testlauf aktiv, wird der Status T gesetzt, die Auftragssperre über DEQUEUE_ESORDER wieder freigegeben und der Auftrag nicht freigegeben."
+   ],
+   "Z": [
+    "Für iv_test mit dem Wert abap_true wird die Status auf T gesetzt, die Text auf Testlauf - nicht freigegeben gesetzt, eine Zeile aufgenommen und DEQUEUE_ESORDER aufgerufen.",
+    "iv_test mit dem Wert abap_true setzen die Status auf T.",
+    "Es wird die Status auf T gesetzt, die Text auf Testlauf - nicht freigegeben gesetzt, eine Zeile aufgenommen und DEQUEUE_ESORDER aufgerufen.",
+    "iv_test mit dem Wert abap_true setzen die Text auf Testlauf - nicht freigegeben.",
+    "Der Funktionsbaustein DEQUEUE_ESORDER wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-076-B17",
+   "soll": "Sonst wird der Auftrag einzeln freigegeben; bei Fehler wird zurückgerollt und Status E mit Meldungstext vermerkt, bei Erfolg festgeschrieben und Status S „freigegeben“ vermerkt.",
+   "zeilen": [
+    94,
+    101,
+    102,
+    108
+   ],
+   "code": [
+    "94:     CALL FUNCTION 'BAPI_PRODORD_RELEASE'",
+    "101:     IF ls_return-type CA 'EA' OR line_exists( lt_detail[ type = 'E' ] ).",
+    "102:       CALL FUNCTION 'BAPI_TRANSACTION_ROLLBACK'.",
+    "108:       CALL FUNCTION 'BAPI_TRANSACTION_COMMIT'"
+   ],
+   "X": [
+    "Es wird eine Zeile aufgenommen und BAPI_PRODORD_RELEASE aufgerufen.",
+    "Der Funktionsbaustein BAPI_PRODORD_RELEASE wird aufgerufen.",
+    "Das Ergebnis von BAPI_PRODORD_RELEASE wird in ls_return übernommen.",
+    "Wenn die Bedingung „ls_return-type CA 'EA' OR line_exists( lt_detail[ type = 'E' ] )“ erfüllt ist, wird BAPI_TRANSACTION_ROLLBACK aufgerufen und der Status auf E gesetzt, sonst BAPI_TRANSACTION_COMMIT aufgerufen, der Status auf S gesetzt und der Text auf freigegeben gesetzt.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_ROLLBACK wird aufgerufen.",
+    "Wenn die Bedingung „ls_return-type CA 'EA' OR line_exists( lt_detail[ type = 'E' ] )“ erfüllt ist, wird der Status auf E gesetzt.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_COMMIT wird aufgerufen."
+   ],
+   "Y": [
+    "Über den BAPI_PRODORD_RELEASE wird die Freigabe des Fertigungsauftrags durchgeführt.",
+    "Liefert die Freigabe einen Fehler- oder Abbruchstatus, werden die Änderungen per BAPI_TRANSACTION_ROLLBACK zurückgenommen und der Status E mit der Fehlermeldung gesichert.",
+    "Verläuft die Freigabe fehlerfrei, werden die Änderungen per BAPI_TRANSACTION_COMMIT synchron bestätigt und der Status S vermerkt."
+   ],
+   "Z": [
+    "Es wird eine Zeile aufgenommen und BAPI_PRODORD_RELEASE aufgerufen.",
+    "Der Funktionsbaustein BAPI_PRODORD_RELEASE wird aufgerufen.",
+    "Das konvertierte Ergebnis wird in ls_return übernommen.",
+    "Für ls_return-type CA 'EA' OR line_exists( lt_detail[ type = 'E' ] ) wird BAPI_TRANSACTION_ROLLBACK aufgerufen und die Status auf E gesetzt.",
+    "Für ls_return-type CA 'EA' OR line_exists( lt_detail[ type = 'E' ] ) wird BAPI_TRANSACTION_ROLLBACK aufgerufen und die Status auf E gesetzt, sonst BAPI_TRANSACTION_COMMIT aufgerufen, die Status auf S gesetzt und die Text auf freigegeben gesetzt.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_ROLLBACK wird aufgerufen.",
+    "Es wird BAPI_TRANSACTION_ROLLBACK aufgerufen und die Status auf E gesetzt.",
+    "ls_return-type CA 'EA' OR line_exists( lt_detail[ type = 'E' ] ) setzen die Status auf E.",
+    "Sonst wird BAPI_TRANSACTION_COMMIT aufgerufen, die Status auf S gesetzt und die Text auf freigegeben gesetzt.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_COMMIT wird aufgerufen.",
+    "Es wird BAPI_TRANSACTION_COMMIT aufgerufen, die Status auf S gesetzt und die Text auf freigegeben gesetzt."
+   ]
+  },
+  {
+   "id": "BM-076-B18",
+   "soll": "Nach der Freigabe wird die Auftragssperre aufgehoben.",
+   "zeilen": [
+    115
+   ],
+   "code": [
+    "115:     CALL FUNCTION 'DEQUEUE_ESORDER'"
+   ],
+   "X": [
+    "Der Funktionsbaustein DEQUEUE_ESORDER wird aufgerufen.",
+    "Es wird DEQUEUE_ESORDER aufgerufen und eine Zeile aufgenommen."
+   ],
+   "Y": [
+    "Nach Abschluss der Freigabe wird die Sperre über DEQUEUE_ESORDER aufgehoben und das Ergebniszeile hinzugefügt."
+   ],
+   "Z": [
+    "Der Funktionsbaustein DEQUEUE_ESORDER wird aufgerufen.",
+    "Es wird DEQUEUE_ESORDER aufgerufen und eine Zeile aufgenommen."
+   ]
+  },
+  {
+   "id": "BM-076-B19",
+   "soll": "Zum Abschluss wird ein Anwendungs-Log ZPP/MASSREL mit 90 Tagen Aufbewahrung angelegt; jedes Ergebnis wird mit einem Meldungstyp nach Status (S, I, W, E) eingetragen und das Log gesichert und festgeschrieben.",
+   "zeilen": [
+    348,
+    369,
+    378,
+    384
+   ],
+   "code": [
+    "348:   CALL FUNCTION 'BAL_LOG_CREATE'",
+    "369:     CALL FUNCTION 'BAL_LOG_MSG_ADD'",
+    "378:   CALL FUNCTION 'BAL_DB_SAVE'",
+    "384:     COMMIT WORK."
+   ],
+   "X": [
+    "Der Code übergibt ls_log an BAL_LOG_CREATE und übernimmt dessen Ausgabe nach gv_handle.",
+    "Der Funktionsbaustein BAL_LOG_MSG_ADD wird aufgerufen.",
+    "Der Funktionsbaustein BAL_DB_SAVE wird aufgerufen.",
+    "Gelingt der Aufruf von BAL_DB_SAVE, wird COMMIT WORK ausgeführt.",
+    "Mit COMMIT WORK wird die Änderung persistiert."
+   ],
+   "Y": [
+    "Über den Funktionsbaustein BAL_LOG_CREATE wird ein Anwendungs-Log für das Objekt ZPP und Unterobjekt MASSREL erstellt.",
+    "Für jedes Auftragsergebnis wird über BAL_LOG_MSG_ADD eine Nachricht mit Meldungstyp, Auftragsnummer und Text zum Anwendungs-Log hinzugefügt.",
+    "Über BAL_DB_SAVE wird das Anwendungs-Log auf der Datenbank gespeichert und bei Erfolg mit COMMIT WORK bestätigt."
+   ],
+   "Z": [
+    "Der Code übergibt ls_log an BAL_LOG_CREATE und übernimmt dessen Ausgabe nach gv_handle.",
+    "Das konvertierte Ergebnis wird in gv_handle übernommen.",
+    "Der Funktionsbaustein BAL_LOG_MSG_ADD wird aufgerufen.",
+    "Der Funktionsbaustein BAL_DB_SAVE wird aufgerufen.",
+    "Bei Treffer wird COMMIT WORK ausgeführt.",
+    "Mit COMMIT WORK wird die Änderung persistiert."
+   ]
+  },
+  {
+   "id": "BM-076-B20",
+   "soll": "Kann das Log nicht angelegt werden, wird ohne Log weitergemacht.",
+   "zeilen": [
+    355,
+    356
+   ],
+   "code": [
+    "355:   IF sy-subrc <> 0.",
+    "356:     RETURN."
+   ],
+   "X": [
+    "Scheitert der Aufruf von BAL_LOG_CREATE, wird der Block verlassen."
+   ],
+   "Y": [
+    "Schlägt das Erzeugen des Log-Handles fehl, wird die Sicherung des Protokolls abgebrochen."
+   ],
+   "Z": [
+    "Ohne Treffer wird der Block verlassen.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben."
+   ]
+  },
+  {
+   "id": "BM-076-B21",
+   "soll": "Die Ergebnisse werden nach freigegeben, gesperrt, Testlauf und Fehler gezählt.",
+   "zeilen": [
+    399,
+    400
+   ],
+   "code": [
+    "399:   LOOP AT gt_result INTO ls_res.",
+    "400:     CASE ls_res-status."
+   ],
+   "X": [
+    "Jede Zeile aus gt_result wird einzeln verarbeitet."
+   ],
+   "Y": [
+    "Die Gesamtergebnisse werden durchlaufen, um die Anzahlen für erfolgreiche, gesperrte, im Testlauf geprüfte und fehlerhafte Aufträge zu ermitteln."
+   ],
+   "Z": [
+    "Jede Zeile aus gt_result wird einzeln verarbeitet."
+   ]
+  },
+  {
+   "id": "BM-076-B22",
+   "soll": "Im Hintergrund werden die Summen und die Zahl gesendeter und empfangener Pakete ins Spool geschrieben, im Dialog wird die Ergebnisliste als ALV angezeigt.",
+   "zeilen": [
+    412,
+    413,
+    422,
+    425
+   ],
+   "code": [
+    "412:   IF sy-batch = abap_true.",
+    "413:     WRITE: / 'Freigegeben:', lv_ok,",
+    "422:       cl_salv_table=>factory( IMPORTING r_salv_table = lo_alv",
+    "425:       lo_alv->display( )."
+   ],
+   "X": [
+    "Wenn das Feld sy-batch gesetzt ist, wird Freigegeben: ausgegeben, lv_ok ausgegeben, Gesperrt:  ausgegeben, lv_lock ausgegeben, Testlauf:  ausgegeben, lv_test ausgegeben, Fehler:  ausgegeben, lv_err ausgegeben, Pakete gesendet/empfangen: ausgegeben, gv_sent ausgegeben, gv_recv ausgegeben und der Block verlassen.",
+    "Freigegeben: wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "Die Methode factory von cl_salv_table wird aufgerufen; ihr Ergebnis wird in lo_alv übernommen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "Die Methode display von lo_alv wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ],
+   "Y": [
+    "Wird das Programm im Hintergrund ausgeführt, wird eine Summenliste mit den Verarbeitungszahlen und Paketstatistiken ausgegeben.",
+    "Im Dialogbetrieb wird über CL_SALV_TABLE eine interaktive ALV-Tabelle erstellt und am Bildschirm angezeigt."
+   ],
+   "Z": [
+    "Für sy-batch mit dem Wert abap_true wird Freigegeben: ausgegeben, lv_ok ausgegeben, Gesperrt:  ausgegeben, lv_lock ausgegeben, Testlauf:  ausgegeben, lv_test ausgegeben, Fehler:  ausgegeben, lv_err ausgegeben, Pakete gesendet/empfangen: ausgegeben, gv_sent ausgegeben, gv_recv ausgegeben und der Block verlassen.",
+    "Freigegeben:, lv_ok, Gesperrt: , lv_lock, Testlauf: , lv_test, Fehler: , lv_err, Pakete gesendet/empfangen:, gv_sent und gv_recv werden ausgegeben.",
+    "Es wird Freigegeben: ausgegeben, lv_ok ausgegeben, Gesperrt:  ausgegeben, lv_lock ausgegeben, Testlauf:  ausgegeben, lv_test ausgegeben, Fehler:  ausgegeben, lv_err ausgegeben, Pakete gesendet/empfangen: ausgegeben, gv_sent ausgegeben, gv_recv ausgegeben und der Block verlassen.",
+    "Freigegeben: wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "lv_ok wird ausgegeben.",
+    "Der Rückgabewert der Methode factory von cl_salv_table wird nach cl_salv_table übernommen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "Die Methode display von lo_alv wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ]
+  }
+ ]
+}

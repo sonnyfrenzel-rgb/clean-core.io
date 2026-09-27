@@ -1,0 +1,65 @@
+{
+ "id": "BM-162",
+ "urteile": [
+  {
+   "id": "BM-162-B01",
+   "X": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "kurz": "Nur Y nennt die Temperaturgrenzen und die Ausnahme."
+  },
+  {
+   "id": "BM-162-B02",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "zu_allgemein",
+     "redundant",
+     "unvollstaendig",
+     "technisch"
+    ]
+   },
+   "kurz": "Y nennt Materialbezug, Meldung und Ausnahme; X nur Ausnahme ohne fachlichen Lesezweck, Z nur „eine Meldung“ ohne Ausnahme."
+  },
+  {
+   "id": "BM-162-B03",
+   "X": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Z": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "kurz": "Nur Y beschreibt die Umrechnungsformel samt Faktor 1 bei leerem Koeffizienten."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

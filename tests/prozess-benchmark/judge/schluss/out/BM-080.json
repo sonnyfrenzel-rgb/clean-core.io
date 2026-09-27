@@ -1,0 +1,425 @@
+{
+ "id": "BM-080",
+ "urteile": [
+  {
+   "id": "BM-080-B01",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Nur Y nennt Charge, fehlenden Entscheid und Selektionskriterien."
+  },
+  {
+   "id": "BM-080-B02",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "zu_allgemein",
+     "redundant",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "falsch"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Y behauptet ein Programmende, obwohl END-OF-SELECTION folgt; X und Z nur Meldung und Verlassen."
+  },
+  {
+   "id": "BM-080-B03",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "grammatik",
+     "redundant"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "kurz": "Y nennt nur die Sperre; X und Z den Sperrfall über ampel = 2."
+  },
+  {
+   "id": "BM-080-B04",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein",
+     "grammatik",
+     "redundant"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "kurz": "Nur Y nennt Vorgaben, Ergebnisse und 'offen' ohne Merkmale."
+  },
+  {
+   "id": "BM-080-B05",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "kurz": "Nur Y unterscheidet Pflicht- und Kannmerkmale."
+  },
+  {
+   "id": "BM-080-B06",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "kurz": "Nur Y nennt die Rückweisung."
+  },
+  {
+   "id": "BM-080-B07",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein",
+     "redundant"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein"
+    ]
+   },
+   "kurz": "Nur Y nennt die Toleranzverletzung."
+  },
+  {
+   "id": "BM-080-B08",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "unvollstaendig",
+     "grammatik"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Nur Y nennt die Annahme; X und Z nur den Text."
+  },
+  {
+   "id": "BM-080-B09",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "kurz": "Nur Y nennt gelbe Ampel und Entsperren fachlich."
+  },
+  {
+   "id": "BM-080-B10",
+   "X": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "kurz": "Nur Y nennt A1 und R1."
+  },
+  {
+   "id": "BM-080-B11",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "grammatik",
+     "redundant"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "kurz": "Nur Y nennt grüne Ampel im Testlauf fachlich."
+  },
+  {
+   "id": "BM-080-B12",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "grammatik",
+     "falsch"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "kurz": "Nur Y nennt Verwendungsentscheid mit Bestandsbuchung und Fehlerfall."
+  },
+  {
+   "id": "BM-080-B13",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein"
+    ]
+   },
+   "kurz": "Nur Y nennt Festschreiben nach Erfolg."
+  },
+  {
+   "id": "BM-080-B14",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein"
+    ]
+   },
+   "kurz": "Nur Y nennt Klasse, Merkmal und Datum."
+  },
+  {
+   "id": "BM-080-B15",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "kurz": "Nur Y nennt Rollback und Protokollhinweis."
+  },
+  {
+   "id": "BM-080-B16",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "grammatik",
+     "redundant"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "kurz": "Nur Y nennt die Chargensperre fachlich."
+  },
+  {
+   "id": "BM-080-B17",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": [
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein"
+    ]
+   },
+   "kurz": "Nur Y nennt die Mail an den Verteiler (ohne Inhalt)."
+  },
+  {
+   "id": "BM-080-B18",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "kurz": "Y nennt Protokollsatz mit Benutzer und Zeit; Z technisch mit Tabellenname; X vage."
+  },
+  {
+   "id": "BM-080-B19",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "kurz": "Nur Y nennt ALV mit Ampel."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

@@ -1,0 +1,188 @@
+{
+ "id": "BM-067",
+ "titel": "Instandhaltungsaufträge zu offenen Störmeldungen per Batch-Input IW31",
+ "prozess": "Der Report sucht in den gewählten Planungswerken alle Störmeldungen der Art M1, zu denen es noch keinen Auftrag gibt. Findet er keine, gibt er einen Hinweis aus und endet. Für jede Meldung prüft er, ob ein Equipment hinterlegt ist; Meldungen ohne Equipment protokolliert er als übersprungen. Für die übrigen baut er eine Batch-Input-Mappe für IW31 – Auftragsart PM01, Bezug zur Meldung, Planungswerk, Meldungskurztext als Auftragstext – und führt die Transaktion im gewählten Modus mit synchroner Verbuchung aus. Findet sich unter den gesammelten Meldungen eine Fehlermeldung, protokolliert er die Meldung mit Fehlertext, sonst als verarbeitet. Zum Schluss gibt er die Summen aus.",
+ "verboten": [
+  "source.abap:81 — kein Fachsatz „Der Auftrag wurde angelegt und die Auftragsnummer protokolliert“ (Erfolg wird nur aus dem Fehlen einer E-Meldung geschlossen, eine Auftragsnummer wird nicht ausgewertet; A-Meldungen werden nicht geprüft)",
+  "source.abap:91 — kein Fachsatz „Die Priorität wird in den Auftrag übernommen“ (die Priorität-Zeile ist auskommentiert)",
+  "gesamte Scheibe — kein Fachsatz „Der Auftrag wird freigegeben“ (die Mappe sichert nur mit =BU, eine Freigabe ist nicht enthalten)"
+ ],
+ "saetze": [
+  {
+   "id": "BM-067-B01",
+   "soll": "Es werden Störmeldungen der Art M1 aus den gewählten Planungswerken selektiert, denen noch kein Auftrag zugeordnet ist.",
+   "zeilen": [
+    45
+   ],
+   "code": [
+    "45:   SELECT m~qmnum i~equnr i~iwerk m~qmtxt"
+   ],
+   "X": [
+    "Es werden Sätze aus qmel selektiert."
+   ],
+   "Y": [
+    "Das Ergebnis enthält Meldungsnummer, Equipmentnummer, iwerk und qmtxt.",
+    "Es werden Meldungen selektiert."
+   ],
+   "Z": [
+    "Aus den Tabellen QMEL und QMIH werden Meldungsnummer (QMEL-QMNUM), Equipmentnummer (QMIH-EQUNR), Instandhaltungswerk (QMIH-IWERK) und Meldungskurztext (QMEL-QMTXT) für Meldungen der Meldungsart 'M1' ohne Auftragsnummer (QMEL-AUFNR ist leer) sowie gemäß den Selektionskriterien für Meldungsnummer und Werk gelesen."
+   ]
+  },
+  {
+   "id": "BM-067-B02",
+   "soll": "Gibt es keine solche Meldung, wird ein Hinweis ausgegeben und der Lauf beendet.",
+   "zeilen": [
+    52,
+    53,
+    54
+   ],
+   "code": [
+    "52:   IF gt_mel IS INITIAL.",
+    "53:     WRITE / 'Keine offenen Stoermeldungen ohne Auftrag'.",
+    "54:     RETURN."
+   ],
+   "X": [
+    "Ohne Treffer wird Keine offenen Stoermeldungen ohne Auftrag ausgegeben und der Block verlassen.",
+    "Ohne Treffer wird Keine offenen Stoermeldungen ohne Auftrag ausgegeben und vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "Es wird Keine offenen Stoermeldungen ohne Auftrag ausgegeben und der Block verlassen.",
+    "Keine offenen Stoermeldungen ohne Auftrag wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code."
+   ],
+   "Y": [
+    "Ohne Treffer wird Keine offenen Stoermeldungen ohne Auftrag ausgegeben und vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "Keine offenen Stoermeldungen ohne Auftrag wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code."
+   ],
+   "Z": [
+    "Werden keine offenen Störmeldungen ohne Auftrag gefunden, wird der Text 'Keine offenen Stoermeldungen ohne Auftrag' ausgegeben und die Verarbeitung beendet."
+   ]
+  },
+  {
+   "id": "BM-067-B03",
+   "soll": "Meldungen ohne Equipment werden übersprungen und als übersprungen protokolliert.",
+   "zeilen": [
+    59,
+    60
+   ],
+   "code": [
+    "59:     IF gs_mel-equnr IS INITIAL.",
+    "60:       WRITE: / gs_mel-qmnum, 'ohne Equipment - uebersprungen'."
+   ],
+   "X": [
+    "Ohne gs_mel-equnr wird gs_mel-qmnum ausgegeben und ohne Equipment - uebersprungen ausgegeben.",
+    "Bei Treffern werden gs_mel-qmnum und ohne Equipment - uebersprungen als Liste ausgegeben.",
+    "gs_mel-qmnum wird ausgegeben.",
+    "ohne Equipment - uebersprungen wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code."
+   ],
+   "Y": [
+    "Ohne Equipmentnummer wird Meldungsnummer ausgegeben, ohne Equipment - uebersprungen ausgegeben und der Schleifendurchlauf übersprungen.",
+    "ohne Equipment - uebersprungen wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code."
+   ],
+   "Z": [
+    "Ist in der Störmeldung keine Equipmentnummer vorhanden, wird die Meldungsnummer mit dem Hinweis 'ohne Equipment - uebersprungen' ausgegeben und die Bearbeitung dieser Meldung übersprungen."
+   ]
+  },
+  {
+   "id": "BM-067-B04",
+   "soll": "Für jede übrige Meldung wird eine Batch-Input-Mappe für IW31 mit Auftragsart PM01, Meldungsbezug, Planungswerk und Meldungskurztext als Auftragskurztext aufgebaut.",
+   "zeilen": [
+    64,
+    91
+   ],
+   "code": [
+    "64:     PERFORM build_bdc USING gs_mel.",
+    "91: FORM build_bdc USING is_mel TYPE ty_mel."
+   ],
+   "X": [
+    "Das Unterprogramm build_bdc wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt."
+   ],
+   "Y": [
+    "Das Unterprogramm build_bdc wird aufgerufen."
+   ],
+   "Z": [
+    "Über die Transaktion IW31 wird mit den Meldungsdaten ein Instandhaltungsauftrag der Auftragsart 'PM01' mit Meldungsnummer, Werk und Kurztext im Modus p_mode mit synchroner Verbuchung angelegt."
+   ]
+  },
+  {
+   "id": "BM-067-B05",
+   "soll": "Die Auftragsanlage läuft über IW31 im gewählten Batch-Input-Modus mit synchroner Verbuchung; die Meldungen der Transaktion werden gesammelt.",
+   "zeilen": [
+    67
+   ],
+   "code": [
+    "67:     CALL TRANSACTION 'IW31' USING gt_bdc"
+   ],
+   "X": [
+    "Die Anlage wird über die Transaktion IW31 angestoßen. Ob und was persistiert wird, entscheidet die aufgerufene Transaktion."
+   ],
+   "Y": [
+    "Die Transaktion IW31 wird per Batch-Input im Modus aus p_mode angestoßen und synchron verbucht. Ob und was persistiert wird, entscheidet die aufgerufene Transaktion."
+   ],
+   "Z": [
+    "Über die Transaktion IW31 wird mit den Meldungsdaten ein Instandhaltungsauftrag der Auftragsart 'PM01' mit Meldungsnummer, Werk und Kurztext im Modus p_mode mit synchroner Verbuchung angelegt."
+   ]
+  },
+  {
+   "id": "BM-067-B06",
+   "soll": "Enthalten die Meldungen eine Fehlermeldung, wird die Meldung mit dem Fehlertext protokolliert, sonst als verarbeitet.",
+   "zeilen": [
+    72,
+    73,
+    78,
+    81
+   ],
+   "code": [
+    "72:     READ TABLE gt_msg INTO gs_msg WITH KEY msgtyp = 'E'.",
+    "73:     IF sy-subrc = 0.",
+    "78:       WRITE: / gs_mel-qmnum, 'FEHLER:', gv_text.",
+    "81:       WRITE: / gs_mel-qmnum, 'verarbeitet'."
+   ],
+   "X": [
+    "In der Tabelle wird nach einer passenden Zeile gesucht.",
+    "Bei Treffer wird eine Meldung ausgegeben, gs_mel-qmnum ausgegeben, FEHLER: ausgegeben und Text ausgegeben.",
+    "Bei Treffer wird eine Meldung ausgegeben, gs_mel-qmnum ausgegeben, FEHLER: ausgegeben und Text ausgegeben, sonst gs_mel-qmnum ausgegeben und verarbeitet ausgegeben.",
+    "Bei Treffern werden gs_mel-qmnum, FEHLER: und Text als Liste ausgegeben.",
+    "gs_mel-qmnum wird ausgegeben.",
+    "FEHLER: wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "Text wird ausgegeben.",
+    "Für andere sy-subrc wird gs_mel-qmnum ausgegeben und verarbeitet ausgegeben.",
+    "Bei Treffern werden gs_mel-qmnum und verarbeitet als Liste ausgegeben.",
+    "gs_mel-qmnum wird ausgegeben.",
+    "verarbeitet wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code."
+   ],
+   "Y": [
+    "In der Tabelle gt_msg wird nach einer passenden Zeile gesucht.",
+    "Bei Treffer wird der Meldungstext in gv_text übernommen, Meldungsnummer ausgegeben, FEHLER: ausgegeben und Text ausgegeben, sonst Meldungsnummer ausgegeben und verarbeitet ausgegeben.",
+    "FEHLER: wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "verarbeitet wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code."
+   ],
+   "Z": [
+    "Wird in den Rückmeldungen der Transaktionsausführung eine Fehlermeldung vom Nachrichtentyp 'E' gefunden, wird der Fehlertext aufbereitet, der Fehlerzähler um 1 erhöht und die Meldungsnummer zusammen mit dem Fehlertext ausgegeben.",
+    "Wird in den Rückmeldungen der Transaktionsausführung keine Fehlermeldung vom Nachrichtentyp 'E' gefunden, wird der Erfolgszähler um 1 erhöht und die Meldungsnummer mit dem Status 'verarbeitet' ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-067-B07",
+   "soll": "Am Ende werden Anzahl verarbeiteter und fehlerhafter Meldungen ausgegeben.",
+   "zeilen": [
+    86
+   ],
+   "code": [
+    "86:   WRITE: / 'Verarbeitet:', gv_ok, 'Fehler:', gv_err."
+   ],
+   "X": [
+    "Verarbeitet:, gv_ok, Fehler: und gv_err werden ausgegeben.",
+    "Verarbeitet: wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "gv_ok wird ausgegeben.",
+    "Fehler: wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "gv_err wird ausgegeben."
+   ],
+   "Y": [
+    "Verarbeitet:, gv_ok, Fehler: und gv_err werden ausgegeben.",
+    "Verarbeitet: wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "Fehler: wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code."
+   ],
+   "Z": [
+    "Es werden eine Trennlinie sowie die Gesamtzahlen der erfolgreich verarbeiteten Meldungen und der aufgetretenen Fehler ausgegeben."
+   ]
+  }
+ ]
+}

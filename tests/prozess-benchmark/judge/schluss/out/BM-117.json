@@ -1,0 +1,417 @@
+{
+ "id": "BM-117",
+ "urteile": [
+  {
+   "id": "BM-117-B01",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein"
+    ]
+   },
+   "kurz": "X und Y nennen Abweisung einer vorhandenen Rückrufnummer im Echtlauf, Z nur 'eine Meldung'."
+  },
+  {
+   "id": "BM-117-B02",
+   "X": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Nur X nennt Material, Serialnummern und Lieferdatum."
+  },
+  {
+   "id": "BM-117-B03",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Nur X nennt das Entfernen nicht passender Chargen."
+  },
+  {
+   "id": "BM-117-B04",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "kurz": "Alle nennen Hinweis und Ende ohne Serialnummern."
+  },
+  {
+   "id": "BM-117-B05",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Nur X nennt die Zuordnung von Kunde und Land je Serialnummer."
+  },
+  {
+   "id": "BM-117-B06",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "falsch"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "grammatik"
+    ]
+   },
+   "kurz": "X beschreibt Test und Liste, behauptet aber eine Kundenzeile je Gruppenwechsel; Y und Z nur technisch."
+  },
+  {
+   "id": "BM-117-B07",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein",
+     "redundant"
+    ]
+   },
+   "kurz": "X und Y nennen Sperre und Fehlermeldung, Z nur 'eine Meldung'."
+  },
+  {
+   "id": "BM-117-B08",
+   "X": {
+    "urteil": "gleich",
+    "mangel": [
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "X nennt Kopf und Positionen, Y und Z nur den COMMIT."
+  },
+  {
+   "id": "BM-117-B09",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "X nur Unterprogrammaufruf, Y 'gruppenweise', Z 'jede Zeile einzeln'; keine sagt 'je Kunde'."
+  },
+  {
+   "id": "BM-117-B10",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "kurz": "Nur X nennt die Wiederverwendung einer vorhandenen Meldung."
+  },
+  {
+   "id": "BM-117-B11",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "X nennt fehlenden Kunden als Ursache, Y und Z nur die Ausgabe."
+  },
+  {
+   "id": "BM-117-B12",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig",
+     "redundant"
+    ]
+   },
+   "kurz": "Nur X nennt Meldungsart S3, Priorität und Positionen."
+  },
+  {
+   "id": "BM-117-B13",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "kurz": "X nennt Rollback und Fortsetzen fachlich, Y und Z technisch."
+  },
+  {
+   "id": "BM-117-B14",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "kurz": "X und Y nennen die Meldungsnummer an den Positionen, Z nur 'qmnum geändert'."
+  },
+  {
+   "id": "BM-117-B15",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "kurz": "Nur X nennt Landeskanal, Standardkanal und Fehlerausgabe fachlich."
+  },
+  {
+   "id": "BM-117-B16",
+   "X": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "kurz": "X sagt nichts, Y und Z nennen den COMMIT."
+  },
+  {
+   "id": "BM-117-B17",
+   "X": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "kurz": "X nennt Liste aus dem Speicher und Ausgabe, Y und Z nur Aufrufe."
+  },
+  {
+   "id": "BM-117-B18",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "falsch"
+    ]
+   },
+   "kurz": "X und Y nennen Status und Fehlerausgabe je Equipment; Z stellt die Fehlerausgabe zusätzlich unter 'Bei Treffern'."
+  }
+ ],
+ "verboten_verletzt": [
+  {
+   "variante": "X",
+   "satz": "Bei jedem Gruppenwechsel nach Kunde wird die Kundennummer farblich hervorgehoben ausgegeben.",
+   "grund": "Unterstellt genau eine Kundenzeile je Kunde; AT NEW kunnr feuert wegen der Feldreihenfolge vor jeder Serialnummer."
+  }
+ ],
+ "soll_zweifel": []
+}

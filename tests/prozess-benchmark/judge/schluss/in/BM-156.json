@@ -1,0 +1,608 @@
+{
+ "id": "BM-156",
+ "titel": "bAV-Monatsmeldung an den Versorgungsträger aus Abrechnungsergebnissen mit Rückrechnungsdifferenzen",
+ "prozess": "Die Entgeltabrechnung meldet monatlich je Versorgungsträger die bAV-Beiträge per Datei. Beim Aufruf wird ein Dateiname vorgeschlagen; Pfade außerhalb des bAV-Verzeichnisses werden abgewiesen. Der Lauf eröffnet ein Protokoll und bricht ab, wenn der Abrechnungskreis nicht im Status „Ende der Abrechnung“ steht, die Periode schon ohne Wiederholungskennzeichen gemeldet wurde, dem Träger keine Lohnarten zugeordnet sind oder die Datei nicht anlegbar ist. Dann schreibt er einen Kopfsatz. Je Mitarbeiter sucht er den bAV-Vertrag beim Träger und das Abrechnungsverzeichnis; ohne beides wird der Mitarbeiter übergangen. Jedes in der Periode entstandene aktuelle Ergebnis wird gelesen, die bAV-Lohnarten nach Arbeitgeber- und Arbeitnehmeranteil summiert und der Jahreswert aus den Kumulationen gebildet. Laufende Perioden werden voll gemeldet, rückgerechnete als Differenz zum Vorgängerergebnis; Differenzsätze ohne Änderung entfallen. Jeder Satz wird gegebenenfalls trägerspezifisch aufbereitet und geschrieben. Am Ende folgen ein Summensatz, im Testlauf das Löschen der Datei, sonst – wenn Sätze geschrieben wurden – der Vermerk der gemeldeten Periode, und die Anzeige des Protokolls.",
+ "verboten": [
+  "zpy_bav_export_f01.abap:172 — kein Fachsatz „der Jahreswert enthält nur Arbeitgeberbeiträge“ (summiert werden alle zugeordneten bAV-Lohnarten, der Kommentar trifft nicht zu)",
+  "zpy_bav_export_f02.abap:42 — kein Fachsatz über den Inhalt der trägerspezifischen Aufbereitung (Zielprogramm dynamisch und nicht im Fall; fehlt es, wird still übergangen)",
+  "zpy_bav_export_f01.abap:108 — kein Fachsatz „Mitarbeiter ohne Beiträge werden nicht gemeldet“ (laufende Sätze mit null werden geschrieben)",
+  "gesamte Scheibe — kein Fachsatz „die Datei wird an den Träger übertragen“ (nur auf dem Applikationsserver abgelegt)"
+ ],
+ "saetze": [
+  {
+   "id": "BM-156-B01",
+   "soll": "Beim Aufruf wird als Meldedatei ein Name im bAV-Ausgangsverzeichnis mit dem aktuellen Jahr und Monat vorgeschlagen.",
+   "zeilen": [
+    18
+   ],
+   "code": [
+    "18:   CONCATENATE '/interface/hr/bav/out/bav_' sy-datum(6) '.csv' INTO p_file."
+   ],
+   "X": [],
+   "Y": [],
+   "Z": [
+    "Beim Initialisieren des Programms wird der Standarddateipfad mit dem aktuellen Jahr und Monat gebildet."
+   ]
+  },
+  {
+   "id": "BM-156-B02",
+   "soll": "Ein Dateipfad außerhalb des freigegebenen bAV-Schnittstellenverzeichnisses wird auf dem Selektionsbild abgewiesen.",
+   "zeilen": [
+    21,
+    23
+   ],
+   "code": [
+    "21:   IF p_file NS '/interface/hr/bav/'.",
+    "23:     MESSAGE e001."
+   ],
+   "X": [
+    "Wenn die Bedingung „p_file NS '/interface/hr/bav/'“ erfüllt ist, wird eine Fehlermeldung ausgegeben.",
+    "Die Fehlermeldung 001 wird ausgegeben."
+   ],
+   "Y": [
+    "Für p_file NS '/interface/hr/bav/' wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ],
+   "Z": [
+    "Enthält der angegebene Dateipfad nicht das Verzeichnis '/interface/hr/bav/', wird die Fehlermeldung E001 ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-156-B03",
+   "soll": "Für den Lauf wird ein Anwendungsprotokoll zu Träger und Periode eröffnet.",
+   "zeilen": [
+    28,
+    318
+   ],
+   "code": [
+    "28:   PERFORM log_create.",
+    "318:   CALL FUNCTION 'BAL_LOG_CREATE'"
+   ],
+   "X": [
+    "Das Unterprogramm log_create wird aufgerufen; es ruft BAL_LOG_CREATE auf.",
+    "Die Unterprogramme log_create, check_control_record, check_double_run, load_customizing und open_file werden nacheinander aufgerufen, jedes ohne Parameter.",
+    "Der Code übergibt ls_log an BAL_LOG_CREATE und übernimmt dessen Ausgabe nach gv_log."
+   ],
+   "Y": [
+    "Das Unterprogramm log_create wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Es wird log_create aufgerufen, check_control_record aufgerufen, check_double_run aufgerufen, load_customizing aufgerufen und open_file aufgerufen.",
+    "Der Code übergibt ls_log an BAL_LOG_CREATE und übernimmt dessen Ausgabe nach gv_log.",
+    "Das konvertierte Ergebnis wird in gv_log übernommen."
+   ],
+   "Z": [
+    "Zum Start der Selektion wird ein neues Anwendungs-Log für den Versorgungsträger und die In-Periode initialisiert."
+   ]
+  },
+  {
+   "id": "BM-156-B04",
+   "soll": "Der Lauf bricht ab, wenn der Abrechnungskreis unbekannt ist oder nicht im Status „Ende der Abrechnung“ steht oder seine Periode noch vor der gewählten liegt.",
+   "zeilen": [
+    64,
+    67,
+    68,
+    70,
+    73
+   ],
+   "code": [
+    "64:   SELECT SINGLE vwsaz pabrj pabrp FROM t569v",
+    "67:   IF sy-subrc <> 0.",
+    "68:     MESSAGE e005 WITH p_abkrs.",
+    "70:   IF lv_vwsaz <> '3'",
+    "73:     MESSAGE e006 WITH p_abkrs gv_inper."
+   ],
+   "X": [
+    "Das Ergebnis enthält vwsaz, pabrj und pabrp.",
+    "Die Felder vwsaz, pabrj und pabrp aus t569v mit dem eingegebenen abkrs werden gelesen.",
+    "Ohne Treffer wird eine Fehlermeldung ausgegeben.",
+    "Die Fehlermeldung 005 wird ausgegeben.",
+    "Wenn die Bedingung „lv_vwsaz <> '3' OR lv_pabrj < p_pabrj OR ( lv_pabrj = p_pabrj AND lv_pabrp < p_pabrp )“ erfüllt ist, wird eine Fehlermeldung ausgegeben.",
+    "Die Fehlermeldung 006 wird ausgegeben."
+   ],
+   "Y": [
+    "vwsaz pabrj pabrp des Satzes mit dem eingegebenen abkrs wird gelesen.",
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben.",
+    "Für lv_vwsaz <> '3' OR lv_pabrj < p_pabrj OR ( lv_pabrj = p_pabrj AND lv_pabrp < p_pabrp ) wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ],
+   "Z": [
+    "Aus der Tabelle T569V werden der Verwaltungsstatus sowie das Abrechnungsjahr und die Abrechnungsperiode zum Abrechnungskreis p_abkrs gelesen.",
+    "Wird kein Satz im Abrechnungsverwaltungssatz T569V zum Abrechnungskreis gefunden, wird die Fehlermeldung E005 ausgegeben.",
+    "Ist der Verwaltungsstatus ungleich '3' oder liegt die Abrechnungsperiode vor der eingegebenen Periode, wird die Fehlermeldung E006 ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-156-B05",
+   "soll": "Wurde die gewählte Periode bereits gemeldet, bricht der Echtlauf ab, es sei denn, eine Wiederholung ist ausdrücklich gewählt.",
+   "zeilen": [
+    48,
+    50,
+    52
+   ],
+   "code": [
+    "48:   IMPORT last_period = gv_last",
+    "50:   IF gv_last = gv_inper AND p_test IS INITIAL AND p_rerun IS INITIAL.",
+    "52:     MESSAGE e002 WITH gv_inper."
+   ],
+   "X": [
+    "Wenn das Feld gv_last gleich gv_inper ist, das Feld p_test leer ist und das Feld p_rerun leer ist, wird eine Fehlermeldung ausgegeben.",
+    "Die Fehlermeldung 002 wird ausgegeben."
+   ],
+   "Y": [
+    "Für gv_last = gv_inper AND p_test IS INITIAL AND p_rerun IS INITIAL wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ],
+   "Z": [
+    "Entspricht die zuletzt gemeldete Periode der aktuellen In-Periode und liegt weder ein Testlauf noch ein Wiederholungslauf vor, wird die Fehlermeldung E002 ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-156-B06",
+   "soll": "Die dem Träger zugeordneten bAV-Lohnarten mit ihrer Einteilung in Arbeitgeber- und Arbeitnehmeranteil werden geladen; fehlen sie, bricht der Lauf ab.",
+   "zeilen": [
+    79,
+    81,
+    82
+   ],
+   "code": [
+    "79:   SELECT traeger lgart art FROM zpy_bav_lgart INTO TABLE gt_lgart",
+    "81:   IF gt_lgart IS INITIAL.",
+    "82:     MESSAGE e003 WITH p_trag."
+   ],
+   "X": [
+    "Das Ergebnis enthält traeger, lgart und art.",
+    "Es werden Sätze aus zpy_bav_lgart mit dem eingegebenen traeger selektiert.",
+    "Ohne Treffer wird eine Fehlermeldung ausgegeben.",
+    "Die Fehlermeldung 003 wird ausgegeben."
+   ],
+   "Y": [
+    "Es werden Sätze aus zpy_bav_lgart mit dem eingegebenen traeger selektiert.",
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ],
+   "Z": [
+    "Aus der Tabelle ZPY_BAV_LGART werden Versorgungsträger, Lohnart und Beitragsart zum Versorgungsträger p_trag gelesen.",
+    "Wurden keine Lohnarten für den Versorgungsträger im Customizing gefunden, wird die Fehlermeldung E003 ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-156-B07",
+   "soll": "Aus dem Trägerkürzel wird der Name des trägerspezifischen Formatierungsprogramms gebildet.",
+   "zeilen": [
+    84
+   ],
+   "code": [
+    "84:   CONCATENATE 'ZPY_BAV_FORMAT_' p_trag INTO gv_prog."
+   ],
+   "X": [],
+   "Y": [],
+   "Z": []
+  },
+  {
+   "id": "BM-156-B08",
+   "soll": "Die Meldedatei wird angelegt; gelingt das nicht, bricht der Lauf ab, sonst wird ein Kopfsatz mit Träger, Periode und Datum geschrieben.",
+   "zeilen": [
+    226,
+    227,
+    228,
+    238
+   ],
+   "code": [
+    "226:   OPEN DATASET p_file FOR OUTPUT IN TEXT MODE ENCODING UTF-8.",
+    "227:   IF sy-subrc <> 0.",
+    "228:     MESSAGE e004 WITH p_file.",
+    "238:   TRANSFER gv_line TO p_file."
+   ],
+   "X": [
+    "Lässt sich die Datei nicht öffnen, wird eine Fehlermeldung ausgegeben.",
+    "Die Fehlermeldung 004 wird ausgegeben."
+   ],
+   "Y": [
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ],
+   "Z": [
+    "Die Ausgabedatei wird im UTF-8-Textmodus zum Schreiben geöffnet.",
+    "Kann die Ausgabedatei nicht geöffnet werden, wird die Fehlermeldung E004 ausgegeben.",
+    "Ein Kopfsatz mit Kennung 'K', Träger, In-Periode und aktuellem Datum wird in die Datei geschrieben."
+   ]
+  },
+  {
+   "id": "BM-156-B09",
+   "soll": "Für jeden selektierten Mitarbeiter wird der bAV-Vertrag beim gewählten Träger zum Ende des Auswahlzeitraums der logischen Datenbank gesucht; ohne Vertrag wird er übergangen.",
+   "zeilen": [
+    34,
+    101,
+    112,
+    113,
+    115
+   ],
+   "code": [
+    "34: GET peras.",
+    "101:   CALL FUNCTION 'HR_READ_INFOTYPE'",
+    "112:   READ TABLE lt_p9010 INTO ls_p9010 WITH KEY traeger = p_trag.",
+    "113:   IF sy-subrc <> 0.",
+    "115:     RETURN."
+   ],
+   "X": [
+    "Jeder von der logischen Datenbank gelieferte peras-Satz wird verarbeitet. Welche Sätze das sind, bestimmt die logische Datenbank mit ihrem Selektionsbild, nicht der Report.",
+    "Der Funktionsbaustein HR_READ_INFOTYPE wird aufgerufen.",
+    "In der Tabelle lt_p9010 wird nach einer passenden Zeile gesucht.",
+    "Ohne Treffer wird der Block verlassen."
+   ],
+   "Y": [
+    "Jeder von der logischen Datenbank gelieferte peras-Satz wird verarbeitet. Welche Sätze das sind, bestimmt die logische Datenbank mit ihrem Selektionsbild, nicht der Report.",
+    "Der Funktionsbaustein HR_READ_INFOTYPE wird aufgerufen.",
+    "In der Tabelle wird nach einer passenden Zeile gesucht.",
+    "Ohne Treffer wird der Block verlassen.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben."
+   ],
+   "Z": [
+    "Für den Mitarbeiter werden die bAV-Vertragsdaten aus Infotyp 9010 zum Stichtag gelesen."
+   ]
+  },
+  {
+   "id": "BM-156-B10",
+   "soll": "Hat der Mitarbeiter kein Abrechnungsverzeichnis, wird eine Warnung protokolliert und er übergangen.",
+   "zeilen": [
+    119,
+    129,
+    130,
+    131
+   ],
+   "code": [
+    "119:   CALL FUNCTION 'CU_READ_RGDIR'",
+    "129:   IF sy-subrc <> 0.",
+    "130:     PERFORM log_add USING 'W' pv_pernr 'Kein Abrechnungsergebnis'.",
+    "131:     RETURN."
+   ],
+   "X": [
+    "Der Code übergibt pv_pernr an CU_READ_RGDIR und übernimmt dessen Ausgabe nach lv_molga.",
+    "Scheitert der Aufruf von CU_READ_RGDIR, wird log_add aufgerufen und der Block verlassen.",
+    "Das Unterprogramm log_add wird aufgerufen; es ruft BAL_LOG_MSG_ADD_FREE_TEXT auf."
+   ],
+   "Y": [
+    "Der Code übergibt pv_pernr an CU_READ_RGDIR und übernimmt dessen Ausgabe nach lv_molga.",
+    "Das konvertierte Ergebnis wird in lv_molga übernommen.",
+    "Ohne Treffer wird log_add aufgerufen und der Block verlassen.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "Das Unterprogramm log_add wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Es wird log_add aufgerufen und der Block verlassen."
+   ],
+   "Z": [
+    "Das Abrechnungsverzeichnis (RGDIR) des Mitarbeiters wird über den Funktionsbaustein CU_READ_RGDIR ermittelt.",
+    "Wird kein Abrechnungsverzeichnis gefunden, wird eine Warnung im Anwendungs-Log vermerkt und der Mitarbeiter übersprungen."
+   ]
+  },
+  {
+   "id": "BM-156-B11",
+   "soll": "Jedes aktuelle Ergebnis, das in der gewählten Periode entstanden ist, wird gelesen; ist es nicht lesbar, wird ein Fehler protokolliert und das Ergebnis übersprungen.",
+   "zeilen": [
+    134,
+    136,
+    138,
+    139,
+    182
+   ],
+   "code": [
+    "134:   LOOP AT gt_rgdir INTO ls_rgdir WHERE inper = gv_inper",
+    "136:     PERFORM read_result USING pv_pernr ls_rgdir-seqnr",
+    "138:     IF lv_ok = abap_false.",
+    "139:       PERFORM log_add USING 'E' pv_pernr 'Ergebnis nicht lesbar'.",
+    "182:   CALL FUNCTION 'PYXX_READ_PAYROLL_RESULT'"
+   ],
+   "X": [
+    "Die Zeilen aus gt_rgdir, bei denen das Feld inper gleich gv_inper ist und das Feld srtza gleich A ist, werden einzeln verarbeitet.",
+    "Das Unterprogramm read_result wird aufgerufen; es ruft PYXX_READ_PAYROLL_RESULT auf.",
+    "Wenn das Feld lv_ok nicht gesetzt ist, wird log_add aufgerufen und der Schleifendurchlauf übersprungen.",
+    "Das Unterprogramm log_add wird aufgerufen; es ruft BAL_LOG_MSG_ADD_FREE_TEXT auf.",
+    "Der Funktionsbaustein PYXX_READ_PAYROLL_RESULT wird aufgerufen."
+   ],
+   "Y": [
+    "Jede Zeile aus gt_rgdir wird einzeln verarbeitet.",
+    "Das Unterprogramm read_result wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Für lv_ok mit dem Wert abap_false wird log_add aufgerufen.",
+    "Das Unterprogramm log_add wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Der Funktionsbaustein PYXX_READ_PAYROLL_RESULT wird aufgerufen."
+   ],
+   "Z": [
+    "Zu jedem aktuellen Abrechnungsergebnis der In-Periode wird das Abrechnungsergebnis aus Cluster RD gelesen.",
+    "Kann das Abrechnungsergebnis nicht gelesen werden, wird ein Fehler im Protokoll eingetragen und zum nächsten Eintrag fortgefahren."
+   ]
+  },
+  {
+   "id": "BM-156-B12",
+   "soll": "Aus dem Ergebnis werden die Beträge der bAV-Lohnarten nach Arbeitgeber- und Arbeitnehmeranteil summiert.",
+   "zeilen": [
+    147,
+    201,
+    202,
+    203,
+    204
+   ],
+   "code": [
+    "147:     PERFORM collect_amounts USING ls_result CHANGING ls_rec.",
+    "201:   LOOP AT is_result-inter-rt INTO ls_rt.",
+    "202:     READ TABLE gt_lgart INTO ls_lg WITH TABLE KEY lgart = ls_rt-lgart.",
+    "203:     CHECK sy-subrc = 0.",
+    "204:     CASE ls_lg-art."
+   ],
+   "X": [
+    "Das Unterprogramm collect_amounts wird aufgerufen.",
+    "Jede Zeile aus is_result-inter-rt wird einzeln verarbeitet.",
+    "In der Tabelle gt_lgart wird nach einer passenden Zeile gesucht.",
+    "Nur wenn ein Treffer vorliegt, wird der Schleifendurchlauf fortgesetzt; sonst wird er übersprungen, und die Schleife läuft mit dem nächsten Durchlauf weiter."
+   ],
+   "Y": [
+    "Das Unterprogramm collect_amounts wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Jede Zeile aus is_result-inter-rt wird einzeln verarbeitet.",
+    "In der Tabelle wird nach einer passenden Zeile gesucht.",
+    "Nur sy-subrc mit dem Wert 0 gehen weiter; kleinere werden übersprungen, die Schleife läuft weiter."
+   ],
+   "Z": []
+  },
+  {
+   "id": "BM-156-B13",
+   "soll": "Als Jahreswert werden die Kalenderjahreskumulationen aller bAV-Lohnarten des Trägers aufsummiert.",
+   "zeilen": [
+    213,
+    216,
+    217
+   ],
+   "code": [
+    "213:   LOOP AT is_result-inter-crt INTO ls_crt WHERE cumty = 'Y'.",
+    "216:     IF sy-subrc = 0.",
+    "217:       cs_rec-ytd = cs_rec-ytd + ls_crt-betrg."
+   ],
+   "X": [
+    "Die Zeilen aus is_result-inter-crt, bei denen das Feld cumty gleich Y ist, werden einzeln verarbeitet."
+   ],
+   "Y": [
+    "Jede Zeile aus is_result-inter-crt wird einzeln verarbeitet."
+   ],
+   "Z": []
+  },
+  {
+   "id": "BM-156-B14",
+   "soll": "Ein Ergebnis der laufenden Periode wird als laufender Satz gemeldet, auch wenn seine Beiträge null sind.",
+   "zeilen": [
+    149,
+    172
+   ],
+   "code": [
+    "149:     IF ls_rgdir-fpper = ls_rgdir-inper.",
+    "172:     PERFORM write_record USING ls_rec."
+   ],
+   "X": [
+    "Wenn das Feld ls_rgdir-fpper gleich ls_rgdir-inper ist, wird das Feld ls_rec-satzart auf L gesetzt, sonst das Feld ls_rec-satzart auf R gesetzt.",
+    "Wenn das Feld ls_rgdir-fpper gleich ls_rgdir-inper ist, wird das Feld ls_rec-satzart auf L gesetzt.",
+    "Das Unterprogramm write_record wird aufgerufen."
+   ],
+   "Y": [
+    "Für ls_rgdir-fpper mit dem Wert ls_rgdir-inper wird die ls_rec-satzart auf L gesetzt.",
+    "Für ls_rgdir-fpper mit dem Wert ls_rgdir-inper wird die ls_rec-satzart auf L gesetzt, sonst die ls_rec-satzart auf R gesetzt.",
+    "ls_rgdir-fpper mit dem Wert ls_rgdir-inper setzen die ls_rec-satzart auf L.",
+    "Das Unterprogramm write_record wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt."
+   ],
+   "Z": [
+    "Stimmt die Für-Periode mit der In-Periode überein, wird die Satzart auf 'L' gesetzt.",
+    "Liegt eine Rückrechnung vor, wird die Satzart auf 'R' gesetzt und nach dem vorherigen Abrechnungsergebnis gesucht."
+   ]
+  },
+  {
+   "id": "BM-156-B15",
+   "soll": "Bei einer rückgerechneten Periode wird das vorherige Ergebnis derselben Periode gelesen und nur die Differenz der Anteile gemeldet; fehlt der Vorgänger oder ist er nicht lesbar, werden die vollen Beträge als Differenzsatz gemeldet.",
+   "zeilen": [
+    155,
+    157,
+    158,
+    160,
+    162,
+    163
+   ],
+   "code": [
+    "155:       READ TABLE gt_rgdir INTO ls_prev WITH KEY fpper = ls_rgdir-fpper",
+    "157:       IF sy-subrc = 0.",
+    "158:         PERFORM read_result USING pv_pernr ls_prev-seqnr",
+    "160:         IF lv_ok = abap_true.",
+    "162:           PERFORM collect_amounts USING ls_resprev CHANGING ls_old.",
+    "163:           ls_rec-ag = ls_rec-ag - ls_old-ag."
+   ],
+   "X": [
+    "Wenn das Feld ls_rgdir-fpper gleich ls_rgdir-inper ist, wird das Feld ls_rec-satzart auf L gesetzt, sonst das Feld ls_rec-satzart auf R gesetzt.",
+    "In der Tabelle gt_rgdir wird nach einer passenden Zeile gesucht.",
+    "Bei Treffer wird read_result aufgerufen.",
+    "Das Unterprogramm read_result wird aufgerufen; es ruft PYXX_READ_PAYROLL_RESULT auf.",
+    "Wenn das Feld lv_ok gesetzt ist, wird collect_amounts aufgerufen.",
+    "Das Unterprogramm collect_amounts wird aufgerufen."
+   ],
+   "Y": [
+    "Für ls_rgdir-fpper mit dem Wert ls_rgdir-inper wird die ls_rec-satzart auf L gesetzt, sonst die ls_rec-satzart auf R gesetzt.",
+    "Für andere ls_rgdir-fpper wird die ls_rec-satzart auf R gesetzt.",
+    "In der Tabelle wird nach einer passenden Zeile gesucht.",
+    "Bei Treffer wird read_result aufgerufen.",
+    "Das Unterprogramm read_result wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Für lv_ok mit dem Wert abap_true wird collect_amounts aufgerufen.",
+    "Das Unterprogramm collect_amounts wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt."
+   ],
+   "Z": [
+    "Liegt eine Rückrechnung vor, wird die Satzart auf 'R' gesetzt und nach dem vorherigen Abrechnungsergebnis gesucht.",
+    "Wird ein Vorgängerergebnis im Abrechnungsverzeichnis gefunden, wird dessen Abrechnungsergebnis gelesen.",
+    "Bei erfolgreichem Lesen des Vorgängerergebnisses werden dessen Beträge ermittelt und von den aktuellen Beträgen abgezogen."
+   ]
+  },
+  {
+   "id": "BM-156-B16",
+   "soll": "Rückrechnungssätze ohne Differenz werden nicht gemeldet.",
+   "zeilen": [
+    167
+   ],
+   "code": [
+    "167:       IF ls_rec-ag = 0 AND ls_rec-an = 0."
+   ],
+   "X": [
+    "Wenn das Feld ls_rec-ag gleich 0 ist und das Feld ls_rec-an gleich 0 ist, wird der Schleifendurchlauf übersprungen."
+   ],
+   "Y": [],
+   "Z": [
+    "Ergeben sowohl Arbeitgeber- als auch Arbeitnehmeranteil bei einer Rückrechnung null, wird die Verarbeitung des Satzes übersprungen."
+   ]
+  },
+  {
+   "id": "BM-156-B17",
+   "soll": "Jeder Datensatz enthält Satzart, Personalnummer, Vertrag, Periode, beide Anteile und Jahreswert, wird – sofern das Trägerprogramm eine Aufbereitung vorsieht – trägerspezifisch aufbereitet und in die Datei geschrieben; Anzahl und Summen werden fortgeschrieben.",
+   "zeilen": [
+    262,
+    264,
+    265
+   ],
+   "code": [
+    "262:   PERFORM format_record IN PROGRAM (gv_prog) CHANGING gv_line IF FOUND.",
+    "264:   TRANSFER gv_line TO p_file.",
+    "265:   gv_count_rec = gv_count_rec + 1."
+   ],
+   "X": [
+    "Das externe Unterprogramm format_record wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt."
+   ],
+   "Y": [
+    "Das externe Unterprogramm format_record wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt."
+   ],
+   "Z": [
+    "Falls vorhanden, wird eine trägerspezifische Formatierungsroutine für den Datensatz aufgerufen.",
+    "Der formatierte Datensatz mit Beträgen und Kennzahlen wird in die Datei übertragen und die Summenzähler werden hochgezählt."
+   ]
+  },
+  {
+   "id": "BM-156-B18",
+   "soll": "Nach allen Mitarbeitern wird ein Summensatz mit Satzanzahl und Summen beider Anteile geschrieben.",
+   "zeilen": [
+    39,
+    276,
+    285
+   ],
+   "code": [
+    "39:   PERFORM write_trailer.",
+    "276:   CHECK gv_file_open = abap_true.",
+    "285:   TRANSFER gv_line TO p_file."
+   ],
+   "X": [
+    "Das Unterprogramm write_trailer wird aufgerufen.",
+    "Die Unterprogramme write_trailer, close_and_register und log_display werden nacheinander aufgerufen, jedes ohne Parameter.",
+    "Nur wenn das Feld gv_file_open gesetzt ist, geht es weiter; sonst wird das Unterprogramm write_trailer an dieser Stelle verlassen."
+   ],
+   "Y": [
+    "Das Unterprogramm write_trailer wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Es wird write_trailer aufgerufen, close_and_register aufgerufen und log_display aufgerufen.",
+    "Nur gv_file_open mit dem Wert abap_true gehen weiter; kleinere werden übersprungen, die Schleife läuft weiter."
+   ],
+   "Z": [
+    "Ist die Datei geöffnet, wird ein Schlusssatz mit Datensatzanzahl sowie Gesamtbeträgen für AG und AN in die Datei geschrieben."
+   ]
+  },
+  {
+   "id": "BM-156-B19",
+   "soll": "Im Testlauf wird die fertige Datei wieder gelöscht und nichts vermerkt.",
+   "zeilen": [
+    293,
+    295,
+    297
+   ],
+   "code": [
+    "293:   IF p_test = abap_true.",
+    "295:     DELETE DATASET p_file.",
+    "297:     RETURN."
+   ],
+   "X": [
+    "Wenn das Feld p_test gesetzt ist, wird log_add aufgerufen und der Block verlassen."
+   ],
+   "Y": [
+    "Für p_test mit dem Wert abap_true wird log_add aufgerufen und der Block verlassen.",
+    "Bei p_test gleich abap_true wird der Block verlassen.",
+    "Es wird log_add aufgerufen und der Block verlassen."
+   ],
+   "Z": [
+    "Handelt es sich um einen Testlauf, wird die erstellte Datei wieder gelöscht und ein entsprechender Hinweis im Log hinterlegt."
+   ]
+  },
+  {
+   "id": "BM-156-B20",
+   "soll": "Enthält die Datei keinen Datensatz, wird die Periode nicht als gemeldet vermerkt.",
+   "zeilen": [
+    300,
+    302
+   ],
+   "code": [
+    "300:   IF gv_count_rec = 0.",
+    "302:     RETURN."
+   ],
+   "X": [
+    "Wenn das Feld gv_count_rec gleich 0 ist, wird log_add aufgerufen und der Block verlassen."
+   ],
+   "Y": [
+    "Für gv_count_rec mit dem Wert 0 wird log_add aufgerufen und der Block verlassen.",
+    "Bei gv_count_rec gleich 0 wird der Block verlassen.",
+    "Es wird log_add aufgerufen und der Block verlassen."
+   ],
+   "Z": [
+    "Wurden im Echtlauf keine Datensätze erzeugt, wird eine Warnung protokolliert und die Periode nicht gespeichert."
+   ]
+  },
+  {
+   "id": "BM-156-B21",
+   "soll": "Sonst wird die Periode als gemeldet vermerkt und festgeschrieben.",
+   "zeilen": [
+    306,
+    308
+   ],
+   "code": [
+    "306:   EXPORT last_period = gv_last",
+    "308:   COMMIT WORK."
+   ],
+   "X": [
+    "Mit COMMIT WORK wird die Änderung persistiert.",
+    "Es wird COMMIT WORK ausgeführt und log_add aufgerufen."
+   ],
+   "Y": [
+    "Mit COMMIT WORK wird die Änderung persistiert.",
+    "Es wird COMMIT WORK ausgeführt und log_add aufgerufen."
+   ],
+   "Z": [
+    "Im Echtlauf mit vorhandenen Sätzen wird die gemeldete Periode in der Clusterdatenbank INDX gesichert, die Transaktion bestätigt und eine Erfolgsmeldung protokolliert."
+   ]
+  },
+  {
+   "id": "BM-156-B22",
+   "soll": "Das Protokoll wird gesichert und bei Dialogstart angezeigt.",
+   "zeilen": [
+    41,
+    346,
+    352
+   ],
+   "code": [
+    "41:   PERFORM log_display.",
+    "346:   CALL FUNCTION 'BAL_DB_SAVE'",
+    "352:     CALL FUNCTION 'BAL_DSP_LOG_DISPLAY'"
+   ],
+   "X": [
+    "Die Unterprogramme write_trailer, close_and_register und log_display werden nacheinander aufgerufen, jedes ohne Parameter.",
+    "Das Unterprogramm log_display wird aufgerufen; es ruft BAL_DB_SAVE und BAL_DSP_LOG_DISPLAY auf.",
+    "Es wird eine Zeile aufgenommen und BAL_DB_SAVE aufgerufen.",
+    "Der Funktionsbaustein BAL_DB_SAVE wird aufgerufen.",
+    "Wenn das Feld sy-batch nicht gesetzt ist, wird BAL_DSP_LOG_DISPLAY aufgerufen.",
+    "Der Funktionsbaustein BAL_DSP_LOG_DISPLAY wird aufgerufen."
+   ],
+   "Y": [
+    "Es wird write_trailer aufgerufen, close_and_register aufgerufen und log_display aufgerufen.",
+    "Das Unterprogramm log_display wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Es wird eine Zeile aufgenommen und BAL_DB_SAVE aufgerufen.",
+    "Der Funktionsbaustein BAL_DB_SAVE wird aufgerufen.",
+    "Für sy-batch mit dem Wert abap_false wird BAL_DSP_LOG_DISPLAY aufgerufen.",
+    "Der Funktionsbaustein BAL_DSP_LOG_DISPLAY wird aufgerufen."
+   ],
+   "Z": [
+    "Das Anwendungs-Log wird in die Datenbank gespeichert.",
+    "Läuft das Programm im Dialogbetrieb, wird das Anwendungs-Log am Bildschirm angezeigt."
+   ]
+  }
+ ]
+}

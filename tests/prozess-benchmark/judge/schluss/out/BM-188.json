@@ -1,0 +1,202 @@
+{
+ "id": "BM-188",
+ "urteile": [
+  {
+   "id": "BM-188-B01",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "kurz": "Nur X nennt die Vorbelegung mit dem Vortag."
+  },
+  {
+   "id": "BM-188-B02",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "zu_allgemein",
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "X nennt Werkstyp A; Y/Z nur generisch."
+  },
+  {
+   "id": "BM-188-B03",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "zu_allgemein",
+     "redundant",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "X nennt Hinweis und Abbruch; Y ohne Abbruch, Z generisch."
+  },
+  {
+   "id": "BM-188-B04",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein",
+     "grammatik"
+    ]
+   },
+   "kurz": "X nennt unverbuchte Kassendaten je Filiale; Y/Z nur Zählung und sy-dbcnt."
+  },
+  {
+   "id": "BM-188-B05",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Nur X nennt Jobname mit Filiale und Datum."
+  },
+  {
+   "id": "BM-188-B06",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "X und Y nennen Meldung und Übergehen; Z ohne Übergehen."
+  },
+  {
+   "id": "BM-188-B07",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "falsch",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "X nennt Report mit Parametern im Job; Y ohne Parameter; Z spricht fälschlich von direktem Start."
+  },
+  {
+   "id": "BM-188-B08",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Nur X beschreibt Sofortstart bzw. Start nach Vorgänger."
+  },
+  {
+   "id": "BM-188-B09",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "kurz": "Alle nennen die Anzahl eingeplanter Filialjobs."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

@@ -1,0 +1,480 @@
+{
+ "id": "BM-193",
+ "urteile": [
+  {
+   "id": "BM-193-B01",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "kurz": "Y nennt URL-Parameter und Laden; X/Z Methodenaufrufe."
+  },
+  {
+   "id": "BM-193-B02",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig",
+     "grammatik"
+    ]
+   },
+   "kurz": "Nur Y nennt Erfasser, Datum und Status als Vorbelegung."
+  },
+  {
+   "id": "BM-193-B03",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "zu_allgemein",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "zu_allgemein",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Nur Y nennt Lesen und Merken als Vergleichsstand."
+  },
+  {
+   "id": "BM-193-B04",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Nur Y nennt Fehlermeldung bei unbekannter Nummer."
+  },
+  {
+   "id": "BM-193-B05",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Nur Y nennt die Pflichtfelder."
+  },
+  {
+   "id": "BM-193-B06",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "falsch",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Y nennt Fehlermeldung am Feld, nicht das Übergehen unbekannter Felder; X technisch, Z mit falschem „kleinere“."
+  },
+  {
+   "id": "BM-193-B07",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "kurz": "Y nennt Abbruch des Sicherns; X/Z nur Blockverlassen."
+  },
+  {
+   "id": "BM-193-B08",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Nur Y nennt Nummernkreisobjekt ZEHS_UNF."
+  },
+  {
+   "id": "BM-193-B09",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Y nennt Fehlermeldung und Abbruch; X/Z technisch."
+  },
+  {
+   "id": "BM-193-B10",
+   "X": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "kurz": "Nur Y nennt die Meldepflicht ab mehr als drei Ausfalltagen."
+  },
+  {
+   "id": "BM-193-B11",
+   "X": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "kurz": "Y nennt den Statuswechsel 01 auf 02, nicht Benutzer und Datum."
+  },
+  {
+   "id": "BM-193-B12",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "kurz": "Y nennt Unfalltabelle fachlich; X/Z nur „Zeile eingefügt“."
+  },
+  {
+   "id": "BM-193-B13",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "kurz": "Y nennt Rollback und Fehlermeldung; X/Z technisch."
+  },
+  {
+   "id": "BM-193-B14",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "kurz": "Y nennt Änderungsbeleg mit altem und neuem Stand; X/Z nur Registrierung."
+  },
+  {
+   "id": "BM-193-B15",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Y nennt Festschreiben und Rückmeldung der Nummer; X/Z technisch."
+  },
+  {
+   "id": "BM-193-B16",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Nur Y nennt die Bedingung „erstmals meldepflichtig“."
+  },
+  {
+   "id": "BM-193-B17",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Nur Y nennt den Schalter ZEHS_UNFALL_MAIL."
+  },
+  {
+   "id": "BM-193-B18",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "grammatik"
+    ]
+   },
+   "kurz": "Y nennt Sicherheitsfachkraft des Werks und Sammelpostfach; X/Z Feldnamen."
+  },
+  {
+   "id": "BM-193-B19",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "zu_allgemein",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "zu_allgemein",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Y nennt Werk, Datum, Ausfalltage, nicht die Nummer und die BG-Erinnerung; X/Z nur Zeilen."
+  },
+  {
+   "id": "BM-193-B20",
+   "X": {
+    "urteil": "fehlt",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "fehlt",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "kurz": "Nur Y nennt die Warnung bei Versandfehler."
+  },
+  {
+   "id": "BM-193-B21",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "kurz": "Y nennt Erfolgsmeldung, Schreibschutz und Bestätigungsseite; X/Z Methodenaufrufe."
+  },
+  {
+   "id": "BM-193-B22",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Y nennt Abbruch des Speicherns, keine Variante den Verbleib in der Maske."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

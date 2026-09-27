@@ -1,0 +1,265 @@
+{
+ "id": "BM-054",
+ "urteile": [
+  {
+   "id": "BM-054-B01",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "kurz": "Y nur 'waers des Satzes'; X und Z nennen die Buchungskreiswährung."
+  },
+  {
+   "id": "BM-054-B02",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein",
+     "redundant"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "kurz": "X und Z nennen Sperre und Fehlerabbruch; Y nur Bausteinaufruf und 'eine Meldung'."
+  },
+  {
+   "id": "BM-054-B03",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "X nur offene Posten ohne die nach dem Stichtag ausgeglichenen; Y und Z ohne Stichtags- und Fremdwährungskriterium."
+  },
+  {
+   "id": "BM-054-B04",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": [
+     "redundant"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "kurz": "Alle nennen Hinweis und Ende."
+  },
+  {
+   "id": "BM-054-B05",
+   "X": {
+    "urteil": "gleich",
+    "mangel": [
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "kurz": "X fachlich (ohne Vorzeichen); Y und Z nur Parameterübergabe."
+  },
+  {
+   "id": "BM-054-B06",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "kurz": "Nur X nennt die Summierung der Differenz je Währung."
+  },
+  {
+   "id": "BM-054-B07",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "kurz": "X fachlich; Y und Z listen Ausgabe-Literale."
+  },
+  {
+   "id": "BM-054-B08",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "kurz": "Nur X erklärt Echtlauf und Überspringen ohne Differenz fachlich."
+  },
+  {
+   "id": "BM-054-B09",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein",
+     "redundant"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein"
+    ]
+   },
+   "kurz": "Nur X nennt Soll-/Habenkonten für Verlust und Gewinn."
+  },
+  {
+   "id": "BM-054-B10",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "kurz": "X fachlich; Y und Z zerlegen in Aufrufe und Literale."
+  },
+  {
+   "id": "BM-054-B11",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "unvollstaendig",
+     "grammatik"
+    ]
+   },
+   "kurz": "Nur X nennt den Protokollsatz."
+  },
+  {
+   "id": "BM-054-B12",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "kurz": "X fachlich; Y und Z Bausteinname und Variablen."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

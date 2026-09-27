@@ -1,0 +1,414 @@
+{
+ "id": "BM-020",
+ "urteile": [
+  {
+   "id": "BM-020-B01",
+   "X": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "kurz": "Nur Z nennt den Vorjahresvorschlag."
+  },
+  {
+   "id": "BM-020-B02",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein",
+     "redundant"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein",
+     "redundant"
+    ]
+   },
+   "Z": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "kurz": "X/Y nur \"Native-SQL-Block\", Z schweigt; keiner nennt Umsatzermittlung."
+  },
+  {
+   "id": "BM-020-B03",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Z": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "kurz": "X/Y nur Codebedingung, Z schweigt."
+  },
+  {
+   "id": "BM-020-B04",
+   "X": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "zu_allgemein"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "kurz": "Alle nennen Hinweis und Ende, Y generisch."
+  },
+  {
+   "id": "BM-020-B05",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "zu_allgemein",
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "kurz": "X/Y ohne Bedingung fehlende Staffel, Z vollständig."
+  },
+  {
+   "id": "BM-020-B06",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein",
+     "falsch"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Keiner nennt die absteigende Sortierung; Y ohne Filter."
+  },
+  {
+   "id": "BM-020-B07",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "kurz": "X/Y nur Feld bokre, Z sagt Bonusrelevanz."
+  },
+  {
+   "id": "BM-020-B08",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "kurz": "X/Y nur Kundennummer gelesen, Z sagt Prüfung auf vorhandenen Bonusbeleg."
+  },
+  {
+   "id": "BM-020-B09",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "falsch"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "X technisch mit Fehlerweg, Y mit falschem Rücksprung, Z ohne fehlenden Kurs."
+  },
+  {
+   "id": "BM-020-B10",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "kurz": "X/Y nur Konstante c_min_umsatz, Z nennt 10.000 EUR."
+  },
+  {
+   "id": "BM-020-B11",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein",
+     "falsch"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "kurz": "X technischer Filter, Y ohne Filter, Z nennt Stufenwahl und Prozentsatz."
+  },
+  {
+   "id": "BM-020-B12",
+   "X": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "kurz": "Keine Variante beschreibt die Bonusberechnung."
+  },
+  {
+   "id": "BM-020-B13",
+   "X": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "kurz": "Nur Z beschreibt die Kappung."
+  },
+  {
+   "id": "BM-020-B14",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "grammatik"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "kurz": "X/Y nur Status I, Z sagt Ausweis ohne Belegerstellung."
+  },
+  {
+   "id": "BM-020-B15",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "grammatik"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "kurz": "X/Y nur Status T, Z nennt Testlauf-Hinweis."
+  },
+  {
+   "id": "BM-020-B16",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "X/Y nur Aufrufe, Z nur ZG2 ohne Grund, Material und Kondition."
+  },
+  {
+   "id": "BM-020-B17",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "grammatik"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "kurz": "X/Y technisch zerstückelt, Z fachlich."
+  },
+  {
+   "id": "BM-020-B18",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "zu_allgemein",
+     "technisch"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "kurz": "X/Z nennen Abbruchmeldung beim Einfügen, Y nur \"ohne Treffer Meldung\"."
+  },
+  {
+   "id": "BM-020-B19",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "kurz": "X/Y nur ALV-Baustein, Z sagt Ergebnisliste."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

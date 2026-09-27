@@ -1,0 +1,177 @@
+{
+ "id": "BM-029",
+ "titel": "Chargen mit abgelaufenem MHD in den gesperrten Bestand umbuchen (344)",
+ "prozess": "Der tägliche Job startet den Report mit Werken, optional Lagerorten, einer Vorlaufzeit in Tagen und dem Buchungsschalter. Der Stichtag ist heute plus Vorlauf. Der Report liest alle Chargen mit frei verwendbarem Bestand, deren Verfallsdatum gepflegt ist und spätestens am Stichtag liegt. Gibt es keine, meldet er das und stoppt. Ist Buchen angekreuzt, bucht er je Charge den gesamten freien Chargenbestand mit Bewegungsart 344 in den gesperrten Bestand; entsteht ein Materialbeleg, wird sofort festgeschrieben, sonst zurückgerollt und die erste Rückmeldung als Ergebnis vermerkt. Jede Charge ist eine eigene LUW. Zum Schluss zeigt er alle betroffenen Chargen mit Verfallsdatum, Bestand, Beleg und Ergebnistext als ALV-Liste an.",
+ "verboten": [
+  "source.abap:39 — kein Fachsatz „Auch Qualitätsprüfbestand wird gesperrt“ (nur frei verwendbarer Chargenbestand CLABS)",
+  "source.abap:83 — kein Fachsatz „Bei einem Fehler wird der gesamte Lauf zurückgenommen“ (jede Charge hat ihre eigene LUW; bereits festgeschriebene bleiben)",
+  "source.abap:32 — kein Fachsatz „Der Job bucht immer“ (ohne Häkchen nur Liste)",
+  "gesamte Scheibe — kein Fachsatz „Die Charge wird im Chargenstamm als gesperrt gekennzeichnet“ (es wird Bestand umgebucht, der Chargenzustand wird nicht geändert)"
+ ],
+ "saetze": [
+  {
+   "id": "BM-029-B01",
+   "soll": "Der Verfallsstichtag ist das Tagesdatum plus der eingegebenen Vorlaufzeit in Tagen.",
+   "zeilen": [
+    26
+   ],
+   "code": [
+    "26:   gv_datum = sy-datum + p_tage."
+   ],
+   "X": [],
+   "Y": [],
+   "Z": []
+  },
+  {
+   "id": "BM-029-B02",
+   "soll": "Es werden Chargen in den gewählten Werken und Lagerorten mit frei verwendbarem Bestand gelesen, deren Mindesthaltbarkeits- bzw. Verfallsdatum gepflegt ist und spätestens am Stichtag liegt.",
+   "zeilen": [
+    39
+   ],
+   "code": [
+    "39:   SELECT b~matnr b~werks b~lgort b~charg b~clabs h~vfdat"
+   ],
+   "X": [
+    "Es werden Sätze aus mchb selektiert."
+   ],
+   "Y": [
+    "Aus den Tabellen MCHB und MCH1 werden Materialnummer, Werk, Lagerort, Chargennummer, frei verwendbarer Bestand und Verfallsdatum für die eingegebenen Werke und Lagerorte gelesen, sofern der freie Bestand größer als 0 ist, ein Verfallsdatum ungleich '00000000' vorliegt und dieses Verfallsdatum kleiner oder gleich dem Tagesdatum zuzüglich der angegebenen Tage ist."
+   ],
+   "Z": [
+    "Das Ergebnis enthält Materialnummer, Werk, Lagerort, Charge, clabs und vfdat.",
+    "Es werden Sätze aus mchb selektiert."
+   ]
+  },
+  {
+   "id": "BM-029-B03",
+   "soll": "Gibt es keine, wird „Keine Chargen mit Verfall“ ausgegeben und der Lauf beendet.",
+   "zeilen": [
+    28,
+    29,
+    30
+   ],
+   "code": [
+    "28:   IF gt_out IS INITIAL.",
+    "29:     WRITE / 'Keine Chargen mit Verfall'.",
+    "30:     STOP."
+   ],
+   "X": [
+    "Ohne Treffer wird Keine Chargen mit Verfall ausgegeben.",
+    "Keine Chargen mit Verfall wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code."
+   ],
+   "Y": [
+    "Wurden keine Chargen gefunden, wird der Text 'Keine Chargen mit Verfall' ausgegeben und die Programmausführung abgebrochen."
+   ],
+   "Z": [
+    "Ist die Tabelle gt_out leer, wird Keine Chargen mit Verfall ausgegeben.",
+    "Keine Chargen mit Verfall wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code."
+   ]
+  },
+  {
+   "id": "BM-029-B04",
+   "soll": "Nur wenn Buchen angekreuzt ist, wird je Charge der gesamte frei verwendbare Chargenbestand mit Bewegungsart 344 in den gesperrten Bestand umgebucht.",
+   "zeilen": [
+    32,
+    68,
+    71
+   ],
+   "code": [
+    "32:   IF p_post = 'X'.",
+    "68:     ls_item-move_type = '344'.",
+    "71:     CALL FUNCTION 'BAPI_GOODSMVT_CREATE'"
+   ],
+   "X": [
+    "Mit gesetztem p_post wird umbuchen aufgerufen.",
+    "Die ls_item-move_type wird auf 344 gesetzt.",
+    "Es wird eine Zeile aufgenommen und BAPI_GOODSMVT_CREATE aufgerufen.",
+    "Der Code übergibt ls_head an BAPI_GOODSMVT_CREATE und übernimmt dessen Ausgabe nach ls_out>-mblnr.",
+    "Das konvertierte Ergebnis wird in ls_out>-mblnr übernommen."
+   ],
+   "Y": [
+    "Ist das Buchungskennzeichen auf 'X' gesetzt, wird das Unterprogramm zur Umbuchung der Chargen aufgerufen.",
+    "Über den Funktionsbaustein BAPI_GOODSMVT_CREATE wird eine Warenbewegung mit Bewegungsart '344', dem aktuellen Tagesdatum als Buchungsdatum und dem Kopftext 'MHD-Sperre automatisch' zur Umbuchung in den gesperrten Bestand aufgerufen."
+   ],
+   "Z": [
+    "Mit gesetztem p_post wird umbuchen aufgerufen.",
+    "Das Feld ls_item-move_type wird auf 344 gesetzt.",
+    "Es wird eine Zeile aufgenommen und BAPI_GOODSMVT_CREATE aufgerufen.",
+    "Der Code übergibt ls_head an BAPI_GOODSMVT_CREATE und übernimmt dessen Ausgabe nach ls_out-mblnr."
+   ]
+  },
+  {
+   "id": "BM-029-B05",
+   "soll": "Entsteht kein Materialbeleg, wird zurückgerollt und die erste Rückmeldung als Ergebnistext zur Charge vermerkt.",
+   "zeilen": [
+    80,
+    81,
+    83
+   ],
+   "code": [
+    "80:     IF <ls_out>-mblnr IS INITIAL.",
+    "81:       READ TABLE lt_return INTO ls_return INDEX 1.",
+    "83:       ROLLBACK WORK."
+   ],
+   "X": [
+    "Ohne ls_out>-mblnr wird ROLLBACK WORK ausgeführt.",
+    "Ohne ls_out>-mblnr wird ROLLBACK WORK ausgeführt, sonst die Text auf in Sperrbestand umgebucht gesetzt und COMMIT WORK ausgeführt.",
+    "In der Tabelle wird nach einer passenden Zeile gesucht.",
+    "Mit ROLLBACK WORK wird die Änderung verworfen; nichts ist persistiert."
+   ],
+   "Y": [
+    "Wurde keine Materialbelegnummer zurückgegeben, wird die Fehlermeldung aus dem Rückgabeprotokoll als Statustext übernommen und die Buchung per ROLLBACK WORK verworfen.",
+    "Wurde eine Materialbelegnummer erfolgreich erzeugt, wird der Statustext auf 'in Sperrbestand umgebucht' gesetzt und die Buchung per COMMIT WORK AND WAIT auf der Datenbank festgeschrieben."
+   ],
+   "Z": [
+    "Ohne Materialbelegnummer wird ROLLBACK WORK ausgeführt, sonst der Text auf in Sperrbestand umgebucht gesetzt und COMMIT WORK ausgeführt.",
+    "In der Tabelle lt_return wird nach einer passenden Zeile gesucht.",
+    "Mit ROLLBACK WORK werden die noch nicht festgeschriebenen Änderungen verworfen."
+   ]
+  },
+  {
+   "id": "BM-029-B06",
+   "soll": "Entsteht ein Materialbeleg, wird er je Charge sofort festgeschrieben und die Charge als in den Sperrbestand umgebucht markiert.",
+   "zeilen": [
+    85,
+    86
+   ],
+   "code": [
+    "85:       <ls_out>-text = 'in Sperrbestand umgebucht'.",
+    "86:       COMMIT WORK AND WAIT."
+   ],
+   "X": [
+    "Ohne ls_out>-mblnr wird ROLLBACK WORK ausgeführt, sonst die Text auf in Sperrbestand umgebucht gesetzt und COMMIT WORK ausgeführt.",
+    "Sonst wird die Text auf in Sperrbestand umgebucht gesetzt und COMMIT WORK ausgeführt.",
+    "Sonst setzen die Text auf in Sperrbestand umgebucht.",
+    "Es wird die Text auf in Sperrbestand umgebucht gesetzt und COMMIT WORK ausgeführt.",
+    "Mit COMMIT WORK wird die Änderung persistiert."
+   ],
+   "Y": [
+    "Wurde eine Materialbelegnummer erfolgreich erzeugt, wird der Statustext auf 'in Sperrbestand umgebucht' gesetzt und die Buchung per COMMIT WORK AND WAIT auf der Datenbank festgeschrieben."
+   ],
+   "Z": [
+    "Ohne Materialbelegnummer wird ROLLBACK WORK ausgeführt, sonst der Text auf in Sperrbestand umgebucht gesetzt und COMMIT WORK ausgeführt.",
+    "Sonst wird der Text auf in Sperrbestand umgebucht gesetzt.",
+    "Mit COMMIT WORK wird die Änderung persistiert."
+   ]
+  },
+  {
+   "id": "BM-029-B07",
+   "soll": "Am Ende wird die Liste der betroffenen Chargen mit Verfallsdatum, Bestand, Materialbeleg und Ergebnis als ALV angezeigt.",
+   "zeilen": [
+    93
+   ],
+   "code": [
+    "93:   CALL FUNCTION 'REUSE_ALV_GRID_DISPLAY'"
+   ],
+   "X": [
+    "Der Funktionsbaustein REUSE_ALV_GRID_DISPLAY wird aufgerufen."
+   ],
+   "Y": [
+    "Die Chargentabelle wird über den Funktionsbaustein REUSE_ALV_GRID_DISPLAY unter Verwendung der Tabellenstruktur ZMM_S_VERFALL als ALV-Liste am Bildschirm angezeigt."
+   ],
+   "Z": [
+    "Der Funktionsbaustein REUSE_ALV_GRID_DISPLAY wird aufgerufen."
+   ]
+  }
+ ]
+}

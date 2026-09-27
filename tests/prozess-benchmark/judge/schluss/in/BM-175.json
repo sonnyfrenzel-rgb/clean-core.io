@@ -1,0 +1,345 @@
+{
+ "id": "BM-175",
+ "titel": "Bonusabsprachen: Endabrechnung freigegebener Absprachen je Absprachenart als Hintergrundjob einplanen",
+ "prozess": "Der Report wird mit Verkaufsorganisationen, Absprachenarten, Stichtag und Testkennzeichen gestartet und liest die vor dem Stichtag abgelaufenen Bonusabsprachen mit Status offen oder A; gibt es keine, endet er mit Hinweis. Die Absprachen werden nach Art sortiert und je Art gesammelt. Jede Absprache braucht die Freigabe des Vertriebscontrollings, sonst wird sie mit Hinweis übergangen. Ist für die Art eine Zusatzprüfung in einer Customizingtabelle hinterlegt, wird die genannte Routine eines anderen Programms dynamisch gerufen, sofern sie existiert, und kann die Absprache ablehnen. Am Ende jeder Art listet der Testlauf die gesammelten Absprachen; im Echtlauf öffnet der Report einen Hintergrundjob, plant darin die Standard-Sammelabrechnung mit den gesammelten Absprachenummern ein und gibt den Job sofort frei. Scheitert das Öffnen, bricht der Lauf mit Fehlermeldung ab; scheitert die Freigabe, wird das gelistet. Freigegebene Jobs werden protokolliert, gezählt und gelistet. Scheitert die letzte Absprache einer Art an der Vorprüfung, entfällt der Job für die ganze Art.",
+ "verboten": [
+  "zsd_bonus_endabr.abap:46 — kein Fachsatz „für jede Absprachenart mit freigegebenen Absprachen wird ein Job eingeplant“: scheitert die letzte Absprache einer Art an der Vorprüfung, überspringt CHECK den AT-END-Block und die ganze Art bleibt ohne Job",
+  "zsd_bonus_endabr_f01.abap:43 — kein Fachsatz „fehlt die hinterlegte Prüfroutine, wird die Absprache gesperrt“: ohne gefundene Routine bleibt die Absprache freigegeben",
+  "zsd_bonus_endabr_f01.abap:72 — kein Fachsatz „die Absprachen werden in diesem Lauf abgerechnet“: der Report plant nur Jobs ein, die Abrechnung läuft später im Hintergrund",
+  "gesamte Scheibe — kein Fachsatz „Bonusgutschriften werden gebucht oder Absprachen auf endabgerechnet gesetzt“: das tut erst das eingeplante Standardprogramm"
+ ],
+ "saetze": [
+  {
+   "id": "BM-175-B01",
+   "soll": "Es werden Bonusabsprachen der gewählten Verkaufsorganisationen und Absprachenarten gelesen, die vor dem Stichtag abgelaufen sind und den Status offen oder A haben.",
+   "zeilen": [
+    33,
+    72
+   ],
+   "code": [
+    "33:   PERFORM absprachen_lesen.",
+    "72:   SELECT boart knuma vkorg bonem datbi FROM kona"
+   ],
+   "X": [
+    "Aus der Tabelle KONA werden die Absprachen mit Absprachenart BOART, Absprachennummer KNUMA, Verkaufsorganisation VKORG, Begünstigtem BONEM und Gültig-bis-Datum DATBI für die selektierten Verkaufsorganisationen und Absprachenarten gelesen, deren Gültig-bis-Datum vor dem vorgegebenen Stichtag liegt und deren Absprachenstatus BOSTA initial oder gleich 'A' ist."
+   ],
+   "Y": [
+    "Das Unterprogramm absprachen_lesen wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Es werden Sätze aus kona selektiert."
+   ],
+   "Z": [
+    "Das Unterprogramm absprachen_lesen wird aufgerufen; es liest KONA.",
+    "Das Ergebnis enthält boart, knuma, Verkaufsorganisation, bonem und datbi.",
+    "Es werden Sätze aus kona selektiert."
+   ]
+  },
+  {
+   "id": "BM-175-B02",
+   "soll": "Gibt es keine, endet der Lauf mit einem Hinweis.",
+   "zeilen": [
+    34,
+    35,
+    36
+   ],
+   "code": [
+    "34:   IF gt_abs IS INITIAL.",
+    "35:     MESSAGE s001.",
+    "36:     RETURN."
+   ],
+   "X": [
+    "Werden keine passenden Absprachen in der Tabelle KONA gefunden, wird die Erfolgsmeldung 001 ausgegeben und die Programmausführung abgebrochen."
+   ],
+   "Y": [
+    "Ohne Treffer wird eine Meldung ausgegeben und der Block verlassen.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "Eine Meldung wird ausgegeben.",
+    "Es wird eine Meldung ausgegeben und der Block verlassen."
+   ],
+   "Z": [
+    "Ist die Tabelle gt_abs leer, wird eine Statusmeldung ausgegeben und der Block verlassen.",
+    "Die Statusmeldung 001 wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-175-B03",
+   "soll": "Die Absprachen werden je Absprachenart gesammelt; mit jeder neuen Art beginnt eine neue Sammlung.",
+   "zeilen": [
+    40,
+    41
+   ],
+   "code": [
+    "40:   LOOP AT gt_abs INTO gs_abs.",
+    "41:     AT NEW boart."
+   ],
+   "X": [
+    "Für jede gefundene Absprache wird bei Beginn einer neuen Absprachenart BOART die Liste der gesammelten Absprachennummern geleert."
+   ],
+   "Y": [
+    "Jede Zeile aus gt_abs wird einzeln verarbeitet."
+   ],
+   "Z": [
+    "Jede Zeile aus gt_abs wird einzeln verarbeitet."
+   ]
+  },
+  {
+   "id": "BM-175-B04",
+   "soll": "Eine Absprache ohne Freigabe des Vertriebscontrollings wird mit Hinweis gelistet und nicht abgerechnet.",
+   "zeilen": [
+    91,
+    93,
+    94
+   ],
+   "code": [
+    "91:   SELECT SINGLE freigabe FROM zsd_bonus_frg INTO @DATA(lv_frg)",
+    "93:   IF sy-subrc <> 0 OR lv_frg <> 'X'.",
+    "94:     WRITE: / us_abs-knuma, 'nicht vom Controlling freigegeben'."
+   ],
+   "X": [
+    "Aus der Tabelle ZSD_BONUS_FRG wird das Feld FREIGABE zur aktuellen Absprachennummer KNUMA gelesen.",
+    "Ist kein Freigabeeintrag vorhanden oder weicht das Freigabekennzeichen von 'X' ab, wird ausgegeben, dass die Absprache nicht vom Controlling freigegeben ist, und die Vorprüfung wird mit negativem Prüfergebnis beendet."
+   ],
+   "Y": [
+    "freigabe des Satzes wird gelesen.",
+    "Für sy-subrc <> 0 OR lv_frg <> 'X' wird us_abs-knuma ausgegeben, nicht vom Controlling freigegeben ausgegeben und der Block verlassen.",
+    "us_abs-knuma und nicht vom Controlling freigegeben werden ausgegeben.",
+    "Es wird us_abs-knuma ausgegeben, nicht vom Controlling freigegeben ausgegeben und der Block verlassen.",
+    "us_abs-knuma wird ausgegeben.",
+    "nicht vom Controlling freigegeben wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code."
+   ],
+   "Z": [
+    "Das Feld freigabe aus zsd_bonus_frg wird gelesen.",
+    "Wenn kein Treffer vorliegt oder das Feld lv_frg nicht gesetzt ist, wird us_abs-knuma ausgegeben, nicht vom Controlling freigegeben ausgegeben und der Block verlassen.",
+    "nicht vom Controlling freigegeben wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code."
+   ]
+  },
+  {
+   "id": "BM-175-B05",
+   "soll": "Ist für die Absprachenart eine Zusatzprüfung hinterlegt, wird die dort genannte Routine eines anderen Programms gerufen, sofern sie existiert; lehnt sie ab, wird die Absprache mit Hinweis übergangen.",
+   "zeilen": [
+    100,
+    104,
+    107,
+    108
+   ],
+   "code": [
+    "100:   SELECT SINGLE progname, formname FROM zsd_bonus_exit",
+    "104:     PERFORM (lv_form) IN PROGRAM (lv_prog) IF FOUND",
+    "107:     IF cv_ok = abap_false.",
+    "108:       WRITE: / us_abs-knuma, 'Zusatzpruefung', lv_form, 'negativ'."
+   ],
+   "X": [
+    "Aus der Tabelle ZSD_BONUS_EXIT werden der Programmname PROGNAME und der Routinename FORMNAME zur Absprachenart BOART gelesen.",
+    "Wurde ein Eintrag in der Tabelle ZSD_BONUS_EXIT gefunden, wird die dort hinterlegte Prüfroutine im angegebenen Programm für die Absprachennummer aufgerufen.",
+    "Liefert die aufgerufene Prüfroutine ein negatives Ergebnis, wird eine Hinweismeldung mit der Absprachennummer und dem Namen der Prüfroutine ausgegeben."
+   ],
+   "Y": [
+    "Das Ergebnis enthält progname und formname.",
+    "progname und formname des Satzes werden gelesen.",
+    "Das externe Unterprogramm lv_form wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Für cv_ok mit dem Wert abap_false wird us_abs-knuma ausgegeben, Zusatzpruefung ausgegeben, Unterprogramm ausgegeben und negativ ausgegeben.",
+    "us_abs-knuma, Zusatzpruefung, Unterprogramm und negativ werden ausgegeben.",
+    "us_abs-knuma wird ausgegeben.",
+    "Zusatzpruefung wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "Unterprogramm wird ausgegeben.",
+    "negativ wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code."
+   ],
+   "Z": [
+    "Das Ergebnis enthält progname und formname.",
+    "Die Felder progname und formname aus zsd_bonus_exit werden gelesen.",
+    "Das externe Unterprogramm lv_form wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Wenn das Feld cv_ok nicht gesetzt ist, wird us_abs-knuma ausgegeben, Zusatzpruefung ausgegeben, Unterprogramm ausgegeben und negativ ausgegeben.",
+    "Zusatzpruefung wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "negativ wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code."
+   ]
+  },
+  {
+   "id": "BM-175-B06",
+   "soll": "Geprüfte Absprachen werden in die Sammlung der Absprachenart aufgenommen.",
+   "zeilen": [
+    46
+   ],
+   "code": [
+    "46:     CHECK gv_ok = abap_true."
+   ],
+   "X": [
+    "Ist das Prüfergebnis der Vorprüfung positiv, wird die Absprachennummer in die Sammelliste der abzurechnenden Absprachen übernommen."
+   ],
+   "Y": [
+    "Nur gv_ok mit dem Wert abap_true gehen weiter; kleinere werden übersprungen, die Schleife läuft weiter."
+   ],
+   "Z": [
+    "Nur wenn das Feld gv_ok gesetzt ist, wird der Schleifendurchlauf fortgesetzt; sonst wird er übersprungen, und die Schleife läuft mit dem nächsten Durchlauf weiter."
+   ]
+  },
+  {
+   "id": "BM-175-B07",
+   "soll": "Am Ende jeder Absprachenart listet der Testlauf die gesammelten Absprachen; im Echtlauf wird für eine nicht leere Sammlung die Sammelabrechnung als Job eingeplant.",
+   "zeilen": [
+    49,
+    50,
+    51,
+    53
+   ],
+   "code": [
+    "49:     AT END OF boart.",
+    "50:       IF p_test = abap_true.",
+    "51:         PERFORM testliste USING gs_abs-boart.",
+    "53:         PERFORM job_einplanen USING gs_abs-boart."
+   ],
+   "X": [
+    "Am Ende einer Absprachenart wird bei aktivem Testlauf-Kennzeichen die Testliste für diese Absprachenart aufgerufen.",
+    "Ist der Testlauf nicht aktiv und enthält die Sammelliste mindestens eine Absprachennummer, wird die Einplanung des Hintergrundjobs für diese Absprachenart aufgerufen."
+   ],
+   "Y": [
+    "Für p_test mit dem Wert abap_true wird testliste aufgerufen.",
+    "Für p_test mit dem Wert abap_true wird testliste aufgerufen, sonst job_einplanen aufgerufen.",
+    "Das Unterprogramm testliste wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Mit einer nicht leeren gr_knuma wird job_einplanen aufgerufen.",
+    "Das Unterprogramm job_einplanen wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt."
+   ],
+   "Z": [
+    "Wenn das Feld p_test gesetzt ist, wird testliste aufgerufen.",
+    "Das Unterprogramm testliste wird aufgerufen; es gibt Listenzeilen aus.",
+    "Enthält die Tabelle gr_knuma Zeilen, wird job_einplanen aufgerufen.",
+    "Das Unterprogramm job_einplanen wird aufgerufen; es legt Sätze an in ZSD_BONUS_LAUF, ruft JOB_OPEN und JOB_CLOSE auf und gibt eine Meldung aus."
+   ]
+  },
+  {
+   "id": "BM-175-B08",
+   "soll": "Lässt sich der Job nicht öffnen, bricht der Lauf mit Fehlermeldung ab.",
+   "zeilen": [
+    122,
+    129,
+    130
+   ],
+   "code": [
+    "122:   CALL FUNCTION 'JOB_OPEN'",
+    "129:   IF sy-subrc <> 0.",
+    "130:     MESSAGE e010 WITH gv_jobname."
+   ],
+   "X": [
+    "Über den Funktionsbaustein JOB_OPEN wird ein Hintergrundjob mit dem zusammengesetzten Namen ZBONUS_<Absprachenart>_<Tagesdatum> geöffnet.",
+    "Schlägt das Öffnen des Hintergrundjobs fehl, wird die Fehlermeldung 010 mit dem Jobnamen gesendet."
+   ],
+   "Y": [
+    "Der Code übergibt gv_jobname an JOB_OPEN und übernimmt dessen Ausgabe nach gv_jobcount.",
+    "Das konvertierte Ergebnis wird in gv_jobcount übernommen.",
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ],
+   "Z": [
+    "Der Code übergibt gv_jobname an JOB_OPEN und übernimmt dessen Ausgabe nach gv_jobcount.",
+    "Scheitert der Aufruf von JOB_OPEN, wird eine Fehlermeldung ausgegeben.",
+    "Die Fehlermeldung 010 wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-175-B09",
+   "soll": "Die Standard-Sammelabrechnung wird mit den gesammelten Absprachenummern im Job eingeplant und der Job sofort freigegeben.",
+   "zeilen": [
+    133,
+    138
+   ],
+   "code": [
+    "133:   SUBMIT rv15c001 WITH knuma IN gr_knuma",
+    "138:   CALL FUNCTION 'JOB_CLOSE'"
+   ],
+   "X": [
+    "Der Abrechnungsreport RV15C001 wird mit den gesammelten Absprachennummern und deaktiviertem Testmodus als Schritt in den geöffneten Hintergrundjob eingesteuert.",
+    "Über den Funktionsbaustein JOB_CLOSE wird der Hintergrundjob geschlossen und für den sofortigen Start freigegeben."
+   ],
+   "Y": [
+    "Das Kindprogramm rv15c001 wird gestartet. Was das Kind tut, ist nicht Teil dieses Satzes.",
+    "Der Funktionsbaustein JOB_CLOSE wird aufgerufen."
+   ],
+   "Z": [
+    "Das Programm rv15c001 wird als Schritt des Hintergrundjobs gv_jobname eingeplant. Was das Programm im Job tut, ist nicht Teil dieses Satzes.",
+    "Der Funktionsbaustein JOB_CLOSE wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-175-B10",
+   "soll": "Scheitert die Freigabe, wird der Job als nicht freigegeben gelistet und nicht protokolliert.",
+   "zeilen": [
+    145,
+    146
+   ],
+   "code": [
+    "145:   IF sy-subrc <> 0.",
+    "146:     WRITE: / 'Job', gv_jobname, 'nicht freigegeben'."
+   ],
+   "X": [
+    "Schlägt das Schließen des Hintergrundjobs fehl, wird ausgegeben, dass der Job nicht freigegeben wurde, und die Einplanung für diese Absprachenart abgebrochen."
+   ],
+   "Y": [
+    "Ohne Treffer wird Job ausgegeben, gv_jobname ausgegeben, nicht freigegeben ausgegeben und der Block verlassen.",
+    "Ohne Treffer wird Job ausgegeben und vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "Job, gv_jobname und nicht freigegeben werden ausgegeben.",
+    "Es wird Job ausgegeben, gv_jobname ausgegeben, nicht freigegeben ausgegeben und der Block verlassen.",
+    "Job wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "gv_jobname wird ausgegeben.",
+    "nicht freigegeben wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code."
+   ],
+   "Z": [
+    "Scheitert der Aufruf von JOB_CLOSE, wird Job ausgegeben, gv_jobname ausgegeben, nicht freigegeben ausgegeben und vor der Datenbankoperation zurückgekehrt.",
+    "Job wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "nicht freigegeben wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code."
+   ]
+  },
+  {
+   "id": "BM-175-B11",
+   "soll": "Jeder freigegebene Job wird mit Jobname, Absprachenart, Datum, Anzahl und Benutzer protokolliert, gezählt und gelistet.",
+   "zeilen": [
+    156,
+    158
+   ],
+   "code": [
+    "156:   INSERT zsd_bonus_lauf FROM ls_lauf.",
+    "158:   WRITE: / 'Job', gv_jobname, 'eingeplant fuer', ls_lauf-anzahl, 'Absprachen'."
+   ],
+   "X": [
+    "In die Protokolltabelle ZSD_BONUS_LAUF wird ein Datensatz mit Jobname, Jobzähler, Absprachenart, aktuellem Tagesdatum, Anzahl der verarbeiteten Absprachen und Benutzernamen eingefügt.",
+    "Der Zähler der eingeplanten Jobs wird um eins erhöht und eine Erfolgsmeldung mit dem Jobnamen sowie der Anzahl der eingeplanten Absprachen ausgegeben."
+   ],
+   "Y": [
+    "Job, gv_jobname, eingeplant fuer, ls_lauf-anzahl und Absprachen werden ausgegeben.",
+    "Job wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "gv_jobname wird ausgegeben.",
+    "eingeplant fuer wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "ls_lauf-anzahl wird ausgegeben.",
+    "Absprachen wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code."
+   ],
+   "Z": [
+    "Job, gv_jobname, eingeplant fuer, ls_lauf-anzahl und Absprachen werden ausgegeben.",
+    "Job wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "eingeplant fuer wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "Absprachen wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code."
+   ]
+  },
+  {
+   "id": "BM-175-B12",
+   "soll": "Im Echtlauf wird am Ende die Zahl der eingeplanten Jobs ausgegeben.",
+   "zeilen": [
+    58,
+    60
+   ],
+   "code": [
+    "58:   IF p_test = abap_false.",
+    "60:     WRITE: / 'Eingeplante Jobs:', gv_anz_job."
+   ],
+   "X": [
+    "Ist das Testlauf-Kennzeichen nicht aktiv, wird nach Abschluss aller Absprachen eine Trennlinie und die Gesamtzahl der erfolgreich eingeplanten Jobs ausgegeben."
+   ],
+   "Y": [
+    "Für p_test mit dem Wert abap_false wird Eingeplante Jobs: ausgegeben und gv_anz_job ausgegeben.",
+    "Eingeplante Jobs: und gv_anz_job werden ausgegeben.",
+    "Eingeplante Jobs: wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "gv_anz_job wird ausgegeben."
+   ],
+   "Z": [
+    "Wenn das Feld p_test nicht gesetzt ist, wird Eingeplante Jobs: ausgegeben und gv_anz_job ausgegeben.",
+    "Eingeplante Jobs: wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code."
+   ]
+  }
+ ]
+}

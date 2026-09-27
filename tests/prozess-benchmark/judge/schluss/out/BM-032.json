@@ -1,0 +1,306 @@
+{
+ "id": "BM-032",
+ "urteile": [
+  {
+   "id": "BM-032-B01",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig",
+     "grammatik"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "kurz": "X/Y ohne Stornofilter und Zeitraum, Z vollständig."
+  },
+  {
+   "id": "BM-032-B02",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "zu_allgemein",
+     "redundant",
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "abweichend",
+    "mangel": [
+     "falsch"
+    ]
+   },
+   "kurz": "X/Y ohne Hinweis auf trotzdem angezeigte Liste, Z behauptet Abbruch der Verarbeitung."
+  },
+  {
+   "id": "BM-032-B03",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "grammatik"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "kurz": "X technisch mit Überspringen, Y nur Tabellenzugriff, Z fachlich."
+  },
+  {
+   "id": "BM-032-B04",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "grammatik",
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "X/Z nur die 100-Punkte-Stufe, Y alle Werte ohne Schwellen."
+  },
+  {
+   "id": "BM-032-B05",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Keiner nennt die Mengensummierung; X/Z den Endlieferfilter."
+  },
+  {
+   "id": "BM-032-B06",
+   "X": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "kurz": "Keine Variante beschreibt die Mengenpunkte."
+  },
+  {
+   "id": "BM-032-B07",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "grammatik"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "kurz": "X/Y nur Selektionen und Feld n_ok, Z beschreibt Prüflose und Annahme."
+  },
+  {
+   "id": "BM-032-B08",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig",
+     "grammatik"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "X/Y nur lv_qual = 100, Z Qualitätsquote ohne Durchschnittspunkte."
+  },
+  {
+   "id": "BM-032-B09",
+   "X": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "kurz": "Keine Variante beschreibt die Gewichtung."
+  },
+  {
+   "id": "BM-032-B10",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "grammatik",
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Alle nur Note A vollständig, B/C fehlen oder ohne Schwelle."
+  },
+  {
+   "id": "BM-032-B11",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "kurz": "X/Y nur Unterprogrammaufruf, Z nennt Löschen und Einfügen."
+  },
+  {
+   "id": "BM-032-B12",
+   "X": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "zu_allgemein"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "kurz": "X/Z nennen Commit mit Erfolg und Rollback mit Fehler, Y nur \"Meldung\"."
+  },
+  {
+   "id": "BM-032-B13",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "kurz": "X/Y nur Aufrufe, Z sagt ALV-Anzeige."
+  }
+ ],
+ "verboten_verletzt": [
+  {
+   "variante": "Z",
+   "satz": "Wurden keine Wareneingänge gefunden, wird die Meldung 002(zmm) als Fehler angezeigt und die Verarbeitung abgebrochen.",
+   "grund": "RETURN verlässt nur START-OF-SELECTION, die leere Liste wird trotzdem angezeigt"
+  }
+ ],
+ "soll_zweifel": []
+}

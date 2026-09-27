@@ -1,0 +1,244 @@
+{
+ "id": "BM-095",
+ "urteile": [
+  {
+   "id": "BM-095-B01",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein",
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "kurz": "X nennt nur einen scheiternden Native-SQL-Block, Y nur 'ohne Treffer eine Meldung', Z den Abbruch bei gescheiterter Verbindung."
+  },
+  {
+   "id": "BM-095-B02",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "zu_allgemein"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "zu_allgemein"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "kurz": "X und Y wiederholen nur 'Native-SQL-Block wird ausgeführt', Z beschreibt Summenbestand je Artikel und Trennen."
+  },
+  {
+   "id": "BM-095-B03",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "kurz": "Alle lesen Lagerortbestände zu Werk und Lagerort; Y nur mit Tabellen- und Feldnamen."
+  },
+  {
+   "id": "BM-095-B04",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig",
+     "redundant"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "kurz": "X und Y nur Konvertierungsbaustein und Tabellensuche, Z nennt Umwandlung und Bestand 0 bei fehlendem Eintrag."
+  },
+  {
+   "id": "BM-095-B05",
+   "X": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Nur Z erwähnt Differenz und prozentuale Toleranz, aber ohne die Berechnung."
+  },
+  {
+   "id": "BM-095-B06",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "kurz": "X nur Rohbedingung mit Überspringen, Z Überspringen innerhalb der Toleranz."
+  },
+  {
+   "id": "BM-095-B07",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "grammatik"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "kurz": "X und Y nur move_type Z11/Z12 über pv_diff, Z nennt Zugang und Abgang mit Betrag."
+  },
+  {
+   "id": "BM-095-B08",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "kurz": "X und Y nur post_group/BAPI-Aufrufe, Z Zugänge und Abgänge als eigene Belege mit Tagesdatum."
+  },
+  {
+   "id": "BM-095-B09",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "kurz": "X und Y nur 'Block verlassen' bei leerer pt_items, Z fachlich."
+  },
+  {
+   "id": "BM-095-B10",
+   "X": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "grammatik"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "grammatik"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "kurz": "Alle beschreiben Rücknahme mit Fehlermeldung bzw. Festschreiben mit Belegnummer; X und Y als lange Aufrufketten."
+  },
+  {
+   "id": "BM-095-B11",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "kurz": "X und Y nennen Feldnamen gs_rep-*, Z WMS-, SAP- und Differenzmenge."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

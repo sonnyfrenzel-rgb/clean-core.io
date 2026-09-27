@@ -1,0 +1,275 @@
+{
+ "id": "BM-112",
+ "titel": "IDoc-Eingang Equipmenttausch: Ausbau, Zählerstand bei Ausbau, Einbau mit Ausnahmeklasse und IDoc-Status",
+ "prozess": "Die Middleware schickt je Equipmenttausch ein IDoc ZEQUISWAP, und der Eingangsbaustein verarbeitet ein Paket solcher IDocs einzeln. Aus den Segmenten übernimmt er Technischen Platz, Datum und Zeit, das ausgebaute Equipment mit Zählerstand und das eingebaute Equipment; unbekannte Segmente werden ignoriert. Dann prüft er, dass alle drei Angaben vorhanden sind, dass das alte Equipment aktuell an genau diesem Platz eingebaut ist und dass das neue Equipment nirgends eingebaut ist; bei einem unbekannten neuen Equipment führt ein nicht geleertes Feld dazu, dass es als „bereits eingebaut“ abgelehnt wird. Danach baut er das alte Equipment zum gemeldeten Zeitpunkt aus. Ist ein Zählerstand gemeldet und besitzt das alte Equipment einen aktiven Zähler, erfasst er den Stand bei Ausbau als Messbeleg; ohne Zähler entfällt dieser Schritt. Anschließend baut er das neue Equipment ein. Jeder Fehler in diesen Schritten löst eine Ausnahme aus: Dann wird der gesamte Tausch dieses IDocs zurückgerollt, das IDoc erhält Status 51 mit dem Fehlertext und der Workflow wird informiert, und die Verarbeitung geht mit dem nächsten IDoc weiter. Gelingt alles, wird der Tausch festgeschrieben und das IDoc erhält Status 53.",
+ "verboten": [
+  "lzpm_swapf01.abap:37 — kein Fachsatz „ein unbekanntes neues Equipment wird als unbekannt abgelehnt“: lv_tplnr wird vor der zweiten Lesung nicht geleert; ohne Treffer bleibt der Platz aus der ersten Lesung stehen und das IDoc wird mit „bereits eingebaut“ abgelehnt",
+  "z_idoc_input_zequiswap.abap:49 — kein Fachsatz „IDocs mit unbekannten Segmenten werden abgelehnt“: unbekannte Segmente werden übergangen, das CONTINUE ist ohne Wirkung",
+  "lzpm_swapf01.abap:89 — kein Fachsatz „ohne Zähler am Equipment wird das IDoc abgelehnt“: ohne aktiven Zähler endet nur die Messbelegroutine, der Tausch geht weiter",
+  "gesamte Scheibe — kein Fachsatz „ein fehlgeschlagener Einbau lässt das alte Equipment ausgebaut zurück“: Ausbau, Messbeleg und Einbau liegen in einer LUW und werden gemeinsam zurückgerollt"
+ ],
+ "saetze": [
+  {
+   "id": "BM-112-B01",
+   "soll": "Jedes eingehende IDoc beschreibt einen Equipmenttausch; seine Segmente liefern Technischen Platz mit Datum und Zeit, das ausgebaute Equipment mit Zählerstand und das eingebaute Equipment, unbekannte Segmente werden ignoriert.",
+   "zeilen": [
+    188,
+    191,
+    192
+   ],
+   "code": [
+    "188:   LOOP AT idoc_contrl INTO DATA(ls_contrl).",
+    "191:     LOOP AT idoc_data INTO DATA(ls_data) WHERE docnum = ls_contrl-docnum.",
+    "192:       CASE ls_data-segnam."
+   ],
+   "X": [
+    "Die Kontrollsätze der Tabelle IDOC_CONTRL werden satzweise durchlaufen.",
+    "Zu jedem Kontrollsatz werden die Datenzeilen mit passender Belegnummer aus der Tabelle IDOC_DATA sequenziell gelesen.",
+    "Anhand des Segmentnamens werden die Daten den Kopf-, Ausbau- oder Einbaudaten zugewiesen; sonstige Segmente werden übersprungen."
+   ],
+   "Y": [
+    "Jede Zeile aus idoc_contrl wird einzeln verarbeitet.",
+    "Jede Zeile aus idoc_data wird einzeln verarbeitet."
+   ],
+   "Z": [
+    "Jede Zeile aus idoc_contrl wird einzeln verarbeitet.",
+    "Die Zeilen aus idoc_data, bei denen das Feld docnum gleich ls_contrl-docnum ist, werden einzeln verarbeitet."
+   ]
+  },
+  {
+   "id": "BM-112-B02",
+   "soll": "Fehlen Platz, ausgebautes oder eingebautes Equipment, wird das IDoc abgelehnt.",
+   "zeilen": [
+    16,
+    18
+   ],
+   "code": [
+    "16:   IF ps_hdr-tplnr IS INITIAL OR ps_out-equnr IS INITIAL",
+    "18:     RAISE EXCEPTION TYPE zcx_pm_swap"
+   ],
+   "X": [
+    "Ist der Technische Platz im Kopfsegment oder die Equipmentnummer des Aus- oder Einbaus nicht gepflegt, wird die Ausnahme ZCX_PM_SWAP mit dem Hinweis auf fehlende Segmente ausgelöst."
+   ],
+   "Y": [],
+   "Z": []
+  },
+  {
+   "id": "BM-112-B03",
+   "soll": "Das ausgebaute Equipment muss aktuell an genau diesem Technischen Platz eingebaut sein, sonst wird das IDoc abgelehnt.",
+   "zeilen": [
+    24,
+    29,
+    30
+   ],
+   "code": [
+    "24:   SELECT SINGLE i~tplnr INTO lv_tplnr",
+    "29:   IF lv_tplnr <> ps_hdr-tplnr.",
+    "30:     RAISE EXCEPTION TYPE zcx_pm_swap"
+   ],
+   "X": [
+    "Aus den Tabellen EQUZ und ILOA wird der mit Gültigkeitsende 31.12.9999 hinterlegte Technische Platz des auszubauenden Equipments gelesen.",
+    "Stimmt der ermittelte Technische Platz nicht mit dem im Kopf übergebenen Technischen Platz überein, wird die Ausnahme ZCX_PM_SWAP ausgelöst."
+   ],
+   "Y": [
+    "i~tplnr INTO lv_tplnr des Satzes wird gelesen."
+   ],
+   "Z": [
+    "Das Feld tplnr aus equz wird gelesen."
+   ]
+  },
+  {
+   "id": "BM-112-B04",
+   "soll": "Das einzubauende Equipment darf aktuell an keinem Platz eingebaut sein, sonst wird das IDoc abgelehnt.",
+   "zeilen": [
+    37,
+    42,
+    43
+   ],
+   "code": [
+    "37:   SELECT SINGLE i~tplnr INTO lv_tplnr",
+    "42:   IF lv_tplnr IS NOT INITIAL.",
+    "43:     RAISE EXCEPTION TYPE zcx_pm_swap"
+   ],
+   "X": [
+    "Aus den Tabellen EQUZ und ILOA wird der mit Gültigkeitsende 31.12.9999 hinterlegte Technische Platz des einzubauenden Equipments gelesen.",
+    "Ist für das einzubauende Equipment bereits ein Technischer Platz vorhanden, wird die Ausnahme ZCX_PM_SWAP ausgelöst."
+   ],
+   "Y": [
+    "i~tplnr INTO lv_tplnr des Satzes wird gelesen."
+   ],
+   "Z": [
+    "Das Feld tplnr aus equz wird gelesen."
+   ]
+  },
+  {
+   "id": "BM-112-B05",
+   "soll": "Das alte Equipment wird zum gemeldeten Zeitpunkt vom Platz ausgebaut; meldet der Ausbau einen Fehler, wird das IDoc abgelehnt.",
+   "zeilen": [
+    58,
+    66,
+    206
+   ],
+   "code": [
+    "58:   CALL FUNCTION 'BAPI_EQUI_DISMANTLE'",
+    "66:   IF ls_ret-type CA 'EA'.",
+    "206:         PERFORM dismantle   USING ls_hdr ls_out."
+   ],
+   "X": [
+    "Über den Funktionsbaustein BAPI_EQUI_DISMANTLE wird das Equipment zum übergebenen Datum und zur Uhrzeit am Technischen Platz ausgebaut.",
+    "Enthält der Rückgabestatus des Ausbaus einen Fehler oder Abbruch, wird die Ausnahme ZCX_PM_SWAP mit der Rückmeldungsnachricht ausgelöst.",
+    "Der Ausbau des bisherigen Equipments wird ausgeführt."
+   ],
+   "Y": [
+    "Der Code übergibt ps_out-equnr an BAPI_EQUI_DISMANTLE und übernimmt dessen Ausgabe nach ls_ret.",
+    "Das konvertierte Ergebnis wird in ls_ret übernommen.",
+    "Es wird check_input aufgerufen und dismantle aufgerufen.",
+    "Das Unterprogramm dismantle wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt."
+   ],
+   "Z": [
+    "Der Code übergibt ps_out-equnr an BAPI_EQUI_DISMANTLE und übernimmt dessen Ausgabe nach ls_ret.",
+    "Die Unterprogramme check_input und dismantle werden nacheinander aufgerufen.",
+    "Das Unterprogramm dismantle wird aufgerufen; es ruft BAPI_EQUI_DISMANTLE auf."
+   ]
+  },
+  {
+   "id": "BM-112-B06",
+   "soll": "Ist ein Zählerstand gemeldet und hat das ausgebaute Equipment einen aktiven Zähler, wird der Stand bei Ausbau als Messbeleg erfasst; ohne Zähler entfällt der Messbeleg ohne Fehler.",
+   "zeilen": [
+    82,
+    88,
+    92,
+    207
+   ],
+   "code": [
+    "82:   SELECT SINGLE p~point FROM imptt AS p",
+    "88:   IF sy-subrc <> 0.",
+    "92:   CALL FUNCTION 'MEASUREM_DOCUM_RFC_SINGLE_001'",
+    "207:         IF ls_out-zaehler IS NOT INITIAL."
+   ],
+   "X": [
+    "Aus den Tabellen IMPTT und EQUI wird der aktive Zähler-Messpunkt zum auszubauenden Equipment gelesen.",
+    "Wird kein aktiver Zähler-Messpunkt gefunden, wird die Erfassung des Zählerstands beendet.",
+    "Über den Funktionsbaustein MEASUREM_DOCUM_RFC_SINGLE_001 wird für den Messpunkt ein Messbeleg mit dem Zählerstand, Datum, Uhrzeit und dem Kurztext Stand bei Ausbau ohne Verbuchung angelegt.",
+    "Ist ein Zählerstand angegeben, wird dieser als Messbeleg zum ausgebauten Equipment erfasst."
+   ],
+   "Y": [
+    "p~point des Satzes wird gelesen.",
+    "Ohne Treffer wird der Block verlassen.",
+    "Der Funktionsbaustein MEASUREM_DOCUM_RFC_SINGLE_001 wird aufgerufen.",
+    "Mit einer nicht leeren ls_out-zaehler wird post_counter aufgerufen."
+   ],
+   "Z": [
+    "Das Feld point des Messpunkts wird gelesen.",
+    "Ohne Treffer wird der Block verlassen.",
+    "Der Funktionsbaustein MEASUREM_DOCUM_RFC_SINGLE_001 wird aufgerufen.",
+    "Ist das Feld ls_out-zaehler nicht leer, wird post_counter aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-112-B07",
+   "soll": "Schlägt das Anlegen des Messbelegs fehl, wird das IDoc mit der Systemmeldung abgelehnt.",
+   "zeilen": [
+    102,
+    105
+   ],
+   "code": [
+    "102:   IF sy-subrc <> 0.",
+    "105:     RAISE EXCEPTION TYPE zcx_pm_swap"
+   ],
+   "X": [
+    "Schlägt das Anlegen des Messbelegs fehl, wird eine Ausnahme vom Typ ZCX_PM_SWAP mit der erzeugten Fehlermeldung ausgelöst."
+   ],
+   "Y": [
+    "Ohne Treffer wird eine Meldung ausgegeben."
+   ],
+   "Z": [
+    "Scheitert der Aufruf von MEASUREM_DOCUM_RFC_SINGLE_001, wird der Meldungstext in lv_msg übernommen."
+   ]
+  },
+  {
+   "id": "BM-112-B08",
+   "soll": "Das neue Equipment wird zum selben Zeitpunkt am Platz eingebaut; meldet der Einbau einen Fehler, wird das IDoc abgelehnt.",
+   "zeilen": [
+    120,
+    128,
+    210
+   ],
+   "code": [
+    "120:   CALL FUNCTION 'BAPI_EQUI_INSTALL'",
+    "128:   IF ls_ret-type CA 'EA'.",
+    "210:         PERFORM install     USING ls_hdr ls_in."
+   ],
+   "X": [
+    "Über den Funktionsbaustein BAPI_EQUI_INSTALL wird das Equipment zum übergebenen Datum und zur Uhrzeit am Technischen Platz eingebaut.",
+    "Enthält der Rückgabestatus des Einbaus einen Fehler oder Abbruch, wird die Ausnahme ZCX_PM_SWAP mit der Rückmeldungsnachricht ausgelöst.",
+    "Der Einbau des neuen Equipments wird ausgeführt."
+   ],
+   "Y": [
+    "Der Code übergibt ps_in-equnr an BAPI_EQUI_INSTALL und übernimmt dessen Ausgabe nach ls_ret.",
+    "Das konvertierte Ergebnis wird in ls_ret übernommen.",
+    "Das Unterprogramm install wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt."
+   ],
+   "Z": [
+    "Der Code übergibt ps_in-equnr an BAPI_EQUI_INSTALL und übernimmt dessen Ausgabe nach ls_ret.",
+    "Das Unterprogramm install wird aufgerufen; es ruft BAPI_EQUI_INSTALL auf."
+   ]
+  },
+  {
+   "id": "BM-112-B09",
+   "soll": "Bei jeder Ablehnung werden Ausbau, Messbeleg und Einbau dieses IDocs gemeinsam zurückgenommen, das IDoc erhält Status 51 mit dem Fehlertext und der Workflow wird über den Fehler informiert.",
+   "zeilen": [
+    212,
+    213,
+    215,
+    217
+   ],
+   "code": [
+    "212:       CATCH zcx_pm_swap INTO lx_swap.",
+    "213:         CALL FUNCTION 'BAPI_TRANSACTION_ROLLBACK'.",
+    "215:         PERFORM set_status USING ls_contrl-docnum '51' lv_text",
+    "217:         workflow_result = 99999."
+   ],
+   "X": [
+    "Tritt während der Bearbeitung eine Ausnahme auf, werden über den Funktionsbaustein BAPI_TRANSACTION_ROLLBACK alle Datenbankänderungen zurückgerollt."
+   ],
+   "Y": [
+    "Der Funktionsbaustein BAPI_TRANSACTION_ROLLBACK wird aufgerufen.",
+    "Das Unterprogramm set_status wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Es wird set_status aufgerufen und die workflow_result auf 99999 gesetzt.",
+    "Die workflow_result wird auf 99999 gesetzt."
+   ],
+   "Z": [
+    "Der Funktionsbaustein BAPI_TRANSACTION_ROLLBACK wird aufgerufen.",
+    "Das Unterprogramm set_status wird aufgerufen.",
+    "Es wird set_status aufgerufen, das Feld workflow_result auf 99999 gesetzt und der Schleifendurchlauf übersprungen.",
+    "Das Feld workflow_result wird auf 99999 gesetzt."
+   ]
+  },
+  {
+   "id": "BM-112-B10",
+   "soll": "Gelingt der ganze Tausch, wird er festgeschrieben und das IDoc erhält Status 53 „Equipmenttausch gebucht“.",
+   "zeilen": [
+    221,
+    224
+   ],
+   "code": [
+    "221:     CALL FUNCTION 'BAPI_TRANSACTION_COMMIT'",
+    "224:     PERFORM set_status USING ls_contrl-docnum '53' 'Equipmenttausch gebucht'"
+   ],
+   "X": [
+    "Verläuft der Tausch fehlerfrei, werden die Datenbankänderungen über den Funktionsbaustein BAPI_TRANSACTION_COMMIT mit Wartebedingung festgeschrieben.",
+    "Für das erfolgreich verarbeitete IDoc wird der Status 53 mit dem Text Equipmenttausch gebucht hinzugefügt."
+   ],
+   "Y": [
+    "Der Funktionsbaustein BAPI_TRANSACTION_COMMIT wird aufgerufen.",
+    "Es wird BAPI_TRANSACTION_COMMIT aufgerufen und set_status aufgerufen.",
+    "Das Unterprogramm set_status wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt."
+   ],
+   "Z": [
+    "Der Funktionsbaustein BAPI_TRANSACTION_COMMIT wird aufgerufen.",
+    "Es wird BAPI_TRANSACTION_COMMIT aufgerufen und set_status aufgerufen.",
+    "Das Unterprogramm set_status wird aufgerufen."
+   ]
+  }
+ ]
+}

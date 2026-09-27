@@ -1,0 +1,294 @@
+{
+ "id": "BM-171",
+ "urteile": [
+  {
+   "id": "BM-171-B01",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "zu_allgemein",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Y nennt Datei vom Applikationsserver und Fehlermeldung; Z nur Fehlerfall, X nur generische Meldung."
+  },
+  {
+   "id": "BM-171-B02",
+   "X": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "kurz": "Nur Y beschreibt das Zerlegen der Zeile in die Felder."
+  },
+  {
+   "id": "BM-171-B03",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "zu_allgemein",
+     "redundant"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "kurz": "Y und Z nennen leere Datei und als Fehler angezeigten Hinweis; X nur generisch."
+  },
+  {
+   "id": "BM-171-B04",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "grammatik"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "grammatik"
+    ]
+   },
+   "kurz": "Y nennt Dateiname und Testkennzeichen zu Beginn; X/Z listen Literale."
+  },
+  {
+   "id": "BM-171-B05",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Nur Y nennt den Konvertierungsfehler als Ursache von 030."
+  },
+  {
+   "id": "BM-171-B06",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "grammatik"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "kurz": "Y fachlich „Ablesedatum in der Zukunft“; X/Z nur Feldvergleich."
+  },
+  {
+   "id": "BM-171-B07",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "grammatik"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "kurz": "Y nennt unbekanntes Gerät; X/Z technisch mit cv_msgno."
+  },
+  {
+   "id": "BM-171-B08",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "kurz": "Y nennt die zwei letzten Ablesungen und den Rücklauf; X/Z nur Bedingung als Code."
+  },
+  {
+   "id": "BM-171-B09",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "kurz": "Y beschreibt Tagesverbrauchsvergleich und Warnung; X/Z listen Ausgabefelder."
+  },
+  {
+   "id": "BM-171-B10",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Y nennt Zählung, Ausgabe und Überspringen; Z ohne Zählung, X nur Ausgabe."
+  },
+  {
+   "id": "BM-171-B11",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "kurz": "Y fachlich mit Testlauf-Bedingung; X/Z mit „Zeile aufgenommen“ und Bausteinname."
+  },
+  {
+   "id": "BM-171-B12",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "zu_allgemein"
+    ]
+   },
+   "kurz": "Y nennt Rollback mit Meldung bzw. Commit mit Zählung; X/Z Bausteinaufrufe als Code."
+  },
+  {
+   "id": "BM-171-B13",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Y nennt die Zähler am Ende, keine Variante die Lücke bei fehlerhaftem letztem Satz."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

@@ -1,0 +1,596 @@
+{
+ "id": "BM-060",
+ "urteile": [
+  {
+   "id": "BM-060-B01",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "kurz": "X und Y nennen nur die Schleife über idoc_contrl; Z die Einzelverarbeitung je Kontrollsatz."
+  },
+  {
+   "id": "BM-060-B02",
+   "X": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "kurz": "Nur Z nennt den Abbruch bei falschem Nachrichtentyp."
+  },
+  {
+   "id": "BM-060-B03",
+   "X": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Nur Z nennt die Übernahme der Kopfdaten, ohne die Felder."
+  },
+  {
+   "id": "BM-060-B04",
+   "X": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Nur Z nennt die Übernahme der Wertdaten, ohne Felder und ohne das Ignorieren anderer Segmente."
+  },
+  {
+   "id": "BM-060-B05",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "grammatik",
+     "redundant"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "grammatik",
+     "redundant"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "kurz": "X und Y setzen nur Meldungsfelder; Z nennt fehlenden Buchungskreis als Fehler."
+  },
+  {
+   "id": "BM-060-B06",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "kurz": "Nur Z nennt buchungskreisspezifische und generische Zuordnung."
+  },
+  {
+   "id": "BM-060-B07",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "grammatik",
+     "redundant"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "kurz": "Nur Z nennt fehlende Anlagenklasse als Fehler."
+  },
+  {
+   "id": "BM-060-B08",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "grammatik"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "grammatik",
+     "redundant"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "kurz": "Nur Z erklärt die Gültigkeitsprüfung der Kostenstelle."
+  },
+  {
+   "id": "BM-060-B09",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "grammatik",
+     "redundant"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "kurz": "Nur Z nennt den nicht positiven Betrag fachlich."
+  },
+  {
+   "id": "BM-060-B10",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "falsch"
+    ]
+   },
+   "kurz": "X und Y nur fill_status; Z fachlich, behauptet aber, der Status 51 werde geschrieben."
+  },
+  {
+   "id": "BM-060-B11",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "falsch",
+     "grammatik"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "kurz": "X mit erfundener Schleife; Y technisch; Z nennt Prüfung auf verbuchte Referenz."
+  },
+  {
+   "id": "BM-060-B12",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": [
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Z nennt Dublette mit Status 51 (ohne Hinweis auf die Anlage); X und Y nur fill_status."
+  },
+  {
+   "id": "BM-060-B13",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "falsch",
+     "redundant",
+     "grammatik"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "kurz": "X behauptet, die Eingabe bestimme den Baustein; Y technisch; Z fachlich."
+  },
+  {
+   "id": "BM-060-B14",
+   "X": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "kurz": "Keine Variante nennt das Verwerfen eines nicht vorhandenen Exits."
+  },
+  {
+   "id": "BM-060-B15",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "grammatik",
+     "redundant"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "kurz": "Nur Z nennt Status 51 nach Exit-Fehler."
+  },
+  {
+   "id": "BM-060-B16",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "falsch"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Z nennt Anlegen und Buchen, aber nicht die gemeinsame LUW; X und Y nur Parameterübergabe."
+  },
+  {
+   "id": "BM-060-B17",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "falsch"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "kurz": "Nur Z nennt den Stammsatz mit seinen Merkmalen."
+  },
+  {
+   "id": "BM-060-B18",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "grammatik",
+     "redundant"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "kurz": "Nur Z erklärt Rollback beim Anlegen fachlich."
+  },
+  {
+   "id": "BM-060-B19",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "falsch",
+     "redundant"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": [
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Z nennt Bewegungsart 100 und Werte (ohne 'ohne Kreditor'); X und Y technisch."
+  },
+  {
+   "id": "BM-060-B20",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "grammatik",
+     "redundant"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "kurz": "Nur Z nennt das Zurückrollen der gesamten Transaktion."
+  },
+  {
+   "id": "BM-060-B21",
+   "X": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": [
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Nur Z nennt den Referenzsatz (ohne Projekt)."
+  },
+  {
+   "id": "BM-060-B22",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "grammatik",
+     "redundant"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "kurz": "Nur Z nennt Referenzfehler und Rollback fachlich."
+  },
+  {
+   "id": "BM-060-B23",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "kurz": "Nur Z nennt das gemeinsame Festschreiben."
+  },
+  {
+   "id": "BM-060-B24",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "kurz": "Nur Z nennt Status 51 mit BAPI-Meldung."
+  },
+  {
+   "id": "BM-060-B25",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "zu_allgemein"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "kurz": "Nur Z nennt Status 53."
+  },
+  {
+   "id": "BM-060-B26",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "grammatik",
+     "redundant"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "grammatik",
+     "redundant"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "kurz": "Nur Z nennt die Workflow-Rückmeldung fachlich."
+  },
+  {
+   "id": "BM-060-B27",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "kurz": "Nur Z nennt das Workflow-Gesamtergebnis."
+  }
+ ],
+ "verboten_verletzt": [
+  {
+   "variante": "Z",
+   "satz": "Liegt ein Prüffehler vor, wird über FILL_STATUS der IDoc-Fehlerstatus 51 geschrieben und mit dem nächsten IDoc fortgefahren.",
+   "grund": "Behauptet, der Baustein schreibe den Status; er füllt nur IDOC_STATUS, geschrieben wird von der ALE-Schicht."
+  }
+ ],
+ "soll_zweifel": []
+}

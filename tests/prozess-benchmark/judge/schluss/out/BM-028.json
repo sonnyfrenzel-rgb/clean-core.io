@@ -1,0 +1,178 @@
+{
+ "id": "BM-028",
+ "urteile": [
+  {
+   "id": "BM-028-B01",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "zu_allgemein",
+     "technisch"
+    ]
+   },
+   "kurz": "X/Y nennen Fehlermeldung bei unlesbarer Datei, Z nur \"ohne Treffer Meldung\"."
+  },
+  {
+   "id": "BM-028-B02",
+   "X": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "kurz": "Nur Y beschreibt das Zerlegen der Zeilen."
+  },
+  {
+   "id": "BM-028-B03",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig",
+     "grammatik"
+    ]
+   },
+   "kurz": "X/Z nur Feld labst, Y nennt frei verwendbaren Bestand am abgebenden Ort."
+  },
+  {
+   "id": "BM-028-B04",
+   "X": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "X/Y nennen Protokoll und Überspringen, Z ohne Überspringen."
+  },
+  {
+   "id": "BM-028-B05",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "unvollstaendig",
+     "grammatik"
+    ]
+   },
+   "kurz": "X/Z nur Feldzuweisung und Aufruf, Y sagt Buchung 301."
+  },
+  {
+   "id": "BM-028-B06",
+   "X": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "falsch"
+    ]
+   },
+   "kurz": "X technisch vollständig, Y fachlich, Z ohne Typfilter."
+  },
+  {
+   "id": "BM-028-B07",
+   "X": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "kurz": "X/Y nennen Commit und Materialbeleg, Z zerstückelt."
+  },
+  {
+   "id": "BM-028-B08",
+   "X": {
+    "urteil": "gleich",
+    "mangel": [
+     "redundant"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "kurz": "X/Y nennen Testlauf ohne Fehler, Z vermischt Zweige."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

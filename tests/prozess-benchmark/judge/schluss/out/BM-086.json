@@ -1,0 +1,164 @@
+{
+ "id": "BM-086",
+ "urteile": [
+  {
+   "id": "BM-086-B01",
+   "X": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "kurz": "Nur Y beschreibt die Prüfung auf ZCREDLIM mit Abbruch."
+  },
+  {
+   "id": "BM-086-B02",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "X und Z nennen nur die Zeilenschleife, Y auch die Kopfdaten aus ZE1CREDHD."
+  },
+  {
+   "id": "BM-086-B03",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "X und Z nur 'Sätze aus knkk', Y liest den Kreditstammsatz zu Kunde und Kreditkontrollbereich."
+  },
+  {
+   "id": "BM-086-B04",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "grammatik"
+    ]
+   },
+   "kurz": "Alle decken beide Fehlerfälle ab, X und Z aber nur als 'lv_error auf X setzen'."
+  },
+  {
+   "id": "BM-086-B05",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "X und Z nennen nur 'eine Zeile in knkk wird geändert' ohne neues Limit, Y nennt Limit, Prüfdatum, Änderer und Datum."
+  },
+  {
+   "id": "BM-086-B06",
+   "X": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "grammatik"
+    ]
+   },
+   "kurz": "Alle nennen Status 53 bei fehlerfreiem IDoc; X und Z als Feldzuweisungskette."
+  },
+  {
+   "id": "BM-086-B07",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "unvollstaendig",
+     "grammatik"
+    ]
+   },
+   "kurz": "Nur Y nennt Kundennummer und Workflow-Fehlerergebnis verständlich; X und Z nur 'workflow_result auf 99999'."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

@@ -1,0 +1,296 @@
+{
+ "id": "BM-055",
+ "titel": "Leistungsverrechnung aus kundeneigener Zeiterfassung auf Kostenstellen und Innenaufträge",
+ "prozess": "Der Monatsjob startet den Verrechnungslauf mit Kostenrechnungskreis, Geschäftsjahr, Periode, Buchungsdatum und Testlauf-Schalter. Gelesen werden die freigegebenen Zeitsätze der Periode; ohne solche endet der Lauf mit Info. Jeder Satz wird auf gültige, nicht gesperrte Sender-Kostenstelle und bekannte Leistungsart geprüft, fehlerhafte werden nur protokolliert, gültige je Sender, Leistungsart und Empfänger verdichtet. Dann wird die Periode gesperrt; ist sie schon gesperrt, endet der Lauf mit Fehlereintrag. Je verdichteter Position wird eine Leistungsverrechnung im Testlauf geprüft oder im Echtlauf gebucht. Bei Fehlern wird zurückgerollt und im Echtlauf der Status der Zeitsätze auf E gesetzt; bei Erfolg im Echtlauf erhalten sie Status V und die CO-Belegnummer. Am Ende wird die Sperre freigegeben und das Protokoll ausgegeben.",
+ "verboten": [
+  "zcl_co_act_alloc.abap:189 — kein Fachsatz „ungültige Zeitsätze werden auf Status E gesetzt“ (Prüffehler stehen nur im Protokoll, die Sätze bleiben auf F und kommen im nächsten Lauf wieder)",
+  "zcl_co_act_alloc.abap:183 — kein Fachsatz „der Empfänger wird geprüft“ (nur Sender und Leistungsart)",
+  "zcl_co_act_alloc.abap:98 — kein Fachsatz „Tarif oder Betrag wird im Programm berechnet“ (übergeben wird nur die Menge; die Bewertung erfolgt im Standard)",
+  "zcl_co_act_alloc.abap:72 — kein Fachsatz „der Job bricht mit Fehlermeldung ab“ (die Methode kehrt mit Protokolleintrag zurück, der Report gibt das Protokoll aus)"
+ ],
+ "saetze": [
+  {
+   "id": "BM-055-B01",
+   "soll": "Der Monatsjob verrechnet für Kostenrechnungskreis, Geschäftsjahr und Periode zum gewählten Buchungsdatum; standardmäßig läuft er als Testlauf.",
+   "zeilen": [
+    18
+   ],
+   "code": [
+    "18:   gt_log = go_alloc->run( iv_kokrs = p_kokrs"
+   ],
+   "X": [
+    "Der Rückgabewert der Methode run von go_alloc wird nach gt_log übernommen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ],
+   "Y": [
+    "Die Leistungsverrechnung wird mit dem eingegebenen Kostenrechnungskreis, dem Geschäftsjahr, der Periode, dem Buchungsdatum und dem Testkennzeichen aufgerufen."
+   ],
+   "Z": [
+    "Der Rückgabewert der Methode run von go_alloc wird nach gt_log übernommen."
+   ]
+  },
+  {
+   "id": "BM-055-B02",
+   "soll": "Gelesen werden nur die vom Vorgesetzten freigegebenen Zeitsätze (Status F) der Periode; gibt es keine, endet der Lauf mit einem Info-Eintrag.",
+   "zeilen": [
+    80,
+    82,
+    191
+   ],
+   "code": [
+    "80:     IF mt_ts IS INITIAL.",
+    "82:       RETURN.",
+    "191:     SELECT * FROM zco_timesheet INTO TABLE mt_ts"
+   ],
+   "X": [
+    "Ohne mt_ts wird eine Zeile aufgenommen und der Block verlassen.",
+    "Ohne mt_ts wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "Es wird eine Zeile aufgenommen und der Block verlassen.",
+    "Es werden Sätze aus zco_timesheet selektiert."
+   ],
+   "Y": [
+    "Aus der Tabelle ZCO_TIMESHEET werden alle Zeiterfassungssätze mit Status freigegeben ('F') für den Kostenrechnungskreis, das Geschäftsjahr und die Periode gelesen.",
+    "Sind keine freigegebenen Zeiterfassungsdaten vorhanden, wird ein Informationshinweis mit dem Status 'I' und dem Text 'Keine freigegebenen Zeiten' in das Protokoll eingetragen und die Verarbeitung beendet."
+   ],
+   "Z": [
+    "Ist die Tabelle mt_ts leer, wird eine Zeile aufgenommen und vor der Datenbankoperation zurückgekehrt.",
+    "Es werden Sätze aus zco_timesheet selektiert."
+   ]
+  },
+  {
+   "id": "BM-055-B03",
+   "soll": "Jeder Zeitsatz wird zum Periodenbeginn geprüft: Die Sender-Kostenstelle muss gültig und für sekundäre Istkosten nicht gesperrt sein, die Leistungsart muss existieren; sonst wird der Satz mit Fehlertext protokolliert und nicht verrechnet.",
+   "zeilen": [
+    210,
+    216,
+    222,
+    227
+   ],
+   "code": [
+    "210:       SELECT SINGLE kostl FROM csks INTO lv_kostl",
+    "216:       IF sy-subrc <> 0.",
+    "222:       SELECT SINGLE lstar FROM csla INTO lv_lstar",
+    "227:       IF sy-subrc <> 0."
+   ],
+   "X": [
+    "kostl des Satzes wird gelesen.",
+    "Ohne Treffer wird eine Zeile aufgenommen.",
+    "lstar des Satzes wird gelesen.",
+    "Ohne Treffer wird eine Zeile aufgenommen."
+   ],
+   "Y": [
+    "Aus der Tabelle CSKS wird für den Kostenrechnungskreis und die Senderkostenstelle geprüft, ob die Kostenstelle zum Periodenersten gültig und nicht für sekundäre Istkosten gesperrt ist.",
+    "Ist die Senderkostenstelle ungültig oder gesperrt, wird ein Fehler mit Status 'E' und dem Text 'Sender ungueltig oder gesperrt' im Protokoll erfasst und der Zeiterfassungssatz übersprungen.",
+    "Aus der Tabelle CSLA wird für den Kostenrechnungskreis und die Leistungsart geprüft, ob die Leistungsart zum Periodenersten gültig ist.",
+    "Ist die Leistungsart zum Stichtag ungültig, wird ein Fehler mit Status 'E' und dem Text 'Leistungsart unbekannt' im Protokoll erfasst und der Zeiterfassungssatz übersprungen."
+   ],
+   "Z": [
+    "Die Kostenstelle der Kostenstelle wird gelesen.",
+    "Ohne Treffer wird eine Zeile aufgenommen und der Schleifendurchlauf übersprungen.",
+    "Das Feld lstar aus csla wird gelesen.",
+    "Ohne Treffer wird eine Zeile aufgenommen und der Schleifendurchlauf übersprungen."
+   ]
+  },
+  {
+   "id": "BM-055-B04",
+   "soll": "Gültige Zeitsätze werden je Sender-Kostenstelle, Leistungsart, Empfänger-Kostenstelle bzw. Innenauftrag und Einheit zu einer Menge verdichtet.",
+   "zeilen": [
+    241
+   ],
+   "code": [
+    "241:       COLLECT ls_sum INTO mt_sum."
+   ],
+   "X": [],
+   "Y": [
+    "Gültige Zeiterfassungssätze werden nach Senderkostenstelle, Leistungsart, Empfängerkostenstelle, Auftrag und Mengeneinheit verdichtet und die Mengen summiert."
+   ],
+   "Z": []
+  },
+  {
+   "id": "BM-055-B05",
+   "soll": "Vor dem Buchen wird die Periode gegen parallele Verrechnung gesperrt; ist sie schon gesperrt, endet der Lauf mit einem Fehlereintrag.",
+   "zeilen": [
+    88,
+    97,
+    99
+   ],
+   "code": [
+    "88:     CALL FUNCTION 'ENQUEUE_EZCO_TIMESHEET'",
+    "97:     IF sy-subrc <> 0.",
+    "99:       RETURN."
+   ],
+   "X": [
+    "Der Funktionsbaustein ENQUEUE_EZCO_TIMESHEET wird aufgerufen.",
+    "Ohne Treffer wird eine Zeile aufgenommen und der Block verlassen.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "Es wird eine Zeile aufgenommen und der Block verlassen."
+   ],
+   "Y": [
+    "Über den Funktionsbaustein ENQUEUE_EZCO_TIMESHEET wird eine Sperre auf Kostenrechnungskreis, Geschäftsjahr und Periode gesetzt."
+   ],
+   "Z": [
+    "Der Funktionsbaustein ENQUEUE_EZCO_TIMESHEET wird aufgerufen.",
+    "Ist die Sperre über ENQUEUE_EZCO_TIMESHEET nicht zu erhalten, wird eine Zeile aufgenommen und vor der Datenbankoperation zurückgekehrt."
+   ]
+  },
+  {
+   "id": "BM-055-B06",
+   "soll": "Je verdichteter Position wird eine Leistungsverrechnung von der Sender-Kostenstelle auf die Empfänger-Kostenstelle bzw. den Innenauftrag aufgebaut; im Testlauf wird sie nur geprüft, im Echtlauf zur Buchung übergeben.",
+   "zeilen": [
+    110,
+    117,
+    118,
+    125
+   ],
+   "code": [
+    "110:       APPEND VALUE #( send_cctr  = ls_sum-skostl",
+    "117:       IF iv_test = abap_true.",
+    "118:         CALL FUNCTION 'BAPI_ACC_ACTIVITY_ALLOC_CHECK'",
+    "125:         CALL FUNCTION 'BAPI_ACC_ACTIVITY_ALLOC_POST'"
+   ],
+   "X": [
+    "Eine Zeile wird in lt_items aufgenommen.",
+    "Für iv_test mit dem Wert abap_true wird BAPI_ACC_ACTIVITY_ALLOC_CHECK aufgerufen.",
+    "Für iv_test mit dem Wert abap_true wird BAPI_ACC_ACTIVITY_ALLOC_CHECK aufgerufen, sonst BAPI_ACC_ACTIVITY_ALLOC_POST aufgerufen.",
+    "Der Funktionsbaustein BAPI_ACC_ACTIVITY_ALLOC_CHECK wird aufgerufen.",
+    "Für andere iv_test wird BAPI_ACC_ACTIVITY_ALLOC_POST aufgerufen.",
+    "Der Code übergibt ls_hdr an BAPI_ACC_ACTIVITY_ALLOC_POST und übernimmt dessen Ausgabe nach lv_docno.",
+    "Das konvertierte Ergebnis wird in lv_docno übernommen."
+   ],
+   "Y": [
+    "Ist das Testkennzeichen gesetzt, wird die Leistungsverrechnung über den Baustein BAPI_ACC_ACTIVITY_ALLOC_CHECK lediglich simuliert und geprüft.",
+    "Ist das Testkennzeichen nicht gesetzt, wird die Leistungsverrechnung über den Baustein BAPI_ACC_ACTIVITY_ALLOC_POST gebucht und eine Belegnummer empfangen."
+   ],
+   "Z": [
+    "Eine Zeile wird in lt_items aufgenommen.",
+    "Wenn das Feld iv_test gesetzt ist, wird BAPI_ACC_ACTIVITY_ALLOC_CHECK aufgerufen, sonst BAPI_ACC_ACTIVITY_ALLOC_POST aufgerufen.",
+    "Der Funktionsbaustein BAPI_ACC_ACTIVITY_ALLOC_CHECK wird aufgerufen.",
+    "Der Code übergibt ls_hdr an BAPI_ACC_ACTIVITY_ALLOC_POST und übernimmt dessen Ausgabe nach lv_docno."
+   ]
+  },
+  {
+   "id": "BM-055-B07",
+   "soll": "Enthält die Rückmeldung eine Fehlermeldung, wird zurückgerollt; im Echtlauf werden die betroffenen Zeitsätze auf Status E gesetzt und festgeschrieben.",
+   "zeilen": [
+    142,
+    143,
+    144,
+    147,
+    148,
+    157
+   ],
+   "code": [
+    "142:       READ TABLE lt_ret INTO ls_ret WITH KEY type = 'E'.",
+    "143:       IF sy-subrc = 0.",
+    "144:         CALL FUNCTION 'BAPI_TRANSACTION_ROLLBACK'.",
+    "147:         IF iv_test = abap_false.",
+    "148:           UPDATE zco_timesheet SET status = 'E'",
+    "157:           COMMIT WORK."
+   ],
+   "X": [
+    "In der Tabelle wird nach einer passenden Zeile gesucht.",
+    "Bei Treffer wird BAPI_TRANSACTION_ROLLBACK aufgerufen und die Status auf E gesetzt.",
+    "Bei Treffer wird BAPI_TRANSACTION_ROLLBACK aufgerufen und die Status auf E gesetzt, sonst die Status auf T gesetzt und die Text auf Pruefung ohne Fehler gesetzt beziehungsweise eine Zeile geändert, BAPI_TRANSACTION_COMMIT aufgerufen und die Status auf V gesetzt.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_ROLLBACK wird aufgerufen.",
+    "Es wird BAPI_TRANSACTION_ROLLBACK aufgerufen und die Status auf E gesetzt.",
+    "sy-subrc mit dem Wert 0 setzen die Status auf E.",
+    "Für iv_test mit dem Wert abap_false wird eine Zeile geändert und COMMIT WORK ausgeführt.",
+    "Es wird eine Zeile geändert und COMMIT WORK ausgeführt.",
+    "Die Status in zco_timesheet wird geändert. Ob eine Zeile getroffen wird, garantiert der Code nicht.",
+    "Mit COMMIT WORK wird die Änderung persistiert."
+   ],
+   "Y": [
+    "Tritt bei der Verrechnung ein Fehler auf, wird die Transaktion über den Baustein BAPI_TRANSACTION_ROLLBACK zurückgesetzt und der Fehler im Protokoll mit Status 'E' festgehalten.",
+    "Tritt der Fehler im Echtlauf auf (Testkennzeichen nicht gesetzt), wird in der Tabelle ZCO_TIMESHEET der Status der zugehörigen freigegebenen Sätze auf fehlerhaft ('E') gesetzt und die Änderung gesichert.",
+    "Verläuft die Prüfung im Testlauf fehlerfrei, wird der Protokollsatz mit dem Status 'T' und dem Text 'Pruefung ohne Fehler' versehen.",
+    "Verläuft die Buchung im Echtlauf fehlerfrei, wird in der Tabelle ZCO_TIMESHEET der Status der freigegebenen Sätze auf verrechnet ('V') gesetzt und die erzeugte Belegnummer hinterlegt."
+   ],
+   "Z": [
+    "In der Tabelle lt_ret wird nach einer passenden Zeile gesucht.",
+    "Bei Treffer wird BAPI_TRANSACTION_ROLLBACK aufgerufen und der Status auf E gesetzt.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_ROLLBACK wird aufgerufen.",
+    "Wenn ein Treffer vorliegt, wird der Status auf E gesetzt.",
+    "Wenn das Feld iv_test nicht gesetzt ist, wird eine Zeile geändert und COMMIT WORK ausgeführt.",
+    "Der Status in zco_timesheet wird geändert. Ob eine Zeile getroffen wird, garantiert der Code nicht.",
+    "Mit COMMIT WORK wird die Änderung persistiert."
+   ]
+  },
+  {
+   "id": "BM-055-B08",
+   "soll": "Im Testlauf ohne Fehler wird die Position nur als geprüft protokolliert.",
+   "zeilen": [
+    160
+   ],
+   "code": [
+    "160:         ls_log-status = 'T'."
+   ],
+   "X": [
+    "Bei Treffer wird BAPI_TRANSACTION_ROLLBACK aufgerufen und die Status auf E gesetzt, sonst die Status auf T gesetzt und die Text auf Pruefung ohne Fehler gesetzt beziehungsweise eine Zeile geändert, BAPI_TRANSACTION_COMMIT aufgerufen und die Status auf V gesetzt.",
+    "Für iv_test mit dem Wert abap_true wird die Status auf T gesetzt und die Text auf Pruefung ohne Fehler gesetzt.",
+    "iv_test mit dem Wert abap_true setzen die Status auf T.",
+    "Es wird die Status auf T gesetzt und die Text auf Pruefung ohne Fehler gesetzt."
+   ],
+   "Y": [
+    "Verläuft die Prüfung im Testlauf fehlerfrei, wird der Protokollsatz mit dem Status 'T' und dem Text 'Pruefung ohne Fehler' versehen."
+   ],
+   "Z": [
+    "Wenn das Feld iv_test gesetzt ist, wird der Status auf T gesetzt und der Text auf Pruefung ohne Fehler gesetzt.",
+    "Wenn das Feld iv_test gesetzt ist, wird der Status auf T gesetzt."
+   ]
+  },
+  {
+   "id": "BM-055-B09",
+   "soll": "Im Echtlauf ohne Fehler werden die Zeitsätze mit der CO-Belegnummer auf Status V gesetzt und gemeinsam mit der Verrechnung festgeschrieben.",
+   "zeilen": [
+    163,
+    173
+   ],
+   "code": [
+    "163:         UPDATE zco_timesheet SET status = 'V'",
+    "173:         CALL FUNCTION 'BAPI_TRANSACTION_COMMIT'"
+   ],
+   "X": [
+    "Bei Treffer wird BAPI_TRANSACTION_ROLLBACK aufgerufen und die Status auf E gesetzt, sonst die Status auf T gesetzt und die Text auf Pruefung ohne Fehler gesetzt beziehungsweise eine Zeile geändert, BAPI_TRANSACTION_COMMIT aufgerufen und die Status auf V gesetzt.",
+    "Für andere iv_test wird eine Zeile geändert, BAPI_TRANSACTION_COMMIT aufgerufen und die Status auf V gesetzt.",
+    "Es wird eine Zeile geändert, BAPI_TRANSACTION_COMMIT aufgerufen und die Status auf V gesetzt.",
+    "Die Status in zco_timesheet wird geändert. Ob eine Zeile getroffen wird, garantiert der Code nicht.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_COMMIT wird aufgerufen."
+   ],
+   "Y": [
+    "Verläuft die Buchung im Echtlauf fehlerfrei, wird in der Tabelle ZCO_TIMESHEET der Status der freigegebenen Sätze auf verrechnet ('V') gesetzt und die erzeugte Belegnummer hinterlegt.",
+    "Die Buchung wird über den Baustein BAPI_TRANSACTION_COMMIT mit Warten auf der Datenbank bestätigt und der Beleg im Protokoll mit Status 'V' vermerkt."
+   ],
+   "Z": [
+    "Sonst wird eine Zeile geändert, BAPI_TRANSACTION_COMMIT aufgerufen und der Status auf V gesetzt.",
+    "Der Status in zco_timesheet wird geändert. Ob eine Zeile getroffen wird, garantiert der Code nicht.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_COMMIT wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-055-B10",
+   "soll": "Nach allen Positionen wird die Periodensperre freigegeben und das Protokoll mit Sender, Leistungsart, Empfänger, Menge, Status und Text ausgegeben.",
+   "zeilen": [
+    25,
+    182
+   ],
+   "code": [
+    "25:     WRITE: / gs_log-sender, gs_log-lstar, gs_log-receiver,",
+    "182:     CALL FUNCTION 'DEQUEUE_EZCO_TIMESHEET'"
+   ],
+   "X": [
+    "Bei Treffern werden gs_log-sender, gs_log-lstar, gs_log-receiver, gs_log-menge, Status und Text als Liste ausgegeben.",
+    "gs_log-sender wird ausgegeben.",
+    "gs_log-lstar wird ausgegeben.",
+    "gs_log-receiver wird ausgegeben.",
+    "Der Funktionsbaustein DEQUEUE_EZCO_TIMESHEET wird aufgerufen."
+   ],
+   "Y": [
+    "Über den Funktionsbaustein DEQUEUE_EZCO_TIMESHEET wird die Sperre für den Kostenrechnungskreis, das Geschäftsjahr und die Periode wieder aufgehoben.",
+    "Das Verarbeitungsprotokoll wird zeilenweise durchlaufen und die protokollierten Felder werden ausgegeben."
+   ],
+   "Z": [
+    "Bei Treffern werden gs_log-sender, gs_log-lstar, gs_log-receiver, Menge, Status und Text als Liste ausgegeben.",
+    "Der Funktionsbaustein DEQUEUE_EZCO_TIMESHEET wird aufgerufen."
+   ]
+  }
+ ]
+}

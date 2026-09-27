@@ -1,0 +1,110 @@
+{
+ "id": "BM-063",
+ "titel": "Störmeldung für ein Equipment per BAPI anlegen",
+ "prozess": "Ein Leitstandsmitarbeiter startet den Report mit Equipment, Kurztext und Priorität. Der Report legt über die Meldungs-BAPI eine Störmeldung der Art M2 an. Enthält die Rückmeldung der BAPI einen Fehler, gibt er eine Fehlermeldung aus und endet, ohne zu speichern. Sonst sichert er die Meldung, schreibt die Transaktion mit Warten auf die Verbuchung fest und gibt die Meldungsnummer aus. Ob das Sichern selbst Fehler gemeldet hat, wird nicht geprüft.",
+ "verboten": [
+  "source.abap:26 — kein Fachsatz „Schlägt das Sichern fehl, wird nicht festgeschrieben“ (das RETURN des Sicherns wird nicht geprüft; Commit und Erfolgsausgabe folgen unbedingt)",
+  "gesamte Scheibe — kein Fachsatz „Zur Meldung wird ein Instandhaltungsauftrag angelegt“ (es wird nur die Meldung angelegt)",
+  "source.abap:34 — kein Fachsatz „Die Meldung ist nachweislich gespeichert“ (die Ausgabe belegt nur das Durchlaufen, nicht den Verbuchungserfolg)"
+ ],
+ "saetze": [
+  {
+   "id": "BM-063-B01",
+   "soll": "Für das eingegebene Equipment wird eine Störmeldung der Meldungsart M2 mit Kurztext und Priorität angelegt.",
+   "zeilen": [
+    11,
+    14
+   ],
+   "code": [
+    "11:   ls_head-equipment  = p_equnr.",
+    "14:   CALL FUNCTION 'BAPI_ALM_NOTIF_CREATE'"
+   ],
+   "X": [
+    "Unter Verwendung der angegebenen Equipmentnummer, des Kurztextes und der Priorität wird für die Meldungsart 'M2' der Funktionsbaustein BAPI_ALM_NOTIF_CREATE aufgerufen, um eine Instandhaltungsmeldung anzulegen."
+   ],
+   "Y": [
+    "Der Code übergibt 'M2' an BAPI_ALM_NOTIF_CREATE und übernimmt dessen Ausgabe nach ls_export."
+   ],
+   "Z": [
+    "Der Code übergibt 'M2' an BAPI_ALM_NOTIF_CREATE und übernimmt dessen Ausgabe nach ls_export.",
+    "Das konvertierte Ergebnis wird in ls_export übernommen."
+   ]
+  },
+  {
+   "id": "BM-063-B02",
+   "soll": "Meldet das Anlegen einen Fehler, wird „Meldung konnte nicht angelegt werden“ ausgegeben und die Verarbeitung ohne Speichern beendet.",
+   "zeilen": [
+    22,
+    23,
+    24
+   ],
+   "code": [
+    "22:   IF line_exists( lt_return[ type = 'E' ] ).",
+    "23:     MESSAGE 'Meldung konnte nicht angelegt werden' TYPE 'S' DISPLAY LIKE 'E'.",
+    "24:     RETURN."
+   ],
+   "X": [
+    "Falls in der Rückmeldetabelle ein Eintrag mit dem Typ 'E' vorhanden ist, wird die Meldung 'Meldung konnte nicht angelegt werden' als Fehlerhinweis angezeigt und die Ausführung beendet."
+   ],
+   "Y": [
+    "Wenn in lt_return eine passende Zeile existiert, wird eine Statusmeldung ausgegeben und der Block verlassen.",
+    "Die Statusmeldung „Meldung konnte nicht angelegt werden“ wird ausgegeben, angezeigt wie eine Fehlermeldung."
+   ],
+   "Z": [
+    "Für line_exists( lt_return[ type = 'E' ] ) wird eine Meldung ausgegeben und der Block verlassen.",
+    "Eine Meldung wird ausgegeben.",
+    "Es wird eine Meldung ausgegeben und der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-063-B03",
+   "soll": "Andernfalls wird die Meldung gesichert und die Transaktion mit Warten auf die Verbuchung festgeschrieben.",
+   "zeilen": [
+    26,
+    31
+   ],
+   "code": [
+    "26:   CALL FUNCTION 'BAPI_ALM_NOTIF_SAVE'",
+    "31:   CALL FUNCTION 'BAPI_TRANSACTION_COMMIT'"
+   ],
+   "X": [
+    "Mit der ermittelten Meldungsnummer wird der Funktionsbaustein BAPI_ALM_NOTIF_SAVE aufgerufen, um die Meldung zu sichern.",
+    "Über den Funktionsbaustein BAPI_TRANSACTION_COMMIT wird die Verbuchung mit Warteparameter auf der Datenbank bestätigt."
+   ],
+   "Y": [
+    "Der Funktionsbaustein BAPI_ALM_NOTIF_SAVE wird aufgerufen.",
+    "Es wird BAPI_ALM_NOTIF_SAVE aufgerufen, BAPI_TRANSACTION_COMMIT aufgerufen, Meldung angelegt: ausgegeben und ls_export-notif_no ausgegeben.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_COMMIT wird aufgerufen."
+   ],
+   "Z": [
+    "Der Funktionsbaustein BAPI_ALM_NOTIF_SAVE wird aufgerufen.",
+    "Es wird BAPI_ALM_NOTIF_SAVE aufgerufen, BAPI_TRANSACTION_COMMIT aufgerufen, Meldung angelegt: ausgegeben und ls_export-notif_no ausgegeben.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_COMMIT wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-063-B04",
+   "soll": "Zum Schluss wird die Meldungsnummer ausgegeben.",
+   "zeilen": [
+    34
+   ],
+   "code": [
+    "34:   WRITE: / 'Meldung angelegt:', ls_export-notif_no."
+   ],
+   "X": [
+    "Die erzeugte Meldungsnummer wird mit dem vorangestellten Text 'Meldung angelegt:' ausgegeben."
+   ],
+   "Y": [
+    "Es wird BAPI_ALM_NOTIF_SAVE aufgerufen, BAPI_TRANSACTION_COMMIT aufgerufen, Meldung angelegt: ausgegeben und ls_export-notif_no ausgegeben.",
+    "Meldung angelegt: und ls_export-notif_no werden ausgegeben.",
+    "Meldung angelegt: wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code."
+   ],
+   "Z": [
+    "Es wird BAPI_ALM_NOTIF_SAVE aufgerufen, BAPI_TRANSACTION_COMMIT aufgerufen, Meldung angelegt: ausgegeben und ls_export-notif_no ausgegeben.",
+    "Meldung angelegt: und ls_export-notif_no werden ausgegeben.",
+    "Meldung angelegt: wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "ls_export-notif_no wird ausgegeben."
+   ]
+  }
+ ]
+}

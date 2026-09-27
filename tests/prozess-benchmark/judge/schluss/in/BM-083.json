@@ -1,0 +1,65 @@
+{
+ "id": "BM-083",
+ "titel": "Organisationseinheit und Kostenstelle eines Mitarbeiters zum Stichtag",
+ "prozess": "Andere Programme übergeben Personalnummer und Stichtag (Vorschlag: heute). Der Baustein liest die organisatorische Zuordnung des Mitarbeiters (Infotyp 0001) genau für diesen Tag. Findet er keinen gültigen Satz oder schlägt das Lesen fehl, endet er mit der Ausnahme NOT_ASSIGNED. Sonst gibt er Organisationseinheit und Kostenstelle des gefundenen Satzes zurück; eine leere Kostenstelle wird nicht weiter behandelt, der frühere Rückgriff auf die Planstelle ist auskommentiert.",
+ "verboten": [
+  "gesamte Scheibe — kein Fachsatz „fehlende Kostenstelle wird aus der Planstelle ermittelt“ (nur auskommentierter Rest).",
+  "source.abap:16 — kein read-Knoten auf PA0001 (der Zugriff läuft über den Baustein, nicht über SELECT).",
+  "source.abap:33 — kein Fachsatz „leere Kostenstelle führt zu Fehler“ (eine leere Kostenstelle wird ungeprüft zurückgegeben)."
+ ],
+ "saetze": [
+  {
+   "id": "BM-083-B01",
+   "soll": "Die organisatorische Zuordnung (Infotyp 0001) des Mitarbeiters wird für genau den Stichtag gelesen.",
+   "zeilen": [
+    16
+   ],
+   "code": [
+    "16:   CALL FUNCTION 'HR_READ_INFOTYPE'"
+   ],
+   "X": [
+    "Der Funktionsbaustein HR_READ_INFOTYPE wird aufgerufen."
+   ],
+   "Y": [
+    "Über den Funktionsbaustein HR_READ_INFOTYPE wird für die übergebene Personalnummer zum angegebenen Datum der Infotyp 0001 (Organisatorische Zuordnung) in eine interne Tabelle eingelesen."
+   ],
+   "Z": [
+    "Der Funktionsbaustein HR_READ_INFOTYPE wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-083-B02",
+   "soll": "Ist der Mitarbeiter zum Stichtag keiner Organisationseinheit zugeordnet oder schlägt das Lesen fehl, endet der Baustein mit NOT_ASSIGNED.",
+   "zeilen": [
+    27,
+    28
+   ],
+   "code": [
+    "27:   IF sy-subrc <> 0 OR lt_p0001 IS INITIAL.",
+    "28:     RAISE not_assigned."
+   ],
+   "X": [],
+   "Y": [
+    "Ist das Lesen nicht erfolgreich (Rückgabewert ungleich 0) oder enthält die Tabelle des Infotyps 0001 keine Einträge, wird die Ausnahme NOT_ASSIGNED ausgelöst."
+   ],
+   "Z": []
+  },
+  {
+   "id": "BM-083-B03",
+   "soll": "Sonst werden Organisationseinheit und Kostenstelle des gültigen Satzes zurückgegeben.",
+   "zeilen": [
+    32,
+    33
+   ],
+   "code": [
+    "32:   ev_orgeh = ls_p0001-orgeh.",
+    "33:   ev_kostl = ls_p0001-kostl."
+   ],
+   "X": [],
+   "Y": [
+    "Die Organisationseinheit ORGEH und die Kostenstelle KOSTL werden aus dem gelesenen Datensatz in die entsprechenden Ausgabefelder übernommen."
+   ],
+   "Z": []
+  }
+ ]
+}

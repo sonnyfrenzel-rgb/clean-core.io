@@ -1,0 +1,90 @@
+{
+ "id": "BM-044",
+ "urteile": [
+  {
+   "id": "BM-044-B01",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "X ohne Ausnahme COMPANY_NOT_FOUND, Z nur Feldname; Y vollständig."
+  },
+  {
+   "id": "BM-044-B02",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "X und Z beschreiben nur die Parameterübergabe technisch, ohne Kurstyp M; Y fachlich vollständig."
+  },
+  {
+   "id": "BM-044-B03",
+   "X": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "kurz": "Nur Y nennt die Ausnahme NO_RATE."
+  },
+  {
+   "id": "BM-044-B04",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "X und Z nennen nur ev_kursf, nicht den Hauswährungsbetrag; Y nennt beides."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

@@ -1,0 +1,510 @@
+{
+ "id": "BM-119",
+ "titel": "Lieferanten-SDB (XML) ins Gefahrstoffkataster: Transformation, CAS-Zuordnung, Verbuchung, Archivierung, Zusammenlagerungsprüfung TRGS 510",
+ "prozess": "Der Nachtjob wird mit Eingangsverzeichnis, Werk und Testlaufkennzeichen gestartet; ein unbekanntes Werk wird schon am Selektionsbild abgewiesen. Er listet die Dateien des Verzeichnisses und endet mit Hinweis, wenn keine vorhanden sind. Für jede XML-Datei liest er den Inhalt und transformiert ihn in die SDB-Struktur; nicht lesbare oder fehlerhafte Dateien werden protokolliert und bleiben im Eingang. Über die CAS-Nummer ermittelt er den Stoff; ohne Zuordnung bleibt die Datei mit Warnung liegen. Ist das SDB nicht neuer als der Katasterstand im Werk, wird es nur als erledigt vermerkt. Im Testlauf werden Stoff, Lagerklasse und WGK nur protokolliert, sonst wird die Übernahme von Lagerklasse, WGK, SDB-Datum und Lieferant ins Kataster zur Verbuchung vorgemerkt. Erledigte Dateien werden im Echtlauf sofort ins Archiv geschrieben und im Eingang gelöscht. Danach prüft der Job je Lagerort die gelagerten Lagerklassen paarweise gegen die Zusammenlagerungsmatrix, werksspezifisch vor allgemein; eine unbekannte Lagerklasse oder die erste unzulässige Kombination wird protokolliert und führt im Echtlauf zu einer offenen Aufgabe für den Gefahrstoffbeauftragten. Weil die Katasteränderungen erst beim abschließenden COMMIT WORK verbucht werden, prüft er dabei den alten Stand. Die Verbuchung übernimmt die Daten an allen Lagerorten des Stoffs und historisiert sie; fehlt der Stoff im Kataster des Werks, bricht sie mit MESSAGE A ab und verwirft alle Übernahmen des Laufs. Zum Schluss wird das Protokoll angezeigt.",
+ "verboten": [
+  "zehs_sdb_inbound.abap:56 — kein Fachsatz „die Zusammenlagerungsprüfung berücksichtigt die soeben eingelesenen Lagerklassen“: die Katasteränderungen sind nur zur Verbuchung vorgemerkt und werden erst beim COMMIT WORK danach geschrieben; geprüft wird der alte Stand",
+  "z_ehs_kataster_update.abap:25 — kein Fachsatz „ein Stoff ohne Katastereintrag im Werk wird übersprungen“: das UPDATE trifft keine Zeile, MESSAGE A bricht die gesamte Verbuchung des Laufs ab, auch die Übernahmen aller anderen Dateien, die zu diesem Zeitpunkt bereits archiviert sind",
+  "zcl_ehs_lagerklasse.abap:70 — kein Fachsatz „fehlt eine Lagerklasse als Spalte in der Matrix, wird die Zusammenlagerung abgelehnt“: dann gilt sie als zulässig; nur eine vorhandene Zelle ohne 1 oder 2 (auch leer) ist unzulässig",
+  "zehs_sdb_inbound_f01.abap:143 — kein Fachsatz „alle unzulässigen Kombinationen eines Lagerorts werden gemeldet“: die Prüfung bricht bei der ersten ab, je Lagerort entsteht höchstens eine Aufgabe"
+ ],
+ "saetze": [
+  {
+   "id": "BM-119-B01",
+   "soll": "Ein unbekanntes Werk wird schon auf dem Selektionsbild abgewiesen.",
+   "zeilen": [
+    20,
+    22,
+    23
+   ],
+   "code": [
+    "20:   SELECT SINGLE werks FROM t001w INTO @DATA(lv_werks)",
+    "22:   IF sy-subrc <> 0.",
+    "23:     MESSAGE e800(zehs) WITH p_werks."
+   ],
+   "X": [
+    "Aus der Tabelle T001W wird das Werk zum angegebenen Selektionswert gelesen.",
+    "Wird das Werk in Tabelle T001W nicht gefunden, wird die Fehlermeldung E800 ausgegeben."
+   ],
+   "Y": [
+    "werks des Satzes mit dem eingegebenen werks wird gelesen.",
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ],
+   "Z": [
+    "Das Werk des Werks mit dem eingegebenen Werk wird gelesen.",
+    "Ohne Treffer wird eine Fehlermeldung ausgegeben.",
+    "Die Fehlermeldung 800(ZEHS) wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-119-B02",
+   "soll": "Die Dateien des Eingangsverzeichnisses werden aufgelistet; ist das nicht möglich oder das Verzeichnis leer, endet der Lauf mit Hinweis und leerem Protokoll.",
+   "zeilen": [
+    29,
+    43,
+    44,
+    45
+   ],
+   "code": [
+    "29:   CALL FUNCTION 'EPS2_GET_DIRECTORY_LISTING'",
+    "43:   IF sy-subrc <> 0 OR gt_files IS INITIAL.",
+    "44:     MESSAGE s801(zehs) WITH p_dir.",
+    "45:     RETURN."
+   ],
+   "X": [
+    "Über den Funktionsbaustein EPS2_GET_DIRECTORY_LISTING wird die Dateiliste des angegebenen Verzeichnisses ermittelt.",
+    "Schlägt das Lesen des Verzeichnisses fehl oder ist die Dateiliste leer, wird die Information s801 ausgegeben und die Verarbeitung beendet."
+   ],
+   "Y": [
+    "Der Funktionsbaustein EPS2_GET_DIRECTORY_LISTING wird aufgerufen.",
+    "Für sy-subrc <> 0 OR gt_files IS INITIAL wird eine Meldung ausgegeben und der Block verlassen.",
+    "Eine Meldung wird ausgegeben.",
+    "Es wird eine Meldung ausgegeben und der Block verlassen."
+   ],
+   "Z": [
+    "Der Funktionsbaustein EPS2_GET_DIRECTORY_LISTING wird aufgerufen.",
+    "Wenn der Aufruf von EPS2_GET_DIRECTORY_LISTING scheitert oder das Feld gt_files leer ist, wird eine Statusmeldung ausgegeben und der Block verlassen.",
+    "Die Statusmeldung 801(ZEHS) wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-119-B03",
+   "soll": "Verarbeitet werden nur XML-Dateien.",
+   "zeilen": [
+    48,
+    49
+   ],
+   "code": [
+    "48:   LOOP AT gt_files INTO gs_file.",
+    "49:     CHECK gs_file-name CP '*.xml' OR gs_file-name CP '*.XML'."
+   ],
+   "X": [
+    "Für jede gefundene Datei im Verzeichnis wird eine Verarbeitungsschleife durchlaufen.",
+    "Endet der Dateiname weder auf .xml noch auf .XML, wird die Datei übersprungen."
+   ],
+   "Y": [
+    "Jede Zeile aus gt_files wird einzeln verarbeitet.",
+    "Nur gs_file-name CP '*.xml' OR gs_file-name CP '*.XML' gehen weiter; kleinere werden übersprungen, die Schleife läuft weiter."
+   ],
+   "Z": [
+    "Jede Zeile aus gt_files wird einzeln verarbeitet.",
+    "Nur wenn die Bedingung „gs_file-name CP '*.xml' OR gs_file-name CP '*.XML'“ erfüllt ist, wird der Schleifendurchlauf fortgesetzt; sonst wird er übersprungen, und die Schleife läuft mit dem nächsten Durchlauf weiter."
+   ]
+  },
+  {
+   "id": "BM-119-B04",
+   "soll": "Jede Datei wird gelesen; ist sie nicht lesbar, wird das protokolliert und sie bleibt im Eingang.",
+   "zeilen": [
+    50,
+    208,
+    209,
+    210,
+    213
+   ],
+   "code": [
+    "50:     PERFORM datei_verarbeiten USING gs_file-name CHANGING gv_ok gv_xml.",
+    "208:   OPEN DATASET lv_path FOR INPUT IN BINARY MODE.",
+    "209:   IF sy-subrc <> 0.",
+    "210:     PERFORM prot USING pv_name 'E' 'Datei nicht lesbar'.",
+    "213:   READ DATASET lv_path INTO pv_xml."
+   ],
+   "X": [
+    "Für die Datei wird das Unterprogramm DATEI_VERARBEITEN zur Datenübernahme aufgerufen.",
+    "Die Eingangsdatei wird im Binärmodus zum Lesen geöffnet.",
+    "Kann die Eingangsdatei nicht geöffnet werden, wird ein Fehlereintrag im Protokoll vermerkt und die Verarbeitung dieser Datei beendet."
+   ],
+   "Y": [
+    "Das Unterprogramm datei_verarbeiten wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Ohne Treffer wird prot aufgerufen und der Block verlassen.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "Das Unterprogramm prot wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Es wird prot aufgerufen und der Block verlassen."
+   ],
+   "Z": [
+    "Das Unterprogramm datei_verarbeiten wird aufgerufen; es ruft Z_EHS_KATASTER_UPDATE (zur Verbuchung) auf und liest ESTRI und ZEHS_KATASTER.",
+    "Lässt sich die Datei nicht öffnen, wird prot aufgerufen und vor der Datenbankoperation zurückgekehrt.",
+    "Das Unterprogramm prot wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-119-B05",
+   "soll": "Der Dateiinhalt wird in die SDB-Struktur transformiert; ist das XML fehlerhaft, wird der Fehler protokolliert und die Datei bleibt liegen.",
+   "zeilen": [
+    217,
+    222
+   ],
+   "code": [
+    "217:       CALL TRANSFORMATION zehs_sdb_to_abap",
+    "222:       PERFORM prot USING pv_name 'E' gv_text."
+   ],
+   "X": [
+    "Tritt bei der Transformation der XML-Datei ein Fehler auf, wird eine Fehlermeldung protokolliert und die Bearbeitung der Datei abgebrochen."
+   ],
+   "Y": [
+    "Das Unterprogramm prot wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Es wird prot aufgerufen und der Block verlassen."
+   ],
+   "Z": [
+    "Das Unterprogramm prot wird aufgerufen.",
+    "Es wird prot aufgerufen und der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-119-B06",
+   "soll": "Über die CAS-Nummer wird der Stoff ermittelt; ohne Zuordnung wird eine Warnung protokolliert und die Datei bleibt für einen späteren Lauf liegen.",
+   "zeilen": [
+    227,
+    235,
+    237
+   ],
+   "code": [
+    "227:   SELECT SINGLE h~recn, h~subid",
+    "235:   IF sy-subrc <> 0.",
+    "237:     PERFORM prot USING pv_name 'W' gv_text."
+   ],
+   "X": [
+    "Aus den Tabellen ESTRI und ESTRH wird anhand des aktiven Identifikators vom Typ NUM und der Kategorie CAS die interne Stoffnummer gelesen.",
+    "Ist die CAS-Nummer keinem Stoff zugeordnet, wird eine Warnung ins Protokoll geschrieben und die Verarbeitung der Datei abgebrochen."
+   ],
+   "Y": [
+    "Das Ergebnis enthält h~recn und h~subid.",
+    "h~recn und h~subid des Satzes werden gelesen.",
+    "Ohne Treffer wird prot aufgerufen und der Block verlassen.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "Das Unterprogramm prot wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Es wird prot aufgerufen und der Block verlassen."
+   ],
+   "Z": [
+    "Das Ergebnis enthält recn und subid.",
+    "Die Felder recn und subid aus estri werden gelesen.",
+    "Ohne Treffer wird prot aufgerufen und vor der Datenbankoperation zurückgekehrt.",
+    "Das Unterprogramm prot wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-119-B07",
+   "soll": "Ist das SDB nicht neuer als der Katasterstand des Stoffs im Werk, wird es nicht übernommen, aber als erledigt archiviert.",
+   "zeilen": [
+    242,
+    246,
+    247
+   ],
+   "code": [
+    "242:   SELECT SINGLE sdb_datum FROM zehs_kataster",
+    "246:   IF sy-subrc = 0 AND lv_alt >= ls_sdb-datum.",
+    "247:     PERFORM prot USING pv_name 'I' 'SDB nicht neuer als Katasterstand'."
+   ],
+   "X": [
+    "Aus der Tabelle ZEHS_KATASTER wird das Datum des bisherigen Sicherheitsdatenblatts für das Werk und den Stoff gelesen.",
+    "Ist das vorhandene Katasterdatum mindestens so aktuell wie das Datum des Sicherheitsdatenblatts, wird ein Hinweis protokolliert, die Datei für die Archivierung freigegeben und die Verarbeitung beendet."
+   ],
+   "Y": [
+    "sdb_datum des Satzes mit dem eingegebenen werks wird gelesen.",
+    "Für sy-subrc = 0 AND lv_alt >= ls_sdb-datum wird prot aufgerufen und der Block verlassen.",
+    "Das Unterprogramm prot wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt."
+   ],
+   "Z": [
+    "Das Feld sdb_datum aus zehs_kataster mit dem eingegebenen Werk wird gelesen.",
+    "Wenn ein Treffer vorliegt und das Feld lv_alt mindestens ls_sdb-datum ist, wird prot aufgerufen und der Block verlassen.",
+    "Das Unterprogramm prot wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-119-B08",
+   "soll": "Im Testlauf werden Stoff, Lagerklasse und WGK nur protokolliert.",
+   "zeilen": [
+    252,
+    254
+   ],
+   "code": [
+    "252:   IF p_test = abap_true.",
+    "254:     PERFORM prot USING pv_name 'I' gv_text."
+   ],
+   "X": [
+    "Ist der Testlauf aktiv, wird lediglich ein Informationseintrag protokolliert und die weitere Verbuchung übersprungen."
+   ],
+   "Y": [
+    "Für p_test mit dem Wert abap_true wird prot aufgerufen und der Block verlassen.",
+    "Bei p_test gleich abap_true wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "Das Unterprogramm prot wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Es wird prot aufgerufen und der Block verlassen."
+   ],
+   "Z": [
+    "Wenn das Feld p_test gesetzt ist, wird prot aufgerufen und vor der Datenbankoperation zurückgekehrt.",
+    "Das Unterprogramm prot wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-119-B09",
+   "soll": "Sonst wird die Übernahme von Lagerklasse, WGK, SDB-Datum und Lieferant ins Kataster zur Verbuchung vorgemerkt und protokolliert.",
+   "zeilen": [
+    264,
+    269
+   ],
+   "code": [
+    "264:   CALL FUNCTION 'Z_EHS_KATASTER_UPDATE' IN UPDATE TASK",
+    "269:   PERFORM prot USING pv_name 'S' gv_text."
+   ],
+   "X": [
+    "Die Aktualisierung des Katasters wird über den Verbuchungsbaustein Z_EHS_KATASTER_UPDATE im Verbuchungsprozess vorgemerkt."
+   ],
+   "Y": [
+    "Der Baustein Z_EHS_KATASTER_UPDATE wird zur Verbuchung registriert. An der Aufrufstelle wird nichts geändert. Angestoßen wird er erst mit dem COMMIT WORK in Zeile 59. Ob ein COMMIT WORK ihn auf jedem Weg anstößt, ist im gelieferten Code nicht bestimmt.",
+    "Das Unterprogramm prot wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt."
+   ],
+   "Z": [
+    "Der Baustein Z_EHS_KATASTER_UPDATE wird zur Verbuchung registriert. An der Aufrufstelle wird nichts geändert. Angestoßen wird er erst mit dem COMMIT WORK in Zeile 59. Ob ein COMMIT WORK ihn auf jedem Weg anstößt, ist im gelieferten Code nicht bestimmt.",
+    "Das Unterprogramm prot wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-119-B10",
+   "soll": "Erledigte Dateien werden im Echtlauf ins Archivverzeichnis geschrieben und im Eingang gelöscht; ist das Archiv nicht beschreibbar, bleibt die Datei mit Warnung liegen.",
+   "zeilen": [
+    51,
+    52,
+    288,
+    289,
+    290,
+    293,
+    295
+   ],
+   "code": [
+    "51:     IF gv_ok = abap_true AND p_test IS INITIAL.",
+    "52:       PERFORM datei_archivieren USING gs_file-name gv_xml.",
+    "288:   OPEN DATASET lv_dst FOR OUTPUT IN BINARY MODE.",
+    "289:   IF sy-subrc <> 0.",
+    "290:     PERFORM prot USING pv_name 'W' 'Archivierung nicht möglich'.",
+    "293:   TRANSFER pv_bin TO lv_dst.",
+    "295:   DELETE DATASET lv_src."
+   ],
+   "X": [
+    "Wurde die Datei erfolgreich verarbeitet und ist kein Testlauf aktiv, wird das Unterprogramm DATEI_ARCHIVIEREN aufgerufen.",
+    "Die Zieldatei im Archivverzeichnis wird im Binärmodus zum Schreiben geöffnet.",
+    "Kann die Archivdatei nicht geöffnet werden, wird eine Warnung im Protokoll abgelegt und der Vorgang beendet.",
+    "Der binäre Dateiinhalt wird in die Zieldatei im Archivverzeichnis übertragen.",
+    "Die ursprüngliche Datei wird aus dem Eingangsverzeichnis gelöscht."
+   ],
+   "Y": [
+    "Für gv_ok = abap_true AND p_test IS INITIAL wird datei_archivieren aufgerufen.",
+    "Das Unterprogramm datei_archivieren wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Ohne Treffer wird prot aufgerufen und der Block verlassen.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "Das Unterprogramm prot wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Es wird prot aufgerufen und der Block verlassen."
+   ],
+   "Z": [
+    "Wenn das Feld gv_ok gesetzt ist und das Feld p_test leer ist, wird datei_archivieren aufgerufen.",
+    "Das Unterprogramm datei_archivieren wird aufgerufen; es löscht aus DATASET.",
+    "Lässt sich die Datei nicht öffnen, wird prot aufgerufen und vor der Datenbankoperation zurückgekehrt.",
+    "Das Unterprogramm prot wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-119-B11",
+   "soll": "Danach werden je Lagerort des Werks die dort gelagerten Lagerklassen laut Kataster gegen die Zusammenlagerungsmatrix geprüft.",
+   "zeilen": [
+    56,
+    133,
+    307,
+    312,
+    314,
+    321
+   ],
+   "code": [
+    "56:   PERFORM lagerpruefung.",
+    "133:     SELECT * FROM zehs_zl_matrix",
+    "307:   SELECT lgort, subid, lgk FROM zehs_kataster",
+    "312:   lo_check = NEW #( p_werks ).",
+    "314:   LOOP AT lt_kat INTO DATA(ls_kat)",
+    "321:         lo_check->pruefen( lt_lgk )."
+   ],
+   "X": [
+    "Es wird das Unterprogramm LAGERPRUEFUNG zur Prüfung der Zusammenlagerung nach TRGS 510 aufgerufen.",
+    "Aus der Tabelle ZEHS_ZL_MATRIX werden alle Einträge für das Werk oder mit dem allgemeinen Schlüssel Stern in die interne Prüfmatrix geladen.",
+    "Aus der Tabelle ZEHS_KATASTER werden alle Einträge mit vorhandener Lagerklasse zum angegebenen Werk gelesen.",
+    "Ein Prüfobjekt der Klasse ZCL_EHS_LAGERKLASSE wird für das Werk instanziiert.",
+    "Die Katastereinträge werden nach Lagerort gruppiert durchlaufen.",
+    "Für die eindeutigen Lagerklassen des jeweiligen Lagerorts wird die Zusammenlagerungsprüfung aufgerufen."
+   ],
+   "Y": [
+    "Das Unterprogramm lagerpruefung wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Es werden Sätze aus zehs_zl_matrix selektiert.",
+    "Das Ergebnis enthält lgort, subid und lgk.",
+    "Es werden Sätze aus zehs_kataster mit dem eingegebenen werks selektiert.",
+    "Jede Zeile aus lt_kat wird einzeln verarbeitet.",
+    "Die Methode pruefen von lo_check wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ],
+   "Z": [
+    "Das Unterprogramm lagerpruefung wird aufgerufen; es legt Sätze an in ZEHS_AUFGABE und liest ZEHS_KATASTER.",
+    "Es werden Sätze aus zehs_zl_matrix selektiert.",
+    "Das Ergebnis enthält Lagerort, subid und lgk.",
+    "Es werden Sätze aus zehs_kataster mit dem eingegebenen Werk selektiert.",
+    "Die Zeilen aus lt_kat werden gruppenweise verarbeitet.",
+    "Die Methode pruefen von lo_check wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-119-B12",
+   "soll": "Für jede Lagerklasse gilt die werksspezifische Matrixzeile, ersatzweise die allgemeine; fehlt beides, ist die Lagerklasse unbekannt und der Lagerort gilt als fehlerhaft.",
+   "zeilen": [
+    150,
+    152,
+    153,
+    156,
+    157
+   ],
+   "code": [
+    "150:       READ TABLE mt_matrix ASSIGNING <ls_row>",
+    "152:       IF sy-subrc <> 0.",
+    "153:         READ TABLE mt_matrix ASSIGNING <ls_row>",
+    "156:       IF sy-subrc <> 0.",
+    "157:         RAISE EXCEPTION TYPE zcx_ehs_zusammenlagerung"
+   ],
+   "X": [
+    "Wird für die Lagerklasse kein Eintrag zum spezifischen Werk in der Matrix gefunden, wird nach einem Eintrag mit dem Werksschlüssel Stern gesucht.",
+    "Ist die Lagerklasse weder werksspezifisch noch allgemein in der Matrix gepflegt, wird die Ausnahme ZCX_EHS_ZUSAMMENLAGERUNG mit der Fehlerursache für unbekannte Lagerklassen ausgelöst."
+   ],
+   "Y": [
+    "In der Tabelle wird nach einer passenden Zeile gesucht.",
+    "In der Tabelle wird nach einer passenden Zeile gesucht."
+   ],
+   "Z": [
+    "In der Tabelle mt_matrix wird nach einer passenden Zeile gesucht.",
+    "In der Tabelle mt_matrix wird nach einer passenden Zeile gesucht."
+   ]
+  },
+  {
+   "id": "BM-119-B13",
+   "soll": "Jede Kombination zweier Lagerklassen ist mit Wert 1 oder 2 zulässig, mit jedem anderen Wert unzulässig; fehlt die Spalte in der Matrix, gilt sie als zulässig.",
+   "zeilen": [
+    163,
+    165,
+    166,
+    169,
+    173
+   ],
+   "code": [
+    "163:       LOOP AT it_lgk INTO DATA(lv_b) FROM lv_from.",
+    "165:         ASSIGN COMPONENT lv_col OF STRUCTURE <ls_row> TO <lv_cell>.",
+    "166:         IF sy-subrc <> 0.",
+    "169:         CASE <lv_cell>.",
+    "173:             RAISE EXCEPTION TYPE zcx_ehs_zusammenlagerung"
+   ],
+   "X": [
+    "In einer inneren Schleife werden alle nachfolgenden Lagerklassen zur paarweisen Prüfung durchlaufen.",
+    "Ist die Spalte zur zweiten Lagerklasse in der Matrixzeile nicht vorhanden, wird die Prüfung für dieses Paar übersprungen.",
+    "Weist die Matrixzelle weder den Wert 1 noch den Wert 2 auf, wird die Ausnahme ZCX_EHS_ZUSAMMENLAGERUNG für eine verbotene Zusammenlagerung ausgelöst."
+   ],
+   "Y": [
+    "Jede Zeile aus it_lgk wird einzeln verarbeitet.",
+    "Eine Komponente der Struktur wird an das Feldsymbol gebunden."
+   ],
+   "Z": [
+    "Jede Zeile aus it_lgk wird einzeln verarbeitet.",
+    "Eine Komponente der Struktur wird an das Feldsymbol gebunden.",
+    "Lässt sich das Feld nicht zuweisen, wird der Schleifendurchlauf übersprungen."
+   ]
+  },
+  {
+   "id": "BM-119-B14",
+   "soll": "Die erste unzulässige Zusammenlagerung eines Lagerorts wird protokolliert und erzeugt im Echtlauf eine offene Aufgabe ZUSLAG für den Gefahrstoffbeauftragten.",
+   "zeilen": [
+    324,
+    325,
+    326
+   ],
+   "code": [
+    "324:         PERFORM prot USING <ls_lo>-lgort 'E' gv_text.",
+    "325:         IF p_test IS INITIAL.",
+    "326:           INSERT zehs_aufgabe FROM @( VALUE #( werks  = p_werks"
+   ],
+   "X": [
+    "Wird bei der Zusammenlagerungsprüfung ein Konflikt erkannt, wird der Fehlertext im Protokoll abgelegt.",
+    "Ist kein Testlauf aktiv, wird bei einem Zusammenlagerungskonflikt eine offene Aufgabe mit der Art ZUSLAG in die Tabelle ZEHS_AUFGABE eingefügt."
+   ],
+   "Y": [
+    "Das Unterprogramm prot wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt."
+   ],
+   "Z": [
+    "Das Unterprogramm prot wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-119-B15",
+   "soll": "Im Echtlauf wird am Ende festgeschrieben; erst dabei werden die vorgemerkten Katasteränderungen geschrieben.",
+   "zeilen": [
+    58,
+    59
+   ],
+   "code": [
+    "58:   IF p_test IS INITIAL.",
+    "59:     COMMIT WORK."
+   ],
+   "X": [
+    "Ist kein Testlauf aktiv, werden die Datenbankänderungen mit COMMIT WORK festgeschrieben."
+   ],
+   "Y": [
+    "Ohne p_test wird COMMIT WORK ausgeführt.",
+    "Mit COMMIT WORK wird die Verbuchung der zuvor registrierten Bausteine angestoßen. Ohne AND WAIT wartet der Code das Verbuchungsergebnis nicht ab; ausgeführt oder persistiert ist damit nicht belegt."
+   ],
+   "Z": [
+    "Ist das Feld p_test leer, wird COMMIT WORK ausgeführt.",
+    "Mit COMMIT WORK wird die Verbuchung der zuvor registrierten Bausteine angestoßen. Ohne AND WAIT wartet der Code das Verbuchungsergebnis nicht ab; ausgeführt oder persistiert ist damit nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-119-B16",
+   "soll": "Die Verbuchung übernimmt die SDB-Daten des Stoffs an allen Lagerorten des Werks und historisiert die Änderung; ist der Stoff im Werk nicht im Kataster, bricht die Verbuchung ab.",
+   "zeilen": [
+    81,
+    88,
+    89,
+    92
+   ],
+   "code": [
+    "81:   UPDATE zehs_kataster",
+    "88:   IF sy-subrc <> 0.",
+    "89:     MESSAGE a810(zehs) WITH is_kataster-subid is_kataster-werks.",
+    "92:   INSERT zehs_kat_hist FROM @( VALUE #( BASE CORRESPONDING #( is_kataster )"
+   ],
+   "X": [
+    "In der Tabelle ZEHS_KATASTER werden für das angegebene Werk und den Stoff die Felder LGK, WGK, SDB_DATUM und LIFNR aktualisiert.",
+    "Kann der Datensatz in ZEHS_KATASTER nicht aktualisiert werden, bricht die Verbuchung mit der Abbruchmeldung A810 ab.",
+    "In die Historientabelle ZEHS_KAT_HIST wird ein Datensatz mit den Katasterwerten, dem aktuellen Tagesdatum, der Uhrzeit und dem Benutzernamen eingefügt."
+   ],
+   "Y": [
+    "Die lgk in zehs_kataster wird geändert. Ob eine Zeile getroffen wird, garantiert der Code nicht.",
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ],
+   "Z": [
+    "Das Feld lgk in zehs_kataster wird geändert. Ob eine Zeile getroffen wird, garantiert der Code nicht.",
+    "Schlägt die Datenbankänderung fehl, wird eine Abbruchmeldung ausgegeben.",
+    "Die Abbruchmeldung 810(ZEHS) wird ausgegeben; das Programm wird abgebrochen."
+   ]
+  },
+  {
+   "id": "BM-119-B17",
+   "soll": "Zum Abschluss wird das Protokoll aller Dateien und Lagerorte als Liste angezeigt.",
+   "zeilen": [
+    64,
+    356
+   ],
+   "code": [
+    "64:   PERFORM protokoll_anzeigen.",
+    "356:       lo_alv->display( )."
+   ],
+   "X": [],
+   "Y": [
+    "Das Unterprogramm protokoll_anzeigen wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Die Methode display von lo_alv wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ],
+   "Z": [
+    "Das Unterprogramm protokoll_anzeigen wird aufgerufen; es gibt eine Meldung aus.",
+    "Die Methode display von lo_alv wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ]
+  }
+ ]
+}

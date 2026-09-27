@@ -1,0 +1,138 @@
+{
+ "id": "BM-050",
+ "urteile": [
+  {
+   "id": "BM-050-B01",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Nur X nennt Auftragsarten, Auftragsnummern und Auftragstyp 01."
+  },
+  {
+   "id": "BM-050-B02",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": [
+     "redundant"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": [
+     "redundant"
+    ]
+   },
+   "kurz": "Alle nennen Hinweis und Ende; Y und Z mit Wiederholungen."
+  },
+  {
+   "id": "BM-050-B03",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "falsch"
+    ]
+   },
+   "kurz": "X nennt die Freigabeprüfung; Y spricht von gescheitertem Aufruf; Z widersprüchlich 'ohne Treffer'/'bei Treffern'."
+  },
+  {
+   "id": "BM-050-B04",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "unvollstaendig",
+     "technisch"
+    ]
+   },
+   "Z": {
+    "urteil": "abweichend",
+    "mangel": [
+     "falsch",
+     "zu_allgemein"
+    ]
+   },
+   "kurz": "X nennt Parameter und Testlauf; Y ohne Periode/Testlauf; Z spricht fälschlich von einer Anlage."
+  },
+  {
+   "id": "BM-050-B05",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "falsch"
+    ]
+   },
+   "kurz": "X fachlich; Y und Z listen Variablen, Z mit widersprüchlichen Trefferangaben."
+  },
+  {
+   "id": "BM-050-B06",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "kurz": "X fachlich; Y und Z nur Variablennamen."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

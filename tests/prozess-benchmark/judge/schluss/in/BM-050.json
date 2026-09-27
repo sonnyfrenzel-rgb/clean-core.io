@@ -1,0 +1,176 @@
+{
+ "id": "BM-050",
+ "titel": "Freigegebene Innenaufträge einzeln per Batch-Input über KO88 abrechnen",
+ "prozess": "Das Controlling startet den Report im Monatsabschluss mit Auftragsarten, Buchungskreis, Periode, Geschäftsjahr und Testlauf-Schalter. Gelesen werden die Innenaufträge der Auswahl; ohne Treffer endet der Report mit einem Hinweis. Je Auftrag wird geprüft, ob er freigegeben ist; nicht freigegebene werden übersprungen und gemeldet. Freigegebene Aufträge werden einzeln über die Transaktion KO88 per Batch-Input ohne Bildschirmanzeige und mit synchroner Verbuchung abgerechnet. Enthält die Rückmeldung eine Fehlermeldung, wird der Auftrag als Fehler protokolliert, sonst als abgerechnet. Am Ende stehen die Zähler und das Testlauf-Kennzeichen in der Liste.",
+ "verboten": [
+  "source.abap:69 — kein Fachsatz „der Report bucht die Abrechnung selbst“ (die Buchung erfolgt, wenn überhaupt, in KO88; im Testlauf gar nicht)",
+  "source.abap:80 — kein Fachsatz „Auftrag wird technisch abgeschlossen“ (Status wird nur geprüft, nicht gesetzt)",
+  "source.abap:75 — kein Fachsatz „Warnungen führen zum Fehler“ (nur Meldungstyp E wird gesucht)"
+ ],
+ "saetze": [
+  {
+   "id": "BM-050-B01",
+   "soll": "Es werden die Innenaufträge (Auftragstyp 01) der gewählten Auftragsarten und Auftragsnummern im Buchungskreis gelesen.",
+   "zeilen": [
+    36
+   ],
+   "code": [
+    "36:   SELECT * FROM aufk INTO TABLE lt_aufk"
+   ],
+   "X": [
+    "Aus der Tabelle AUFK werden alle Daten zu den selektierten Auftragsnummern und Auftragsarten für den angegebenen Buchungskreis mit Auftragstyp 01 gelesen."
+   ],
+   "Y": [
+    "Es werden Auftragsstammsätze mit dem eingegebenen Buchungskreis selektiert."
+   ],
+   "Z": [
+    "Es werden Sätze aus aufk mit dem eingegebenen Buchungskreis selektiert."
+   ]
+  },
+  {
+   "id": "BM-050-B02",
+   "soll": "Werden keine Aufträge gefunden, wird das gemeldet und der Report endet.",
+   "zeilen": [
+    41,
+    42,
+    43
+   ],
+   "code": [
+    "41:   IF lt_aufk IS INITIAL.",
+    "42:     WRITE / 'Keine Innenauftraege selektiert.'.",
+    "43:     RETURN."
+   ],
+   "X": [
+    "Wurden keine Innenaufträge selektiert, wird der Hinweis Keine Innenauftraege selektiert. ausgegeben und die Verarbeitung beendet."
+   ],
+   "Y": [
+    "Ohne Treffer wird Keine Innenauftraege selektiert. ausgegeben und vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "Keine Innenauftraege selektiert. wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code."
+   ],
+   "Z": [
+    "Ohne Treffer wird Keine Innenauftraege selektiert. ausgegeben und der Block verlassen.",
+    "Ohne Treffer wird Keine Innenauftraege selektiert. ausgegeben und vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "Es wird Keine Innenauftraege selektiert. ausgegeben und der Block verlassen.",
+    "Keine Innenauftraege selektiert. wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code."
+   ]
+  },
+  {
+   "id": "BM-050-B03",
+   "soll": "Nur Aufträge mit dem Systemstatus „freigegeben“ werden abgerechnet; alle anderen werden als übersprungen gemeldet.",
+   "zeilen": [
+    48,
+    56,
+    57
+   ],
+   "code": [
+    "48:     CALL FUNCTION 'STATUS_CHECK'",
+    "56:     IF sy-subrc <> 0.",
+    "57:       WRITE: / ls_aufk-aufnr, 'nicht freigegeben - uebersprungen'."
+   ],
+   "X": [
+    "Über den Funktionsbaustein STATUS_CHECK wird geprüft, ob für die Objektnummer des Auftrags der Status I0002 aktiv ist.",
+    "Ist der Status I0002 nicht aktiv oder schlägt die Prüfung fehl, wird die Auftragsnummer mit dem Text nicht freigegeben - uebersprungen ausgegeben und der Auftrag übersprungen."
+   ],
+   "Y": [
+    "Der Funktionsbaustein STATUS_CHECK wird aufgerufen.",
+    "Scheitert der Aufruf von STATUS_CHECK, wird Auftragsnummer ausgegeben, nicht freigegeben - uebersprungen ausgegeben und der Schleifendurchlauf übersprungen.",
+    "nicht freigegeben - uebersprungen wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code."
+   ],
+   "Z": [
+    "Der Funktionsbaustein STATUS_CHECK wird aufgerufen.",
+    "Ohne Treffer wird ls_aufk-aufnr ausgegeben und nicht freigegeben - uebersprungen ausgegeben.",
+    "Bei Treffern werden ls_aufk-aufnr und nicht freigegeben - uebersprungen als Liste ausgegeben.",
+    "ls_aufk-aufnr wird ausgegeben.",
+    "nicht freigegeben - uebersprungen wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code."
+   ]
+  },
+  {
+   "id": "BM-050-B04",
+   "soll": "Jeder freigegebene Auftrag wird für Periode und Geschäftsjahr über die Einzelabrechnung KO88 abgerechnet; der Testlauf-Schalter wird an die Transaktion durchgereicht.",
+   "zeilen": [
+    69
+   ],
+   "code": [
+    "69:     CALL TRANSACTION 'KO88' USING lt_bdc"
+   ],
+   "X": [
+    "Die Transaktion KO88 wird im Hintergrund mit den Abrechnungsparametern Auftragsnummer, Periode, Geschäftsjahr und Testlaufkennzeichen aufgerufen."
+   ],
+   "Y": [
+    "Die Transaktion KO88 wird per Batch-Input im Modus N angestoßen und synchron verbucht. Ob und was persistiert wird, entscheidet die aufgerufene Transaktion."
+   ],
+   "Z": [
+    "Die Anlage wird über die Transaktion KO88 angestoßen. Ob und was persistiert wird, entscheidet die aufgerufene Transaktion."
+   ]
+  },
+  {
+   "id": "BM-050-B05",
+   "soll": "Enthält die Rückmeldung der Transaktion eine Fehlermeldung, wird der Auftrag mit der Meldung als Fehler protokolliert, sonst als abgerechnet.",
+   "zeilen": [
+    74,
+    75,
+    77,
+    80
+   ],
+   "code": [
+    "74:     READ TABLE lt_msg INTO ls_msg WITH KEY msgtyp = 'E'.",
+    "75:     IF sy-subrc = 0.",
+    "77:       WRITE: / ls_aufk-aufnr, 'Fehler', ls_msg-msgid, ls_msg-msgnr, ls_msg-msgv1.",
+    "80:       WRITE: / ls_aufk-aufnr, 'abgerechnet'."
+   ],
+   "X": [
+    "Liegt im Rückmeldeprotokoll der Transaktion eine Fehlermeldung vom Typ E vor, wird die Fehleranzahl um 1 erhöht und die Auftragsnummer zusammen mit den Nachrichtendaten ausgegeben.",
+    "Liegt im Rückmeldeprotokoll keine Fehlermeldung vor, wird die Anzahl erfolgreicher Abrechnungen um 1 erhöht und die Auftragsnummer mit dem Vermerk abgerechnet ausgegeben."
+   ],
+   "Y": [
+    "In der Tabelle lt_msg wird nach einer passenden Zeile gesucht.",
+    "Bei Treffer wird Auftragsnummer ausgegeben, Fehler ausgegeben, ls_msg-msgid ausgegeben, ls_msg-msgnr ausgegeben und ls_msg-msgv1 ausgegeben, sonst Auftragsnummer ausgegeben und abgerechnet ausgegeben.",
+    "Fehler wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "abgerechnet wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code."
+   ],
+   "Z": [
+    "In der Tabelle wird nach einer passenden Zeile gesucht.",
+    "Bei Treffer wird ls_aufk-aufnr ausgegeben, Fehler ausgegeben, ls_msg-msgid ausgegeben, ls_msg-msgnr ausgegeben und ls_msg-msgv1 ausgegeben.",
+    "Bei Treffer wird ls_aufk-aufnr ausgegeben, Fehler ausgegeben, ls_msg-msgid ausgegeben, ls_msg-msgnr ausgegeben und ls_msg-msgv1 ausgegeben, sonst ls_aufk-aufnr ausgegeben und abgerechnet ausgegeben.",
+    "Bei Treffern werden ls_aufk-aufnr, Fehler, ls_msg-msgid, ls_msg-msgnr und ls_msg-msgv1 als Liste ausgegeben.",
+    "ls_aufk-aufnr wird ausgegeben.",
+    "Fehler wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "ls_msg-msgid wird ausgegeben.",
+    "ls_msg-msgnr wird ausgegeben.",
+    "ls_msg-msgv1 wird ausgegeben.",
+    "Für andere sy-subrc wird ls_aufk-aufnr ausgegeben und abgerechnet ausgegeben.",
+    "Bei Treffern werden ls_aufk-aufnr und abgerechnet als Liste ausgegeben.",
+    "ls_aufk-aufnr wird ausgegeben.",
+    "abgerechnet wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code."
+   ]
+  },
+  {
+   "id": "BM-050-B06",
+   "soll": "Zum Schluss werden die Anzahl abgerechneter und fehlerhafter Aufträge sowie das Testlauf-Kennzeichen ausgegeben.",
+   "zeilen": [
+    85
+   ],
+   "code": [
+    "85:   WRITE: / 'Abgerechnet:', lv_ok, '  Fehler:', lv_err, '  Testlauf:', p_test."
+   ],
+   "X": [
+    "Abschließend werden eine Trennlinie sowie eine Gesamtübersicht mit der Anzahl abgerechneter Aufträge, der Fehleranzahl und dem Testlaufkennzeichen ausgegeben."
+   ],
+   "Y": [
+    "Abgerechnet:, lv_ok,  Fehler:, lv_err,  Testlauf: und p_test werden ausgegeben.",
+    "Abgerechnet: wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "Fehler: wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "Testlauf: wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code."
+   ],
+   "Z": [
+    "Abgerechnet:, lv_ok,  Fehler:, lv_err,  Testlauf: und p_test werden ausgegeben.",
+    "Abgerechnet: wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "lv_ok wird ausgegeben.",
+    "Fehler: wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "lv_err wird ausgegeben.",
+    "Testlauf: wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "p_test wird ausgegeben."
+   ]
+  }
+ ]
+}

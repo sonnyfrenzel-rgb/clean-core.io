@@ -1,0 +1,328 @@
+{
+ "id": "BM-035",
+ "titel": "Zyklische ABC-Inventur: fällige Materialien, Belege anlegen, Differenzen bis Wertgrenze buchen",
+ "prozess": "Die Lagerleitung startet den Report mit Werk, Lagerort, Modus (Anlegen oder Buchen), Wertgrenze und Höchstzahl an Positionen je Beleg. Eine Berechtigungsprüfung beim Programmstart wird nicht ausgewertet; wirksam ist erst die Prüfung der Inventurberechtigung für das Werk am Selektionsbild. Im Modus Anlegen liest der Report die Materialien mit Zykluskennzeichen, freiem Bestand und ohne Inventursperre am Lagerort und hält die fällig, die nie inventarisiert wurden oder deren letzte Inventur länger zurückliegt als das Intervall aus der Zahl der Inventuren pro Jahr. Ist nichts fällig, meldet er das; sonst legt er Inventurbelege mit Referenz ZYKLUS an, rollt bei Fehler zurück und schreibt sonst fest. Im Modus Buchen liest er je Inventurbeleg die gezählten, noch nicht gebuchten Positionen, bewertet jede Mengendifferenz mit dem Standard- bzw. gleitenden Preis und merkt Positionen über der Wertgrenze zur Nachzählung und Freigabe durch das Controlling vor. Die übrigen Positionen eines Belegs bucht er als Inventurdifferenz, rollt bei Fehler zurück und schreibt sonst fest. Zum Schluss gibt er das Protokoll als Liste aus.",
+ "verboten": [
+  "zmm_zyklusinventur.abap:18 — kein Fachsatz „Ohne Buchungsberechtigung startet der Report nicht“ (das Ergebnis wird nie ausgewertet, und das Werk ist zu diesem Zeitpunkt noch leer)",
+  "zcl_mm_cycle_count.abap:129 — kein Fachsatz „Die Nachzählung wird automatisch als neuer Inventurbeleg angelegt“ (nur Vormerkung in der Z-Tabelle)",
+  "zcl_mm_cycle_count.abap:143 — kein Fachsatz „Die Differenzen werden mit Bewegungsgrund gebucht“ (es wird nur die Position übergeben)",
+  "zcl_mm_cycle_count.abap:41 — kein Fachsatz „Chargen werden einzeln inventarisiert“ (die Charge im Fälligkeitsergebnis bleibt leer)"
+ ],
+ "saetze": [
+  {
+   "id": "BM-035-B01",
+   "soll": "Beim Verlassen des Selektionsbilds wird geprüft, ob der Anwender im Werk Inventurbelege anlegen darf; sonst wird die Eingabe mit Fehlermeldung zurückgewiesen.",
+   "zeilen": [
+    23,
+    26,
+    27
+   ],
+   "code": [
+    "23:   AUTHORITY-CHECK OBJECT 'M_ISEG_WDB'",
+    "26:   IF sy-subrc <> 0.",
+    "27:     MESSAGE e030(zmm) WITH p_werks."
+   ],
+   "X": [
+    "Die Berechtigung auf M_ISEG_WDB wird geprüft.",
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ],
+   "Y": [
+    "Schlägt die Berechtigungsprüfung fehl, wird eine Fehlermeldung mit dem betroffenen Werk ausgegeben."
+   ],
+   "Z": [
+    "Die Berechtigung auf M_ISEG_WDB wird geprüft.",
+    "Ohne Berechtigung auf M_ISEG_WDB für den eingegebenen Werk wird eine Fehlermeldung ausgegeben.",
+    "Die Fehlermeldung 030(ZMM) wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-035-B02",
+   "soll": "Im Modus Anlegen werden die Materialien des Werks mit Zykluskennzeichen gelesen, die am Lagerort frei verwendbaren Bestand haben und nicht zur Inventur gesperrt sind.",
+   "zeilen": [
+    33,
+    88
+   ],
+   "code": [
+    "33:   CASE abap_true.",
+    "88:     SELECT c~matnr, d~dlinv, t~anzin"
+   ],
+   "X": [
+    "Das Ergebnis enthält c~matnr, d~dlinv und t~anzin.",
+    "Es werden Sätze aus marc selektiert."
+   ],
+   "Y": [
+    "Ist die Option zur Beleganlage ausgewählt, werden zunächst die fälligen Materialien ermittelt.",
+    "Ist die Option zur Differenzenbuchung ausgewählt, werden die Differenzen bis zum Wertgrenzwert gebucht.",
+    "Aus den Tabellen MARC, MARD und T159C werden Materialnummer, Datum der letzten Inventur und Anzahl der Inventuren pro Jahr für das Werk, den Lagerort mit frei verwendbarem Bestand größer 0, ohne Sperre und mit gesetztem Zyklus-Kennzeichen gelesen."
+   ],
+   "Z": [
+    "Das Ergebnis enthält Materialnummer, dlinv und anzin.",
+    "Es werden Werksdatensätze zu Materialien selektiert."
+   ]
+  },
+  {
+   "id": "BM-035-B03",
+   "soll": "Fällig ist ein Material, wenn es noch nie inventarisiert wurde oder seit der letzten Inventur mindestens 365 geteilt durch die Zahl der Inventuren pro Jahr seines Zykluskennzeichens Tage vergangen sind.",
+   "zeilen": [
+    99,
+    101
+   ],
+   "code": [
+    "99:     LOOP AT lt_cand INTO DATA(ls_cand) WHERE anzin > 0.",
+    "101:       IF ls_cand-dlinv IS INITIAL OR sy-datum - ls_cand-dlinv >= 365 / ls_cand-anzin."
+   ],
+   "X": [
+    "Jede Zeile aus lt_cand wird einzeln verarbeitet.",
+    "Für ls_cand-dlinv IS INITIAL OR sy-datum - ls_cand-dlinv >= 365 / ls_cand-anzin wird eine Zeile aufgenommen."
+   ],
+   "Y": [
+    "Für jedes Material mit einer Inventuranzahl größer 0 wird geprüft, ob es noch nie inventarisiert wurde oder das Intervall von 365 Tagen geteilt durch die Anzahl der Inventuren abgelaufen ist; trifft dies zu, wird das Material in die Liste der fälligen Materialien aufgenommen."
+   ],
+   "Z": [
+    "Die Zeilen aus lt_cand, bei denen das Feld anzin größer als 0 ist, werden einzeln verarbeitet.",
+    "Wenn die Bedingung „ls_cand-dlinv IS INITIAL OR sy-datum - ls_cand-dlinv >= 365 / ls_cand-anzin“ erfüllt ist, wird eine Zeile aufgenommen."
+   ]
+  },
+  {
+   "id": "BM-035-B04",
+   "soll": "Ist nichts fällig, wird das gemeldet und die Verarbeitung beendet.",
+   "zeilen": [
+    36,
+    37,
+    38
+   ],
+   "code": [
+    "36:       IF lt_due IS INITIAL.",
+    "37:         WRITE / 'Keine faelligen Materialien'.",
+    "38:         RETURN."
+   ],
+   "X": [
+    "Ohne Treffer wird Keine faelligen Materialien ausgegeben und der Block verlassen.",
+    "Ohne Treffer wird Keine faelligen Materialien ausgegeben und vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "Es wird Keine faelligen Materialien ausgegeben und der Block verlassen.",
+    "Keine faelligen Materialien wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code."
+   ],
+   "Y": [
+    "Sind keine fälligen Materialien vorhanden, wird der Text 'Keine faelligen Materialien' ausgegeben und die Verarbeitung beendet.",
+    "Sind fällige Materialien vorhanden, werden Inventurbelege mit der maximalen Positionsanzahl angelegt."
+   ],
+   "Z": [
+    "Ist die Tabelle lt_due leer, wird Keine faelligen Materialien ausgegeben und der Block verlassen.",
+    "Keine faelligen Materialien wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code."
+   ]
+  },
+  {
+   "id": "BM-035-B05",
+   "soll": "Für die fälligen Materialien werden Inventurbelege mit Referenz ZYKLUS zum Tagesdatum angelegt, aufgeteilt nach der eingegebenen Höchstzahl an Positionen je Beleg.",
+   "zeilen": [
+    117,
+    120
+   ],
+   "code": [
+    "117:     ls_head-phys_inv_ref = 'ZYKLUS'.",
+    "120:     CALL FUNCTION 'BAPI_MATPHYSINV_CREATE_MULT'"
+   ],
+   "X": [
+    "Die ls_head-phys_inv_ref wird auf ZYKLUS gesetzt.",
+    "Der Funktionsbaustein BAPI_MATPHYSINV_CREATE_MULT wird aufgerufen."
+   ],
+   "Y": [
+    "Der Funktionsbaustein BAPI_MATPHYSINV_CREATE_MULT wird aufgerufen, um Inventurbelege mit Beleg- und Plandatum zum Tagesdatum und der Referenz 'ZYKLUS' zu erstellen."
+   ],
+   "Z": [
+    "Das Feld ls_head-phys_inv_ref wird auf ZYKLUS gesetzt.",
+    "Der Funktionsbaustein BAPI_MATPHYSINV_CREATE_MULT wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-035-B06",
+   "soll": "Meldet die Anlage einen Fehler, wird zurückgerollt und der Fehler protokolliert; sonst werden die Belege festgeschrieben und ihre Nummern protokolliert.",
+   "zeilen": [
+    129,
+    130,
+    134
+   ],
+   "code": [
+    "129:     IF line_exists( lt_return[ type = 'E' ] ).",
+    "130:       CALL FUNCTION 'BAPI_TRANSACTION_ROLLBACK'.",
+    "134:     CALL FUNCTION 'BAPI_TRANSACTION_COMMIT'"
+   ],
+   "X": [
+    "Für line_exists( lt_return[ type = 'E' ] ) wird BAPI_TRANSACTION_ROLLBACK aufgerufen und der Block verlassen.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_ROLLBACK wird aufgerufen.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_COMMIT wird aufgerufen."
+   ],
+   "Y": [
+    "Tritt bei der Beleganlage ein Fehler auf, wird ein Rollback durchgeführt, eine Fehlermeldung ins Protokoll geschrieben und die Beleganlage abgebrochen.",
+    "Wurden die Belege fehlerfrei angelegt, werden die Änderungen auf der Datenbank festgeschrieben und für jeden erzeugten Inventurbeleg eine Erfolgsmeldung protokolliert."
+   ],
+   "Z": [
+    "Wenn in lt_return eine passende Zeile existiert, wird BAPI_TRANSACTION_ROLLBACK aufgerufen und der Block verlassen.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_ROLLBACK wird aufgerufen.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_COMMIT wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-035-B07",
+   "soll": "Im Modus Buchen werden die gezählten, noch nicht gebuchten und nicht gelöschten Inventurpositionen des Lagerorts je Inventurbeleg verarbeitet.",
+   "zeilen": [
+    148,
+    158
+   ],
+   "code": [
+    "148:     SELECT iblnr, gjahr, zeili, matnr, charg, buchm, menge",
+    "158:     LOOP AT lt_iseg INTO DATA(ls_grp)"
+   ],
+   "X": [
+    "Es werden Sätze aus iseg selektiert.",
+    "Jede Zeile aus lt_iseg wird einzeln verarbeitet."
+   ],
+   "Y": [
+    "Aus der Tabelle ISEG werden Belegnummer, Geschäftsjahr, Zeilennummer, Materialnummer, Charge, Buchbestand und gezählte Menge für das Werk und den Lagerort gelesen, bei denen die Zählung erfasst, aber noch keine Differenz gebucht und keine Löschvormerkung gesetzt ist."
+   ],
+   "Z": [
+    "Es werden Sätze aus iseg selektiert.",
+    "Die Zeilen aus lt_iseg werden gruppenweise verarbeitet."
+   ]
+  },
+  {
+   "id": "BM-035-B08",
+   "soll": "Je Position wird der Bewertungspreis nach Preissteuerung (Standardpreis oder gleitender Durchschnittspreis) je Preiseinheit gelesen; ohne Bewertung wird die Position mit Warnung übersprungen.",
+   "zeilen": [
+    162,
+    168
+   ],
+   "code": [
+    "162:         SELECT SINGLE CASE vprsv WHEN 'S' THEN stprs ELSE verpr END AS preis, peinh",
+    "168:         IF sy-subrc <> 0 OR ls_mbew-peinh = 0."
+   ],
+   "X": [
+    "Das Ergebnis enthält CASE vprsv WHEN 'S' THEN stprs ELSE verpr END AS preis und peinh.",
+    "CASE vprsv WHEN 'S' THEN stprs ELSE verpr END AS preis und peinh des Satzes werden gelesen."
+   ],
+   "Y": [
+    "Für jede Inventurposition wird aus der Tabelle MBEW der Preis (Standard- oder gleitender Durchschnittspreis) und die Preiseinheit zum Material und Bewertungskreis gelesen.",
+    "Wird kein Bewertungssatz gefunden oder ist die Preiseinheit 0, wird eine Warnmeldung im Protokoll erfasst und die Position übersprungen."
+   ],
+   "Z": [
+    "Das Ergebnis enthält CASE vprsv WHEN 'S' THEN stprs ELSE verpr END und peinh.",
+    "Die Felder CASE vprsv WHEN 'S' THEN stprs ELSE verpr END AS preis und peinh der Materialbewertung werden gelesen.",
+    "Wenn kein Treffer vorliegt oder das Feld ls_mbew-peinh gleich 0 ist, wird der Schleifendurchlauf übersprungen."
+   ]
+  },
+  {
+   "id": "BM-035-B09",
+   "soll": "Der Differenzwert ist der Betrag der Mengendifferenz mal Stückpreis.",
+   "zeilen": [
+    172,
+    173
+   ],
+   "code": [
+    "172:         lv_preis = ls_mbew-preis / ls_mbew-peinh.",
+    "173:         lv_wert  = abs( ls_pos-menge - ls_pos-buchm ) * lv_preis."
+   ],
+   "X": [],
+   "Y": [],
+   "Z": []
+  },
+  {
+   "id": "BM-035-B10",
+   "soll": "Liegt er über der Wertgrenze, wird die Position nicht gebucht, sondern zur Nachzählung bzw. Freigabe durch das Controlling vorgemerkt und protokolliert.",
+   "zeilen": [
+    174,
+    176
+   ],
+   "code": [
+    "174:         IF lv_wert > iv_limit.",
+    "176:           INSERT zmm_inv_recount FROM @( VALUE #( iblnr = ls_pos-iblnr"
+   ],
+   "X": [],
+   "Y": [
+    "Übersteigt der absolute Differenzwert den Grenzwert, wird ein Datensatz in die Tabelle ZMM_INV_RECOUNT zur Nachzählung eingefügt und eine Warnmeldung protokolliert.",
+    "Übersteigt der Differenzwert den Grenzwert nicht, wird die Positionsnummer zur Liste der zu buchenden Positionen hinzugefügt."
+   ],
+   "Z": [
+    "Wenn das Feld lv_wert größer als iv_limit ist, wird der Schleifendurchlauf übersprungen."
+   ]
+  },
+  {
+   "id": "BM-035-B11",
+   "soll": "Die übrigen Positionen eines Belegs werden gemeinsam als Inventurdifferenz zum Tagesdatum gebucht; Belege ohne buchbare Position werden übersprungen.",
+   "zeilen": [
+    187,
+    190
+   ],
+   "code": [
+    "187:       IF lt_items IS INITIAL.",
+    "190:       CALL FUNCTION 'BAPI_MATPHYSINV_POSTDIFF'"
+   ],
+   "X": [
+    "Der Funktionsbaustein BAPI_MATPHYSINV_POSTDIFF wird aufgerufen."
+   ],
+   "Y": [
+    "Sind für einen Inventurbeleg keine buchbaren Positionen vorhanden, wird die Verarbeitung des Belegs übersprungen.",
+    "Der Funktionsbaustein BAPI_MATPHYSINV_POSTDIFF wird aufgerufen, um die Differenzen des Belegs zum Tagesdatum zu buchen."
+   ],
+   "Z": [
+    "Ist die Tabelle lt_items leer, wird der Schleifendurchlauf übersprungen.",
+    "Der Funktionsbaustein BAPI_MATPHYSINV_POSTDIFF wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-035-B12",
+   "soll": "Scheitert die Buchung, wird zurückgerollt und der Beleg als fehlgeschlagen protokolliert; sonst wird festgeschrieben und die Zahl gebuchter Differenzen protokolliert.",
+   "zeilen": [
+    198,
+    199,
+    202
+   ],
+   "code": [
+    "198:       IF line_exists( lt_return[ type = 'E' ] ).",
+    "199:         CALL FUNCTION 'BAPI_TRANSACTION_ROLLBACK'.",
+    "202:         CALL FUNCTION 'BAPI_TRANSACTION_COMMIT'"
+   ],
+   "X": [
+    "Für line_exists( lt_return[ type = 'E' ] ) wird BAPI_TRANSACTION_ROLLBACK aufgerufen.",
+    "Für line_exists( lt_return[ type = 'E' ] ) wird BAPI_TRANSACTION_ROLLBACK aufgerufen, sonst BAPI_TRANSACTION_COMMIT aufgerufen.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_ROLLBACK wird aufgerufen.",
+    "Sonst wird BAPI_TRANSACTION_COMMIT aufgerufen.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_COMMIT wird aufgerufen."
+   ],
+   "Y": [
+    "Tritt bei der Differenzbuchung ein Fehler auf, wird ein Rollback ausgeführt und eine Fehlermeldung protokolliert.",
+    "Verläuft die Buchung fehlerfrei, werden die Änderungen auf der Datenbank festgeschrieben und eine Erfolgsmeldung mit der Anzahl gebuchter Positionen protokolliert."
+   ],
+   "Z": [
+    "Wenn in lt_return eine passende Zeile existiert, wird BAPI_TRANSACTION_ROLLBACK aufgerufen, sonst BAPI_TRANSACTION_COMMIT aufgerufen.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_ROLLBACK wird aufgerufen.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_COMMIT wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-035-B13",
+   "soll": "Am Ende wird das Protokoll mit Meldungstyp und Text als Liste ausgegeben.",
+   "zeilen": [
+    45,
+    46
+   ],
+   "code": [
+    "45:   LOOP AT go_cc->mt_log INTO DATA(ls_log).",
+    "46:     WRITE: / ls_log-type, ls_log-text."
+   ],
+   "X": [
+    "Jede Zeile aus go_cc->mt_log wird einzeln verarbeitet.",
+    "Bei Treffern werden Typ und Text als Liste ausgegeben.",
+    "Typ wird ausgegeben.",
+    "Text wird ausgegeben."
+   ],
+   "Y": [
+    "Für jeden Eintrag im Protokoll werden der Nachrichtentyp und der Meldungstext ausgegeben."
+   ],
+   "Z": [
+    "Jede Zeile aus go_cc->mt_log wird einzeln verarbeitet.",
+    "Bei Treffern werden Typ und Text als Liste ausgegeben."
+   ]
+  }
+ ]
+}

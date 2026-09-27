@@ -1,0 +1,331 @@
+{
+ "id": "BM-159",
+ "urteile": [
+  {
+   "id": "BM-159-B01",
+   "X": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Z": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "kurz": "Nur Y nennt Abweisung anderer Nachrichtentypen."
+  },
+  {
+   "id": "BM-159-B02",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig",
+     "zu_allgemein"
+    ]
+   },
+   "kurz": "Nur Y nennt Kopf- und Belegsegmente."
+  },
+  {
+   "id": "BM-159-B03",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Nur Y nennt Status 51 bei fehlendem Kopf."
+  },
+  {
+   "id": "BM-159-B04",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Nur Y nennt Status 53 'bereits übernommen'."
+  },
+  {
+   "id": "BM-159-B05",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig",
+     "zu_allgemein"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig",
+     "zu_allgemein"
+    ]
+   },
+   "kurz": "Nur Y nennt Datumsfolge, 730 Tage und Beschäftigungsstatus."
+  },
+  {
+   "id": "BM-159-B06",
+   "X": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": [
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "kurz": "Nur Y nennt Übertragung der Kopfdaten und Aktivität."
+  },
+  {
+   "id": "BM-159-B07",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig",
+     "zu_allgemein"
+    ]
+   },
+   "kurz": "Nur Y nennt Verwerfen, Umrechnung und Abweisung ohne Kurs."
+  },
+  {
+   "id": "BM-159-B08",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig",
+     "zu_allgemein",
+     "redundant"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig",
+     "zu_allgemein",
+     "redundant"
+    ]
+   },
+   "kurz": "Nur Y beschreibt die Pauschalenlogik."
+  },
+  {
+   "id": "BM-159-B09",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Nur Y nennt drei Sperrversuche mit Wartezeit."
+  },
+  {
+   "id": "BM-159-B10",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Nur Y nennt Fehlerauswertung, Rollback und Entsperren."
+  },
+  {
+   "id": "BM-159-B11",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "kurz": "Y nennt Zuordnungsspeicherung, Commit und Entsperren fachlich."
+  },
+  {
+   "id": "BM-159-B12",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "redundant",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "redundant",
+     "zu_allgemein",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Y nennt Einfügen der Zuordnung und Abbruch; X/Z nur Meldung."
+  },
+  {
+   "id": "BM-159-B13",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Nur Y nennt Status 53 bzw. 51 mit Text."
+  },
+  {
+   "id": "BM-159-B14",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "grammatik",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Y fachlich mit Fehlerworkflow; X/Z Variablenzuweisungen."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

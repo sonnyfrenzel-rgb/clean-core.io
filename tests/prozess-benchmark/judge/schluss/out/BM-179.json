@@ -1,0 +1,488 @@
+{
+ "id": "BM-179",
+ "urteile": [
+  {
+   "id": "BM-179-B01",
+   "X": {
+    "urteil": "fehlt",
+    "mangel": [
+     "zu_allgemein",
+     "technisch"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "fehlt",
+    "mangel": [
+     "zu_allgemein",
+     "technisch"
+    ]
+   },
+   "kurz": "Nur Y nennt Vorbelegung auf die letzten 7 Tage."
+  },
+  {
+   "id": "BM-179-B02",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "zu_allgemein",
+     "redundant",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Y fachlich; X mit option EQ; Z ohne Einschränkung auf Einzelwerte."
+  },
+  {
+   "id": "BM-179-B03",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Nur Y nennt abgefertigte Transporte und Selektionskriterien."
+  },
+  {
+   "id": "BM-179-B04",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "zu_allgemein",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Nur Y nennt das Entfernen bereits belegter Transporte."
+  },
+  {
+   "id": "BM-179-B05",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "zu_allgemein",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Y nennt Hinweis und Stopp, keine Variante dass die Liste trotzdem aufgebaut wird."
+  },
+  {
+   "id": "BM-179-B06",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Y nennt Lieferungen und HU-Gewichte, aber nicht Summierung und Umrechnung in kg; X/Z nur Feldlisten."
+  },
+  {
+   "id": "BM-179-B07",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "falsch"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Y nennt Fehler bei ungültiger Einheit, behauptet aber Abbruch für alle HUs des Transports statt nur der Lieferung; X/Z nur Schleifenaustritt."
+  },
+  {
+   "id": "BM-179-B08",
+   "X": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "grammatik"
+    ]
+   },
+   "kurz": "Alle nennen Fehler „Kein HU-Gewicht ermittelbar“, X/Z mit Feldnamen."
+  },
+  {
+   "id": "BM-179-B09",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Nur Y nennt Tarifzone zur Route und Fehler."
+  },
+  {
+   "id": "BM-179-B10",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein",
+     "redundant",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Y nennt Staffel- und Gültigkeitsbedingung und Fehler, aber nicht kleinste Staffel/jüngsten Preis; X/Z generisch."
+  },
+  {
+   "id": "BM-179-B11",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Keine nennt Formel und Mindestfracht vollständig; Y nennt den Rechenfehler fachlich."
+  },
+  {
+   "id": "BM-179-B12",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "zu_allgemein",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "zu_allgemein",
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Nur Y nennt den Dieselzuschlag."
+  },
+  {
+   "id": "BM-179-B13",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "falsch",
+     "grammatik"
+    ]
+   },
+   "kurz": "Y fachlich; X technisch; Z mit falschem „kleinere“."
+  },
+  {
+   "id": "BM-179-B14",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "unvollstaendig",
+     "grammatik"
+    ]
+   },
+   "kurz": "Y nennt Übernahme der Belegnummer und Kennzeichnung; X/Z ohne vorhandenen Beleg."
+  },
+  {
+   "id": "BM-179-B15",
+   "X": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "kurz": "Keine Variante nennt die Memory-Übergabe an den Kalkulationsexit."
+  },
+  {
+   "id": "BM-179-B16",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "zu_allgemein",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "zu_allgemein",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Y nennt Frachtkostenbeleg mit Frachtkostenart und Transport; X/Z nur Transaktionsaufruf."
+  },
+  {
+   "id": "BM-179-B17",
+   "X": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "grammatik"
+    ]
+   },
+   "kurz": "Alle nennen den Fehler bei E/A-Meldungen, X/Z technisch."
+  },
+  {
+   "id": "BM-179-B18",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "zu_allgemein",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "zu_allgemein",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Nur Y nennt Belegnummer aus Erfolgsmeldung und Protokoll."
+  },
+  {
+   "id": "BM-179-B19",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "kurz": "Y fachlich mit Gruppierung und Summe; X/Z Feldlisten."
+  },
+  {
+   "id": "BM-179-B20",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Y nennt Seitenkopf; X/Z nur Ausgabefelder."
+  },
+  {
+   "id": "BM-179-B21",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "abweichend",
+    "mangel": [
+     "falsch",
+     "grammatik"
+    ]
+   },
+   "kurz": "Y nennt Übergabe der Belegnummer und VI03; X ohne Übergabe; Z spricht von Anlage und „kleineren“ Werten."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

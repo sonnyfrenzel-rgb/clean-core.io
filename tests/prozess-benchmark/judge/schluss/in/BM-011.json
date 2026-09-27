@@ -1,0 +1,348 @@
+{
+ "id": "BM-011",
+ "titel": "Rückstandsbearbeitung: Werksbestand nach Lieferpriorität zuteilen und Aufträge per BAPI neu einplanen",
+ "prozess": "Der Report wird von der Disposition mit Verkaufsorganisationen, Werken, optional Materialien, einem Stichtag (Vorschlag heute) und dem Testlaufkennzeichen gestartet. Er liest alle nicht abgesagten, nicht voll belieferten Positionen von Kundenaufträgen und ermittelt aus den Einteilungen je Position die unbestätigte Restmenge. Als Rückstand bleiben Positionen mit Restmenge, deren Wunschlieferdatum spätestens am Stichtag liegt, geordnet nach Material, Werk, Lieferpriorität und Wunschtermin. Gibt es keine, erscheint ein Hinweis, und am Ende wird ein leeres Protokoll gezeigt. Sonst ermittelt er je Material und Werk den frei verwendbaren Lagerbestand und teilt ihn der Reihe nach zu, jeweils höchstens die Restmenge der Position. Ist der Bestand erschöpft, protokolliert er die übrigen Positionen als unversorgt. Im Testlauf protokolliert er nur die geplanten Zuteilungen. Im Echtlauf sperrt er den Auftrag, setzt die erste Einteilung per BAPI auf Stichtag und volle Auftragsmenge, damit die Standardprüfung neu bestätigt, schreibt bei Erfolg fest oder rollt bei Fehler zurück und löst die Sperre. Ist der Auftrag gesperrt, wird die Position übersprungen, der Bestand gilt dennoch als verbraucht. Zum Schluss zeigt er das Protokoll als ALV-Liste.",
+ "verboten": [
+  "zsd_backorder_f01.abap:128 — kein Fachsatz „die zugeteilte Menge wird im Auftrag bestätigt“: der BAPI erhält die volle Auftragsmenge und den Stichtag, iv_menge wird nur protokolliert; was bestätigt wird, entscheidet die Standard-ATP-Prüfung",
+  "zsd_backorder_f01.abap:78 — kein Fachsatz „der freie Bestand wird nur bei erfolgreicher Änderung verbraucht“: er wird vor Testlauf-Entscheidung und BAPI gemindert, auch bei Sperre oder Ablehnung",
+  "zsd_backorder_f01.abap:65 — kein Fachsatz „nur nicht reservierter/unbestätigter Bestand wird verteilt“: gelesen wird der gesamte frei verwendbare Lagerbestand, bestehende Bestätigungen anderer Aufträge werden nicht abgezogen",
+  "zsd_backorder_f01.abap:46 — kein write-Knoten: MODIFY wirkt auf die interne Tabelle, nicht auf die Datenbank"
+ ],
+ "saetze": [
+  {
+   "id": "BM-011-B01",
+   "soll": "Es werden alle nicht abgesagten Positionen von Kundenaufträgen der gewählten Verkaufsorganisationen, Werke und Materialien gelesen, die noch nicht voll beliefert sind.",
+   "zeilen": [
+    40
+   ],
+   "code": [
+    "40:   SELECT p~matnr p~werks p~lprio k~vdatu AS edatu p~vbeln p~posnr"
+   ],
+   "X": [
+    "Es werden Sätze aus vbap selektiert."
+   ],
+   "Y": [
+    "Es werden Auftragspositionen selektiert."
+   ],
+   "Z": [
+    "Aus den Tabellen VBAP, VBAK und VBUP werden Auftragspositionen mit Materialnummer, Werk, Lieferpriorität, Wunschlieferdatum, Belegnummer, Positionsnummer, Auftragsmenge und Verkaufsmengeneinheit für die angegebenen Verkaufsorganisationen, Werke und Materialien gelesen, sofern kein Absagegrund gepflegt ist, der Belegtyp 'C' lautet und der Gesamtlieferstatus ungleich 'C' ist."
+   ]
+  },
+  {
+   "id": "BM-011-B02",
+   "soll": "Zu diesen Positionen werden alle Einteilungen gelesen und die bestätigte Menge je Position summiert.",
+   "zeilen": [
+    55,
+    62,
+    64
+   ],
+   "code": [
+    "55:   SELECT * FROM vbep INTO TABLE lt_vbep",
+    "62:     LOOP AT lt_vbep INTO ls_vbep WHERE vbeln = gs_rueck-vbeln",
+    "64:       gs_rueck-bmeng = gs_rueck-bmeng + ls_vbep-bmeng."
+   ],
+   "X": [
+    "Es werden Sätze aus vbep selektiert.",
+    "Jede Zeile aus lt_vbep wird einzeln verarbeitet."
+   ],
+   "Y": [
+    "Es werden Einteilungen zu den Einträgen aus gt_rueck selektiert.",
+    "Die Zeilen aus lt_vbep, bei denen die Belegnummer gleich gs_rueck-vbeln ist und die Positionsnummer gleich gs_rueck-posnr ist, werden einzeln verarbeitet."
+   ],
+   "Z": [
+    "Aus der Tabelle VBEP werden alle Einteilungen zu den zuvor ermittelten Beleg- und Positionsnummern gelesen."
+   ]
+  },
+  {
+   "id": "BM-011-B03",
+   "soll": "Die unbestätigte Restmenge ist Auftragsmenge minus bestätigter Menge.",
+   "zeilen": [
+    66
+   ],
+   "code": [
+    "66:     gs_rueck-offen = gs_rueck-kwmeng - gs_rueck-bmeng."
+   ],
+   "X": [],
+   "Y": [],
+   "Z": []
+  },
+  {
+   "id": "BM-011-B04",
+   "soll": "Als Rückstand bleiben nur Positionen mit unbestätigter Restmenge, deren Wunschlieferdatum aus dem Auftragskopf spätestens am Stichtag liegt.",
+   "zeilen": [
+    68
+   ],
+   "code": [
+    "68:     IF gs_rueck-offen <= 0 OR gs_rueck-edatu > p_datum."
+   ],
+   "X": [],
+   "Y": [
+    "Wenn das Feld gs_rueck-offen höchstens 0 ist oder das Feld gs_rueck-edatu größer als p_datum ist, wird der Schleifendurchlauf übersprungen."
+   ],
+   "Z": [
+    "Ist die offene Menge kleiner oder gleich 0 oder liegt das Wunschlieferdatum nach dem Stichtagsdatum, wird die Position aus der Rückstandstabelle gelöscht.",
+    "Ist die offene Menge größer als 0 und liegt das Wunschlieferdatum bis einschließlich zum Stichtagsdatum, wird die Position mit der berechneten bestätigten und offenen Menge in der Rückstandstabelle aktualisiert."
+   ]
+  },
+  {
+   "id": "BM-011-B05",
+   "soll": "Die Rückstände werden je Material und Werk nach Lieferpriorität, dann nach Wunschtermin geordnet.",
+   "zeilen": [
+    76
+   ],
+   "code": [
+    "76:   SORT gt_rueck BY matnr werks lprio edatu vbeln posnr."
+   ],
+   "X": [],
+   "Y": [],
+   "Z": [
+    "Die Rückstände werden nach Materialnummer, Werk, Lieferpriorität, Wunschlieferdatum, Belegnummer und Positionsnummer aufsteigend sortiert."
+   ]
+  },
+  {
+   "id": "BM-011-B06",
+   "soll": "Gibt es keine Rückstände, erscheint ein Hinweis; das Protokoll wird trotzdem angezeigt, dann leer.",
+   "zeilen": [
+    19,
+    20,
+    21,
+    25
+   ],
+   "code": [
+    "19:   IF gt_rueck IS INITIAL.",
+    "20:     MESSAGE s020.",
+    "21:     RETURN.",
+    "25: END-OF-SELECTION."
+   ],
+   "X": [
+    "Ohne Treffer wird eine Meldung ausgegeben und der Block verlassen.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "Eine Meldung wird ausgegeben.",
+    "Es wird eine Meldung ausgegeben und der Block verlassen."
+   ],
+   "Y": [
+    "Ist die Tabelle gt_rueck leer, wird eine Statusmeldung ausgegeben und der Block verlassen.",
+    "Die Statusmeldung 020 wird ausgegeben."
+   ],
+   "Z": [
+    "Sind keine Rückstände vorhanden, wird eine Erfolgsmeldung mit der Nummer 020 ausgegeben und die Verarbeitung beendet.",
+    "Sind Rückstände vorhanden, wird die Verteilung des freien Bestands aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-011-B07",
+   "soll": "Für jede neue Kombination aus Material und Werk wird der frei verwendbare Bestand über alle Lagerorte des Werks ermittelt.",
+   "zeilen": [
+    89,
+    91
+   ],
+   "code": [
+    "89:     AT NEW werks.",
+    "91:       SELECT SUM( labst ) FROM mard INTO lv_frei"
+   ],
+   "X": [
+    "Es werden Sätze aus mard selektiert."
+   ],
+   "Y": [
+    "Das Ergebnis enthält SUM( und labst.",
+    "Es werden Lagerortbestände selektiert."
+   ],
+   "Z": [
+    "Bei jedem Werkwechsel wird aus der Tabelle MARD die Summe des frei verwendbaren Lagerbestands für das aktuelle Material und Werk ermittelt."
+   ]
+  },
+  {
+   "id": "BM-011-B08",
+   "soll": "Ist der Bestand erschöpft, wird die Position mit „Kein freier Bestand“ protokolliert und nicht bearbeitet.",
+   "zeilen": [
+    96
+   ],
+   "code": [
+    "96:     IF lv_frei <= 0."
+   ],
+   "X": [
+    "Für lv_frei bis einschließlich 0 wird eine Zeile aufgenommen."
+   ],
+   "Y": [
+    "Wenn das Feld lv_frei höchstens 0 ist, wird eine Zeile aufgenommen und der Schleifendurchlauf übersprungen."
+   ],
+   "Z": [
+    "Ist der freie Bestand kleiner oder gleich 0, wird ein Warnhinweis mit dem Status 'W' und dem Text 'Kein freier Bestand' in das Protokoll eingetragen und mit der nächsten Position fortgefahren."
+   ]
+  },
+  {
+   "id": "BM-011-B09",
+   "soll": "Jede Position erhält als Zuteilung das Minimum aus ihrer Restmenge und dem verbleibenden freien Bestand; der freie Bestand sinkt um diese Zuteilung.",
+   "zeilen": [
+    103,
+    104
+   ],
+   "code": [
+    "103:     lv_zuteil = nmin( val1 = gs_rueck-offen val2 = lv_frei ).",
+    "104:     lv_frei   = lv_frei - lv_zuteil."
+   ],
+   "X": [],
+   "Y": [],
+   "Z": []
+  },
+  {
+   "id": "BM-011-B10",
+   "soll": "Im Testlauf wird die geplante Zuteilung nur protokolliert.",
+   "zeilen": [
+    106
+   ],
+   "code": [
+    "106:     IF p_test = abap_true."
+   ],
+   "X": [
+    "Für p_test mit dem Wert abap_true wird eine Zeile aufgenommen."
+   ],
+   "Y": [
+    "Wenn das Feld p_test gesetzt ist, wird eine Zeile aufgenommen und der Schleifendurchlauf übersprungen."
+   ],
+   "Z": [
+    "Ist der Testlauf aktiviert, wird ein Informationseintrag mit dem Status 'I', der zugeteilten Menge und dem Text 'Testlauf: würde neu eingeplant' in das Protokoll geschrieben und die Einplanung übersprungen.",
+    "Ist der Testlauf nicht aktiv, wird die Neueinplanung des Auftrags mit der errechneten Zuteilungsmenge aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-011-B11",
+   "soll": "Im Echtlauf wird der Kundenauftrag gesperrt; ist er in Bearbeitung, wird die Position mit Fehler protokolliert und übersprungen.",
+   "zeilen": [
+    130,
+    137,
+    141
+   ],
+   "code": [
+    "130:   CALL FUNCTION 'ENQUEUE_EVVBAKE'",
+    "137:   IF sy-subrc <> 0.",
+    "141:     RETURN."
+   ],
+   "X": [
+    "Der Funktionsbaustein ENQUEUE_EVVBAKE wird aufgerufen.",
+    "Ohne Treffer wird eine Zeile aufgenommen und der Block verlassen.",
+    "Ohne Treffer wird der Block verlassen.",
+    "Es wird eine Zeile aufgenommen und der Block verlassen."
+   ],
+   "Y": [
+    "Der Funktionsbaustein ENQUEUE_EVVBAKE wird aufgerufen.",
+    "Ist die Sperre über ENQUEUE_EVVBAKE nicht zu erhalten, wird eine Zeile aufgenommen und der Block verlassen."
+   ],
+   "Z": [
+    "Der Verkaufsbeleg wird über den Funktionsbaustein ENQUEUE_EVVBAKE gegen parallele Änderungen gesperrt."
+   ]
+  },
+  {
+   "id": "BM-011-B12",
+   "soll": "Die erste Einteilung der Position wird auf den Stichtag und die volle Auftragsmenge geändert, sodass die Standard-Verfügbarkeitsprüfung neu bestätigt.",
+   "zeilen": [
+    154
+   ],
+   "code": [
+    "154:   CALL FUNCTION 'BAPI_SALESORDER_CHANGE'"
+   ],
+   "X": [
+    "Es wird die ls_hdrx-updateflag auf U gesetzt, eine Zeile aufgenommen und BAPI_SALESORDER_CHANGE aufgerufen.",
+    "Der Funktionsbaustein BAPI_SALESORDER_CHANGE wird aufgerufen."
+   ],
+   "Y": [
+    "Es wird das Feld ls_hdrx-updateflag auf U gesetzt, eine Zeile aufgenommen und BAPI_SALESORDER_CHANGE aufgerufen.",
+    "Der Funktionsbaustein BAPI_SALESORDER_CHANGE wird aufgerufen."
+   ],
+   "Z": [
+    "Über den Funktionsbaustein BAPI_SALESORDER_CHANGE wird die Einteilung 0001 der Auftragsposition auf das Stichtagsdatum und die Auftragsmenge geändert."
+   ]
+  },
+  {
+   "id": "BM-011-B13",
+   "soll": "Lehnt der Auftrag die Änderung mit einem Fehler ab, wird sie verworfen und „Änderung abgelehnt“ protokolliert.",
+   "zeilen": [
+    165,
+    166,
+    167
+   ],
+   "code": [
+    "165:   READ TABLE lt_ret WITH KEY type = 'E' TRANSPORTING NO FIELDS.",
+    "166:   IF sy-subrc = 0.",
+    "167:     CALL FUNCTION 'BAPI_TRANSACTION_ROLLBACK'."
+   ],
+   "X": [
+    "In der Tabelle wird nach einer passenden Zeile gesucht.",
+    "Bei Treffer wird BAPI_TRANSACTION_ROLLBACK aufgerufen und eine Zeile aufgenommen.",
+    "Bei Treffer wird BAPI_TRANSACTION_ROLLBACK aufgerufen und eine Zeile aufgenommen, sonst BAPI_TRANSACTION_COMMIT aufgerufen und eine Zeile aufgenommen.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_ROLLBACK wird aufgerufen.",
+    "Es wird BAPI_TRANSACTION_ROLLBACK aufgerufen und eine Zeile aufgenommen."
+   ],
+   "Y": [
+    "In der Tabelle lt_ret wird nach einer passenden Zeile gesucht.",
+    "Bei Treffer wird BAPI_TRANSACTION_ROLLBACK aufgerufen und eine Zeile aufgenommen, sonst BAPI_TRANSACTION_COMMIT aufgerufen und eine Zeile aufgenommen.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_ROLLBACK wird aufgerufen."
+   ],
+   "Z": [
+    "Gibt die Auftragsänderung Fehler vom Typ 'E' zurück (sy-subrc gleich 0), werden die Änderungen über BAPI_TRANSACTION_ROLLBACK zurückgesetzt und ein Fehlereintrag mit dem Status 'E' und dem Text 'Änderung abgelehnt' im Protokoll gespeichert.",
+    "Treten keine Fehler vom Typ 'E' auf, werden die Änderungen über BAPI_TRANSACTION_COMMIT mit Warteparameter festgeschrieben und ein Erfolgsstatus 'S' mit der zugeteilten Menge sowie dem Text 'Neu eingeplant' im Protokoll vermerkt."
+   ]
+  },
+  {
+   "id": "BM-011-B14",
+   "soll": "Sonst wird die Änderung synchron festgeschrieben und „Neu eingeplant“ mit der Zuteilungsmenge protokolliert.",
+   "zeilen": [
+    172
+   ],
+   "code": [
+    "172:     CALL FUNCTION 'BAPI_TRANSACTION_COMMIT'"
+   ],
+   "X": [
+    "Bei Treffer wird BAPI_TRANSACTION_ROLLBACK aufgerufen und eine Zeile aufgenommen, sonst BAPI_TRANSACTION_COMMIT aufgerufen und eine Zeile aufgenommen.",
+    "Für andere sy-subrc wird BAPI_TRANSACTION_COMMIT aufgerufen und eine Zeile aufgenommen.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_COMMIT wird aufgerufen.",
+    "Es wird BAPI_TRANSACTION_COMMIT aufgerufen und eine Zeile aufgenommen."
+   ],
+   "Y": [
+    "Bei Treffer wird BAPI_TRANSACTION_ROLLBACK aufgerufen und eine Zeile aufgenommen, sonst BAPI_TRANSACTION_COMMIT aufgerufen und eine Zeile aufgenommen.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_COMMIT wird aufgerufen."
+   ],
+   "Z": [
+    "Treten keine Fehler vom Typ 'E' auf, werden die Änderungen über BAPI_TRANSACTION_COMMIT mit Warteparameter festgeschrieben und ein Erfolgsstatus 'S' mit der zugeteilten Menge sowie dem Text 'Neu eingeplant' im Protokoll vermerkt."
+   ]
+  },
+  {
+   "id": "BM-011-B15",
+   "soll": "Danach wird die Auftragssperre wieder gelöst.",
+   "zeilen": [
+    180
+   ],
+   "code": [
+    "180:   CALL FUNCTION 'DEQUEUE_EVVBAKE'"
+   ],
+   "X": [
+    "Der Funktionsbaustein DEQUEUE_EVVBAKE wird aufgerufen."
+   ],
+   "Y": [
+    "Der Funktionsbaustein DEQUEUE_EVVBAKE wird aufgerufen."
+   ],
+   "Z": [
+    "Die Sperre auf den Verkaufsbeleg wird über den Funktionsbaustein DEQUEUE_EVVBAKE aufgehoben."
+   ]
+  },
+  {
+   "id": "BM-011-B16",
+   "soll": "Am Ende wird das Verteilprotokoll mit Auftrag, Position, Material, Zuteilung, Status und Meldung als ALV-Liste angezeigt.",
+   "zeilen": [
+    197
+   ],
+   "code": [
+    "197:   CALL FUNCTION 'REUSE_ALV_GRID_DISPLAY'"
+   ],
+   "X": [
+    "Der Funktionsbaustein REUSE_ALV_GRID_DISPLAY wird aufgerufen."
+   ],
+   "Y": [
+    "Der Funktionsbaustein REUSE_ALV_GRID_DISPLAY wird aufgerufen."
+   ],
+   "Z": [
+    "Das Verarbeitungsprotokoll wird über den Funktionsbaustein REUSE_ALV_GRID_DISPLAY als ALV-Grid zur Anzeige gebracht."
+   ]
+  }
+ ]
+}

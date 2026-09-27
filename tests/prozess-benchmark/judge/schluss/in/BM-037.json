@@ -1,0 +1,530 @@
+{
+ "id": "BM-037",
+ "titel": "Niederstwertprüfung zum Bilanzstichtag mit Gängigkeitsabschlag und Preisänderung per MR21-Batch-Input",
+ "prozess": "Zum Jahresabschluss startet die Bestandsbewertung den Report für einen Buchungskreis; als Stichtag wird der 31.12. des Vorjahres vorgeschlagen, dazu Materialarten, Abwertungsschwelle, Mindestwert, Testlauf und Batch-Input-Modus. Am Selektionsbild wird die Berechtigung zum Ändern der Materialbewertung geprüft. Der Report ermittelt die Werke des Buchungskreises und liest die Materialien mit Bestand samt Wert und Buchpreis (Standard- bzw. gleitender Preis); ohne Werke bricht er ab, ohne Bestände überspringt er die Bewertung. Als Marktpreis dient der jüngste Bestellpreis der letzten 183 Tage, sonst der Buchpreis. Aus dem Verbrauch der letzten 12 Monate (261, 201, 601) ergibt sich die Reichweite und daraus ein Gängigkeitsabschlag von 0, 20, 50 oder – ohne Verbrauch – 80 %. Der neue Preis ist der niedrigere aus Buch- und Marktpreis abzüglich Abschlag; Materialien, deren Abwertung Schwelle und Mindestwert erreicht, sind Kandidaten. Im Echtlauf werden nur Standardpreis-Kandidaten, deren Bewertung nicht gerade gesperrt ist, per Batch-Input über MR21 zum Stichtag umgewertet, V-Preis-Kandidaten werden zur manuellen Abwertung vermerkt; danach werden alle Kandidaten mit Buchungskennzeichen in die Historie geschrieben. Zum Schluss erscheint im Hintergrund ein Summenprotokoll, im Dialog eine ALV-Liste nach Abwertungsbetrag, aus der sich der Materialstamm öffnen lässt.",
+ "verboten": [
+  "zmm_niederstwert_f01.abap:89 — kein Fachsatz „Stornos von Verbräuchen werden gegengerechnet“ (262/202/602 sind nicht in der Bewegungsartenliste)",
+  "zmm_niederstwert_f02.abap:40 — kein Fachsatz „Das Material bleibt während der Preisänderung gesperrt“ (die Sperre wird vor MR21 wieder freigegeben)",
+  "zmm_niederstwert_f01.abap:118 — kein Fachsatz „Werterhöhungen (Zuschreibungen) werden gebucht“ (der neue Preis ist nie höher als der Buchpreis)",
+  "zmm_niederstwert_f02.abap:34 — kein Fachsatz „V-Preis-Materialien werden über den Material-Ledger-Abschluss abgewertet“ (der Code vermerkt nur, dass manuell abzuwerten ist)"
+ ],
+ "saetze": [
+  {
+   "id": "BM-037-B01",
+   "soll": "Als Stichtag wird der 31.12. des Vorjahres vorgeschlagen.",
+   "zeilen": [
+    22,
+    23,
+    24
+   ],
+   "code": [
+    "22:   p_stich = sy-datum.",
+    "23:   p_stich+4(4) = '1231'.",
+    "24:   p_stich(4)   = p_stich(4) - 1."
+   ],
+   "X": [
+    "Die p_stich+4(4 wird auf 1231 gesetzt."
+   ],
+   "Y": [
+    "Zum Initialisierungszeitpunkt wird das Stichtagsdatum auf den 31. Dezember des Vorjahres vorbelegt."
+   ],
+   "Z": [
+    "Das Feld p_stich+4(4 wird auf 1231 gesetzt."
+   ]
+  },
+  {
+   "id": "BM-037-B02",
+   "soll": "Am Selektionsbild wird geprüft, ob der Anwender im Buchungskreis Materialbewertungen ändern darf; sonst wird die Eingabe zurückgewiesen.",
+   "zeilen": [
+    57,
+    60,
+    61
+   ],
+   "code": [
+    "57:   AUTHORITY-CHECK OBJECT 'K_ML_VA'",
+    "60:   IF sy-subrc <> 0.",
+    "61:     MESSAGE e042 WITH p_bukrs."
+   ],
+   "X": [
+    "Die Berechtigung auf K_ML_VA wird geprüft.",
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ],
+   "Y": [
+    "Fehlt die Änderungsberechtigung 02 für das Berechtigungsobjekt K_ML_VA im Buchungskreis p_bukrs, wird die Fehlermeldung E042 ausgegeben und die Verarbeitung abgebrochen."
+   ],
+   "Z": [
+    "Die Berechtigung auf K_ML_VA wird geprüft.",
+    "Ohne Berechtigung auf K_ML_VA für den eingegebenen Buchungskreis wird eine Fehlermeldung ausgegeben.",
+    "Die Fehlermeldung 042 wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-037-B03",
+   "soll": "Es werden die Werke ermittelt, deren Bewertungskreis zum Buchungskreis gehört; ohne Werk bricht der Lauf ab.",
+   "zeilen": [
+    31,
+    32,
+    68
+   ],
+   "code": [
+    "31:   IF gt_werks IS INITIAL.",
+    "32:     MESSAGE e040 WITH p_bukrs.",
+    "68:   SELECT w~werks FROM t001w AS w"
+   ],
+   "X": [
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben.",
+    "Es werden Sätze aus t001w mit dem eingegebenen Buchungskreis selektiert."
+   ],
+   "Y": [
+    "Aus der Tabelle T001W im Verbund mit der Tabelle T001K werden alle Werke zum angegebenen Buchungskreis ermittelt.",
+    "Werden keine Werke zum Buchungskreis gefunden, wird die Fehlermeldung E040 ausgegeben."
+   ],
+   "Z": [
+    "Ist die Tabelle gt_werks leer, wird eine Fehlermeldung ausgegeben.",
+    "Die Fehlermeldung 040 wird ausgegeben.",
+    "Es werden Werke mit dem eingegebenen Buchungskreis selektiert."
+   ]
+  },
+  {
+   "id": "BM-037-B04",
+   "soll": "Gelesen werden die nicht getrennt bewerteten Materialien der gewählten Materialarten mit positivem Gesamtbestand samt Bestandswert und Preiseinheit.",
+   "zeilen": [
+    78
+   ],
+   "code": [
+    "78:   SELECT b~matnr b~bwkey a~mtart b~vprsv b~lbkum b~salk3 b~peinh"
+   ],
+   "X": [
+    "Es werden Sätze aus mbew selektiert."
+   ],
+   "Y": [
+    "Aus den Tabellen MBEW und MARA werden Bestands- und Preisdaten für Materialien mit einem bewerteten Bestand größer als 0 in den selektierten Werken ohne Bewertungsart gelesen."
+   ],
+   "Z": [
+    "Es werden Materialbewertungen zu den Einträgen aus gt_werks selektiert."
+   ]
+  },
+  {
+   "id": "BM-037-B05",
+   "soll": "Buchpreis ist bei Preissteuerung S der Standardpreis, bei V der gleitende Durchschnittspreis.",
+   "zeilen": [
+    78,
+    90,
+    91
+   ],
+   "code": [
+    "78:   SELECT b~matnr b~bwkey a~mtart b~vprsv b~lbkum b~salk3 b~peinh",
+    "90:   LOOP AT gt_bew ASSIGNING <ls_bew> WHERE vprsv = 'V'.",
+    "91:     SELECT SINGLE verpr FROM mbew INTO <ls_bew>-preis"
+   ],
+   "X": [
+    "Es werden Sätze aus mbew selektiert.",
+    "Jede Zeile aus gt_bew wird einzeln verarbeitet.",
+    "verpr des Satzes wird gelesen."
+   ],
+   "Y": [
+    "Aus den Tabellen MBEW und MARA werden Bestands- und Preisdaten für Materialien mit einem bewerteten Bestand größer als 0 in den selektierten Werken ohne Bewertungsart gelesen.",
+    "Für Materialien mit gleitendem Durchschnittspreis (Preissteuerung V) wird der gleitende Durchschnittspreis VERPR aus der Tabelle MBEW als Buchpreis übernommen."
+   ],
+   "Z": [
+    "Es werden Materialbewertungen zu den Einträgen aus gt_werks selektiert.",
+    "Die Zeilen aus gt_bew, bei denen das Feld vprsv gleich V ist, werden einzeln verarbeitet.",
+    "Das Feld verpr der Materialbewertung wird gelesen."
+   ]
+  },
+  {
+   "id": "BM-037-B06",
+   "soll": "Ohne Bestände wird ein Hinweis ausgegeben und die Bewertung übersprungen.",
+   "zeilen": [
+    36,
+    37,
+    38
+   ],
+   "code": [
+    "36:   IF gt_bew IS INITIAL.",
+    "37:     MESSAGE s041.",
+    "38:     RETURN."
+   ],
+   "X": [
+    "Ohne Treffer wird eine Meldung ausgegeben und der Block verlassen.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "Eine Meldung wird ausgegeben.",
+    "Es wird eine Meldung ausgegeben und der Block verlassen."
+   ],
+   "Y": [
+    "Werden keine bewerteten Bestände gefunden, wird die Erfolgsmeldung S041 ausgegeben und die Verarbeitung beendet."
+   ],
+   "Z": [
+    "Ist die Tabelle gt_bew leer, wird eine Statusmeldung ausgegeben und der Block verlassen.",
+    "Die Statusmeldung 041 wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-037-B07",
+   "soll": "Marktpreis ist der Nettopreis der jüngsten nicht gelöschten Bestellung des Materials im Werk aus den letzten 183 Tagen vor dem Stichtag, umgerechnet auf die Preiseinheit des Materials; ohne solche Bestellung gilt der Buchpreis.",
+   "zeilen": [
+    104,
+    107,
+    117,
+    119,
+    121
+   ],
+   "code": [
+    "104:   gv_von6 = p_stich - 183.",
+    "107:     SELECT p~netpr p~peinh",
+    "117:     IF sy-subrc = 0 AND lv_peinh > 0 AND <ls_bew>-peinh > 0.",
+    "119:       <ls_bew>-markt = lv_netpr / lv_peinh * <ls_bew>-peinh.",
+    "121:       <ls_bew>-markt = <ls_bew>-preis.     \"kein Marktpreis: Buchpreis"
+   ],
+   "X": [
+    "Es werden Sätze aus ekpo selektiert."
+   ],
+   "Y": [
+    "Aus den Tabellen EKPO und EKKO wird je Material und Werk die letzte ungelöschte Einkaufsbestellung der vergangenen 183 Tage vor dem Stichtag mit Nettopreis und Preiseinheit ermittelt.",
+    "Wurde ein Bestellpreis ermittelt und sind die Preiseinheiten positiv, wird der Marktpreis auf die Preiseinheit des Materialstamms umgerechnet.",
+    "Wurde kein Bestellpreis ermittelt oder ist eine Preiseinheit nicht positiv, wird als Marktpreis der bisherige Buchpreis übernommen."
+   ],
+   "Z": [
+    "Das Ergebnis enthält netpr und peinh.",
+    "Es werden Bestellpositionen selektiert."
+   ]
+  },
+  {
+   "id": "BM-037-B08",
+   "soll": "Der Verbrauch ist die Summe der Mengen der Bewegungsarten 261, 201 und 601 im Jahr vor dem Stichtag.",
+   "zeilen": [
+    133,
+    140
+   ],
+   "code": [
+    "133:   r_bwart_verbr-low = '261'. APPEND r_bwart_verbr.",
+    "140:     SELECT SUM( s~menge ) FROM mseg AS s"
+   ],
+   "X": [
+    "Es wird die r_bwart_verbr-sign auf I gesetzt, die r_bwart_verbr-option auf EQ gesetzt, die r_bwart_verbr-low auf 261 gesetzt, eine Zeile aufgenommen, die r_bwart_verbr-low auf 201 gesetzt und die r_bwart_verbr-low auf 601 gesetzt.",
+    "Eine Zeile wird aufgenommen.",
+    "Die r_bwart_verbr-low wird auf 261 gesetzt.",
+    "Es werden Sätze aus mseg selektiert."
+   ],
+   "Y": [
+    "Aus den Tabellen MSEG und MKPF wird die Summe der Verbrauchsmengen der Bewegungsarten 261, 201 und 601 innerhalb der letzten 365 Tage vor dem Stichtag ermittelt."
+   ],
+   "Z": [
+    "Es wird das Feld r_bwart_verbr-sign auf I gesetzt, das Feld r_bwart_verbr-option auf EQ gesetzt, das Feld r_bwart_verbr-low auf 261 gesetzt, eine Zeile aufgenommen, das Feld r_bwart_verbr-low auf 201 gesetzt und das Feld r_bwart_verbr-low auf 601 gesetzt.",
+    "Eine Zeile wird aufgenommen.",
+    "Das Feld r_bwart_verbr-low wird auf 261 gesetzt.",
+    "Das Ergebnis enthält SUM( und Menge.",
+    "Es werden Materialbelegpositionen selektiert."
+   ]
+  },
+  {
+   "id": "BM-037-B09",
+   "soll": "Ohne Verbrauch erhält das Material einen Gängigkeitsabschlag von 80 %.",
+   "zeilen": [
+    149,
+    150
+   ],
+   "code": [
+    "149:     IF lv_verbr <= 0.",
+    "150:       <ls_bew>-abschl = gc_abschl_0."
+   ],
+   "X": [],
+   "Y": [
+    "Ist die Verbrauchsmenge kleiner oder gleich 0, wird ein Abschlag von 80.00 Prozent gesetzt."
+   ],
+   "Z": [
+    "Wenn das Feld lv_verbr höchstens 0 ist, wird der Schleifendurchlauf übersprungen."
+   ]
+  },
+  {
+   "id": "BM-037-B10",
+   "soll": "Sonst wird die Reichweite als Bestand durch Monatsverbrauch berechnet: über 24 Monate 50 % Abschlag, über 12 Monate 20 %, sonst keiner.",
+   "zeilen": [
+    153,
+    154
+   ],
+   "code": [
+    "153:     <ls_bew>-reichw = <ls_bew>-lbkum / ( lv_verbr / 12 ).",
+    "154:     IF <ls_bew>-reichw > 24."
+   ],
+   "X": [],
+   "Y": [
+    "Ist die Verbrauchsreichweite größer als 24 Monate, wird ein Abschlag von 50.00 Prozent gesetzt.",
+    "Liegt die Verbrauchsreichweite bei mehr als 12 bis einschließlich 24 Monaten, wird ein Abschlag von 20.00 Prozent gesetzt.",
+    "Liegt die Verbrauchsreichweite bei bis zu 12 Monaten, wird der Abschlag auf 0 gesetzt."
+   ],
+   "Z": []
+  },
+  {
+   "id": "BM-037-B11",
+   "soll": "Der neue Preis ist der niedrigere aus Buch- und Marktpreis, vermindert um den Gängigkeitsabschlag.",
+   "zeilen": [
+    169,
+    170
+   ],
+   "code": [
+    "169:     <ls_bew>-neupr = nmin( val1 = <ls_bew>-preis val2 = <ls_bew>-markt ).",
+    "170:     <ls_bew>-neupr = <ls_bew>-neupr * ( 100 - <ls_bew>-abschl ) / 100."
+   ],
+   "X": [],
+   "Y": [
+    "Als neuer Preis wird das Minimum aus Buchpreis und Marktpreis berechnet und um den prozentualen Abschlag vermindert."
+   ],
+   "Z": []
+  },
+  {
+   "id": "BM-037-B12",
+   "soll": "Daraus werden die Abwertung in Prozent des Buchpreises und der Abwertungsbetrag über den Gesamtbestand berechnet.",
+   "zeilen": [
+    172,
+    174
+   ],
+   "code": [
+    "172:       <ls_bew>-abw_pct = ( <ls_bew>-preis - <ls_bew>-neupr ) * 100 / <ls_bew>-preis.",
+    "174:     <ls_bew>-abw_wert = ( <ls_bew>-preis - <ls_bew>-neupr ) * <ls_bew>-lbkum / <ls_bew>-peinh."
+   ],
+   "X": [],
+   "Y": [],
+   "Z": []
+  },
+  {
+   "id": "BM-037-B13",
+   "soll": "Ein Material ist Abwertungskandidat, wenn die prozentuale Abwertung die Schwelle und der Abwertungsbetrag den Mindestwert erreichen.",
+   "zeilen": [
+    175,
+    176
+   ],
+   "code": [
+    "175:     IF <ls_bew>-abw_pct >= p_schw AND <ls_bew>-abw_wert >= p_minw.",
+    "176:       <ls_bew>-kandidat = abap_true."
+   ],
+   "X": [],
+   "Y": [
+    "Erreichen oder überschreiten der prozentuale Abwertungsbetrag den Schwellenwert p_schw und der absolute Abwertungsbetrag den Mindestwert p_minw, wird das Material als Kandidat markiert und der Status auf Gelb gesetzt.",
+    "Unterschreitet der prozentuale Abwertungsbetrag den Schwellenwert p_schw oder der absolute Abwertungsbetrag den Mindestwert p_minw, wird der Status auf Grün gesetzt."
+   ],
+   "Z": []
+  },
+  {
+   "id": "BM-037-B14",
+   "soll": "Nur im Echtlauf werden Preise geändert und die Historie geschrieben; im Testlauf wird nur ausgewertet.",
+   "zeilen": [
+    45
+   ],
+   "code": [
+    "45:   IF p_test = abap_false."
+   ],
+   "X": [
+    "Für p_test mit dem Wert abap_false wird preise_aendern aufgerufen und historie_schreiben aufgerufen."
+   ],
+   "Y": [
+    "Ist der Testlauf nicht ausgewählt, werden die Preisänderungen gebucht und die Historie fortgeschrieben."
+   ],
+   "Z": [
+    "Wenn das Feld p_test nicht gesetzt ist, wird preise_aendern aufgerufen und historie_schreiben aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-037-B15",
+   "soll": "Kandidaten mit gleitendem Durchschnittspreis werden nicht gebucht, sondern für eine manuelle Abwertung vermerkt.",
+   "zeilen": [
+    216,
+    218
+   ],
+   "code": [
+    "216:     IF <ls_bew>-vprsv <> 'S'.",
+    "218:       <ls_bew>-meldung = 'V-Preis: manuelle Abwertung erforderlich'."
+   ],
+   "X": [
+    "Für ls_bew>-vprsv ungleich S wird die ls_bew>-meldung auf V-Preis: manuelle Abwertung erforderlich gesetzt.",
+    "ls_bew>-vprsv ungleich S setzen die ls_bew>-meldung auf V-Preis: manuelle Abwertung erforderlich."
+   ],
+   "Y": [
+    "Weicht die Preissteuerung des Abwertungskandidaten von S ab, wird der Status auf Rot gesetzt, der Hinweistext V-Preis: manuelle Abwertung erforderlich vermerkt und das Material übersprungen."
+   ],
+   "Z": [
+    "Wenn das Feld ls_bew-vprsv ungleich S ist, wird das Feld ls_bew-meldung auf V-Preis: manuelle Abwertung erforderlich gesetzt und der Schleifendurchlauf übersprungen.",
+    "Wenn das Feld ls_bew-vprsv ungleich S ist, wird das Feld ls_bew-meldung auf V-Preis: manuelle Abwertung erforderlich gesetzt."
+   ]
+  },
+  {
+   "id": "BM-037-B16",
+   "soll": "Ist die Materialbewertung gerade von jemand anderem gesperrt, wird der Kandidat mit Hinweis übersprungen; die Sperre selbst wird nur geprüft und sofort wieder freigegeben.",
+   "zeilen": [
+    222,
+    230,
+    235
+   ],
+   "code": [
+    "222:     CALL FUNCTION 'ENQUEUE_EMMBEWE'",
+    "230:     IF sy-subrc <> 0.",
+    "235:     CALL FUNCTION 'DEQUEUE_EMMBEWE'"
+   ],
+   "X": [
+    "Der Funktionsbaustein ENQUEUE_EMMBEWE wird aufgerufen.",
+    "Ohne Treffer wird die ls_bew>-meldung auf Material gesperrt gesetzt.",
+    "sy-subrc ungleich 0 setzen die ls_bew>-meldung auf Material gesperrt.",
+    "Der Funktionsbaustein DEQUEUE_EMMBEWE wird aufgerufen."
+   ],
+   "Y": [
+    "Kann der Bewertungsdatensatz über den Funktionsbaustein ENQUEUE_EMMBEWE nicht gesperrt werden, wird der Status auf Rot gesetzt, der Hinweistext Material gesperrt vermerkt und das Material übersprungen.",
+    "Die Sperre auf den Bewertungsdatensatz wird über den Funktionsbaustein DEQUEUE_EMMBEWE wieder aufgehoben."
+   ],
+   "Z": [
+    "Der Funktionsbaustein ENQUEUE_EMMBEWE wird aufgerufen.",
+    "Ist die Sperre über ENQUEUE_EMMBEWE nicht zu erhalten, wird das Feld ls_bew-meldung auf Material gesperrt gesetzt und der Schleifendurchlauf übersprungen.",
+    "Wenn die Sperre über ENQUEUE_EMMBEWE nicht zu erhalten ist, wird das Feld ls_bew-meldung auf Material gesperrt gesetzt.",
+    "Der Funktionsbaustein DEQUEUE_EMMBEWE wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-037-B17",
+   "soll": "Für jeden Standardpreis-Kandidaten wird der neue Preis zum Stichtag per Batch-Input über die Preisänderung MR21 im Werk gebucht.",
+   "zeilen": [
+    242,
+    249,
+    252
+   ],
+   "code": [
+    "242:     bdc_dynpro 'SAPRCKM_MR21' '0201'.",
+    "249:     bdc_field  'CKI_MR21_0250-NEWVALPR(01)' lv_preis.",
+    "252:     CALL TRANSACTION 'MR21' USING gt_bdc"
+   ],
+   "X": [
+    "Die Anlage wird über die Transaktion MR21 angestoßen. Ob und was persistiert wird, entscheidet die aufgerufene Transaktion."
+   ],
+   "Y": [
+    "Über den Transaktionsaufruf MR21 wird der neue Materialpreis per Batch-Input verbucht."
+   ],
+   "Z": [
+    "Die Transaktion MR21 wird per Batch-Input angestoßen. Ob und was persistiert wird, entscheidet die aufgerufene Transaktion."
+   ]
+  },
+  {
+   "id": "BM-037-B18",
+   "soll": "Meldet MR21 einen Fehler, wird dessen Text beim Material vermerkt, sonst „Preis geändert“.",
+   "zeilen": [
+    256,
+    257,
+    259,
+    264
+   ],
+   "code": [
+    "256:     READ TABLE gt_bdcmsg INTO DATA(ls_msg) WITH KEY msgtyp = 'E'.",
+    "257:     IF sy-subrc = 0.",
+    "259:       MESSAGE ID ls_msg-msgid TYPE 'E' NUMBER ls_msg-msgnr",
+    "264:       <ls_bew>-meldung = 'Preis geaendert'."
+   ],
+   "X": [
+    "In der Tabelle wird nach einer passenden Zeile gesucht.",
+    "Bei Treffer wird eine Meldung ausgegeben.",
+    "Bei Treffer wird eine Meldung ausgegeben, sonst die ls_bew>-meldung auf Preis geaendert gesetzt.",
+    "Eine Meldung wird ausgegeben.",
+    "Für andere sy-subrc wird die ls_bew>-meldung auf Preis geaendert gesetzt.",
+    "Andere sy-subrc setzen die ls_bew>-meldung auf Preis geaendert."
+   ],
+   "Y": [
+    "Tritt bei der Ausführung der Transaktion MR21 eine Fehlermeldung auf, wird der Status auf Rot gesetzt und der Fehlertext übernommen.",
+    "Wird die Transaktion MR21 fehlerfrei ausgeführt, wird der Status auf Grün gesetzt und der Text Preis geaendert eingetragen."
+   ],
+   "Z": [
+    "In der Tabelle gt_bdcmsg wird nach einer passenden Zeile gesucht.",
+    "Bei Treffer wird der Meldungstext in ls_bew-meldung übernommen, sonst das Feld ls_bew-meldung auf Preis geaendert gesetzt.",
+    "Der Meldungstext wird in ls_bew-meldung übernommen; angezeigt wird dabei nichts.",
+    "Sonst wird das Feld ls_bew-meldung auf Preis geaendert gesetzt."
+   ]
+  },
+  {
+   "id": "BM-037-B19",
+   "soll": "Alle Kandidaten werden mit Buchungskreis, Stichtag, Benutzer und dem Kennzeichen, ob gebucht wurde, in die Historie geschrieben und festgeschrieben.",
+   "zeilen": [
+    280,
+    286,
+    287
+   ],
+   "code": [
+    "280:     ls_hist-gebucht = xsdbool( ls_bew-status = icon_green_light ).",
+    "286:   MODIFY zmm_nsw_hist FROM TABLE lt_hist.",
+    "287:   COMMIT WORK."
+   ],
+   "X": [
+    "Eine Zeile in zmm_nsw_hist wird eingefügt oder überschrieben.",
+    "Es wird eine Zeile eingefügt oder überschrieben und COMMIT WORK ausgeführt.",
+    "Mit COMMIT WORK wird die Änderung persistiert."
+   ],
+   "Y": [
+    "Liegen Abwertungskandidaten vor, werden deren Daten in die Tabelle ZMM_NSW_HIST geschrieben und die Datenbankänderungen bestätigt."
+   ],
+   "Z": [
+    "Eine Zeile in zmm_nsw_hist wird eingefügt oder überschrieben.",
+    "Es wird eine Zeile eingefügt oder überschrieben und COMMIT WORK ausgeführt.",
+    "Mit COMMIT WORK wird die Änderung persistiert."
+   ]
+  },
+  {
+   "id": "BM-037-B20",
+   "soll": "Im Hintergrund wird nur ein Summenprotokoll mit Anzahl Materialien, Kandidaten, geänderten Preisen und Abwertungsbetrag ausgegeben.",
+   "zeilen": [
+    300,
+    341,
+    345
+   ],
+   "code": [
+    "300:   IF sy-batch = abap_true.",
+    "341:   WRITE: / 'Buchungskreis', p_bukrs, 'Stichtag', p_stich DD/MM/YYYY.",
+    "345:   WRITE: / 'Abwertungsbetrag gesamt  :', lv_summe CURRENCY 'EUR'."
+   ],
+   "X": [
+    "Für sy-batch mit dem Wert abap_true wird protokoll_batch aufgerufen und der Block verlassen.",
+    "Bei sy-batch gleich abap_true wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "Buchungskreis, Stichtag, p_stich DD/MM/YYYY, Materialien mit Bestand :, lines( gt_bew ), Abwertungskandidaten :, lv_anz_k, davon Preis geaendert :, lv_anz_g, Abwertungsbetrag gesamt : und lv_summe CURRENCY 'EUR' werden ausgegeben.",
+    "Buchungskreis wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "Buchungskreis wird ausgegeben.",
+    "Stichtag wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "p_stich DD/MM/YYYY wird ausgegeben.",
+    "Abwertungsbetrag gesamt : wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "lv_summe CURRENCY 'EUR' wird ausgegeben."
+   ],
+   "Y": [
+    "Wird das Programm im Hintergrund ausgeführt, wird das Batch-Protokoll aufgerufen und die Bildschirmausgabe übersprungen.",
+    "Im Batch-Protokoll werden Buchungskreis, Stichtag, die Anzahl der Bestandsmaterialien, die Abwertungskandidaten, die geänderten Preise sowie die Gesamtabwertungssumme ausgegeben."
+   ],
+   "Z": [
+    "Wenn das Feld sy-batch gesetzt ist, wird protokoll_batch aufgerufen und der Block verlassen.",
+    "Buchungskreis, Stichtag, p_stich, Materialien mit Bestand :, lines( gt_bew ), Abwertungskandidaten :, lv_anz_k, davon Preis geaendert :, lv_anz_g, Abwertungsbetrag gesamt : und lv_summe werden ausgegeben.",
+    "Buchungskreis wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "Stichtag wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "Abwertungsbetrag gesamt : wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code."
+   ]
+  },
+  {
+   "id": "BM-037-B21",
+   "soll": "Im Dialog wird die Ergebnisliste nach Abwertungsbetrag absteigend als ALV angezeigt; ein Doppelklick öffnet den Materialstamm.",
+   "zeilen": [
+    298,
+    315,
+    357
+   ],
+   "code": [
+    "298:   SORT gt_bew BY abw_wert DESCENDING.",
+    "315:   CALL FUNCTION 'REUSE_ALV_GRID_DISPLAY'",
+    "357:       CALL TRANSACTION 'MM03' AND SKIP FIRST SCREEN."
+   ],
+   "X": [
+    "Es wird REUSE_ALV_FIELDCATALOG_MERGE aufgerufen, die ls_layo-zebra auf X gesetzt, die ls_layo-colwidth_optimize auf X gesetzt und REUSE_ALV_GRID_DISPLAY aufgerufen.",
+    "Der Funktionsbaustein REUSE_ALV_GRID_DISPLAY wird aufgerufen.",
+    "Die Anlage wird über die Transaktion MM03 angestoßen. Ob und was persistiert wird, entscheidet die aufgerufene Transaktion."
+   ],
+   "Y": [
+    "Die ermittelten Bestandsbewertungen werden über den Funktionsbaustein REUSE_ALV_GRID_DISPLAY in einem interaktiven ALV-Grid ausgegeben."
+   ],
+   "Z": [
+    "Es wird REUSE_ALV_FIELDCATALOG_MERGE aufgerufen, das Feld ls_layo-zebra auf X gesetzt, das Feld ls_layo-colwidth_optimize auf X gesetzt und REUSE_ALV_GRID_DISPLAY aufgerufen.",
+    "Der Funktionsbaustein REUSE_ALV_GRID_DISPLAY wird aufgerufen.",
+    "Die Transaktion MM03 wird aufgerufen; das Einstiegsbild wird übersprungen."
+   ]
+  }
+ ]
+}

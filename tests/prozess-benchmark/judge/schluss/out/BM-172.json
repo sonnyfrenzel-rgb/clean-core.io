@@ -1,0 +1,233 @@
+{
+ "id": "BM-172",
+ "urteile": [
+  {
+   "id": "BM-172-B01",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein"
+    ]
+   },
+   "kurz": "X nennt Kopf, EAN-Positionen und Umsatz minus Rabatt; Y/Z nur Tabellenzeile und Unterprogrammaufruf."
+  },
+  {
+   "id": "BM-172-B02",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Z": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "kurz": "X und Y nennen das Übergehen von Nullmengen; Z schweigt."
+  },
+  {
+   "id": "BM-172-B03",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "kurz": "X nennt Status 51 bei fehlender Filiale; Y nur Überspringen ohne Status."
+  },
+  {
+   "id": "BM-172-B04",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Keine Variante nennt Status 51 bei nicht erhaltener Sperre; Y immerhin das Überspringen."
+  },
+  {
+   "id": "BM-172-B05",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein",
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "X nennt Artikelermittlung und Merken unbekannter EANs, aber nicht das Herausnehmen aus der Umsatzrechnung; Y/Z nur generische Selektion."
+  },
+  {
+   "id": "BM-172-B06",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein"
+    ]
+   },
+   "kurz": "X nennt die Kumulation je Artikel; Y/Z nur Unterprogrammnamen."
+  },
+  {
+   "id": "BM-172-B07",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "kurz": "Nur X nennt das Schreiben in die Fehlertabelle unter Übergehen von Dubletten."
+  },
+  {
+   "id": "BM-172-B08",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "kurz": "Nur X nennt Status 51 ohne Artikelumsatz."
+  },
+  {
+   "id": "BM-172-B09",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "X nennt Verbuchung und Status 53 mit/ohne Warnung; Y/Z nur Registrierung des Verbuchungsbausteins."
+  },
+  {
+   "id": "BM-172-B10",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "kurz": "X nennt Freigabe der Sperre fachlich; Y/Z nur Bausteinname."
+  },
+  {
+   "id": "BM-172-B11",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "grammatik"
+    ]
+   },
+   "kurz": "X nennt das Verbuchungskennzeichen fachlich; Y/Z nur Feldname in_update_task."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

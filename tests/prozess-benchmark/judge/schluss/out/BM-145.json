@@ -1,0 +1,102 @@
+{
+ "id": "BM-145",
+ "urteile": [
+  {
+   "id": "BM-145-B01",
+   "X": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein",
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "X nennt den Aktivierungseintrag in TVARVC; Y/Z nur Feld low."
+  },
+  {
+   "id": "BM-145-B02",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "falsch"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "kurz": "X und Z nennen Schalter, Ausnahme HRADMIN01 und Programmende; Y 'Screenfolge beendet'."
+  },
+  {
+   "id": "BM-145-B03",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein",
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Nur X nennt Qualifikationsverknüpfung und Zeitfenster."
+  },
+  {
+   "id": "BM-145-B04",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "kurz": "Alle nur Feldnamen OBJID/SOBID/ENDDA ohne fachliche Benennung."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

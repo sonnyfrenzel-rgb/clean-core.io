@@ -1,0 +1,437 @@
+{
+ "id": "BM-176",
+ "urteile": [
+  {
+   "id": "BM-176-B01",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "abweichend",
+    "mangel": [
+     "falsch"
+    ]
+   },
+   "kurz": "X nennt Portion und Datum; Y nur Portion; Z spricht fälschlich von logischer Datenbank."
+  },
+  {
+   "id": "BM-176-B02",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein",
+     "grammatik"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein",
+     "redundant"
+    ]
+   },
+   "kurz": "X nennt Portion in TE420 und Fehlermeldung; Y/Z generisch mit falschem Feldbezug."
+  },
+  {
+   "id": "BM-176-B03",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein"
+    ]
+   },
+   "kurz": "X fachlich; Y/Z Bedingung nur als Feldnamen."
+  },
+  {
+   "id": "BM-176-B04",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "kurz": "Nur X nennt das Merken der Portion, keine Variante das Protokoll."
+  },
+  {
+   "id": "BM-176-B05",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "X nennt Ableseeinheit und aktiven Vertrag; Y/Z nur Feldliste."
+  },
+  {
+   "id": "BM-176-B06",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "zu_allgemein",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "X nennt Abbruch ohne Anlagen; Y nur Meldungsanzeige, Z nur „eine Meldung“."
+  },
+  {
+   "id": "BM-176-B07",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "X nennt Sperre und Warnung; Y ohne Warnung, Z nur Bausteinaufruf."
+  },
+  {
+   "id": "BM-176-B08",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "X nennt vorhandene Abrechnungssperre und Protokoll; Y/Z nur Feldprüfung."
+  },
+  {
+   "id": "BM-176-B09",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein"
+    ]
+   },
+   "kurz": "X nennt Turnusablesung Grund 01 mit Status ungleich 0; Y/Z nur Methodenaufruf und Zählung."
+  },
+  {
+   "id": "BM-176-B10",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "X nennt RLM/Schätzung aus, Sperre 05 bzw. Warnung; Y/Z nur Blockverlassen."
+  },
+  {
+   "id": "BM-176-B11",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig",
+     "redundant"
+    ]
+   },
+   "kurz": "X nennt Schätzen und Testlauf-Protokoll; Y/Z nur Blockverlassen im Test."
+  },
+  {
+   "id": "BM-176-B12",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig",
+     "redundant"
+    ]
+   },
+   "kurz": "X nennt Schätzbaustein und Erfolgsprotokoll; Y/Z nur Aufruf."
+  },
+  {
+   "id": "BM-176-B13",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "kurz": "Nur X nennt Sperre 06 ohne Vorperiode."
+  },
+  {
+   "id": "BM-176-B14",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "fehlt",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Z": {
+    "urteil": "fehlt",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "kurz": "X nennt Abbruch und Protokollierung; Y/Z nur get_text-Aufruf."
+  },
+  {
+   "id": "BM-176-B15",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "X nennt Sperre am Vertrag mit Testlauf-Variante und Protokoll; Y/Z technisch ohne Protokoll."
+  },
+  {
+   "id": "BM-176-B16",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "kurz": "X nennt Freigabe der Anlagensperre; Y/Z nur Bausteinname."
+  },
+  {
+   "id": "BM-176-B17",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "X nennt Paketgröße, Commit und Rollback im Test; Y/Z ohne Paketbezug."
+  },
+  {
+   "id": "BM-176-B18",
+   "X": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Keine nennt die Übernahme aller Meldungen ins Protokoll; Y/Z nur die Informationsmeldung bei Fehlern im Hintergrund."
+  },
+  {
+   "id": "BM-176-B19",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": [
+     "redundant"
+    ]
+   },
+   "kurz": "Alle nennen die Ausgabe „Kein Protokoll vorhanden“."
+  },
+  {
+   "id": "BM-176-B20",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "falsch"
+    ]
+   },
+   "kurz": "X nennt Fehler/Warnungen im Hintergrund und ALV im Dialog; Y technisch, Z verliert den Filter („jede Zeile“)."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

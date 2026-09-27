@@ -1,0 +1,729 @@
+{
+ "id": "BM-198",
+ "urteile": [
+  {
+   "id": "BM-198-B01",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein",
+     "redundant"
+    ]
+   },
+   "kurz": "Y nennt Schalter ZISU_EDM_EXPORT_ACTIVE und Abbruch; X/Z ohne Schalternamen."
+  },
+  {
+   "id": "BM-198-B02",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "falsch",
+     "technisch"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein",
+     "redundant"
+    ]
+   },
+   "kurz": "Y nennt X/J-Prüfung; X deutet p_mode <> 'X' fälschlich als „nicht gesetzt“."
+  },
+  {
+   "id": "BM-198-B03",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "falsch",
+     "redundant"
+    ]
+   },
+   "kurz": "Y nennt Job und Report mit Parametern; Z spricht fälschlich von Start."
+  },
+  {
+   "id": "BM-198-B04",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Nur Y nennt die Sofortstart-Freigabe."
+  },
+  {
+   "id": "BM-198-B05",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "zu_allgemein",
+     "redundant"
+    ]
+   },
+   "kurz": "Y nennt Fehlermeldungen je Schritt fachlich; Z generisch."
+  },
+  {
+   "id": "BM-198-B06",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "falsch",
+     "redundant"
+    ]
+   },
+   "kurz": "Y nennt zweiten Job mit Abgleichreport; Z spricht fälschlich von Start."
+  },
+  {
+   "id": "BM-198-B07",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein",
+     "redundant"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein",
+     "redundant"
+    ]
+   },
+   "kurz": "Nur Y nennt Ereignis bzw. Nachfolger."
+  },
+  {
+   "id": "BM-198-B08",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "zu_allgemein",
+     "technisch"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "zu_allgemein",
+     "redundant"
+    ]
+   },
+   "kurz": "Y nennt Fehlermeldung, keine die Meldung der Jobnummern fachlich."
+  },
+  {
+   "id": "BM-198-B09",
+   "X": {
+    "urteil": "gleich",
+    "mangel": [
+     "redundant"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "grammatik"
+    ]
+   },
+   "kurz": "Alle nennen die Umleitung für TSCHNEIDER auf das Q-Gateway."
+  },
+  {
+   "id": "BM-198-B10",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein",
+     "redundant"
+    ]
+   },
+   "kurz": "Y nennt Anwendungsprotokoll und Abbruch fachlich."
+  },
+  {
+   "id": "BM-198-B11",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Nur Y nennt Zählpunkte und Empfänger zum Datum."
+  },
+  {
+   "id": "BM-198-B12",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "zu_allgemein",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "zu_allgemein",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Keine sagt, dass der Abschluss trotzdem läuft; Y nennt immerhin Hinweis und Stopp."
+  },
+  {
+   "id": "BM-198-B13",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Nur Y nennt das Aussortieren bereits gesendeter Zählpunkte."
+  },
+  {
+   "id": "BM-198-B14",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Y nennt Profilwerte offener Zählpunkte zum Stichtag."
+  },
+  {
+   "id": "BM-198-B15",
+   "X": {
+    "urteil": "abweichend",
+    "mangel": [
+     "falsch",
+     "technisch"
+    ]
+   },
+   "Y": {
+    "urteil": "abweichend",
+    "mangel": [
+     "falsch"
+    ]
+   },
+   "Z": {
+    "urteil": "abweichend",
+    "mangel": [
+     "falsch",
+     "zu_allgemein"
+    ]
+   },
+   "kurz": "Alle behaupten die Einschränkung auf Stichtag/offene Zählpunkte; keine nennt das Lesen aller Werte bei leerer Treibermenge."
+  },
+  {
+   "id": "BM-198-B16",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "falsch",
+     "zu_allgemein"
+    ]
+   },
+   "kurz": "Y nennt Gruppierung je Zählpunkt; Z mit „jede Zeile“ und „kleinere“."
+  },
+  {
+   "id": "BM-198-B17",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Y nennt Warnung und Status L; X/Z nur write_status."
+  },
+  {
+   "id": "BM-198-B18",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Nur Y nennt gestörte Werte und Status E."
+  },
+  {
+   "id": "BM-198-B19",
+   "X": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "kurz": "Keine Variante beschreibt den Nachrichteninhalt."
+  },
+  {
+   "id": "BM-198-B20",
+   "X": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "kurz": "Keine Variante nennt die Kontrollsumme."
+  },
+  {
+   "id": "BM-198-B21",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Nur Y nennt JSON und die meLo-Anpassung."
+  },
+  {
+   "id": "BM-198-B22",
+   "X": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "kurz": "Y nennt die Ausnahme bei Transformationsfehler, nicht XML/UTF-8."
+  },
+  {
+   "id": "BM-198-B23",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "falsch"
+    ]
+   },
+   "kurz": "Y nennt Größenausgabe ohne Versand; Z mit falschem „kleinere“."
+  },
+  {
+   "id": "BM-198-B24",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "falsch",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "X/Z nur Methodenaufrufe; Z mit unsinniger Zuweisung."
+  },
+  {
+   "id": "BM-198-B25",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "zu_allgemein",
+     "redundant",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "X/Z nur Blockverlassen."
+  },
+  {
+   "id": "BM-198-B26",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "X/Z nennen nur die Abbruchbedingung 2xx/4xx, keine Wiederholung mit Wartezeit."
+  },
+  {
+   "id": "BM-198-B27",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "grammatik",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Y nennt Status S/F mit Protokoll; X/Z ohne Protokoll."
+  },
+  {
+   "id": "BM-198-B28",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Y nennt Statussatz mit Code und Versuchen."
+  },
+  {
+   "id": "BM-198-B29",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "kurz": "Y nennt Festschreiben nach Statusablage."
+  },
+  {
+   "id": "BM-198-B30",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "kurz": "Y nennt das Sichern des Protokolls fachlich."
+  },
+  {
+   "id": "BM-198-B31",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Nur Y nennt Ereignis ZISU_EDM_EXPORT_DONE."
+  },
+  {
+   "id": "BM-198-B32",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "kurz": "Y fachlich; X/Z Literale."
+  }
+ ],
+ "verboten_verletzt": [
+  {
+   "variante": "X",
+   "satz": "Es werden Sätze aus zisu_edm_prof mit dem eingegebenen ab_date zu den Einträgen aus gt_open selektiert.",
+   "grund": "Behauptet Einschränkung auf Stichtag und offene Zählpunkte; bei leerem gt_open entfällt die WHERE-Bedingung."
+  },
+  {
+   "variante": "Y",
+   "satz": "Aus der Tabelle ZISU_EDM_PROF werden alle Profilwerte für die noch offenen Zählpunkte zum Stichtag selektiert.",
+   "grund": "Behauptet Einschränkung auf Stichtag und offene Zählpunkte; bei leerem gt_open entfällt die WHERE-Bedingung."
+  }
+ ],
+ "soll_zweifel": []
+}

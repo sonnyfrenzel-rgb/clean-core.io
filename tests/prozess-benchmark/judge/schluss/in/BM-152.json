@@ -1,0 +1,407 @@
+{
+ "id": "BM-152",
+ "titel": "Zeiterfassungsterminal: Buchungsdatei einlesen und als Zeitereignisse hochladen",
+ "prozess": "Ein Hintergrundjob übernimmt alle 15 Minuten die Buchungsdatei des Terminalservers eines Werks. Er sperrt die Datei exklusiv und bricht hart ab, wenn ein anderer Lauf sie gerade verarbeitet; dann eröffnet er ein Anwendungsprotokoll. Die Datei wird zeilenweise gelesen und zerlegt; Zeilen mit leerem Datum werden als Fehler protokolliert; ungültige Datums- oder Uhrzeitangaben werden nicht erkannt, weil die Zuweisung sie nicht prüft. Zu den Ausweisen werden die heute gültigen Personalnummern und die Zeitereignisse der letzten sieben Tage gelesen. Buchungen mit unbekanntem Ausweis werden protokolliert und verworfen, Buchungsarten auf Kommen, Gehen, Pausenbeginn und Pausenende abgebildet, andere mit Warnung ignoriert. Bereits vorhandene Ereignisse mit gleichem Zeitpunkt gelten als Dublette und werden übergangen. Im Echtlauf werden die übrigen Ereignisse in einem Aufruf hochgeladen; bei einer Fehlermeldung wird alles verworfen, sonst festgeschrieben. Nur nach erfolgreichem Upload wird die Datei archiviert und gelöscht; andernfalls bleibt sie für den nächsten Lauf liegen. Zum Schluss wird das Protokoll gesichert, im Dialog angezeigt und die Sperre freigegeben.",
+ "verboten": [
+  "zpt_term_upload_f01.abap:103 — kein Fachsatz „der Ausweis wird zum Buchungsdatum geprüft“ (Gültigkeit zu heute, sy-datum)",
+  "zpt_term_upload_f01.abap:140 — kein Fachsatz „doppelte Zeilen innerhalb der Datei werden erkannt“ (verglichen wird nur gegen bereits gebuchte Zeitereignisse)",
+  "zpt_term_upload.abap:46 — kein Fachsatz „die Datei wird nach jedem Lauf archiviert“ — im Testlauf, bei abgelehntem Upload und wenn alle Buchungen verworfen wurden, bleibt sie liegen und wird im nächsten Lauf erneut gelesen",
+  "zpt_term_upload_f01.abap:174 — kein Fachsatz „fehlerfreie Ereignisse werden trotzdem gebucht“ (alles oder nichts)",
+  "zpt_term_upload_f01.abap:71 — kein Fachsatz „Zeilen mit ungültigem Datum oder ungültiger Uhrzeit werden erkannt und verworfen“ (die Zuweisung an Typ d/t prüft nicht; conversion_errors wird nie ausgelöst, nur ein leeres Datum wird abgewiesen)"
+ ],
+ "saetze": [
+  {
+   "id": "BM-152-B01",
+   "soll": "Der Job sperrt die Buchungsdatei exklusiv; läuft bereits ein anderer Upload auf derselben Datei, bricht er hart ab.",
+   "zeilen": [
+    58,
+    65,
+    67
+   ],
+   "code": [
+    "58:   CALL FUNCTION 'ENQUEUE_EZPT_TERMFILE'",
+    "65:   IF sy-subrc <> 0.",
+    "67:     MESSAGE a001 WITH p_file."
+   ],
+   "X": [
+    "Die Eingabedatei wird über den Baustein ENQUEUE_EZPT_TERMFILE exklusiv gesperrt.",
+    "Kann die Datei nicht gesperrt werden, wird die Verarbeitung mit der Abbruchmeldung A001 beendet."
+   ],
+   "Y": [
+    "Der Funktionsbaustein ENQUEUE_EZPT_TERMFILE wird aufgerufen.",
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ],
+   "Z": [
+    "Der Funktionsbaustein ENQUEUE_EZPT_TERMFILE wird aufgerufen.",
+    "Ist die Sperre über ENQUEUE_EZPT_TERMFILE nicht zu erhalten, wird eine Abbruchmeldung ausgegeben.",
+    "Die Abbruchmeldung 001 wird ausgegeben; das Programm wird abgebrochen."
+   ]
+  },
+  {
+   "id": "BM-152-B02",
+   "soll": "Für den Lauf wird ein Anwendungsprotokoll zur Datei eröffnet.",
+   "zeilen": [
+    38,
+    77
+   ],
+   "code": [
+    "38:   PERFORM log_create.",
+    "77:   CALL FUNCTION 'BAL_LOG_CREATE'"
+   ],
+   "X": [
+    "Für das Objekt ZPT und das Unterobjekt TERMINAL wird über BAL_LOG_CREATE ein Anwendungsprotokoll angelegt."
+   ],
+   "Y": [
+    "Es wird lock_file aufgerufen, log_create aufgerufen und read_file aufgerufen.",
+    "Das Unterprogramm log_create wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Der Code übergibt ls_log an BAL_LOG_CREATE und übernimmt dessen Ausgabe nach gv_log.",
+    "Das konvertierte Ergebnis wird in gv_log übernommen."
+   ],
+   "Z": [
+    "Die Unterprogramme lock_file, log_create und read_file werden nacheinander aufgerufen, jedes ohne Parameter.",
+    "Das Unterprogramm log_create wird aufgerufen; es ruft BAL_LOG_CREATE auf.",
+    "Der Code übergibt ls_log an BAL_LOG_CREATE und übernimmt dessen Ausgabe nach gv_log."
+   ]
+  },
+  {
+   "id": "BM-152-B03",
+   "soll": "Die Buchungsdatei wird geöffnet; ist sie nicht lesbar, wird das protokolliert und es gibt keine Buchungen.",
+   "zeilen": [
+    108,
+    109,
+    110,
+    111
+   ],
+   "code": [
+    "108:   OPEN DATASET p_file FOR INPUT IN TEXT MODE ENCODING UTF-8.",
+    "109:   IF sy-subrc <> 0.",
+    "110:     PERFORM log_add USING 'E' 'Datei nicht lesbar'.",
+    "111:     RETURN."
+   ],
+   "X": [
+    "Die Eingabedatei wird im Textmodus mit UTF-8-Codierung zum Lesen geöffnet.",
+    "Kann die Eingabedatei nicht geöffnet werden, wird die Fehlermeldung Datei nicht lesbar protokolliert und das Einlesen abgebrochen."
+   ],
+   "Y": [
+    "Ohne Treffer wird log_add aufgerufen und der Block verlassen.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "Das Unterprogramm log_add wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Es wird log_add aufgerufen und der Block verlassen."
+   ],
+   "Z": [
+    "Lässt sich die Datei nicht öffnen, wird log_add aufgerufen und der Block verlassen.",
+    "Das Unterprogramm log_add wird aufgerufen; es ruft BAL_LOG_MSG_ADD_FREE_TEXT auf."
+   ]
+  },
+  {
+   "id": "BM-152-B04",
+   "soll": "Jede Zeile wird gelesen, aufbewahrt und in Terminal, Ausweis, Datum, Uhrzeit und Buchungsart zerlegt.",
+   "zeilen": [
+    114,
+    115,
+    121
+   ],
+   "code": [
+    "114:   DO.",
+    "115:     READ DATASET p_file INTO lv_line.",
+    "121:     SPLIT lv_line AT ';' INTO ls_raw-terminal ls_raw-zausw"
+   ],
+   "X": [],
+   "Y": [],
+   "Z": []
+  },
+  {
+   "id": "BM-152-B05",
+   "soll": "Zeilen mit leerem Datum werden als Fehler protokolliert und übergangen; ein ungültiges Datum oder eine ungültige Uhrzeit wird bei der Zuweisung nicht geprüft und läuft weiter.",
+   "zeilen": [
+    123,
+    127,
+    128
+   ],
+   "code": [
+    "123:     CATCH SYSTEM-EXCEPTIONS conversion_errors = 1.",
+    "127:     IF sy-subrc = 1 OR ls_raw-ldate IS INITIAL.",
+    "128:       PERFORM log_add USING 'E' lv_line."
+   ],
+   "X": [
+    "Tritt bei der Konvertierung von Datum oder Uhrzeit ein Fehler auf oder ist das Buchungsdatum leer, wird die Zeile als Fehler protokolliert und übersprungen."
+   ],
+   "Y": [
+    "Für sy-subrc = 1 OR ls_raw-ldate IS INITIAL wird log_add aufgerufen.",
+    "Das Unterprogramm log_add wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt."
+   ],
+   "Z": [
+    "Wenn der Rückgabewert (sy-subrc) 1 ist oder das Feld ls_raw-ldate leer ist, wird log_add aufgerufen und der Schleifendurchlauf übersprungen.",
+    "Das Unterprogramm log_add wird aufgerufen; es ruft BAL_LOG_MSG_ADD_FREE_TEXT auf."
+   ]
+  },
+  {
+   "id": "BM-152-B06",
+   "soll": "Enthält die Datei keine verwertbare Buchung, wird das im Protokoll vermerkt und nichts gebucht.",
+   "zeilen": [
+    40,
+    41
+   ],
+   "code": [
+    "40:   IF gt_raw IS INITIAL.",
+    "41:     PERFORM log_add USING 'I' 'Keine Buchungen in der Datei'."
+   ],
+   "X": [
+    "Sind keine Buchungsdatensätze in der Datei vorhanden, wird der Hinweis Keine Buchungen in der Datei im Protokoll vermerkt."
+   ],
+   "Y": [
+    "Ohne Treffer wird log_add aufgerufen.",
+    "Ohne Treffer wird log_add aufgerufen, sonst map_events aufgerufen und post_events aufgerufen.",
+    "Das Unterprogramm log_add wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt."
+   ],
+   "Z": [
+    "Ist die Tabelle gt_raw leer, wird log_add aufgerufen, sonst map_events aufgerufen und post_events aufgerufen.",
+    "Das Unterprogramm log_add wird aufgerufen; es ruft BAL_LOG_MSG_ADD_FREE_TEXT auf."
+   ]
+  },
+  {
+   "id": "BM-152-B07",
+   "soll": "Zu den Ausweisnummern werden die heute gültigen Personalnummern gelesen und dazu die Zeitereignisse dieser Mitarbeiter der letzten sieben Tage.",
+   "zeilen": [
+    155,
+    162
+   ],
+   "code": [
+    "155:   SELECT zausw pernr FROM pa0050 INTO TABLE lt_badge",
+    "162:     SELECT pernr ldate ltime FROM teven INTO TABLE lt_teven"
+   ],
+   "X": [
+    "Zu den eingelesenen Ausweisnummern werden aus Tabelle PA0050 die Personalnummern zum aktuellen Tagesdatum gelesen.",
+    "Wurden Ausweise ermittelt, werden aus Tabelle TEVEN die vorhandenen Zeitereignisse der letzten 7 Tage zu den Personalnummern gelesen."
+   ],
+   "Y": [
+    "Es werden Sätze aus pa0050 selektiert.",
+    "Es werden Sätze aus teven selektiert."
+   ],
+   "Z": [
+    "Das Ergebnis enthält zausw und Personalnummer.",
+    "Es werden Sätze aus pa0050 zu den Einträgen aus gt_raw selektiert.",
+    "Das Ergebnis enthält Personalnummer, ldate und ltime.",
+    "Es werden Sätze aus teven zu den Einträgen aus lt_badge selektiert."
+   ]
+  },
+  {
+   "id": "BM-152-B08",
+   "soll": "Buchungen mit unbekanntem Ausweis werden als Fehler protokolliert und nicht übernommen.",
+   "zeilen": [
+    169,
+    170,
+    171
+   ],
+   "code": [
+    "169:     READ TABLE lt_badge INTO ls_badge WITH TABLE KEY zausw = ls_raw-zausw.",
+    "170:     IF sy-subrc <> 0.",
+    "171:       PERFORM log_add USING 'E' |Ausweis { ls_raw-zausw } unbekannt|."
+   ],
+   "X": [
+    "Ist die Ausweisnummer unbekannt, wird eine Fehlermeldung protokolliert und der Datensatz übersprungen."
+   ],
+   "Y": [
+    "In der Tabelle wird nach einer passenden Zeile gesucht.",
+    "Ohne Treffer wird log_add aufgerufen.",
+    "Das Unterprogramm log_add wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt."
+   ],
+   "Z": [
+    "In der Tabelle lt_badge wird nach einer passenden Zeile gesucht.",
+    "Ohne Treffer wird log_add aufgerufen und der Schleifendurchlauf übersprungen.",
+    "Das Unterprogramm log_add wird aufgerufen; es ruft BAL_LOG_MSG_ADD_FREE_TEXT auf."
+   ]
+  },
+  {
+   "id": "BM-152-B09",
+   "soll": "Die Buchungsart wird abgebildet: Kommen auf P10, Gehen auf P20, Pausenbeginn auf P15, Pausenende auf P25; andere Buchungsarten werden mit Warnung ignoriert.",
+   "zeilen": [
+    176,
+    186
+   ],
+   "code": [
+    "176:     CASE ls_raw-kind.",
+    "186:         PERFORM log_add USING 'W' |Buchungsart { ls_raw-kind } ignoriert|."
+   ],
+   "X": [
+    "Die Buchungsart K wird auf Zeitereignistyp P10, G auf P20, PB auf P15 und PE auf P25 abgebildet.",
+    "Ist die Buchungsart unbekannt, wird eine Warnung protokolliert und der Datensatz ignoriert."
+   ],
+   "Y": [
+    "Das Unterprogramm log_add wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt."
+   ],
+   "Z": [
+    "Das Unterprogramm log_add wird aufgerufen; es ruft BAL_LOG_MSG_ADD_FREE_TEXT auf.",
+    "Es wird log_add aufgerufen und der Schleifendurchlauf übersprungen."
+   ]
+  },
+  {
+   "id": "BM-152-B10",
+   "soll": "Gibt es für den Mitarbeiter bereits ein Zeitereignis mit gleichem Datum und gleicher Uhrzeit, wird die Buchung als Dublette stillschweigend übergangen.",
+   "zeilen": [
+    192,
+    193,
+    198
+   ],
+   "code": [
+    "192:     LOOP AT lt_teven INTO ls_teven WHERE pernr = ls_badge-pernr.",
+    "193:       IF ls_teven-ldate = ls_raw-ldate AND ls_teven-ltime = ls_raw-ltime.",
+    "198:     IF lv_dup = abap_true."
+   ],
+   "X": [
+    "Wird in Tabelle TEVEN bereits ein Zeitereignis mit identischem Datum und identischer Uhrzeit für die Personalnummer gefunden, wird der Datensatz als Dublette markiert.",
+    "Handelt es sich um eine Dublette, wird die Buchung übersprungen."
+   ],
+   "Y": [
+    "Jede Zeile aus lt_teven wird einzeln verarbeitet.",
+    "Für ls_teven-ldate = ls_raw-ldate AND ls_teven-ltime = ls_raw-ltime wird der Block verlassen."
+   ],
+   "Z": [
+    "Die Zeilen aus lt_teven, bei denen die Personalnummer gleich ls_badge-pernr ist, werden einzeln verarbeitet.",
+    "Wenn das Feld ls_teven-ldate gleich ls_raw-ldate ist und das Feld ls_teven-ltime gleich ls_raw-ltime ist, wird die Schleife verlassen.",
+    "Wenn das Feld lv_dup gesetzt ist, wird der Schleifendurchlauf übersprungen."
+   ]
+  },
+  {
+   "id": "BM-152-B11",
+   "soll": "Alle übrigen Buchungen werden mit Personalnummer, Datum, Uhrzeit, Ereignisart und Terminal zum Hochladen vorgemerkt.",
+   "zeilen": [
+    202
+   ],
+   "code": [
+    "202:     ls_event-pernr      = ls_badge-pernr."
+   ],
+   "X": [],
+   "Y": [],
+   "Z": []
+  },
+  {
+   "id": "BM-152-B12",
+   "soll": "Im Testlauf oder ohne vorgemerkte Ereignisse wird nur deren Anzahl protokolliert.",
+   "zeilen": [
+    212,
+    214
+   ],
+   "code": [
+    "212:   IF gt_events IS INITIAL OR p_test = abap_true.",
+    "214:     RETURN."
+   ],
+   "X": [
+    "Liegen keine zu verbuchenden Zeitereignisse vor oder ist der Testmodus aktiviert, wird ein Informationshinweis protokolliert und die Buchung übersprungen."
+   ],
+   "Y": [
+    "Für gt_events IS INITIAL OR p_test = abap_true wird log_add aufgerufen und der Block verlassen.",
+    "Es wird log_add aufgerufen und der Block verlassen."
+   ],
+   "Z": [
+    "Wenn das Feld gt_events leer ist oder das Feld p_test gesetzt ist, wird log_add aufgerufen und der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-152-B13",
+   "soll": "Sonst werden alle Ereignisse in einem Aufruf hochgeladen; meldet der Upload auch nur einen Fehler, wird alles verworfen und protokolliert, andernfalls festgeschrieben.",
+   "zeilen": [
+    217,
+    225,
+    226,
+    229
+   ],
+   "code": [
+    "217:   CALL FUNCTION 'BAPI_CC1_UPLOAD_TIMEEVENT'",
+    "225:   IF sy-subrc = 0.",
+    "226:     CALL FUNCTION 'BAPI_TRANSACTION_ROLLBACK'.",
+    "229:     CALL FUNCTION 'BAPI_TRANSACTION_COMMIT'"
+   ],
+   "X": [
+    "Die Zeitereignisse werden über den Baustein BAPI_CC1_UPLOAD_TIMEEVENT verbucht.",
+    "Tritt bei der Verbuchung ein Fehler oder Abbruch auf, wird die Transaktion zurückgerollt und ein Fehler protokolliert.",
+    "Verläuft die Verbuchung fehlerfrei, werden die Zeitereignisse mit BAPI_TRANSACTION_COMMIT festgeschrieben und der Buchungsstatus auf erfolgreich gesetzt."
+   ],
+   "Y": [
+    "Der Funktionsbaustein BAPI_CC1_UPLOAD_TIMEEVENT wird aufgerufen.",
+    "Bei Treffer wird BAPI_TRANSACTION_ROLLBACK aufgerufen und log_add aufgerufen.",
+    "Bei Treffer wird BAPI_TRANSACTION_ROLLBACK aufgerufen und log_add aufgerufen, sonst BAPI_TRANSACTION_COMMIT aufgerufen.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_ROLLBACK wird aufgerufen.",
+    "Es wird BAPI_TRANSACTION_ROLLBACK aufgerufen und log_add aufgerufen.",
+    "Für andere sy-subrc wird BAPI_TRANSACTION_COMMIT aufgerufen.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_COMMIT wird aufgerufen."
+   ],
+   "Z": [
+    "Der Funktionsbaustein BAPI_CC1_UPLOAD_TIMEEVENT wird aufgerufen.",
+    "Bei Treffer wird BAPI_TRANSACTION_ROLLBACK aufgerufen und log_add aufgerufen, sonst BAPI_TRANSACTION_COMMIT aufgerufen.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_ROLLBACK wird aufgerufen.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_COMMIT wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-152-B14",
+   "soll": "Nach erfolgreichem Upload wird der Dateiinhalt in eine Archivdatei mit Zeitstempel geschrieben und die Originaldatei gelöscht; lässt sich die Archivdatei nicht anlegen, bleibt das Original liegen.",
+   "zeilen": [
+    46,
+    241,
+    242,
+    247,
+    250
+   ],
+   "code": [
+    "46:   IF gv_posted = abap_true.",
+    "241:   OPEN DATASET lv_target FOR OUTPUT IN TEXT MODE ENCODING UTF-8.",
+    "242:   IF sy-subrc <> 0.",
+    "247:     TRANSFER lv_line TO lv_target.",
+    "250:   DELETE DATASET p_file."
+   ],
+   "X": [
+    "Wurden Buchungen erfolgreich verbucht, wird die Datei archiviert.",
+    "Die Archivdatei wird mit aktuellem Datum und Uhrzeit im Namen zum Schreiben geöffnet.",
+    "Kann die Archivdatei nicht angelegt werden, wird ein Fehler protokolliert und die Archivierung beendet.",
+    "Die eingelesenen Zeilen werden vollständig in die Archivdatei geschrieben.",
+    "Die ursprüngliche Eingabedatei wird gelöscht."
+   ],
+   "Y": [
+    "Für gv_posted mit dem Wert abap_true wird archive_file aufgerufen.",
+    "Ohne Treffer wird log_add aufgerufen und der Block verlassen.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben."
+   ],
+   "Z": [
+    "Wenn das Feld gv_posted gesetzt ist, wird archive_file aufgerufen.",
+    "Lässt sich die Datei nicht öffnen, wird log_add aufgerufen und vor der Datenbankoperation zurückgekehrt."
+   ]
+  },
+  {
+   "id": "BM-152-B15",
+   "soll": "Das Protokoll wird gesichert und bei Dialogstart angezeigt; zum Schluss wird die Dateisperre freigegeben.",
+   "zeilen": [
+    50,
+    257,
+    263
+   ],
+   "code": [
+    "50:   CALL FUNCTION 'DEQUEUE_EZPT_TERMFILE'",
+    "257:   CALL FUNCTION 'BAL_DB_SAVE'",
+    "263:     CALL FUNCTION 'BAL_DSP_LOG_DISPLAY'"
+   ],
+   "X": [
+    "Das Anwendungsprotokoll wird über BAL_DB_SAVE auf der Datenbank gespeichert.",
+    "Wird das Programm nicht im Hintergrundbetrieb ausgeführt, wird das Protokoll am Bildschirm angezeigt.",
+    "Die Sperre auf der Datei wird über den Baustein DEQUEUE_EZPT_TERMFILE aufgehoben."
+   ],
+   "Y": [
+    "Es wird log_save aufgerufen und DEQUEUE_EZPT_TERMFILE aufgerufen.",
+    "Der Funktionsbaustein DEQUEUE_EZPT_TERMFILE wird aufgerufen.",
+    "Es wird eine Zeile aufgenommen und BAL_DB_SAVE aufgerufen.",
+    "Der Funktionsbaustein BAL_DB_SAVE wird aufgerufen.",
+    "Ohne sy-batch wird BAL_DSP_LOG_DISPLAY aufgerufen.",
+    "Der Funktionsbaustein BAL_DSP_LOG_DISPLAY wird aufgerufen."
+   ],
+   "Z": [
+    "Es wird log_save aufgerufen und DEQUEUE_EZPT_TERMFILE aufgerufen.",
+    "Der Funktionsbaustein DEQUEUE_EZPT_TERMFILE wird aufgerufen.",
+    "Es wird eine Zeile aufgenommen und BAL_DB_SAVE aufgerufen.",
+    "Der Funktionsbaustein BAL_DB_SAVE wird aufgerufen.",
+    "Ist das Feld sy-batch leer, wird BAL_DSP_LOG_DISPLAY aufgerufen.",
+    "Der Funktionsbaustein BAL_DSP_LOG_DISPLAY wird aufgerufen."
+   ]
+  }
+ ]
+}

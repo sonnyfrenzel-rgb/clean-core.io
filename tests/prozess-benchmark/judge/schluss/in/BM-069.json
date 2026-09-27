@@ -1,0 +1,227 @@
+{
+ "id": "BM-069",
+ "titel": "Automatischer Verwendungsentscheid für fehlerfreie Prüflose (Hintergrundjob)",
+ "prozess": "Der Job läuft stündlich je Werk. Er liest alle Prüflose des Werks mit der gewählten Herkunft und dem gewählten Entstehungszeitraum, für die noch kein Verwendungsentscheid vermerkt ist; gibt es keine, meldet er das und endet. Für jedes Los prüft er zuerst, ob inzwischen doch ein Entscheid existiert, und überspringt es dann stillschweigend. Hat das Los ein zurückgewiesenes Merkmal, bleibt es für den Prüfer liegen und wird so protokolliert. Sind noch nicht alle geplanten Merkmale bewertet, wird ebenfalls kein Entscheid gesetzt. Nur vollständig bewertete, fehlerfreie Lose erhalten über die BAPI einen Verwendungsentscheid mit dem vorgegebenen Code aus der Auswahlmenge ZFREI; bei Fehler wird zurückgerollt und der Fehlertext protokolliert, sonst festgeschrieben. Am Ende zeigt der Job das Protokoll als ALV-Liste an.",
+ "verboten": [
+  "gesamte Scheibe — kein Fachsatz „Der Prüflosbestand wird explizit in den frei verwendbaren Bestand umgebucht“ (der Code übergibt keine Bestandsbuchungsdaten; ob der VE bucht, hängt vom Customizing des VE-Codes ab und ist im Code nicht sichtbar)",
+  "source.abap:54 — kein Fachsatz „Lose mit vorhandenem Entscheid werden protokolliert“ (sie werden ohne Protokolleintrag übersprungen)",
+  "source.abap:61 — kein Fachsatz „Zurückgewiesene Lose werden gesperrt oder abgelehnt“ (sie bleiben nur liegen)"
+ ],
+ "saetze": [
+  {
+   "id": "BM-069-B01",
+   "soll": "Es werden Prüflose des gewählten Werks mit der gewählten Herkunft (Vorschlag 04, Wareneingang aus Produktion) und Entstehungsdatum gelesen, für die noch kein Verwendungsentscheid getroffen ist.",
+   "zeilen": [
+    34
+   ],
+   "code": [
+    "34:   SELECT * FROM qals INTO TABLE gt_lose"
+   ],
+   "X": [
+    "Zum Start der Verarbeitung werden alle Prüflose aus Tabelle QALS selektiert, deren Werk dem eingegebenen Werk entspricht, deren Prüflosart und Entstehungsdatum den Selektionskriterien genügen und deren Status STAT35 initial ist."
+   ],
+   "Y": [
+    "Es werden Sätze aus qals mit dem eingegebenen werk selektiert."
+   ],
+   "Z": [
+    "Es werden Prüflose mit dem eingegebenen werk selektiert."
+   ]
+  },
+  {
+   "id": "BM-069-B02",
+   "soll": "Ohne offene Prüflose wird „Keine offenen Prueflose“ gemeldet und der Lauf beendet.",
+   "zeilen": [
+    39,
+    40,
+    41
+   ],
+   "code": [
+    "39:   IF gt_lose IS INITIAL.",
+    "40:     MESSAGE 'Keine offenen Prueflose' TYPE 'S'.",
+    "41:     RETURN."
+   ],
+   "X": [
+    "Wurden keine offenen Prüflose gefunden, wird eine Erfolgsmeldung ausgegeben und die Verarbeitung beendet."
+   ],
+   "Y": [
+    "Ohne Treffer wird eine Meldung ausgegeben und der Block verlassen.",
+    "Ohne Treffer wird der Block verlassen.",
+    "Eine Meldung wird ausgegeben.",
+    "Es wird eine Meldung ausgegeben und der Block verlassen."
+   ],
+   "Z": [
+    "Ohne Treffer wird eine Statusmeldung ausgegeben und der Block verlassen.",
+    "Die Statusmeldung „Keine offenen Prueflose“ wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-069-B03",
+   "soll": "Hat ein Prüflos inzwischen einen Verwendungsentscheid auf Losebene, wird es ohne Protokolleintrag übersprungen.",
+   "zeilen": [
+    51,
+    54,
+    55
+   ],
+   "code": [
+    "51:     SELECT SINGLE vcode FROM qave INTO gv_vcode",
+    "54:     IF sy-subrc = 0.",
+    "55:       CONTINUE."
+   ],
+   "X": [
+    "Aus der Tabelle QAVE wird der Verwendungsentscheidcode zum aktuellen Prüflos mit Kennzeichenart L gelesen.",
+    "Existiert bereits ein Verwendungsentscheid für das Prüflos, wird die Bearbeitung dieses Prüfloses abgebrochen und mit dem nächsten Prüflos fortgefahren."
+   ],
+   "Y": [
+    "vcode des Satzes wird gelesen."
+   ],
+   "Z": [
+    "Das Feld vcode aus qave wird gelesen.",
+    "Bei Treffer wird der Schleifendurchlauf übersprungen."
+   ]
+  },
+  {
+   "id": "BM-069-B04",
+   "soll": "Ist mindestens ein Merkmal zurückgewiesen, bleibt das Los für einen manuellen Verwendungsentscheid liegen und wird so protokolliert.",
+   "zeilen": [
+    58,
+    61,
+    62
+   ],
+   "code": [
+    "58:     SELECT COUNT(*) FROM qamr INTO gv_rej",
+    "61:     IF gv_rej > 0.",
+    "62:       gs_log-ergebnis = 'Merkmal zurueckgewiesen - manueller VE'."
+   ],
+   "X": [
+    "Aus der Tabelle QAMR wird die Anzahl der zurückgewiesenen Merkmale (MBEWERTG = 'R') für das Prüflos ermittelt.",
+    "Ist mindestens ein Merkmal zurückgewiesen (Anzahl größer als 0), wird der Statustext 'Merkmal zurueckgewiesen - manueller VE' ins Protokoll eingetragen und zum nächsten Prüflos gesprungen."
+   ],
+   "Y": [
+    "Die Zahl der Sätze wird ermittelt.",
+    "Für gv_rej größer 0 wird die gs_log-ergebnis auf Merkmal zurueckgewiesen - manueller VE gesetzt und eine Zeile aufgenommen.",
+    "gv_rej größer 0 setzen die gs_log-ergebnis auf Merkmal zurueckgewiesen - manueller VE.",
+    "Es wird die gs_log-ergebnis auf Merkmal zurueckgewiesen - manueller VE gesetzt und eine Zeile aufgenommen."
+   ],
+   "Z": [
+    "Die Zahl der Sätze wird ermittelt.",
+    "Wenn das Feld gv_rej größer als 0 ist, wird das Feld gs_log-ergebnis auf Merkmal zurueckgewiesen - manueller VE gesetzt, eine Zeile aufgenommen und der Schleifendurchlauf übersprungen.",
+    "Wenn das Feld gv_rej größer als 0 ist, wird das Feld gs_log-ergebnis auf Merkmal zurueckgewiesen - manueller VE gesetzt."
+   ]
+  },
+  {
+   "id": "BM-069-B05",
+   "soll": "Sind weniger Merkmale bewertet als geplant, wird kein Entscheid gesetzt und „Offene Merkmale - kein VE“ protokolliert.",
+   "zeilen": [
+    67,
+    69,
+    72,
+    73
+   ],
+   "code": [
+    "67:     SELECT COUNT(*) FROM qamv INTO gv_plan",
+    "69:     SELECT COUNT(*) FROM qamr INTO gv_bew",
+    "72:     IF gv_bew < gv_plan.",
+    "73:       gs_log-ergebnis = 'Offene Merkmale - kein VE'."
+   ],
+   "X": [
+    "Aus der Tabelle QAMV wird die Anzahl aller Vorgangsmerkmale zum Prüflos ermittelt.",
+    "Aus der Tabelle QAMR wird die Anzahl aller bewerteten Merkmale (MBEWERTG ungleich initial) zum Prüflos ermittelt.",
+    "Ist die Anzahl bewerteter Merkmale kleiner als die Anzahl geplanter Merkmale, wird der Statustext 'Offene Merkmale - kein VE' ins Protokoll übernommen und zum nächsten Prüflos gesprungen."
+   ],
+   "Y": [
+    "Die Zahl der Sätze wird ermittelt.",
+    "Die Zahl der Sätze wird ermittelt.",
+    "Für gv_bew kleiner gv_plan wird die gs_log-ergebnis auf Offene Merkmale - kein VE gesetzt und eine Zeile aufgenommen.",
+    "gv_bew kleiner gv_plan setzen die gs_log-ergebnis auf Offene Merkmale - kein VE.",
+    "Es wird die gs_log-ergebnis auf Offene Merkmale - kein VE gesetzt und eine Zeile aufgenommen."
+   ],
+   "Z": [
+    "Die Zahl der Sätze wird ermittelt.",
+    "Die Zahl der Sätze wird ermittelt.",
+    "Wenn das Feld gv_bew kleiner als gv_plan ist, wird das Feld gs_log-ergebnis auf Offene Merkmale - kein VE gesetzt, eine Zeile aufgenommen und der Schleifendurchlauf übersprungen.",
+    "Wenn das Feld gv_bew kleiner als gv_plan ist, wird das Feld gs_log-ergebnis auf Offene Merkmale - kein VE gesetzt."
+   ]
+  },
+  {
+   "id": "BM-069-B06",
+   "soll": "Für vollständig bewertete Lose ohne Zurückweisung wird der Verwendungsentscheid mit dem Code aus dem Parameter (Vorschlag A1) aus der Auswahlmenge ZFREI gesetzt und der Abschluss erzwungen.",
+   "zeilen": [
+    79,
+    86
+   ],
+   "code": [
+    "79:     gs_ud-ud_selected_set     = 'ZFREI'.",
+    "86:     CALL FUNCTION 'BAPI_INSPLOT_SETUSAGEDECISION'"
+   ],
+   "X": [
+    "Für das Prüflos wird über den Funktionsbaustein BAPI_INSPLOT_SETUSAGEDECISION der Verwendungsentscheid mit Codegruppe 'ZFREI', Auswahlmenge 'ZFREI', dem übergebenen Entscheidungscode sowie erzwungenem Abschluss gesetzt."
+   ],
+   "Y": [
+    "Die gs_ud-ud_selected_set wird auf ZFREI gesetzt.",
+    "Es wird die gs_ud-ud_force_completion auf X gesetzt und BAPI_INSPLOT_SETUSAGEDECISION aufgerufen.",
+    "Der Code übergibt gs_los-prueflos an BAPI_INSPLOT_SETUSAGEDECISION und übernimmt dessen Ausgabe nach gs_ret.",
+    "Das konvertierte Ergebnis wird in gs_ret übernommen."
+   ],
+   "Z": [
+    "Das Feld gs_ud-ud_selected_set wird auf ZFREI gesetzt.",
+    "Es wird das Feld gs_ud-ud_force_completion auf X gesetzt und BAPI_INSPLOT_SETUSAGEDECISION aufgerufen.",
+    "Der Code übergibt gs_los-prueflos an BAPI_INSPLOT_SETUSAGEDECISION und übernimmt dessen Ausgabe nach gs_ret."
+   ]
+  },
+  {
+   "id": "BM-069-B07",
+   "soll": "Scheitert der Entscheid, wird zurückgerollt und der Fehlertext protokolliert; sonst wird festgeschrieben und „VE gesetzt“ protokolliert.",
+   "zeilen": [
+    94,
+    95,
+    98
+   ],
+   "code": [
+    "94:     IF gs_ret-type CA 'EA'.",
+    "95:       CALL FUNCTION 'BAPI_TRANSACTION_ROLLBACK'.",
+    "98:       CALL FUNCTION 'BAPI_TRANSACTION_COMMIT'"
+   ],
+   "X": [
+    "Tritt beim Setzen des Verwendungsentscheids ein Fehler- oder Abbruchstatus (E oder A) auf, werden die Änderungen über BAPI_TRANSACTION_ROLLBACK zurückgerollt und die Fehlermeldung im Protokoll vermerkt.",
+    "War das Setzen des Verwendungsentscheids erfolgreich, werden die Änderungen über BAPI_TRANSACTION_COMMIT mit Wartekennzeichen festgeschrieben und der Statustext 'VE gesetzt' im Protokoll erfasst."
+   ],
+   "Y": [
+    "Für gs_ret-type CA 'EA' wird BAPI_TRANSACTION_ROLLBACK aufgerufen.",
+    "Für gs_ret-type CA 'EA' wird BAPI_TRANSACTION_ROLLBACK aufgerufen, sonst BAPI_TRANSACTION_COMMIT aufgerufen und die gs_log-ergebnis auf VE gesetzt gesetzt.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_ROLLBACK wird aufgerufen.",
+    "Sonst wird BAPI_TRANSACTION_COMMIT aufgerufen und die gs_log-ergebnis auf VE gesetzt gesetzt.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_COMMIT wird aufgerufen.",
+    "Es wird BAPI_TRANSACTION_COMMIT aufgerufen und die gs_log-ergebnis auf VE gesetzt gesetzt."
+   ],
+   "Z": [
+    "Wenn die Bedingung „gs_ret-type CA 'EA'“ erfüllt ist, wird BAPI_TRANSACTION_ROLLBACK aufgerufen, sonst BAPI_TRANSACTION_COMMIT aufgerufen und das Feld gs_log-ergebnis auf VE gesetzt gesetzt.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_ROLLBACK wird aufgerufen.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_COMMIT wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-069-B08",
+   "soll": "Das Protokoll aller nicht übersprungenen Lose wird als ALV-Liste angezeigt.",
+   "zeilen": [
+    106,
+    108
+   ],
+   "code": [
+    "106:   cl_salv_table=>factory( IMPORTING r_salv_table = go_alv",
+    "108:   go_alv->display( )."
+   ],
+   "X": [
+    "Für die gesammelten Protokollzeilen wird eine ALV-Tabelle instanziiert.",
+    "Die ALV-Tabelle mit dem Verarbeitungsprotokoll wird am Bildschirm zur Anzeige gebracht."
+   ],
+   "Y": [
+    "Der Rückgabewert der Methode factory von cl_salv_table wird nach cl_salv_table übernommen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "Die Methode display von go_alv wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ],
+   "Z": [
+    "Die Methode factory von cl_salv_table wird aufgerufen; ihr Ergebnis wird in go_alv übernommen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "Die Methode display von go_alv wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ]
+  }
+ ]
+}

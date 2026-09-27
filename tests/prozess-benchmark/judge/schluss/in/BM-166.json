@@ -1,0 +1,195 @@
+{
+ "id": "BM-166",
+ "titel": "IS-Retail: Aktionsmenge nach Filialquote auf die Filialen eines Verteilzentrums aufteilen",
+ "prozess": "Der Disponent startet den Report mit Material, Aktionsmenge, Verteilzentrum und Testkennzeichen. Schon im Selektionsbild wird geprüft, dass das Werk ein Verteilzentrum ist, sonst wird die Eingabe mit Fehlermeldung abgewiesen. Danach liest der Report aus einer Quotentabelle alle Filialen dieses Verteilzentrums, die als Filiale angelegt sind; ohne Quote endet er mit einer Meldung. Die Summe der positiven Quoten ist die Bezugsgröße. Jede Filiale mit positiver Quote erhält den abgeschnittenen Anteil der Aktionsmenge, der verbleibende Rest geht vollständig an die Filiale mit der größten Zuteilung. Im Echtlauf wird die Aufteilung je Filiale in einer eigenen Tabelle gespeichert und festgeschrieben, ohne Fehlerprüfung. In beiden Läufen wird die Zuteilung als ALV-Liste gezeigt. Standard-Aufteiler oder Folgebelege entstehen nicht.",
+ "verboten": [
+  "source.abap:72 — kein Fachsatz „es werden Aufteiler, Filialbestellungen oder Lieferungen angelegt“: geschrieben wird nur die eigene Tabelle ZRT_AUFTEIL",
+  "source.abap:52 — kein Fachsatz „die Menge wird kaufmännisch gerundet“: der Anteil wird abgeschnitten, der gesamte Rest landet bei einer einzigen Filiale",
+  "source.abap:73 — kein Fachsatz „bei Schreibfehlern wird zurückgerollt“: der Rückgabewert von MODIFY wird nicht geprüft"
+ ],
+ "saetze": [
+  {
+   "id": "BM-166-B01",
+   "soll": "Das eingegebene Werk muss ein Verteilzentrum sein; andernfalls wird die Eingabe mit einer Fehlermeldung abgewiesen.",
+   "zeilen": [
+    26,
+    29,
+    30
+   ],
+   "code": [
+    "26:   SELECT SINGLE werks FROM t001w INTO @DATA(lv_werks)",
+    "29:   IF sy-subrc <> 0.",
+    "30:     MESSAGE e020 WITH p_vz.          \"kein Verteilzentrum"
+   ],
+   "X": [
+    "Aus der Tabelle T001W wird das Werk zum eingegebenen Verteilzentrum mit dem Kennzeichen B gelesen.",
+    "Wird kein passendes Verteilzentrum in Tabelle T001W gefunden, wird die Fehlermeldung E020 mit dem Verteilzentrum ausgegeben."
+   ],
+   "Y": [
+    "Das Werk des Werks mit dem eingegebenen Werk wird gelesen.",
+    "Ohne Treffer wird eine Fehlermeldung ausgegeben.",
+    "Die Fehlermeldung 020 wird ausgegeben."
+   ],
+   "Z": [
+    "werks des Satzes mit dem eingegebenen werks wird gelesen.",
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-166-B02",
+   "soll": "Es werden die Filialen des Verteilzentrums mit ihrer gepflegten Quote gelesen; nur Werke vom Typ Filiale zählen.",
+   "zeilen": [
+    34
+   ],
+   "code": [
+    "34:   SELECT q~filiale, q~quote"
+   ],
+   "X": [
+    "Aus der Tabelle ZRT_QUOTE werden verknüpft mit Tabelle T001W die Filiale und die Quote für das angegebene Verteilzentrum gelesen, sofern der Werkstyp der Filiale gleich A ist."
+   ],
+   "Y": [
+    "Das Ergebnis enthält filiale und quote.",
+    "Es werden Sätze aus zrt_quote mit dem eingegebenen q~vz selektiert."
+   ],
+   "Z": [
+    "Das Ergebnis enthält q~filiale und q~quote.",
+    "Es werden Sätze aus zrt_quote mit dem eingegebenen q~vz selektiert."
+   ]
+  },
+  {
+   "id": "BM-166-B03",
+   "soll": "Gibt es keine Filialquote, endet der Lauf mit einer als Fehler angezeigten Hinweismeldung ohne Aufteilung.",
+   "zeilen": [
+    40,
+    41,
+    42
+   ],
+   "code": [
+    "40:   IF lt_filq IS INITIAL.",
+    "41:     MESSAGE s021 WITH p_vz DISPLAY LIKE 'E'.",
+    "42:     RETURN."
+   ],
+   "X": [
+    "Werden keine Filialquoten gefunden, wird die Meldung S021 mit dem Verteilzentrum als Fehler angezeigt und die Verarbeitung abgebrochen."
+   ],
+   "Y": [
+    "Ohne Treffer wird eine Statusmeldung ausgegeben und vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "Die Statusmeldung 021 wird ausgegeben, angezeigt wie eine Fehlermeldung."
+   ],
+   "Z": [
+    "Ohne Treffer wird eine Meldung ausgegeben und der Block verlassen.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "Eine Meldung wird ausgegeben.",
+    "Es wird eine Meldung ausgegeben und der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-166-B04",
+   "soll": "Die Summe aller positiven Quoten bildet die Bezugsgröße der Aufteilung.",
+   "zeilen": [
+    45
+   ],
+   "code": [
+    "45:   DATA(lv_summe) = REDUCE zrt_quote_wert( INIT s = 0"
+   ],
+   "X": [
+    "Die Summe aller Filialquoten mit einem Wert größer als 0 wird berechnet."
+   ],
+   "Y": [],
+   "Z": []
+  },
+  {
+   "id": "BM-166-B05",
+   "soll": "Jede Filiale mit positiver Quote erhält den abgerundeten Anteil der Aktionsmenge nach ihrem Quotenanteil; Filialen ohne positive Quote gehen leer aus.",
+   "zeilen": [
+    51,
+    52
+   ],
+   "code": [
+    "51:     CHECK ls_filq-quote > 0.",
+    "52:     DATA(lv_anteil) = CONV menge_d( trunc( p_menge * ls_filq-quote / lv_summe ) )."
+   ],
+   "X": [
+    "Für jede gefundene Filialquote wird geprüft, ob die Quote größer als 0 ist; andernfalls wird die Filiale übersprungen.",
+    "Der ganzzahlige Mengenanteil der Filiale an der Aktionsmenge wird anhand der Gesamtsumme der Quoten berechnet, zur Aufteilungsliste hinzugefügt und von der Restmenge subtrahiert."
+   ],
+   "Y": [
+    "Nur wenn das Feld ls_filq-quote größer als 0 ist, wird der Schleifendurchlauf fortgesetzt; sonst wird er übersprungen, und die Schleife läuft mit dem nächsten Durchlauf weiter."
+   ],
+   "Z": [
+    "Nur ls_filq-quote größer 0 gehen weiter; kleinere werden übersprungen, die Schleife läuft weiter."
+   ]
+  },
+  {
+   "id": "BM-166-B06",
+   "soll": "Der Rundungsrest wird der Filiale mit der größten Zuteilung zugeschlagen.",
+   "zeilen": [
+    59,
+    61
+   ],
+   "code": [
+    "59:   READ TABLE lt_auft ASSIGNING FIELD-SYMBOL(<ls_auft>) INDEX 1.",
+    "61:     <ls_auft>-menge = <ls_auft>-menge + lv_rest."
+   ],
+   "X": [
+    "Die Aufteilungsliste wird absteigend nach der zugeteilten Menge sortiert und der erste Eintrag wird gelesen.",
+    "Wenn die Filiale mit der größten Zuteilung erfolgreich ermittelt wurde, wird die verbliebene Restmenge zu deren Menge addiert."
+   ],
+   "Y": [
+    "In der Tabelle lt_auft wird nach einer passenden Zeile gesucht."
+   ],
+   "Z": [
+    "In der Tabelle wird nach einer passenden Zeile gesucht."
+   ]
+  },
+  {
+   "id": "BM-166-B07",
+   "soll": "Nur ohne Testkennzeichen wird die Aufteilung je Filiale mit Material, Verteilzentrum, Datum und Benutzer gespeichert und festgeschrieben.",
+   "zeilen": [
+    64,
+    72,
+    73
+   ],
+   "code": [
+    "64:   IF p_test = abap_false.",
+    "72:     MODIFY zrt_aufteil FROM TABLE lt_db.",
+    "73:     COMMIT WORK."
+   ],
+   "X": [
+    "Wenn der Testlauf nicht aktiv ist, wird die Verbuchung der Aufteilungsdaten eingeleitet.",
+    "Die ermittelten Aufteilungsdaten werden in die Tabelle ZRT_AUFTEIL fortgeschrieben und auf der Datenbank verbindlich gesichert."
+   ],
+   "Y": [
+    "Wenn das Feld p_test nicht gesetzt ist, wird eine Zeile eingefügt oder überschrieben und COMMIT WORK ausgeführt.",
+    "Eine Zeile in zrt_aufteil wird eingefügt oder überschrieben. sy-subrc wird danach nicht ausgewertet.",
+    "Mit COMMIT WORK wird die Änderung persistiert."
+   ],
+   "Z": [
+    "Für p_test mit dem Wert abap_false wird eine Zeile eingefügt oder überschrieben und COMMIT WORK ausgeführt.",
+    "Eine Zeile in zrt_aufteil wird eingefügt oder überschrieben. sy-subrc wird danach nicht ausgewertet.",
+    "Es wird eine Zeile eingefügt oder überschrieben und COMMIT WORK ausgeführt.",
+    "Mit COMMIT WORK wird die Änderung persistiert."
+   ]
+  },
+  {
+   "id": "BM-166-B08",
+   "soll": "Die Zuteilung je Filiale wird als Liste angezeigt, im Testlauf ebenso wie im Echtlauf.",
+   "zeilen": [
+    79
+   ],
+   "code": [
+    "79:       lo_alv->display( )."
+   ],
+   "X": [
+    "Die ALV-Tabelle mit den Filialzuteilungen wird zur Anzeige gebracht."
+   ],
+   "Y": [
+    "Die Methode display von lo_alv wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ],
+   "Z": [
+    "Die Methode display von lo_alv wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ]
+  }
+ ]
+}

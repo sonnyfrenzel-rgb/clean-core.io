@@ -1,0 +1,220 @@
+{
+ "id": "BM-010",
+ "titel": "Auftragssperre bei überfälligen Posten: BSID summieren, KNA1 direkt ändern",
+ "prozess": "Der Report läuft täglich nachts als Job, mit Buchungskreisen, optionalen Kunden, Überfälligkeitstagen, Mindestbetrag und Testlaufkennzeichen. Er liest die offenen Soll-Posten der Kunden ohne Sonderhauptbuchvorgänge. Posten, deren Fälligkeit mehr als die eingegebenen Tage zurückliegt, summiert er je Kunde. Für jeden Kunden, dessen Summe den Mindestbetrag erreicht, prüft er die zentrale Auftragssperre; ist schon eine gesetzt, protokolliert er das. Im Testlauf listet er die Kandidaten nur auf. Im Echtlauf sperrt er den Kundenstamm, überspringt den Kunden mit Protokoll, wenn dieser gerade bearbeitet wird, und setzt sonst die Auftragssperre 07 direkt im Kundenstamm, gibt die Sperre frei und protokolliert. Am Ende schreibt er alle Änderungen mit einem COMMIT fest. Gutschriften werden nicht gegengerechnet und Beträge verschiedener Buchungskreise werden ohne Währungsumrechnung addiert.",
+ "verboten": [
+  "source.abap:34 — kein Fachsatz „Gutschriften und Zahlungen werden gegengerechnet“: es werden nur Soll-Posten (SHKZG = 'S') gelesen",
+  "source.abap:44 — kein Fachsatz „je Buchungskreis und Währung summiert“: summiert wird nur je Kunde über alle ausgewählten Buchungskreise in Hauswährungsbeträgen",
+  "source.abap:69 — kein Fachsatz „die Sperre wird mit Änderungsbeleg im Business Partner gesetzt“: das UPDATE schreibt direkt in KNA1",
+  "gesamte Scheibe — kein Fachsatz „Kunden werden wieder entsperrt, wenn die Posten bezahlt sind“: der Report setzt nur Sperren"
+ ],
+ "saetze": [
+  {
+   "id": "BM-010-B01",
+   "soll": "Es werden die offenen Soll-Posten ohne Sonderhauptbuchkennzeichen der ausgewählten Buchungskreise und Kunden gelesen.",
+   "zeilen": [
+    34
+   ],
+   "code": [
+    "34:   SELECT kunnr dmbtr zfbdt zbd1t FROM bsid INTO TABLE gt_op"
+   ],
+   "X": [
+    "Es werden Sätze aus bsid selektiert."
+   ],
+   "Y": [
+    "Das Ergebnis enthält Kundennummer, Betrag in Hauswährung, zfbdt und zbd1t.",
+    "Es werden offene Debitorenposten selektiert."
+   ],
+   "Z": [
+    "Aus Tabelle BSID werden Kundennummer (kunnr), Betrag in Hauswährung (dmbtr), Basisdatum für Fälligkeitsberechnung (zfbdt) und Tage der Skontofrist 1 (zbd1t) für die selektierten Buchungskreise (s_bukrs) und Kundennummern (s_kunnr) gelesen, sofern kein Sonderhauptbuch-Kennzeichen (umskz = space) gesetzt ist und das Soll/Haben-Kennzeichen gleich 'S' ist."
+   ]
+  },
+  {
+   "id": "BM-010-B02",
+   "soll": "Nur Posten, deren Fälligkeit (Basisdatum plus Skontotage 1) mehr als die eingegebene Anzahl Tage zurückliegt, werden je Kunde aufsummiert.",
+   "zeilen": [
+    41,
+    44
+   ],
+   "code": [
+    "41:     CHECK gs_op-zfbdt + gs_op-zbd1t < sy-datum - p_tage.",
+    "44:     COLLECT gs_sum INTO gt_sum."
+   ],
+   "X": [
+    "Nur gs_op-zfbdt + gs_op-zbd1t < sy-datum - p_tage gehen weiter; kleinere werden übersprungen, die Schleife läuft weiter."
+   ],
+   "Y": [
+    "Nur wenn die Bedingung „gs_op-zfbdt + gs_op-zbd1t < sy-datum - p_tage“ erfüllt ist, wird der Schleifendurchlauf fortgesetzt; sonst wird er übersprungen, und die Schleife läuft mit dem nächsten Durchlauf weiter."
+   ],
+   "Z": [
+    "Ist die Summe aus Basisdatum (zfbdt) und Tagen der Skontofrist 1 (zbd1t) kleiner als das Tagesdatum abzüglich der vorgegebenen Tage (p_tage), werden Kundennummer (kunnr) und Betrag (dmbtr) in die Summentabelle verdichtet.",
+    "Ist die Summe aus Basisdatum (zfbdt) und Tagen der Skontofrist 1 (zbd1t) nicht kleiner als das Tagesdatum abzüglich der vorgegebenen Tage (p_tage), wird die Bearbeitung des aktuellen Postens abgebrochen und mit dem nächsten Posten fortgefahren."
+   ]
+  },
+  {
+   "id": "BM-010-B03",
+   "soll": "Kunden, deren überfällige Summe unter dem Mindestbetrag liegt, bleiben unberührt.",
+   "zeilen": [
+    48
+   ],
+   "code": [
+    "48:     CHECK gs_sum-betrag >= p_minbt."
+   ],
+   "X": [
+    "Nur Beträge ab p_minbt gehen weiter; kleinere werden übersprungen, die Schleife läuft weiter."
+   ],
+   "Y": [
+    "Nur Beträge ab p_minbt gehen weiter; kleinere werden übersprungen, die Schleife läuft weiter."
+   ],
+   "Z": [
+    "Erreicht oder überschreitet der kumulierte Betrag den Mindestbetrag (p_minbt), wird die Prüfung für den jeweiligen Debitor fortgeführt.",
+    "Liegt der kumulierte Betrag unter dem Mindestbetrag (p_minbt), wird der aktuelle Debitor übersprungen und mit dem nächsten fortgefahren."
+   ]
+  },
+  {
+   "id": "BM-010-B04",
+   "soll": "Hat der Kunde bereits eine Auftragssperre, wird das nur protokolliert.",
+   "zeilen": [
+    49,
+    50,
+    51
+   ],
+   "code": [
+    "49:     SELECT SINGLE aufsd FROM kna1 INTO gv_aufsd WHERE kunnr = gs_sum-kunnr.",
+    "50:     IF gv_aufsd IS NOT INITIAL.",
+    "51:       WRITE: / gs_sum-kunnr, 'bereits gesperrt:', gv_aufsd."
+   ],
+   "X": [
+    "aufsd des Kunden wird gelesen.",
+    "Mit einer nicht leeren gv_aufsd wird Kundennummer ausgegeben, bereits gesperrt: ausgegeben und gv_aufsd ausgegeben.",
+    "Bei Treffern werden Kundennummer, bereits gesperrt: und gv_aufsd als Liste ausgegeben.",
+    "Kundennummer wird ausgegeben.",
+    "bereits gesperrt: wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "gv_aufsd wird ausgegeben."
+   ],
+   "Y": [
+    "Die Auftragssperre des Kunden wird gelesen.",
+    "Ist die Auftragssperre nicht leer, wird Kundennummer ausgegeben, bereits gesperrt: ausgegeben, Auftragssperre ausgegeben und der Schleifendurchlauf übersprungen.",
+    "bereits gesperrt: wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code."
+   ],
+   "Z": [
+    "Aus der Tabelle KNA1 wird das Feld Zentrale Auftragssperre (aufsd) für die jeweilige Kundennummer (kunnr) gelesen.",
+    "Ist das Feld Auftragssperre (aufsd) in Tabelle KNA1 initial, wird mit der Überprüfung des Testlaufs fortgefahren.",
+    "Ist das Feld Auftragssperre (aufsd) in Tabelle KNA1 nicht initial, werden die Kundennummer, der Text 'bereits gesperrt:' und der vorhandene Sperrwert (aufsd) ausgegeben und die Bearbeitung dieses Debitors wird beendet."
+   ]
+  },
+  {
+   "id": "BM-010-B05",
+   "soll": "Im Testlauf werden die Sperrkandidaten mit Betrag nur aufgelistet.",
+   "zeilen": [
+    54,
+    55
+   ],
+   "code": [
+    "54:     IF p_test = abap_true.",
+    "55:       WRITE: / gs_sum-kunnr, gs_sum-betrag, 'würde gesperrt (Testlauf)'."
+   ],
+   "X": [
+    "Für p_test mit dem Wert abap_true wird Kundennummer ausgegeben, Betrag ausgegeben und würde gesperrt (Testlauf) ausgegeben.",
+    "Bei Treffern werden Kundennummer, Betrag und würde gesperrt (Testlauf) als Liste ausgegeben.",
+    "Kundennummer wird ausgegeben.",
+    "Betrag wird ausgegeben.",
+    "würde gesperrt (Testlauf) wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code."
+   ],
+   "Y": [
+    "Wenn das Feld p_test gesetzt ist, wird Kundennummer ausgegeben, Betrag ausgegeben, würde gesperrt (Testlauf) ausgegeben und der Schleifendurchlauf übersprungen.",
+    "würde gesperrt (Testlauf) wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code."
+   ],
+   "Z": [
+    "Ist der Parameter Testlauf (p_test) nicht aktiv gesetzt, wird mit dem Sperren des Debitors fortgefahren.",
+    "Ist der Parameter Testlauf (p_test) aktiv gesetzt ('X'), werden die Kundennummer, der kumulierte Betrag und der Text 'würde gesperrt (Testlauf)' ausgegeben und die Bearbeitung dieses Debitors wird beendet."
+   ]
+  },
+  {
+   "id": "BM-010-B06",
+   "soll": "Im Echtlauf wird der Kundenstamm gesperrt; ist er gerade in Bearbeitung, wird der Kunde übersprungen und der Bearbeiter protokolliert.",
+   "zeilen": [
+    58,
+    65,
+    66
+   ],
+   "code": [
+    "58:     CALL FUNCTION 'ENQUEUE_EXKNA1'",
+    "65:     IF sy-subrc <> 0.",
+    "66:       WRITE: / gs_sum-kunnr, 'in Bearbeitung durch', sy-msgv1."
+   ],
+   "X": [
+    "Der Funktionsbaustein ENQUEUE_EXKNA1 wird aufgerufen.",
+    "Ohne Treffer wird Kundennummer ausgegeben, in Bearbeitung durch ausgegeben und sy-msgv1 ausgegeben.",
+    "Bei Treffern werden Kundennummer, in Bearbeitung durch und sy-msgv1 als Liste ausgegeben.",
+    "Kundennummer wird ausgegeben.",
+    "in Bearbeitung durch wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "sy-msgv1 wird ausgegeben."
+   ],
+   "Y": [
+    "Der Funktionsbaustein ENQUEUE_EXKNA1 wird aufgerufen.",
+    "Ist die Sperre über ENQUEUE_EXKNA1 nicht zu erhalten, wird Kundennummer ausgegeben, in Bearbeitung durch ausgegeben, sy-msgv1 ausgegeben und der Schleifendurchlauf übersprungen.",
+    "in Bearbeitung durch wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code."
+   ],
+   "Z": [
+    "Über den Funktionsbaustein ENQUEUE_EXKNA1 wird eine exklusive Sperre für die Kundennummer (kunnr) gesetzt.",
+    "Treten beim Setzen der Sperre Ausnahmen wie foreign_lock, system_failure oder sonstige Fehler auf, wird ein Fehlerstatus über sy-subrc zurückgeliefert.",
+    "Ist der Rückgabewert (sy-subrc) ungleich 0, werden die Kundennummer, der Text 'in Bearbeitung durch' und der Benutzername aus sy-msgv1 ausgegeben und die Bearbeitung dieses Debitors wird abgebrochen."
+   ]
+  },
+  {
+   "id": "BM-010-B07",
+   "soll": "Sonst erhält der Kunde die zentrale Auftragssperre 07, die Kundensperre wird wieder freigegeben und der Vorgang protokolliert.",
+   "zeilen": [
+    69,
+    70,
+    73
+   ],
+   "code": [
+    "69:     UPDATE kna1 SET aufsd = '07' WHERE kunnr = gs_sum-kunnr.",
+    "70:     CALL FUNCTION 'DEQUEUE_EXKNA1'",
+    "73:     WRITE: / gs_sum-kunnr, gs_sum-betrag, 'Auftragssperre 07 gesetzt'."
+   ],
+   "X": [
+    "Es wird eine Zeile geändert, DEQUEUE_EXKNA1 aufgerufen, Kundennummer ausgegeben, Betrag ausgegeben und Auftragssperre 07 gesetzt ausgegeben.",
+    "Die aufsd des Kunden wird geändert. Ob eine Zeile getroffen wird, garantiert der Code nicht. sy-subrc wird danach nicht ausgewertet.",
+    "Der Funktionsbaustein DEQUEUE_EXKNA1 wird aufgerufen.",
+    "Bei Treffern werden Kundennummer, Betrag und Auftragssperre 07 gesetzt als Liste ausgegeben.",
+    "Kundennummer wird ausgegeben.",
+    "Betrag wird ausgegeben.",
+    "Auftragssperre 07 gesetzt wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code."
+   ],
+   "Y": [
+    "Es wird eine Zeile geändert, DEQUEUE_EXKNA1 aufgerufen, Kundennummer ausgegeben, Betrag ausgegeben und Auftragssperre 07 gesetzt ausgegeben.",
+    "Die Auftragssperre des Kunden wird geändert. Ob eine Zeile getroffen wird, garantiert der Code nicht. sy-subrc wird danach nicht ausgewertet.",
+    "Der Funktionsbaustein DEQUEUE_EXKNA1 wird aufgerufen.",
+    "Bei Treffern werden Kundennummer, Betrag und Auftragssperre 07 gesetzt als Liste ausgegeben.",
+    "Auftragssperre 07 gesetzt wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code."
+   ],
+   "Z": [
+    "In Tabelle KNA1 wird das Feld Auftragssperre (aufsd) für die Kundennummer (kunnr) auf den Wert '07' geändert.",
+    "Über den Funktionsbaustein DEQUEUE_EXKNA1 wird die zuvor gesetzte exklusive Sperre für die Kundennummer (kunnr) wieder freigegeben.",
+    "Die Kundennummer, der kumulierte Betrag und der Text 'Auftragssperre 07 gesetzt' werden ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-010-B08",
+   "soll": "Am Ende werden alle gesetzten Sperren festgeschrieben.",
+   "zeilen": [
+    76
+   ],
+   "code": [
+    "76:   COMMIT WORK."
+   ],
+   "X": [
+    "Mit COMMIT WORK wird die Änderung persistiert."
+   ],
+   "Y": [
+    "Mit COMMIT WORK wird die Änderung persistiert."
+   ],
+   "Z": [
+    "Die vorgenommenen Änderungen auf der Datenbank werden mit COMMIT WORK verbindlich festgeschrieben."
+   ]
+  }
+ ]
+}

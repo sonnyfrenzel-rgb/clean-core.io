@@ -1,0 +1,544 @@
+{
+ "id": "BM-179",
+ "titel": "Transport und Handling Units: Frachtkosten aus HU-Gewicht und Spediteurtarif berechnen, Frachtkostenbelege per Batch-Input",
+ "prozess": "Ein Nachtjob startet den Report mit Spediteuren, Transportarten, dem vorbelegten Zeitraum der letzten sieben Tage, Frachtkostenart, Batch-Input-Modus und Testkennzeichen; unbekannte Einzelspediteure werden abgewiesen. Er liest die abgefertigten Transporte des Zeitraums, entfernt die bereits mit Frachtkosten belegten und beendet die Verarbeitung mit Hinweis, wenn keiner übrig bleibt. Je Transport wird das Frachtgewicht als Summe der Bruttogewichte aller Handling Units seiner Lieferungen in kg gebildet; eine unbekannte Gewichtseinheit macht den Transport fehlerhaft. Die Fracht ergibt sich aus Tarifzone der Route und der passenden Gewichtsstaffel des Spediteurtarifs, mindestens die Mindestfracht, zuzüglich eines gepflegten Dieselzuschlags; fehlen Gewicht, Zone oder Tarif, erhält der Transport einen Fehler. Im Echtlauf wird für jeden fehlerfreien Transport, der noch nicht im eigenen Protokoll steht, die Fracht für den Kalkulationsexit ins Memory gestellt und der Frachtkostenbeleg per Batch-Input angelegt; Fehlermeldungen machen den Transport fehlerhaft, sonst werden Belegnummer und Werte protokolliert. Die Liste zeigt je Spediteur die Transporte mit Gewicht, Fracht, Beleg oder Fehler und eine Frachtsumme, jede Seite mit Kopf. Ein Doppelklick auf eine Zeile mit Beleg öffnet den Frachtkostenbeleg. Eine Übergabe an die Finanzbuchhaltung findet nicht statt.",
+ "verboten": [
+  "zle_frachtkosten_f01.abap:49 — kein Fachsatz „es zählen nur die äußeren Handling Units“: alle HUs der Lieferung werden addiert, geschachtelte HUs gehen doppelt ins Frachtgewicht ein",
+  "zle_frachtkosten_f01.abap:136 — kein Fachsatz „das Frachtgewicht kommt aus dem Bruttogewicht der Lieferung“: das FORM wird nie gerufen",
+  "zle_frachtkosten_f02.abap:30 — kein Fachsatz „der Frachtkostenbeleg enthält sicher den berechneten Betrag“: der Betrag wird nur ins Memory gestellt, ob der Kalkulationsexit ihn übernimmt, liegt außerhalb dieses Falls",
+  "gesamte Scheibe — kein Fachsatz „die Frachtkosten werden an die Finanzbuchhaltung übergeben“: der Batch-Input für VI02 ist auskommentiert"
+ ],
+ "saetze": [
+  {
+   "id": "BM-179-B01",
+   "soll": "Der Abfertigungszeitraum wird mit den letzten sieben Tagen bis gestern vorbelegt.",
+   "zeilen": [
+    28,
+    33
+   ],
+   "code": [
+    "28: INITIALIZATION.",
+    "33:   APPEND s_datum."
+   ],
+   "X": [
+    "Eine Zeile wird aufgenommen."
+   ],
+   "Y": [
+    "Beim Initialisieren wird der Selektionszeitraum für das Abfertigungsdatum s_datum auf die letzten 7 Tage bis gestern vorbesetzt."
+   ],
+   "Z": [
+    "Eine Zeile wird aufgenommen."
+   ]
+  },
+  {
+   "id": "BM-179-B02",
+   "soll": "Einzeln eingegebene Spediteure, die nicht existieren, werden im Selektionsbild abgewiesen.",
+   "zeilen": [
+    36,
+    37,
+    40
+   ],
+   "code": [
+    "36:   LOOP AT s_tdlnr INTO DATA(ls_tdlnr) WHERE option = 'EQ'.",
+    "37:     SELECT SINGLE lifnr FROM lfa1 INTO @DATA(lv_lifnr)",
+    "40:       MESSAGE e001 WITH ls_tdlnr-low.        \"Spediteur & unbekannt"
+   ],
+   "X": [
+    "Die Zeilen aus s_tdlnr, bei denen das Feld option gleich EQ ist, werden einzeln verarbeitet.",
+    "Die Lieferantennummer des Lieferanten wird gelesen.",
+    "Ohne Treffer wird eine Fehlermeldung ausgegeben.",
+    "Die Fehlermeldung 001 wird ausgegeben."
+   ],
+   "Y": [
+    "Für jede Einzelselektion der Spediteurnummer s_tdlnr wird die Lieferantennummer in Tabelle LFA1 geprüft.",
+    "Aus Tabelle LFA1 wird das Feld LIFNR für den eingegebenen Spediteur s_tdlnr-low gelesen.",
+    "Wird der Spediteur in Tabelle LFA1 nicht gefunden, wird die Fehlermeldung E001 ausgegeben."
+   ],
+   "Z": [
+    "Jede Zeile aus s_tdlnr wird einzeln verarbeitet.",
+    "lifnr des Satzes wird gelesen.",
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-179-B03",
+   "soll": "Es werden die abgefertigten Transporte der gewählten Spediteure und Transportarten im Zeitraum gelesen.",
+   "zeilen": [
+    83
+   ],
+   "code": [
+    "83:   SELECT tdlnr, tknum, shtyp, route, dtabf"
+   ],
+   "X": [
+    "Das Ergebnis enthält tdlnr, tknum, shtyp, Route und dtabf.",
+    "Es werden Transporte selektiert."
+   ],
+   "Y": [
+    "Aus Tabelle VTTK werden die Felder TDLNR, TKNUM, SHTYP, ROUTE und DTABF für Transporte selektiert, deren Abfertigungsstatus STABF den Wert X hat und die den Selektionskriterien entsprechen."
+   ],
+   "Z": [
+    "Das Ergebnis enthält tdlnr, tknum, shtyp, Route und dtabf.",
+    "Es werden Sätze aus vttk selektiert."
+   ]
+  },
+  {
+   "id": "BM-179-B04",
+   "soll": "Transporte, zu denen bereits eine Frachtkostenposition existiert, werden entfernt.",
+   "zeilen": [
+    93,
+    98
+   ],
+   "code": [
+    "93:   SELECT rebel FROM vfkp",
+    "98:     DELETE gt_tr WHERE tknum = ls_vfkp-rebel."
+   ],
+   "X": [
+    "Es werden Sätze aus vfkp zu den Einträgen aus gt_tr selektiert."
+   ],
+   "Y": [
+    "Aus Tabelle VFKP werden die Belegpositionen REBEL zu allen selektierten Transportnummern gelesen.",
+    "Für jede gefundene Abrechnungsposition aus Tabelle VFKP wird der entsprechende Transport aus der internen Transporttabelle gelöscht."
+   ],
+   "Z": [
+    "Es werden Sätze aus vfkp selektiert."
+   ]
+  },
+  {
+   "id": "BM-179-B05",
+   "soll": "Bleibt kein Transport, wird ein Hinweis ausgegeben und die Verarbeitung beendet; die Liste wird trotzdem aufgebaut.",
+   "zeilen": [
+    46,
+    47,
+    48
+   ],
+   "code": [
+    "46:   IF gt_tr IS INITIAL.",
+    "47:     MESSAGE s002.                            \"nichts abzurechnen",
+    "48:     STOP."
+   ],
+   "X": [
+    "Ist die Tabelle gt_tr leer, wird eine Statusmeldung ausgegeben.",
+    "Die Statusmeldung 002 wird ausgegeben."
+   ],
+   "Y": [
+    "Sind keine Transporte zur Abrechnung vorhanden, wird die Erfolgsmeldung S002 ausgegeben und die Verarbeitung gestoppt."
+   ],
+   "Z": [
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-179-B06",
+   "soll": "Das Frachtgewicht eines Transports ist die Summe der Bruttogewichte aller Handling Units der Lieferungen im Transport, umgerechnet in kg.",
+   "zeilen": [
+    113,
+    121,
+    130,
+    139
+   ],
+   "code": [
+    "113:   SELECT tknum, vbeln FROM vttp",
+    "121:   SELECT vpobjkey, exidv, brgew, gewei FROM vekp",
+    "130:         lv_kg = SWITCH #( ls_hu-gewei",
+    "139:         <ls_tr>-gewicht_kg = <ls_tr>-gewicht_kg + lv_kg."
+   ],
+   "X": [
+    "Das Ergebnis enthält tknum und Belegnummer.",
+    "Es werden Transportpositionen zu den Einträgen aus gt_tr selektiert.",
+    "Das Ergebnis enthält vpobjkey, exidv, brgew und gewei.",
+    "Es werden Sätze aus vekp zu den Einträgen aus lt_vttp selektiert."
+   ],
+   "Y": [
+    "Aus Tabelle VTTP werden die Lieferungsnummern VBELN zu allen selektierten Transportnummern TKNUM gelesen.",
+    "Aus Tabelle VEKP werden Packmitteldaten VPOBJKEY, EXIDV, BRGEW und GEWEI zu den Lieferungsnummern mit VPOBJ gleich 01 gelesen."
+   ],
+   "Z": [
+    "Das Ergebnis enthält tknum und Belegnummer.",
+    "Es werden Sätze aus vttp selektiert.",
+    "Das Ergebnis enthält vpobjkey, exidv, brgew und gewei.",
+    "Es werden Sätze aus vekp selektiert."
+   ]
+  },
+  {
+   "id": "BM-179-B07",
+   "soll": "Hat eine Handling Unit eine andere Gewichtseinheit als kg, g oder t, erhält der Transport einen Fehler und die übrigen Handling Units dieser Lieferung werden nicht mehr gezählt.",
+   "zeilen": [
+    135,
+    136
+   ],
+   "code": [
+    "135:         IF lv_kg < 0.",
+    "136:           <ls_tr>-fehler = |HU { ls_hu-exidv }: Gewichtseinheit { ls_hu-gewei }|."
+   ],
+   "X": [
+    "Wenn das Feld lv_kg kleiner als 0 ist, wird die Schleife verlassen."
+   ],
+   "Y": [
+    "Besitzt eine Handling Unit eine ungültige Gewichtseinheit (Berechnungswert kleiner 0), wird ein Fehlertext gesetzt und die Bearbeitung weiterer Handling Units des Transports abgebrochen."
+   ],
+   "Z": [
+    "Für negative lv_kg wird der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-179-B08",
+   "soll": "Ohne Frachtgewicht wird keine Fracht berechnet, der Transport erhält einen Fehler.",
+   "zeilen": [
+    153
+   ],
+   "code": [
+    "153:   IF cs_tr-gewicht_kg <= 0."
+   ],
+   "X": [
+    "Wenn das Feld cs_tr-gewicht_kg höchstens 0 ist, wird das Feld cs_tr-fehler auf Kein HU-Gewicht ermittelbar gesetzt und der Block verlassen.",
+    "Wenn das Feld cs_tr-gewicht_kg höchstens 0 ist, wird das Feld cs_tr-fehler auf Kein HU-Gewicht ermittelbar gesetzt."
+   ],
+   "Y": [
+    "Ist das ermittelte Frachtgewicht kleiner oder gleich null, wird der Fehlertext Kein HU-Gewicht ermittelbar gesetzt und die Frachtberechnung beendet."
+   ],
+   "Z": [
+    "Für cs_tr-gewicht_kg bis einschließlich 0 wird die cs_tr-fehler auf Kein HU-Gewicht ermittelbar gesetzt und der Block verlassen.",
+    "cs_tr-gewicht_kg bis einschließlich 0 setzen die cs_tr-fehler auf Kein HU-Gewicht ermittelbar."
+   ]
+  },
+  {
+   "id": "BM-179-B09",
+   "soll": "Zur Route wird die Tarifzone ermittelt; fehlt sie, erhält der Transport einen Fehler.",
+   "zeilen": [
+    158,
+    160
+   ],
+   "code": [
+    "158:   SELECT SINGLE zone FROM zle_route_zone INTO lv_zone",
+    "160:   IF sy-subrc <> 0."
+   ],
+   "X": [
+    "Das Feld zone aus zle_route_zone wird gelesen.",
+    "Ohne Treffer wird der Block verlassen."
+   ],
+   "Y": [
+    "Aus Tabelle ZLE_ROUTE_ZONE wird die Tarifzone ZONE zur Route des Transports gelesen.",
+    "Wird zur Route keine Tarifzone in Tabelle ZLE_ROUTE_ZONE gefunden, wird ein entsprechender Fehlertext gesetzt und die Frachtberechnung beendet."
+   ],
+   "Z": [
+    "zone des Satzes wird gelesen.",
+    "Ohne Treffer wird der Block verlassen.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben."
+   ]
+  },
+  {
+   "id": "BM-179-B10",
+   "soll": "Aus dem Spediteurtarif wird die kleinste Gewichtsstaffel gewählt, die das Gewicht abdeckt, und davon der jüngste zum Abfertigungsdatum gültige Preis; ohne Tarif erhält der Transport einen Fehler.",
+   "zeilen": [
+    166,
+    175,
+    176
+   ],
+   "code": [
+    "166:   SELECT preis_100kg, mindestfracht",
+    "175:   READ TABLE lt_tarif INTO DATA(ls_tarif) INDEX 1.",
+    "176:   IF sy-subrc <> 0."
+   ],
+   "X": [
+    "Das Ergebnis enthält preis_100kg und mindestfracht.",
+    "Es werden Sätze aus zle_tarif selektiert.",
+    "In der Tabelle lt_tarif wird nach einer passenden Zeile gesucht.",
+    "Ohne Treffer wird der Block verlassen."
+   ],
+   "Y": [
+    "Aus Tabelle ZLE_TARIF werden PREIS_100KG und MINDESTFRACHT für den Spediteur und die Zone gelesen, deren Höchstgewicht mindestens dem Transportgewicht entspricht und deren Gültigkeitsbeginn vor oder am Abfertigungsdatum liegt.",
+    "Wird kein passender Tarif in Tabelle ZLE_TARIF gefunden, wird ein Fehlertext vermerkt und die Frachtberechnung beendet."
+   ],
+   "Z": [
+    "Das Ergebnis enthält preis_100kg und mindestfracht.",
+    "Es werden Sätze aus zle_tarif selektiert.",
+    "In der Tabelle wird nach einer passenden Zeile gesucht.",
+    "Ohne Treffer wird der Block verlassen.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben."
+   ]
+  },
+  {
+   "id": "BM-179-B11",
+   "soll": "Die Fracht ist Gewicht in 100 kg mal Preis je 100 kg, mindestens aber die Mindestfracht; ein Rechenfehler macht den Transport fehlerhaft.",
+   "zeilen": [
+    182,
+    184,
+    189
+   ],
+   "code": [
+    "182:     cs_tr-fracht = cs_tr-gewicht_kg / 100 * ls_tarif-preis_100kg.",
+    "184:   IF sy-subrc = 4.",
+    "189:   cs_tr-fracht = nmax( val1 = cs_tr-fracht val2 = ls_tarif-mindestfracht )."
+   ],
+   "X": [
+    "Bei Rückgabewert 4 wird das Feld cs_tr-fehler auf Rechenfehler Fracht gesetzt und der Block verlassen.",
+    "Wenn der Rückgabewert (sy-subrc) 4 ist, wird das Feld cs_tr-fehler auf Rechenfehler Fracht gesetzt."
+   ],
+   "Y": [
+    "Tritt bei der Multiplikation des Gewichts mit dem 100-kg-Tarifpreis ein arithmetischer Fehler auf, wird der Fehlertext Rechenfehler Fracht gesetzt und abgebrochen."
+   ],
+   "Z": [
+    "Für sy-subrc mit dem Wert 4 wird die cs_tr-fehler auf Rechenfehler Fracht gesetzt und der Block verlassen.",
+    "Bei sy-subrc gleich 4 wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "sy-subrc mit dem Wert 4 setzen die cs_tr-fehler auf Rechenfehler Fracht."
+   ]
+  },
+  {
+   "id": "BM-179-B12",
+   "soll": "Ist ein Dieselzuschlag gepflegt, wird die Fracht um diesen Prozentsatz erhöht.",
+   "zeilen": [
+    192,
+    196,
+    197
+   ],
+   "code": [
+    "192:   SELECT SINGLE low FROM tvarvc INTO @DATA(lv_diesel)",
+    "196:   IF sy-subrc = 0.",
+    "197:     cs_tr-fracht = cs_tr-fracht * ( 1 + CONV decfloat16( lv_diesel ) / 100 )."
+   ],
+   "X": [
+    "Das Feld low des Variableneintrags wird gelesen."
+   ],
+   "Y": [
+    "Aus Tabelle TVARVC wird der Dieselzuschlagssatz LOW für den Variablennamen ZLE_DIESELZUSCHLAG mit Typ P und Nummer 0000 gelesen.",
+    "Wurde ein Dieselzuschlag in Tabelle TVARVC gefunden, wird der Frachtbetrag um den ermittelten Prozentsatz erhöht."
+   ],
+   "Z": [
+    "low des Satzes wird gelesen."
+   ]
+  },
+  {
+   "id": "BM-179-B13",
+   "soll": "Nur fehlerfreie Transporte werden weiterverarbeitet, und nur im Echtlauf wird ein Frachtkostenbeleg angelegt.",
+   "zeilen": [
+    55,
+    56
+   ],
+   "code": [
+    "55:     CHECK <gs_tr>-fehler IS INITIAL.",
+    "56:     IF p_test = abap_false."
+   ],
+   "X": [
+    "Nur wenn das Feld gs_tr-fehler leer ist, wird der Schleifendurchlauf fortgesetzt; sonst wird er übersprungen, und die Schleife läuft mit dem nächsten Durchlauf weiter.",
+    "Wenn das Feld p_test nicht gesetzt ist, wird kostenbeleg_anlegen aufgerufen."
+   ],
+   "Y": [
+    "Ist für den Transport ein Fehlertext vermerkt, wird die Belegerstellung für diesen Transport übersprungen.",
+    "Ist der Testlauf nicht aktiv (p_test ist abap_false), wird das Unterprogramm KOSTENBELEG_ANLEGEN aufgerufen."
+   ],
+   "Z": [
+    "Nur Eine leere gs_tr>-fehler gehen weiter; kleinere werden übersprungen, die Schleife läuft weiter.",
+    "Für p_test mit dem Wert abap_false wird kostenbeleg_anlegen aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-179-B14",
+   "soll": "Steht der Transport bereits im eigenen Frachtkostenprotokoll, wird kein weiterer Beleg angelegt und der Transport mit dem vorhandenen Beleg als bereits abgerechnet gekennzeichnet.",
+   "zeilen": [
+    251,
+    253
+   ],
+   "code": [
+    "251:   SELECT SINGLE fknum FROM zle_fk_log INTO @DATA(lv_fknum_alt)",
+    "253:   IF sy-subrc = 0."
+   ],
+   "X": [
+    "Das Feld fknum aus zle_fk_log wird gelesen.",
+    "Bei Treffer wird das Feld cs_tr-fehler auf Bereits abgerechnet (Protokoll) gesetzt und vor der Datenbankoperation zurückgekehrt.",
+    "Wenn ein Treffer vorliegt, wird das Feld cs_tr-fehler auf Bereits abgerechnet (Protokoll) gesetzt."
+   ],
+   "Y": [
+    "Aus Tabelle ZLE_FK_LOG wird geprüft, ob zur Transportnummer TKNUM bereits ein Frachtkostenbeleg FKNUM vorhanden ist.",
+    "Wurde der Transport bereits in Tabelle ZLE_FK_LOG protokolliert, wird die Belegnummer übernommen, der Fehlertext Bereits abgerechnet (Protokoll) gesetzt und die Belegerstellung beendet."
+   ],
+   "Z": [
+    "fknum des Satzes wird gelesen.",
+    "Bei Treffer wird die cs_tr-fehler auf Bereits abgerechnet (Protokoll) gesetzt und der Block verlassen.",
+    "Bei Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "sy-subrc mit dem Wert 0 setzen die cs_tr-fehler auf Bereits abgerechnet (Protokoll)."
+   ]
+  },
+  {
+   "id": "BM-179-B15",
+   "soll": "Fracht und Transportnummer werden für den Kalkulationsexit der Frachtkostenberechnung im ABAP-Memory bereitgestellt und nach der Anlage wieder freigegeben.",
+   "zeilen": [
+    259,
+    276
+   ],
+   "code": [
+    "259:   EXPORT fracht = cs_tr-fracht",
+    "276:   FREE MEMORY ID 'ZLE_FRACHT'."
+   ],
+   "X": [],
+   "Y": [],
+   "Z": []
+  },
+  {
+   "id": "BM-179-B16",
+   "soll": "Der Frachtkostenbeleg wird mit Frachtkostenart und Transportnummer per Batch-Input angelegt und synchron verbucht.",
+   "zeilen": [
+    262,
+    272
+   ],
+   "code": [
+    "262:   bdc_dynpro 'SAPMV54A' '0010'.",
+    "272:   CALL TRANSACTION 'VI01' USING gt_bdc"
+   ],
+   "X": [
+    "Die Transaktion VI01 wird per Batch-Input angestoßen. Ob und was persistiert wird, entscheidet die aufgerufene Transaktion."
+   ],
+   "Y": [
+    "Über den Aufruf der Transaktion VI01 mittels Batch-Input wird der Frachtkostenbeleg mit Frachtkostenart p_fkart und Transportnummer cs_tr-tknum angelegt."
+   ],
+   "Z": [
+    "Die Anlage wird über die Transaktion VI01 angestoßen. Ob und was persistiert wird, entscheidet die aufgerufene Transaktion."
+   ]
+  },
+  {
+   "id": "BM-179-B17",
+   "soll": "Endet die Anlage mit Fehler- oder Abbruchmeldung, erhält der Transport einen Fehler.",
+   "zeilen": [
+    278
+   ],
+   "code": [
+    "278:   IF line_exists( lt_msg[ msgtyp = 'E' ] ) OR line_exists( lt_msg[ msgtyp = 'A' ] )."
+   ],
+   "X": [
+    "Wenn die Bedingung „line_exists( lt_msg[ msgtyp = 'E' ] ) OR line_exists( lt_msg[ msgtyp = 'A' ] )“ erfüllt ist, wird das Feld cs_tr-fehler auf VI01 mit Fehler beendet gesetzt und der Block verlassen.",
+    "Wenn die Bedingung „line_exists( lt_msg[ msgtyp = 'E' ] ) OR line_exists( lt_msg[ msgtyp = 'A' ] )“ erfüllt ist, wird das Feld cs_tr-fehler auf VI01 mit Fehler beendet gesetzt."
+   ],
+   "Y": [
+    "Wurden beim Aufruf von Transaktion VI01 Fehlermeldungen vom Typ E oder A gemeldet, wird der Fehlertext VI01 mit Fehler beendet gesetzt und abgebrochen."
+   ],
+   "Z": [
+    "Für line_exists( lt_msg[ msgtyp = 'E' ] ) OR line_exists( lt_msg[ msgtyp = 'A' ] ) wird die cs_tr-fehler auf VI01 mit Fehler beendet gesetzt und der Block verlassen.",
+    "line_exists( lt_msg[ msgtyp = 'E' ] ) OR line_exists( lt_msg[ msgtyp = 'A' ] ) setzen die cs_tr-fehler auf VI01 mit Fehler beendet."
+   ]
+  },
+  {
+   "id": "BM-179-B18",
+   "soll": "Die Belegnummer wird aus der Erfolgsmeldung übernommen; Transport, Beleg, Spediteur, Fracht und Gewicht werden protokolliert.",
+   "zeilen": [
+    284,
+    287,
+    297
+   ],
+   "code": [
+    "284:   READ TABLE lt_msg INTO DATA(ls_msg) WITH KEY msgtyp = 'S'",
+    "287:     cs_tr-fknum = ls_msg-msgv1.",
+    "297:   INSERT zle_fk_log FROM ls_log."
+   ],
+   "X": [
+    "In der Tabelle lt_msg wird nach einer passenden Zeile gesucht."
+   ],
+   "Y": [
+    "Wird in den Batch-Input-Meldungen eine Erfolgsmeldung vom Typ S der Nachrichtenklasse VY gefunden, wird die Belegnummer aus dem Nachrichtenparameter msgv1 übernommen.",
+    "In Tabelle ZLE_FK_LOG wird ein neuer Protokollsatz mit Transportnummer, Belegnummer, Spediteur, Fracht, Gewicht, Tagesdatum und Benutzername eingefügt."
+   ],
+   "Z": [
+    "In der Tabelle wird nach einer passenden Zeile gesucht."
+   ]
+  },
+  {
+   "id": "BM-179-B19",
+   "soll": "Die Liste zeigt je Spediteur alle Transporte mit Gewicht, Fracht, Beleg bzw. Fehler und eine Frachtsumme je Spediteur.",
+   "zeilen": [
+    339,
+    341,
+    344,
+    349,
+    350,
+    351
+   ],
+   "code": [
+    "339:     AT NEW tdlnr.",
+    "341:       WRITE: / 'Spediteur', ls_tr-tdlnr COLOR COL_GROUP.",
+    "344:     WRITE: /3 ls_tr-tknum, ls_tr-shtyp, ls_tr-dtabf,",
+    "349:     AT END OF tdlnr.",
+    "350:       SUM.",
+    "351:       WRITE: /3 'Summe Spediteur', 60 ls_tr-fracht COLOR COL_TOTAL."
+   ],
+   "X": [
+    "Bei Treffern werden Spediteur und ls_tr-tdlnr als Liste ausgegeben.",
+    "Spediteur wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "Bei Treffern werden ls_tr-tknum, ls_tr-shtyp, ls_tr-dtabf, ls_tr-gewicht_kg, ls_tr-fracht, ls_tr-fknum und ls_tr-fehler als Liste ausgegeben.",
+    "Bei Treffern werden Summe Spediteur und ls_tr-fracht als Liste ausgegeben.",
+    "Summe Spediteur wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code."
+   ],
+   "Y": [
+    "Bei jedem neuen Spediteur wird im Protokoll eine Leerzeile erzeugt und die Spediteurnummer ausgegeben.",
+    "Für jeden Transport werden Transportnummer, Transportart, Abfertigungsdatum, Gewicht, Fracht, Frachtkostenbeleg und Fehlertext in die Liste geschrieben.",
+    "Am Gruppenwechselende eines Spediteurs wird die Summe der Frachtkosten ausgegeben."
+   ],
+   "Z": [
+    "Bei Treffern werden Spediteur und ls_tr-tdlnr COLOR COL_GROUP als Liste ausgegeben.",
+    "Spediteur wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "ls_tr-tdlnr COLOR COL_GROUP wird ausgegeben.",
+    "Bei Treffern werden 3 ls_tr-tknum, ls_tr-shtyp, ls_tr-dtabf, ls_tr-gewicht_kg, ls_tr-fracht, ls_tr-fknum und ls_tr-fehler als Liste ausgegeben.",
+    "3 ls_tr-tknum wird ausgegeben.",
+    "ls_tr-shtyp wird ausgegeben.",
+    "ls_tr-dtabf wird ausgegeben.",
+    "Bei Treffern werden 3 'Summe Spediteur' und 60 ls_tr-fracht COLOR COL_TOTAL als Liste ausgegeben.",
+    "3 'Summe Spediteur' wird ausgegeben.",
+    "60 ls_tr-fracht COLOR COL_TOTAL wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-179-B20",
+   "soll": "Jede Seite erhält einen Kopf mit Zeitraum, Testkennzeichen, Datum und Seitennummer.",
+   "zeilen": [
+    64,
+    360
+   ],
+   "code": [
+    "64: TOP-OF-PAGE.",
+    "360:   WRITE: / 'Frachtkostenbelege', s_datum-low, '-', s_datum-high,"
+   ],
+   "X": [
+    "Frachtkostenbelege, s_datum-low, -, s_datum-high, Testlauf:, p_test, sy-datum, sy-uzeit, Seite und sy-pagno werden ausgegeben.",
+    "Frachtkostenbelege wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "- wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code."
+   ],
+   "Y": [
+    "Im Seitenkopf werden das Abfertigungsdatum von s_datum-low bis s_datum-high, das Testlauf-Kennzeichen, das Systemdatum, die Uhrzeit sowie die Seitenzahl ausgegeben und unterstrichen."
+   ],
+   "Z": [
+    "Frachtkostenbelege, s_datum-low, -, s_datum-high, Testlauf:, p_test, 50 sy-datum, sy-uzeit, Seite und sy-pagno werden ausgegeben.",
+    "Frachtkostenbelege wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "s_datum-low wird ausgegeben.",
+    "- wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "s_datum-high wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-179-B21",
+   "soll": "Ein Doppelklick auf eine Transportzeile mit Beleg öffnet den Frachtkostenbeleg in der Anzeige.",
+   "zeilen": [
+    67,
+    69,
+    70,
+    71
+   ],
+   "code": [
+    "67: AT LINE-SELECTION.",
+    "69:   CHECK gv_fknum IS NOT INITIAL.",
+    "70:   SET PARAMETER ID 'FKK' FIELD gv_fknum.",
+    "71:   CALL TRANSACTION 'VI03' AND SKIP FIRST SCREEN."
+   ],
+   "X": [
+    "Nur wenn das Feld gv_fknum nicht leer ist, geht es weiter; sonst wird der Ereignisblock AT LINE-SELECTION an dieser Stelle verlassen.",
+    "Die Transaktion VI03 wird aufgerufen; das Einstiegsbild wird übersprungen."
+   ],
+   "Y": [
+    "Wurde keine Frachtkostenbelegnummer im Feld gv_fknum hinterlegt, wird der Verzweigungsschritt abgebrochen.",
+    "Ist eine Frachtkostenbelegnummer vorhanden, wird die Transaktion VI03 unter Übergabe der Belegnummer im Parameter FKK aufgerufen und das Feld gv_fknum anschließend geleert."
+   ],
+   "Z": [
+    "Nur Eine nicht leere gv_fknum gehen weiter; kleinere werden übersprungen, die Schleife läuft weiter.",
+    "Die Anlage wird über die Transaktion VI03 angestoßen. Ob und was persistiert wird, entscheidet die aufgerufene Transaktion."
+   ]
+  }
+ ]
+}

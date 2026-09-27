@@ -1,0 +1,89 @@
+{
+ "id": "BM-065",
+ "urteile": [
+  {
+   "id": "BM-065-B01",
+   "X": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "grammatik"
+    ]
+   },
+   "kurz": "X nennt Vorgangsmenge und rückgemeldete Menge; Y und Z nur Feldnamen."
+  },
+  {
+   "id": "BM-065-B02",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "zu_allgemein"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "zu_allgemein",
+     "redundant"
+    ]
+   },
+   "kurz": "Nur X nennt die Fehlermeldung zum fehlenden Vorgang."
+  },
+  {
+   "id": "BM-065-B03",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "kurz": "Nur X nennt die Berechnung der offenen Menge."
+  },
+  {
+   "id": "BM-065-B04",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein",
+     "redundant"
+    ]
+   },
+   "kurz": "X fachlich; Y und Z Code-Bedingung."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

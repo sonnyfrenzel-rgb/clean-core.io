@@ -1,0 +1,80 @@
+{
+ "id": "BM-125",
+ "titel": "Treasury: am Stichtag fällige Festgelder listen (VTBFHA, STOP, toter Zweig IF 1 = 2)",
+ "prozess": "Der Händler startet den Report morgens mit Buchungskreis und Stichtag (Vorschlag heute). Der Report liest alle Festgeldgeschäfte (Produktart 51A) des Buchungskreises, deren Laufzeit am Stichtag endet. Gibt es keine, schreibt er einen Hinweis mit dem Stichtag und beendet den Lauf. Sonst listet er jedes fällige Geschäft mit Geschäftsnummer, Geschäftspartner und Währung. Eine frühere Übergabe an eine Cash-Management-Tabelle steht noch im Code, ist aber durch die Bedingung 1 = 2 stillgelegt; die zugehörige Routine, die diese Tabelle löschen und neu füllen würde, wird nie ausgeführt. Es wird nichts geändert.",
+ "verboten": [
+  "source.abap:20 — kein Fachsatz „die fälligen Festgelder werden an das Cash Management übergeben“: der Aufruf steht in IF 1 = 2 und wird nie ausgeführt",
+  "source.abap:27 — kein Fachsatz „die Dispositionstabelle wird neu aufgebaut“: das FORM wird nie erreicht",
+  "gesamte Scheibe — kein Fachsatz „fällige Festgelder werden prolongiert oder zurückgezahlt“: der Report listet nur"
+ ],
+ "saetze": [
+  {
+   "id": "BM-125-B01",
+   "soll": "Es werden die Festgeldgeschäfte (Produktart 51A) des Buchungskreises gelesen, deren Laufzeit am Stichtag endet.",
+   "zeilen": [
+    11
+   ],
+   "code": [
+    "11:   SELECT * FROM vtbfha INTO TABLE gt_fha"
+   ],
+   "X": [
+    "Aus der Tabelle VTBFHA werden alle Datensätze gelesen, bei denen der Buchungskreis bukrs dem angegebenen Buchungskreis, die Produktart sgsart dem Wert '51A' und das Fälligkeitsdatum delfz dem angegebenen Datum entspricht."
+   ],
+   "Y": [
+    "Es werden Sätze aus vtbfha mit dem eingegebenen Buchungskreis und dem eingegebenen delfz selektiert."
+   ],
+   "Z": [
+    "Es werden Sätze aus vtbfha mit dem eingegebenen Buchungskreis und dem eingegebenen delfz selektiert."
+   ]
+  },
+  {
+   "id": "BM-125-B02",
+   "soll": "Gibt es keine, wird ein Hinweis mit dem Stichtag ausgegeben und der Lauf beendet.",
+   "zeilen": [
+    15,
+    16,
+    17
+   ],
+   "code": [
+    "15:   IF gt_fha IS INITIAL.",
+    "16:     WRITE: / 'Keine fälligen Festgelder am', p_datum.",
+    "17:     STOP."
+   ],
+   "X": [
+    "Wurden keine Datensätze in VTBFHA gefunden, wird der Hinweistext 'Keine fälligen Festgelder am' zusammen mit dem angegebenen Datum ausgegeben und die Verarbeitung beendet."
+   ],
+   "Y": [
+    "Ohne Treffer wird Keine fälligen Festgelder am ausgegeben und p_datum ausgegeben.",
+    "Keine fälligen Festgelder am wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code."
+   ],
+   "Z": [
+    "Ohne Treffer wird Keine fälligen Festgelder am ausgegeben und p_datum ausgegeben.",
+    "Keine fälligen Festgelder am und p_datum werden ausgegeben.",
+    "Keine fälligen Festgelder am wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "p_datum wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-125-B03",
+   "soll": "Jedes fällige Festgeld wird mit Geschäftsnummer, Geschäftspartner und Währung gelistet.",
+   "zeilen": [
+    23
+   ],
+   "code": [
+    "23:     WRITE: / ls_fha-rfha, ls_fha-kontrh, ls_fha-wgschft1."
+   ],
+   "X": [
+    "Für jeden ermittelten Datensatz der Tabelle VTBFHA werden die Geschäftsnummer rfha, der Geschäftspartner kontrh sowie der Betrag in Vertragswährung wgschft1 ausgegeben."
+   ],
+   "Y": [
+    "Bei Treffern werden ls_fha-rfha, ls_fha-kontrh und ls_fha-wgschft1 als Liste ausgegeben."
+   ],
+   "Z": [
+    "Bei Treffern werden ls_fha-rfha, ls_fha-kontrh und ls_fha-wgschft1 als Liste ausgegeben.",
+    "ls_fha-rfha wird ausgegeben.",
+    "ls_fha-kontrh wird ausgegeben.",
+    "ls_fha-wgschft1 wird ausgegeben."
+   ]
+  }
+ ]
+}

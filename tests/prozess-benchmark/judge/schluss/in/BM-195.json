@@ -1,0 +1,412 @@
+{
+ "id": "BM-195",
+ "titel": "Embargoprüfung beim Sichern des Kundenauftrags: implizite Erweiterung ruft gefilterten Kernel-BAdI mit Russland- und Standardimplementierung",
+ "prozess": "Beim Sichern eines Kundenauftrags läuft zu Beginn der Standardroutine BELEG_SICHERN eine implizite Erweiterung. Sie prüft zuerst den Schalter ZFT_EMBARGO_AKTIV und arbeitet nur bei eingeschalteter Prüfung, beim Anlegen oder Ändern und nur für Terminaufträge und Kontrakte. Das Empfangsland ist das Land des Warenempfängers auf Kopfebene, ersatzweise das des Auftraggebers; Deutschland und EU-Mitgliedstaaten werden nicht geprüft. Für alle anderen Länder holt die Erweiterung über den BAdI ZBADI_FT_EMBARGO mit dem Land als Filter die passende Prüfung und ruft sie mit Auftragskopf und Positionen auf; welche der beiden Implementierungen greift, legen die Filterwerte der Erweiterungsimplementierungen fest, die nicht im Quelltext stehen. Gibt es keine aktive Implementierung, wird ohne Sperre weitergesichert. Die Russland-Implementierung liest die gültigen Sanktionsmuster des Landes und die Warennummern der Positionsmaterialien; nicht gelöschte, nicht abgesagte Positionen ohne Warennummer führen vorsorglich zur Sperre mit Warnung, Positionen mit sanktionierter Warennummer zur Sperre mit Abbruch- oder Warnbefund je nach Sanktionsart. Die Standardimplementierung liest die Embargoart des Landes: Totalembargo sperrt mit Abbruchbefund, Waffenembargo sperrt nur bei Positionen mit Rüstungsgut, andere Arten bleiben ohne Wirkung. Zurück in der Erweiterung wird bei einem Abbruchbefund das Sichern mit einer Abbruchmeldung beendet, sodass der Auftrag nicht gesichert wird. Verlangt die Prüfung sonst eine Sperre, erhält der Auftrag die Liefersperre Z1, die Sperre wird mit Anzahl der Befunde im Embargoprotokoll festgehalten, der Benutzer erhält einen Hinweis und das Sichern läuft weiter. Eine einmal gesetzte Sperre wird von dieser Logik nie wieder aufgehoben.",
+ "verboten": [
+  "zei_ft_export_check.abap:51 — kein Fachsatz „für Russland wird zusätzlich die allgemeine Länderliste geprüft“: der Aufruf erreicht genau eine Implementierung; welche, entscheiden die Filterwerte der Erweiterungsimplementierungen, die nicht im Quelltext stehen (laut Kopfkommentar RU/BY für die Russland-Klasse)",
+  "zei_ft_export_check.abap:74 — kein Fachsatz „ergibt eine spätere Prüfung keinen Befund mehr, wird die Liefersperre aufgehoben“: der Code setzt die Sperre Z1 nur, er entfernt sie nie",
+  "zei_ft_export_check.abap:89 — kein Fachsatz „die einzelnen Prüfbefunde werden dem Benutzer angezeigt oder gespeichert“: gezeigt wird nur ein Hinweis mit dem Land, im Protokoll steht nur die Anzahl der Befunde",
+  "zcl_ft_embargo_ru.abap:45 — kein Fachsatz „ein Auftrag ohne Positionen wird gesperrt“: bei leerer Positionstabelle liest FOR ALL ENTRIES ohne Einschränkung alle Werksdaten, die folgende Positionsschleife läuft aber leer, es entsteht weder Befund noch Sperre",
+  "gesamte Scheibe — kein Fachsatz „die Exportkontrolle erfolgt über SAP GTS“: der GTS-Aufruf ist auskommentiert, ebenso die frühere feste Länderprüfung Iran/Syrien"
+ ],
+ "saetze": [
+  {
+   "id": "BM-195-B01",
+   "soll": "Beim Sichern eines Kundenauftrags wird geprüft, ob die Embargoprüfung über den Schalter ZFT_EMBARGO_AKTIV eingeschaltet ist.",
+   "zeilen": [
+    169
+   ],
+   "code": [
+    "169:   SELECT SINGLE low FROM tvarvc INTO lv_ft_aktiv"
+   ],
+   "X": [
+    "Aus der Steuerungstabelle TVARVC wird der Parameterwert LOW zum Eintrag 'ZFT_EMBARGO_AKTIV' gelesen."
+   ],
+   "Y": [
+    "Das Feld low des Variableneintrags wird gelesen."
+   ],
+   "Z": [
+    "low des Satzes wird gelesen."
+   ]
+  },
+  {
+   "id": "BM-195-B02",
+   "soll": "Geprüft werden nur Terminaufträge und Kontrakte beim Anlegen oder Ändern.",
+   "zeilen": [
+    175
+   ],
+   "code": [
+    "175:   IF lv_ft_aktiv = 'X' AND t180-trtyp CA 'HV' AND vbak-vbtyp CA 'CG'."
+   ],
+   "X": [
+    "Aus den Belegpartnern wird der Eintrag zum Warenempfänger mit der Partnerrolle 'WE' gelesen."
+   ],
+   "Y": [],
+   "Z": []
+  },
+  {
+   "id": "BM-195-B03",
+   "soll": "Das Empfangsland ist das Land des Warenempfängers auf Kopfebene, ohne Warenempfänger das Land des Auftraggebers.",
+   "zeilen": [
+    179,
+    182
+   ],
+   "code": [
+    "179:     READ TABLE xvbpa ASSIGNING FIELD-SYMBOL(<ls_ft_we>)",
+    "182:     lv_ft_land = COND #( WHEN sy-subrc = 0 THEN <ls_ft_we>-land1"
+   ],
+   "X": [
+    "Aus den Belegpartnern wird der Eintrag zum Warenempfänger mit der Partnerrolle 'WE' gelesen."
+   ],
+   "Y": [
+    "In der Tabelle xvbpa wird nach einer passenden Zeile gesucht."
+   ],
+   "Z": [
+    "In der Tabelle wird nach einer passenden Zeile gesucht."
+   ]
+  },
+  {
+   "id": "BM-195-B04",
+   "soll": "Lieferungen nach Deutschland und in EU-Mitgliedstaaten werden nicht geprüft.",
+   "zeilen": [
+    186,
+    193
+   ],
+   "code": [
+    "186:     SELECT SINGLE xegld FROM t005 INTO @DATA(lv_ft_eu)",
+    "193:     IF lv_ft_land <> 'DE' AND lv_ft_eu IS INITIAL."
+   ],
+   "X": [
+    "Aus der Ländertabelle T005 wird das EU-Kennzeichen XEGLD zum ermittelten Empfangsland gelesen.",
+    "Ist das Empfangsland ungleich 'DE' und gehört nicht zur EU, wird die BAdI-Instanz zur Embargoprüfung anhand des Empfangslands ermittelt."
+   ],
+   "Y": [
+    "Das Feld xegld aus t005 wird gelesen."
+   ],
+   "Z": [
+    "xegld des Satzes wird gelesen."
+   ]
+  },
+  {
+   "id": "BM-195-B05",
+   "soll": "Für alle anderen Länder wird die zum Empfangsland passende Embargoprüfung ermittelt und mit Auftragskopf und Positionen aufgerufen.",
+   "zeilen": [
+    196,
+    200
+   ],
+   "code": [
+    "196:           GET BADI lo_ft_embargo",
+    "200:           CALL BADI lo_ft_embargo->pruefen"
+   ],
+   "X": [
+    "Ist das Empfangsland ungleich 'DE' und gehört nicht zur EU, wird die BAdI-Instanz zur Embargoprüfung anhand des Empfangslands ermittelt.",
+    "Die BAdI-Prüfmethode wird mit Auftragskopf, Belegpositionen und Empfangsland aufgerufen; die Sperrkennzeichnung und Rückmeldungen werden übernommen."
+   ],
+   "Y": [
+    "Die konfigurierte BAdI-Implementierung wird angefordert.",
+    "Das Feld vbak, das Feld xvbap[] und das Feld lv_ft_land werden der BAdI-Methode pruefen übergeben und das Feld lv_ft_sperre und das Feld lt_ft_meldung übernommen."
+   ],
+   "Z": [
+    "Die konfigurierte BAdI-Implementierung wird angefordert.",
+    "Der Betrag wird der Methode pruefen übergeben und ein Routentext übernommen. Dieser Aufruf ist nicht selbst ein menschlicher Freigabeprozess."
+   ]
+  },
+  {
+   "id": "BM-195-B06",
+   "soll": "Gibt es für das Land keine aktive Prüfung, wird der Auftrag ungeprüft und ohne Sperre gesichert.",
+   "zeilen": [
+    210,
+    213
+   ],
+   "code": [
+    "210:         CATCH cx_badi_not_implemented.",
+    "213:           CLEAR lv_ft_sperre."
+   ],
+   "X": [
+    "Ist keine aktive BAdI-Implementierung vorhanden, wird der Ausnahmefall abgefangen und die Sperre zurückgesetzt."
+   ],
+   "Y": [],
+   "Z": []
+  },
+  {
+   "id": "BM-195-B07",
+   "soll": "Meldet die Prüfung ein Totalembargo, wird das Sichern mit Abbruchmeldung beendet und der Auftrag nicht gesichert.",
+   "zeilen": [
+    217,
+    219,
+    220
+   ],
+   "code": [
+    "217:       READ TABLE lt_ft_meldung TRANSPORTING NO FIELDS",
+    "219:       IF sy-subrc = 0.",
+    "220:         MESSAGE a151(zft) WITH lv_ft_land."
+   ],
+   "X": [
+    "Wurde in den Meldungen mindestens eine Abbruchmeldung vom Typ 'A' zurückgegeben, wird der Vorgang mit der Abbruchmeldung a151(zft) und dem Empfangsland abgebrochen."
+   ],
+   "Y": [
+    "In der Tabelle lt_ft_meldung wird nach einer passenden Zeile gesucht.",
+    "Bei Treffer wird eine Abbruchmeldung ausgegeben.",
+    "Die Abbruchmeldung 151(ZFT) wird ausgegeben; das Programm wird abgebrochen."
+   ],
+   "Z": [
+    "In der Tabelle wird nach einer passenden Zeile gesucht.",
+    "Bei Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-195-B08",
+   "soll": "Verlangt die Prüfung eine Sperre, erhält der Auftrag die Liefersperre Z1 „Exportkontrolle“.",
+   "zeilen": [
+    223,
+    225
+   ],
+   "code": [
+    "223:       IF lv_ft_sperre = abap_true.",
+    "225:         vbak-lifsk = 'Z1'."
+   ],
+   "X": [
+    "Ist die Liefersperre aktiv, wird am Belegkopf VBAK der Sperrgrund LIFSK auf 'Z1' gesetzt und das Änderungskennzeichen auf den Aktualisierungsstatus gesetzt, falls es noch leer war.",
+    "Bei gesetzter Sperre wird eine Informationsmeldung i152(zft) mit dem betroffenen Land ausgegeben."
+   ],
+   "Y": [
+    "Wenn das Feld lv_ft_sperre gesetzt ist, wird das Sperrkennzeichen auf Z1 gesetzt und eine Informationsmeldung ausgegeben.",
+    "Wenn das Feld lv_ft_sperre gesetzt ist, wird das Sperrkennzeichen auf Z1 gesetzt."
+   ],
+   "Z": [
+    "Für lv_ft_sperre mit dem Wert abap_true wird die Sperrkennzeichen auf Z1 gesetzt und eine Meldung ausgegeben.",
+    "lv_ft_sperre mit dem Wert abap_true setzen die Sperrkennzeichen auf Z1."
+   ]
+  },
+  {
+   "id": "BM-195-B09",
+   "soll": "Die Sperre wird mit Auftrag, Land, Zeitpunkt, Benutzer und Anzahl der Prüfbefunde im Embargoprotokoll festgehalten, und der Benutzer erhält einen Hinweis.",
+   "zeilen": [
+    236,
+    238
+   ],
+   "code": [
+    "236:         INSERT zft_embargo_log FROM ls_ft_log.",
+    "238:         MESSAGE i152(zft) WITH lv_ft_land."
+   ],
+   "X": [
+    "Ein Protokolleintrag mit Belegnummer, Empfangsland, Datum, Uhrzeit, Benutzername und Meldungsanzahl wird in die Tabelle ZFT_EMBARGO_LOG eingefügt.",
+    "Bei gesetzter Sperre wird eine Informationsmeldung i152(zft) mit dem betroffenen Land ausgegeben."
+   ],
+   "Y": [
+    "Wenn das Feld lv_ft_sperre gesetzt ist, wird das Sperrkennzeichen auf Z1 gesetzt und eine Informationsmeldung ausgegeben.",
+    "Die Informationsmeldung 152(ZFT) wird ausgegeben."
+   ],
+   "Z": [
+    "Für lv_ft_sperre mit dem Wert abap_true wird die Sperrkennzeichen auf Z1 gesetzt und eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-195-B10",
+   "soll": "Für Russland und Belarus werden die am Tag gültigen sanktionierten Warennummern-Muster des Landes gelesen; ohne Einträge gibt es keine Sperre.",
+   "zeilen": [
+    102,
+    107,
+    108
+   ],
+   "code": [
+    "102:     SELECT stawn_muster, sanktion_art",
+    "107:     IF lt_sanktion IS INITIAL.",
+    "108:       RETURN."
+   ],
+   "X": [
+    "Aus der Tabelle ZFT_SANKTION werden die Felder STAWN_MUSTER und SANKTION_ART zum übergebenen Land und mit Gültigkeitsdatum bis einschließlich dem Tagesdatum gelesen.",
+    "Sind keine Sanktionseinträge für das Land vorhanden, wird die Prüfung ohne weitere Aktion beendet."
+   ],
+   "Y": [
+    "Das Ergebnis enthält stawn_muster und sanktion_art.",
+    "Es werden Sätze aus zft_sanktion selektiert.",
+    "Ohne Treffer wird der Block verlassen."
+   ],
+   "Z": [
+    "Das Ergebnis enthält stawn_muster und sanktion_art.",
+    "Es werden Sätze aus zft_sanktion selektiert.",
+    "Ohne Treffer wird der Block verlassen.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben."
+   ]
+  },
+  {
+   "id": "BM-195-B11",
+   "soll": "Zu den Positionen werden die Warennummern aus den Werksdaten der Materialien gelesen.",
+   "zeilen": [
+    111
+   ],
+   "code": [
+    "111:     SELECT matnr, werks, stawn"
+   ],
+   "X": [
+    "Aus der Tabelle MARC werden die Felder MATNR, WERKS und STAWN zu den Materialnummern und Werken der Belegpositionen ermittelt."
+   ],
+   "Y": [
+    "Das Ergebnis enthält Materialnummer, Werk und stawn.",
+    "Es werden Werksdatensätze zu Materialien zu den Einträgen aus it_vbap selektiert."
+   ],
+   "Z": [
+    "Das Ergebnis enthält matnr, werks und stawn.",
+    "Es werden Sätze aus marc selektiert."
+   ]
+  },
+  {
+   "id": "BM-195-B12",
+   "soll": "Geprüft werden alle nicht gelöschten Positionen ohne Absagegrund.",
+   "zeilen": [
+    118,
+    120
+   ],
+   "code": [
+    "118:     LOOP AT it_vbap INTO DATA(ls_vbap) WHERE updkz <> 'D'.",
+    "120:       CHECK ls_vbap-abgru IS INITIAL.        \"abgesagte Positionen nicht prüfen"
+   ],
+   "X": [
+    "Alle Belegpositionen, die nicht gelöscht sind, werden nacheinander verarbeitet.",
+    "Positionen mit gesetztem Absagegrund ABGRU werden von der weiteren Prüfung ausgeschlossen."
+   ],
+   "Y": [
+    "Die Zeilen aus it_vbap, bei denen das Feld updkz ungleich D ist, werden einzeln verarbeitet.",
+    "Nur wenn der Absagegrund leer ist, wird der Schleifendurchlauf fortgesetzt; sonst wird er übersprungen, und die Schleife läuft mit dem nächsten Durchlauf weiter."
+   ],
+   "Z": [
+    "Jede Zeile aus it_vbap wird einzeln verarbeitet.",
+    "Nur Eine leere ls_vbap-abgru gehen weiter; kleinere werden übersprungen, die Schleife läuft weiter."
+   ]
+  },
+  {
+   "id": "BM-195-B13",
+   "soll": "Hat das Material im Lieferwerk keine Warennummer, wird der Auftrag vorsorglich gesperrt und die Position als Warnung gemeldet.",
+   "zeilen": [
+    125,
+    127
+   ],
+   "code": [
+    "125:       IF sy-subrc <> 0 OR ls_marc-stawn IS INITIAL.",
+    "127:         ev_sperre = abap_true."
+   ],
+   "X": [
+    "Fehlt der Werkseintrag oder ist die Warennummer STAWN initial, wird die Sperre gesetzt, eine Warnmeldung der Klasse 'ZFT' mit Nummer '153' und der Positionsnummer hinzugefügt und mit der nächsten Position fortgefahren."
+   ],
+   "Y": [
+    "Wenn kein Treffer vorliegt oder das Feld ls_marc-stawn leer ist, wird eine Zeile aufgenommen und der Schleifendurchlauf übersprungen."
+   ],
+   "Z": [
+    "Für sy-subrc <> 0 OR ls_marc-stawn IS INITIAL wird eine Zeile aufgenommen."
+   ]
+  },
+  {
+   "id": "BM-195-B14",
+   "soll": "Passt die Warennummer einer Position auf ein Sanktionsmuster, wird der Auftrag gesperrt; bei Sanktionsart Totalembargo wird die Position als Abbruch gemeldet, sonst als Warnung, und das erste passende Muster genügt.",
+   "zeilen": [
+    134,
+    135,
+    136
+   ],
+   "code": [
+    "134:         IF ls_marc-stawn CP ls_sanktion-stawn_muster.",
+    "135:           ev_sperre = abap_true.",
+    "136:           APPEND VALUE #( type       = COND #( WHEN ls_sanktion-sanktion_art = 'T' THEN 'A' ELSE 'W' )"
+   ],
+   "X": [
+    "Entspricht die Warennummer dem Sanktionsmuster, wird die Sperre gesetzt, abhängig von der Sanktionsart eine Abbruch- oder Warnmeldung der Klasse 'ZFT' mit Nummer '154', der Positionsnummer sowie der Warennummer ausgegeben und die Prüfung weiterer Muster für diese Position beendet."
+   ],
+   "Y": [
+    "Wenn die Bedingung „ls_marc-stawn CP ls_sanktion-stawn_muster“ erfüllt ist, wird eine Zeile aufgenommen und die Schleife verlassen.",
+    "Eine Zeile wird in ct_meldung aufgenommen."
+   ],
+   "Z": [
+    "Für ls_marc-stawn CP ls_sanktion-stawn_muster wird eine Zeile aufgenommen und der Block verlassen.",
+    "Eine Zeile wird in ct_meldung aufgenommen.",
+    "Es wird eine Zeile aufgenommen und der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-195-B15",
+   "soll": "Für die übrigen Länder wird die am Tag gültige Embargoart des Landes aus der Embargo-Länderliste gelesen; ein Land ohne Eintrag bleibt ungesperrt.",
+   "zeilen": [
+    25,
+    29,
+    30
+   ],
+   "code": [
+    "25:     SELECT SINGLE embargo_art FROM zft_embargo_land",
+    "29:     IF sy-subrc <> 0.",
+    "30:       RETURN."
+   ],
+   "X": [
+    "Aus der Tabelle ZFT_EMBARGO_LAND wird das Feld EMBARGO_ART zum übergebenen Land und mit Gültigkeitsdatum bis einschließlich dem Tagesdatum gelesen.",
+    "Wird kein passender Eintrag in der Tabelle ZFT_EMBARGO_LAND gefunden, wird die Prüfung beendet."
+   ],
+   "Y": [
+    "Das Feld embargo_art aus zft_embargo_land wird gelesen.",
+    "Ohne Treffer wird der Block verlassen."
+   ],
+   "Z": [
+    "embargo_art des Satzes wird gelesen.",
+    "Ohne Treffer wird der Block verlassen.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben."
+   ]
+  },
+  {
+   "id": "BM-195-B16",
+   "soll": "Bei Totalembargo wird der Auftrag gesperrt und mit einer Abbruchmeldung für das Land versehen.",
+   "zeilen": [
+    34,
+    36
+   ],
+   "code": [
+    "34:       WHEN 'T'.",
+    "36:         ev_sperre = abap_true."
+   ],
+   "X": [
+    "Liegt ein Totalembargo mit dem Wert 'T' vor, wird die Sperre gesetzt und eine Abbruchmeldung der Klasse 'ZFT' mit Nummer '155' und dem Land hinzugefügt."
+   ],
+   "Y": [],
+   "Z": []
+  },
+  {
+   "id": "BM-195-B17",
+   "soll": "Bei Waffenembargo wird der Auftrag nur gesperrt, wenn eine nicht gelöschte Position ein als Rüstungsgut gekennzeichnetes Material enthält, und jede solche Position wird als Warnung gemeldet.",
+   "zeilen": [
+    40,
+    43,
+    46
+   ],
+   "code": [
+    "40:       WHEN 'W'.",
+    "43:           SELECT SINGLE zz_ruestung FROM mara",
+    "46:           IF sy-subrc = 0 AND lv_ruestung = abap_true."
+   ],
+   "X": [
+    "Liegt ein Waffenembargo mit dem Wert 'W' vor, werden alle Belegpositionen durchlaufen, die nicht gelöscht sind.",
+    "Aus der Materialstammtabelle MARA wird das Kennzeichen ZZ_RUESTUNG zur Materialnummer der Position gelesen.",
+    "Ist das Material vorhanden und als Rüstungsgut gekennzeichnet, wird die Sperre gesetzt und eine Warnmeldung der Klasse 'ZFT' mit Nummer '156' und der Positionsnummer hinzugefügt."
+   ],
+   "Y": [
+    "Das Feld zz_ruestung des Materials wird gelesen.",
+    "Wenn ein Treffer vorliegt und das Feld lv_ruestung gesetzt ist, wird eine Zeile aufgenommen."
+   ],
+   "Z": [
+    "zz_ruestung des Satzes wird gelesen.",
+    "Für sy-subrc = 0 AND lv_ruestung = abap_true wird eine Zeile aufgenommen."
+   ]
+  },
+  {
+   "id": "BM-195-B18",
+   "soll": "Andere Embargoarten wie „Beobachtung“ haben keine Wirkung.",
+   "zeilen": [
+    53
+   ],
+   "code": [
+    "53:       WHEN OTHERS."
+   ],
+   "X": [],
+   "Y": [],
+   "Z": []
+  }
+ ]
+}

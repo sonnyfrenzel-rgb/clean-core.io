@@ -1,0 +1,293 @@
+{
+ "id": "BM-114",
+ "titel": "Unfallmeldung aus dem Portal: Prüfung, Nummernvergabe, Meldepflicht § 193 SGB VII, BG-Anzeige, Ereignis an Workflow und SiFa",
+ "prozess": "Das Mitarbeiterportal ruft den RFC-Baustein mit den Unfalldaten auf. Ohne Berechtigung zum Anlegen im Werk gibt der Baustein sofort einen Fehler zurück. Sonst legt er das Unfallobjekt an, das Personalnummer und Unfalldatum als Pflichtangaben prüft und verlangt, dass der Mitarbeiter am Unfalltag aktiv beschäftigt war. Danach meldet er einen Empfänger für das Ereignis „Unfall gemeldet“ an und lässt den Unfall erfassen: Er zieht eine Unfallnummer, setzt den Status auf T bei tödlichem Ausgang, M bei mehr als drei Ausfalltagen und sonst E und speichert den Unfall. Ist der Unfall nach § 193 SGB VII meldepflichtig, liest er die BG-Mitgliedsnummer des Werks und merkt die Unfallanzeige als offen mit einer Frist von drei Tagen nach dem Unfalldatum vor; fehlt die Zuordnung, wird die gesamte Meldung abgelehnt. Schließlich löst er das Ereignis aus, worauf der Empfänger ein Workflow-Ereignis MELDEPFLICHTIG oder ERFASST erzeugt und bei Meldepflicht die Sicherheitsfachkräfte per Mail informiert; ein Mailfehler bleibt folgenlos. Gelingt alles, wird festgeschrieben und die Unfallnummer zurückgegeben, bei jeder Ablehnung wird alles zurückgerollt und der Fehlertext zurückgegeben.",
+ "verboten": [
+  "zcl_ehs_unfall.abap:126 — kein Fachsatz „ein meldepflichtiger Unfall wird auch ohne BG-Zuordnung gespeichert“: die Ausnahme führt im Baustein zu ROLLBACK WORK, der ganze Unfall geht verloren",
+  "gesamte Scheibe — kein Fachsatz „die Unfallanzeige wird an die Berufsgenossenschaft übermittelt“: sie wird nur als offen mit Frist vorgemerkt",
+  "zcl_ehs_unfall.abap:133 — kein Fachsatz „die Frist beginnt mit Kenntnis des Unternehmers“: sie wird starr ab Unfalldatum berechnet",
+  "zcl_ehs_unfall_handler.abap:45 — kein Fachsatz „schlägt die Mail fehl, wird der Unfall abgelehnt“: cx_bcs wird ohne Wirkung gefangen"
+ ],
+ "saetze": [
+  {
+   "id": "BM-114-B01",
+   "soll": "Ohne Berechtigung zum Anlegen von Unfällen im Werk wird die Meldung mit Fehler zurückgewiesen.",
+   "zeilen": [
+    17,
+    20,
+    23
+   ],
+   "code": [
+    "17:   AUTHORITY-CHECK OBJECT 'Z_EHS_UNF'",
+    "20:   IF sy-subrc <> 0.",
+    "23:     RETURN."
+   ],
+   "X": [
+    "Die Berechtigung auf Z_EHS_UNF wird geprüft.",
+    "Ohne Berechtigung auf Z_EHS_UNF wird der Block verlassen."
+   ],
+   "Y": [
+    "Die Berechtigung auf Z_EHS_UNF wird geprüft.",
+    "Ohne Treffer wird der Block verlassen.",
+    "Ohne Berechtigung auf Z_EHS_UNF wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben."
+   ],
+   "Z": [
+    "Fehlt die Berechtigung, wird die Fehlermeldung 001 der Nachrichtenklasse ZEHS mit dem Werk zurückgegeben und die Verarbeitung abgebrochen."
+   ]
+  },
+  {
+   "id": "BM-114-B02",
+   "soll": "Fehlen Personalnummer oder Unfalldatum, wird die Meldung abgelehnt.",
+   "zeilen": [
+    86,
+    87
+   ],
+   "code": [
+    "86:     IF ms_unfall-pernr IS INITIAL OR ms_unfall-datum IS INITIAL.",
+    "87:       RAISE EXCEPTION TYPE zcx_ehs_unfall"
+   ],
+   "X": [],
+   "Y": [],
+   "Z": [
+    "Ist die Personalnummer oder das Unfalldatum nicht gepflegt, wird die Ausnahme mit der Meldung für Pflichtfelder ausgelöst."
+   ]
+  },
+  {
+   "id": "BM-114-B03",
+   "soll": "Der verunfallte Mitarbeiter muss am Unfalltag aktiv beschäftigt sein, sonst wird die Meldung abgelehnt.",
+   "zeilen": [
+    93,
+    99,
+    100
+   ],
+   "code": [
+    "93:     SELECT SINGLE @abap_true FROM pa0000",
+    "99:     IF lv_aktiv = abap_false.",
+    "100:       RAISE EXCEPTION TYPE zcx_ehs_unfall"
+   ],
+   "X": [
+    "Es wird geprüft, ob es einen passenden Personalmaßnahme-Satz gibt."
+   ],
+   "Y": [
+    "abap_true des Satzes wird gelesen."
+   ],
+   "Z": [
+    "Aus Tabelle PA0000 wird für die Personalnummer geprüft, ob zum Unfalldatum ein aktives Beschäftigungsverhältnis mit Beschäftigungsstatus 3 vorliegt.",
+    "Ist der Mitarbeiter zum Unfalldatum nicht aktiv beschäftigt, wird die Ausnahme mit der Information zur nicht bestehenden Beschäftigung für die Personalnummer ausgelöst."
+   ]
+  },
+  {
+   "id": "BM-114-B04",
+   "soll": "Nach der Prüfung wird ein Empfänger für die Meldung des erfassten Unfalls angemeldet.",
+   "zeilen": [
+    29
+   ],
+   "code": [
+    "29:       SET HANDLER lo_handler->on_gemeldet FOR lo_unfall."
+   ],
+   "X": [],
+   "Y": [],
+   "Z": []
+  },
+  {
+   "id": "BM-114-B05",
+   "soll": "Der Unfall erhält eine Nummer aus dem Nummernkreis ZEHS_UNF; ist keine Nummer erhältlich, wird die Meldung abgelehnt.",
+   "zeilen": [
+    111,
+    119,
+    120
+   ],
+   "code": [
+    "111:     CALL FUNCTION 'NUMBER_GET_NEXT'",
+    "119:     IF sy-subrc <> 0.",
+    "120:       RAISE EXCEPTION TYPE zcx_ehs_unfall"
+   ],
+   "X": [
+    "Der Code übergibt '01' an NUMBER_GET_NEXT und übernimmt dessen Ausgabe nach rv_unfallnr."
+   ],
+   "Y": [
+    "Der Code übergibt '01' an NUMBER_GET_NEXT und übernimmt dessen Ausgabe nach rv_unfallnr.",
+    "Das konvertierte Ergebnis wird in rv_unfallnr übernommen."
+   ],
+   "Z": [
+    "Über den Nummernkreis ZEHS_UNF wird zum Nummernkreisintervall 01 die nächste Unfallnummer gezogen.",
+    "Schlägt die Ermittlung der nächsten Unfallnummer fehl, wird die Ausnahme mit dem Fehler zum Nummernkreis ausgelöst."
+   ]
+  },
+  {
+   "id": "BM-114-B06",
+   "soll": "Der Unfall wird mit Status T bei tödlichem Ausgang, M bei mehr als drei Ausfalltagen und sonst E gespeichert; scheitert das Speichern, wird die Meldung abgelehnt.",
+   "zeilen": [
+    128,
+    133,
+    134,
+    135
+   ],
+   "code": [
+    "128:     ls_hdr-status   = COND #( WHEN ms_unfall-toedlich = abap_true THEN 'T'",
+    "133:     INSERT zehs_unfall FROM ls_hdr.",
+    "134:     IF sy-subrc <> 0.",
+    "135:       RAISE EXCEPTION TYPE zcx_ehs_unfall"
+   ],
+   "X": [],
+   "Y": [],
+   "Z": [
+    "Die Unfalldaten werden mit der gezogenen Unfallnummer, dem aktuellen Datum als Erfassungsdatum, dem aktuellen Benutzernamen sowie dem Status T bei tödlichem Verlauf, dem Status M bei mehr als drei Ausfalltagen oder andernfalls dem Status E in die Tabelle ZEHS_UNFALL eingefügt.",
+    "Kann der Datensatz nicht in Tabelle ZEHS_UNFALL eingefügt werden, wird die Ausnahme wegen eines Datenbankfehlers ausgelöst."
+   ]
+  },
+  {
+   "id": "BM-114-B07",
+   "soll": "Meldepflichtig ist ein Unfall mit tödlichem Ausgang oder mehr als drei Tagen Arbeitsunfähigkeit.",
+   "zeilen": [
+    140,
+    154
+   ],
+   "code": [
+    "140:     DATA(lv_pflicht) = ist_meldepflichtig( ).",
+    "154:     rv_pflicht = xsdbool( ms_unfall-toedlich = abap_true"
+   ],
+   "X": [],
+   "Y": [],
+   "Z": []
+  },
+  {
+   "id": "BM-114-B08",
+   "soll": "Für meldepflichtige Unfälle wird die Mitgliedsnummer der Berufsgenossenschaft des Werks gelesen; fehlt sie, wird die ganze Meldung abgelehnt.",
+   "zeilen": [
+    141,
+    162,
+    165,
+    166
+   ],
+   "code": [
+    "141:     IF lv_pflicht = abap_true.",
+    "162:     SELECT SINGLE bg_mitglnr FROM zehs_bg_werk",
+    "165:     IF sy-subrc <> 0.",
+    "166:       RAISE EXCEPTION TYPE zcx_ehs_unfall"
+   ],
+   "X": [
+    "Das Feld bg_mitglnr aus zehs_bg_werk wird gelesen."
+   ],
+   "Y": [
+    "bg_mitglnr des Satzes wird gelesen."
+   ],
+   "Z": [
+    "Aus der Tabelle ZEHS_BG_WERK wird die Berufsgenossenschafts-Mitgliedsnummer zum Werk des Unfalls gelesen.",
+    "Wird keine Mitgliedsnummer zum Werk gefunden, wird die Ausnahme für die fehlende Berufsgenossenschaft ausgelöst."
+   ]
+  },
+  {
+   "id": "BM-114-B09",
+   "soll": "Sonst wird die Unfallanzeige an die Berufsgenossenschaft als offen mit Frist drei Tage nach dem Unfalldatum vorgemerkt.",
+   "zeilen": [
+    175
+   ],
+   "code": [
+    "175:     INSERT zehs_bg_anz FROM ls_bg."
+   ],
+   "X": [],
+   "Y": [],
+   "Z": [
+    "Ein Datensatz mit der ermittelten Mitgliedsnummer, der Unfallnummer, einer Frist von drei Tagen nach dem Unfalldatum und dem Status OFFEN wird in die Tabelle ZEHS_BG_ANZ eingefügt."
+   ]
+  },
+  {
+   "id": "BM-114-B10",
+   "soll": "Der erfasste Unfall wird mit Nummer und Meldepflicht bekannt gemacht.",
+   "zeilen": [
+    145
+   ],
+   "code": [
+    "145:     RAISE EVENT gemeldet"
+   ],
+   "X": [],
+   "Y": [],
+   "Z": [
+    "Das Ereignis zur Unfallmeldung wird mit der Unfallnummer und dem Kennzeichen für die Meldepflicht ausgelöst."
+   ]
+  },
+  {
+   "id": "BM-114-B11",
+   "soll": "Darauf wird für das Unfallobjekt ein Workflow-Ereignis ausgelöst, MELDEPFLICHTIG oder ERFASST.",
+   "zeilen": [
+    202,
+    205
+   ],
+   "code": [
+    "202:     lv_event  = COND #( WHEN ev_meldepflichtig = abap_true",
+    "205:     CALL FUNCTION 'SAP_WAPI_CREATE_EVENT'"
+   ],
+   "X": [
+    "Der Funktionsbaustein SAP_WAPI_CREATE_EVENT wird aufgerufen."
+   ],
+   "Y": [
+    "Der Funktionsbaustein SAP_WAPI_CREATE_EVENT wird aufgerufen."
+   ],
+   "Z": [
+    "Für das Business-Objekt ZEHSUNF wird das Workflow-Ereignis MELDEPFLICHTIG ausgelöst, wenn eine Meldepflicht vorliegt, andernfalls das Ereignis ERFASST."
+   ]
+  },
+  {
+   "id": "BM-114-B12",
+   "soll": "Bei meldepflichtigen Unfällen erhält der Verteiler der Sicherheitsfachkräfte eine Mail mit Hinweis auf die Dreitagesfrist; ein Versandfehler bleibt folgenlos.",
+   "zeilen": [
+    212,
+    223
+   ],
+   "code": [
+    "212:     IF ev_meldepflichtig = abap_true.",
+    "223:           lo_send->send( )."
+   ],
+   "X": [
+    "Die Methode send von lo_send wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ],
+   "Y": [
+    "Die Methode send von lo_send wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ],
+   "Z": [
+    "Ist der Unfall meldepflichtig, wird eine E-Mail mit Betreff und Hinweistext zur dreitägigen Anzeigefrist an den Verteiler ZEHS_SIFA gesendet."
+   ]
+  },
+  {
+   "id": "BM-114-B13",
+   "soll": "Gelingt die Erfassung, wird alles festgeschrieben und die Unfallnummer mit Erfolgsmeldung zurückgegeben.",
+   "zeilen": [
+    31
+   ],
+   "code": [
+    "31:       COMMIT WORK."
+   ],
+   "X": [
+    "Mit COMMIT WORK wird die Änderung persistiert."
+   ],
+   "Y": [
+    "Mit COMMIT WORK wird die Änderung persistiert."
+   ],
+   "Z": [
+    "Nach erfolgreicher Erfassung werden die Änderungen auf der Datenbank bestätigt und die Erfolgsmeldung 000 der Nachrichtenklasse ZEHS mit der neuen Unfallnummer zurückgegeben."
+   ]
+  },
+  {
+   "id": "BM-114-B14",
+   "soll": "Bei jeder Ablehnung werden alle Änderungen zurückgenommen und der Fehlertext zurückgegeben.",
+   "zeilen": [
+    34,
+    35
+   ],
+   "code": [
+    "34:     CATCH zcx_ehs_unfall INTO lx_unfall.",
+    "35:       ROLLBACK WORK."
+   ],
+   "X": [
+    "Mit ROLLBACK WORK werden die noch nicht festgeschriebenen Änderungen verworfen."
+   ],
+   "Y": [
+    "Mit ROLLBACK WORK wird die Änderung verworfen; nichts ist persistiert."
+   ],
+   "Z": [
+    "Tritt bei der Erfassung ein Ausnahmefehler auf, werden die Datenbankänderungen zurückgerollt, die Unfallnummer initialisiert und die Fehlermeldung 002 der Nachrichtenklasse ZEHS mit dem Fehlertext zurückgegeben."
+   ]
+  }
+ ]
+}

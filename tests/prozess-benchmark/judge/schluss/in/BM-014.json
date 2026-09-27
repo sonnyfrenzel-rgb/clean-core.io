@@ -1,0 +1,309 @@
+{
+ "id": "BM-014",
+ "titel": "Faktura-Sammellauf je Verkaufsorganisation: SUBMIT RV60SBAT, Nachkontrolle über VBFA, Anwendungsprotokoll und Mail",
+ "prozess": "Der Report läuft nachts als Job mit Verkaufsorganisationen, optionalen Versandstellen, Fakturadatum, Testlaufkennzeichen und einer Mailadresse. Er ermittelt Lieferungen mit gebuchtem Warenausgang bis zum Fakturadatum, die noch nicht voll fakturiert sind und keine Fakturasperre haben. Ohne Treffer protokolliert er das und endet. Sonst führt er je Verkaufsorganisation einen Sammellauf durch: Er sperrt die Verkaufsorganisation gegen Doppelstart und überspringt sie mit Fehler, wenn schon ein Lauf aktiv ist. Im Echtlauf startet er den Standard-Sammellauf für genau diese Lieferungen und kehrt danach zurück; im Testlauf protokolliert er nur. Danach löst er die Sperre. Im Echtlauf prüft er anschließend über den Belegfluss, welche Lieferungen keine Rechnung (Typ M) erhalten haben, zählt und protokolliert sie. Alle Meldungen landen in einem Anwendungsprotokoll, das festgeschrieben wird. Gibt es Lieferungen ohne Rechnung und eine Mailadresse, verschickt er eine Mail mit der Anzahl; ein Versandfehler wird nur gemeldet.",
+ "verboten": [
+  "zsd_billing_run_f01.abap:58 — kein Fachsatz „die Rechnungen werden an die Buchhaltung übergeben/gebucht“: was RV60SBAT tut, liegt außerhalb des Falls; der Report prüft nur den Belegfluss",
+  "zsd_billing_run_f01.abap:82 — kein Fachsatz „jede fakturierte Lieferung wird erkannt“: gesucht wird nur Folgebelegtyp M; andere Fakturatypen gelten als „ohne Rechnung“",
+  "zsd_billing_run_f01.abap:90 — kein Fachsatz „nur tatsächlich fehlgeschlagene Fakturen werden gemeldet“: auch Lieferungen einer wegen Sperre übersprungenen Verkaufsorganisation zählen als ohne Rechnung"
+ ],
+ "saetze": [
+  {
+   "id": "BM-014-B01",
+   "soll": "Es werden Lieferungen der gewählten Verkaufsorganisationen und Versandstellen ermittelt, deren Warenausgang bis zum Fakturadatum gebucht ist, die noch nicht oder nur teilweise fakturiert sind und keine Fakturasperre haben.",
+   "zeilen": [
+    62
+   ],
+   "code": [
+    "62:   SELECT l~vbeln l~vkorg l~kunag"
+   ],
+   "X": [
+    "Es werden Sätze aus likp selektiert."
+   ],
+   "Y": [
+    "Das Ergebnis enthält Belegnummer, Verkaufsorganisation und kunag.",
+    "Es werden Lieferungen selektiert."
+   ],
+   "Z": [
+    "Aus den Tabellen LIKP und VBUK werden Liefernummer, Verkaufsorganisation und Auftraggeber für alle Lieferungen gelesen, deren Verkaufsorganisation und Versandstelle den Selektionskriterien entsprechen, die keine Fakturasperre haben, deren Ist-Warenausgangsdatum bis einschließlich dem Fakturadatum liegt, deren Gesamtstatus Warenausgang 'C' ist und deren Fakturastatus 'A' oder 'B' lautet."
+   ]
+  },
+  {
+   "id": "BM-014-B02",
+   "soll": "Gibt es keine solchen Lieferungen, wird nur die Meldung 400 protokolliert und der Job endet.",
+   "zeilen": [
+    35,
+    37,
+    38
+   ],
+   "code": [
+    "35:   IF gt_lief IS INITIAL.",
+    "37:     PERFORM log_sichern.",
+    "38:     RETURN."
+   ],
+   "X": [
+    "Ohne Treffer wird eine Zeile aufgenommen, log_sichern aufgerufen und der Block verlassen.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "Es wird eine Zeile aufgenommen, log_sichern aufgerufen und der Block verlassen.",
+    "Das Unterprogramm log_sichern wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt."
+   ],
+   "Y": [
+    "Ist die Tabelle gt_lief leer, wird eine Zeile aufgenommen, log_sichern aufgerufen und der Block verlassen.",
+    "Das Unterprogramm log_sichern wird aufgerufen; es ruft BAL_LOG_CREATE, BAL_LOG_MSG_ADD und BAL_DB_SAVE auf und schreibt mit COMMIT WORK fest."
+   ],
+   "Z": [
+    "Wurden keine Lieferungen gefunden, wird die Informationsmeldung ZSD 400 zur Meldungsliste hinzugefügt, das Protokoll gesichert und die Verarbeitung beendet."
+   ]
+  },
+  {
+   "id": "BM-014-B03",
+   "soll": "Für jede betroffene Verkaufsorganisation wird ein Sammellauf durchgeführt.",
+   "zeilen": [
+    41,
+    42
+   ],
+   "code": [
+    "41:   LOOP AT gt_vkorg INTO gv_vkorg.",
+    "42:     PERFORM sammellauf USING gv_vkorg."
+   ],
+   "X": [
+    "Jede Zeile aus gt_vkorg wird einzeln verarbeitet.",
+    "Das Unterprogramm sammellauf wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt."
+   ],
+   "Y": [
+    "Jede Zeile aus gt_vkorg wird einzeln verarbeitet.",
+    "Das Unterprogramm sammellauf wird aufgerufen; es ruft ENQUEUE_EZSD_BILLRUN und DEQUEUE_EZSD_BILLRUN auf."
+   ],
+   "Z": [
+    "Für jede gefundene Verkaufsorganisation wird der Faktura-Sammellauf aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-014-B04",
+   "soll": "Läuft für die Verkaufsorganisation bereits ein Sammellauf, wird sie mit Fehler 401 übersprungen.",
+   "zeilen": [
+    84,
+    91,
+    94
+   ],
+   "code": [
+    "84:   CALL FUNCTION 'ENQUEUE_EZSD_BILLRUN'",
+    "91:   IF sy-subrc <> 0.",
+    "94:     RETURN."
+   ],
+   "X": [
+    "Der Funktionsbaustein ENQUEUE_EZSD_BILLRUN wird aufgerufen.",
+    "Ohne Treffer wird eine Zeile aufgenommen und der Block verlassen.",
+    "Ohne Treffer wird der Block verlassen.",
+    "Es wird eine Zeile aufgenommen und der Block verlassen."
+   ],
+   "Y": [
+    "Der Funktionsbaustein ENQUEUE_EZSD_BILLRUN wird aufgerufen.",
+    "Ist die Sperre über ENQUEUE_EZSD_BILLRUN nicht zu erhalten, wird eine Zeile aufgenommen und der Block verlassen."
+   ],
+   "Z": [
+    "Für die jeweilige Verkaufsorganisation wird eine Sperre über das Sperrobjekt EZSD_BILLRUN gesetzt."
+   ]
+  },
+  {
+   "id": "BM-014-B05",
+   "soll": "Im Echtlauf wird der Standard-Faktura-Sammellauf für genau die ermittelten Lieferungen dieser Verkaufsorganisation zum Fakturadatum gestartet und das mit Meldung 402 protokolliert.",
+   "zeilen": [
+    107,
+    108
+   ],
+   "code": [
+    "107:   IF p_test = abap_false.",
+    "108:     SUBMIT rv60sbat WITH SELECTION-TABLE lt_params"
+   ],
+   "X": [
+    "Für p_test mit dem Wert abap_false wird eine Zeile aufgenommen.",
+    "Für p_test mit dem Wert abap_false wird eine Zeile aufgenommen, sonst eine Zeile aufgenommen.",
+    "Das Kindprogramm rv60sbat wird gestartet. Was das Kind tut, ist nicht Teil dieses Satzes."
+   ],
+   "Y": [
+    "Wenn das Feld p_test nicht gesetzt ist, wird eine Zeile aufgenommen, sonst eine Zeile aufgenommen.",
+    "Das Kindprogramm rv60sbat wird gestartet. Was das Kind tut, ist nicht Teil dieses Satzes."
+   ],
+   "Z": [
+    "Ist der Testlauf nicht aktiv, wird der Report RV60SBAT mit den aufbereiteten Selektionsparametern gestartet und die Erfolgsmeldung ZSD 402 protokolliert.",
+    "Ist der Testlauf aktiv, wird der Report RV60SBAT nicht ausgeführt und stattdessen die Informationsmeldung ZSD 403 mit der Anzahl der Parameter protokolliert."
+   ]
+  },
+  {
+   "id": "BM-014-B06",
+   "soll": "Im Testlauf wird nur protokolliert, wie viele Selektionszeilen übergeben würden.",
+   "zeilen": [
+    107
+   ],
+   "code": [
+    "107:   IF p_test = abap_false."
+   ],
+   "X": [
+    "Für p_test mit dem Wert abap_false wird eine Zeile aufgenommen.",
+    "Für p_test mit dem Wert abap_false wird eine Zeile aufgenommen, sonst eine Zeile aufgenommen."
+   ],
+   "Y": [
+    "Wenn das Feld p_test nicht gesetzt ist, wird eine Zeile aufgenommen, sonst eine Zeile aufgenommen."
+   ],
+   "Z": [
+    "Ist der Testlauf nicht aktiv, wird der Report RV60SBAT mit den aufbereiteten Selektionsparametern gestartet und die Erfolgsmeldung ZSD 402 protokolliert.",
+    "Ist der Testlauf aktiv, wird der Report RV60SBAT nicht ausgeführt und stattdessen die Informationsmeldung ZSD 403 mit der Anzahl der Parameter protokolliert."
+   ]
+  },
+  {
+   "id": "BM-014-B07",
+   "soll": "Danach wird die Sperre der Verkaufsorganisation gelöst.",
+   "zeilen": [
+    117
+   ],
+   "code": [
+    "117:   CALL FUNCTION 'DEQUEUE_EZSD_BILLRUN'"
+   ],
+   "X": [
+    "Der Funktionsbaustein DEQUEUE_EZSD_BILLRUN wird aufgerufen."
+   ],
+   "Y": [
+    "Der Funktionsbaustein DEQUEUE_EZSD_BILLRUN wird aufgerufen."
+   ],
+   "Z": [
+    "Die Sperre über das Sperrobjekt EZSD_BILLRUN für die Verkaufsorganisation wird wieder freigegeben."
+   ]
+  },
+  {
+   "id": "BM-014-B08",
+   "soll": "Im Echtlauf wird anschließend für jede ermittelte Lieferung geprüft, ob eine Rechnung als Folgebeleg existiert.",
+   "zeilen": [
+    130,
+    132,
+    138
+   ],
+   "code": [
+    "130:   CHECK p_test = abap_false.",
+    "132:   SELECT * FROM vbfa INTO TABLE lt_vbfa",
+    "138:     READ TABLE lt_vbfa TRANSPORTING NO FIELDS"
+   ],
+   "X": [
+    "Nur p_test mit dem Wert abap_false gehen weiter; kleinere werden übersprungen, die Schleife läuft weiter.",
+    "Es werden Sätze aus vbfa selektiert.",
+    "In der Tabelle wird nach einer passenden Zeile gesucht."
+   ],
+   "Y": [
+    "Nur wenn das Feld p_test nicht gesetzt ist, geht es weiter; sonst wird das Unterprogramm ergebnis_pruefen an dieser Stelle verlassen.",
+    "Es werden Belegfluss-Sätze zu den Einträgen aus gt_lief selektiert.",
+    "In der Tabelle lt_vbfa wird nach einer passenden Zeile gesucht."
+   ],
+   "Z": [
+    "Ist der Testlauf aktiv, wird die Ergebnisprüfung übersprungen.",
+    "Aus der Tabelle VBFA werden alle Folgebelege vom Belegtyp Rechnung 'M' zu den bearbeiteten Lieferungen gelesen.",
+    "Für jede Lieferung ohne gefundenen Rechnungsfolgebeleg wird der Fehlerzähler um 1 erhöht und die Warnmeldung ZSD 404 mit Liefernummer und Auftraggeber protokolliert."
+   ]
+  },
+  {
+   "id": "BM-014-B09",
+   "soll": "Jede Lieferung ohne Rechnung wird gezählt und mit Warnung 404 samt Auftraggeber protokolliert.",
+   "zeilen": [
+    140,
+    141
+   ],
+   "code": [
+    "140:     IF sy-subrc <> 0.",
+    "141:       gv_fehler = gv_fehler + 1."
+   ],
+   "X": [
+    "Ohne Treffer wird eine Zeile aufgenommen."
+   ],
+   "Y": [
+    "Ohne Treffer wird eine Zeile aufgenommen."
+   ],
+   "Z": [
+    "Für jede Lieferung ohne gefundenen Rechnungsfolgebeleg wird der Fehlerzähler um 1 erhöht und die Warnmeldung ZSD 404 mit Liefernummer und Auftraggeber protokolliert."
+   ]
+  },
+  {
+   "id": "BM-014-B10",
+   "soll": "Alle gesammelten Meldungen werden in einem Anwendungsprotokoll ZSD/BILLRUN mit 90 Tagen Aufbewahrung gesichert und festgeschrieben.",
+   "zeilen": [
+    161,
+    170,
+    179,
+    184
+   ],
+   "code": [
+    "161:   CALL FUNCTION 'BAL_LOG_CREATE'",
+    "170:     CALL FUNCTION 'BAL_LOG_MSG_ADD'",
+    "179:   CALL FUNCTION 'BAL_DB_SAVE'",
+    "184:   COMMIT WORK."
+   ],
+   "X": [
+    "Der Code übergibt ls_log an BAL_LOG_CREATE und übernimmt dessen Ausgabe nach lv_handle.",
+    "Das konvertierte Ergebnis wird in lv_handle übernommen.",
+    "Der Funktionsbaustein BAL_LOG_MSG_ADD wird aufgerufen.",
+    "Es wird eine Zeile aufgenommen, BAL_DB_SAVE aufgerufen und COMMIT WORK ausgeführt.",
+    "Der Funktionsbaustein BAL_DB_SAVE wird aufgerufen.",
+    "Mit COMMIT WORK wird die Änderung persistiert."
+   ],
+   "Y": [
+    "Der Code übergibt ls_log an BAL_LOG_CREATE und übernimmt dessen Ausgabe nach lv_handle.",
+    "Der Funktionsbaustein BAL_LOG_MSG_ADD wird aufgerufen.",
+    "Es wird eine Zeile aufgenommen, BAL_DB_SAVE aufgerufen und COMMIT WORK ausgeführt.",
+    "Der Funktionsbaustein BAL_DB_SAVE wird aufgerufen.",
+    "Mit COMMIT WORK wird die Änderung persistiert."
+   ],
+   "Z": [
+    "Ein Anwendungsprotokoll für Objekt 'ZSD' und Unterobjekt 'BILLRUN' mit Verfallsdatum in 90 Tagen wird angelegt.",
+    "Alle gesammelten Meldungen werden nacheinander in das Anwendungsprotokoll eingefügt.",
+    "Das Anwendungsprotokoll wird auf der Datenbank gespeichert und die Änderungen werden festgeschrieben."
+   ]
+  },
+  {
+   "id": "BM-014-B11",
+   "soll": "Gibt es Lieferungen ohne Rechnung und ist eine Mailadresse angegeben, erhält diese eine Mail mit der Anzahl und dem Verweis auf das Protokoll.",
+   "zeilen": [
+    48,
+    202,
+    209,
+    210
+   ],
+   "code": [
+    "48:   IF gv_fehler > 0 AND p_mail IS NOT INITIAL.",
+    "202:       lo_doc  = cl_document_bcs=>create_document(",
+    "209:       lo_send->send( ).",
+    "210:       COMMIT WORK."
+   ],
+   "X": [
+    "Für gv_fehler > 0 AND p_mail IS NOT INITIAL wird mail_senden aufgerufen.",
+    "Der Rückgabewert der Methode create_document von cl_document_bcs wird nach lo_doc übernommen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "Die Methode send von lo_send wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "Mit COMMIT WORK wird die Änderung persistiert."
+   ],
+   "Y": [
+    "Wenn das Feld gv_fehler größer als 0 ist und das Feld p_mail nicht leer ist, wird mail_senden aufgerufen.",
+    "Der Rückgabewert der Methode create_document von cl_document_bcs wird nach lo_doc übernommen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "Die Methode send von lo_send wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "Mit COMMIT WORK wird die Änderung persistiert."
+   ],
+   "Z": [
+    "Gibt es fehlerhafte Lieferungen ohne Rechnung und ist eine E-Mail-Adresse angegeben, wird eine E-Mail mit der Anzahl der fehlerhaften Lieferungen an die angegebene Adresse versendet.",
+    "Gibt es keine fehlerhaften Lieferungen oder ist keine E-Mail-Adresse angegeben, wird keine E-Mail versendet."
+   ]
+  },
+  {
+   "id": "BM-014-B12",
+   "soll": "Scheitert der Mailversand, wird nur eine Meldung ausgegeben.",
+   "zeilen": [
+    212
+   ],
+   "code": [
+    "212:       MESSAGE lx_bcs TYPE 'S' DISPLAY LIKE 'E'."
+   ],
+   "X": [
+    "Eine Meldung wird ausgegeben."
+   ],
+   "Y": [
+    "Die Statusmeldung lx_bcs wird ausgegeben, angezeigt wie eine Fehlermeldung."
+   ],
+   "Z": []
+  }
+ ]
+}

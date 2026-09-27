@@ -1,0 +1,192 @@
+{
+ "id": "BM-046",
+ "urteile": [
+  {
+   "id": "BM-046-B01",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "unvollstaendig",
+     "technisch"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "kurz": "X nennt nur bsid, Y offene Posten ohne das Kriterium 'ohne Mahnsperre'; Z vollständig."
+  },
+  {
+   "id": "BM-046-B02",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "zu_allgemein",
+     "redundant"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": [
+     "redundant"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "kurz": "X spricht nur von 'einer Meldung'; Y und Z nennen den Hinweis und das Ende."
+  },
+  {
+   "id": "BM-046-B03",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "kurz": "X und Y nennen nur die Z-Tabelle; Z nennt offene Klärungsfälle (Status O) zu den Belegen."
+  },
+  {
+   "id": "BM-046-B04",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "zu_allgemein",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "kurz": "X ohne Folge, Y technisch über lt_klaer; Z fachlich klar."
+  },
+  {
+   "id": "BM-046-B05",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "kurz": "X und Y mit Variablennamen und Ausgabewiederholung; Z beschreibt die Testlauf-Liste fachlich."
+  },
+  {
+   "id": "BM-046-B06",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "falsch"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "kurz": "X und Y nennen nur Parameterübergabe (X mit sinnlosem 'konvertiertem Ergebnis'); Z nennt das Setzen der Mahnsperre."
+  },
+  {
+   "id": "BM-046-B07",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "grammatik",
+     "falsch"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "kurz": "X und Y technisch und zerstückelt, X ordnet die Fehlerausgabe 'bei Treffern' zu; Z beschreibt Status S und beide Meldungen."
+  },
+  {
+   "id": "BM-046-B08",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "falsch"
+    ]
+   },
+   "kurz": "X und Y technisch; Z fachlich, behauptet aber, der COMMIT bestätige alle Änderungen (auch die Mahnsperre)."
+  }
+ ],
+ "verboten_verletzt": [
+  {
+   "variante": "Z",
+   "satz": "Ist der Testlauf nicht aktiv, werden alle vorgenommenen Änderungen mit COMMIT WORK auf der Datenbank bestätigt.",
+   "grund": "Unterstellt, erst der COMMIT schreibe alle Änderungen einschließlich der Mahnsperre fest; die Massenänderung sichert den Beleg selbst."
+  }
+ ],
+ "soll_zweifel": []
+}

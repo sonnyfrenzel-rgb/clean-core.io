@@ -1,0 +1,115 @@
+{
+ "id": "BM-142",
+ "urteile": [
+  {
+   "id": "BM-142-B01",
+   "X": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig",
+     "zu_allgemein"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Nur X nennt Ausweis und Stichtag."
+  },
+  {
+   "id": "BM-142-B02",
+   "X": {
+    "urteil": "gleich",
+    "mangel": [
+     "falsch"
+    ]
+   },
+   "Y": {
+    "urteil": "abweichend",
+    "mangel": [
+     "falsch",
+     "zu_allgemein",
+     "redundant"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "kurz": "X/Z nennen Ausnahme BADGE_UNKNOWN (X behauptet Meldungsausgabe); Y nur 'eine Meldung'."
+  },
+  {
+   "id": "BM-142-B03",
+   "X": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig",
+     "zu_allgemein"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "kurz": "Nur X nennt Beschäftigungsstatus zum Stichtag."
+  },
+  {
+   "id": "BM-142-B04",
+   "X": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Y": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "kurz": "Nur X beschreibt Status ungleich 3, Leeren der Personalnummer und Ausnahme."
+  },
+  {
+   "id": "BM-142-B05",
+   "X": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "kurz": "Keine Variante beschreibt die Rückgabe der Personalnummer."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

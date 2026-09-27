@@ -1,0 +1,70 @@
+{
+ "id": "BM-023",
+ "urteile": [
+  {
+   "id": "BM-023-B01",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Z": {
+    "urteil": "abweichend",
+    "mangel": [
+     "technisch",
+     "falsch"
+    ]
+   },
+   "kurz": "X/Y nennen den Filter 551/552, Z mit falscher \"kleinere\"-Logik."
+  },
+  {
+   "id": "BM-023-B02",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig",
+     "zu_allgemein"
+    ]
+   },
+   "kurz": "Nur X nennt die Wertgrenze 5.000."
+  },
+  {
+   "id": "BM-023-B03",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "zu_allgemein",
+     "technisch",
+     "redundant"
+    ]
+   },
+   "kurz": "X/Y nennen die Fehlermeldung, Z nur \"Meldung\"."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

@@ -1,0 +1,91 @@
+{
+ "id": "BM-124",
+ "urteile": [
+  {
+   "id": "BM-124-B01",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig",
+     "redundant"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "kurz": "Z nennt Partner und Kreditsegment; X/Y nur Feldnamen ohne Selektionsbezug."
+  },
+  {
+   "id": "BM-124-B02",
+   "X": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "kurz": "Nur Z beschreibt die Ausnahme 'kein Segment'."
+  },
+  {
+   "id": "BM-124-B03",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "kurz": "Alle nur technisch (Block verlassen/Rückgabewert initial); keiner sagt klar, dass der Auftrag abgelehnt wird."
+  },
+  {
+   "id": "BM-124-B04",
+   "X": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "kurz": "Nur Z beschreibt die Freigabebedingung aus Gültigkeit und Obligo plus Auftragswert."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

@@ -1,0 +1,75 @@
+{
+ "id": "BM-064",
+ "titel": "Freigabesperre für Fertigungsaufträge ohne Prüfplan (BAdI WORKORDER_UPDATE)",
+ "prozess": "Beim Freigeben eines Fertigungsauftrags ruft SAP die BAdI-Methode AT_RELEASE auf. Die Implementierung prüft nur Aufträge der Werke 1000 und 1100; für alle anderen Werke endet sie sofort und die Freigabe läuft weiter. Für die betroffenen Werke sucht sie eine nicht gelöschte Prüfplanzuordnung für Material und Werk. Gibt es keine, weist sie mit einem Hinweis auf den fehlenden Prüfplan hin und löst die Ausnahme ERROR aus, womit die Freigabe abgelehnt wird. Ist ein Prüfplan zugeordnet, endet die Methode ohne Einwand.",
+ "verboten": [
+  "source.abap:11 — kein Fachsatz „Die Gültigkeit oder der Status des Prüfplans wird geprüft“ (geprüft werden nur Existenz der Zuordnung und Löschkennzeichen)",
+  "gesamte Scheibe — kein Fachsatz „Es wird ein Prüflos angelegt“ (der BAdI liest nur und lehnt ggf. ab)",
+  "source.abap:8 — kein Fachsatz „Aufträge anderer Werke werden gesperrt“ (dort endet die Methode ohne Ausnahme, die Freigabe geht durch)"
+ ],
+ "saetze": [
+  {
+   "id": "BM-064-B01",
+   "soll": "Die Prüfung greift nur bei der Freigabe von Aufträgen der Werke 1000 und 1100; für andere Werke wird die Freigabe ohne Prüfung zugelassen.",
+   "zeilen": [
+    8
+   ],
+   "code": [
+    "8:     CHECK is_header_dialog-werks = '1000'"
+   ],
+   "X": [
+    "Entspricht das Werk im Auftragskopf weder 1000 noch 1100, wird die Verarbeitung vorzeitig beendet."
+   ],
+   "Y": [
+    "Nur is_header_dialog-werks = '1000' OR is_header_dialog-werks = '1100' gehen weiter; kleinere werden übersprungen, die Schleife läuft weiter."
+   ],
+   "Z": [
+    "Nur wenn das Werk gleich 1000 ist oder das Werk gleich 1100 ist, geht es weiter; sonst wird die Methode if_ex_workorder_update~at_release an dieser Stelle verlassen."
+   ]
+  },
+  {
+   "id": "BM-064-B02",
+   "soll": "Für Material und Werk des Auftrags wird eine nicht gelöschte Zuordnung zu einem Prüfplan (Plantyp Q) gesucht.",
+   "zeilen": [
+    11
+   ],
+   "code": [
+    "11:     SELECT SINGLE plnnr FROM mapl INTO lv_plnnr"
+   ],
+   "X": [
+    "Aus der Tabelle MAPL wird die Plannummer zum Material und Werk des Auftragskopfs mit dem Plantyp Q und ohne gesetzte Löschvormerkung gelesen."
+   ],
+   "Y": [
+    "plnnr des Satzes wird gelesen."
+   ],
+   "Z": [
+    "Das Feld plnnr aus mapl wird gelesen."
+   ]
+  },
+  {
+   "id": "BM-064-B03",
+   "soll": "Fehlt ein Prüfplan, wird der Hinweis „Kein Pruefplan fuer Material … – Freigabe nicht moeglich“ ausgegeben und die Freigabe über die Ausnahme ERROR abgelehnt.",
+   "zeilen": [
+    16,
+    17,
+    20
+   ],
+   "code": [
+    "16:     IF sy-subrc <> 0.",
+    "17:       MESSAGE i398(00) WITH 'Kein Pruefplan fuer Material'",
+    "20:       RAISE error."
+   ],
+   "X": [
+    "Wird kein entsprechender Eintrag in der Tabelle MAPL gefunden, wird eine Informationsmeldung über den fehlenden Prüfplan mit der Materialnummer ausgegeben und die Ausnahme ERROR ausgelöst."
+   ],
+   "Y": [
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ],
+   "Z": [
+    "Ohne Treffer wird eine Informationsmeldung ausgegeben.",
+    "Die Informationsmeldung 398(00) wird ausgegeben."
+   ]
+  }
+ ]
+}

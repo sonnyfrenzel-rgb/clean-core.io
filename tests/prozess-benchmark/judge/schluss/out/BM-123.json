@@ -1,0 +1,104 @@
+{
+ "id": "BM-123",
+ "urteile": [
+  {
+   "id": "BM-123-B01",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig",
+     "zu_allgemein"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig",
+     "zu_allgemein"
+    ]
+   },
+   "kurz": "X nennt Finanzkreis, Jahr und Position; Y/Z nur 'Sätze aus fmci'."
+  },
+  {
+   "id": "BM-123-B02",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "falsch"
+    ]
+   },
+   "Y": {
+    "urteil": "abweichend",
+    "mangel": [
+     "falsch",
+     "zu_allgemein",
+     "redundant"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "kurz": "Z beschreibt RAISING korrekt; X behauptet Ausgabe der Meldung; Y nur 'Meldung wird ausgegeben' ohne Ausnahme."
+  },
+  {
+   "id": "BM-123-B03",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "kurz": "Nur X nennt NO_EXPENDITURE bei Positionstyp ungleich 3."
+  },
+  {
+   "id": "BM-123-B04",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "kurz": "Nur X beschreibt die Rückgabe des Finanzvorgangs."
+  }
+ ],
+ "verboten_verletzt": [
+  {
+   "variante": "X",
+   "satz": "Wird kein entsprechender Datensatz in der Tabelle FMCI gefunden, wird die Fehlermeldung E001(ZFM) mit der Finanzposition und dem Finanzkreis ausgegeben und die Verarbeitung mit der Ausnahme NOT_FOUND abgebrochen.",
+   "grund": "Behauptet Ausgabe der Meldung; mit RAISING wird bei behandelter Ausnahme nichts angezeigt."
+  },
+  {
+   "variante": "Y",
+   "satz": "Ohne Treffer wird eine Meldung ausgegeben.",
+   "grund": "Meldung wird mit RAISING nicht angezeigt, nur die Ausnahme ausgelöst."
+  },
+  {
+   "variante": "Y",
+   "satz": "Eine Meldung wird ausgegeben.",
+   "grund": "Wie oben: MESSAGE ... RAISING zeigt bei behandelter Ausnahme keine Meldung."
+  }
+ ],
+ "soll_zweifel": []
+}

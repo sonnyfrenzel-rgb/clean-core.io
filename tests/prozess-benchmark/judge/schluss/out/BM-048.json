@@ -1,0 +1,130 @@
+{
+ "id": "BM-048",
+ "urteile": [
+  {
+   "id": "BM-048-B01",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "X und Z nennen nur anla mit Jahr/Bereich; Y vollständig inkl. Deaktivierungsfilter."
+  },
+  {
+   "id": "BM-048-B02",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "zu_allgemein",
+     "redundant"
+    ]
+   },
+   "kurz": "X und Y nennen den Hinweis 'Keine aktiven Anlagen'; Z nur 'eine Meldung'."
+  },
+  {
+   "id": "BM-048-B03",
+   "X": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "kurz": "Nur Y beschreibt die Wertberechnung."
+  },
+  {
+   "id": "BM-048-B04",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "grammatik"
+    ]
+   },
+   "kurz": "X und Z nennen alle drei Status, aber über Variablennamen; Y nur 'voll abgeschrieben'."
+  },
+  {
+   "id": "BM-048-B05",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "kurz": "X mit Feldnamen, Y fachlich über den Restbuchwert, Z schweigt."
+  },
+  {
+   "id": "BM-048-B06",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein",
+     "falsch"
+    ]
+   },
+   "kurz": "X und Z technisch ohne ALV-Bezug (Z übernimmt das Ergebnis fälschlich nach cl_salv_table); Y fachlich."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

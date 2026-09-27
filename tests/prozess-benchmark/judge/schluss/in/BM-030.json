@@ -1,0 +1,187 @@
+{
+ "id": "BM-030",
+ "titel": "WM-Nachschub für Kommissionier-Fixplätze per Transportauftrag (L_TO_CREATE_SINGLE)",
+ "prozess": "Ein Job alle 30 Minuten oder der Lagerleitstand ruft den Baustein mit Lagernummer, Kommissionier-Lagertyp (Vorschlag 005), Werk und WM-Bewegungsart (Vorschlag 319). Zuerst sperrt er den Nachschub für Lagernummer und Lagertyp; ist die Sperre belegt, endet er mit LOCKED. Dann liest er alle nicht gelöschten Materialien mit Fixplatz im Lagertyp und betrachtet die mit gepflegter Mindestmenge. Für jeden Fixplatz summiert er die verfügbare Quantmenge; liegt sie unter der Mindestmenge, bestimmt er die Nachschubmenge aus der gepflegten Nachschubmenge oder als Auffüllung bis zur Maximalmenge und legt einen Transportauftrag an den Fixplatz an, der sofort festgeschrieben wird. Erfolge werden gezählt und mit TA-Nummer protokolliert, Fehler mit Fehlernummer. Zum Schluss gibt er die Sperre frei und liefert Anzahl und Protokoll zurück; offene Transportaufträge zum Platz werden nicht gegengerechnet.",
+ "verboten": [
+  "source.abap:61 — kein Fachsatz „Der Transportauftrag wird quittiert“ (es wird nur angelegt und committet, nicht quittiert)",
+  "source.abap:61 — kein Fachsatz „Der Vonplatz im Reservelager wird vom Code bestimmt“ (der Code gibt nur den Nachplatz vor; die Vonplatzfindung liegt bei der WM-Strategie)",
+  "source.abap:45 — kein Fachsatz „Offene Transportaufträge zum Fixplatz werden berücksichtigt“ (nur verfügbare Quantmenge, keine Zugänge in Arbeit)",
+  "source.abap:34 — kein Fachsatz „Der Lauf wartet, bis die Sperre frei ist“ (er bricht sofort ab)"
+ ],
+ "saetze": [
+  {
+   "id": "BM-030-B01",
+   "soll": "Der Nachschublauf wird für Lagernummer und Lagertyp exklusiv gesperrt; läuft bereits einer, endet der Baustein mit der Ausnahme LOCKED.",
+   "zeilen": [
+    25,
+    33,
+    34
+   ],
+   "code": [
+    "25:   CALL FUNCTION 'ENQUEUE_EZ_WM_NACHSCH'",
+    "33:   IF sy-subrc <> 0.",
+    "34:     RAISE locked."
+   ],
+   "X": [
+    "Über den Funktionsbaustein ENQUEUE_EZ_WM_NACHSCH wird eine Sperre für die angegebene Lagernummer und den Lagertyp gesetzt.",
+    "Kann die Sperre nicht erfolgreich gesetzt werden (sy-subrc ungleich 0), wird die Ausnahme LOCKED ausgelöst und die Verarbeitung beendet."
+   ],
+   "Y": [
+    "Der Funktionsbaustein ENQUEUE_EZ_WM_NACHSCH wird aufgerufen."
+   ],
+   "Z": [
+    "Der Funktionsbaustein ENQUEUE_EZ_WM_NACHSCH wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-030-B02",
+   "soll": "Es werden alle nicht gelöschten Materialien mit festem Lagerplatz im Kommissionier-Lagertyp gelesen; betrachtet werden nur solche mit gepflegter Mindestmenge.",
+   "zeilen": [
+    37,
+    43
+   ],
+   "code": [
+    "37:   SELECT * FROM mlgt INTO TABLE lt_mlgt",
+    "43:   LOOP AT lt_mlgt INTO ls_mlgt WHERE lpmin > 0."
+   ],
+   "X": [
+    "Aus der Tabelle MLGT werden alle Datensätze zur Lagernummer und zum Lagertyp gelesen, für die ein Lagerplatz gepflegt ist und bei denen kein Löschvormerk (LVORM) gesetzt ist.",
+    "Die ermittelten Lagermaterialdaten werden für alle Datensätze durchlaufen, bei denen eine Mindestmenge LPMIN größer als 0 gepflegt ist."
+   ],
+   "Y": [
+    "Es werden Sätze aus mlgt selektiert.",
+    "Die Zeilen aus lt_mlgt, bei denen das Feld lpmin größer als 0 ist, werden einzeln verarbeitet."
+   ],
+   "Z": [
+    "Es werden Sätze aus mlgt selektiert.",
+    "Jede Zeile aus lt_mlgt wird einzeln verarbeitet."
+   ]
+  },
+  {
+   "id": "BM-030-B03",
+   "soll": "Je Fixplatz wird die verfügbare Menge aller Quants des Materials auf diesem Platz summiert.",
+   "zeilen": [
+    45
+   ],
+   "code": [
+    "45:     SELECT SUM( verme ) FROM lqua INTO lv_verme"
+   ],
+   "X": [
+    "Aus der Tabelle LQUA wird die Summe der verfügbaren Mengen (VERME) zur Lagernummer, zum Lagertyp, zum Lagerplatz und zum Material ermittelt."
+   ],
+   "Y": [
+    "Das Ergebnis enthält SUM( und verme.",
+    "Es werden Quants selektiert."
+   ],
+   "Z": [
+    "Es werden Sätze aus lqua selektiert."
+   ]
+  },
+  {
+   "id": "BM-030-B04",
+   "soll": "Liegt sie nicht unter der Mindestmenge, ist kein Nachschub nötig.",
+   "zeilen": [
+    51
+   ],
+   "code": [
+    "51:     IF lv_verme >= ls_mlgt-lpmin."
+   ],
+   "X": [
+    "Ist die verfügbare Menge größer oder gleich der Mindestmenge LPMIN, wird die Verarbeitung für diesen Lagerplatz übersprungen."
+   ],
+   "Y": [
+    "Wenn das Feld lv_verme mindestens ls_mlgt-lpmin ist, wird der Schleifendurchlauf übersprungen."
+   ],
+   "Z": []
+  },
+  {
+   "id": "BM-030-B05",
+   "soll": "Die Nachschubmenge ist die im Lagertyp gepflegte Nachschubmenge, sonst die Differenz bis zur Maximalmenge des Platzes.",
+   "zeilen": [
+    55,
+    56,
+    58
+   ],
+   "code": [
+    "55:     IF ls_mlgt-nsmng > 0.",
+    "56:       lv_menge = ls_mlgt-nsmng.",
+    "58:       lv_menge = ls_mlgt-lpmax - lv_verme."
+   ],
+   "X": [
+    "Ist eine feste Nachschubmenge (NSMNG) größer als 0 gepflegt, wird diese als Anforderungsmenge übernommen.",
+    "Ist keine feste Nachschubmenge größer als 0 gepflegt, wird die Anforderungsmenge aus der Differenz zwischen der Maximalmenge LPMAX und der verfügbaren Menge berechnet."
+   ],
+   "Y": [],
+   "Z": []
+  },
+  {
+   "id": "BM-030-B06",
+   "soll": "Für diese Menge wird mit der WM-Bewegungsart (Vorschlag 319) ein Transportauftrag mit dem Fixplatz als Nachplatz angelegt und sofort festgeschrieben.",
+   "zeilen": [
+    61
+   ],
+   "code": [
+    "61:     CALL FUNCTION 'L_TO_CREATE_SINGLE'"
+   ],
+   "X": [
+    "Über den Funktionsbaustein L_TO_CREATE_SINGLE wird ein Transportauftrag mit direkter Verbuchung für die Lagernummer, die Bewegungsart, das Material, das Werk, die berechnete Anforderungsmenge und den Ziellagerplatz angefordert."
+   ],
+   "Y": [
+    "Der Code übergibt iv_lgnum an L_TO_CREATE_SINGLE und übernimmt dessen Ausgabe nach lv_tanum."
+   ],
+   "Z": [
+    "Der Code übergibt iv_lgnum an L_TO_CREATE_SINGLE und übernimmt dessen Ausgabe nach lv_tanum.",
+    "Das konvertierte Ergebnis wird in lv_tanum übernommen."
+   ]
+  },
+  {
+   "id": "BM-030-B07",
+   "soll": "Jeder angelegte Transportauftrag wird gezählt und mit Nummer, Material und Platz protokolliert, jeder gescheiterte mit Material und Fehlernummer.",
+   "zeilen": [
+    80,
+    81,
+    85
+   ],
+   "code": [
+    "80:     IF sy-subrc = 0.",
+    "81:       ev_anz_ta = ev_anz_ta + 1.",
+    "85:       ls_prot-type = 'E'."
+   ],
+   "X": [
+    "Wurde der Transportauftrag erfolgreich erstellt (sy-subrc gleich 0), wird der Zähler der erstellten Transportaufträge um 1 erhöht und eine Erfolgsmeldung mit der Transportauftragsnummer, dem Material und dem Lagerplatz aufbereitet.",
+    "Konnte kein Transportauftrag erstellt werden (sy-subrc ungleich 0), wird eine Fehlermeldung mit dem Material und dem Fehlerstatus für das Protokoll aufbereitet."
+   ],
+   "Y": [
+    "Gelingt der Aufruf von L_TO_CREATE_SINGLE, wird der Typ auf S gesetzt, sonst der Typ auf E gesetzt.",
+    "Wenn der Aufruf von L_TO_CREATE_SINGLE gelingt, wird der Typ auf S gesetzt.",
+    "Sonst wird der Typ auf E gesetzt."
+   ],
+   "Z": [
+    "Bei Treffer wird die Typ auf S gesetzt.",
+    "Bei Treffer wird die Typ auf S gesetzt, sonst die Typ auf E gesetzt.",
+    "sy-subrc mit dem Wert 0 setzen die Typ auf S.",
+    "Für andere sy-subrc wird die Typ auf E gesetzt.",
+    "Andere sy-subrc setzen die Typ auf E."
+   ]
+  },
+  {
+   "id": "BM-030-B08",
+   "soll": "Am Ende wird die Sperre freigegeben und die Anzahl der Transportaufträge mit dem Protokoll zurückgegeben.",
+   "zeilen": [
+    91
+   ],
+   "code": [
+    "91:   CALL FUNCTION 'DEQUEUE_EZ_WM_NACHSCH'"
+   ],
+   "X": [
+    "Über den Funktionsbaustein DEQUEUE_EZ_WM_NACHSCH wird die zuvor gesetzte Sperre für die Lagernummer und den Lagertyp wieder aufgehoben."
+   ],
+   "Y": [
+    "Der Funktionsbaustein DEQUEUE_EZ_WM_NACHSCH wird aufgerufen."
+   ],
+   "Z": [
+    "Der Funktionsbaustein DEQUEUE_EZ_WM_NACHSCH wird aufgerufen."
+   ]
+  }
+ ]
+}

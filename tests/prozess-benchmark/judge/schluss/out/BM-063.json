@@ -1,0 +1,95 @@
+{
+ "id": "BM-063",
+ "urteile": [
+  {
+   "id": "BM-063-B01",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "falsch"
+    ]
+   },
+   "kurz": "X nennt Meldung M2 mit Equipment, Kurztext, Priorität; Y und Z nur Parameterübergabe."
+  },
+  {
+   "id": "BM-063-B02",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein",
+     "redundant"
+    ]
+   },
+   "kurz": "X und Y nennen Meldungstext und Ende; Z nur 'eine Meldung'."
+  },
+  {
+   "id": "BM-063-B03",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "kurz": "Nur X nennt Sichern und Festschreiben mit Warten."
+  },
+  {
+   "id": "BM-063-B04",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "kurz": "X nennt die Meldungsnummer; Y und Z nur notif_no."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

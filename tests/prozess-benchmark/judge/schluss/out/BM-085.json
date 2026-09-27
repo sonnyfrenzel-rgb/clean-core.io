@@ -1,0 +1,106 @@
+{
+ "id": "BM-085",
+ "urteile": [
+  {
+   "id": "BM-085-B01",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "X und Z lassen den Status N weg, Y nennt Stapel und Status N."
+  },
+  {
+   "id": "BM-085-B02",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Nur Y beschreibt die Pflichtfeldprüfung, X und Z nur die Schleife."
+  },
+  {
+   "id": "BM-085-B03",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "falsch",
+     "redundant"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "falsch",
+     "redundant",
+     "grammatik"
+    ]
+   },
+   "kurz": "X und Z behaupten 'eine Zeile wird geändert' (der UPDATE trifft alle N-Zeilen des Stapels), Y korrekt."
+  },
+  {
+   "id": "BM-085-B04",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "kurz": "X und Z geben 'Pflichtfeldfehler:' und lv_nerr aus, ohne dass klar wird, dass es die Fehleranzahl ist; Y nennt die Anzahl."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

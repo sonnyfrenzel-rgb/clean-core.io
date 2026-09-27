@@ -1,0 +1,83 @@
+{
+ "id": "BM-082",
+ "titel": "Überstundengrenzen löschen mit Berechtigungsprüfung je Personalbereich",
+ "prozess": "Ein Pflegedialog der Personalabteilung ruft den Baustein mit Personalbereich und Stichtag auf. Zuerst prüft der Baustein über das kundeneigene Berechtigungsobjekt Z_HR_OVT, ob der Benutzer für diesen Personalbereich löschen darf; fehlt die Berechtigung, endet er mit der Ausnahme NO_AUTHORITY. Danach löscht er alle Überstundengrenzen des Personalbereichs, deren Beginn am oder nach dem Stichtag liegt. Wurde nichts gelöscht, endet er mit NOT_FOUND, sonst gibt er die Anzahl der gelöschten Einträge zurück. Ein COMMIT setzt der Baustein nicht; ob die Löschung festgeschrieben wird, entscheidet der Aufrufer.",
+ "verboten": [
+  "source.abap:21 — kein Fachsatz „Löschung ist festgeschrieben“ (kein COMMIT im Baustein; der Aufrufer entscheidet).",
+  "source.abap:14 — kein Fachsatz über eine Prüfung je Personalnummer (P_ORGIN); geprüft wird ein Kundenobjekt auf Personalbereich.",
+  "source.abap:21 — kein Fachsatz „Grenzen vor dem Stichtag werden gelöscht“ (Bedingung ist begda >= Stichtag)."
+ ],
+ "saetze": [
+  {
+   "id": "BM-082-B01",
+   "soll": "Vor dem Löschen wird geprüft, ob der Benutzer Überstundengrenzen des angegebenen Personalbereichs löschen darf; sonst endet der Baustein mit NO_AUTHORITY.",
+   "zeilen": [
+    14,
+    17,
+    18
+   ],
+   "code": [
+    "14:   AUTHORITY-CHECK OBJECT 'Z_HR_OVT'",
+    "17:   IF sy-subrc <> 0.",
+    "18:     RAISE no_authority."
+   ],
+   "X": [
+    "Es wird geprüft, ob die Berechtigung für das Berechtigungsobjekt Z_HR_OVT mit der Aktivität 06 und dem angegebenen Personalbereich vorliegt.",
+    "Fehlt die erforderliche Berechtigung, wird die Ausnahme NO_AUTHORITY ausgelöst."
+   ],
+   "Y": [
+    "Die Berechtigung auf Z_HR_OVT wird geprüft."
+   ],
+   "Z": [
+    "Die Berechtigung auf Z_HR_OVT wird geprüft."
+   ]
+  },
+  {
+   "id": "BM-082-B02",
+   "soll": "Alle Überstundengrenzen des Personalbereichs mit Beginn ab dem Stichtag werden gelöscht.",
+   "zeilen": [
+    21
+   ],
+   "code": [
+    "21:   DELETE FROM zhr_ovt_limit"
+   ],
+   "X": [
+    "In der Tabelle ZHR_OVT_LIMIT werden alle Datensätze gelöscht, deren Personalbereich PERSA dem übergebenen Personalbereich entspricht und deren Beginndatum BEGDA größer oder gleich dem übergebenen Von-Datum ist."
+   ],
+   "Y": [],
+   "Z": []
+  },
+  {
+   "id": "BM-082-B03",
+   "soll": "Gab es keine solchen Einträge, endet der Baustein mit NOT_FOUND.",
+   "zeilen": [
+    24,
+    25
+   ],
+   "code": [
+    "24:   IF sy-subrc <> 0.",
+    "25:     RAISE not_found."
+   ],
+   "X": [
+    "Wurde kein passender Datensatz gelöscht, wird die Ausnahme NOT_FOUND ausgelöst."
+   ],
+   "Y": [],
+   "Z": []
+  },
+  {
+   "id": "BM-082-B04",
+   "soll": "Sonst wird die Anzahl der gelöschten Einträge zurückgegeben.",
+   "zeilen": [
+    27
+   ],
+   "code": [
+    "27:   ev_count = sy-dbcnt."
+   ],
+   "X": [
+    "Die Anzahl der gelöschten Datensätze wird an den Ausgabeparameter EV_COUNT übergeben."
+   ],
+   "Y": [],
+   "Z": []
+  }
+ ]
+}

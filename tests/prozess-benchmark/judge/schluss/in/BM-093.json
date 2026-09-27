@@ -1,0 +1,369 @@
+{
+ "id": "BM-093",
+ "titel": "Überstundenmonitor: Ist gegen Soll je Monat mit Workflow-Alarm an die Führungskraft",
+ "prozess": "Die Personalabteilung startet den Überstundenmonitor für einen Monat. Zuerst werden die im Monat gültigen Überstundengrenzen je Personalbereich geladen und die Mitarbeiter der gewählten Organisationseinheiten und Personalbereiche gelesen; gibt es keine, endet der Lauf. Je Mitarbeiter wird geprüft, ob der Benutzer dessen Anwesenheiten lesen darf, sonst wird er übersprungen. Die Bewertung liest die Sollarbeitszeit zum Monatsende – fehlt sie, erhält der Mitarbeiter Status E – sowie Personalbereich und Organisationseinheit. Ist-Stunden aus Anwesenheiten und erfasster Mehrarbeit werden summiert, das Soll vereinfacht aus Wochenstunden und fünf Siebteln der Kalendertage berechnet, Feiertage bleiben unberücksichtigt. Die Überstunden werden mit der Grenze des Personalbereichs (ersatzweise 20 Stunden) zu einer Ampel rot, gelb (über 80 Prozent) oder grün verglichen. Bei roter Ampel und gewählter Alarmierung wird – höchstens einmal je Mitarbeiter und Monat – ein Alarm protokolliert und das Workflow-Ereignis LIMITEXCEEDED für die Führungskraft ausgelöst; ausgelöste Alarme werden festgeschrieben. Zum Schluss erscheint die Ampel aller bewerteten Mitarbeiter als ALV-Liste.",
+ "verboten": [
+  "zcl_hr_overtime.abap:102 — kein Fachsatz „Feiertage und Abwesenheiten mindern das Soll“ (vereinfachte Formel ohne Kalender).",
+  "zcl_hr_overtime.abap:143 — kein Fachsatz „Überstunden werden genehmigt oder ausgezahlt“ (nur Alarm-Ereignis).",
+  "zhr_ot_eval.abap:55 — kein Fachsatz „Berechtigung für Mehrarbeit (IT2005) wird geprüft“ (geprüft wird nur IT2002).",
+  "zcl_hr_overtime.abap:126 — kein Fachsatz „die Führungskraft wird bei erneuter Überschreitung im selben Monat erneut benachrichtigt“."
+ ],
+ "saetze": [
+  {
+   "id": "BM-093-B01",
+   "soll": "Zu Beginn werden die Überstundengrenzen je Personalbereich geladen, die im gewählten Monat gelten.",
+   "zeilen": [
+    37,
+    129
+   ],
+   "code": [
+    "37:   CREATE OBJECT go_eval",
+    "129:     SELECT * FROM zhr_ot_limit INTO TABLE mt_limit"
+   ],
+   "X": [
+    "Es werden Sätze aus zhr_ot_limit selektiert."
+   ],
+   "Y": [
+    "Es werden Sätze aus zhr_ot_limit selektiert."
+   ],
+   "Z": [
+    "Das Auswertungsobjekt zur Überstundenermittlung wird mit dem berechneten Monatszeitraum erzeugt.",
+    "Aus der Tabelle ZHR_OT_LIMIT werden alle Überstundengrenzen gelesen, deren Gültigkeit den Auswertungsmonat überschneidet."
+   ]
+  },
+  {
+   "id": "BM-093-B02",
+   "soll": "Es werden alle Mitarbeiter gelesen, die im Monat einer der gewählten Organisationseinheiten und Personalbereiche zugeordnet sind; ohne Treffer endet der Lauf mit einer Meldung.",
+   "zeilen": [
+    42,
+    48,
+    49
+   ],
+   "code": [
+    "42:   SELECT DISTINCT pernr FROM pa0001 INTO TABLE gt_pernr",
+    "48:   IF gt_pernr IS INITIAL.",
+    "49:     MESSAGE s003(zhr_ot)."
+   ],
+   "X": [
+    "Es werden Organisatorische Zuordnungen selektiert.",
+    "Ohne Treffer wird eine Statusmeldung ausgegeben und der Block verlassen.",
+    "Die Statusmeldung 003(ZHR_OT) wird ausgegeben."
+   ],
+   "Y": [
+    "Es werden Sätze aus pa0001 selektiert.",
+    "Ohne Treffer wird eine Meldung ausgegeben und der Block verlassen.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "Eine Meldung wird ausgegeben.",
+    "Es wird eine Meldung ausgegeben und der Block verlassen."
+   ],
+   "Z": [
+    "Aus der Tabelle PA0001 werden alle eindeutigen Personalnummern gelesen, die den Kriterien für Personalnummer, Organisationseinheit und Personalbereich entsprechen und im Monatszeitraum gültig sind.",
+    "Werden keine Personalnummern gefunden, wird die Erfolgsmeldung 003(zhr_ot) ausgegeben und die Verarbeitung beendet."
+   ]
+  },
+  {
+   "id": "BM-093-B03",
+   "soll": "Mitarbeiter, deren Anwesenheiten der Benutzer nicht lesen darf, werden übersprungen.",
+   "zeilen": [
+    55,
+    68
+   ],
+   "code": [
+    "55:     CALL FUNCTION 'HR_CHECK_AUTHORITY_INFTY'",
+    "68:     IF sy-subrc <> 0."
+   ],
+   "X": [
+    "Der Funktionsbaustein HR_CHECK_AUTHORITY_INFTY wird aufgerufen.",
+    "Scheitert der Aufruf von HR_CHECK_AUTHORITY_INFTY, wird der Schleifendurchlauf übersprungen."
+   ],
+   "Y": [
+    "Der Funktionsbaustein HR_CHECK_AUTHORITY_INFTY wird aufgerufen."
+   ],
+   "Z": [
+    "Über den Funktionsbaustein HR_CHECK_AUTHORITY_INFTY wird die Leseberechtigung für den Infotyp 2002 der Personalnummer im Monatszeitraum geprüft.",
+    "Liegt keine Leseberechtigung für den Infotyp 2002 vor oder tritt ein Fehler auf, wird die Verarbeitung der aktuellen Personalnummer übersprungen."
+   ]
+  },
+  {
+   "id": "BM-093-B04",
+   "soll": "Ohne Sollarbeitszeit zum Monatsende erhält der Mitarbeiter den Status E mit Hinweistext und wird nicht weiter bewertet.",
+   "zeilen": [
+    149,
+    160,
+    161
+   ],
+   "code": [
+    "149:     CALL FUNCTION 'HR_READ_INFOTYPE'",
+    "160:     IF sy-subrc <> 0 OR lt_p0007 IS INITIAL.",
+    "161:       rs_res-status = 'E'."
+   ],
+   "X": [
+    "Der Funktionsbaustein HR_READ_INFOTYPE wird aufgerufen.",
+    "Wenn der Aufruf von HR_READ_INFOTYPE scheitert oder das Feld lt_p0007 leer ist, wird der Status auf E gesetzt, der Text auf Keine Sollarbeitszeit (IT0007) gesetzt und der Block verlassen.",
+    "Wenn der Aufruf von HR_READ_INFOTYPE scheitert oder das Feld lt_p0007 leer ist, wird der Status auf E gesetzt.",
+    "Wenn der Aufruf von HR_READ_INFOTYPE scheitert oder das Feld lt_p0007 leer ist, wird der Text auf Keine Sollarbeitszeit (IT0007) gesetzt."
+   ],
+   "Y": [
+    "Der Funktionsbaustein HR_READ_INFOTYPE wird aufgerufen.",
+    "Für sy-subrc <> 0 OR lt_p0007 IS INITIAL wird die Status auf E gesetzt, die Text auf Keine Sollarbeitszeit (IT0007) gesetzt und der Block verlassen.",
+    "sy-subrc <> 0 OR lt_p0007 IS INITIAL setzen die Status auf E.",
+    "Es wird die Status auf E gesetzt, die Text auf Keine Sollarbeitszeit (IT0007) gesetzt und der Block verlassen.",
+    "sy-subrc <> 0 OR lt_p0007 IS INITIAL setzen die Text auf Keine Sollarbeitszeit (IT0007)."
+   ],
+   "Z": [
+    "Über den Funktionsbaustein HR_READ_INFOTYPE werden die Sollarbeitszeitdaten des Infotyps 0007 zum Monatsende für die Personalnummer gelesen.",
+    "Werden keine Sollarbeitszeitdaten des Infotyps 0007 gefunden oder schlägt das Lesen fehl, wird der Status E und der Hinweistext Keine Sollarbeitszeit (IT0007) gesetzt und die Auswertung abgebrochen."
+   ]
+  },
+  {
+   "id": "BM-093-B05",
+   "soll": "Personalbereich und Organisationseinheit werden aus der organisatorischen Zuordnung zum Monatsende übernommen.",
+   "zeilen": [
+    167,
+    179
+   ],
+   "code": [
+    "167:     CALL FUNCTION 'HR_READ_INFOTYPE'",
+    "179:     rs_res-persa = ls_p0001-werks."
+   ],
+   "X": [
+    "Der Funktionsbaustein HR_READ_INFOTYPE wird aufgerufen."
+   ],
+   "Y": [
+    "Der Funktionsbaustein HR_READ_INFOTYPE wird aufgerufen."
+   ],
+   "Z": [
+    "Über den Funktionsbaustein HR_READ_INFOTYPE werden die organisatorischen Zuordnungsdaten des Infotyps 0001 zum Monatsende für die Personalnummer gelesen."
+   ]
+  },
+  {
+   "id": "BM-093-B06",
+   "soll": "Die Ist-Stunden ergeben sich aus den Anwesenheiten plus der erfassten Mehrarbeit des Monats, jeweils ohne gesperrte Sätze.",
+   "zeilen": [
+    183,
+    188
+   ],
+   "code": [
+    "183:     SELECT SUM( stdaz ) FROM pa2002 INTO lv_ist",
+    "188:     SELECT SUM( stdaz ) FROM pa2005 INTO lv_mehr"
+   ],
+   "X": [
+    "Das Ergebnis enthält SUM( und stdaz.",
+    "Es werden Sätze aus pa2002 selektiert.",
+    "Das Ergebnis enthält SUM( und stdaz.",
+    "Es werden Sätze aus pa2005 selektiert."
+   ],
+   "Y": [
+    "Es werden Sätze aus pa2002 selektiert.",
+    "Es werden Sätze aus pa2005 selektiert."
+   ],
+   "Z": [
+    "Aus der Tabelle PA2002 wird die Summe der nicht gesperrten Anwesenheitsstunden im Monatszeitraum für die Personalnummer gelesen.",
+    "Aus der Tabelle PA2005 wird die Summe der nicht gesperrten Mehrarbeitsstunden im Monatszeitraum für die Personalnummer gelesen."
+   ]
+  },
+  {
+   "id": "BM-093-B07",
+   "soll": "Das Soll wird vereinfacht aus den Wochenstunden geteilt durch fünf mal der Zahl der Arbeitstage (fünf Siebtel der Kalendertage) berechnet, ohne Feiertage.",
+   "zeilen": [
+    194,
+    195
+   ],
+   "code": [
+    "194:     lv_days = ( mv_endda - mv_begda + 1 ) * 5 / 7.",
+    "195:     lv_soll = ls_p0007-wostd / 5 * lv_days."
+   ],
+   "X": [],
+   "Y": [],
+   "Z": []
+  },
+  {
+   "id": "BM-093-B08",
+   "soll": "Die Überstunden sind Ist plus Mehrarbeit minus Soll.",
+   "zeilen": [
+    196
+   ],
+   "code": [
+    "196:     rs_res-overtime = lv_ist + lv_mehr - lv_soll."
+   ],
+   "X": [],
+   "Y": [],
+   "Z": []
+  },
+  {
+   "id": "BM-093-B09",
+   "soll": "Als Grenze gilt die des Personalbereichs; ist keine hinterlegt, gelten 20 Stunden.",
+   "zeilen": [
+    198,
+    200,
+    202
+   ],
+   "code": [
+    "198:     READ TABLE mt_limit INTO ls_limit WITH KEY persa = rs_res-persa.",
+    "200:       rs_res-limit = ls_limit-hours.",
+    "202:       rs_res-limit = c_default_limit."
+   ],
+   "X": [
+    "In der Tabelle mt_limit wird nach einer passenden Zeile gesucht."
+   ],
+   "Y": [
+    "In der Tabelle wird nach einer passenden Zeile gesucht."
+   ],
+   "Z": [
+    "Wird für den Personalbereich eine Grenze in den hinterlegten Überstundengrenzen gefunden, wird deren Stundenwert als Limit übernommen.",
+    "Wird für den Personalbereich keine Überstundengrenze gefunden, wird das Standardlimit von 20,00 Stunden gesetzt."
+   ]
+  },
+  {
+   "id": "BM-093-B10",
+   "soll": "Über der Grenze ist die Ampel rot, über 80 Prozent der Grenze gelb, sonst grün.",
+   "zeilen": [
+    205,
+    206,
+    208,
+    210
+   ],
+   "code": [
+    "205:     IF rs_res-overtime > rs_res-limit.",
+    "206:       rs_res-status = 'R'.",
+    "208:       rs_res-status = 'Y'.",
+    "210:       rs_res-status = 'G'."
+   ],
+   "X": [
+    "Wenn das Feld rs_res-overtime größer als rs_res-limit ist, wird der Status auf R gesetzt.",
+    "Wenn das Feld rs_res-overtime größer als rs_res-limit ist, wird der Status auf R gesetzt.",
+    "Wenn die Bedingung „rs_res-overtime > rs_res-limit * '0.8'“ erfüllt ist, wird der Status auf Y gesetzt.",
+    "Wenn die Bedingung „rs_res-overtime > rs_res-limit * '0.8'“ erfüllt ist, wird der Status auf Y gesetzt.",
+    "Sonst wird der Status auf G gesetzt.",
+    "Sonst wird der Status auf G gesetzt."
+   ],
+   "Y": [
+    "Für rs_res-overtime größer rs_res-limit wird die Status auf R gesetzt.",
+    "Für rs_res-overtime größer rs_res-limit wird die Status auf R gesetzt, sonst die Status auf Y gesetzt beziehungsweise die Status auf G gesetzt.",
+    "rs_res-overtime größer rs_res-limit setzen die Status auf R.",
+    "Für rs_res-overtime > rs_res-limit * '0.8' wird die Status auf Y gesetzt.",
+    "rs_res-overtime > rs_res-limit * '0.8' setzen die Status auf Y.",
+    "Sonst wird die Status auf G gesetzt.",
+    "Sonst setzen die Status auf G."
+   ],
+   "Z": [
+    "Übersteigen die berechneten Überstunden das Limit, wird der Status auf R gesetzt.",
+    "Übersteigen die berechneten Überstunden 80 % des Limits, wird der Status auf Y gesetzt.",
+    "Liegen die berechneten Überstunden bei höchstens 80 % des Limits, wird der Status auf G gesetzt."
+   ]
+  },
+  {
+   "id": "BM-093-B11",
+   "soll": "Nur bei roter Ampel und gewählter Alarmierung wird ein Alarm ausgelöst.",
+   "zeilen": [
+    73,
+    74
+   ],
+   "code": [
+    "73:     IF gs_res-status = 'R' AND p_alert = 'X'.",
+    "74:       go_eval->raise_alert( gs_res )."
+   ],
+   "X": [
+    "Die Methode raise_alert von go_eval wird aufgerufen; sie legt Sätze an in ZHR_OT_ALERT, ruft SWE_EVENT_CREATE auf und liest ZHR_OT_ALERT."
+   ],
+   "Y": [
+    "Die Methode raise_alert von go_eval wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ],
+   "Z": [
+    "Ist der Status R und die Alarmierung aktiviert, wird die Alarmierung eingeleitet und der Alarmzähler um 1 erhöht.",
+    "Für das berechnete Auswertungsergebnis wird die Methode raise_alert aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-093-B12",
+   "soll": "Je Mitarbeiter und Monat wird höchstens ein Alarm ausgelöst; ein bereits protokollierter Alarm wird nicht wiederholt.",
+   "zeilen": [
+    219,
+    222,
+    223
+   ],
+   "code": [
+    "219:     SELECT SINGLE * FROM zhr_ot_alert INTO ls_alert",
+    "222:     IF sy-subrc = 0.",
+    "223:       RETURN.                 \"je Mitarbeiter und Monat nur ein Alarm"
+   ],
+   "X": [
+    "Es werden Sätze aus zhr_ot_alert selektiert.",
+    "Bei Treffer wird vor der Datenbankoperation zurückgekehrt."
+   ],
+   "Y": [
+    "Es werden Sätze aus zhr_ot_alert selektiert.",
+    "Bei Treffer wird der Block verlassen.",
+    "Bei Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben."
+   ],
+   "Z": [
+    "Aus der Tabelle ZHR_OT_ALERT wird gelesen, ob für die Personalnummer und das Monatsbeginndatum bereits ein Alarmeintrag vorhanden ist.",
+    "Ist für den Mitarbeiter und Monat bereits ein Alarmeintrag vorhanden, wird die Alarmierung vorzeitig beendet."
+   ]
+  },
+  {
+   "id": "BM-093-B13",
+   "soll": "Ein neuer Alarm wird mit Überstunden, Grenze, Datum und Benutzer protokolliert und löst das Workflow-Ereignis LIMITEXCEEDED für die Führungskraft aus.",
+   "zeilen": [
+    233,
+    236
+   ],
+   "code": [
+    "233:     INSERT zhr_ot_alert FROM ls_alert.",
+    "236:     CALL FUNCTION 'SWE_EVENT_CREATE'"
+   ],
+   "X": [
+    "Der Funktionsbaustein SWE_EVENT_CREATE wird aufgerufen."
+   ],
+   "Y": [
+    "Der Funktionsbaustein SWE_EVENT_CREATE wird aufgerufen."
+   ],
+   "Z": [
+    "In die Tabelle ZHR_OT_ALERT wird ein Datensatz mit Personalnummer, Monatsbeginn, Überstunden, Grenzwert, Tagesdatum und Benutzername eingefügt.",
+    "Über den Funktionsbaustein SWE_EVENT_CREATE wird für das Objekt ZHROT das Workflow-Ereignis LIMITEXCEEDED erzeugt."
+   ]
+  },
+  {
+   "id": "BM-093-B14",
+   "soll": "Wurden Alarme ausgelöst, werden sie festgeschrieben.",
+   "zeilen": [
+    80,
+    81
+   ],
+   "code": [
+    "80:   IF gv_alerts > 0.",
+    "81:     COMMIT WORK."
+   ],
+   "X": [
+    "Wenn das Feld gv_alerts größer als 0 ist, wird COMMIT WORK ausgeführt.",
+    "Mit COMMIT WORK wird die Änderung persistiert."
+   ],
+   "Y": [
+    "Für gv_alerts größer 0 wird COMMIT WORK ausgeführt.",
+    "Mit COMMIT WORK wird die Änderung persistiert."
+   ],
+   "Z": [
+    "Wurde mindestens ein Alarm erzeugt, werden die Änderungen mit COMMIT WORK auf der Datenbank bestätigt."
+   ]
+  },
+  {
+   "id": "BM-093-B15",
+   "soll": "Zum Schluss wird die Überstundenampel aller bewerteten Mitarbeiter als ALV-Liste angezeigt.",
+   "zeilen": [
+    84
+   ],
+   "code": [
+    "84:   CALL FUNCTION 'REUSE_ALV_GRID_DISPLAY'"
+   ],
+   "X": [
+    "Der Funktionsbaustein REUSE_ALV_GRID_DISPLAY wird aufgerufen."
+   ],
+   "Y": [
+    "Der Funktionsbaustein REUSE_ALV_GRID_DISPLAY wird aufgerufen."
+   ],
+   "Z": [
+    "Über den Funktionsbaustein REUSE_ALV_GRID_DISPLAY werden die gesammelten Überstundenergebnisse in einem ALV-Grid mit dem Titel Überstundenmonitor ausgegeben."
+   ]
+  }
+ ]
+}

@@ -1,0 +1,146 @@
+{
+ "id": "BM-007",
+ "titel": "Verfügbarkeitsprüfung je Auftrag: Fehlmengen offener Positionen per BAPI ermitteln",
+ "prozess": "Die Methode wird vom Innendienst-Cockpit mit einer Auftragsnummer aufgerufen. Sie liest alle nicht abgesagten Positionen des Auftrags zusammen mit ihrem Lieferstatus; gibt es keine, endet sie mit einer Ausnahme. Voll belieferte Positionen überspringt sie. Für jede andere Position ruft sie die Standard-Verfügbarkeitsprüfung für Material und Werk mit der Prüfregel A auf. Meldet diese einen Fehler, bricht die ganze Prüfung mit Angabe des Materials ab. Sonst summiert sie die bis heute bestätigten Mengen. Ist diese Summe kleiner als die Auftragsmenge, nimmt sie die Position mit Bedarf, verfügbarer Menge und Fehlmenge in die Rückgabeliste auf. Der Auftrag selbst wird nicht verändert.",
+ "verboten": [
+  "zcl_sd_atp_check.abap:49 — kein Fachsatz „Auftragspositionen werden neu bestätigt“: der BAPI simuliert nur, am Auftrag wird nichts geändert",
+  "zcl_sd_atp_check.abap:69 — kein Fachsatz „Fehlmenge gegenüber der offenen Restmenge“: verglichen wird die gesamte Auftragsmenge, bereits gelieferte Teilmengen werden nicht abgezogen",
+  "zcl_sd_atp_check.abap:61 — kein Fachsatz „fehlerhafte Positionen werden übersprungen“: ein BAPI-Fehler beendet die Prüfung des ganzen Auftrags"
+ ],
+ "saetze": [
+  {
+   "id": "BM-007-B01",
+   "soll": "Zum Auftrag werden alle nicht abgesagten Positionen mit Material, Werk, Auftragsmenge und Lieferstatus gelesen.",
+   "zeilen": [
+    34
+   ],
+   "code": [
+    "34:     SELECT p~posnr, p~matnr, p~werks, p~kwmeng, p~meins, u~lfsta"
+   ],
+   "X": [
+    "Das Ergebnis enthält p~posnr, p~matnr, p~werks, p~kwmeng, p~meins und u~lfsta.",
+    "Es werden Sätze aus vbap selektiert."
+   ],
+   "Y": [
+    "Das Ergebnis enthält Positionsnummer, Materialnummer, Werk, Auftragsmenge, Mengeneinheit und lfsta.",
+    "Es werden Auftragspositionen selektiert."
+   ],
+   "Z": [
+    "Aus den Tabellen VBAP und VBUP werden Positionsnummer, Materialnummer, Werk, Auftragsmenge, Basismengeneinheit und der Lieferstatus für den angegebenen Kundenauftrag ohne Absagegrund (ABGRU ist initial) selektiert."
+   ]
+  },
+  {
+   "id": "BM-007-B02",
+   "soll": "Hat der Auftrag keine solchen Positionen, bricht die Prüfung mit dem Fehler „keine Positionen“ ab.",
+   "zeilen": [
+    40,
+    41
+   ],
+   "code": [
+    "40:     IF sy-subrc <> 0.",
+    "41:       RAISE EXCEPTION TYPE zcx_sd_atp EXPORTING textid = zcx_sd_atp=>no_items."
+   ],
+   "X": [],
+   "Y": [],
+   "Z": [
+    "Wurden keine passenden Positionen gefunden (sy-subrc ungleich 0), wird die Ausnahme ZCX_SD_ATP mit der Fehlerkennung no_items ausgelöst."
+   ]
+  },
+  {
+   "id": "BM-007-B03",
+   "soll": "Voll belieferte Positionen werden nicht geprüft.",
+   "zeilen": [
+    45
+   ],
+   "code": [
+    "45:       IF ls_item-lfsta = 'C'."
+   ],
+   "X": [],
+   "Y": [
+    "Wenn das Feld ls_item-lfsta gleich C ist, wird der Schleifendurchlauf übersprungen."
+   ],
+   "Z": [
+    "Ist die Position bereits vollständig beliefert (LFSTA = 'C'), wird die weitere Prüfung übersprungen und mit der nächsten Position fortgefahren."
+   ]
+  },
+  {
+   "id": "BM-007-B04",
+   "soll": "Für jede übrige Position wird die Verfügbarkeit des Materials im Werk mit der Prüfregel A ermittelt.",
+   "zeilen": [
+    49
+   ],
+   "code": [
+    "49:       CALL FUNCTION 'BAPI_MATERIAL_AVAILABILITY'"
+   ],
+   "X": [
+    "Der Code übergibt ls_item-werks an BAPI_MATERIAL_AVAILABILITY und übernimmt dessen Ausgabe nach ls_return.",
+    "Das konvertierte Ergebnis wird in ls_return übernommen."
+   ],
+   "Y": [
+    "Der Code übergibt ls_item-werks an BAPI_MATERIAL_AVAILABILITY und übernimmt dessen Ausgabe nach ls_return."
+   ],
+   "Z": [
+    "Über den Funktionsbaustein BAPI_MATERIAL_AVAILABILITY wird für das Werk, das Material, die Mengeneinheit der Position und die feste Prüfregel 'A' die Materialverfügbarkeit abgefragt."
+   ]
+  },
+  {
+   "id": "BM-007-B05",
+   "soll": "Meldet die Verfügbarkeitsprüfung einen Fehler, bricht die gesamte Prüfung mit Angabe des Materials ab.",
+   "zeilen": [
+    60,
+    61
+   ],
+   "code": [
+    "60:       IF ls_return-type = 'E'.",
+    "61:         RAISE EXCEPTION TYPE zcx_sd_atp"
+   ],
+   "X": [],
+   "Y": [],
+   "Z": [
+    "Gibt der Baustein einen Fehler zurück (TYPE = 'E'), wird die Ausnahme ZCX_SD_ATP mit der Fehlerkennung bapi_error unter Angabe der Materialnummer ausgelöst."
+   ]
+  },
+  {
+   "id": "BM-007-B06",
+   "soll": "Als verfügbar zählen nur Mengen, die bis heute bestätigt sind.",
+   "zeilen": [
+    66,
+    67
+   ],
+   "code": [
+    "66:       LOOP AT lt_wmdvex INTO ls_wmdve WHERE com_date <= sy-datum.",
+    "67:         lv_avail = lv_avail + ls_wmdve-com_qty."
+   ],
+   "X": [
+    "Jede Zeile aus lt_wmdvex wird einzeln verarbeitet."
+   ],
+   "Y": [
+    "Die Zeilen aus lt_wmdvex, bei denen das Feld com_date höchstens sy-datum ist, werden einzeln verarbeitet."
+   ],
+   "Z": [
+    "Für alle Rückmeldesätze mit Bestätigungsdatum bis einschließlich dem aktuellen Tagesdatum (COM_DATE kleiner oder gleich sy-datum) wird die bestätigte Menge aufsummiert."
+   ]
+  },
+  {
+   "id": "BM-007-B07",
+   "soll": "Liegt die verfügbare Menge unter der Auftragsmenge, wird die Position mit Bedarf, verfügbarer Menge und Fehlmenge zurückgegeben.",
+   "zeilen": [
+    69,
+    70
+   ],
+   "code": [
+    "69:       IF lv_avail < ls_item-kwmeng.",
+    "70:         ls_short = VALUE #( posnr   = ls_item-posnr"
+   ],
+   "X": [
+    "Für lv_avail kleiner ls_item-kwmeng wird eine Zeile aufgenommen."
+   ],
+   "Y": [
+    "Wenn das Feld lv_avail kleiner als ls_item-kwmeng ist, wird eine Zeile aufgenommen."
+   ],
+   "Z": [
+    "Ist die verfügbare Menge kleiner als die Auftragsmenge der Position, wird ein Eintrag mit Positionsnummer, Materialnummer, Werk, Bedarfsmenge, verfügbarer Menge und der berechneten Fehlmenge in die Ergebnistabelle eingefügt."
+   ]
+  }
+ ]
+}

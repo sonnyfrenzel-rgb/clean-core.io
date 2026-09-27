@@ -1,0 +1,791 @@
+{
+ "id": "BM-057",
+ "titel": "Monatsabschluss-Steuerungsjob für mehrere Buchungskreise mit Schrittliste, Abgrenzungen und Parallelprüfung",
+ "prozess": "Der Report läuft als Hintergrundjob zum Monatsende für eine Lauf-ID, eine Laufart, mehrere Buchungskreise sowie Geschäftsjahr und Periode. Er legt ein Anwendungsprotokoll an und sperrt den Lauf exklusiv; ist er bereits gesperrt, endet der Job mit einer Meldung im Jobprotokoll. Anschließend wird je Buchungskreis in der Periodensteuerung geprüft, ob die Abschlussperiode offen ist; nur diese Buchungskreise laufen mit, bei geschlossener Periode wird gewarnt. Die aktiven Schritte der Laufart werden in Customizing-Reihenfolge abgearbeitet, bereits erfolgreich gelaufene Schritte werden beim Neustart übersprungen. Je Schritttyp läuft eine im Customizing hinterlegte Kundenroutine oder ein Funktionsbaustein (Ziel im Code nicht bestimmbar), die Buchung der Abgrenzungen, ein Standardprogramm wie der Abschreibungslauf oder eine parallele Prüfung je Buchungskreis. Abgrenzungen werden als Beleg Aufwand an Abgrenzung gebucht, im Testlauf nur geprüft; Fehler werden zurückgerollt und protokolliert, erfolgreiche Buchungen festgeschrieben und in der Abgrenzungstabelle als gebucht markiert. Die Parallelprüfung startet je Buchungskreis eine eigene Task, die den Saldo der offenen Posten der Nullkonten ermittelt; der Job wartet höchstens 30 Minuten auf alle Rückmeldungen. Nach jedem Schritt wird dessen Status gespeichert; scheitert ein kritischer Schritt, wird der Lauf abgebrochen. Zum Schluss werden Laufstatus und Protokoll gesichert, die Sperre aufgehoben und bei angegebener Adresse eine Abschlussmail versendet. Das Ergebnis eingeplanter Standardprogramme wird nicht geprüft, und nicht kritische Fehler verhindern den Status erfolgreich nicht.",
+ "verboten": [
+  "zfi_close_run_f02.abap:33 — kein call-Knoten und kein Fachsatz mit einem bestimmten Abschlussschritt (Programm und FORM stammen aus ZFI_CLOSE_STEP; wegen IF FOUND bleibt eine fehlende Routine folgenlos und der Schritt wird mit Status S gespeichert)",
+  "zfi_close_run_f02.abap:205 — kein Fachsatz „ein fehlgeschlagener Abschreibungslauf bzw. ein fehlgeschlagenes Standardprogramm führt zum Fehlerstatus“ (cv_rc wird nach SUBMIT fest auf 0 gesetzt, das Programmergebnis wird nicht ausgewertet)",
+  "zfi_close_run_f01.abap:68 — kein Fachsatz „Status S bedeutet, dass alle Schritte fehlerfrei waren“ (nicht kritische Schritte können mit E enden, der Laufkopf erhält trotzdem S)",
+  "zfi_close_run_f02.abap:70 — kein Fachsatz „ein Testlauf schreibt nichts fort“ (Schrittstatus und Laufkopf werden auch im Testlauf gespeichert und festgeschrieben; ein späterer Echtlauf mit derselben Lauf-ID überspringt die im Test erfolgreichen Schritte, und Kundenroutinen sowie Programme mit Customizing-Variante laufen ohne Testschalter)"
+ ],
+ "saetze": [
+  {
+   "id": "BM-057-B01",
+   "soll": "Zu Beginn des Jobs wird ein Anwendungsprotokoll für den Abschlusslauf mit der Lauf-ID als externer Nummer angelegt.",
+   "zeilen": [
+    28
+   ],
+   "code": [
+    "28:   CALL FUNCTION 'BAL_LOG_CREATE'"
+   ],
+   "X": [
+    "Zu Beginn der Selektion wird ein Anwendungsprotokoll für das Objekt ZFI und Unterobjekt CLOSE mit der angegebenen Lauf-ID angelegt; das Verfallsdatum wird auf das Tagesdatum plus 180 Tage gesetzt.",
+    "Schlägt das Anlegen des Protokolls fehl, wird kein Fehler behandelt und fortgefahren."
+   ],
+   "Y": [
+    "Der Code übergibt gs_bal_log an BAL_LOG_CREATE und übernimmt dessen Ausgabe nach gv_log.",
+    "Es wird BAL_LOG_CREATE aufgerufen und ENQUEUE_EZFI_CLOSE_RUN aufgerufen."
+   ],
+   "Z": [
+    "Der Code übergibt gs_bal_log an BAL_LOG_CREATE und übernimmt dessen Ausgabe nach gv_log.",
+    "Das konvertierte Ergebnis wird in gv_log übernommen.",
+    "Es wird BAL_LOG_CREATE aufgerufen und ENQUEUE_EZFI_CLOSE_RUN aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-057-B02",
+   "soll": "Der Abschlusslauf wird für Lauf-ID, Geschäftsjahr und Periode exklusiv gesperrt, damit er nicht doppelt läuft.",
+   "zeilen": [
+    38
+   ],
+   "code": [
+    "38:   CALL FUNCTION 'ENQUEUE_EZFI_CLOSE_RUN'"
+   ],
+   "X": [
+    "Es wird eine exklusive Laufsperre für die Lauf-ID, das Geschäftsjahr und die Periode gesetzt."
+   ],
+   "Y": [
+    "Es wird BAL_LOG_CREATE aufgerufen und ENQUEUE_EZFI_CLOSE_RUN aufgerufen.",
+    "Der Funktionsbaustein ENQUEUE_EZFI_CLOSE_RUN wird aufgerufen."
+   ],
+   "Z": [
+    "Es wird BAL_LOG_CREATE aufgerufen und ENQUEUE_EZFI_CLOSE_RUN aufgerufen.",
+    "Der Funktionsbaustein ENQUEUE_EZFI_CLOSE_RUN wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-057-B03",
+   "soll": "Ist der Lauf bereits gesperrt, wird im Jobprotokoll gemeldet, wer ihn bearbeitet, und der Job endet ohne Verarbeitung.",
+   "zeilen": [
+    49,
+    51,
+    52
+   ],
+   "code": [
+    "49:   IF sy-subrc <> 0.",
+    "51:     MESSAGE i001 WITH p_runid sy-msgv1.",
+    "52:     RETURN."
+   ],
+   "X": [
+    "Konnte die Laufsperre nicht gesetzt werden, wird eine Informationsmeldung ausgegeben und die Verarbeitung beendet."
+   ],
+   "Y": [
+    "Ist die Sperre über ENQUEUE_EZFI_CLOSE_RUN nicht zu erhalten, wird eine Informationsmeldung ausgegeben und der Block verlassen.",
+    "Die Informationsmeldung 001 wird ausgegeben."
+   ],
+   "Z": [
+    "Ohne Treffer wird eine Meldung ausgegeben und der Block verlassen.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "Eine Meldung wird ausgegeben.",
+    "Es wird eine Meldung ausgegeben und der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-057-B04",
+   "soll": "Für die ausgewählten Buchungskreise wird die Buchungsperiodenvariante gelesen.",
+   "zeilen": [
+    152
+   ],
+   "code": [
+    "152:   SELECT bukrs opvar FROM t001 INTO TABLE lt_t001"
+   ],
+   "X": [
+    "Aus Tabelle T001 werden Buchungskreis und Buchungsperiodenvariante für die selektierten Buchungskreise gelesen."
+   ],
+   "Y": [
+    "Das Ergebnis enthält Buchungskreis und opvar.",
+    "Es werden Buchungskreise selektiert."
+   ],
+   "Z": [
+    "Es werden Sätze aus t001 selektiert."
+   ]
+  },
+  {
+   "id": "BM-057-B05",
+   "soll": "Je Buchungskreis wird geprüft, ob die Abschlussperiode im ersten Intervall der Periodensteuerung für alle Kontoarten offen ist.",
+   "zeilen": [
+    157,
+    168
+   ],
+   "code": [
+    "157:     SELECT SINGLE * FROM t001b INTO ls_t001b",
+    "168:     IF lv_akt BETWEEN lv_von AND lv_bis."
+   ],
+   "X": [
+    "Für jeden gelesenen Buchungskreis wird in Tabelle T001B der Eintrag für Satztyp 0, die Buchungsperiodenvariante und die Kontoart + gelesen.",
+    "Liegt die eingegebene Periode innerhalb des in T001B gepflegten Intervalls 1 von Geschäftsjahr und Periode, wird der Buchungskreis in die Liste der verarbeitbaren Buchungskreise aufgenommen.",
+    "Liegt die Periode nicht im Intervall, wird eine Warnmeldung in das Anwendungsprotokoll geschrieben."
+   ],
+   "Y": [
+    "Es werden Sätze aus t001b selektiert.",
+    "Wenn die Bedingung „lv_akt BETWEEN lv_von AND lv_bis“ erfüllt ist, wird eine Zeile aufgenommen."
+   ],
+   "Z": [
+    "Es werden Sätze aus t001b selektiert.",
+    "Für lv_akt BETWEEN lv_von AND lv_bis wird eine Zeile aufgenommen."
+   ]
+  },
+  {
+   "id": "BM-057-B06",
+   "soll": "Buchungskreise ohne gepflegte Periodensteuerung werden ohne Meldung übergangen.",
+   "zeilen": [
+    161
+   ],
+   "code": [
+    "161:     IF sy-subrc <> 0."
+   ],
+   "X": [
+    "Wird kein Eintrag in T001B gefunden, wird der Buchungskreis übersprungen."
+   ],
+   "Y": [
+    "Ohne Treffer wird der Schleifendurchlauf übersprungen."
+   ],
+   "Z": []
+  },
+  {
+   "id": "BM-057-B07",
+   "soll": "Buchungskreise mit offener Periode werden in den Abschluss aufgenommen; bei geschlossener Periode wird eine Warnung protokolliert.",
+   "zeilen": [
+    168,
+    169,
+    171
+   ],
+   "code": [
+    "168:     IF lv_akt BETWEEN lv_von AND lv_bis.",
+    "169:       APPEND ls_t001-bukrs TO gt_bukrs.",
+    "171:       mac_log 'W' '011' ls_t001-bukrs lv_akt."
+   ],
+   "X": [
+    "Liegt die eingegebene Periode innerhalb des in T001B gepflegten Intervalls 1 von Geschäftsjahr und Periode, wird der Buchungskreis in die Liste der verarbeitbaren Buchungskreise aufgenommen.",
+    "Liegt die Periode nicht im Intervall, wird eine Warnmeldung in das Anwendungsprotokoll geschrieben."
+   ],
+   "Y": [
+    "Wenn die Bedingung „lv_akt BETWEEN lv_von AND lv_bis“ erfüllt ist, wird eine Zeile aufgenommen.",
+    "Eine Zeile wird in gt_bukrs aufgenommen."
+   ],
+   "Z": [
+    "Für lv_akt BETWEEN lv_von AND lv_bis wird eine Zeile aufgenommen.",
+    "Eine Zeile wird in gt_bukrs aufgenommen."
+   ]
+  },
+  {
+   "id": "BM-057-B08",
+   "soll": "Hat kein Buchungskreis eine offene Periode, werden keine Abschlussschritte ausgeführt.",
+   "zeilen": [
+    57
+   ],
+   "code": [
+    "57:   IF gt_bukrs IS INITIAL."
+   ],
+   "X": [
+    "Ist die Liste der Buchungskreise mit offener Periode initial, werden keine Schritte ausgeführt und direkt der Abschluss des Laufs aufgerufen.",
+    "Sind Buchungskreise mit offener Periode vorhanden, werden alle aktiven Schritte zur Laufart aus Tabelle ZFI_CLOSE_STEP nach Sequenznummer sortiert gelesen."
+   ],
+   "Y": [],
+   "Z": []
+  },
+  {
+   "id": "BM-057-B09",
+   "soll": "Die aktiven Abschlussschritte der gewählten Laufart werden aus dem Customizing in ihrer festgelegten Reihenfolge gelesen.",
+   "zeilen": [
+    62
+   ],
+   "code": [
+    "62:     SELECT * FROM zfi_close_step INTO TABLE gt_steps"
+   ],
+   "X": [
+    "Sind Buchungskreise mit offener Periode vorhanden, werden alle aktiven Schritte zur Laufart aus Tabelle ZFI_CLOSE_STEP nach Sequenznummer sortiert gelesen."
+   ],
+   "Y": [
+    "Sonst wird execute_steps aufgerufen.",
+    "Es werden Sätze aus zfi_close_step mit dem eingegebenen rtype selektiert."
+   ],
+   "Z": [
+    "Sonst wird execute_steps aufgerufen.",
+    "Es werden Sätze aus zfi_close_step mit dem eingegebenen rtype selektiert."
+   ]
+  },
+  {
+   "id": "BM-057-B10",
+   "soll": "Zusätzlich wird der bisherige Schrittstatus dieses Laufs für Geschäftsjahr und Periode gelesen.",
+   "zeilen": [
+    67
+   ],
+   "code": [
+    "67:     SELECT * FROM zfi_close_stat INTO TABLE gt_stat"
+   ],
+   "X": [
+    "Bereits ausgeführte Schritte für die Lauf-ID, das Geschäftsjahr und die Periode werden aus Tabelle ZFI_CLOSE_STAT gelesen."
+   ],
+   "Y": [
+    "Sonst wird execute_steps aufgerufen.",
+    "Es werden Sätze aus zfi_close_stat mit dem eingegebenen runid, dem eingegebenen Geschäftsjahr und dem eingegebenen monat selektiert."
+   ],
+   "Z": [
+    "Sonst wird execute_steps aufgerufen.",
+    "Es werden Sätze aus zfi_close_stat mit dem eingegebenen runid, dem eingegebenen gjahr und dem eingegebenen monat selektiert."
+   ]
+  },
+  {
+   "id": "BM-057-B11",
+   "soll": "Schritte, die in diesem Lauf bereits erfolgreich waren, werden bei einem Neustart übersprungen.",
+   "zeilen": [
+    281,
+    284
+   ],
+   "code": [
+    "281:     READ TABLE gt_stat INTO gs_stat",
+    "284:     IF sy-subrc = 0."
+   ],
+   "X": [
+    "Für jeden Schritt wird geprüft, ob in Tabelle ZFI_CLOSE_STAT bereits ein erfolgreicher Status S hinterlegt ist; trifft dies zu, wird der Schritt übersprungen."
+   ],
+   "Y": [
+    "In der Tabelle gt_stat wird nach einer passenden Zeile gesucht.",
+    "Bei Treffer wird der Schleifendurchlauf übersprungen."
+   ],
+   "Z": [
+    "In der Tabelle wird nach einer passenden Zeile gesucht."
+   ]
+  },
+  {
+   "id": "BM-057-B12",
+   "soll": "Je nach Schritttyp wird eine Kundenroutine, ein Funktionsbaustein, die Abgrenzungsbuchung, ein Standardprogramm oder eine parallele Prüfung je Buchungskreis ausgeführt.",
+   "zeilen": [
+    289
+   ],
+   "code": [
+    "289:     CASE gs_step-steptype."
+   ],
+   "X": [
+    "Hat der Schritt den Typ F, wird die im Customizing hinterlegte Form-Routine dynamisch aufgerufen.",
+    "Hat der Schritt den Typ B, wird der im Customizing hinterlegte Funktionsbaustein aufgerufen.",
+    "Hat der Schritt den Typ A, wird die Routine zum Buchen von Abgrenzungen aufgerufen.",
+    "Hat der Schritt den Typ S, wird das im Customizing hinterlegte Programm aufgerufen.",
+    "Hat der Schritt den Typ P, wird die parallele Buchungskreisprüfung aufgerufen.",
+    "Ist der Schritttyp unbekannt, wird der Rückgabewert auf 8 gesetzt."
+   ],
+   "Y": [],
+   "Z": []
+  },
+  {
+   "id": "BM-057-B13",
+   "soll": "Welche Kundenroutine bzw. welcher Funktionsbaustein läuft, steht nur im Customizing und ist im Code nicht bestimmt.",
+   "zeilen": [
+    292,
+    299
+   ],
+   "code": [
+    "292:         PERFORM (gs_step-formname) IN PROGRAM (gs_step-progname)",
+    "299:         CALL FUNCTION lv_fname"
+   ],
+   "X": [
+    "Hat der Schritt den Typ F, wird die im Customizing hinterlegte Form-Routine dynamisch aufgerufen.",
+    "Hat der Schritt den Typ B, wird der im Customizing hinterlegte Funktionsbaustein aufgerufen."
+   ],
+   "Y": [
+    "Das externe Unterprogramm gs_step-formname wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Der Code übergibt gt_bukrs an lv_fname und übernimmt dessen Ausgabe nach gv_rc. Welcher Baustein das ist, steht erst zur Laufzeit in lv_fname fest."
+   ],
+   "Z": [
+    "Das externe Unterprogramm gs_step-formname wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Der Code übergibt gt_bukrs an lv_fname und übernimmt dessen Ausgabe nach gv_rc. Welcher Baustein das ist, entscheidet die Eingabe zur Laufzeit.",
+    "Das konvertierte Ergebnis wird in gv_rc übernommen."
+   ]
+  },
+  {
+   "id": "BM-057-B14",
+   "soll": "Ein unbekannter Schritttyp gilt als fehlerhaft.",
+   "zeilen": [
+    316
+   ],
+   "code": [
+    "316:         gv_rc = 8."
+   ],
+   "X": [
+    "Ist der Schritttyp unbekannt, wird der Rückgabewert auf 8 gesetzt."
+   ],
+   "Y": [
+    "Das Feld gv_rc wird auf 8 gesetzt."
+   ],
+   "Z": [
+    "Die gv_rc wird auf 8 gesetzt."
+   ]
+  },
+  {
+   "id": "BM-057-B15",
+   "soll": "Nach jedem Schritt wird sein Ergebnis als erfolgreich oder fehlerhaft mit Benutzer und Zeitpunkt gespeichert und festgeschrieben.",
+   "zeilen": [
+    325,
+    329,
+    330
+   ],
+   "code": [
+    "325:     gs_stat-status = COND #( WHEN gv_rc = 0 THEN 'S' ELSE 'E' ).",
+    "329:     MODIFY zfi_close_stat FROM gs_stat.",
+    "330:     COMMIT WORK."
+   ],
+   "X": [
+    "Der Status des Schrittes wird mit Rückgabewert, Zeitstempel und Benutzer in Tabelle ZFI_CLOSE_STAT fortgeschrieben und per Commit gesichert."
+   ],
+   "Y": [
+    "Eine Zeile in zfi_close_stat wird eingefügt oder überschrieben.",
+    "Es wird eine Zeile eingefügt oder überschrieben und COMMIT WORK ausgeführt.",
+    "Mit COMMIT WORK wird die Änderung persistiert."
+   ],
+   "Z": [
+    "Eine Zeile in zfi_close_stat wird eingefügt oder überschrieben.",
+    "Es wird eine Zeile eingefügt oder überschrieben und COMMIT WORK ausgeführt.",
+    "Mit COMMIT WORK wird die Änderung persistiert."
+   ]
+  },
+  {
+   "id": "BM-057-B16",
+   "soll": "Scheitert ein als kritisch gekennzeichneter Schritt, wird der Lauf als abgebrochen markiert, der Abbruch protokolliert und kein weiterer Schritt ausgeführt.",
+   "zeilen": [
+    333,
+    334,
+    335
+   ],
+   "code": [
+    "333:     IF gv_rc <> 0 AND gs_step-critical = abap_true.",
+    "334:       gv_abort = abap_true.",
+    "335:       mac_log 'E' '032' gs_step-stepid gv_rc."
+   ],
+   "X": [
+    "War ein kritischer Schritt fehlerhaft, wird der Abbruchstatus gesetzt, eine Fehlermeldung ins Anwendungsprotokoll geschrieben und die Schleife abgebrochen."
+   ],
+   "Y": [
+    "Wenn das Feld gv_rc ungleich 0 ist und das Feld gs_step-critical gesetzt ist, wird die Schleife verlassen."
+   ],
+   "Z": [
+    "Für gv_rc <> 0 AND gs_step-critical = abap_true wird der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-057-B17",
+   "soll": "Für die Abgrenzungen werden die noch nicht gebuchten Abgrenzungspositionen der Buchungskreise mit offener Periode für die Abschlussperiode gelesen.",
+   "zeilen": [
+    362
+   ],
+   "code": [
+    "362:   SELECT * FROM zfi_accrual INTO TABLE lt_accr"
+   ],
+   "X": [
+    "Aus Tabelle ZFI_ACCRUAL werden noch nicht gebuchte Abgrenzungssätze für alle aktiven Buchungskreise, das Geschäftsjahr und die Periode gelesen."
+   ],
+   "Y": [
+    "Es werden Sätze aus zfi_accrual mit dem eingegebenen Geschäftsjahr und dem eingegebenen monat zu den Einträgen aus gt_bukrs selektiert."
+   ],
+   "Z": [
+    "Es werden Sätze aus zfi_accrual mit dem eingegebenen gjahr und dem eingegebenen monat selektiert."
+   ]
+  },
+  {
+   "id": "BM-057-B18",
+   "soll": "Jede Abgrenzung wird als Sachkontenbeleg der Belegart SA zum eingegebenen Buchungsdatum aufgebaut: Aufwand mit Kostenstelle im Soll an Abgrenzungskonto im Haben.",
+   "zeilen": [
+    378,
+    383,
+    385,
+    387,
+    388
+   ],
+   "code": [
+    "378:     ls_head-doc_type   = 'SA'.",
+    "383:     APPEND VALUE #( itemno_acc = 1 gl_account = ls_accr-hkont_aufw",
+    "385:     APPEND VALUE #( itemno_acc = 2 gl_account = ls_accr-hkont_abgr",
+    "387:     APPEND VALUE #( itemno_acc = 1 currency = ls_accr-waers amt_doccur = ls_accr-betrag ) TO lt_amt.",
+    "388:     APPEND VALUE #( itemno_acc = 2 currency = ls_accr-waers amt_doccur = - ls_accr-betrag ) TO lt_amt."
+   ],
+   "X": [],
+   "Y": [
+    "Das Feld ls_head-doc_type wird auf SA gesetzt.",
+    "Eine Zeile wird in lt_gl aufgenommen.",
+    "Es wird eine Zeile aufgenommen.",
+    "Eine Zeile wird in lt_gl aufgenommen.",
+    "Eine Zeile wird in lt_amt aufgenommen.",
+    "Eine Zeile wird in lt_amt aufgenommen."
+   ],
+   "Z": [
+    "Die ls_head-doc_type wird auf SA gesetzt.",
+    "Eine Zeile wird in lt_gl aufgenommen.",
+    "Es wird eine Zeile aufgenommen.",
+    "Eine Zeile wird in lt_gl aufgenommen.",
+    "Eine Zeile wird in lt_amt aufgenommen.",
+    "Eine Zeile wird in lt_amt aufgenommen."
+   ]
+  },
+  {
+   "id": "BM-057-B19",
+   "soll": "Im Testlauf wird der Abgrenzungsbeleg nur geprüft, im Echtlauf gebucht.",
+   "zeilen": [
+    390,
+    392,
+    400
+   ],
+   "code": [
+    "390:     IF p_test = abap_true.",
+    "392:       CALL FUNCTION 'BAPI_ACC_DOCUMENT_CHECK'",
+    "400:       CALL FUNCTION 'BAPI_ACC_DOCUMENT_POST'"
+   ],
+   "X": [
+    "Für jeden Abgrenzungssatz im Testmodus wird der FI-Beleg über den Baustein BAPI_ACC_DOCUMENT_CHECK nur geprüft.",
+    "Im Echtlauf wird für jeden Abgrenzungssatz der FI-Beleg über den Baustein BAPI_ACC_DOCUMENT_POST gebucht."
+   ],
+   "Y": [
+    "Wenn das Feld p_test gesetzt ist, wird BAPI_ACC_DOCUMENT_CHECK aufgerufen, sonst BAPI_ACC_DOCUMENT_POST aufgerufen.",
+    "Der Funktionsbaustein BAPI_ACC_DOCUMENT_CHECK wird aufgerufen.",
+    "Der Code übergibt ls_head an BAPI_ACC_DOCUMENT_POST und übernimmt dessen Ausgabe nach lv_objkey."
+   ],
+   "Z": [
+    "Für p_test mit dem Wert abap_true wird BAPI_ACC_DOCUMENT_CHECK aufgerufen.",
+    "Für p_test mit dem Wert abap_true wird BAPI_ACC_DOCUMENT_CHECK aufgerufen, sonst BAPI_ACC_DOCUMENT_POST aufgerufen.",
+    "Der Funktionsbaustein BAPI_ACC_DOCUMENT_CHECK wird aufgerufen.",
+    "Für andere p_test wird BAPI_ACC_DOCUMENT_POST aufgerufen.",
+    "Der Code übergibt ls_head an BAPI_ACC_DOCUMENT_POST und übernimmt dessen Ausgabe nach lv_objkey.",
+    "Das konvertierte Ergebnis wird in lv_objkey übernommen."
+   ]
+  },
+  {
+   "id": "BM-057-B20",
+   "soll": "Meldet Prüfung oder Buchung einen Fehler, wird zurückgerollt, der Abgrenzungsschritt als fehlerhaft gewertet und der Fehler mit Buchungskreis protokolliert.",
+   "zeilen": [
+    412,
+    413,
+    414,
+    415
+   ],
+   "code": [
+    "412:     IF sy-subrc = 0.",
+    "413:       CALL FUNCTION 'BAPI_TRANSACTION_ROLLBACK'.",
+    "414:       cv_rc = 4.",
+    "415:       mac_log 'E' '040' ls_accr-bukrs ls_ret-message."
+   ],
+   "X": [
+    "Liefert die Belegverarbeitung einen Fehler zurück, wird ein Rollback ausgeführt, der Fehler im Anwendungsprotokoll protokolliert und der Rückgabewert auf 4 gesetzt."
+   ],
+   "Y": [
+    "Bei Treffer wird BAPI_TRANSACTION_ROLLBACK aufgerufen und das Feld cv_rc auf 4 gesetzt.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_ROLLBACK wird aufgerufen.",
+    "Wenn ein Treffer vorliegt, wird das Feld cv_rc auf 4 gesetzt."
+   ],
+   "Z": [
+    "Bei Treffer wird BAPI_TRANSACTION_ROLLBACK aufgerufen und die cv_rc auf 4 gesetzt.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_ROLLBACK wird aufgerufen.",
+    "Es wird BAPI_TRANSACTION_ROLLBACK aufgerufen und die cv_rc auf 4 gesetzt.",
+    "sy-subrc mit dem Wert 0 erhalten 4."
+   ]
+  },
+  {
+   "id": "BM-057-B21",
+   "soll": "Im Echtlauf wird eine fehlerfreie Buchung festgeschrieben und die Abgrenzung mit der Belegnummer als gebucht gekennzeichnet.",
+   "zeilen": [
+    417,
+    418,
+    423
+   ],
+   "code": [
+    "417:       IF p_test = abap_false.",
+    "418:         CALL FUNCTION 'BAPI_TRANSACTION_COMMIT'",
+    "423:         UPDATE zfi_accrual SET posted = abap_true"
+   ],
+   "X": [
+    "Im fehlerfreien Echtlauf wird der Beleg festgeschrieben und in Tabelle ZFI_ACCRUAL die Belegnummer eingetragen sowie das Kennzeichen für gebucht gesetzt."
+   ],
+   "Y": [
+    "Wenn das Feld p_test nicht gesetzt ist, wird BAPI_TRANSACTION_COMMIT aufgerufen und eine Zeile geändert.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_COMMIT wird aufgerufen.",
+    "Das Feld posted in zfi_accrual wird geändert. Ob eine Zeile getroffen wird, garantiert der Code nicht."
+   ],
+   "Z": [
+    "Für p_test mit dem Wert abap_false wird BAPI_TRANSACTION_COMMIT aufgerufen und eine Zeile geändert.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_COMMIT wird aufgerufen.",
+    "Die posted in zfi_accrual wird geändert. Ob eine Zeile getroffen wird, garantiert der Code nicht."
+   ]
+  },
+  {
+   "id": "BM-057-B22",
+   "soll": "Für den Abschreibungslauf wird das Standardprogramm RAPOST2000 je Buchungskreis nacheinander für Geschäftsjahr und Periode gestartet, im Testlauf als Testlauf.",
+   "zeilen": [
+    447,
+    448
+   ],
+   "code": [
+    "447:       LOOP AT gt_bukrs INTO lv_bukrs.",
+    "448:         SUBMIT rapost2000"
+   ],
+   "X": [
+    "Handelt es sich beim Programmnamen um RAPOST2000, wird dieser Report sequentiell für jeden Buchungskreis mit den Periodenparametern ausgeführt."
+   ],
+   "Y": [
+    "Jede Zeile aus gt_bukrs wird einzeln verarbeitet.",
+    "Das Kindprogramm rapost2000 wird gestartet. Was das Kind tut, ist nicht Teil dieses Satzes."
+   ],
+   "Z": [
+    "Jede Zeile aus gt_bukrs wird einzeln verarbeitet.",
+    "Das Kindprogramm rapost2000 wird gestartet. Was das Kind tut, ist nicht Teil dieses Satzes."
+   ]
+  },
+  {
+   "id": "BM-057-B23",
+   "soll": "Andere Standardprogramme werden mit der im Customizing hinterlegten Variante gestartet.",
+   "zeilen": [
+    458
+   ],
+   "code": [
+    "458:       SUBMIT (gs_step-progname)"
+   ],
+   "X": [
+    "Handelt es sich um ein anderes Programm, wird dieses mit der im Customizing hinterlegten Variante ausgeführt."
+   ],
+   "Y": [
+    "Das Kindprogramm wird gestartet. Was das Kind tut, ist nicht Teil dieses Satzes."
+   ],
+   "Z": [
+    "Das Kindprogramm wird gestartet. Was das Kind tut, ist nicht Teil dieses Satzes."
+   ]
+  },
+  {
+   "id": "BM-057-B24",
+   "soll": "Das Ergebnis der gestarteten Programme wird nicht ausgewertet; der Schritt gilt immer als erfolgreich.",
+   "zeilen": [
+    464
+   ],
+   "code": [
+    "464:   cv_rc = 0."
+   ],
+   "X": [
+    "Die Programmausführung wird mit Rückgabewert 0 beendet."
+   ],
+   "Y": [
+    "Das Feld cv_rc wird auf 0 gesetzt."
+   ],
+   "Z": [
+    "Die cv_rc wird auf 0 gesetzt."
+   ]
+  },
+  {
+   "id": "BM-057-B25",
+   "soll": "Für den Parallelschritt wird je Buchungskreis eine Prüfung als eigene Task in der angegebenen Servergruppe gestartet.",
+   "zeilen": [
+    480,
+    482
+   ],
+   "code": [
+    "480:   LOOP AT gt_bukrs INTO lv_bukrs.",
+    "482:     CALL FUNCTION 'Z_FI_CLOSE_STEP_BUKRS'"
+   ],
+   "X": [
+    "Für jeden Buchungskreis wird der Funktionsbaustein Z_FI_CLOSE_STEP_BUKRS asynchron in einer RFC-Servergruppe gestartet."
+   ],
+   "Y": [
+    "Jede Zeile aus gt_bukrs wird einzeln verarbeitet.",
+    "Der Baustein Z_FI_CLOSE_STEP_BUKRS wird asynchron in einer eigenen Task gestartet. Ein Ergebnis liegt zu diesem Zeitpunkt nicht vor."
+   ],
+   "Z": [
+    "Jede Zeile aus gt_bukrs wird einzeln verarbeitet.",
+    "Der Baustein Z_FI_CLOSE_STEP_BUKRS wird asynchron in einer eigenen Task gestartet. Ein Ergebnis liegt zu diesem Zeitpunkt nicht vor."
+   ]
+  },
+  {
+   "id": "BM-057-B26",
+   "soll": "Kann die Prüfung eines Buchungskreises nicht gestartet werden, gilt er als fehlerhaft und der Fehler wird protokolliert.",
+   "zeilen": [
+    495,
+    500
+   ],
+   "code": [
+    "495:     IF sy-subrc = 0.",
+    "500:       mac_log 'E' '050' lv_bukrs gv_msg."
+   ],
+   "X": [
+    "Scheitert der asynchrone Aufruf, wird der Fehlerzähler erhöht und ein Fehlereintrag ins Anwendungsprotokoll geschrieben."
+   ],
+   "Y": [],
+   "Z": []
+  },
+  {
+   "id": "BM-057-B27",
+   "soll": "Die Prüfung ermittelt je als Nullkonto gepflegtem Verrechnungskonto des Buchungskreises den Saldo der offenen Posten des Geschäftsjahres bis zur Abschlussperiode.",
+   "zeilen": [
+    102,
+    109,
+    114
+   ],
+   "code": [
+    "102:   SELECT hkont FROM zfi_close_acct INTO TABLE lt_hkont",
+    "109:     SELECT shkzg dmbtr FROM bsis INTO (lv_shkzg, lv_dmbtr)",
+    "114:       lv_saldo = lv_saldo + COND dmbtr( WHEN lv_shkzg = 'H' THEN - lv_dmbtr"
+   ],
+   "X": [
+    "Im Funktionsbaustein Z_FI_CLOSE_STEP_BUKRS werden für den Buchungskreis alle Null-Prüfkonten aus Tabelle ZFI_CLOSE_ACCT gelesen.",
+    "Für jedes Sachkonto werden offene Posten bis zur Periode aus Tabelle BSIS saldiert; weicht der Saldo von 0 ab, wird ein Fehler zurückgegeben und die Prüfung beendet."
+   ],
+   "Y": [
+    "Es werden Sätze aus zfi_close_acct selektiert.",
+    "Das Ergebnis enthält Soll/Haben-Kennzeichen und Betrag in Hauswährung.",
+    "Es werden offene Sachkontenposten selektiert."
+   ],
+   "Z": [
+    "Es werden Sätze aus zfi_close_acct selektiert.",
+    "Es werden Sätze aus bsis selektiert."
+   ]
+  },
+  {
+   "id": "BM-057-B28",
+   "soll": "Ist ein Verrechnungskonto nicht ausgeglichen, meldet die Prüfung für den Buchungskreis einen Fehler mit Konto und Saldo; sonst meldet sie die Konten als ausgeglichen.",
+   "zeilen": [
+    117,
+    118,
+    125
+   ],
+   "code": [
+    "117:     IF lv_saldo <> 0.",
+    "118:       ev_rc  = 4.",
+    "125:   ev_msg = COND #( WHEN ev_rc = 0 THEN |{ iv_bukrs }: Verrechnungskonten ausgeglichen| ELSE ev_msg )."
+   ],
+   "X": [
+    "Für jedes Sachkonto werden offene Posten bis zur Periode aus Tabelle BSIS saldiert; weicht der Saldo von 0 ab, wird ein Fehler zurückgegeben und die Prüfung beendet.",
+    "Der Funktionsbaustein Z_FI_CLOSE_STEP_BUKRS liefert bei ausgeglichenen Konten den Status 0 und eine Erfolgsmeldung zurück."
+   ],
+   "Y": [
+    "Wenn das Feld lv_saldo ungleich 0 ist, wird das Feld ev_rc auf 4 gesetzt und die Schleife verlassen.",
+    "Wenn das Feld lv_saldo ungleich 0 ist, wird das Feld ev_rc auf 4 gesetzt."
+   ],
+   "Z": [
+    "Für lv_saldo ungleich 0 wird die ev_rc auf 4 gesetzt und der Block verlassen.",
+    "Bei lv_saldo ungleich 0 wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "lv_saldo ungleich 0 erhalten 4."
+   ]
+  },
+  {
+   "id": "BM-057-B29",
+   "soll": "Jede Rückmeldung einer Prüfung wird entgegengenommen und gezählt; fehlerhafte Prüfungen werden gezählt und protokolliert.",
+   "zeilen": [
+    522,
+    530,
+    532,
+    534
+   ],
+   "code": [
+    "522:   RECEIVE RESULTS FROM FUNCTION 'Z_FI_CLOSE_STEP_BUKRS'",
+    "530:   IF sy-subrc <> 0 OR lv_rc <> 0.",
+    "532:     mac_log 'E' '051' iv_task lv_msg.",
+    "534:   gv_recv = gv_recv + 1."
+   ],
+   "X": [],
+   "Y": [],
+   "Z": []
+  },
+  {
+   "id": "BM-057-B30",
+   "soll": "Der Lauf wartet höchstens 30 Minuten auf alle Rückmeldungen; Zeitüberschreitung, Startfehler oder Prüffehler machen den Parallelschritt fehlerhaft.",
+   "zeilen": [
+    505,
+    506,
+    507
+   ],
+   "code": [
+    "505:   WAIT UNTIL gv_recv >= gv_sent UP TO 1800 SECONDS.",
+    "506:   IF sy-subrc <> 0 OR gv_failed > 0 OR gv_perr > 0.",
+    "507:     cv_rc = 4."
+   ],
+   "X": [
+    "Es wird bis zu 1800 Sekunden auf die Rückmeldungen der parallelen Tasks gewartet; sind Fehler aufgetreten, wird der Rückgabewert auf 4 gesetzt."
+   ],
+   "Y": [
+    "Wenn der Rückgabewert (sy-subrc) ungleich 0 ist, das Feld gv_failed größer als 0 ist oder das Feld gv_perr größer als 0 ist, wird das Feld cv_rc auf 4 gesetzt.",
+    "Wenn der Rückgabewert (sy-subrc) ungleich 0 ist, das Feld gv_failed größer als 0 ist oder das Feld gv_perr größer als 0 ist, wird das Feld cv_rc auf 4 gesetzt."
+   ],
+   "Z": [
+    "Für sy-subrc <> 0 OR gv_failed > 0 OR gv_perr > 0 wird die cv_rc auf 4 gesetzt.",
+    "sy-subrc <> 0 OR gv_failed > 0 OR gv_perr > 0 erhalten 4."
+   ]
+  },
+  {
+   "id": "BM-057-B31",
+   "soll": "Zum Abschluss erhält der Laufkopf den Status abgebrochen, ohne offene Periode oder erfolgreich und wird gespeichert.",
+   "zeilen": [
+    195,
+    198
+   ],
+   "code": [
+    "195:   gs_run-status = COND #( WHEN gv_abort = abap_true THEN 'A'",
+    "198:   MODIFY zfi_close_run FROM gs_run."
+   ],
+   "X": [
+    "In Tabelle ZFI_CLOSE_RUN wird der Laufkopf mit Benutzer, Datum, Uhrzeit und dem Gesamtstatus (A bei Abbruch, E bei fehlenden offenen Perioden, sonst S) gespeichert."
+   ],
+   "Y": [
+    "Eine Zeile in zfi_close_run wird eingefügt oder überschrieben.",
+    "Es wird eine Zeile eingefügt oder überschrieben, eine Zeile aufgenommen, BAL_DB_SAVE aufgerufen, COMMIT WORK ausgeführt, DEQUEUE_EZFI_CLOSE_RUN aufgerufen und send_mail aufgerufen."
+   ],
+   "Z": [
+    "Eine Zeile in zfi_close_run wird eingefügt oder überschrieben.",
+    "Es wird eine Zeile eingefügt oder überschrieben, eine Zeile aufgenommen, BAL_DB_SAVE aufgerufen, COMMIT WORK ausgeführt, DEQUEUE_EZFI_CLOSE_RUN aufgerufen und send_mail aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-057-B32",
+   "soll": "Danach wird das Anwendungsprotokoll gesichert, alles festgeschrieben und die Laufsperre aufgehoben.",
+   "zeilen": [
+    201,
+    209,
+    211
+   ],
+   "code": [
+    "201:   CALL FUNCTION 'BAL_DB_SAVE'",
+    "209:   COMMIT WORK.",
+    "211:   CALL FUNCTION 'DEQUEUE_EZFI_CLOSE_RUN'"
+   ],
+   "X": [
+    "Das Anwendungsprotokoll wird auf der Datenbank gesichert und die Sperre für den Lauf gelöst."
+   ],
+   "Y": [
+    "Es wird eine Zeile eingefügt oder überschrieben, eine Zeile aufgenommen, BAL_DB_SAVE aufgerufen, COMMIT WORK ausgeführt, DEQUEUE_EZFI_CLOSE_RUN aufgerufen und send_mail aufgerufen.",
+    "Der Funktionsbaustein BAL_DB_SAVE wird aufgerufen.",
+    "Mit COMMIT WORK wird die Änderung persistiert.",
+    "Der Funktionsbaustein DEQUEUE_EZFI_CLOSE_RUN wird aufgerufen."
+   ],
+   "Z": [
+    "Es wird eine Zeile eingefügt oder überschrieben, eine Zeile aufgenommen, BAL_DB_SAVE aufgerufen, COMMIT WORK ausgeführt, DEQUEUE_EZFI_CLOSE_RUN aufgerufen und send_mail aufgerufen.",
+    "Der Funktionsbaustein BAL_DB_SAVE wird aufgerufen.",
+    "Mit COMMIT WORK wird die Änderung persistiert.",
+    "Der Funktionsbaustein DEQUEUE_EZFI_CLOSE_RUN wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-057-B33",
+   "soll": "Ist eine Mailadresse angegeben, wird eine Abschlussmail mit Laufstatus und Anzahl der Buchungskreise versendet; ein Versandfehler wird nur im Jobprotokoll gemeldet.",
+   "zeilen": [
+    236,
+    252,
+    253,
+    256
+   ],
+   "code": [
+    "236:   CHECK p_mail IS NOT INITIAL.",
+    "252:       lo_send->send( ).",
+    "253:       COMMIT WORK.",
+    "256:       MESSAGE lv_text TYPE 'I'."
+   ],
+   "X": [
+    "Ist eine E-Mail-Adresse angegeben, wird eine Status-E-Mail über Business Communication Services versendet.",
+    "Tritt beim E-Mail-Versand ein Fehler auf, wird der Ausnahmetext als Informationsmeldung ausgegeben."
+   ],
+   "Y": [
+    "Nur wenn das Feld p_mail nicht leer ist, geht es weiter; sonst wird das Unterprogramm send_mail an dieser Stelle verlassen.",
+    "Die Methode send von lo_send wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "Mit COMMIT WORK wird die Änderung persistiert.",
+    "Die Informationsmeldung lv_text wird ausgegeben."
+   ],
+   "Z": [
+    "Nur Eine nicht leere p_mail gehen weiter; kleinere werden übersprungen, die Schleife läuft weiter.",
+    "Die Methode send von lo_send wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "Mit COMMIT WORK wird die Änderung persistiert.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  }
+ ]
+}

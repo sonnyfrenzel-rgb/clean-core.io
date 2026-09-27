@@ -1,0 +1,216 @@
+{
+ "id": "BM-087",
+ "urteile": [
+  {
+   "id": "BM-087-B01",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "kurz": "X und Y nennen nur den Bausteinaufruf, Z das Lesen offener Änderungszeiger."
+  },
+  {
+   "id": "BM-087-B02",
+   "X": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "kurz": "X und Z beschreiben Meldung und Ende bei fehlenden Zeigern, Y nur mit der Rohbedingung."
+  },
+  {
+   "id": "BM-087-B03",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein",
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "kurz": "Nur Z beschreibt das Sammeln je Kreditor; X und Y nur die Schleife."
+  },
+  {
+   "id": "BM-087-B04",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "kurz": "X und Z nennen Lesen und Überspringen fehlender/gelöschter Kreditoren, Y nur das Lesen aus lfa1."
+  },
+  {
+   "id": "BM-087-B05",
+   "X": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "kurz": "X und Z sagen, dass im Test nur gelistet wird, Y lässt das Überspringen weg."
+  },
+  {
+   "id": "BM-087-B06",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "unvollstaendig",
+     "falsch"
+    ]
+   },
+   "kurz": "X und Y nur Bausteinaufruf; Z nennt Adressdaten, behauptet aber eine Übermittlung an das Partnersystem."
+  },
+  {
+   "id": "BM-087-B07",
+   "X": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "falsch"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "kurz": "Y stellt die Ausgabe zusätzlich unter 'Bei Treffern', obwohl sie nur im Fehlerfall erfolgt."
+  },
+  {
+   "id": "BM-087-B08",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "X und Y nennen nur Bausteinname und COMMIT; Z spricht nur von den 'verarbeiteten' Zeigern statt allen gelesenen."
+  },
+  {
+   "id": "BM-087-B09",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "kurz": "X und Y geben 'lv_sent' aus, nur Z nennt die Anzahl gesendeter Kreditoren."
+  }
+ ],
+ "verboten_verletzt": [
+  {
+   "variante": "Z",
+   "satz": "Ist das Kennzeichen für den Testlauf nicht gesetzt, wird über den Funktionsbaustein MASTER_IDOC_DISTRIBUTE ein IDoc mit den Adressdaten des Kreditors an das Partnersystem übermittelt.",
+   "grund": "Behauptet eine Übermittlung an das Partnersystem; der Code erzeugt nur das Ausgangs-IDoc."
+  }
+ ],
+ "soll_zweifel": []
+}

@@ -1,0 +1,212 @@
+{
+ "id": "BM-190",
+ "urteile": [
+  {
+   "id": "BM-190-B01",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "X nennt fünf Versuche exklusiver Sperre; Y/Z nur Bausteinaufruf."
+  },
+  {
+   "id": "BM-190-B02",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "kurz": "Nur X nennt das Warten bei Fremdsperre."
+  },
+  {
+   "id": "BM-190-B03",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "zu_allgemein",
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "kurz": "X und Z nennen Ausnahme SPERRFEHLER; Y nur Meldung."
+  },
+  {
+   "id": "BM-190-B04",
+   "X": {
+    "urteil": "abweichend",
+    "mangel": [
+     "falsch"
+    ]
+   },
+   "Y": {
+    "urteil": "abweichend",
+    "mangel": [
+     "falsch",
+     "zu_allgemein"
+    ]
+   },
+   "Z": {
+    "urteil": "abweichend",
+    "mangel": [
+     "falsch",
+     "technisch"
+    ]
+   },
+   "kurz": "Alle behaupten eine Ablehnung nach gescheiterten Versuchen; keine sagt, dass ohne Sperre weitergelaufen wird."
+  },
+  {
+   "id": "BM-190-B05",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "zu_allgemein",
+     "technisch"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "zu_allgemein",
+     "technisch"
+    ]
+   },
+   "kurz": "X nennt Yard und Stellplatz; Y/Z generisch."
+  },
+  {
+   "id": "BM-190-B06",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein",
+     "redundant"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "kurz": "X und Z nennen Freigabe und PLATZ_BELEGT; Y nur Meldung."
+  },
+  {
+   "id": "BM-190-B07",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "falsch"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "kurz": "X spricht vom Weiterstellen des bisherigen Endes statt jetzt plus Stunden; Y/Z nur Methodenaufruf."
+  },
+  {
+   "id": "BM-190-B08",
+   "X": {
+    "urteil": "gleich",
+    "mangel": [
+     "falsch"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "X nennt Status R, Container und Bearbeiter; Y/Z nur „Zeile geändert“."
+  },
+  {
+   "id": "BM-190-B09",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "kurz": "X nennt Freigabe der Sperre fachlich; Y/Z nur Bausteinaufruf."
+  }
+ ],
+ "verboten_verletzt": [
+  {
+   "variante": "X",
+   "satz": "Ist der Rückgabewert der Schleife ungleich 0, wird mit dem Stellplatz die Fehlermeldung E101(zyard) ausgegeben und die Ausnahme PLATZ_GESPERRT ausgelöst.",
+   "grund": "Nach der letzten Wartepause ist sy-subrc 0; PLATZ_GESPERRT wird nie ausgelöst."
+  },
+  {
+   "variante": "Z",
+   "satz": "Bei Rückgabewert ungleich 0 wird die Ausnahme platz_gesperrt ausgelöst.",
+   "grund": "Nach der letzten Wartepause ist sy-subrc 0; PLATZ_GESPERRT wird nie ausgelöst."
+  }
+ ],
+ "soll_zweifel": []
+}

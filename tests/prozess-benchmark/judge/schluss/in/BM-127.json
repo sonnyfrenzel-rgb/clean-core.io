@@ -1,0 +1,216 @@
+{
+ "id": "BM-127",
+ "titel": "RE-FX Umsatzmiete: Jahresabrechnung aus Mieter-Umsatzmeldungen mit Staffel und Mindestmiete (GROUP BY, REDUCE, TRY/CATCH)",
+ "prozess": "Der Report wird nach Jahresende mit Buchungskreis, Geschäftsjahr und optionalem Speicherkennzeichen gestartet. Er liest alle Monatsumsätze, die Mieter für Verträge des Buchungskreises im Jahr gemeldet haben. Gibt es keine, meldet er das und endet. Sonst summiert er je Vertrag und Währung den Jahresumsatz. Für jeden Vertrag liest er die monatliche Mindestmiete aus der Kondition Z100; fehlt sie, wird der Vertrag nicht abgerechnet. Er ermittelt den höchsten Staffelsatz, dessen Umsatzschwelle erreicht ist, und setzt die Jahresmiete auf den größeren Betrag aus Umsatzanteil und zwölf Mindestmieten; die Differenz ist die Nachforderung. Zusätzlich berechnet er die Mietbelastungsquote; bei Umsatz null (und Miete über null) setzt er sie auf 999. Ist das Speicherkennzeichen gesetzt, schreibt er alle Ergebnisse in die eigene Abrechnungstabelle und schreibt sie fest. Zum Schluss zeigt er die Abrechnungsliste an. Eine Buchung oder Faktura der Nachforderung erfolgt nicht.",
+ "verboten": [
+  "source.abap:47 — kein Fachsatz „ohne Staffel wird der Vertrag übersprungen“: ohne Staffel ist der Satz null und es gilt die Mindestmiete",
+  "source.abap:71 — kein Fachsatz „die Nachforderung wird im Vertrag gebucht oder fakturiert“: gespeichert wird nur in eine eigene Ergebnistabelle",
+  "source.abap:37 — kein Fachsatz „die zum Abrechnungsjahr gültige Mindestmiete wird verwendet“: gelesen wird eine beliebige bis heute gültig gewordene Z100-Kondition"
+ ],
+ "saetze": [
+  {
+   "id": "BM-127-B01",
+   "soll": "Es werden die Umsatzmeldungen aller Monate des Geschäftsjahres für die Mietverträge des Buchungskreises gelesen.",
+   "zeilen": [
+    15
+   ],
+   "code": [
+    "15:   SELECT u~recnnr, u~monat, u~umsatz, u~waers, c~intreno"
+   ],
+   "X": [
+    "Das Ergebnis enthält u~recnnr, u~monat, u~umsatz, u~waers und c~intreno.",
+    "Es werden Sätze aus zre_umsatz mit dem eingegebenen Buchungskreis und dem eingegebenen u~gjahr selektiert."
+   ],
+   "Y": [
+    "Aus den Tabellen ZRE_UMSATZ und VICNCN werden die Vertragsnummer RECNNR, der Monat MONAT, der Umsatz UMSATZ, der Währungsschlüssel WAERS und die interne Vertragsnummer INTRENO für den Buchungskreis p_bukrs und das Geschäftsjahr p_gjahr gelesen."
+   ],
+   "Z": [
+    "Das Ergebnis enthält recnnr, monat, umsatz, Währung und intreno.",
+    "Es werden Sätze aus zre_umsatz mit dem eingegebenen Buchungskreis und dem eingegebenen Geschäftsjahr selektiert."
+   ]
+  },
+  {
+   "id": "BM-127-B02",
+   "soll": "Liegen keine Meldungen vor, wird ein Hinweis ausgegeben und der Lauf beendet.",
+   "zeilen": [
+    22,
+    23,
+    24
+   ],
+   "code": [
+    "22:   IF sy-subrc <> 0.",
+    "23:     MESSAGE s004(zre) WITH p_bukrs p_gjahr DISPLAY LIKE 'E'.",
+    "24:     RETURN."
+   ],
+   "X": [
+    "Ohne Treffer wird eine Meldung ausgegeben und der Block verlassen.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "Eine Meldung wird ausgegeben.",
+    "Es wird eine Meldung ausgegeben und der Block verlassen."
+   ],
+   "Y": [
+    "Werden keine Umsatzdaten gefunden (sy-subrc ungleich 0), wird die Nachricht ZRE 004 mit dem Buchungskreis und dem Geschäftsjahr als Fehler ausgegeben und die Verarbeitung beendet."
+   ],
+   "Z": [
+    "Ohne Treffer wird eine Statusmeldung ausgegeben und vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "Die Statusmeldung 004(ZRE) wird ausgegeben, angezeigt wie eine Fehlermeldung."
+   ]
+  },
+  {
+   "id": "BM-127-B03",
+   "soll": "Je Mietvertrag und Währung wird der gemeldete Jahresumsatz summiert.",
+   "zeilen": [
+    27,
+    32
+   ],
+   "code": [
+    "27:   LOOP AT lt_ums INTO DATA(ls_ums)",
+    "32:     DATA(lv_jahresumsatz) = REDUCE zre_ums_betrag( INIT s = 0"
+   ],
+   "X": [
+    "Jede Zeile aus lt_ums wird einzeln verarbeitet."
+   ],
+   "Y": [
+    "Über die gelesenen Umsatzdaten wird gruppiert nach Vertragsnummer RECNNR, interner Vertragsnummer INTRENO und Währungsschlüssel WAERS iteriert und jeweils die Summe der Monatsumsätze als Jahresumsatz berechnet."
+   ],
+   "Z": [
+    "Die Zeilen aus lt_ums werden gruppenweise verarbeitet."
+   ]
+  },
+  {
+   "id": "BM-127-B04",
+   "soll": "Die monatliche Mindestmiete wird aus der Vertragskondition Z100 gelesen; Verträge ohne diese Kondition werden nicht abgerechnet.",
+   "zeilen": [
+    37,
+    42
+   ],
+   "code": [
+    "37:     SELECT SINGLE unitprice FROM vicdcond",
+    "42:     IF sy-subrc <> 0."
+   ],
+   "X": [
+    "unitprice des Satzes wird gelesen."
+   ],
+   "Y": [
+    "Aus der Tabelle VICDCOND wird der Einzelpreis UNITPRICE zur Konditionsart Z100 mit Gültigkeitsbeginn bis einschließlich dem Tagesdatum für den internen Vertragsschlüssel INTRENO gelesen.",
+    "Wird keine Mindestmietkondition gefunden (sy-subrc ungleich 0), wird der aktuelle Vertrag übersprungen und mit dem nächsten Vertrag fortgefahren."
+   ],
+   "Z": [
+    "Das Feld unitprice aus vicdcond wird gelesen.",
+    "Ohne Treffer wird der Schleifendurchlauf übersprungen."
+   ]
+  },
+  {
+   "id": "BM-127-B05",
+   "soll": "Der höchste Staffelsatz, dessen Umsatzschwelle erreicht ist, wird ermittelt.",
+   "zeilen": [
+    47
+   ],
+   "code": [
+    "47:     SELECT MAX( prozent ) FROM zre_ums_staffel"
+   ],
+   "X": [
+    "Es werden Sätze aus zre_ums_staffel selektiert."
+   ],
+   "Y": [
+    "Aus der Tabelle ZRE_UMS_STAFFEL wird der maximale Prozentsatz PROZENT zur Vertragsnummer RECNNR ermittelt, bei dem der Mindestumsatz AB_UMSATZ kleiner oder gleich dem berechneten Jahresumsatz ist."
+   ],
+   "Z": [
+    "Das Ergebnis enthält MAX( und prozent.",
+    "Es werden Sätze aus zre_ums_staffel selektiert."
+   ]
+  },
+  {
+   "id": "BM-127-B06",
+   "soll": "Die Jahresmiete ist der größere Betrag aus Umsatz mal Staffelsatz und zwölf Mindestmieten; die Nachforderung ist ihr Überschuss über die Mindestmieten.",
+   "zeilen": [
+    52,
+    60
+   ],
+   "code": [
+    "52:     DATA(lv_miete) = nmax( val1 = lv_jahresumsatz * lv_prozent / 100",
+    "60:     APPEND VALUE #( bukrs    = p_bukrs"
+   ],
+   "X": [
+    "Eine Zeile wird in gt_abr aufgenommen."
+   ],
+   "Y": [
+    "Die Miete wird als Maximum aus dem errechneten Staffelbetrag und der zwölffachen Mindestmiete bestimmt; anschließend wird die Quote als prozentualer Anteil der Miete am Jahresumsatz berechnet.",
+    "Der Abrechnungsdatensatz mit Buchungskreis, Geschäftsjahr, Vertragsnummer, Jahresumsatz, Miete, Nachforderung, Quote und Währung wird in die Abrechnungstabelle eingefügt."
+   ],
+   "Z": [
+    "Eine Zeile wird in gt_abr aufgenommen."
+   ]
+  },
+  {
+   "id": "BM-127-B07",
+   "soll": "Die Mietbelastungsquote ist die Jahresmiete in Prozent des Umsatzes; bei einem Umsatz von null und einer Miete über null wird sie auf 999 gesetzt.",
+   "zeilen": [
+    55,
+    57
+   ],
+   "code": [
+    "55:         DATA(lv_quote) = lv_miete * 100 / lv_jahresumsatz.",
+    "57:         lv_quote = 999."
+   ],
+   "X": [
+    "Die lv_quote wird auf 999 gesetzt."
+   ],
+   "Y": [
+    "Die Miete wird als Maximum aus dem errechneten Staffelbetrag und der zwölffachen Mindestmiete bestimmt; anschließend wird die Quote als prozentualer Anteil der Miete am Jahresumsatz berechnet.",
+    "Tritt bei der Berechnung der Quote eine Division durch Null auf, wird die Quote auf den Wert 999 gesetzt."
+   ],
+   "Z": [
+    "Das Feld lv_quote wird auf 999 gesetzt."
+   ]
+  },
+  {
+   "id": "BM-127-B08",
+   "soll": "Auf Wunsch wird das Abrechnungsergebnis je Vertrag gespeichert und festgeschrieben.",
+   "zeilen": [
+    70,
+    71,
+    72
+   ],
+   "code": [
+    "70:   IF p_upd = abap_true.",
+    "71:     MODIFY zre_ums_abr FROM TABLE gt_abr.",
+    "72:     COMMIT WORK."
+   ],
+   "X": [
+    "Für p_upd mit dem Wert abap_true wird eine Zeile eingefügt oder überschrieben und COMMIT WORK ausgeführt.",
+    "Eine Zeile in zre_ums_abr wird eingefügt oder überschrieben. sy-subrc wird danach nicht ausgewertet.",
+    "Es wird eine Zeile eingefügt oder überschrieben und COMMIT WORK ausgeführt.",
+    "Mit COMMIT WORK wird die Änderung persistiert."
+   ],
+   "Y": [
+    "Ist das Kennzeichen p_upd nicht gesetzt, unterbleibt das Schreiben in die Datenbanktabelle ZRE_UMS_ABR.",
+    "Ist das Kennzeichen p_upd gesetzt, wird die Tabelle ZRE_UMS_ABR mit den Datensätzen der Abrechnungstabelle fortgeschrieben und die Änderung mit COMMIT WORK auf der Datenbank bestätigt."
+   ],
+   "Z": [
+    "Wenn das Feld p_upd gesetzt ist, wird eine Zeile eingefügt oder überschrieben und COMMIT WORK ausgeführt.",
+    "Eine Zeile in zre_ums_abr wird eingefügt oder überschrieben. sy-subrc wird danach nicht ausgewertet.",
+    "Mit COMMIT WORK wird die Änderung persistiert."
+   ]
+  },
+  {
+   "id": "BM-127-B09",
+   "soll": "Die Abrechnungsliste wird am Bildschirm angezeigt.",
+   "zeilen": [
+    77
+   ],
+   "code": [
+    "77:   lo_alv->display( )."
+   ],
+   "X": [
+    "Die Methode display von lo_alv wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ],
+   "Y": [
+    "Die aufbereitete Abrechnungstabelle wird über die Methode DISPLAY am Bildschirm angezeigt."
+   ],
+   "Z": [
+    "Die Methode display von lo_alv wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ]
+  }
+ ]
+}

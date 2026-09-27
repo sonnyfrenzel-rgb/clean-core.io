@@ -1,0 +1,93 @@
+{
+ "id": "BM-024",
+ "urteile": [
+  {
+   "id": "BM-024-B01",
+   "X": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig",
+     "grammatik"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig",
+     "grammatik"
+    ]
+   },
+   "kurz": "Nur X nennt die Sperrbedingung."
+  },
+  {
+   "id": "BM-024-B02",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": [
+     "redundant"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "kurz": "Alle nennen den Hinweistext und das Ende."
+  },
+  {
+   "id": "BM-024-B03",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "falsch"
+    ]
+   },
+   "kurz": "X sagt ALV-Anzeige, Y/Z nur Methodenaufrufe, Z mit falschem Ziel."
+  },
+  {
+   "id": "BM-024-B04",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "zu_allgemein"
+    ]
+   },
+   "kurz": "X/Y nennen die Fehlermeldung zur ALV, Z nur \"Meldung\"."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

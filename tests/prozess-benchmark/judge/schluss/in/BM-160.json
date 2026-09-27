@@ -1,0 +1,499 @@
+{
+ "id": "BM-160",
+ "titel": "ESS-Adressänderung mit Genehmigungsworkflow, Übernahme in Infotyp 0006 und Rückrechnungshinweis",
+ "prozess": "Ein Mitarbeiter meldet in der ESS-App seine neue Anschrift mit Umzugsdatum. Der Baustein ermittelt die eigene Personalnummer, weist fremde Personalnummern, bereits offene Anträge und ungültige Anschriften (fehlende Straße/Ort, unbekanntes Land, falsche PLZ, Datum außerhalb drei Monate zurück bis ein Jahr voraus) ab. Ein gültiger Antrag wird mit Status NEU gespeichert. Ändert sich das Land oder liegt das Umzugsdatum nicht nach dem Abgerechnet-bis-Datum, startet ein Genehmigungsworkflow; sonst wird die Anschrift sofort übernommen. Die Übernahme sperrt den Mitarbeiter mit bis zu drei Versuchen, legt eine neue Hauptanschrift ab Umzugsdatum an und entsperrt; bei Rückwirkung erhält die Entgeltabrechnung eine Nachricht, sofern nicht per Schalter abgeschaltet. Im Workflow prüft ein zweiter Baustein Antrag und Schreibberechtigung des Genehmigers, übernimmt bei Genehmigung oder setzt ABGELEHNT. Der jeweilige Status wird in der Verbuchung mit Bearbeiter und Datum geschrieben und festgeschrieben.",
+ "verboten": [
+  "zcl_ess_addr_service.abap:148 — kein Fachsatz „die Rückrechnung wird im Code ausgelöst oder ein Rückrechnungsdatum gesetzt“ (nur Nachricht an die Abrechnung)",
+  "z_ess_address_request.abap:68 — kein Fachsatz „abgewiesene Anschriften werden als Antrag gespeichert“ (gespeichert wird erst nach bestandener Prüfung)",
+  "zcl_ess_addr_service.abap:106 — kein Fachsatz „die Sperre wird unbegrenzt wiederholt“ (höchstens drei Versuche)",
+  "z_ess_address_decide.abap:41 — kein Fachsatz „der Mitarbeiter selbst wird auf Berechtigung geprüft“ (geprüft wird der entscheidende Benutzer)"
+ ],
+ "saetze": [
+  {
+   "id": "BM-160-B01",
+   "soll": "Zum angemeldeten Benutzer wird die eigene Personalnummer ermittelt; ohne Zuordnung wird der Antrag abgewiesen.",
+   "zeilen": [
+    121,
+    126,
+    127
+   ],
+   "code": [
+    "121:   SELECT SINGLE pernr FROM pa0105 INTO lv_own",
+    "126:   IF sy-subrc <> 0.",
+    "127:     RAISE no_employee."
+   ],
+   "X": [
+    "pernr des Satzes wird gelesen."
+   ],
+   "Y": [
+    "Die Personalnummer aus pa0105 wird gelesen."
+   ],
+   "Z": [
+    "Aus Tabelle PA0105 wird die zum aktuellen Systembenutzer am heutigen Tag gültige Personalnummer für den Subtyp 0001 gelesen.",
+    "Wird keine Personalnummer zum Systembenutzer gefunden, wird die Ausnahme NO_EMPLOYEE ausgelöst."
+   ]
+  },
+  {
+   "id": "BM-160-B02",
+   "soll": "Wird eine fremde Personalnummer übergeben, wird der Antrag abgewiesen, weil im ESS nur die eigenen Daten geändert werden dürfen.",
+   "zeilen": [
+    129,
+    131
+   ],
+   "code": [
+    "129:   IF iv_pernr IS NOT INITIAL AND iv_pernr <> lv_own.",
+    "131:     RAISE not_own_record."
+   ],
+   "X": [],
+   "Y": [],
+   "Z": [
+    "Wurde eine abweichende Personalnummer übergeben, wird die Ausnahme NOT_OWN_RECORD ausgelöst."
+   ]
+  },
+  {
+   "id": "BM-160-B03",
+   "soll": "Hat der Mitarbeiter bereits einen neuen oder in Genehmigung befindlichen Antrag, wird der neue abgewiesen.",
+   "zeilen": [
+    135,
+    138,
+    139
+   ],
+   "code": [
+    "135:   SELECT SINGLE reqid FROM zess_addr_req INTO @DATA(lv_open)",
+    "138:   IF sy-subrc = 0.",
+    "139:     MESSAGE e030(zess) WITH lv_open RAISING open_request."
+   ],
+   "X": [
+    "reqid des Satzes wird gelesen.",
+    "Bei Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ],
+   "Y": [
+    "Das Feld reqid aus zess_addr_req wird gelesen.",
+    "Bei Treffer wird die Ausnahme open_request ausgelöst.",
+    "Die Ausnahme open_request wird ausgelöst; die Meldung 030(ZESS) erscheint nur, wenn der Aufrufer die Ausnahme nicht behandelt."
+   ],
+   "Z": [
+    "Aus Tabelle ZESS_ADDR_REQ wird geprüft, ob für den Mitarbeiter bereits ein Antrag mit dem Status NEU oder GENEHMIGUNG existiert.",
+    "Existiert bereits ein offener Antrag mit dem Status NEU oder GENEHMIGUNG, wird eine Fehlermeldung ausgegeben und die Ausnahme OPEN_REQUEST ausgelöst."
+   ]
+  },
+  {
+   "id": "BM-160-B04",
+   "soll": "Die Anschrift wird abgewiesen, wenn Straße oder Ort fehlen, das Land unbekannt ist, die Postleitzahl zum Land nicht passt oder das Umzugsdatum mehr als drei Monate zurück oder mehr als ein Jahr voraus liegt.",
+   "zeilen": [
+    145,
+    148,
+    239,
+    244,
+    252,
+    266
+   ],
+   "code": [
+    "145:       lo_service->validate( is_address = is_address",
+    "148:       MESSAGE lx_addr TYPE 'E' RAISING invalid_address.",
+    "239:     IF is_address-stras IS INITIAL OR is_address-ort01 IS INITIAL.",
+    "244:     SELECT SINGLE @abap_true FROM t005",
+    "252:     CALL FUNCTION 'ADDR_POSTAL_CODE_CHECK'",
+    "266:     IF iv_begda < sy-datum - 92 OR iv_begda > sy-datum + 365."
+   ],
+   "X": [
+    "Die Methode validate von lo_service wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "Eine Meldung wird ausgegeben.",
+    "abap_true des Satzes wird gelesen.",
+    "Der Funktionsbaustein ADDR_POSTAL_CODE_CHECK wird aufgerufen."
+   ],
+   "Y": [
+    "Die Methode validate von lo_service wird aufgerufen; sie ruft ADDR_POSTAL_CODE_CHECK auf und liest T005.",
+    "Die Ausnahme invalid_address wird ausgelöst; die Meldung lx_addr erscheint nur, wenn der Aufrufer die Ausnahme nicht behandelt.",
+    "Es wird geprüft, ob es einen passenden Satz in t005 gibt.",
+    "Der Funktionsbaustein ADDR_POSTAL_CODE_CHECK wird aufgerufen."
+   ],
+   "Z": [
+    "Die übergebenen Adressdaten und das Gültigkeitsbeginndatum werden geprüft.",
+    "Schlägt die Adressprüfung fehl, wird eine Fehlermeldung ausgegeben und die Ausnahme INVALID_ADDRESS ausgelöst.",
+    "Ist die Straße oder der Ort nicht befüllt, wird ein Ausnahmefehler für unvollständige Daten ausgelöst.",
+    "In Tabelle T005 wird geprüft, ob das angegebene Land existiert.",
+    "Über den Baustein ADDR_POSTAL_CODE_CHECK wird die Postleitzahl für das angegebene Land und den Ort geprüft.",
+    "Liegt das Gültigkeitsdatum mehr als 92 Tage vor dem Tagesdatum oder mehr als 365 Tage nach dem Tagesdatum, wird ein Ausnahmefehler für ein unzulässiges Datum ausgelöst."
+   ]
+  },
+  {
+   "id": "BM-160-B05",
+   "soll": "Ein gültiger Antrag wird mit neuer Antragsnummer und Status NEU gespeichert.",
+   "zeilen": [
+    151,
+    160
+   ],
+   "code": [
+    "151:   ls_req-reqid   = cl_system_uuid=>create_uuid_c32_static( ).",
+    "160:   INSERT zess_addr_req FROM ls_req."
+   ],
+   "X": [
+    "Die Methode create_uuid_c32_static von cl_system_uuid wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ],
+   "Y": [
+    "Der Rückgabewert der Methode create_uuid_c32_static von cl_system_uuid wird nach ls_req-reqid übernommen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ],
+   "Z": [
+    "Für den Antrag wird eine neue Kennung erzeugt und der Datensatz mit dem Status NEU sowie dem aktuellen Tagesdatum in Tabelle ZESS_ADDR_REQ eingefügt."
+   ]
+  },
+  {
+   "id": "BM-160-B06",
+   "soll": "Eine Genehmigung ist nötig, wenn sich das Land gegenüber der bisherigen Hauptanschrift ändert oder das Umzugsdatum nicht nach dem Abgerechnet-bis-Datum liegt.",
+   "zeilen": [
+    162,
+    274,
+    276,
+    366
+   ],
+   "code": [
+    "162:   IF lo_service->needs_approval( is_address = is_address",
+    "274:     DATA(ls_old) = current_address( iv_begda ).",
+    "276:     rv_needed = xsdbool( ls_old-land1 <> is_address-land1",
+    "366:     SELECT SINGLE abrdt FROM pa0003 INTO rv_abrdt"
+   ],
+   "X": [
+    "Für lo_service->needs_approval( is_address = is_address iv_begda = iv_begda ) = abap_true wird die Status auf GENEHMIGUNG gesetzt und SWE_EVENT_CREATE aufgerufen.",
+    "Die Methode needs_approval von lo_service wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "lo_service->needs_approval( is_address = is_address iv_begda = iv_begda ) = abap_true setzen die Status auf GENEHMIGUNG.",
+    "abrdt des Satzes wird gelesen."
+   ],
+   "Y": [
+    "Wenn die Bedingung „lo_service->needs_approval( is_address = is_address iv_begda = iv_begda ) = abap_true“ erfüllt ist, wird der Status auf GENEHMIGUNG gesetzt und SWE_EVENT_CREATE aufgerufen.",
+    "Die Methode needs_approval von lo_service wird aufgerufen.",
+    "Wenn die Bedingung „lo_service->needs_approval( is_address = is_address iv_begda = iv_begda ) = abap_true“ erfüllt ist, wird der Status auf GENEHMIGUNG gesetzt.",
+    "Das Feld abrdt aus pa0003 wird gelesen."
+   ],
+   "Z": [
+    "Erfordert die Adressänderung eine Genehmigung, wird der Status des Antrags auf GENEHMIGUNG gesetzt.",
+    "Erfordert die Adressänderung keine Genehmigung, wird die neue Adresse direkt übernommen und der Antragsstatus auf UEBERNOMMEN gesetzt.",
+    "Über die Hilfsmethode CURRENT_ADDRESS wird die zum Gültigkeitsdatum aktuelle Anschrift ermittelt.",
+    "Unterscheidet sich das bisherige Land vom neuen Land oder liegt das Gültigkeitsdatum am oder vor dem Abrechnungsdatum, wird ein Genehmigungsbedarf zurückgegeben.",
+    "Aus Tabelle PA0003 wird für die Personalnummer das Datum der Abrechnung bis (ABRDT) gelesen."
+   ]
+  },
+  {
+   "id": "BM-160-B07",
+   "soll": "Genehmigungspflichtige Anträge gehen über ein Workflow-Ereignis an die Personalabteilung und erhalten den Status GENEHMIGUNG, bei gescheitertem Ereignis FEHLER.",
+   "zeilen": [
+    164,
+    166,
+    174,
+    175
+   ],
+   "code": [
+    "164:     ls_req-status = 'GENEHMIGUNG'.",
+    "166:     CALL FUNCTION 'SWE_EVENT_CREATE'",
+    "174:     IF sy-subrc <> 0.",
+    "175:       ls_req-status = 'FEHLER'."
+   ],
+   "X": [
+    "Für lo_service->needs_approval( is_address = is_address iv_begda = iv_begda ) = abap_true wird die Status auf GENEHMIGUNG gesetzt und SWE_EVENT_CREATE aufgerufen.",
+    "lo_service->needs_approval( is_address = is_address iv_begda = iv_begda ) = abap_true setzen die Status auf GENEHMIGUNG.",
+    "Der Funktionsbaustein SWE_EVENT_CREATE wird aufgerufen.",
+    "Ohne Treffer wird die Status auf FEHLER gesetzt.",
+    "sy-subrc ungleich 0 setzen die Status auf FEHLER."
+   ],
+   "Y": [
+    "Wenn die Bedingung „lo_service->needs_approval( is_address = is_address iv_begda = iv_begda ) = abap_true“ erfüllt ist, wird der Status auf GENEHMIGUNG gesetzt und SWE_EVENT_CREATE aufgerufen.",
+    "Wenn die Bedingung „lo_service->needs_approval( is_address = is_address iv_begda = iv_begda ) = abap_true“ erfüllt ist, wird der Status auf GENEHMIGUNG gesetzt.",
+    "Der Funktionsbaustein SWE_EVENT_CREATE wird aufgerufen.",
+    "Scheitert der Aufruf von SWE_EVENT_CREATE, wird der Status auf FEHLER gesetzt.",
+    "Wenn der Aufruf von SWE_EVENT_CREATE scheitert, wird der Status auf FEHLER gesetzt."
+   ],
+   "Z": [
+    "Erfordert die Adressänderung eine Genehmigung, wird der Status des Antrags auf GENEHMIGUNG gesetzt.",
+    "Über den Baustein SWE_EVENT_CREATE wird das Workflow-Ereignis CREATED für das Objekt ZESSADDR mit der Antrags-ID angestoßen."
+   ]
+  },
+  {
+   "id": "BM-160-B08",
+   "soll": "Andere Anträge werden sofort übernommen und erhalten den Status ÜBERNOMMEN, bei Fehler FEHLER.",
+   "zeilen": [
+    179,
+    180,
+    182
+   ],
+   "code": [
+    "179:         lo_service->apply( ls_req ).",
+    "180:         ls_req-status = 'UEBERNOMMEN'.",
+    "182:         ls_req-status = 'FEHLER'."
+   ],
+   "X": [
+    "Die Methode apply von lo_service wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "Sonst setzen die Status auf UEBERNOMMEN.",
+    "Sonst setzen die Status auf FEHLER."
+   ],
+   "Y": [
+    "Die Methode apply von lo_service wird aufgerufen; sie ruft BAPI_EMPLOYEE_ENQUEUE, HR_INFOTYPE_OPERATION und BAPI_EMPLOYEE_DEQUEUE auf.",
+    "Sonst wird der Status auf UEBERNOMMEN gesetzt.",
+    "Sonst wird der Status auf FEHLER gesetzt."
+   ],
+   "Z": [
+    "Erfordert die Adressänderung keine Genehmigung, wird die neue Adresse direkt übernommen und der Antragsstatus auf UEBERNOMMEN gesetzt.",
+    "Schlägt die direkte Adressübernahme fehl, wird der Antragsstatus auf FEHLER gesetzt."
+   ]
+  },
+  {
+   "id": "BM-160-B09",
+   "soll": "Der Antragsstatus wird mit Bearbeiter und Datum verbucht und festgeschrieben; Antragsnummer und Status gehen an die App zurück.",
+   "zeilen": [
+    9,
+    186,
+    191
+   ],
+   "code": [
+    "9:   UPDATE zess_addr_req",
+    "186:   CALL FUNCTION 'Z_ESS_ADDR_STATUS_UPDATE' IN UPDATE TASK",
+    "191:   COMMIT WORK."
+   ],
+   "X": [
+    "Die Status in zess_addr_req wird geändert. Ob eine Zeile getroffen wird, garantiert der Code nicht.",
+    "Der Baustein Z_ESS_ADDR_STATUS_UPDATE wird zur Verbuchung registriert. An der Aufrufstelle wird nichts geändert. Angestoßen wird er erst mit dem COMMIT WORK in Zeile 191.",
+    "Es wird Z_ESS_ADDR_STATUS_UPDATE aufgerufen und COMMIT WORK ausgeführt.",
+    "Mit COMMIT WORK wird die Verbuchung der zuvor registrierten Bausteine angestoßen. Ohne AND WAIT wartet der Code das Verbuchungsergebnis nicht ab; ausgeführt oder persistiert ist damit nicht belegt."
+   ],
+   "Y": [
+    "Der Status in zess_addr_req wird geändert. Ob eine Zeile getroffen wird, garantiert der Code nicht.",
+    "Der Baustein Z_ESS_ADDR_STATUS_UPDATE wird zur Verbuchung registriert. An der Aufrufstelle wird nichts geändert. Angestoßen wird er erst mit dem COMMIT WORK in Zeile 191.",
+    "Es wird Z_ESS_ADDR_STATUS_UPDATE aufgerufen und COMMIT WORK ausgeführt.",
+    "Mit COMMIT WORK wird die Verbuchung der zuvor registrierten Bausteine angestoßen. Ohne AND WAIT wartet der Code das Verbuchungsergebnis nicht ab; ausgeführt oder persistiert ist damit nicht belegt."
+   ],
+   "Z": [
+    "In Tabelle ZESS_ADDR_REQ werden für die übergebene Antrags-ID der Status, der Änderer mit dem übergebenen Benutzernamen und das Änderungsdatum mit dem Tagesdatum aktualisiert.",
+    "Der Antragsstatus wird über den Verbuchungsbaustein Z_ESS_ADDR_STATUS_UPDATE zur Verbuchung registriert.",
+    "Die erzeugten Antragsdaten werden mittels COMMIT WORK auf der Datenbank festgeschrieben."
+   ]
+  },
+  {
+   "id": "BM-160-B10",
+   "soll": "Findet die Verbuchung den Antrag nicht, bricht sie ab.",
+   "zeilen": [
+    14,
+    15
+   ],
+   "code": [
+    "14:   IF sy-subrc <> 0.",
+    "15:     MESSAGE a020(zess) WITH iv_reqid."
+   ],
+   "X": [
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ],
+   "Y": [
+    "Schlägt die Datenbankänderung fehl, wird eine Abbruchmeldung ausgegeben.",
+    "Die Abbruchmeldung 020(ZESS) wird ausgegeben; das Programm wird abgebrochen."
+   ],
+   "Z": [
+    "Konnte der Datensatz in Tabelle ZESS_ADDR_REQ nicht aktualisiert werden, wird eine Abbruchmeldung ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-160-B11",
+   "soll": "Im Workflow wird der Antrag gelesen; ein unbekannter oder nicht mehr in Genehmigung befindlicher Antrag wird abgewiesen.",
+   "zeilen": [
+    37,
+    39,
+    40,
+    42,
+    43
+   ],
+   "code": [
+    "37:   SELECT SINGLE * FROM zess_addr_req INTO ls_req",
+    "39:   IF sy-subrc <> 0.",
+    "40:     RAISE request_not_found.",
+    "42:   IF ls_req-status <> 'GENEHMIGUNG'.",
+    "43:     RAISE not_pending."
+   ],
+   "X": [
+    "Es werden Sätze aus zess_addr_req selektiert."
+   ],
+   "Y": [
+    "Es werden Sätze aus zess_addr_req selektiert."
+   ],
+   "Z": [
+    "Aus Tabelle ZESS_ADDR_REQ wird der Datensatz zur übergebenen Antrags-ID gelesen.",
+    "Wurde kein Datensatz in Tabelle ZESS_ADDR_REQ gefunden, wird die Ausnahme REQUEST_NOT_FOUND ausgelöst.",
+    "Hat der gefundene Antrag nicht den Status GENEHMIGUNG, wird die Ausnahme NOT_PENDING ausgelöst."
+   ]
+  },
+  {
+   "id": "BM-160-B12",
+   "soll": "Der Genehmiger braucht für die Organisationszuordnung des Mitarbeiters zum Umzugsdatum Schreibrecht auf Hauptanschriften, sonst wird abgewiesen.",
+   "zeilen": [
+    47,
+    58,
+    66,
+    67
+   ],
+   "code": [
+    "47:   CALL FUNCTION 'HR_READ_INFOTYPE'",
+    "58:   AUTHORITY-CHECK OBJECT 'P_ORGIN'",
+    "66:   IF sy-subrc <> 0.",
+    "67:     RAISE no_authority."
+   ],
+   "X": [
+    "Der Funktionsbaustein HR_READ_INFOTYPE wird aufgerufen.",
+    "Die Berechtigung auf P_ORGIN wird geprüft."
+   ],
+   "Y": [
+    "Der Funktionsbaustein HR_READ_INFOTYPE wird aufgerufen.",
+    "Die Berechtigung auf P_ORGIN wird geprüft."
+   ],
+   "Z": [
+    "Über den Baustein HR_READ_INFOTYPE wird der Infotyp 0001 für die Personalnummer und das Beginndatum des Antrags gelesen.",
+    "Für das Berechtigungsobjekt P_ORGIN wird geprüft, ob eine Schreibberechtigung für Infotyp 0006, Subtyp 1 mit den Organisationsdaten des Mitarbeiters vorliegt.",
+    "Schlägt die Berechtigungsprüfung fehl, wird die Ausnahme NO_AUTHORITY ausgelöst."
+   ]
+  },
+  {
+   "id": "BM-160-B13",
+   "soll": "Bei Genehmigung wird die Anschrift übernommen (Status ÜBERNOMMEN oder FEHLER), bei Ablehnung der Status ABGELEHNT gesetzt; eine unbekannte Entscheidung wird abgewiesen; der Status wird verbucht und festgeschrieben.",
+   "zeilen": [
+    70,
+    74,
+    80,
+    82,
+    85,
+    90
+   ],
+   "code": [
+    "70:   CASE iv_decision.",
+    "74:           lo_service->apply( ls_req ).",
+    "80:       ls_req-status = 'ABGELEHNT'.",
+    "82:       RAISE invalid_decision.",
+    "85:   CALL FUNCTION 'Z_ESS_ADDR_STATUS_UPDATE' IN UPDATE TASK",
+    "90:   COMMIT WORK."
+   ],
+   "X": [
+    "Die Methode apply von lo_service wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "Die Status wird auf ABGELEHNT gesetzt.",
+    "Der Baustein Z_ESS_ADDR_STATUS_UPDATE wird zur Verbuchung registriert. An der Aufrufstelle wird nichts geändert. Angestoßen wird er erst mit dem COMMIT WORK in Zeile 90.",
+    "Es wird Z_ESS_ADDR_STATUS_UPDATE aufgerufen und COMMIT WORK ausgeführt.",
+    "Mit COMMIT WORK wird die Verbuchung der zuvor registrierten Bausteine angestoßen. Ohne AND WAIT wartet der Code das Verbuchungsergebnis nicht ab; ausgeführt oder persistiert ist damit nicht belegt."
+   ],
+   "Y": [
+    "Die Methode apply von lo_service wird aufgerufen; sie ruft BAPI_EMPLOYEE_ENQUEUE, HR_INFOTYPE_OPERATION und BAPI_EMPLOYEE_DEQUEUE auf.",
+    "Der Status wird auf ABGELEHNT gesetzt.",
+    "Der Baustein Z_ESS_ADDR_STATUS_UPDATE wird zur Verbuchung registriert. An der Aufrufstelle wird nichts geändert. Angestoßen wird er erst mit dem COMMIT WORK in Zeile 90.",
+    "Es wird Z_ESS_ADDR_STATUS_UPDATE aufgerufen und COMMIT WORK ausgeführt.",
+    "Mit COMMIT WORK wird die Verbuchung der zuvor registrierten Bausteine angestoßen. Ohne AND WAIT wartet der Code das Verbuchungsergebnis nicht ab; ausgeführt oder persistiert ist damit nicht belegt."
+   ],
+   "Z": [
+    "Lautet die Entscheidung A, wird die Adressänderung übernommen und der Status des Antrags auf UEBERNOMMEN gesetzt.",
+    "Lautet die Entscheidung R, wird der Status des Antrags auf ABGELEHNT gesetzt.",
+    "Entspricht die Entscheidung weder A noch R, wird die Ausnahme INVALID_DECISION ausgelöst.",
+    "Der neue Status des Antrags wird über den Verbuchungsbaustein Z_ESS_ADDR_STATUS_UPDATE zur Verbuchung registriert.",
+    "Die Änderungen werden mittels COMMIT WORK auf der Datenbank festgeschrieben."
+   ]
+  },
+  {
+   "id": "BM-160-B14",
+   "soll": "Zur Übernahme wird der Mitarbeiter gesperrt; ist er gesperrt, wird nach je einer Sekunde bis zu dreimal insgesamt versucht, danach scheitert die Übernahme.",
+   "zeilen": [
+    288,
+    293,
+    299,
+    300,
+    301,
+    303
+   ],
+   "code": [
+    "288:         CALL FUNCTION 'BAPI_EMPLOYEE_ENQUEUE'",
+    "293:         IF ls_return-type = 'E'.",
+    "299:         IF mv_retry < gc_max_retry.",
+    "300:           WAIT UP TO 1 SECONDS.",
+    "301:           RETRY.",
+    "303:         RAISE EXCEPTION lx_lock."
+   ],
+   "X": [
+    "Der Code übergibt mv_pernr an BAPI_EMPLOYEE_ENQUEUE und übernimmt dessen Ausgabe nach ls_return.",
+    "Das konvertierte Ergebnis wird in ls_return übernommen."
+   ],
+   "Y": [
+    "Der Code übergibt mv_pernr an BAPI_EMPLOYEE_ENQUEUE und übernimmt dessen Ausgabe nach ls_return."
+   ],
+   "Z": [
+    "Die Personalnummer wird über den Baustein BAPI_EMPLOYEE_ENQUEUE für die Bearbeitung gesperrt.",
+    "Gibt der Sperrbaustein einen Fehler vom Typ E zurück, wird ein Ausnahmefehler für eine gesperrte Personalnummer ausgelöst.",
+    "Tritt ein Sperrfehler auf und wurden weniger als 3 Versuche unternommen, wird nach einer Wartezeit von bis zu einer Sekunde ein erneuter Sperrversuch gestartet.",
+    "Wurden bereits 3 Sperrversuche erfolglos durchgeführt, wird der Sperrfehler endgültig als Ausnahme weitergegeben."
+   ]
+  },
+  {
+   "id": "BM-160-B15",
+   "soll": "Auf Basis der bisherigen Hauptanschrift wird ab Umzugsdatum eine neue unbefristete Hauptanschrift mit Straße, PLZ, Ort und Land angelegt und die Sperre gelöst; scheitert die Anlage, scheitert die Übernahme.",
+   "zeilen": [
+    306,
+    319,
+    333,
+    337,
+    350
+   ],
+   "code": [
+    "306:     ls_0006 = current_address( is_req-begda ).",
+    "319:     CALL FUNCTION 'HR_INFOTYPE_OPERATION'",
+    "333:     CALL FUNCTION 'BAPI_EMPLOYEE_DEQUEUE'",
+    "337:     IF ls_return-type CA 'EA'.",
+    "350:     CALL FUNCTION 'HR_READ_SUBTYPE'"
+   ],
+   "X": [
+    "Der Code übergibt '0006' an HR_INFOTYPE_OPERATION und übernimmt dessen Ausgabe nach ls_return.",
+    "Das konvertierte Ergebnis wird in ls_return übernommen.",
+    "Es wird HR_INFOTYPE_OPERATION aufgerufen und BAPI_EMPLOYEE_DEQUEUE aufgerufen.",
+    "Der Funktionsbaustein BAPI_EMPLOYEE_DEQUEUE wird aufgerufen.",
+    "Der Funktionsbaustein HR_READ_SUBTYPE wird aufgerufen."
+   ],
+   "Y": [
+    "Der Code übergibt '0006' an HR_INFOTYPE_OPERATION und übernimmt dessen Ausgabe nach ls_return.",
+    "Es wird HR_INFOTYPE_OPERATION aufgerufen und BAPI_EMPLOYEE_DEQUEUE aufgerufen.",
+    "Der Funktionsbaustein BAPI_EMPLOYEE_DEQUEUE wird aufgerufen.",
+    "Der Funktionsbaustein HR_READ_SUBTYPE wird aufgerufen."
+   ],
+   "Z": [
+    "Die bisherige Anschrift wird gelesen und mit den neuen Adressdaten für Infotyp 0006 und Subtyp 1 mit Gültigkeit bis zum 31.12.9999 aufbereitet.",
+    "Über den Baustein HR_INFOTYPE_OPERATION wird die neue Anschrift mit der Operation INS in Infotyp 0006 ohne sofortigen Datenbank-Commit eingefügt.",
+    "Über den Baustein BAPI_EMPLOYEE_DEQUEUE wird die Sperre der Personalnummer wieder aufgehoben.",
+    "Liefert die Infotyp-Operation eine Fehlermeldung oder Abbruchmeldung zurück, wird ein Ausnahmefehler für eine fehlgeschlagene Aktualisierung ausgelöst.",
+    "Über den Baustein HR_READ_SUBTYPE wird für die Personalnummer der Datensatz des Infotyps 0006 und Subtyps 1 zum Stichtag gelesen und der erste gefundene Satz bereitgestellt."
+   ]
+  },
+  {
+   "id": "BM-160-B16",
+   "soll": "Liegt das Umzugsdatum nicht nach dem Abgerechnet-bis-Datum, erhält die Entgeltabrechnung eine Nachricht mit Personalnummer, Datum, Land und PLZ – außer die Benachrichtigung ist per Schalter abgeschaltet; ein Versandfehler bleibt folgenlos.",
+   "zeilen": [
+    342,
+    343,
+    377,
+    381,
+    391
+   ],
+   "code": [
+    "342:     IF is_req-begda <= payroll_done_until( ).",
+    "343:       notify_payroll( is_req ).",
+    "377:     SELECT SINGLE low FROM tvarvc INTO @DATA(lv_off)",
+    "381:     IF lv_off = abap_true.",
+    "391:     CALL FUNCTION 'SO_NEW_DOCUMENT_SEND_API1'"
+   ],
+   "X": [
+    "low des Satzes wird gelesen.",
+    "Für lv_off mit dem Wert abap_true wird der Block verlassen.",
+    "Bei lv_off gleich abap_true wird der Block verlassen.",
+    "Der Funktionsbaustein SO_NEW_DOCUMENT_SEND_API1 wird aufgerufen."
+   ],
+   "Y": [
+    "Das Feld low des Variableneintrags wird gelesen.",
+    "Wenn das Feld lv_off gesetzt ist, wird der Block verlassen.",
+    "Der Funktionsbaustein SO_NEW_DOCUMENT_SEND_API1 wird aufgerufen."
+   ],
+   "Z": [
+    "Liegt das Gültigkeitsbeginndatum am oder vor dem Abrechnungsdatum, wird eine Benachrichtigung an die Entgeltabrechnung ausgelöst.",
+    "Aus Tabelle TVARVC wird für die Variable ZESS_NOTIFY_PAYROLL_OFF der Parameterwert gelesen.",
+    "Ist die Benachrichtigung in Tabelle TVARVC deaktiviert, wird die Verarbeitung ohne Versand beendet.",
+    "Ist die Benachrichtigung nicht deaktiviert, wird über den Baustein SO_NEW_DOCUMENT_SEND_API1 eine E-Mail mit den Adressänderungsdaten an den Empfänger HR_PAYROLL versendet."
+   ]
+  }
+ ]
+}

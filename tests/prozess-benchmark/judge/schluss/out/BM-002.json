@@ -1,0 +1,118 @@
+{
+ "id": "BM-002",
+ "urteile": [
+  {
+   "id": "BM-002-B01",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Y": {
+    "urteil": "abweichend",
+    "mangel": [
+     "technisch",
+     "falsch"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "kurz": "Keiner sagt \"nur beim Anlegen\"; Y erfindet Schleife und \"kleinere Werte\"."
+  },
+  {
+   "id": "BM-002-B02",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig",
+     "grammatik"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "kurz": "X/Y nur \"kdgrp gelesen\", Z nennt Vertriebsbereich, aber Kundengruppe nur als kdgrp."
+  },
+  {
+   "id": "BM-002-B03",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "falsch"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "kurz": "X/Y nur Feldzuweisungen mehrfach, Y mit falschem Sonst-Zweig; Z nennt Versandbedingung und Kennzeichen."
+  },
+  {
+   "id": "BM-002-B04",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "unvollstaendig",
+     "falsch"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "falsch"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "kurz": "X/Y formulieren ZFD unbedingt bzw. Sonst-Zweig ohne ZFD, Z hat Andernfalls-Bedingung."
+  }
+ ],
+ "verboten_verletzt": [
+  {
+   "variante": "X",
+   "satz": "Für Auftragsarten mit dem Wert ZFD wird das Feld vbak-augru auf Z01 gesetzt.",
+   "grund": "unbedingt formuliert, schließt Key Accounts mit ZFD ein; ELSEIF greift nur für Nicht-Key-Accounts"
+  },
+  {
+   "variante": "Y",
+   "satz": "Für Auftragsarten mit dem Wert ZFD wird die vbak-augru auf Z01 gesetzt.",
+   "grund": "unbedingt formuliert, schließt Key Accounts mit ZFD ein; ELSEIF greift nur für Nicht-Key-Accounts"
+  }
+ ],
+ "soll_zweifel": []
+}

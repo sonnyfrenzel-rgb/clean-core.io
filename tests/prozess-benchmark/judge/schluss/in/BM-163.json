@@ -1,0 +1,101 @@
+{
+ "id": "BM-163",
+ "titel": "Handling Units: Packinhalt einer Auslieferung aus VEKP/VEPO listen",
+ "prozess": "Der Report wird mit einer Auslieferungsnummer gestartet. Er liest die Handling Units, deren Packobjekt diese Auslieferung ist, und danach deren Packpositionen. Ist die Lieferung nicht gepackt, liest der zweite Zugriff wegen der leeren Treibertabelle alle Packpositionen des Systems, die Liste bleibt trotzdem leer. Ein früherer Abbruch mit Meldung für ungepackte Lieferungen ist auskommentiert. Für jede Handling Unit wird eine Kopfzeile mit HU-Nummer, Packmittel und Bruttogewicht gedruckt. Darunter folgen nur die Materialpositionen dieser Handling Unit mit Material, Charge und Menge; geschachtelte Handling Units werden nicht als Inhalt gezeigt. Es wird nichts verändert.",
+ "verboten": [
+  "source.abap:12 — kein Fachsatz „ist die Lieferung ungepackt, wird eine Meldung ausgegeben und abgebrochen“: der Abbruchzweig ist auskommentiert",
+  "source.abap:20 — kein Fachsatz „es werden nur Packpositionen der Lieferung gelesen“: bei leerer HU-Tabelle entfällt die WHERE-Bedingung von FOR ALL ENTRIES",
+  "gesamte Scheibe — kein Fachsatz „Handling Units werden gepackt, umgepackt oder gebucht“: der Report liest und listet nur"
+ ],
+ "saetze": [
+  {
+   "id": "BM-163-B01",
+   "soll": "Es werden die Handling Units gelesen, die der eingegebenen Auslieferung zugeordnet sind.",
+   "zeilen": [
+    12
+   ],
+   "code": [
+    "12:   SELECT * FROM vekp INTO TABLE lt_vekp"
+   ],
+   "X": [
+    "Aus der Tabelle VEKP werden alle Datenzeilen gelesen, bei denen der Schlüssel des Verknüpfungsobjekts VPOBJKEY der angegebenen Liefernummer entspricht und das Verknüpfungsobjekt VPOBJ den Wert '01' aufweist."
+   ],
+   "Y": [
+    "Es werden Sätze aus vekp mit dem eingegebenen vpobjkey selektiert."
+   ],
+   "Z": [
+    "Es werden Sätze aus vekp mit dem eingegebenen vpobjkey selektiert."
+   ]
+  },
+  {
+   "id": "BM-163-B02",
+   "soll": "Zu diesen Handling Units werden die Packpositionen gelesen; hat die Lieferung keine Handling Unit, liest der Zugriff sämtliche Packpositionen des Systems.",
+   "zeilen": [
+    20
+   ],
+   "code": [
+    "20:   SELECT * FROM vepo INTO TABLE lt_vepo"
+   ],
+   "X": [
+    "Aus der Tabelle VEPO werden alle Datensätze gelesen, deren interne Handling-Unit-Nummer VENUM mit einer der zuvor ermittelten Handling-Unit-Nummern übereinstimmt."
+   ],
+   "Y": [
+    "Es werden Sätze aus vepo selektiert."
+   ],
+   "Z": [
+    "Es werden Sätze aus vepo zu den Einträgen aus lt_vekp selektiert."
+   ]
+  },
+  {
+   "id": "BM-163-B03",
+   "soll": "Je Handling Unit werden externe HU-Nummer, Packmittel und Bruttogewicht ausgegeben.",
+   "zeilen": [
+    25
+   ],
+   "code": [
+    "25:     WRITE: / ls_vekp-exidv, ls_vekp-vhilm, ls_vekp-brgew, ls_vekp-gewei."
+   ],
+   "X": [
+    "Die externe Handling-Unit-Identifikation EXIDV, das Packmittel VHILM, das Bruttogewicht BRGEW und die Gewichtseinheit GEWEI des aktuellen Eintrags werden ausgegeben."
+   ],
+   "Y": [
+    "Bei Treffern werden ls_vekp-exidv, ls_vekp-vhilm, ls_vekp-brgew und ls_vekp-gewei als Liste ausgegeben.",
+    "ls_vekp-exidv wird ausgegeben.",
+    "ls_vekp-vhilm wird ausgegeben.",
+    "ls_vekp-brgew wird ausgegeben.",
+    "ls_vekp-gewei wird ausgegeben."
+   ],
+   "Z": [
+    "Bei Treffern werden ls_vekp-exidv, ls_vekp-vhilm, ls_vekp-brgew und ls_vekp-gewei als Liste ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-163-B04",
+   "soll": "Darunter werden nur die Materialpositionen der Handling Unit mit Material, Charge und verpackter Menge gelistet; untergeordnete Handling Units erscheinen nicht als Inhalt.",
+   "zeilen": [
+    26,
+    28
+   ],
+   "code": [
+    "26:     LOOP AT lt_vepo INTO ls_vepo WHERE venum = ls_vekp-venum",
+    "28:       WRITE: /5 ls_vepo-matnr, ls_vepo-charg, ls_vepo-vemng, ls_vepo-vemeh."
+   ],
+   "X": [
+    "Über alle Positionen der Tabelle VEPO, deren interne Nummer VENUM der aktuellen Handling Unit entspricht und deren Kennzeichen für die Positionsart VELIN den Wert '1' hat, wird zeilenweise iteriert.",
+    "Die Materialnummer MATNR, die Chargennummer CHARG, die Verpackungsmenge VEMNG und die Basismengeneinheit VEMEH der aktuellen Position werden ausgegeben."
+   ],
+   "Y": [
+    "Jede Zeile aus lt_vepo wird einzeln verarbeitet.",
+    "Bei Treffern werden 5 ls_vepo-matnr, ls_vepo-charg, ls_vepo-vemng und ls_vepo-vemeh als Liste ausgegeben.",
+    "5 ls_vepo-matnr wird ausgegeben.",
+    "ls_vepo-charg wird ausgegeben.",
+    "ls_vepo-vemng wird ausgegeben.",
+    "ls_vepo-vemeh wird ausgegeben."
+   ],
+   "Z": [
+    "Die Zeilen aus lt_vepo, bei denen das Feld venum gleich ls_vekp-venum ist und das Feld velin gleich 1 ist, werden einzeln verarbeitet.",
+    "Bei Treffern werden Materialnummer, Charge, ls_vepo-vemng und ls_vepo-vemeh als Liste ausgegeben."
+   ]
+  }
+ ]
+}

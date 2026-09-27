@@ -1,0 +1,427 @@
+{
+ "id": "BM-194",
+ "urteile": [
+  {
+   "id": "BM-194-B01",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "zu_allgemein",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein"
+    ]
+   },
+   "kurz": "Y nennt Werke der Selektion; X/Z generisch."
+  },
+  {
+   "id": "BM-194-B02",
+   "X": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "kurz": "Y nennt Protokolleintrag und Ende, nicht das Weitergehen zum Sichern des Protokolls."
+  },
+  {
+   "id": "BM-194-B03",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "zu_allgemein",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "zu_allgemein",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Nur Y nennt Modellname, Variante, Zielsystem, PPDS und Werk."
+  },
+  {
+   "id": "BM-194-B04",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Y nennt Fehlerprotokoll und Übergehen; X ohne Protokoll, Z nur Aufruf."
+  },
+  {
+   "id": "BM-194-B05",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "kurz": "Y nennt Textumwandlung und Suche nach Fehler/Error; X/Z technisch."
+  },
+  {
+   "id": "BM-194-B06",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "kurz": "Y nennt Fehlerprotokoll ohne Aktivierung; X nur Überspringen."
+  },
+  {
+   "id": "BM-194-B07",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "kurz": "Y nennt Testlauf-Hinweis ohne Aktivierung; X nur Überspringen."
+  },
+  {
+   "id": "BM-194-B08",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "zu_allgemein",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "zu_allgemein",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Y nennt Aktivierung mit Erfolgsvermerk; X/Z nur Programmstart."
+  },
+  {
+   "id": "BM-194-B09",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "falsch",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Y nennt Echtlauf, Wartezeit und Queue-Prüfung; Z mit falschem Schleifen-Satz."
+  },
+  {
+   "id": "BM-194-B10",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Y nennt Destination und Queues mit Fehlerstatus; X/Z generisch."
+  },
+  {
+   "id": "BM-194-B11",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "zu_allgemein",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "zu_allgemein",
+     "redundant",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Nur Y nennt den Protokolleintrag „ohne Fehler“."
+  },
+  {
+   "id": "BM-194-B12",
+   "X": {
+    "urteil": "fehlt",
+    "mangel": [
+     "zu_allgemein"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "falsch"
+    ]
+   },
+   "Z": {
+    "urteil": "fehlt",
+    "mangel": [
+     "zu_allgemein"
+    ]
+   },
+   "kurz": "Y nennt Fehlerzeile je Queue mit LUW-Anzahl, behauptet aber verlässlichen Status; X/Z nur Schleife."
+  },
+  {
+   "id": "BM-194-B13",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Nur Y nennt Anwendungslog mit 30 Tagen."
+  },
+  {
+   "id": "BM-194-B14",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "kurz": "Y nennt Anzeige nur im Dialog fachlich; X/Z technisch."
+  },
+  {
+   "id": "BM-194-B15",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "kurz": "Y nennt Verlassen ohne Änderungen für CIF_ADMIN; X/Z Blockverlassen."
+  },
+  {
+   "id": "BM-194-B16",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "kurz": "Y fachlich; X/Z Feldname ct_cif_matloc."
+  },
+  {
+   "id": "BM-194-B17",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein"
+    ]
+   },
+   "kurz": "Y nennt Ausschlusstabelle und Werksdaten fachlich."
+  },
+  {
+   "id": "BM-194-B18",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "falsch",
+     "zu_allgemein"
+    ]
+   },
+   "kurz": "Keine sagt, dass Kombinationen ohne Werksdaten unverändert durchgehen; Z mit falschem „kleinere“."
+  },
+  {
+   "id": "BM-194-B19",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "zu_allgemein",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "zu_allgemein",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Y nennt Ausschlussprüfung und Entfernen der Material-Werks-Zeile."
+  }
+ ],
+ "verboten_verletzt": [
+  {
+   "variante": "Y",
+   "satz": "Am Ende jedes Queue-Namens wird eine Fehlermeldung mit dem Queue-Namen, dem Status und der Anzahl betroffener Einheiten im Protokoll vermerkt.",
+   "grund": "In AT END OF qname ist qstate nicht verlässlich der Zeilenwert; der Satz behauptet die Protokollierung des Status je Queue."
+  }
+ ],
+ "soll_zweifel": []
+}

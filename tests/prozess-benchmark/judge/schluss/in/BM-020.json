@@ -1,0 +1,443 @@
+{
+ "id": "BM-020",
+ "titel": "Jahresbonus: Umsatz per Native SQL, Staffel und Kappung je Kunde, Gutschriftsanforderung per BAPI mit verbuchtem Bonusbeleg",
+ "prozess": "Der Report wird einmal jährlich mit Verkaufsorganisation, Vertriebsweg, Sparte, Geschäftsjahr (Vorschlag Vorjahr), optionalen Regulierern und Testlaufkennzeichen gestartet. Per Native SQL ermittelt er den Nettoumsatz je Regulierer und Belegwährung aus nicht stornierten Rechnungen F2/ZF2 ohne Bonuspositionen und behält nur selektierte Regulierer; ohne Umsätze endet er mit Hinweis. Fehlt die Bonusstaffel für Verkaufsorganisation und Jahr, bricht er ab. Je Kunde prüft die Bonusberechnung, ob der Kunde bonusrelevant ist, ob er für das Jahr schon abgerechnet wurde, rechnet Fremdwährungsumsätze in EUR um und verlangt mindestens 10.000 EUR Umsatz; sonst gibt es keinen Bonus. Der Prozentsatz stammt aus der höchsten erreichten Staffelstufe, der Bonus ist Umsatz in Belegwährung mal Prozentsatz, gegebenenfalls auf den Höchstbetrag der Stufe gekappt. Kunden ohne Bonus und im Testlauf alle Kunden werden nur ausgewiesen. Im Echtlauf legt er je Kunde eine Gutschriftsanforderung mit dem Bonus als Kondition an und verbucht in derselben LUW einen Bonusbeleg; bei Fehler verwirft er beides. Zum Schluss zeigt er eine Ergebnisliste mit Summen je Währung.",
+ "verboten": [
+  "zsd_bonus_run_f01.abap:135 — kein Fachsatz „der Bonusbeleg enthält die Nummer der Gutschriftsanforderung“: der Beleg wird vor der Anlage angemeldet, VBELN ist dabei noch leer",
+  "zsd_bonus_run_f01.abap:23 — kein Fachsatz „Gutschriften und Retouren mindern den Bonusumsatz“: summiert werden nur Rechnungen F2/ZF2",
+  "zcl_sd_bonus_calc.abap:129 — kein Fachsatz „Kappung in EUR“: der Bonus in Belegwährung wird ohne Umrechnung mit dem Höchstbetrag verglichen",
+  "zsd_bonus_run_f01.abap:156 — kein Fachsatz „Status S bedeutet, dass Gutschrift und Bonusbeleg gespeichert sind“: der Status wird nach dem Commit ohne Prüfung des Verbuchungsergebnisses gesetzt"
+ ],
+ "saetze": [
+  {
+   "id": "BM-020-B01",
+   "soll": "Als Geschäftsjahr ist das Vorjahr vorgeschlagen.",
+   "zeilen": [
+    20
+   ],
+   "code": [
+    "20:   p_gjahr = sy-datum(4) - 1."
+   ],
+   "X": [],
+   "Y": [],
+   "Z": [
+    "Beim Initialisieren des Programms wird das Vorjahr als Standardwert für das Geschäftsjahr ermittelt."
+   ]
+  },
+  {
+   "id": "BM-020-B02",
+   "soll": "Für Verkaufsorganisation, Vertriebsweg und Geschäftsjahr wird der Nettoumsatz je Regulierer und Belegwährung aus nicht stornierten Rechnungen der Arten F2 und ZF2 ermittelt, ohne Bonuspositionen.",
+   "zeilen": [
+    213,
+    231
+   ],
+   "code": [
+    "213:   EXEC SQL.",
+    "231:     EXEC SQL."
+   ],
+   "X": [
+    "Ein Native-SQL-Block wird ausgeführt. Native SQL hat keinen automatischen Mandantenfilter.",
+    "Ein Native-SQL-Block wird ausgeführt. Native SQL hat keinen automatischen Mandantenfilter."
+   ],
+   "Y": [
+    "Ein Native-SQL-Block wird ausgeführt. Native SQL hat keinen automatischen Mandantenfilter.",
+    "Ein Native-SQL-Block wird ausgeführt. Native SQL hat keinen automatischen Mandantenfilter."
+   ],
+   "Z": []
+  },
+  {
+   "id": "BM-020-B03",
+   "soll": "Nur Regulierer aus der Selektion werden abgerechnet.",
+   "zeilen": [
+    237
+   ],
+   "code": [
+    "237:     IF ls_ums-kunrg IN s_kunrg."
+   ],
+   "X": [
+    "Wenn das Feld ls_ums-kunrg in der Selektion s_kunrg liegt, wird eine Zeile aufgenommen."
+   ],
+   "Y": [
+    "Für ls_ums-kunrg IN s_kunrg wird eine Zeile aufgenommen."
+   ],
+   "Z": []
+  },
+  {
+   "id": "BM-020-B04",
+   "soll": "Gibt es keine Umsätze, endet der Lauf mit einem Hinweis.",
+   "zeilen": [
+    24,
+    25,
+    26
+   ],
+   "code": [
+    "24:   IF gt_umsatz IS INITIAL.",
+    "25:     MESSAGE s950 WITH p_gjahr p_vkorg.",
+    "26:     RETURN."
+   ],
+   "X": [
+    "Ist die Tabelle gt_umsatz leer, wird eine Statusmeldung ausgegeben und der Block verlassen.",
+    "Die Statusmeldung 950 wird ausgegeben."
+   ],
+   "Y": [
+    "Ohne Treffer wird eine Meldung ausgegeben und der Block verlassen.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "Eine Meldung wird ausgegeben.",
+    "Es wird eine Meldung ausgegeben und der Block verlassen."
+   ],
+   "Z": [
+    "Wurden keine Umsätze gefunden, wird die Erfolgsmeldung 950 mit Geschäftsjahr und Verkaufsorganisation ausgegeben und die Verarbeitung beendet."
+   ]
+  },
+  {
+   "id": "BM-020-B05",
+   "soll": "Ist für Verkaufsorganisation und Jahr keine Bonusstaffel gepflegt, bricht der Lauf mit einer Fehlermeldung ab.",
+   "zeilen": [
+    35,
+    105,
+    108
+   ],
+   "code": [
+    "35:       MESSAGE gx_bonus TYPE 'E'.",
+    "105:     SELECT * FROM zsd_bonus_staffel INTO TABLE mt_staffel",
+    "108:     IF sy-subrc <> 0."
+   ],
+   "X": [
+    "Die Fehlermeldung gx_bonus wird ausgegeben.",
+    "Es werden Sätze aus zsd_bonus_staffel selektiert."
+   ],
+   "Y": [
+    "Eine Meldung wird ausgegeben.",
+    "Es werden Sätze aus zsd_bonus_staffel selektiert."
+   ],
+   "Z": [
+    "Für die angegebene Verkaufsorganisation und das Geschäftsjahr werden die Staffeldaten aus Tabelle ZSD_BONUS_STAFFEL gelesen.",
+    "Wird keine Bonusstaffel gefunden, wird eine Ausnahme ausgelöst.",
+    "Tritt beim Initialisieren der Bonusberechnung ein Fehler auf, wird die entsprechende Fehlermeldung ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-020-B06",
+   "soll": "Die Staffel wird absteigend nach Umsatzschwelle geordnet, sodass die höchste erreichte Stufe gilt.",
+   "zeilen": [
+    116,
+    174
+   ],
+   "code": [
+    "116:     SORT mt_staffel BY ab_umsatz DESCENDING.",
+    "174:     LOOP AT mt_staffel INTO ls_staffel WHERE ab_umsatz <= lv_ums_eur."
+   ],
+   "X": [
+    "Die Zeilen aus mt_staffel, bei denen das Feld ab_umsatz höchstens lv_ums_eur ist, werden einzeln verarbeitet."
+   ],
+   "Y": [
+    "Jede Zeile aus mt_staffel wird einzeln verarbeitet."
+   ],
+   "Z": [
+    "Aus der Bonusstaffel wird die erste Stufe ermittelt, deren Mindestumsatz AB_UMSATZ kleiner oder gleich dem Kundenumsatz in EUR ist, und deren Prozentsatz PROZENT übernommen."
+   ]
+  },
+  {
+   "id": "BM-020-B07",
+   "soll": "Kunden, die im Vertriebsbereich nicht bonusrelevant sind, erhalten keinen Bonus.",
+   "zeilen": [
+    127,
+    132
+   ],
+   "code": [
+    "127:     SELECT SINGLE bokre FROM knvv INTO lv_bokre",
+    "132:     IF lv_bokre <> abap_true."
+   ],
+   "X": [
+    "Das Feld bokre des Kunden wird gelesen.",
+    "Wenn das Feld lv_bokre nicht gesetzt ist, wird der Block verlassen."
+   ],
+   "Y": [
+    "bokre des Kunden wird gelesen.",
+    "Für lv_bokre ungleich abap_true wird der Block verlassen.",
+    "Bei lv_bokre ungleich abap_true wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben."
+   ],
+   "Z": [
+    "Für den Kunden wird im Vertriebsbereich das Kennzeichen für die Bonusrelevanz BOKRE aus Tabelle KNVV gelesen.",
+    "Ist der Kunde im Vertriebsbereich nicht bonusrelevant, wird der Hinweistext gesetzt und die Berechnung abgebrochen."
+   ]
+  },
+  {
+   "id": "BM-020-B08",
+   "soll": "Wurde für Kunde, Verkaufsorganisation und Jahr bereits ein Bonusbeleg erzeugt, gibt es keinen weiteren Bonus.",
+   "zeilen": [
+    138,
+    142
+   ],
+   "code": [
+    "138:     SELECT SINGLE kunnr FROM zsd_bonus_beleg INTO lv_vorhand",
+    "142:     IF sy-subrc = 0."
+   ],
+   "X": [
+    "Die Kundennummer aus zsd_bonus_beleg wird gelesen.",
+    "Bei Treffer wird der Block verlassen."
+   ],
+   "Y": [
+    "Kundennummer des Satzes wird gelesen.",
+    "Bei Treffer wird der Block verlassen.",
+    "Bei Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben."
+   ],
+   "Z": [
+    "In Tabelle ZSD_BONUS_BELEG wird geprüft, ob für den Kunden, die Verkaufsorganisation und das Geschäftsjahr bereits ein Bonusbeleg existiert.",
+    "Wurde für das Geschäftsjahr bereits ein Bonusbeleg gefunden, wird der Hinweistext gesetzt und die Berechnung abgebrochen."
+   ]
+  },
+  {
+   "id": "BM-020-B09",
+   "soll": "Umsätze in Fremdwährung werden zum 31.12. des Jahres in EUR umgerechnet; fehlt der Kurs, gibt es keinen Bonus.",
+   "zeilen": [
+    148,
+    149,
+    159
+   ],
+   "code": [
+    "148:     IF iv_waerk <> c_eur.",
+    "149:       CALL FUNCTION 'CONVERT_TO_LOCAL_CURRENCY'",
+    "159:       IF sy-subrc <> 0."
+   ],
+   "X": [
+    "Für Belegwährungen ungleich c_eur wird CONVERT_TO_LOCAL_CURRENCY aufgerufen.",
+    "Der Code übergibt mv_stichtag an CONVERT_TO_LOCAL_CURRENCY und übernimmt dessen Ausgabe nach lv_ums_eur.",
+    "Scheitert der Aufruf von CONVERT_TO_LOCAL_CURRENCY, wird der Block verlassen."
+   ],
+   "Y": [
+    "Für iv_waerk ungleich c_eur wird CONVERT_TO_LOCAL_CURRENCY aufgerufen.",
+    "Bei iv_waerk ungleich c_eur wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "Der Code übergibt mv_stichtag an CONVERT_TO_LOCAL_CURRENCY und übernimmt dessen Ausgabe nach lv_ums_eur.",
+    "Das konvertierte Ergebnis wird in lv_ums_eur übernommen.",
+    "Ohne Treffer wird der Block verlassen.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben."
+   ],
+   "Z": [
+    "Entspricht die Belegwährung nicht EUR, wird der Betrag über den Funktionsbaustein CONVERT_TO_LOCAL_CURRENCY zum Jahresende in EUR umgerechnet.",
+    "Ist die Belegwährung bereits EUR, wird der Umsatz direkt als Betrag in EUR übernommen."
+   ]
+  },
+  {
+   "id": "BM-020-B10",
+   "soll": "Unter einem Umsatz von 10.000 EUR gibt es keinen Bonus.",
+   "zeilen": [
+    168
+   ],
+   "code": [
+    "168:     IF lv_ums_eur < c_min_umsatz."
+   ],
+   "X": [
+    "Wenn das Feld lv_ums_eur kleiner als c_min_umsatz ist, wird der Block verlassen."
+   ],
+   "Y": [
+    "Für lv_ums_eur kleiner c_min_umsatz wird der Block verlassen."
+   ],
+   "Z": [
+    "Liegt der Umsatz in EUR unter dem Mindestumsatz von 10.000,00 EUR, wird der Hinweistext gesetzt und die Berechnung abgebrochen."
+   ]
+  },
+  {
+   "id": "BM-020-B11",
+   "soll": "Der Bonusprozentsatz ist der der höchsten Staffelstufe, deren Schwelle der EUR-Umsatz erreicht; ohne erreichte Stufe ist er null.",
+   "zeilen": [
+    174,
+    175
+   ],
+   "code": [
+    "174:     LOOP AT mt_staffel INTO ls_staffel WHERE ab_umsatz <= lv_ums_eur.",
+    "175:       rs_result-prozent = ls_staffel-prozent."
+   ],
+   "X": [
+    "Die Zeilen aus mt_staffel, bei denen das Feld ab_umsatz höchstens lv_ums_eur ist, werden einzeln verarbeitet."
+   ],
+   "Y": [
+    "Jede Zeile aus mt_staffel wird einzeln verarbeitet."
+   ],
+   "Z": [
+    "Aus der Bonusstaffel wird die erste Stufe ermittelt, deren Mindestumsatz AB_UMSATZ kleiner oder gleich dem Kundenumsatz in EUR ist, und deren Prozentsatz PROZENT übernommen."
+   ]
+  },
+  {
+   "id": "BM-020-B12",
+   "soll": "Der Bonus ist der Umsatz in Belegwährung mal Prozentsatz, auf zwei Nachkommastellen gerundet.",
+   "zeilen": [
+    180
+   ],
+   "code": [
+    "180:     rs_result-bonus = round( val = iv_umsatz * rs_result-prozent / 100"
+   ],
+   "X": [],
+   "Y": [],
+   "Z": []
+  },
+  {
+   "id": "BM-020-B13",
+   "soll": "Übersteigt der Bonus den Höchstbetrag der Stufe, wird er auf diesen gekappt.",
+   "zeilen": [
+    184,
+    185
+   ],
+   "code": [
+    "184:     IF ls_staffel-max_bonus > 0 AND rs_result-bonus > ls_staffel-max_bonus.",
+    "185:       rs_result-bonus = ls_staffel-max_bonus."
+   ],
+   "X": [],
+   "Y": [],
+   "Z": [
+    "Ist ein Maximalbonus größer als 0 definiert und übersteigt der errechnete Bonus diesen Betrag, wird der Bonus auf den Maximalwert der Staffel gekappt und ein Hinweistext hinterlegt."
+   ]
+  },
+  {
+   "id": "BM-020-B14",
+   "soll": "Kunden ohne Bonus werden nur mit Begründung ausgewiesen.",
+   "zeilen": [
+    264
+   ],
+   "code": [
+    "264:   IF ls_res-bonus <= 0."
+   ],
+   "X": [
+    "Wenn das Feld ls_res-bonus höchstens 0 ist, wird der Status auf I gesetzt, eine Zeile aufgenommen und der Block verlassen.",
+    "Wenn das Feld ls_res-bonus höchstens 0 ist, wird der Status auf I gesetzt."
+   ],
+   "Y": [
+    "Für ls_res-bonus bis einschließlich 0 wird die Status auf I gesetzt, eine Zeile aufgenommen und der Block verlassen.",
+    "ls_res-bonus bis einschließlich 0 setzen die Status auf I."
+   ],
+   "Z": [
+    "Ist der errechnete Bonusbetrag kleiner oder gleich null, wird der Status auf I gesetzt und die Ausgabezeile ohne Belegerstellung fortgeschrieben."
+   ]
+  },
+  {
+   "id": "BM-020-B15",
+   "soll": "Im Testlauf werden Kunden mit Bonus nur als „würde angelegt“ ausgewiesen.",
+   "zeilen": [
+    270
+   ],
+   "code": [
+    "270:   IF p_test = abap_true."
+   ],
+   "X": [
+    "Wenn das Feld p_test gesetzt ist, wird der Status auf T gesetzt, eine Zeile aufgenommen und der Block verlassen.",
+    "Wenn das Feld p_test gesetzt ist, wird der Status auf T gesetzt."
+   ],
+   "Y": [
+    "Für p_test mit dem Wert abap_true wird die Status auf T gesetzt, eine Zeile aufgenommen und der Block verlassen.",
+    "Bei p_test gleich abap_true wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "p_test mit dem Wert abap_true setzen die Status auf T."
+   ],
+   "Z": [
+    "Ist das Kennzeichen für Testlauf aktiv, wird der Status auf T gesetzt, ein Testlauf-Hinweistext vermerkt und die Verarbeitung des Kunden beendet.",
+    "Ist das Kennzeichen für Testlauf nicht aktiv, wird die Anlage der Gutschriftsanforderung aufgerufen und das Ergebnis in die Ausgabetabelle übernommen."
+   ]
+  },
+  {
+   "id": "BM-020-B16",
+   "soll": "Im Echtlauf wird je Kunde eine Gutschriftsanforderung ZG2 mit Auftragsgrund Z30, dem Bonusmaterial und dem Bonus als Kondition ZBON in Belegwährung angelegt.",
+   "zeilen": [
+    329
+   ],
+   "code": [
+    "329:   CALL FUNCTION 'BAPI_SALESORDER_CREATEFROMDAT2'"
+   ],
+   "X": [
+    "Es wird Z_SD_BONUS_POST_UPD aufgerufen und BAPI_SALESORDER_CREATEFROMDAT2 aufgerufen.",
+    "Der Code übergibt ls_hdr an BAPI_SALESORDER_CREATEFROMDAT2 und übernimmt dessen Ausgabe nach cv_vbeln."
+   ],
+   "Y": [
+    "Es wird Z_SD_BONUS_POST_UPD aufgerufen und BAPI_SALESORDER_CREATEFROMDAT2 aufgerufen.",
+    "Der Code übergibt ls_hdr an BAPI_SALESORDER_CREATEFROMDAT2 und übernimmt dessen Ausgabe nach cv_vbeln.",
+    "Das konvertierte Ergebnis wird in cv_vbeln übernommen."
+   ],
+   "Z": [
+    "Über den Funktionsbaustein BAPI_SALESORDER_CREATEFROMDAT2 wird eine Gutschriftsanforderung vom Typ ZG2 angelegt."
+   ]
+  },
+  {
+   "id": "BM-020-B17",
+   "soll": "Zusammen mit der Gutschriftsanforderung wird ein Bonusbeleg mit Umsatz, Prozentsatz und Bonus verbucht; scheitert die Anlage, wird beides verworfen und der Kunde mit der Fehlermeldung ausgewiesen.",
+   "zeilen": [
+    325,
+    340,
+    341,
+    346
+   ],
+   "code": [
+    "325:   CALL FUNCTION 'Z_SD_BONUS_POST_UPD' IN UPDATE TASK",
+    "340:   IF cv_vbeln IS INITIAL.",
+    "341:     CALL FUNCTION 'BAPI_TRANSACTION_ROLLBACK'.",
+    "346:     CALL FUNCTION 'BAPI_TRANSACTION_COMMIT'"
+   ],
+   "X": [
+    "Der Baustein Z_SD_BONUS_POST_UPD wird zur Verbuchung registriert. An der Aufrufstelle wird nichts geändert. Angestoßen wird er erst mit dem COMMIT WORK in Zeile 346. Mit dem ROLLBACK WORK in Zeile 341 wird die Registrierung verworfen.",
+    "Es wird Z_SD_BONUS_POST_UPD aufgerufen und BAPI_SALESORDER_CREATEFROMDAT2 aufgerufen.",
+    "Ohne Belegnummer wird BAPI_TRANSACTION_ROLLBACK aufgerufen und der Status auf E gesetzt, sonst BAPI_TRANSACTION_COMMIT aufgerufen und der Status auf S gesetzt.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_ROLLBACK wird aufgerufen.",
+    "Wenn die Belegnummer leer ist, wird der Status auf E gesetzt.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_COMMIT wird aufgerufen."
+   ],
+   "Y": [
+    "Der Baustein Z_SD_BONUS_POST_UPD wird zur Verbuchung registriert. An der Aufrufstelle wird nichts geändert. Angestoßen wird er erst mit dem COMMIT WORK in Zeile 346. Mit dem ROLLBACK WORK in Zeile 341 wird die Registrierung verworfen.",
+    "Es wird Z_SD_BONUS_POST_UPD aufgerufen und BAPI_SALESORDER_CREATEFROMDAT2 aufgerufen.",
+    "Ohne Belegnummer wird BAPI_TRANSACTION_ROLLBACK aufgerufen und die Status auf E gesetzt.",
+    "Ohne Belegnummer wird BAPI_TRANSACTION_ROLLBACK aufgerufen und die Status auf E gesetzt, sonst BAPI_TRANSACTION_COMMIT aufgerufen und die Status auf S gesetzt.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_ROLLBACK wird aufgerufen.",
+    "Eine leere Belegnummer setzen die Status auf E.",
+    "Sonst wird BAPI_TRANSACTION_COMMIT aufgerufen und die Status auf S gesetzt.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_COMMIT wird aufgerufen.",
+    "Es wird BAPI_TRANSACTION_COMMIT aufgerufen und die Status auf S gesetzt."
+   ],
+   "Z": [
+    "Der Bonusbeleg wird im Verbuchungsbaustein Z_SD_BONUS_POST_UPD zur Verbuchung registriert.",
+    "Wurde keine Verkaufsbelegnummer erzeugt, wird die Transaktion per Rollback zurückgerollt, der Status auf E gesetzt und die Fehlermeldung übernommen.",
+    "Wurde die Verkaufsbelegnummer erfolgreich erzeugt, wird die Verbuchung mit Commit abgeschlossen, der Status auf S gesetzt und die Belegnummer festgehalten."
+   ]
+  },
+  {
+   "id": "BM-020-B18",
+   "soll": "Existiert der Bonusbeleg bei der Verbuchung bereits, bricht die Verbuchung ab.",
+   "zeilen": [
+    51,
+    52,
+    53
+   ],
+   "code": [
+    "51:   INSERT zsd_bonus_beleg FROM is_beleg.",
+    "52:   IF sy-subrc <> 0.",
+    "53:     MESSAGE a951(zsd) WITH is_beleg-kunnr is_beleg-gjahr."
+   ],
+   "X": [
+    "Schlägt die Datenbankänderung fehl, wird eine Abbruchmeldung ausgegeben.",
+    "Die Abbruchmeldung 951(ZSD) wird ausgegeben; das Programm wird abgebrochen."
+   ],
+   "Y": [
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ],
+   "Z": [
+    "In den Verbuchungstask wird der Bonusbeleg in Tabelle ZSD_BONUS_BELEG eingefügt.",
+    "Tritt beim Einfügen in Tabelle ZSD_BONUS_BELEG ein Fehler auf, wird das Programm mit der Abbruchmeldung A951 beendet."
+   ]
+  },
+  {
+   "id": "BM-020-B19",
+   "soll": "Am Ende wird je Kunde Umsatz, Bonusprozentsatz, Bonus, Gutschriftsanforderung, Status und Meldung mit Summen je Währung angezeigt.",
+   "zeilen": [
+    377
+   ],
+   "code": [
+    "377:   CALL FUNCTION 'REUSE_ALV_GRID_DISPLAY'"
+   ],
+   "X": [
+    "Der Funktionsbaustein REUSE_ALV_GRID_DISPLAY wird aufgerufen."
+   ],
+   "Y": [
+    "Der Funktionsbaustein REUSE_ALV_GRID_DISPLAY wird aufgerufen."
+   ],
+   "Z": [
+    "Nach Abschluss der Verarbeitung aller Kunden werden die Ergebnisse in einer ALV-Tabelle am Bildschirm dargestellt."
+   ]
+  }
+ ]
+}

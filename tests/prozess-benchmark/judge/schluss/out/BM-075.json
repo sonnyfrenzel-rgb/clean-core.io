@@ -1,0 +1,206 @@
+{
+ "id": "BM-075",
+ "urteile": [
+  {
+   "id": "BM-075-B01",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "grammatik"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "kurz": "Y und Z nennen die Einschränkung auf PP01/PP02; X nur Code-Bedingung."
+  },
+  {
+   "id": "BM-075-B02",
+   "X": {
+    "urteil": "abweichend",
+    "mangel": [
+     "falsch",
+     "technisch",
+     "grammatik"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "X erfindet Schleife und 'kleinere'; Y und Z nennen nur die Mengenbedingung, keine die Quotenformel."
+  },
+  {
+   "id": "BM-075-B03",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein"
+    ]
+   },
+   "kurz": "Nur Y nennt Toleranztabelle und Vorschlag 5."
+  },
+  {
+   "id": "BM-075-B04",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "kurz": "Y fachlich; Z technisch über die Ausnahme; X nur 'eine Meldung'."
+  },
+  {
+   "id": "BM-075-B05",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "kurz": "X und Z nennen die Verbuchungsregistrierung technisch; Y ohne Grundbedingung und Verbuchungszeitpunkt."
+  },
+  {
+   "id": "BM-075-B06",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "falsch",
+     "redundant"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "kurz": "Y fachlich; X behauptet fälschlich 'nicht persistiert'; Z technisch."
+  },
+  {
+   "id": "BM-075-B07",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein"
+    ]
+   },
+   "kurz": "Nur Y nennt das Ereignis ZSCRAPEXCEEDED."
+  },
+  {
+   "id": "BM-075-B08",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "grammatik",
+     "zu_allgemein"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein"
+    ]
+   },
+   "kurz": "Nur Y nennt den rückgemeldeten Folgevorgang als Ablehnungsgrund."
+  },
+  {
+   "id": "BM-075-B09",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "falsch"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "kurz": "Nur Y nennt die Fortschreibung der Statistik fachlich; X behauptet fälschlich 'nicht persistiert'."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

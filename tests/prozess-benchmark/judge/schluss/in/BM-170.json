@@ -1,0 +1,175 @@
+{
+ "id": "BM-170",
+ "titel": "Transport: beladene Transporte per BAPI abfertigen, mit Wiederholung bei Sperre",
+ "prozess": "Ein Job startet den Report alle 30 Minuten mit Transportdispostellen, optional Transportarten und dem Kennzeichen „nur heute“. Aus diesen Eingaben wird eine dynamische Selektion gebaut, die Transporte mit beendeter Beladung und ohne Abfertigung liest, bei gesetztem Kennzeichen nur solche mit Ladeende heute. Findet er keine, gibt er einen Hinweis aus und überspringt die Verarbeitung, die Zählerzeile am Ende wird trotzdem gedruckt. Für jeden Transport setzt er den Status Abfertigung über das Änderungs-BAPI. Meldet das BAPI einen Fehler, wird zurückgerollt; ist der Transport gesperrt, wartet der Job zwei Sekunden und versucht es erneut, höchstens dreimal, bei anderen Fehlern gibt er sofort auf. Bleibt der Fehler, wird der Transport mit Fehlertext gelistet und gezählt, sonst wird die Abfertigung festgeschrieben. Zum Schluss werden die Zähler ausgegeben, und gab es Fehler, bricht der Job mit einer Fehlermeldung ab, damit das Monitoring anschlägt.",
+ "verboten": [
+  "source.abap:31 — kein Fachsatz „ohne Transporte endet der Job ohne weitere Ausgabe“: RETURN verlässt nur START-OF-SELECTION, die Zählerzeile aus END-OF-SELECTION wird trotzdem gedruckt",
+  "source.abap:60 — kein Fachsatz „jeder fehlerhafte Transport wird mit Fehlertext gelistet“: kommen nur Abbruchmeldungen (Typ A) zurück, scheitert der Zugriff auf die E-Meldung mit Laufzeitfehler",
+  "gesamte Scheibe — kein Fachsatz „Frachtkosten oder Warenausgang werden gebucht“: gesetzt wird nur der Transportstatus Abfertigung"
+ ],
+ "saetze": [
+  {
+   "id": "BM-170-B01",
+   "soll": "Es werden Transporte der gewählten Transportdispostellen und Transportarten gelesen, deren Beladung beendet, die aber noch nicht abgefertigt sind; mit dem Kennzeichen „heute“ nur solche mit Ladeende heute.",
+   "zeilen": [
+    23,
+    27
+   ],
+   "code": [
+    "23:   IF p_heute = 'X'.",
+    "27:   SELECT tknum FROM vttk INTO TABLE lt_tknum"
+   ],
+   "X": [
+    "Mit gesetztem p_heute wird eine Zeile aufgenommen.",
+    "Es werden Transporte selektiert. Welche Sätze das sind, steht erst zur Laufzeit in lt_where fest."
+   ],
+   "Y": [
+    "Ist das Kennzeichen p_heute auf 'X' gesetzt, wird die Selektionsbedingung um das Tagesdatum sy-datum für das Feld DALEN erweitert.",
+    "Ist das Kennzeichen p_heute nicht auf 'X' gesetzt, unterbleibt die Einschränkung auf das Tagesdatum.",
+    "Aus der Tabelle VTTK werden die Transportnummern (TKNUM) für Transporte mit Ladeende (STLAD gleich 'X'), noch nicht erfolgter Abfertigung (STABF gleich Leerzeichen) sowie passend zu den Selektionskriterien für Transportdispostelle und Transportart gelesen."
+   ],
+   "Z": [
+    "Mit gesetztem p_heute wird eine Zeile aufgenommen.",
+    "Es werden Sätze aus vttk selektiert. Welche Sätze das sind, entscheidet die Eingabe zur Laufzeit."
+   ]
+  },
+  {
+   "id": "BM-170-B02",
+   "soll": "Gibt es keine, wird dies ausgegeben und die Verarbeitung der Transporte übersprungen.",
+   "zeilen": [
+    29,
+    30,
+    31
+   ],
+   "code": [
+    "29:   IF lt_tknum IS INITIAL.",
+    "30:     WRITE: / 'Keine Transporte zum Abfertigen.'.",
+    "31:     RETURN."
+   ],
+   "X": [
+    "Ohne Treffer wird Keine Transporte zum Abfertigen. ausgegeben und der Block verlassen.",
+    "Keine Transporte zum Abfertigen. wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code."
+   ],
+   "Y": [
+    "Wurden keine Transporte gefunden, wird die Meldung 'Keine Transporte zum Abfertigen.' ausgegeben und die Verarbeitung beendet.",
+    "Wurden Transporte gefunden, wird die Verarbeitung mit der Bearbeitung der Transporte fortgeführt."
+   ],
+   "Z": [
+    "Ohne Treffer wird Keine Transporte zum Abfertigen. ausgegeben und der Block verlassen.",
+    "Es wird Keine Transporte zum Abfertigen. ausgegeben und der Block verlassen.",
+    "Keine Transporte zum Abfertigen. wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code."
+   ]
+  },
+  {
+   "id": "BM-170-B03",
+   "soll": "Für jeden Transport wird der Status „Abfertigung“ per Änderungs-BAPI gesetzt.",
+   "zeilen": [
+    41
+   ],
+   "code": [
+    "41:       CALL FUNCTION 'BAPI_SHIPMENT_CHANGE'"
+   ],
+   "X": [
+    "Der Funktionsbaustein BAPI_SHIPMENT_CHANGE wird aufgerufen."
+   ],
+   "Y": [
+    "Über den Funktionsbaustein BAPI_SHIPMENT_CHANGE wird der Gesamtbearbeitungsstatus des Transports (STATUS_COMPL) mit der Steuerungsaktion 'C' auf den Wert 'X' gesetzt."
+   ],
+   "Z": [
+    "Der Funktionsbaustein BAPI_SHIPMENT_CHANGE wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-170-B04",
+   "soll": "Schlägt die Änderung fehl, wird sie zurückgerollt; ist der Transport gesperrt, wird zwei Sekunden gewartet und höchstens dreimal insgesamt versucht, bei anderen Fehlern sofort aufgegeben.",
+   "zeilen": [
+    50,
+    52,
+    53
+   ],
+   "code": [
+    "50:       CALL FUNCTION 'BAPI_TRANSACTION_ROLLBACK'.",
+    "52:       IF line_exists( lt_ret[ id = 'VW' number = '022' ] ).",
+    "53:         WAIT UP TO 2 SECONDS."
+   ],
+   "X": [
+    "Der Funktionsbaustein BAPI_TRANSACTION_ROLLBACK wird aufgerufen."
+   ],
+   "Y": [
+    "Über den Funktionsbaustein BAPI_TRANSACTION_ROLLBACK werden die bisherigen Transaktionsänderungen zurückgerollt.",
+    "Ist der Transport gesperrt (Nachricht VW 022), wird bis zu 2 Sekunden gewartet, bevor der nächste Änderungsversuch erfolgt.",
+    "Liegt eine andere Meldung als die Sperre VW 022 vor, wird die Wiederholungsschleife beendet."
+   ],
+   "Z": [
+    "Der Funktionsbaustein BAPI_TRANSACTION_ROLLBACK wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-170-B05",
+   "soll": "Bleibt ein Fehler, wird der Transport mit Fehlertext gelistet und gezählt; sonst wird die Abfertigung festgeschrieben und gezählt.",
+   "zeilen": [
+    58,
+    60,
+    63
+   ],
+   "code": [
+    "58:     IF line_exists( lt_ret[ type = 'E' ] ) OR line_exists( lt_ret[ type = 'A' ] ).",
+    "60:       WRITE: / lv_tknum, 'Fehler:', lt_ret[ type = 'E' ]-message.",
+    "63:     CALL FUNCTION 'BAPI_TRANSACTION_COMMIT'"
+   ],
+   "X": [
+    "Wenn die Bedingung „line_exists( lt_ret[ type = 'E' ] ) OR line_exists( lt_ret[ type = 'A' ] )“ erfüllt ist, wird lv_tknum ausgegeben, Fehler: ausgegeben, lt_ret[ type = 'E' ]-message ausgegeben und der Schleifendurchlauf übersprungen.",
+    "Fehler: wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_COMMIT wird aufgerufen."
+   ],
+   "Y": [
+    "Liegt nach den Versuchen weiterhin ein Fehler vom Typ 'E' oder Abbruch vom Typ 'A' vor, wird der Fehlerzähler um 1 erhöht, die Fehlermeldung zur Transportnummer ausgegeben und zum nächsten Transport übergegangen.",
+    "Liegt kein Fehler vom Typ 'E' oder Abbruch vom Typ 'A' vor, wird mit der Verbuchung fortgefahren.",
+    "Über den Funktionsbaustein BAPI_TRANSACTION_COMMIT werden die Änderungen mit Verbuchungswarten bestätigt und der Erfolgszähler um 1 erhöht."
+   ],
+   "Z": [
+    "Für line_exists( lt_ret[ type = 'E' ] ) OR line_exists( lt_ret[ type = 'A' ] ) wird lv_tknum ausgegeben, Fehler: ausgegeben und lt_ret[ type = 'E' ]-message ausgegeben.",
+    "Bei Treffern werden lv_tknum, Fehler: und lt_ret[ type = 'E' ]-message als Liste ausgegeben.",
+    "lv_tknum wird ausgegeben.",
+    "Fehler: wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "lt_ret[ type = 'E' ]-message wird ausgegeben.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_COMMIT wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-170-B06",
+   "soll": "Am Ende werden die Anzahl abgefertigter und fehlerhafter Transporte ausgegeben; gab es Fehler, bricht der Job mit einer Fehlermeldung ab.",
+   "zeilen": [
+    70,
+    71,
+    72
+   ],
+   "code": [
+    "70:   WRITE: / 'Abgefertigt:', lv_ok, 'Fehler:', lv_err.",
+    "71:   IF lv_err > 0.",
+    "72:     MESSAGE e004(zle) WITH lv_err.       \"Job abbrechen -> Monitoring"
+   ],
+   "X": [
+    "Abgefertigt:, lv_ok, Fehler: und lv_err werden ausgegeben.",
+    "Abgefertigt: wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "Fehler: wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "Wenn das Feld lv_err größer als 0 ist, wird eine Fehlermeldung ausgegeben.",
+    "Die Fehlermeldung 004(ZLE) wird ausgegeben."
+   ],
+   "Y": [
+    "Die Anzahl der erfolgreich abgefertigten Transporte sowie die Anzahl der fehlerhaften Transporte werden ausgegeben.",
+    "Ist der Fehlerzähler größer als 0, wird die Fehlermeldung 004 der Nachrichtenklasse zle mit der Fehleranzahl ausgelöst.",
+    "Ist der Fehlerzähler gleich 0, wird keine Fehlermeldung erzeugt."
+   ],
+   "Z": [
+    "Abgefertigt:, lv_ok, Fehler: und lv_err werden ausgegeben.",
+    "Abgefertigt: wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "lv_ok wird ausgegeben.",
+    "Fehler: wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "lv_err wird ausgegeben.",
+    "Für lv_err größer 0 wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  }
+ ]
+}

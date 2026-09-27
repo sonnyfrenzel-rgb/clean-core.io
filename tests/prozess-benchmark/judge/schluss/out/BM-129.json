@@ -1,0 +1,148 @@
+{
+ "id": "BM-129",
+ "urteile": [
+  {
+   "id": "BM-129-B01",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Y nennt offene Zusagen mit Fallschlüssel; X/Z nur Tabelle und Buchungskreis."
+  },
+  {
+   "id": "BM-129-B02",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "grammatik",
+     "falsch"
+    ]
+   },
+   "kurz": "Y fachlich; X zitiert nur die Bedingung; Z grammatisch kaputt mit falschem 'kleinere'."
+  },
+  {
+   "id": "BM-129-B03",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Y erklärt Übergehen ohne offenen Posten; X nur Schleifenüberspringen; Z nur Feldlesung."
+  },
+  {
+   "id": "BM-129-B04",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "grammatik"
+    ]
+   },
+   "kurz": "Y fachlich benannt; X/Z Variablennamen, Z mit Spaltenpositionen im Text."
+  },
+  {
+   "id": "BM-129-B05",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "kurz": "Y nennt Gesamtzahl gebrochener Zusagen; X/Z nur Variablenausgabe."
+  },
+  {
+   "id": "BM-129-B06",
+   "X": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "abweichend",
+    "mangel": [
+     "falsch",
+     "grammatik",
+     "technisch"
+    ]
+   },
+   "kurz": "X/Y beschreiben Beleganzeige über FB03; Z spricht von einer 'Anlage' über FB03."
+  }
+ ],
+ "verboten_verletzt": [
+  {
+   "variante": "Z",
+   "satz": "Die Anlage wird über die Transaktion FB03 angestoßen. Ob und was persistiert wird, entscheidet die aufgerufene Transaktion.",
+   "grund": "FB03 ist reine Anzeige; der Satz unterstellt eine Anlage/Änderung des Belegs."
+  }
+ ],
+ "soll_zweifel": []
+}

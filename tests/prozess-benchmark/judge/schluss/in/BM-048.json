@@ -1,0 +1,162 @@
+{
+ "id": "BM-048",
+ "titel": "Restbuchwerte der Anlagen je Bewertungsbereich mit Nutzungsstatus als ALV",
+ "prozess": "Die Anlagenbuchhaltung startet den Report mit Buchungskreisen, Anlagenklassen, Geschäftsjahr und Bewertungsbereich. Gelesen werden alle nicht deaktivierten Anlagen mit ihren Jahreswerten; gibt es keine, endet der Report mit einem Hinweis. Je Anlage werden Anschaffungswert, kumulierte AfA und Restbuchwert berechnet und ein Nutzungsstatus vergeben: voll abgeschrieben, nicht aktiviert oder in Nutzung. Mit der Option „nur Restbuchwert null“ bleiben Anlagen mit Restwert außen vor. Die Liste wird als ALV angezeigt; scheitert die ALV-Erzeugung, bricht der Report mit einer Fehlermeldung ab. Es wird nichts gebucht oder geändert.",
+ "verboten": [
+  "source.abap:75 — kein Fachsatz „voll abgeschriebene Anlagen werden deaktiviert oder als Abgang gebucht“ (nur Statustext in der Liste)",
+  "source.abap:48 — kein Fachsatz „alle Bewertungsbereiche werden ausgewertet“ (genau ein Bereich aus P_AFABE)",
+  "source.abap:72 — kein Fachsatz „Aufwertungen oder Zuschreibungen fließen in den Restbuchwert ein“ (nur Anschaffungswert, Jahresbewegungen und die sechs AfA-Felder)"
+ ],
+ "saetze": [
+  {
+   "id": "BM-048-B01",
+   "soll": "Es werden alle nicht deaktivierten Anlagen der gewählten Buchungskreise und Anlagenklassen mit ihren Jahreswerten für Geschäftsjahr und Bewertungsbereich (Vorschlag 01) gelesen.",
+   "zeilen": [
+    48
+   ],
+   "code": [
+    "48:   SELECT a~bukrs a~anln1 a~anln2 a~anlkl a~txt50 a~aktiv"
+   ],
+   "X": [
+    "Es werden Sätze aus anla mit dem eingegebenen Geschäftsjahr und dem eingegebenen c~afabe selektiert."
+   ],
+   "Y": [
+    "Aus den Tabellen ANLA und ANLC werden die Buchungskreise, Anlagenhaupt- und Unternummern, Anlagenklassen, Texte, Aktivierungsdaten sowie Anschaffungs- und Abschreibungswerte für die selektierten Buchungskreise und Anlagenklassen, das angegebene Geschäftsjahr, den Bewertungsbereich und nicht deaktivierte Anlagen (DEAKT = '00000000') gelesen."
+   ],
+   "Z": [
+    "Es werden Sätze aus anla mit dem eingegebenen c~gjahr und dem eingegebenen c~afabe selektiert."
+   ]
+  },
+  {
+   "id": "BM-048-B02",
+   "soll": "Werden keine Anlagen gefunden, erhält der Anwender einen Hinweis und der Report endet.",
+   "zeilen": [
+    60,
+    61,
+    62
+   ],
+   "code": [
+    "60:   IF sy-subrc <> 0.",
+    "61:     MESSAGE 'Keine aktiven Anlagen selektiert' TYPE 'S' DISPLAY LIKE 'E'.",
+    "62:     RETURN."
+   ],
+   "X": [
+    "Ohne Treffer wird eine Statusmeldung ausgegeben und der Block verlassen.",
+    "Die Statusmeldung „Keine aktiven Anlagen selektiert“ wird ausgegeben, angezeigt wie eine Fehlermeldung."
+   ],
+   "Y": [
+    "Wurden keine Daten selektiert (sy-subrc ungleich 0), wird die Information 'Keine aktiven Anlagen selektiert' als Fehlermeldung angezeigt und die Verarbeitung abgebrochen."
+   ],
+   "Z": [
+    "Ohne Treffer wird eine Meldung ausgegeben und der Block verlassen.",
+    "Ohne Treffer wird der Block verlassen.",
+    "Eine Meldung wird ausgegeben.",
+    "Es wird eine Meldung ausgegeben und der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-048-B03",
+   "soll": "Je Anlage werden der Anschaffungswert (kumulierter Stand plus wertmäßige Bewegungen des Jahres), die kumulierte AfA (normal, Sonder- und außerplanmäßig) und daraus der Restbuchwert berechnet.",
+   "zeilen": [
+    70,
+    72
+   ],
+   "code": [
+    "70:     ls_out-afa_kum = ls_raw-knafa + ls_raw-nafag + ls_raw-ksafa",
+    "72:     ls_out-rbw     = ls_out-ahk + ls_out-afa_kum."
+   ],
+   "X": [],
+   "Y": [
+    "Für jede selektierte Anlage werden die Anschaffungs- und Herstellungskosten aus KANSW und ANSWL, die kumulierte Abschreibung aus den verschiedenen Abschreibungskomponenten sowie der Restbuchwert berechnet."
+   ],
+   "Z": []
+  },
+  {
+   "id": "BM-048-B04",
+   "soll": "Anlagen mit Anschaffungswert, aber ohne Restbuchwert gelten als voll abgeschrieben; Anlagen ohne Aktivierungsdatum als nicht aktiviert; alle übrigen als in Nutzung.",
+   "zeilen": [
+    74,
+    75,
+    77,
+    79
+   ],
+   "code": [
+    "74:     IF ls_out-rbw <= 0 AND ls_out-ahk > 0.",
+    "75:       ls_out-status = 'voll abgeschrieben'.",
+    "77:       ls_out-status = 'nicht aktiviert'.",
+    "79:       ls_out-status = 'in Nutzung'."
+   ],
+   "X": [
+    "Wenn das Feld ls_out-rbw höchstens 0 ist und das Feld ls_out-ahk größer als 0 ist, wird der Status auf voll abgeschrieben gesetzt.",
+    "Wenn das Feld ls_out-rbw höchstens 0 ist und das Feld ls_out-ahk größer als 0 ist, wird der Status auf voll abgeschrieben gesetzt.",
+    "Ist das Feld ls_raw-aktiv leer, wird der Status auf nicht aktiviert gesetzt.",
+    "Wenn das Feld ls_raw-aktiv leer ist, wird der Status auf nicht aktiviert gesetzt.",
+    "Sonst wird der Status auf in Nutzung gesetzt.",
+    "Sonst wird der Status auf in Nutzung gesetzt."
+   ],
+   "Y": [
+    "Ist der Restbuchwert kleiner oder gleich 0 und sind die Anschaffungs- und Herstellungskosten größer als 0, wird der Status 'voll abgeschrieben' vergeben."
+   ],
+   "Z": [
+    "Für ls_out-rbw <= 0 AND ls_out-ahk > 0 wird die Status auf voll abgeschrieben gesetzt.",
+    "Für ls_out-rbw <= 0 AND ls_out-ahk > 0 wird die Status auf voll abgeschrieben gesetzt, sonst die Status auf nicht aktiviert gesetzt beziehungsweise die Status auf in Nutzung gesetzt.",
+    "ls_out-rbw <= 0 AND ls_out-ahk > 0 setzen die Status auf voll abgeschrieben.",
+    "Ohne ls_raw-aktiv wird die Status auf nicht aktiviert gesetzt.",
+    "Eine leere ls_raw-aktiv setzen die Status auf nicht aktiviert.",
+    "Sonst wird die Status auf in Nutzung gesetzt.",
+    "Sonst setzen die Status auf in Nutzung."
+   ]
+  },
+  {
+   "id": "BM-048-B05",
+   "soll": "Ist die Option „nur Restbuchwert null“ gesetzt, werden Anlagen mit positivem Restbuchwert nicht in die Liste übernommen.",
+   "zeilen": [
+    82
+   ],
+   "code": [
+    "82:     IF p_null = 'X' AND ls_out-rbw > 0."
+   ],
+   "X": [
+    "Wenn das Feld p_null gesetzt ist und das Feld ls_out-rbw größer als 0 ist, wird der Schleifendurchlauf übersprungen."
+   ],
+   "Y": [
+    "Ist das Kennzeichen p_null als 'X' markiert und der Restbuchwert größer als 0, wird die aktuelle Anlage übersprungen."
+   ],
+   "Z": []
+  },
+  {
+   "id": "BM-048-B06",
+   "soll": "Die Ergebnisliste wird als ALV mit allen Standardfunktionen angezeigt; kann das ALV nicht erzeugt werden, bricht der Report mit einer Fehlermeldung ab.",
+   "zeilen": [
+    88,
+    96,
+    100,
+    103
+   ],
+   "code": [
+    "88:   PERFORM display.",
+    "96:       cl_salv_table=>factory(",
+    "100:       MESSAGE lx_msg TYPE 'E'.",
+    "103:   lo_alv->display( )."
+   ],
+   "X": [
+    "Das Unterprogramm display wird aufgerufen; es gibt eine Meldung aus.",
+    "Die Methode factory von cl_salv_table wird aufgerufen; ihr Ergebnis wird in lo_alv übernommen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "Die Fehlermeldung lx_msg wird ausgegeben.",
+    "Die Methode display von lo_alv wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ],
+   "Y": [
+    "Das Unterprogramm zur Anzeige der Anlagendaten wird aufgerufen.",
+    "Die ALV-Tabelle wird über CL_SALV_TABLE=>FACTORY für die Ausgabetabelle gt_out instanziiert.",
+    "Tritt beim Instanziieren der ALV-Tabelle ein Fehler der Ausnahmeklasse CX_SALV_MSG auf, wird eine Fehlermeldung mit der Ausnahmenachricht ausgegeben.",
+    "Die ALV-Tabelle mit den Anlagendaten wird zur Anzeige gebracht."
+   ],
+   "Z": [
+    "Das Unterprogramm display wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Der Rückgabewert der Methode factory von cl_salv_table wird nach cl_salv_table übernommen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "Eine Meldung wird ausgegeben.",
+    "Die Methode display von lo_alv wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ]
+  }
+ ]
+}

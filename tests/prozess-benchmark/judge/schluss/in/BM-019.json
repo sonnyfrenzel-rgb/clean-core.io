@@ -1,0 +1,443 @@
+{
+ "id": "BM-019",
+ "titel": "Webshop-Bestellung per RFC: Dublettenschutz, Kunde finden oder anlegen, Verfügbarkeit, Preisabgleich, Auftragsanlage mit Protokoll und Ereignis",
+ "prozess": "Die Webshop-Middleware ruft den Baustein per RFC mit Bestellkopf und Positionen auf. Wurde die Shopbestellung schon erfolgreich übernommen, gibt er den vorhandenen Auftrag zurück; eine Bestellung ohne Positionen lehnt er ab. Den Auftraggeber übernimmt er aus dem Shopkonto oder sucht ihn über die E-Mail-Adresse; findet er keinen, legt er nach einem Vorlagekunden einen Neukunden an, sonst prüft er, ob der Webshop-Vertriebsbereich existiert und nicht gesperrt ist. Dann prüft er je Position die verfügbare Menge; reicht sie nicht, lehnt er ab, sofern der Kunde keine Teillieferung erlaubt hat. Anschließend simuliert er den Auftrag mit der SAP-Preisfindung und vergleicht jeden Positionswert mit dem Shoppreis. Weicht ein Preis um mehr als einen Cent ab, legt er keinen Auftrag an, protokolliert die Bestellung mit Status P und gibt die Preismeldungen zurück. Sonst legt er den Kundenauftrag an. Jede Ablehnung verwirft alle Änderungen und liefert Status E. Nach erfolgreicher Anlage protokolliert er die Bestellung, meldet Aufträge ab 25.000 per Workflow-Ereignis und schreibt alles gemeinsam fest.",
+ "verboten": [
+  "zcl_sd_webshop_customer.abap:65 — kein Fachsatz „der Kunde wird eindeutig über seine E-Mail-Adresse gefunden“: verglichen wird nur der 20-stellige Großbuchstaben-Suchbegriff, der erste Treffer gewinnt",
+  "z_sd_webshop_order.abap:70 — kein Fachsatz „bei Preisabweichung wird nichts festgeschrieben“: der Protokollsatz mit Status P und alles, was die Neukundenanlage in dieser LUW angemeldet hat, werden festgeschrieben",
+  "z_sd_webshop_order.abap:98 — kein Fachsatz „Schwelle 25.000 EUR“: die Schwelle gilt in Belegwährung ohne Umrechnung",
+  "zcl_sd_webshop_order.abap:140 — kein Fachsatz „der Auftrag ist nach der Anlage gespeichert“: erst der COMMIT WORK am Ende des Bausteins schreibt ihn fest"
+ ],
+ "saetze": [
+  {
+   "id": "BM-019-B01",
+   "soll": "Wurde dieselbe Shopbestellung bereits erfolgreich übernommen, wird der vorhandene Auftrag mit Status D zurückgegeben und nichts neu angelegt.",
+   "zeilen": [
+    42,
+    45,
+    50
+   ],
+   "code": [
+    "42:   SELECT SINGLE vbeln kunnr FROM zsd_webshop_log INTO (ev_vbeln, ev_kunnr)",
+    "45:   IF sy-subrc = 0.",
+    "50:     RETURN."
+   ],
+   "X": [
+    "Das Ergebnis enthält Belegnummer und Kundennummer.",
+    "Die Felder Belegnummer und Kundennummer aus zsd_webshop_log werden gelesen.",
+    "Bei Treffer wird der Status auf D gesetzt, eine Zeile aufgenommen und vor der Datenbankoperation zurückgekehrt.",
+    "Wenn ein Treffer vorliegt, wird der Status auf D gesetzt."
+   ],
+   "Y": [
+    "Aus der Tabelle ZSD_WEBSHOP_LOG werden Verkaufsbelegnummer und Kundennummer zur Webshop-Bestellnummer mit dem Status S gelesen.",
+    "Wurde bereits ein Protokollsatz mit dem Status S gefunden, wird der Status auf D gesetzt, die Hinweismeldung ZSD 900 hinzugefügt und die Verarbeitung beendet."
+   ],
+   "Z": [
+    "vbeln kunnr des Satzes wird gelesen.",
+    "Bei Treffer wird die Status auf D gesetzt, eine Zeile aufgenommen und der Block verlassen.",
+    "Bei Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "sy-subrc mit dem Wert 0 erhalten D.",
+    "Es wird die Status auf D gesetzt, eine Zeile aufgenommen und der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-019-B02",
+   "soll": "Eine Bestellung ohne Positionen wird mit Fehler 901 abgelehnt.",
+   "zeilen": [
+    53,
+    57
+   ],
+   "code": [
+    "53:   IF it_items IS INITIAL.",
+    "57:     RETURN."
+   ],
+   "X": [
+    "Ist die Tabelle it_items leer, wird der Status auf E gesetzt, eine Zeile aufgenommen und vor der Datenbankoperation zurückgekehrt.",
+    "Wenn das Feld it_items leer ist, wird der Status auf E gesetzt."
+   ],
+   "Y": [
+    "Sind keine Bestellpositionen vorhanden, wird der Status auf E gesetzt, die Fehlermeldung ZSD 901 ausgegeben und die Verarbeitung beendet."
+   ],
+   "Z": [
+    "Ohne Treffer wird die Status auf E gesetzt, eine Zeile aufgenommen und der Block verlassen.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "Eine leere it_items erhalten E.",
+    "Es wird die Status auf E gesetzt, eine Zeile aufgenommen und der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-019-B03",
+   "soll": "Ist im Shopkonto eine Kundennummer hinterlegt, ist diese der Auftraggeber.",
+   "zeilen": [
+    166
+   ],
+   "code": [
+    "166:     IF ms_header-kunnr IS NOT INITIAL."
+   ],
+   "X": [],
+   "Y": [
+    "Ist im Bestellkopf eine Kundennummer angegeben, wird diese übernommen.",
+    "Ist im Bestellkopf keine Kundennummer angegeben, wird nach der E-Mail-Adresse gesucht."
+   ],
+   "Z": []
+  },
+  {
+   "id": "BM-019-B04",
+   "soll": "Sonst wird der erste nicht zum Löschen vorgemerkte Kunde der Kontengruppe ZWEB gesucht, dessen Mailsuchbegriff (die ersten 20 Zeichen der Adresse in Großbuchstaben) passt.",
+   "zeilen": [
+    169,
+    186
+   ],
+   "code": [
+    "169:       rv_kunnr = find_by_email( ).",
+    "186:     SELECT k~kunnr"
+   ],
+   "X": [
+    "Es werden Kunden selektiert."
+   ],
+   "Y": [
+    "Ist im Bestellkopf keine Kundennummer angegeben, wird nach der E-Mail-Adresse gesucht.",
+    "Aus den Tabellen KNA1 und ADR6 wird die Kundennummer anhand der in Großbuchstaben umgewandelten E-Mail-Adresse für die Kontengruppe ZWEB ohne Löschvormerkung gelesen."
+   ],
+   "Z": [
+    "Es werden Kunden selektiert."
+   ]
+  },
+  {
+   "id": "BM-019-B05",
+   "soll": "Für einen vorhandenen Kunden muss der Webshop-Vertriebsbereich 1000/30/00 angelegt sein und darf keine Auftragssperre haben, sonst wird die Bestellung abgelehnt.",
+   "zeilen": [
+    175,
+    201,
+    206,
+    212
+   ],
+   "code": [
+    "175:       check_sales_area( rv_kunnr ).",
+    "201:     SELECT SINGLE aufsd FROM knvv INTO lv_aufsd",
+    "206:     IF sy-subrc <> 0.",
+    "212:     IF lv_aufsd IS NOT INITIAL."
+   ],
+   "X": [
+    "Die Auftragssperre des Kunden wird gelesen."
+   ],
+   "Y": [
+    "Wurde eine Kundennummer ermittelt, wird der Vertriebsbereich des Kunden geprüft.",
+    "Aus der Tabelle KNVV wird das Auftragssperrkennzeichen AUFSD zur Kundennummer für Verkaufsorganisation 1000, Vertriebsweg 30 und Sparte 00 gelesen.",
+    "Existiert für den Kunden kein Eintrag im Vertriebsbereich in der Tabelle KNVV, wird die Ausnahme ZCX_SD_WEBSHOP ausgelöst.",
+    "Ist für den Kunden im Vertriebsbereich eine Auftragssperre gepflegt, wird die Ausnahme ZCX_SD_WEBSHOP ausgelöst."
+   ],
+   "Z": [
+    "aufsd des Kunden wird gelesen."
+   ]
+  },
+  {
+   "id": "BM-019-B06",
+   "soll": "Wird kein Kunde gefunden, wird ein Neukunde mit Name, Anschrift und E-Mail aus dem Shop angelegt; Kontengruppe, Buchungskreis- und Vertriebsdaten stammen vom Vorlagekunden WEBVORLAGE.",
+   "zeilen": [
+    173,
+    227,
+    228,
+    231,
+    256
+   ],
+   "code": [
+    "173:       rv_kunnr = create_customer( ).",
+    "227:     SELECT SINGLE * FROM kna1 INTO ls_kna1 WHERE kunnr = c_ref_kunnr.",
+    "228:     SELECT SINGLE * FROM knb1 INTO ls_knb1",
+    "231:     SELECT SINGLE * FROM knvv INTO ls_knvv",
+    "256:     CALL FUNCTION 'SD_CUSTOMER_MAINTAIN_ALL'"
+   ],
+   "X": [
+    "Es werden Kunden selektiert.",
+    "Es werden Kunden selektiert.",
+    "Es werden Kunden selektiert.",
+    "Der Code übergibt ls_kna1 an SD_CUSTOMER_MAINTAIN_ALL und übernimmt dessen Ausgabe nach rv_kunnr."
+   ],
+   "Y": [
+    "Wurde keine Kundennummer ermittelt, wird ein neuer Kunde angelegt.",
+    "Aus der Tabelle KNA1 werden die Stammdaten des Vorlagekunden WEBVORLAGE gelesen.",
+    "Aus der Tabelle KNB1 werden die Buchungskreisdaten des Vorlagekunden WEBVORLAGE zum Buchungskreis 1000 gelesen.",
+    "Aus der Tabelle KNVV werden die Vertriebsdaten des Vorlagekunden WEBVORLAGE für Verkaufsorganisation 1000, Vertriebsweg 30 und Sparte 00 gelesen.",
+    "Über den Funktionsbaustein SD_CUSTOMER_MAINTAIN_ALL wird mit den Bestelldaten und den Vorlagedaten ein Debitor angelegt."
+   ],
+   "Z": [
+    "Es werden Kunden selektiert.",
+    "Es werden Kunden selektiert.",
+    "Es werden Kunden selektiert.",
+    "Der Code übergibt ls_kna1 an SD_CUSTOMER_MAINTAIN_ALL und übernimmt dessen Ausgabe nach rv_kunnr.",
+    "Das konvertierte Ergebnis wird in rv_kunnr übernommen."
+   ]
+  },
+  {
+   "id": "BM-019-B07",
+   "soll": "Fehlt ein Teil der Vorlage oder scheitert die Anlage, wird die Bestellung abgelehnt.",
+   "zeilen": [
+    236,
+    267
+   ],
+   "code": [
+    "236:     IF ls_kna1 IS INITIAL OR ls_knb1 IS INITIAL OR ls_knvv IS INITIAL.",
+    "267:     IF sy-subrc <> 0 OR rv_kunnr IS INITIAL."
+   ],
+   "X": [],
+   "Y": [
+    "Fehlen Stammdaten, Buchungskreisdaten oder Vertriebsdaten der Vorlage, wird die Ausnahme ZCX_SD_WEBSHOP ausgelöst.",
+    "Schlägt das Anlegen des Debitors fehl oder bleibt die Kundennummer initial, wird die Ausnahme ZCX_SD_WEBSHOP ausgelöst."
+   ],
+   "Z": []
+  },
+  {
+   "id": "BM-019-B08",
+   "soll": "Für jede Position wird die im Werk verfügbare Menge ermittelt; ein Fehler der Prüfung lehnt die Bestellung ab.",
+   "zeilen": [
+    329,
+    338
+   ],
+   "code": [
+    "329:       CALL FUNCTION 'BAPI_MATERIAL_AVAILABILITY'",
+    "338:       IF ls_ret-type = 'E'."
+   ],
+   "X": [
+    "Der Code übergibt ls_item-werks an BAPI_MATERIAL_AVAILABILITY und übernimmt dessen Ausgabe nach lv_avail."
+   ],
+   "Y": [
+    "Über den Funktionsbaustein BAPI_MATERIAL_AVAILABILITY wird die verfügbare Menge des Materials im Werk mit Prüfregel A ermittelt.",
+    "Gibt die Verfügbarkeitsprüfung einen Fehler vom Typ E zurück, wird die Ausnahme ZCX_SD_WEBSHOP ausgelöst."
+   ],
+   "Z": [
+    "Der Code übergibt ls_item-werks an BAPI_MATERIAL_AVAILABILITY und übernimmt dessen Ausgabe nach lv_avail.",
+    "Das konvertierte Ergebnis wird in lv_avail übernommen."
+   ]
+  },
+  {
+   "id": "BM-019-B09",
+   "soll": "Reicht die verfügbare Menge nicht, wird die Bestellung abgelehnt, außer der Kunde hat Teillieferung erlaubt; dann gibt es nur die Warnung 910.",
+   "zeilen": [
+    344,
+    346
+   ],
+   "code": [
+    "344:       IF lv_avail < ls_item-quantity.",
+    "346:         IF ms_header-partial_ok = abap_false."
+   ],
+   "X": [
+    "Wenn das Feld lv_avail kleiner als ls_item-quantity ist, wird eine Zeile aufgenommen."
+   ],
+   "Y": [
+    "Ist die verfügbare Menge kleiner als die Wunschmenge und Teillieferung nicht erlaubt, wird die Ausnahme ZCX_SD_WEBSHOP ausgelöst.",
+    "Ist die verfügbare Menge kleiner als die Wunschmenge, Teillieferung jedoch gestattet, wird eine Warnmeldung ZSD 910 mit der verfügbaren Menge hinzugefügt."
+   ],
+   "Z": [
+    "Für lv_avail kleiner ls_item-quantity wird eine Zeile aufgenommen."
+   ]
+  },
+  {
+   "id": "BM-019-B10",
+   "soll": "Die Bestellung wird als Auftrag ZWEB mit der SAP-Preisfindung simuliert.",
+   "zeilen": [
+    371
+   ],
+   "code": [
+    "371:     CALL FUNCTION 'BAPI_SALESORDER_SIMULATE'"
+   ],
+   "X": [
+    "Der Code übergibt ls_hdr an BAPI_SALESORDER_SIMULATE und übernimmt dessen Ausgabe nach ls_ret."
+   ],
+   "Y": [
+    "Über den Funktionsbaustein BAPI_SALESORDER_SIMULATE wird die Kundenauftragssimulation für die Positionen aufgerufen."
+   ],
+   "Z": [
+    "Der Code übergibt ls_hdr an BAPI_SALESORDER_SIMULATE und übernimmt dessen Ausgabe nach ls_ret.",
+    "Das konvertierte Ergebnis wird in ls_ret übernommen."
+   ]
+  },
+  {
+   "id": "BM-019-B11",
+   "soll": "Weicht der Nettowert einer Position um mehr als 1 Cent vom Shoppreis ab, gilt der Preisabgleich als gescheitert (Meldung 911 je Position); der SAP-Nettowert wird über alle Positionen summiert.",
+   "zeilen": [
+    389,
+    390,
+    396
+   ],
+   "code": [
+    "389:       IF abs( ls_out-net_value1 - ls_item-shop_net ) > c_tol.",
+    "390:         rv_ok = abap_false.",
+    "396:       mv_netwr = mv_netwr + ls_out-net_value1."
+   ],
+   "X": [
+    "Wenn die Bedingung „abs( ls_out-net_value1 - ls_item-shop_net ) > c_tol“ erfüllt ist, wird eine Zeile aufgenommen."
+   ],
+   "Y": [
+    "Ist die absolute Abweichung zwischen dem simulierten Nettowert und dem Shop-Nettowert größer als 0,01, wird die Preisprüfung abgewiesen und eine Fehlermeldung ZSD 911 angehängt."
+   ],
+   "Z": [
+    "Für abs( ls_out-net_value1 - ls_item-shop_net ) > c_tol wird eine Zeile aufgenommen."
+   ]
+  },
+  {
+   "id": "BM-019-B12",
+   "soll": "Bei Preisabweichung wird kein Auftrag angelegt; die Bestellung wird mit Status P protokolliert, festgeschrieben und mit den Preismeldungen zurückgegeben.",
+   "zeilen": [
+    71,
+    77,
+    80,
+    81
+   ],
+   "code": [
+    "71:       IF lo_order->check_prices( ) = abap_false.",
+    "77:         CALL FUNCTION 'Z_SD_WEBSHOP_LOG_UPD' IN UPDATE TASK",
+    "80:         COMMIT WORK.",
+    "81:         RETURN."
+   ],
+   "X": [
+    "Wenn die Bedingung „lo_order->check_prices( ) = abap_false“ erfüllt ist, wird der Status auf P gesetzt, Z_SD_WEBSHOP_LOG_UPD aufgerufen, COMMIT WORK ausgeführt und der Block verlassen.",
+    "Die Methode check_prices von lo_order wird aufgerufen; sie ruft BAPI_SALESORDER_SIMULATE auf.",
+    "Wenn die Bedingung „lo_order->check_prices( ) = abap_false“ erfüllt ist, wird der Status auf P gesetzt.",
+    "Der Baustein Z_SD_WEBSHOP_LOG_UPD wird zur Verbuchung registriert. An der Aufrufstelle wird nichts geändert. Angestoßen wird er erst mit dem COMMIT WORK in Zeile 80.",
+    "Mit COMMIT WORK wird die Verbuchung der zuvor registrierten Bausteine angestoßen. Ohne AND WAIT wartet der Code das Verbuchungsergebnis nicht ab; ausgeführt oder persistiert ist damit nicht belegt."
+   ],
+   "Y": [
+    "Weichen die simulierten Preise von den Webshop-Preisen ab, wird der Status auf P gesetzt und die Meldungsliste übernommen.",
+    "Bei einer Preisabweichung wird der Protokollsatz über den Verbuchungsfunktionsbaustein Z_SD_WEBSHOP_LOG_UPD übergeben, die Änderungen mit COMMIT WORK festgeschrieben und die Verarbeitung beendet."
+   ],
+   "Z": [
+    "Für lo_order->check_prices( ) = abap_false wird die Status auf P gesetzt, Z_SD_WEBSHOP_LOG_UPD aufgerufen, COMMIT WORK ausgeführt und der Block verlassen.",
+    "Die Methode check_prices von lo_order wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "lo_order->check_prices( ) = abap_false erhalten P.",
+    "Der Baustein Z_SD_WEBSHOP_LOG_UPD wird zur Verbuchung registriert. An der Aufrufstelle wird nichts geändert. Angestoßen wird er erst mit dem COMMIT WORK in Zeile 80.",
+    "Es wird Z_SD_WEBSHOP_LOG_UPD aufgerufen, COMMIT WORK ausgeführt und der Block verlassen.",
+    "Mit COMMIT WORK wird die Verbuchung der zuvor registrierten Bausteine angestoßen. Ohne AND WAIT wartet der Code das Verbuchungsergebnis nicht ab; ausgeführt oder persistiert ist damit nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-019-B13",
+   "soll": "Sonst wird ein Kundenauftrag ZWEB mit der Shopbestellnummer als Kundenbestellnummer, dem Auftraggeber und je Shopposition einer Position mit Einteilung angelegt.",
+   "zeilen": [
+    85,
+    413
+   ],
+   "code": [
+    "85:       ev_vbeln = lo_order->create( ).",
+    "413:     CALL FUNCTION 'BAPI_SALESORDER_CREATEFROMDAT2'"
+   ],
+   "X": [
+    "Der Rückgabewert der Methode create von lo_order wird nach ev_vbeln übernommen.",
+    "Der Code übergibt ls_hdr an BAPI_SALESORDER_CREATEFROMDAT2 und übernimmt dessen Ausgabe nach rv_vbeln.",
+    "Es wird BAPI_SALESORDER_CREATEFROMDAT2 aufgerufen und eine Zeile aufgenommen."
+   ],
+   "Y": [
+    "Der Kundenauftrag wird angelegt und die Belegnummer übernommen.",
+    "Über den Funktionsbaustein BAPI_SALESORDER_CREATEFROMDAT2 wird der Kundenauftrag der Auftragsart ZWEB im Vertriebsbereich 1000/30/00 angelegt."
+   ],
+   "Z": [
+    "Der Rückgabewert der Methode create von lo_order wird nach ev_vbeln übernommen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "Der Code übergibt ls_hdr an BAPI_SALESORDER_CREATEFROMDAT2 und übernimmt dessen Ausgabe nach rv_vbeln.",
+    "Das konvertierte Ergebnis wird in rv_vbeln übernommen.",
+    "Es wird BAPI_SALESORDER_CREATEFROMDAT2 aufgerufen und eine Zeile aufgenommen."
+   ]
+  },
+  {
+   "id": "BM-019-B14",
+   "soll": "Liefert die Anlage keine Auftragsnummer, wird die Bestellung abgelehnt.",
+   "zeilen": [
+    425
+   ],
+   "code": [
+    "425:     IF rv_vbeln IS INITIAL."
+   ],
+   "X": [],
+   "Y": [
+    "Wurde keine Auftragsnummer zurückgegeben, wird die Ausnahme ZCX_SD_WEBSHOP ausgelöst."
+   ],
+   "Z": []
+  },
+  {
+   "id": "BM-019-B15",
+   "soll": "Jede Ablehnung aus Kundenermittlung, Verfügbarkeit oder Anlage verwirft alle Änderungen dieser Übertragung und gibt Status E mit dem Ausnahmetext zurück.",
+   "zeilen": [
+    92,
+    93
+   ],
+   "code": [
+    "92:       ROLLBACK WORK.",
+    "93:       RETURN."
+   ],
+   "X": [
+    "Es wird der Status auf E gesetzt, eine Zeile aufgenommen, ROLLBACK WORK ausgeführt und der Block verlassen.",
+    "Mit ROLLBACK WORK werden die noch nicht festgeschriebenen Änderungen verworfen."
+   ],
+   "Y": [
+    "Wird eine Ausnahme vom Typ ZCX_SD_WEBSHOP abgefangen, wird der Status auf E gesetzt, die Ausnahmemeldung hinzugefügt, die Änderungen per ROLLBACK WORK zurückgenommen und die Verarbeitung beendet."
+   ],
+   "Z": [
+    "Es wird die Status auf E gesetzt, eine Zeile aufgenommen, ROLLBACK WORK ausgeführt und der Block verlassen.",
+    "Mit ROLLBACK WORK wird die Änderung verworfen; nichts ist persistiert."
+   ]
+  },
+  {
+   "id": "BM-019-B16",
+   "soll": "Nach erfolgreicher Anlage wird die Bestellung mit Auftrag, Kunde, Nettowert und Status S protokolliert.",
+   "zeilen": [
+    9,
+    103
+   ],
+   "code": [
+    "9:   MODIFY zsd_webshop_log FROM is_log.",
+    "103:   CALL FUNCTION 'Z_SD_WEBSHOP_LOG_UPD' IN UPDATE TASK"
+   ],
+   "X": [
+    "Eine Zeile in zsd_webshop_log wird eingefügt oder überschrieben.",
+    "Der Baustein Z_SD_WEBSHOP_LOG_UPD wird zur Verbuchung registriert. An der Aufrufstelle wird nichts geändert. Angestoßen wird er erst mit dem COMMIT WORK in Zeile 120."
+   ],
+   "Y": [
+    "In die Tabelle ZSD_WEBSHOP_LOG wird der übergebene Protokollsatz eingefügt oder aktualisiert.",
+    "Nach erfolgreicher Anlage wird der Status auf S gesetzt und der Protokollsatz über den Verbuchungsfunktionsbaustein Z_SD_WEBSHOP_LOG_UPD übergeben."
+   ],
+   "Z": [
+    "Eine Zeile in zsd_webshop_log wird eingefügt oder überschrieben.",
+    "Der Baustein Z_SD_WEBSHOP_LOG_UPD wird zur Verbuchung registriert. An der Aufrufstelle wird nichts geändert. Angestoßen wird er erst mit dem COMMIT WORK in Zeile 120."
+   ]
+  },
+  {
+   "id": "BM-019-B17",
+   "soll": "Aufträge ab einem Nettowert von 25.000 lösen das Workflow-Ereignis ZWEBBIG für den Key-Account aus.",
+   "zeilen": [
+    108,
+    110
+   ],
+   "code": [
+    "108:   IF ls_log-netwr >= 25000.",
+    "110:     CALL FUNCTION 'SWE_EVENT_CREATE'"
+   ],
+   "X": [
+    "Für Nettowerte ab 25000 wird SWE_EVENT_CREATE aufgerufen.",
+    "Der Funktionsbaustein SWE_EVENT_CREATE wird aufgerufen."
+   ],
+   "Y": [
+    "Ist der Nettowert des Auftrags größer oder gleich 25.000, wird über den Funktionsbaustein SWE_EVENT_CREATE das Ereignis ZWEBBIG zum Objekttyp BUS2032 erzeugt."
+   ],
+   "Z": [
+    "Für Nettowerte ab 25000 wird SWE_EVENT_CREATE aufgerufen.",
+    "Der Funktionsbaustein SWE_EVENT_CREATE wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-019-B18",
+   "soll": "Auftrag, Protokoll und Ereignis werden gemeinsam festgeschrieben, und Auftragsnummer, Kunde und Status S gehen an den Shop zurück.",
+   "zeilen": [
+    120
+   ],
+   "code": [
+    "120:   COMMIT WORK."
+   ],
+   "X": [
+    "Mit COMMIT WORK wird die Verbuchung der zuvor registrierten Bausteine angestoßen. Ohne AND WAIT wartet der Code das Verbuchungsergebnis nicht ab; ausgeführt oder persistiert ist damit nicht belegt."
+   ],
+   "Y": [],
+   "Z": [
+    "Mit COMMIT WORK wird die Verbuchung der zuvor registrierten Bausteine angestoßen. Ohne AND WAIT wartet der Code das Verbuchungsergebnis nicht ab; ausgeführt oder persistiert ist damit nicht belegt."
+   ]
+  }
+ ]
+}

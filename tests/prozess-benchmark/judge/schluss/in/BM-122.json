@@ -1,0 +1,92 @@
+{
+ "id": "BM-122",
+ "titel": "RE-FX: auslaufende Mietverträge mit Ampel nach Restlaufzeit (VICNCN)",
+ "prozess": "Beim Aufruf schlägt der Report den Buchungskreis aus dem Benutzerparameter vor; der Anwender gibt zusätzlich ein Tagesfenster ein (Vorschlag 90 Tage). Der Report liest alle Mietverträge des Buchungskreises, deren erstes Vertragsende zwischen heute und dem Fensterende liegt, und sortiert sie nach diesem Datum. Für jeden Vertrag bestimmt er aus der Restlaufzeit eine Ampel: Rot bis 30 Tage, Gelb bis 60 Tage, sonst Grün. Jeder Vertrag erscheint mit Nummer, Bezeichnung, Enddatum und Ampel in einer Liste. Eine früher geplante Berücksichtigung von Kündigungsfristen je Vertragsart ist auskommentiert und wirkt nicht. Verträge ohne erstes Vertragsende fallen aus der Selektion. Es wird nichts geändert.",
+ "verboten": [
+  "source.abap:27 — kein Fachsatz „Kündigungsfristen je Vertragsart werden berücksichtigt“: der Zweig ist auskommentiert",
+  "source.abap:16 — kein Fachsatz „unbefristete Verträge werden als auslaufend gemeldet“: ohne erstes Vertragsende liegt das Datum nicht im Zeitfenster",
+  "gesamte Scheibe — kein Fachsatz „Verträge werden verlängert oder gekündigt“: der Report listet nur"
+ ],
+ "saetze": [
+  {
+   "id": "BM-122-B01",
+   "soll": "Beim Aufruf wird der Buchungskreis aus dem Benutzerparameter vorgeschlagen.",
+   "zeilen": [
+    12
+   ],
+   "code": [
+    "12:   GET PARAMETER ID 'BUK' FIELD p_bukrs."
+   ],
+   "X": [
+    "Jeder von der logischen Datenbank gelieferte PARAMETER-Satz wird verarbeitet. Welche Sätze das sind, bestimmt die logische Datenbank mit ihrem Selektionsbild, nicht der Report."
+   ],
+   "Y": [
+    "Aus dem Benutzerparameter BUK wird der Standardwert für den Buchungskreis ausgelesen."
+   ],
+   "Z": [
+    "Der Benutzerparameter BUK wird in p_bukrs übernommen."
+   ]
+  },
+  {
+   "id": "BM-122-B02",
+   "soll": "Es werden die Mietverträge des Buchungskreises gelesen, deren erstes Vertragsende zwischen heute und dem Ende des eingegebenen Tagesfensters liegt.",
+   "zeilen": [
+    16
+   ],
+   "code": [
+    "16:   SELECT recnnr, recntxt, recntype, recnend1st"
+   ],
+   "X": [
+    "Das Ergebnis enthält recnnr, recntxt, recntype und recnend1st.",
+    "Es werden Sätze aus vicncn mit dem eingegebenen Buchungskreis selektiert."
+   ],
+   "Y": [
+    "Aus der Tabelle VICNCN werden Vertragsnummer (RECNNR), Vertragsbezeichnung (RECNTXT), Vertragsart (RECNTYPE) und das erste Vertragsende (RECNEND1ST) für den angegebenen Buchungskreis (BUKRS) gelesen, sofern das erste Vertragsende zwischen dem aktuellen Tagesdatum und dem Tagesdatum zuzüglich der eingegebenen Tagesanzahl liegt."
+   ],
+   "Z": [
+    "Das Ergebnis enthält recnnr, recntxt, recntype und recnend1st.",
+    "Es werden Sätze aus vicncn mit dem eingegebenen Buchungskreis selektiert."
+   ]
+  },
+  {
+   "id": "BM-122-B03",
+   "soll": "Je Vertrag wird eine Ampel bestimmt: Rot bis 30 Tage Restlaufzeit, Gelb bis 60 Tage, sonst Grün.",
+   "zeilen": [
+    23
+   ],
+   "code": [
+    "23:     DATA(lv_ampel) = COND char4( WHEN ls_cn-recnend1st - sy-datum <= 30 THEN 'ROT'"
+   ],
+   "X": [],
+   "Y": [
+    "Liegt das erste Vertragsende (RECNEND1ST) abzüglich des aktuellen Tagesdatums bei bis einschließlich 30 Tagen, wird der Ampelstatus auf ROT gesetzt.",
+    "Liegt das erste Vertragsende (RECNEND1ST) abzüglich des aktuellen Tagesdatums bei mehr als 30 und bis einschließlich 60 Tagen, wird der Ampelstatus auf GELB gesetzt.",
+    "Liegt das erste Vertragsende (RECNEND1ST) abzüglich des aktuellen Tagesdatums bei mehr als 60 Tagen, wird der Ampelstatus auf GRÜN gesetzt."
+   ],
+   "Z": []
+  },
+  {
+   "id": "BM-122-B04",
+   "soll": "Jeder Vertrag wird mit Nummer, Bezeichnung, Enddatum und Ampel gelistet, aufsteigend nach Enddatum.",
+   "zeilen": [
+    28
+   ],
+   "code": [
+    "28:     WRITE: / ls_cn-recnnr, ls_cn-recntxt, ls_cn-recnend1st, lv_ampel."
+   ],
+   "X": [
+    "Bei Treffern werden ls_cn-recnnr, ls_cn-recntxt, ls_cn-recnend1st und lv_ampel als Liste ausgegeben.",
+    "ls_cn-recnnr wird ausgegeben.",
+    "ls_cn-recntxt wird ausgegeben.",
+    "ls_cn-recnend1st wird ausgegeben.",
+    "lv_ampel wird ausgegeben."
+   ],
+   "Y": [
+    "Vertragsnummer (RECNNR), Vertragsbezeichnung (RECNTXT), erstes Vertragsende (RECNEND1ST) und der ermittelte Ampelstatus werden zeilenweise ausgegeben."
+   ],
+   "Z": [
+    "Bei Treffern werden ls_cn-recnnr, ls_cn-recntxt, ls_cn-recnend1st und lv_ampel als Liste ausgegeben."
+   ]
+  }
+ ]
+}

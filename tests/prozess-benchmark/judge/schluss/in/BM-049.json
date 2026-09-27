@@ -1,0 +1,155 @@
+{
+ "id": "BM-049",
+ "titel": "BTE 00001025: Eingangsrechnungen von EU-Lieferanten auf USt-IdNr. und EU-Steuerkennzeichen prüfen",
+ "prozess": "Der Baustein ist als Publish-&-Subscribe-Ereignis 00001025 registriert und läuft beim Buchen jedes FI-Belegs vor dem Sichern. Er betrachtet nur Kreditorenrechnungen (Belegarten KR und RE) mit Kreditorenzeile. Zum Lieferanten werden Land und USt-IdNr. gelesen und geprüft, ob er aus einem anderen EU-Land als der Buchungskreis stammt. Ist das so und fehlt die USt-IdNr., wird die Buchung mit Fehlermeldung abgebrochen. Andernfalls muss jedes Steuerkennzeichen auf den Sachkontenzeilen in der kundeneigenen EU-Kennzeichenliste stehen, sonst wird ebenfalls abgebrochen. Inlands- und Drittlandsrechnungen sowie alle anderen Belegarten passieren unverändert.",
+ "verboten": [
+  "source.abap:56 — kein Fachsatz „das Steuerkennzeichen wird korrigiert“ (der Baustein ändert keine Belegzeile, er bricht nur ab)",
+  "source.abap:44 — kein Fachsatz „Inlandsrechnungen werden abgelehnt“ (Nicht-EU- und Inlandslieferanten laufen ohne Prüfung durch)",
+  "source.abap:58 — kein Fachsatz „es wird nur gewarnt“ (die Warnung ist auskommentiert; aktiv ist Meldungstyp E)"
+ ],
+ "saetze": [
+  {
+   "id": "BM-049-B01",
+   "soll": "Beim Buchen werden nur Kreditorenrechnungen der Belegarten KR und RE geprüft.",
+   "zeilen": [
+    28
+   ],
+   "code": [
+    "28:   LOOP AT t_bkpf INTO ls_bkpf WHERE blart = 'KR' OR blart = 'RE'."
+   ],
+   "X": [
+    "Für jeden Belegkopf in Tabelle T_BKPF mit der Belegart (BLART) KR oder RE wird eine Verarbeitungsschleife durchlaufen."
+   ],
+   "Y": [
+    "Die Zeilen aus t_bkpf, bei denen das Feld blart gleich KR ist oder das Feld blart gleich RE ist, werden einzeln verarbeitet."
+   ],
+   "Z": [
+    "Jede Zeile aus t_bkpf wird einzeln verarbeitet."
+   ]
+  },
+  {
+   "id": "BM-049-B02",
+   "soll": "Belege ohne Kreditorenzeile im Buchungskreis werden nicht weiter geprüft.",
+   "zeilen": [
+    29,
+    32
+   ],
+   "code": [
+    "29:     READ TABLE t_bseg INTO ls_kred",
+    "32:     IF sy-subrc <> 0."
+   ],
+   "X": [
+    "Aus der Belegsegmenttabelle T_BSEG wird die erste Belegzeile mit dem Buchungskreis (BUKRS) des aktuellen Belegkopfs und der Kontoart (KOART) K für Kreditoren gelesen.",
+    "Wird keine Kreditorenzeile in Tabelle T_BSEG gefunden (SY-SUBRC ungleich 0), wird die Bearbeitung des aktuellen Belegs abgebrochen und mit dem nächsten Belegkopf fortgefahren."
+   ],
+   "Y": [
+    "In der Tabelle t_bseg wird nach einer passenden Zeile gesucht.",
+    "Ohne Treffer wird der Schleifendurchlauf übersprungen."
+   ],
+   "Z": [
+    "In der Tabelle wird nach einer passenden Zeile gesucht."
+   ]
+  },
+  {
+   "id": "BM-049-B03",
+   "soll": "Zum Lieferanten werden Land und Umsatzsteuer-Identifikationsnummer gelesen, dazu, ob sein Land EU-Mitglied ist, und das Land des Buchungskreises.",
+   "zeilen": [
+    36,
+    38,
+    40
+   ],
+   "code": [
+    "36:     SELECT SINGLE land1 stceg FROM lfa1 INTO (lv_land, lv_stceg)",
+    "38:     SELECT SINGLE xegld FROM t005 INTO lv_xeg",
+    "40:     SELECT SINGLE land1 FROM t001 INTO lv_land_bukrs"
+   ],
+   "X": [
+    "Aus der Lieferantenstammtabelle LFA1 werden zum Kreditor (LIFNR) das Land (LAND1) und die Umsatzsteuer-Identifikationsnummer (STCEG) gelesen.",
+    "Aus der Ländertabelle T005 wird zum Land des Kreditors das Kennzeichen für die EU-Zugehörigkeit (XEGLD) gelesen.",
+    "Aus der Buchungskreistabelle T001 wird zum Buchungskreis (BUKRS) des Belegkopfs das Buchungskreis-Land (LAND1) gelesen."
+   ],
+   "Y": [
+    "Das Ergebnis enthält Länderschlüssel und stceg.",
+    "Die Felder land1 und stceg des Lieferanten werden gelesen.",
+    "Das Feld xegld aus t005 wird gelesen.",
+    "Der Länderschlüssel des Buchungskreises wird gelesen."
+   ],
+   "Z": [
+    "land1 stceg des Satzes wird gelesen.",
+    "xegld des Satzes wird gelesen.",
+    "Länderschlüssel des Satzes wird gelesen."
+   ]
+  },
+  {
+   "id": "BM-049-B04",
+   "soll": "Nur wenn der Lieferant aus einem anderen EU-Land als der Buchungskreis stammt, greift die innergemeinschaftliche Prüfung.",
+   "zeilen": [
+    44
+   ],
+   "code": [
+    "44:     IF lv_xeg = 'X' AND lv_land <> lv_land_bukrs."
+   ],
+   "X": [
+    "Ist das EU-Kennzeichen (XEGLD) des Kreditorlandes gleich X und weicht das Kreditorland vom Buchungskreis-Land ab, werden die nachfolgenden Prüfungen für innergemeinschaftliche Erwerbe ausgeführt; andernfalls erfolgt keine weitere Prüfung."
+   ],
+   "Y": [],
+   "Z": []
+  },
+  {
+   "id": "BM-049-B05",
+   "soll": "Fehlt dem EU-Lieferanten die USt-IdNr., wird die Buchung mit einer Fehlermeldung abgebrochen.",
+   "zeilen": [
+    45,
+    46
+   ],
+   "code": [
+    "45:       IF lv_stceg IS INITIAL.",
+    "46:         MESSAGE e101(zfi) WITH ls_kred-lifnr."
+   ],
+   "X": [
+    "Ist die Umsatzsteuer-Identifikationsnummer (STCEG) des Kreditors nicht gepflegt (initial), wird die Fehlermeldung E101(zfi) mit der Lieferantennummer (LIFNR) ausgegeben; andernfalls wird die Verarbeitung fortgesetzt."
+   ],
+   "Y": [
+    "Ist das Feld lv_stceg leer, wird eine Fehlermeldung ausgegeben.",
+    "Die Fehlermeldung 101(ZFI) wird ausgegeben."
+   ],
+   "Z": [
+    "Ohne lv_stceg wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-049-B06",
+   "soll": "Jedes Steuerkennzeichen auf Sachkontenzeilen muss in der kundeneigenen Liste der EU-Steuerkennzeichen des Buchungskreises stehen, sonst wird die Buchung mit Angabe von Kennzeichen und Zeile abgebrochen.",
+   "zeilen": [
+    49,
+    53,
+    56,
+    58
+   ],
+   "code": [
+    "49:       LOOP AT t_bseg INTO ls_bseg",
+    "53:         SELECT SINGLE mwskz FROM zfi_eu_mwskz INTO lv_mwskz",
+    "56:         IF sy-subrc <> 0.",
+    "58:           MESSAGE e102(zfi) WITH ls_bseg-mwskz ls_bseg-buzei."
+   ],
+   "X": [
+    "Für jede Belegzeile in Tabelle T_BSEG mit dem Buchungskreis des aktuellen Belegkopfs, der Kontoart (KOART) S für Sachkonten und einem gefüllten Steuerkennzeichen (MWSKZ ungleich Leerzeichen) wird eine Schleife durchlaufen.",
+    "Aus der Steuertabelle ZFI_EU_MWSKZ wird das Steuerkennzeichen (MWSKZ) zum Buchungskreis (BUKRS) und zum Steuerkennzeichen der Sachkontenzeile gelesen.",
+    "Wird das Steuerkennzeichen nicht in Tabelle ZFI_EU_MWSKZ gefunden (SY-SUBRC ungleich 0), wird die Fehlermeldung E102(zfi) mit dem Steuerkennzeichen und der Belegzeilennummer (BUZEI) ausgegeben; andernfalls bleibt der Beleg unverändert."
+   ],
+   "Y": [
+    "Die Zeilen aus t_bseg, bei denen der Buchungskreis gleich ls_bkpf-bukrs ist, das Feld koart gleich S ist und das Feld mwskz gesetzt ist, werden einzeln verarbeitet.",
+    "Das Feld mwskz aus zfi_eu_mwskz wird gelesen.",
+    "Ohne Treffer wird eine Fehlermeldung ausgegeben.",
+    "Die Fehlermeldung 102(ZFI) wird ausgegeben."
+   ],
+   "Z": [
+    "Jede Zeile aus t_bseg wird einzeln verarbeitet.",
+    "mwskz des Satzes wird gelesen.",
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  }
+ ]
+}

@@ -1,0 +1,354 @@
+{
+ "id": "BM-171",
+ "titel": "IS-U: Ableseergebnisse der Ablesefirma aus CSV plausibilisieren und per BAPI hochladen",
+ "prozess": "Der Report wird mit Dateipfad, Toleranz in Prozent und Testkennzeichen gestartet und liest die CSV-Datei der Ablesefirma vom Applikationsserver; ist sie nicht lesbar, bricht er mit Fehlermeldung ab, ist sie leer, endet er mit Hinweis. Jeder Satz wird geprüft: ein nicht numerischer Zählerstand, ein Ablesedatum in der Zukunft, ein unbekanntes Gerät oder ein Stand unter der letzten Ablesung desselben Zählwerks machen ihn fehlerhaft. Weicht der Tagesverbrauch um mehr als die Toleranz vom Tagesverbrauch der Vorperiode ab, wird nur eine Warnung gelistet, weil die Fehlerbewertung auskommentiert ist. Fehlerhafte Sätze werden mit Fehlernummer gelistet und gezählt. Im Echtlauf wird jeder gültige Satz einzeln als Ablesebeleg per BAPI hochgeladen; bei Fehler wird zurückgerollt und die Meldung gelistet, sonst sofort festgeschrieben. Die Liste beginnt mit Dateiname und Testkennzeichen und endet mit den Zählern, die aber fehlen, wenn der letzte Satz fehlerhaft war. Im Testlauf wird nichts hochgeladen.",
+ "verboten": [
+  "zisu_ablupload.abap:81 — kein Fachsatz „am Ende wird immer eine Summenzeile ausgegeben“: ist der letzte Satz fehlerhaft, überspringt CONTINUE den AT-LAST-Block",
+  "zisu_ablupload_f01.abap:88 — kein Fachsatz „Sätze mit auffälligem Verbrauch werden abgewiesen“: die Fehlerbewertung ist auskommentiert, es gibt nur eine Warnzeile",
+  "zisu_ablupload_f01.abap:74 — kein Fachsatz „Zählerüberläufe werden erkannt und korrekt verarbeitet“: jeder Stand unter dem letzten wird als Rücklauf abgewiesen",
+  "gesamte Scheibe — kein Fachsatz „Ablesungen werden geschätzt oder Abrechnungen angestoßen“: es werden nur Ablesebelege hochgeladen"
+ ],
+ "saetze": [
+  {
+   "id": "BM-171-B01",
+   "soll": "Die CSV-Datei der Ablesefirma wird vom Applikationsserver gelesen; lässt sie sich nicht öffnen, bricht der Lauf mit einer Fehlermeldung ab.",
+   "zeilen": [
+    100,
+    101,
+    102
+   ],
+   "code": [
+    "100:   OPEN DATASET p_file FOR INPUT IN TEXT MODE ENCODING DEFAULT.",
+    "101:   IF sy-subrc <> 0.",
+    "102:     MESSAGE e011 WITH p_file."
+   ],
+   "X": [
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ],
+   "Y": [
+    "Die in Parameter p_file angegebene Datei wird auf dem Applikationsserver im Textmodus zum Lesen geöffnet.",
+    "Kann die Datei nicht geöffnet werden (sy-subrc ungleich 0), wird die Fehlermeldung E011 mit dem Dateinamen ausgegeben."
+   ],
+   "Z": [
+    "Lässt sich die Datei nicht öffnen, wird eine Fehlermeldung ausgegeben.",
+    "Die Fehlermeldung 011 wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-171-B02",
+   "soll": "Jede Zeile wird in Gerät, Zählwerk, Ablesedatum, Zählerstand und Hinweis zerlegt.",
+   "zeilen": [
+    105,
+    110
+   ],
+   "code": [
+    "105:     READ DATASET p_file INTO lv_zeile.",
+    "110:     SPLIT lv_zeile AT ';' INTO gs_satz-equnr gs_satz-zwnummer"
+   ],
+   "X": [],
+   "Y": [
+    "In einer Schleife wird zeilenweise der Inhalt der Datei in eine Zeichenkette eingelesen.",
+    "Die eingelesene Textzeile wird anhand des Trennzeichens Semikolon in Gerätenummer, Zählwerksnummer, Ablesedatum, Zählerstand und Ablesehinweis aufgeteilt und an die interne Tabelle gt_satz angehängt."
+   ],
+   "Z": []
+  },
+  {
+   "id": "BM-171-B03",
+   "soll": "Enthält die Datei keine Sätze, endet der Lauf mit einem als Fehler angezeigten Hinweis.",
+   "zeilen": [
+    39,
+    40,
+    41
+   ],
+   "code": [
+    "39:   IF gt_satz IS INITIAL.",
+    "40:     MESSAGE s010 DISPLAY LIKE 'E'.",
+    "41:     RETURN."
+   ],
+   "X": [
+    "Ohne Treffer wird eine Meldung ausgegeben und der Block verlassen.",
+    "Ohne Treffer wird der Block verlassen.",
+    "Eine Meldung wird ausgegeben.",
+    "Es wird eine Meldung ausgegeben und der Block verlassen."
+   ],
+   "Y": [
+    "Ist die Tabelle der Ablesesätze gt_satz leer, wird die Statusmeldung S010 als Fehler angezeigt und die Verarbeitung abgebrochen."
+   ],
+   "Z": [
+    "Ist die Tabelle gt_satz leer, wird eine Statusmeldung ausgegeben und der Block verlassen.",
+    "Die Statusmeldung 010 wird ausgegeben, angezeigt wie eine Fehlermeldung."
+   ]
+  },
+  {
+   "id": "BM-171-B04",
+   "soll": "Zu Beginn der Liste werden Dateiname und Testkennzeichen ausgegeben.",
+   "zeilen": [
+    45,
+    46
+   ],
+   "code": [
+    "45:     AT FIRST.",
+    "46:       WRITE: / 'Upload Ablesungen aus', p_file, 'Testlauf:', p_test."
+   ],
+   "X": [
+    "Bei Treffern werden Upload Ablesungen aus, p_file, Testlauf: und p_test als Liste ausgegeben.",
+    "Upload Ablesungen aus wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "p_file wird ausgegeben.",
+    "Testlauf: wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "p_test wird ausgegeben."
+   ],
+   "Y": [
+    "Beim ersten Datensatz werden der Dateiname aus p_file und das Kennzeichen des Testlaufs aus p_test zusammen mit einer Trennlinie ausgegeben."
+   ],
+   "Z": [
+    "Bei Treffern werden Upload Ablesungen aus, p_file, Testlauf: und p_test als Liste ausgegeben.",
+    "Upload Ablesungen aus wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "Testlauf: wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code."
+   ]
+  },
+  {
+   "id": "BM-171-B05",
+   "soll": "Ein Zählerstand, der nicht als Zahl lesbar ist, macht den Satz fehlerhaft (Fehler 030).",
+   "zeilen": [
+    136,
+    138
+   ],
+   "code": [
+    "136:       gs_satz-stand = us_satz-stand_c.",
+    "138:       cv_msgno = '030'."
+   ],
+   "X": [
+    "Es wird die cv_msgno auf 030 gesetzt und der Block verlassen.",
+    "Die cv_msgno wird auf 030 gesetzt."
+   ],
+   "Y": [
+    "Tritt bei der Konvertierung von Datums- oder Zählerstandszeichenkette ein numerischer Konvertierungsfehler auf, wird die Fehlernummer 030 gesetzt und die Prüfung abgebrochen."
+   ],
+   "Z": [
+    "Es wird das Feld cv_msgno auf 030 gesetzt und der Block verlassen.",
+    "Das Feld cv_msgno wird auf 030 gesetzt."
+   ]
+  },
+  {
+   "id": "BM-171-B06",
+   "soll": "Ein Ablesedatum in der Zukunft macht den Satz fehlerhaft (Fehler 031).",
+   "zeilen": [
+    142
+   ],
+   "code": [
+    "142:   IF gs_satz-adat > sy-datum."
+   ],
+   "X": [
+    "Für gs_satz-adat größer sy-datum wird die cv_msgno auf 031 gesetzt und der Block verlassen.",
+    "gs_satz-adat größer sy-datum erhalten 031."
+   ],
+   "Y": [
+    "Liegt das Ablesedatum in der Zukunft (größer als das Tagesdatum sy-datum), wird die Fehlernummer 031 gesetzt und die Prüfung beendet."
+   ],
+   "Z": [
+    "Wenn das Feld gs_satz-adat größer als sy-datum ist, wird das Feld cv_msgno auf 031 gesetzt und der Block verlassen.",
+    "Wenn das Feld gs_satz-adat größer als sy-datum ist, wird das Feld cv_msgno auf 031 gesetzt."
+   ]
+  },
+  {
+   "id": "BM-171-B07",
+   "soll": "Ein im System unbekanntes Gerät macht den Satz fehlerhaft (Fehler 032).",
+   "zeilen": [
+    147,
+    149
+   ],
+   "code": [
+    "147:   SELECT SINGLE equnr FROM equi INTO @DATA(lv_equnr)",
+    "149:   IF sy-subrc <> 0."
+   ],
+   "X": [
+    "equnr des Satzes wird gelesen.",
+    "Ohne Treffer wird die cv_msgno auf 032 gesetzt und der Block verlassen.",
+    "Ohne Treffer wird der Block verlassen.",
+    "sy-subrc ungleich 0 erhalten 032."
+   ],
+   "Y": [
+    "Aus Tabelle EQUI wird anhand der Gerätenummer equnr der Equipmenteintrag gelesen.",
+    "Wird das Gerät in Tabelle EQUI nicht gefunden (sy-subrc ungleich 0), wird die Fehlernummer 032 gesetzt und die Prüfung beendet."
+   ],
+   "Z": [
+    "Die Equipmentnummer des Equipments wird gelesen.",
+    "Ohne Treffer wird das Feld cv_msgno auf 032 gesetzt und der Block verlassen.",
+    "Wenn kein Treffer vorliegt, wird das Feld cv_msgno auf 032 gesetzt."
+   ]
+  },
+  {
+   "id": "BM-171-B08",
+   "soll": "Die beiden letzten Ablesungen desselben Zählwerks werden gelesen; liegt der neue Stand unter dem letzten, gilt der Satz als Zählerrücklauf und ist fehlerhaft (Fehler 033).",
+   "zeilen": [
+    154,
+    161
+   ],
+   "code": [
+    "154:   SELECT adat, v_zwstand FROM eabl",
+    "161:   IF lt_alt IS NOT INITIAL AND gs_satz-stand < lt_alt[ 1 ]-v_zwstand."
+   ],
+   "X": [
+    "Das Ergebnis enthält adat und v_zwstand.",
+    "Es werden Sätze aus eabl selektiert.",
+    "Für lt_alt IS NOT INITIAL AND gs_satz-stand < lt_alt[ 1 ]-v_zwstand wird die cv_msgno auf 033 gesetzt und der Block verlassen.",
+    "lt_alt IS NOT INITIAL AND gs_satz-stand < lt_alt[ 1 ]-v_zwstand erhalten 033."
+   ],
+   "Y": [
+    "Aus Tabelle EABL werden für Gerätenummer und Zählwerksnummer die bis zu zwei zeitlich neuesten Ablesedatums- und Vorablesestandswerte absteigend sortiert gelesen.",
+    "Liegen Vorablesungen vor und ist der neue Zählerstand kleiner als der Vorablesestand der Vorperiode, wird die Fehlernummer 033 gesetzt und die Prüfung beendet."
+   ],
+   "Z": [
+    "Das Ergebnis enthält adat und v_zwstand.",
+    "Es werden Sätze aus eabl selektiert.",
+    "Wenn die Bedingung „lt_alt IS NOT INITIAL AND gs_satz-stand < lt_alt[ 1 ]-v_zwstand“ erfüllt ist, wird das Feld cv_msgno auf 033 gesetzt und der Block verlassen.",
+    "Wenn die Bedingung „lt_alt IS NOT INITIAL AND gs_satz-stand < lt_alt[ 1 ]-v_zwstand“ erfüllt ist, wird das Feld cv_msgno auf 033 gesetzt."
+   ]
+  },
+  {
+   "id": "BM-171-B09",
+   "soll": "Weicht der neue Tagesverbrauch um mehr als die Toleranz in Prozent vom Tagesverbrauch der Vorperiode ab, wird nur eine Warnung gelistet; der Satz bleibt gültig.",
+   "zeilen": [
+    168,
+    174,
+    175,
+    176
+   ],
+   "code": [
+    "168:   IF lines( lt_alt ) = 2 AND gs_satz-adat > lt_alt[ 1 ]-adat",
+    "174:     lv_abw = abs( lv_tv_neu - lv_tv_alt ) * 100 / lv_tv_alt.",
+    "175:     IF lv_abw > p_tol.",
+    "176:       WRITE: / us_satz-equnr, us_satz-adat_c, 'Warnung Tagesverbrauch', lv_abw, '%'."
+   ],
+   "X": [
+    "Für lv_abw größer p_tol wird us_satz-equnr ausgegeben, us_satz-adat_c ausgegeben, Warnung Tagesverbrauch ausgegeben, lv_abw ausgegeben und % ausgegeben.",
+    "us_satz-equnr, us_satz-adat_c, Warnung Tagesverbrauch, lv_abw und % werden ausgegeben.",
+    "us_satz-equnr wird ausgegeben.",
+    "us_satz-adat_c wird ausgegeben.",
+    "Warnung Tagesverbrauch wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "lv_abw wird ausgegeben.",
+    "% wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code."
+   ],
+   "Y": [
+    "Liegen genau zwei Vorablesungen mit plausibler Datums- und Zählerstandsfolge vor, werden die Tagesverbräuche der aktuellen und vorherigen Periode sowie deren relative Abweichung berechnet.",
+    "Übersteigt die berechnete Verbrauchsabweichung den Toleranzwert p_tol, wird eine Warnzeile mit Gerätenummer, Ablesedatum und Abweichungsprozentsatz ausgegeben."
+   ],
+   "Z": [
+    "Wenn das Feld lv_abw größer als p_tol ist, wird Equipmentnummer ausgegeben, us_satz-adat_c ausgegeben, Warnung Tagesverbrauch ausgegeben, lv_abw ausgegeben und % ausgegeben.",
+    "Warnung Tagesverbrauch wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "% wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code."
+   ]
+  },
+  {
+   "id": "BM-171-B10",
+   "soll": "Fehlerhafte Sätze werden mit Fehlernummer gelistet, gezählt und nicht hochgeladen.",
+   "zeilen": [
+    51,
+    53
+   ],
+   "code": [
+    "51:     IF gv_msgno IS NOT INITIAL.",
+    "53:       WRITE: / gs_satz-equnr, gs_satz-adat_c, gs_satz-stand_c,"
+   ],
+   "X": [
+    "Mit einer nicht leeren gv_msgno wird gs_satz-equnr ausgegeben, gs_satz-adat_c ausgegeben, gs_satz-stand_c ausgegeben, Fehler ausgegeben und gv_msgno ausgegeben.",
+    "Bei Treffern werden gs_satz-equnr, gs_satz-adat_c, gs_satz-stand_c, Fehler und gv_msgno als Liste ausgegeben.",
+    "gs_satz-equnr wird ausgegeben.",
+    "gs_satz-adat_c wird ausgegeben.",
+    "gs_satz-stand_c wird ausgegeben."
+   ],
+   "Y": [
+    "Wurde in der Satzprüfung eine Fehlernummer gesetzt, wird der Zähler der fehlerhaften Sätze um 1 erhöht, Gerätenummer, Ablesedatum, Zählerstand und Fehlernummer werden ausgegeben und der Satz wird übersprungen."
+   ],
+   "Z": [
+    "Ist das Feld gv_msgno nicht leer, wird Equipmentnummer ausgegeben, gs_satz-adat_c ausgegeben, gs_satz-stand_c ausgegeben, Fehler ausgegeben, gv_msgno ausgegeben und der Schleifendurchlauf übersprungen."
+   ]
+  },
+  {
+   "id": "BM-171-B11",
+   "soll": "Nur ohne Testkennzeichen wird jeder gültige Satz als Ablesebeleg per BAPI hochgeladen.",
+   "zeilen": [
+    58,
+    65
+   ],
+   "code": [
+    "58:     IF p_test IS INITIAL.",
+    "65:       CALL FUNCTION 'BAPI_MTRREADDOC_UPLOAD'"
+   ],
+   "X": [
+    "Ohne p_test wird eine Zeile aufgenommen und BAPI_MTRREADDOC_UPLOAD aufgerufen.",
+    "Es wird eine Zeile aufgenommen und BAPI_MTRREADDOC_UPLOAD aufgerufen.",
+    "Der Funktionsbaustein BAPI_MTRREADDOC_UPLOAD wird aufgerufen."
+   ],
+   "Y": [
+    "Ist der Testlauf nicht aktiv (p_test ist initial), werden Gerätenummer, Zählwerksnummer, Ablesedatum, Zählerstand und Hinweis in die Upload-Tabelle gt_upl übertragen.",
+    "Der Funktionsbaustein BAPI_MTRREADDOC_UPLOAD wird zur Verbuchung der Ablesedaten aufgerufen."
+   ],
+   "Z": [
+    "Ist das Feld p_test leer, wird eine Zeile aufgenommen und BAPI_MTRREADDOC_UPLOAD aufgerufen.",
+    "Der Funktionsbaustein BAPI_MTRREADDOC_UPLOAD wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-171-B12",
+   "soll": "Meldet das BAPI einen Fehler, wird zurückgerollt und der Satz mit der Fehlermeldung gelistet; sonst wird der Ablesebeleg sofort festgeschrieben und gezählt.",
+   "zeilen": [
+    69,
+    70,
+    72,
+    74
+   ],
+   "code": [
+    "69:       IF line_exists( gt_ret[ type = 'E' ] ).",
+    "70:         CALL FUNCTION 'BAPI_TRANSACTION_ROLLBACK'.",
+    "72:         WRITE: / gs_satz-equnr, gs_satz-adat_c, gt_ret[ type = 'E' ]-message.",
+    "74:         CALL FUNCTION 'BAPI_TRANSACTION_COMMIT'"
+   ],
+   "X": [
+    "Für line_exists( gt_ret[ type = 'E' ] ) wird BAPI_TRANSACTION_ROLLBACK aufgerufen, gs_satz-equnr ausgegeben, gs_satz-adat_c ausgegeben und gt_ret[ type = 'E' ]-message ausgegeben.",
+    "Für line_exists( gt_ret[ type = 'E' ] ) wird BAPI_TRANSACTION_ROLLBACK aufgerufen, gs_satz-equnr ausgegeben, gs_satz-adat_c ausgegeben und gt_ret[ type = 'E' ]-message ausgegeben, sonst BAPI_TRANSACTION_COMMIT aufgerufen.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_ROLLBACK wird aufgerufen.",
+    "Bei Treffern werden gs_satz-equnr, gs_satz-adat_c und gt_ret[ type = 'E' ]-message als Liste ausgegeben.",
+    "gs_satz-equnr wird ausgegeben.",
+    "gs_satz-adat_c wird ausgegeben.",
+    "gt_ret[ type = 'E' ]-message wird ausgegeben.",
+    "Sonst wird BAPI_TRANSACTION_COMMIT aufgerufen.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_COMMIT wird aufgerufen."
+   ],
+   "Y": [
+    "Enthält die Rückmeldung des Uploads mindestens einen Fehler (Typ E), wird die Transaktion per BAPI_TRANSACTION_ROLLBACK zurückgerollt, der Fehlerzähler erhöht und die Fehlermeldung ausgegeben.",
+    "Liegt kein Fehler vor, wird die Verbuchung per BAPI_TRANSACTION_COMMIT mit Wartekennzeichen festgeschrieben und der Zähler der erfolgreichen Buchungen um 1 erhöht."
+   ],
+   "Z": [
+    "Wenn in gt_ret eine passende Zeile existiert, wird BAPI_TRANSACTION_ROLLBACK aufgerufen, Equipmentnummer ausgegeben, gs_satz-adat_c ausgegeben und gt_ret[ type = 'E' ]-message ausgegeben, sonst BAPI_TRANSACTION_COMMIT aufgerufen.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_ROLLBACK wird aufgerufen.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_COMMIT wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-171-B13",
+   "soll": "Nach dem letzten Satz werden die Anzahl gelesener, fehlerhafter und hochgeladener Sätze ausgegeben – außer der letzte Satz war fehlerhaft.",
+   "zeilen": [
+    81,
+    83
+   ],
+   "code": [
+    "81:     AT LAST.",
+    "83:       WRITE: / 'Saetze gelesen:', lines( gt_satz ),"
+   ],
+   "X": [
+    "Bei Treffern werden Saetze gelesen:, lines( gt_satz ), Fehlerhaft :, gv_anz_f, Hochgeladen : und gv_anz_ok als Liste ausgegeben.",
+    "Saetze gelesen: wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "lines( gt_satz ) wird ausgegeben."
+   ],
+   "Y": [
+    "Beim letzten Schleifendurchlauf werden nach einer Trennlinie die Anzahlen der gelesenen, fehlerhaften und erfolgreich hochgeladenen Sätze ausgegeben."
+   ],
+   "Z": [
+    "Bei Treffern werden Saetze gelesen:, lines( gt_satz ), Fehlerhaft :, gv_anz_f, Hochgeladen : und gv_anz_ok als Liste ausgegeben.",
+    "Saetze gelesen: wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code."
+   ]
+  }
+ ]
+}

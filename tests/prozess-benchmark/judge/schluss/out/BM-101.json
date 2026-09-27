@@ -1,0 +1,125 @@
+{
+ "id": "BM-101",
+ "urteile": [
+  {
+   "id": "BM-101-B01",
+   "X": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch",
+     "grammatik"
+    ]
+   },
+   "kurz": "X und Z lesen die Objektnummer zum Equipment, Y nur 'objnr des Satzes'."
+  },
+  {
+   "id": "BM-101-B02",
+   "X": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Nur X nennt die aktiven (nicht inaktiven) Messpunkte zum Objekt."
+  },
+  {
+   "id": "BM-101-B03",
+   "X": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "X nennt Messbelege ab Datum (ohne Sortierung), Y nur Tabellenname, Z ohne Datum."
+  },
+  {
+   "id": "BM-101-B04",
+   "X": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "falsch",
+     "grammatik"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "kurz": "X und Z beschreiben das Überspringen stornierter Belege; Y spricht von 'kleineren' Werten."
+  },
+  {
+   "id": "BM-101-B05",
+   "X": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "kurz": "X nennt die Felder fachlich, Y und Z nur Feldnamen."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

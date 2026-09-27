@@ -1,0 +1,546 @@
+{
+ "id": "BM-097",
+ "titel": "Export Personalstammdaten an Payroll-Provider (Datei) und Zeiterfassung (RFC), Delta seit letztem Lauf",
+ "prozess": "Ein nächtlicher Job versorgt einen externen Payroll-Provider und das Zeiterfassungssystem mit Personalstammdaten. Beim Aufruf wird ein Dateiname mit Tagesdatum vorgeschlagen. Der Lauf setzt eine Sperre, damit nur ein Export gleichzeitig läuft. Ohne Vollabzug ermittelt er den letzten erfolgreichen Lauf als Stichtag. Er liest die heute zugeordneten Mitarbeiter der gewählten Buchungskreise und Mitarbeitergruppen und beschränkt sie im Delta auf solche mit Änderungen an Maßnahmen, organisatorischer Zuordnung, Personaldaten oder ständiger Anschrift seit dem Stichtag. Je Mitarbeiter prüft er die Leseberechtigung, liest fünf Infotypen und bildet einen Exportsatz (Satzart D für Ausgetretene, sonst U) sowie einen Zeitsatz; ohne Berechtigung oder ohne Anschrift bei Aktiven wird der Mitarbeiter mit Fehlervermerk übersprungen. Im Testlauf zeigt er die Sätze nur an. Im Echtlauf schreibt er die CSV-Datei, überträgt die Zeitsätze per RFC, protokolliert den Lauf – erfolgreich, wenn Datei und RFC gelungen sind – und mailt bei Fehlern die Fehleranzahl an einen Verteiler. Zum Schluss schreibt er fest und gibt die Sperre frei.",
+ "verboten": [
+  "zhr_emp_export_f03.abap:18 — kein Fachsatz „übersprungene Mitarbeiter werden im nächsten Lauf erneut exportiert“ (der Lauf gilt trotzdem als erfolgreich; der nächste Delta-Stichtag schließt sie aus, sofern sie nicht erneut geändert werden).",
+  "zhr_emp_export_f03.abap:47 — kein Fachsatz „Fehlerdetails je Mitarbeiter werden gemailt oder protokolliert“ (nur die Anzahl; die Einzelfehler werden nirgends ausgegeben).",
+  "zhr_emp_export_f02.abap:42 — kein output-Knoten (WRITE TO formatiert nur in eine Variable).",
+  "gesamte Scheibe — kein Fachsatz „die Datei wird an den Provider übertragen“ (die Übertragung per SFTP liegt außerhalb des Programms)."
+ ],
+ "saetze": [
+  {
+   "id": "BM-097-B01",
+   "soll": "Beim Aufruf wird als Exportdatei ein Dateiname mit dem Tagesdatum vorgeschlagen.",
+   "zeilen": [
+    23
+   ],
+   "code": [
+    "23:   CONCATENATE '/interface/out/payroll/emp_' sy-datum '.csv' INTO p_file."
+   ],
+   "X": [
+    "Der Pfad für die Exportdatei wird aus dem Präfix '/interface/out/payroll/emp_', dem aktuellen Tagesdatum sy-datum und der Dateiendung '.csv' zusammengesetzt."
+   ],
+   "Y": [],
+   "Z": []
+  },
+  {
+   "id": "BM-097-B02",
+   "soll": "Es darf nur ein Exportlauf gleichzeitig laufen; ist bereits einer aktiv, bricht der Lauf ab.",
+   "zeilen": [
+    27,
+    34,
+    35
+   ],
+   "code": [
+    "27:   CALL FUNCTION 'ENQUEUE_EZHR_EXPORT'",
+    "34:   IF sy-subrc <> 0.",
+    "35:     MESSAGE e050(zhr_if)."
+   ],
+   "X": [
+    "Zur Verhinderung gleichzeitiger Läufe wird über den Funktionsbaustein ENQUEUE_EZHR_EXPORT eine Sperre für den Report sy-repid angefordert.",
+    "Kann die Sperre nicht gesetzt werden, wird die Fehlermeldung E050(ZHR_IF) ausgegeben und die Verarbeitung abgebrochen."
+   ],
+   "Y": [
+    "Der Funktionsbaustein ENQUEUE_EZHR_EXPORT wird aufgerufen.",
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ],
+   "Z": [
+    "Der Funktionsbaustein ENQUEUE_EZHR_EXPORT wird aufgerufen.",
+    "Ist die Sperre über ENQUEUE_EZHR_EXPORT nicht zu erhalten, wird eine Fehlermeldung ausgegeben.",
+    "Die Fehlermeldung 050(ZHR_IF) wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-097-B03",
+   "soll": "Ohne Vollabzug wird das Datum des letzten erfolgreichen Laufs als Stichtag ermittelt; gab es noch keinen, wird alles exportiert.",
+   "zeilen": [
+    38,
+    76
+   ],
+   "code": [
+    "38:   IF p_full IS INITIAL.",
+    "76:   SELECT MAX( run_date ) FROM zhr_export_log INTO pv_date"
+   ],
+   "X": [
+    "Ist der Parameter p_full nicht gesetzt, wird der Zeitpunkt des letzten erfolgreichen Laufs über die Routine GET_LAST_RUN ermittelt.",
+    "Aus der Tabelle ZHR_EXPORT_LOG wird das höchste Ausführungsdatum run_date für den aktuellen Report sy-repid mit dem Status 'S' selektiert."
+   ],
+   "Y": [
+    "Ohne p_full wird get_last_run aufgerufen.",
+    "Es werden Sätze aus zhr_export_log selektiert."
+   ],
+   "Z": [
+    "Ist das Feld p_full leer, wird get_last_run aufgerufen.",
+    "Das Ergebnis enthält MAX( und run_date.",
+    "Es werden Sätze aus zhr_export_log selektiert."
+   ]
+  },
+  {
+   "id": "BM-097-B04",
+   "soll": "Es werden alle Mitarbeiter gelesen, die heute einem der gewählten Buchungskreise und Mitarbeitergruppen zugeordnet sind.",
+   "zeilen": [
+    90
+   ],
+   "code": [
+    "90:   SELECT pernr FROM pa0001 INTO TABLE lt_tmp"
+   ],
+   "X": [
+    "Aus der Tabelle PA0001 werden die Personalnummern pernr gelesen, deren Buchungskreis bukrs und Mitarbeitergruppe persg den Selektionskriterien entsprechen und deren Gültigkeitszeitraum das aktuelle Datum sy-datum einschließt."
+   ],
+   "Y": [
+    "Es werden Sätze aus pa0001 selektiert."
+   ],
+   "Z": [
+    "Es werden Organisatorische Zuordnungen selektiert."
+   ]
+  },
+  {
+   "id": "BM-097-B05",
+   "soll": "Beim Vollabzug werden alle diese Mitarbeiter exportiert.",
+   "zeilen": [
+    101,
+    102
+   ],
+   "code": [
+    "101:   IF gv_last_run IS INITIAL.",
+    "102:     gt_pernr = lt_tmp."
+   ],
+   "X": [
+    "Ist kein Datum eines vorherigen Laufs vorhanden, werden alle selektierten Personalnummern übernommen und die Selektion beendet."
+   ],
+   "Y": [
+    "Ohne gv_last_run wird der Block verlassen.",
+    "Ohne gv_last_run wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben."
+   ],
+   "Z": [
+    "Ist das Feld gv_last_run leer, wird der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-097-B06",
+   "soll": "Beim Delta werden nur Mitarbeiter exportiert, deren Maßnahmen, organisatorische Zuordnung, Personaldaten oder ständige Anschrift seit dem Stichtag geändert wurden.",
+   "zeilen": [
+    107,
+    111,
+    115,
+    119,
+    126
+   ],
+   "code": [
+    "107:   SELECT pernr FROM pa0000 APPENDING TABLE lt_chg",
+    "111:   SELECT pernr FROM pa0001 APPENDING TABLE lt_chg",
+    "115:   SELECT pernr FROM pa0002 APPENDING TABLE lt_chg",
+    "119:   SELECT pernr FROM pa0006 APPENDING TABLE lt_chg",
+    "126:   gt_pernr = lt_chg."
+   ],
+   "X": [
+    "Aus der Tabelle PA0000 werden zu den selektierten Personalnummern diejenigen ergänzt, deren Änderungsdatum aedtm größer oder gleich dem Datum des letzten Laufs ist.",
+    "Aus der Tabelle PA0001 werden zu den selektierten Personalnummern diejenigen ergänzt, deren Änderungsdatum aedtm größer oder gleich dem Datum des letzten Laufs ist.",
+    "Aus der Tabelle PA0002 werden zu den selektierten Personalnummern diejenigen ergänzt, deren Änderungsdatum aedtm größer oder gleich dem Datum des letzten Laufs ist.",
+    "Aus der Tabelle PA0006 werden zu den selektierten Personalnummern diejenigen mit Subtyp '1' ergänzt, deren Änderungsdatum aedtm größer oder gleich dem Datum des letzten Laufs ist."
+   ],
+   "Y": [
+    "Es werden Sätze aus pa0000 selektiert.",
+    "Es werden Sätze aus pa0001 selektiert.",
+    "Es werden Sätze aus pa0002 selektiert.",
+    "Es werden Sätze aus pa0006 selektiert."
+   ],
+   "Z": [
+    "Es werden Personalmaßnahmen zu den Einträgen aus lt_tmp selektiert.",
+    "Es werden Organisatorische Zuordnungen zu den Einträgen aus lt_tmp selektiert.",
+    "Es werden Sätze Personaldaten zu den Einträgen aus lt_tmp selektiert.",
+    "Es werden Sätze aus pa0006 zu den Einträgen aus lt_tmp selektiert."
+   ]
+  },
+  {
+   "id": "BM-097-B07",
+   "soll": "Gibt es keine zu exportierenden Mitarbeiter, wird das gemeldet und der Lauf beendet.",
+   "zeilen": [
+    43,
+    44
+   ],
+   "code": [
+    "43:   IF gt_pernr IS INITIAL.",
+    "44:     MESSAGE s051(zhr_if)."
+   ],
+   "X": [
+    "Wurden keine Personalnummern zur Verarbeitung ermittelt, wird die Erfolgsmeldung S051(ZHR_IF) ausgegeben und die Verarbeitung beendet."
+   ],
+   "Y": [
+    "Ohne Treffer wird eine Meldung ausgegeben und der Block verlassen.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "Eine Meldung wird ausgegeben.",
+    "Es wird eine Meldung ausgegeben und der Block verlassen."
+   ],
+   "Z": [
+    "Ist die Tabelle gt_pernr leer, wird eine Statusmeldung ausgegeben und der Block verlassen.",
+    "Die Statusmeldung 051(ZHR_IF) wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-097-B08",
+   "soll": "Mitarbeiter, deren Personaldaten der Benutzer nicht lesen darf, werden mit einem Fehlervermerk übersprungen.",
+   "zeilen": [
+    147,
+    160,
+    164
+   ],
+   "code": [
+    "147:   CALL FUNCTION 'HR_CHECK_AUTHORITY_INFTY'",
+    "160:   IF sy-subrc <> 0.",
+    "164:     RETURN."
+   ],
+   "X": [
+    "Über den Funktionsbaustein HR_CHECK_AUTHORITY_INFTY wird die Leseberechtigung für den Infotyp 0002 zur Personalnummer am aktuellen Datum geprüft.",
+    "Liegt keine Berechtigung für den Infotyp 0002 vor, wird ein Fehlereintrag mit dem Text 'Keine Berechtigung Infotyp 0002' erfasst und die Bearbeitung dieser Personalnummer abgebrochen."
+   ],
+   "Y": [
+    "Der Funktionsbaustein HR_CHECK_AUTHORITY_INFTY wird aufgerufen.",
+    "Ohne Treffer wird die Text auf Keine Berechtigung Infotyp 0002 gesetzt, eine Zeile aufgenommen und der Block verlassen.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "sy-subrc ungleich 0 setzen die Text auf Keine Berechtigung Infotyp 0002.",
+    "Es wird die Text auf Keine Berechtigung Infotyp 0002 gesetzt, eine Zeile aufgenommen und der Block verlassen."
+   ],
+   "Z": [
+    "Der Funktionsbaustein HR_CHECK_AUTHORITY_INFTY wird aufgerufen.",
+    "Scheitert der Aufruf von HR_CHECK_AUTHORITY_INFTY, wird der Text auf Keine Berechtigung Infotyp 0002 gesetzt, eine Zeile aufgenommen und der Block verlassen.",
+    "Wenn der Aufruf von HR_CHECK_AUTHORITY_INFTY scheitert, wird der Text auf Keine Berechtigung Infotyp 0002 gesetzt."
+   ]
+  },
+  {
+   "id": "BM-097-B09",
+   "soll": "Je Mitarbeiter werden zum heutigen Tag Maßnahmen, organisatorische Zuordnung, Daten zur Person, ständige Anschrift und dienstliche E-Mail-Adresse gelesen.",
+   "zeilen": [
+    167,
+    177,
+    187,
+    197,
+    208
+   ],
+   "code": [
+    "167:   CALL FUNCTION 'HR_READ_INFOTYPE'",
+    "177:   CALL FUNCTION 'HR_READ_INFOTYPE'",
+    "187:   CALL FUNCTION 'HR_READ_INFOTYPE'",
+    "197:   CALL FUNCTION 'HR_READ_INFOTYPE'",
+    "208:   CALL FUNCTION 'HR_READ_INFOTYPE'"
+   ],
+   "X": [
+    "Über den Funktionsbaustein HR_READ_INFOTYPE werden die Daten des Infotyps 0000 zur Personalnummer für das aktuelle Tagesdatum gelesen.",
+    "Über den Funktionsbaustein HR_READ_INFOTYPE werden die Daten des Infotyps 0001 zur Personalnummer für das aktuelle Tagesdatum gelesen.",
+    "Über den Funktionsbaustein HR_READ_INFOTYPE werden die Daten des Infotyps 0002 zur Personalnummer für das aktuelle Tagesdatum gelesen.",
+    "Über den Funktionsbaustein HR_READ_INFOTYPE werden die Daten des Infotyps 0006 zur Personalnummer für das aktuelle Tagesdatum gelesen.",
+    "Über den Funktionsbaustein HR_READ_INFOTYPE werden die Daten des Infotyps 0105 zur Personalnummer für das aktuelle Tagesdatum gelesen."
+   ],
+   "Y": [
+    "Der Funktionsbaustein HR_READ_INFOTYPE wird aufgerufen.",
+    "Es wird HR_READ_INFOTYPE aufgerufen.",
+    "Der Funktionsbaustein HR_READ_INFOTYPE wird aufgerufen.",
+    "Der Funktionsbaustein HR_READ_INFOTYPE wird aufgerufen.",
+    "Der Funktionsbaustein HR_READ_INFOTYPE wird aufgerufen.",
+    "Der Funktionsbaustein HR_READ_INFOTYPE wird aufgerufen."
+   ],
+   "Z": [
+    "Der Funktionsbaustein HR_READ_INFOTYPE wird aufgerufen.",
+    "Es wird HR_READ_INFOTYPE aufgerufen.",
+    "Der Funktionsbaustein HR_READ_INFOTYPE wird aufgerufen.",
+    "Der Funktionsbaustein HR_READ_INFOTYPE wird aufgerufen.",
+    "Der Funktionsbaustein HR_READ_INFOTYPE wird aufgerufen.",
+    "Der Funktionsbaustein HR_READ_INFOTYPE wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-097-B10",
+   "soll": "Ausgetretene Mitarbeiter erhalten die Satzart D, alle anderen die Satzart U.",
+   "zeilen": [
+    221,
+    222,
+    224
+   ],
+   "code": [
+    "221:   IF ls_p0000-stat2 = '0'.",
+    "222:     ls_rec-satzart = 'D'.",
+    "224:     ls_rec-satzart = 'U'."
+   ],
+   "X": [
+    "Hat das Feld STAT2 im Infotyp 0000 den Wert '0', wird die Satzart auf 'D' gesetzt.",
+    "Hat das Feld STAT2 im Infotyp 0000 nicht den Wert '0', wird die Satzart auf 'U' gesetzt."
+   ],
+   "Y": [
+    "Für ls_p0000-stat2 mit dem Wert 0 wird die ls_rec-satzart auf D gesetzt.",
+    "Für ls_p0000-stat2 mit dem Wert 0 wird die ls_rec-satzart auf D gesetzt, sonst die ls_rec-satzart auf U gesetzt.",
+    "ls_p0000-stat2 mit dem Wert 0 setzen die ls_rec-satzart auf D.",
+    "Für andere ls_p0000-stat2 wird die ls_rec-satzart auf U gesetzt.",
+    "Andere ls_p0000-stat2 setzen die ls_rec-satzart auf U."
+   ],
+   "Z": [
+    "Wenn das Feld ls_p0000-stat2 gleich 0 ist, wird das Feld ls_rec-satzart auf D gesetzt, sonst das Feld ls_rec-satzart auf U gesetzt.",
+    "Wenn das Feld ls_p0000-stat2 gleich 0 ist, wird das Feld ls_rec-satzart auf D gesetzt.",
+    "Sonst wird das Feld ls_rec-satzart auf U gesetzt."
+   ]
+  },
+  {
+   "id": "BM-097-B11",
+   "soll": "Ein nicht ausgetretener Mitarbeiter ohne ständige Anschrift wird mit einem Fehlervermerk übersprungen.",
+   "zeilen": [
+    238,
+    242
+   ],
+   "code": [
+    "238:   IF sy-subrc <> 0 AND ls_rec-satzart = 'U'.",
+    "242:     RETURN."
+   ],
+   "X": [
+    "Ist für einen Änderungssatz mit Satzart 'U' keine Anschrift vorhanden, wird ein Fehlereintrag mit dem Text 'Keine ständige Anschrift (IT0006 Subtyp 1)' erfasst und die Bearbeitung dieser Personalnummer beendet."
+   ],
+   "Y": [
+    "Für sy-subrc <> 0 AND ls_rec-satzart = 'U' wird die Text auf Keine ständige Anschrift (IT0006 Subtyp 1) gesetzt, eine Zeile aufgenommen und der Block verlassen.",
+    "sy-subrc <> 0 AND ls_rec-satzart = 'U' setzen die Text auf Keine ständige Anschrift (IT0006 Subtyp 1).",
+    "Es wird die Text auf Keine ständige Anschrift (IT0006 Subtyp 1) gesetzt, eine Zeile aufgenommen und der Block verlassen."
+   ],
+   "Z": [
+    "Wenn kein Treffer vorliegt und das Feld ls_rec-satzart gleich U ist, wird der Text auf Keine ständige Anschrift (IT0006 Subtyp 1) gesetzt, eine Zeile aufgenommen und der Block verlassen.",
+    "Wenn kein Treffer vorliegt und das Feld ls_rec-satzart gleich U ist, wird der Text auf Keine ständige Anschrift (IT0006 Subtyp 1) gesetzt."
+   ]
+  },
+  {
+   "id": "BM-097-B12",
+   "soll": "Der Exportsatz enthält Personalnummer, Name, Geburtsdatum, Buchungskreis, Kostenstelle, Organisationseinheit, Anschrift und E-Mail-Adresse.",
+   "zeilen": [
+    230,
+    244,
+    249
+   ],
+   "code": [
+    "230:   ls_rec-nachn = ls_p0002-nachn.",
+    "244:   ls_rec-stras = ls_p0006-stras.",
+    "249:   ls_rec-email = ls_p0105-usrid_long."
+   ],
+   "X": [],
+   "Y": [],
+   "Z": []
+  },
+  {
+   "id": "BM-097-B13",
+   "soll": "Für die Zeiterfassung wird je Mitarbeiter ein Satz mit Name und Kostenstelle gebildet; ausgetretene Mitarbeiter werden dort deaktiviert, nicht gelöscht.",
+   "zeilen": [
+    253,
+    256
+   ],
+   "code": [
+    "253:   ls_time-pernr  = pv_pernr.",
+    "256:   ls_time-active = xsdbool( ls_rec-satzart = 'U' )."
+   ],
+   "X": [],
+   "Y": [],
+   "Z": []
+  },
+  {
+   "id": "BM-097-B14",
+   "soll": "Im Testlauf werden die Exportsätze nur als Liste angezeigt; nichts wird geschrieben oder gesendet.",
+   "zeilen": [
+    52,
+    54,
+    275
+   ],
+   "code": [
+    "52:   IF p_test = 'X'.",
+    "54:     RETURN.",
+    "275:       lo_alv->display( )."
+   ],
+   "X": [
+    "Ist der Parameter p_test als 'X' markiert, wird über die Routine DISPLAY_PREVIEW eine Vorschau angezeigt und die weitere Verarbeitung beendet.",
+    "Über die Fabrikmethode der Klasse CL_SALV_TABLE wird eine ALV-Tabelle für die aufbereiteten Datensätze erzeugt und zur Anzeige gebracht."
+   ],
+   "Y": [
+    "Mit gesetztem p_test wird display_preview aufgerufen und der Block verlassen.",
+    "Mit gesetztem p_test wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "Es wird display_preview aufgerufen und der Block verlassen.",
+    "Die Methode display von lo_alv wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ],
+   "Z": [
+    "Mit gesetztem p_test wird display_preview aufgerufen und der Block verlassen.",
+    "Die Methode display von lo_alv wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-097-B15",
+   "soll": "Im Echtlauf wird eine UTF-8-Datei mit Kopfzeile und je Mitarbeiter einer semikolongetrennten Zeile auf dem Applikationsserver geschrieben; ist sie nicht beschreibbar, wird ein Fehler vermerkt.",
+   "zeilen": [
+    290,
+    291,
+    297,
+    305
+   ],
+   "code": [
+    "290:   OPEN DATASET p_file FOR OUTPUT IN TEXT MODE ENCODING UTF-8.",
+    "291:   IF sy-subrc <> 0.",
+    "297:   TRANSFER 'SATZART;PERNR;NACHNAME;VORNAME;GEBDAT;BUKRS;KOSTL;ORGEH;STRASSE;PLZ;ORT;EMAIL'",
+    "305:     TRANSFER lv_line TO p_file."
+   ],
+   "X": [
+    "Die Zieldatei p_file wird im Textmodus mit UTF-8-Codierung zur Ausgabe geöffnet.",
+    "Kann die Zieldatei nicht geöffnet werden, wird die Fehlermeldung 'Datei nicht beschreibbar' erfasst und die Ausgabe abgebrochen.",
+    "Die Kopfzeile mit den Spaltenüberschriften wird in die Zieldatei übertragen.",
+    "Für jeden aufbereiteten Mitarbeiterdatensatz wird eine durch Semikolon getrennte Textzeile zusammengesetzt und in die Zieldatei übertragen."
+   ],
+   "Y": [
+    "Ohne Treffer wird eine Zeile aufgenommen und der Block verlassen.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben."
+   ],
+   "Z": [
+    "Lässt sich die Datei nicht öffnen, wird eine Zeile aufgenommen und der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-097-B16",
+   "soll": "Das Geburtsdatum wird in der Datei im Format TT/MM/JJJJ ausgegeben.",
+   "zeilen": [
+    300
+   ],
+   "code": [
+    "300:     WRITE ls_rec-gbdat TO lv_gbdat DD/MM/YYYY."
+   ],
+   "X": [
+    "Für jeden aufbereiteten Mitarbeiterdatensatz wird eine durch Semikolon getrennte Textzeile zusammengesetzt und in die Zieldatei übertragen."
+   ],
+   "Y": [
+    "Bei Treffern werden ls_rec-gbdat TO lv_gbdat DD/MM/YYYY als Liste ausgegeben.",
+    "ls_rec-gbdat TO lv_gbdat DD/MM/YYYY wird ausgegeben."
+   ],
+   "Z": [
+    "Der Wert ls_rec-gbdat wird aufbereitet in lv_gbdat übernommen; ausgegeben wird dabei nichts."
+   ]
+  },
+  {
+   "id": "BM-097-B17",
+   "soll": "Die Zeitsätze werden per RFC an das Zeiterfassungssystem übertragen; ein Kommunikations- oder Systemfehler wird mit seinem Text vermerkt.",
+   "zeilen": [
+    322,
+    330
+   ],
+   "code": [
+    "322:   CALL FUNCTION 'Z_TIME_EMP_SYNC'",
+    "330:   IF sy-subrc <> 0."
+   ],
+   "X": [
+    "Die Mitarbeiterdaten der Zeiterfassung werden über den RFC-Funktionsbaustein Z_TIME_EMP_SYNC an die Destination p_dest übermittelt.",
+    "Tritt beim RFC-Aufruf ein Übertragungsfehler auf, wird der empfangene Fehlertext in die Fehlerliste übernommen.",
+    "Wurde der RFC-Aufruf fehlerfrei ausgeführt, wird das Kennzeichen für eine erfolgreiche RFC-Übertragung gesetzt."
+   ],
+   "Y": [
+    "Ein entferntes System wird über die eingegebene Destination benachrichtigt. Welches System und was dort geschieht, ist aus dem gelieferten Code nicht ableitbar.",
+    "Ohne Treffer wird eine Zeile aufgenommen.",
+    "Ohne Treffer wird eine Zeile aufgenommen, sonst die gv_rfc_ok auf X gesetzt."
+   ],
+   "Z": [
+    "Z_TIME_EMP_SYNC wird in einem entfernten System über die eingegebene Destination aufgerufen. Welches System und was dort geschieht, ist aus dem gelieferten Code nicht ableitbar.",
+    "Scheitert der Aufruf von Z_TIME_EMP_SYNC, wird eine Zeile aufgenommen, sonst das Feld gv_rfc_ok auf X gesetzt."
+   ]
+  },
+  {
+   "id": "BM-097-B18",
+   "soll": "Der Lauf wird mit Datum, Uhrzeit, Vollabzugskennzeichen und den Anzahlen von Sätzen und Fehlern protokolliert.",
+   "zeilen": [
+    358
+   ],
+   "code": [
+    "358:   INSERT zhr_export_log FROM ls_log."
+   ],
+   "X": [
+    "Ein neuer Protokolldatensatz mit Ausführungsdatum, Uhrzeit, Kennzeichen Vollabzug, Satzanzahlen und Status wird in die Tabelle ZHR_EXPORT_LOG eingefügt."
+   ],
+   "Y": [],
+   "Z": []
+  },
+  {
+   "id": "BM-097-B19",
+   "soll": "Der Lauf gilt als erfolgreich, wenn Datei und RFC-Übertragung gelungen sind – auch wenn einzelne Mitarbeiter übersprungen wurden.",
+   "zeilen": [
+    353,
+    354,
+    356
+   ],
+   "code": [
+    "353:   IF gv_file_ok = 'X' AND gv_rfc_ok = 'X'.",
+    "354:     ls_log-status = 'S'.",
+    "356:     ls_log-status = 'E'."
+   ],
+   "X": [
+    "Wurden sowohl die Datei als auch die RFC-Übertragung erfolgreich abgeschlossen, wird der Protokollstatus auf 'S' gesetzt.",
+    "Wurde mindestens eine der beiden Übertragungen nicht erfolgreich abgeschlossen, wird der Protokollstatus auf 'E' gesetzt."
+   ],
+   "Y": [
+    "Für gv_file_ok = 'X' AND gv_rfc_ok = 'X' wird die Status auf S gesetzt.",
+    "Für gv_file_ok = 'X' AND gv_rfc_ok = 'X' wird die Status auf S gesetzt, sonst die Status auf E gesetzt.",
+    "gv_file_ok = 'X' AND gv_rfc_ok = 'X' setzen die Status auf S.",
+    "Sonst wird die Status auf E gesetzt.",
+    "Sonst setzen die Status auf E."
+   ],
+   "Z": [
+    "Wenn das Feld gv_file_ok gesetzt ist und das Feld gv_rfc_ok gesetzt ist, wird der Status auf S gesetzt, sonst der Status auf E gesetzt.",
+    "Wenn das Feld gv_file_ok gesetzt ist und das Feld gv_rfc_ok gesetzt ist, wird der Status auf S gesetzt.",
+    "Sonst wird der Status auf E gesetzt."
+   ]
+  },
+  {
+   "id": "BM-097-B20",
+   "soll": "Gab es Fehler, erhält die HR-IT-Verteilerliste eine Mail mit der Fehleranzahl; scheitert der Versand, erscheint eine Warnung.",
+   "zeilen": [
+    60,
+    383,
+    394
+   ],
+   "code": [
+    "60:   IF gt_error IS NOT INITIAL.",
+    "383:   CALL FUNCTION 'SO_NEW_DOCUMENT_SEND_API1'",
+    "394:     MESSAGE w053(zhr_if)."
+   ],
+   "X": [
+    "Liegen Fehlereinträge vor, wird über die Routine SEND_ERROR_MAIL der Versand einer Benachrichtigungs-E-Mail eingeleitet.",
+    "Über den Funktionsbaustein SO_NEW_DOCUMENT_SEND_API1 wird eine Benachrichtigungs-E-Mail mit den Fehlerinformationen an die Adresse p_mail versendet.",
+    "Tritt beim E-Mail-Versand ein Fehler auf, wird die Warnmeldung W053(ZHR_IF) ausgegeben."
+   ],
+   "Y": [
+    "Bei Treffern wird send_error_mail aufgerufen.",
+    "Es wird die ls_rcv-rec_type auf C gesetzt, eine Zeile aufgenommen und SO_NEW_DOCUMENT_SEND_API1 aufgerufen.",
+    "Der Funktionsbaustein SO_NEW_DOCUMENT_SEND_API1 wird aufgerufen.",
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ],
+   "Z": [
+    "Enthält die Tabelle gt_error Zeilen, wird send_error_mail aufgerufen.",
+    "Es wird das Feld ls_rcv-rec_type auf C gesetzt, eine Zeile aufgenommen und SO_NEW_DOCUMENT_SEND_API1 aufgerufen.",
+    "Der Funktionsbaustein SO_NEW_DOCUMENT_SEND_API1 wird aufgerufen.",
+    "Scheitert der Aufruf von SO_NEW_DOCUMENT_SEND_API1, wird eine Warnung ausgegeben.",
+    "Die Warnung 053(ZHR_IF) wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-097-B21",
+   "soll": "Protokoll und Mail werden festgeschrieben und die Laufsperre freigegeben.",
+   "zeilen": [
+    63,
+    65
+   ],
+   "code": [
+    "63:   COMMIT WORK.",
+    "65:   CALL FUNCTION 'DEQUEUE_EZHR_EXPORT'"
+   ],
+   "X": [
+    "Über den Funktionsbaustein DEQUEUE_EZHR_EXPORT wird die zuvor gesetzte Sperre für den Report sy-repid wieder freigegeben."
+   ],
+   "Y": [
+    "Mit COMMIT WORK wird die Änderung persistiert.",
+    "Es wird COMMIT WORK ausgeführt und DEQUEUE_EZHR_EXPORT aufgerufen.",
+    "Der Funktionsbaustein DEQUEUE_EZHR_EXPORT wird aufgerufen."
+   ],
+   "Z": [
+    "Mit COMMIT WORK wird die Änderung persistiert.",
+    "Es wird COMMIT WORK ausgeführt und DEQUEUE_EZHR_EXPORT aufgerufen.",
+    "Der Funktionsbaustein DEQUEUE_EZHR_EXPORT wird aufgerufen."
+   ]
+  }
+ ]
+}

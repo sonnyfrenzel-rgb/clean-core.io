@@ -1,0 +1,83 @@
+{
+ "id": "BM-043",
+ "urteile": [
+  {
+   "id": "BM-043-B01",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "abweichend",
+    "mangel": [
+     "falsch",
+     "technisch",
+     "grammatik"
+    ]
+   },
+   "kurz": "X nennt Vorbelegung gültig und Abbruch; Y ohne Ergebnis gültig; Z erfindet Schleife und 'kleinere'."
+  },
+  {
+   "id": "BM-043-B02",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein"
+    ]
+   },
+   "kurz": "Nur X nennt Stammsatzlesung zum Buchungsdatum im Kostenrechnungskreis."
+  },
+  {
+   "id": "BM-043-B03",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "kurz": "Nur X nennt das Fehlschlagen bei fehlender Kostenstelle."
+  },
+  {
+   "id": "BM-043-B04",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "kurz": "Nur X nennt das Fehlschlagen bei gesperrter Kostenstelle."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

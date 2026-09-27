@@ -1,0 +1,107 @@
+{
+ "id": "BM-085",
+ "titel": "Pflichtfeldprüfung einer Materialanlage-Vorlage per Makro",
+ "prozess": "Ein Sachbearbeiter startet den Report für einen Stapel von Materialanlage-Vorlagen. Der Report liest alle neuen Vorlagezeilen (Status N) des Stapels und prüft je Zeile per Makro, ob Materialart, Basismengeneinheit, Warengruppe und Werk gefüllt sind; jedes leere Pflichtfeld wird vermerkt. Ist keine Zeile fehlerhaft, setzt er alle neuen Zeilen des Stapels auf Status V und meldet die Freigabe. Andernfalls bleibt der Stapel unverändert und nur die Anzahl der Pflichtfeldfehler wird ausgegeben. Materialien selbst legt der Report nicht an.",
+ "verboten": [
+  "source.abap:30 — kein Fachsatz „fehlerfreie Zeilen werden einzeln freigegeben“ (alles oder nichts: ein Fehler verhindert die Freigabe des ganzen Stapels).",
+  "gesamte Scheibe — kein Fachsatz „Materialien werden angelegt“ (nur der Status der Stagingtabelle wird gesetzt).",
+  "source.abap:35 — kein Fachsatz „fehlerhafte Materialien werden einzeln aufgelistet“ (nur die Anzahl wird ausgegeben)."
+ ],
+ "saetze": [
+  {
+   "id": "BM-085-B01",
+   "soll": "Es werden alle neuen Vorlagezeilen (Status N) des eingegebenen Stapels gelesen.",
+   "zeilen": [
+    24
+   ],
+   "code": [
+    "24:   SELECT * FROM zmm_mat_stage INTO TABLE lt_stage"
+   ],
+   "X": [
+    "Es werden Sätze aus zmm_mat_stage mit dem eingegebenen batch_id selektiert."
+   ],
+   "Y": [
+    "Aus der Tabelle ZMM_MAT_STAGE werden alle Datensätze zur angegebenen Batch-ID mit dem Status 'N' gelesen."
+   ],
+   "Z": [
+    "Es werden Sätze aus zmm_mat_stage mit dem eingegebenen batch_id selektiert."
+   ]
+  },
+  {
+   "id": "BM-085-B02",
+   "soll": "Für jede Zeile wird geprüft, ob Materialart, Basismengeneinheit, Warengruppe und Werk gefüllt sind; jedes leere Feld wird als Fehler vermerkt.",
+   "zeilen": [
+    26,
+    27
+   ],
+   "code": [
+    "26:   LOOP AT lt_stage INTO ls_stage.",
+    "27:     mandatory: mtart, meins, matkl, werks."
+   ],
+   "X": [
+    "Jede Zeile aus lt_stage wird einzeln verarbeitet."
+   ],
+   "Y": [
+    "Für jeden gelesenen Datensatz wird geprüft, ob die Pflichtfelder MTART, MEINS, MATKL und WERKS gefüllt sind; fehlende Angaben werden als Fehler erfasst."
+   ],
+   "Z": [
+    "Jede Zeile aus lt_stage wird einzeln verarbeitet."
+   ]
+  },
+  {
+   "id": "BM-085-B03",
+   "soll": "Ist keine Zeile fehlerhaft, wird der ganze Stapel auf Status V (plausibel) gesetzt und das gemeldet.",
+   "zeilen": [
+    29,
+    30,
+    32
+   ],
+   "code": [
+    "29:   IF lt_err IS INITIAL.",
+    "30:     UPDATE zmm_mat_stage SET status = 'V'",
+    "32:     WRITE: / 'Vorlage plausibel, Status V gesetzt.'."
+   ],
+   "X": [
+    "Ist die Tabelle lt_err leer, wird eine Zeile geändert und Vorlage plausibel, Status V gesetzt. ausgegeben, sonst Pflichtfeldfehler: ausgegeben und lv_nerr ausgegeben.",
+    "Der Status in zmm_mat_stage wird geändert. Ob eine Zeile getroffen wird, garantiert der Code nicht. Im gelieferten Code steht kein COMMIT WORK. sy-subrc wird danach nicht ausgewertet.",
+    "Vorlage plausibel, Status V gesetzt. wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code."
+   ],
+   "Y": [
+    "Sind keine Fehler aufgetreten, wird in der Tabelle ZMM_MAT_STAGE der Status für alle Datensätze der angegebenen Batch-ID mit bisherigem Status 'N' auf 'V' gesetzt.",
+    "Sind keine Fehler aufgetreten, wird die Meldung 'Vorlage plausibel, Status V gesetzt.' ausgegeben.",
+    "Sind Fehler aufgetreten, wird die Anzahl der Fehler ermittelt und zusammen mit dem Text 'Pflichtfeldfehler:' ausgegeben."
+   ],
+   "Z": [
+    "Ohne Treffer wird eine Zeile geändert und Vorlage plausibel, Status V gesetzt. ausgegeben.",
+    "Ohne Treffer wird eine Zeile geändert und Vorlage plausibel, Status V gesetzt. ausgegeben, sonst Pflichtfeldfehler: ausgegeben und lv_nerr ausgegeben.",
+    "Es wird eine Zeile geändert und Vorlage plausibel, Status V gesetzt. ausgegeben.",
+    "Die Status in zmm_mat_stage wird geändert. Ob eine Zeile getroffen wird, garantiert der Code nicht. Angekündigt, nicht persistiert: im gelieferten Code steht kein COMMIT WORK. sy-subrc wird danach nicht ausgewertet.",
+    "Vorlage plausibel, Status V gesetzt. wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code."
+   ]
+  },
+  {
+   "id": "BM-085-B04",
+   "soll": "Sonst bleibt der Stapel unverändert und es wird nur die Anzahl der Pflichtfeldfehler ausgegeben.",
+   "zeilen": [
+    35
+   ],
+   "code": [
+    "35:     WRITE: / 'Pflichtfeldfehler:', lv_nerr."
+   ],
+   "X": [
+    "Ist die Tabelle lt_err leer, wird eine Zeile geändert und Vorlage plausibel, Status V gesetzt. ausgegeben, sonst Pflichtfeldfehler: ausgegeben und lv_nerr ausgegeben.",
+    "Pflichtfeldfehler: wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code."
+   ],
+   "Y": [
+    "Sind Fehler aufgetreten, wird die Anzahl der Fehler ermittelt und zusammen mit dem Text 'Pflichtfeldfehler:' ausgegeben."
+   ],
+   "Z": [
+    "Ohne Treffer wird eine Zeile geändert und Vorlage plausibel, Status V gesetzt. ausgegeben, sonst Pflichtfeldfehler: ausgegeben und lv_nerr ausgegeben.",
+    "Sonst wird Pflichtfeldfehler: ausgegeben und lv_nerr ausgegeben.",
+    "Pflichtfeldfehler: und lv_nerr werden ausgegeben.",
+    "Pflichtfeldfehler: wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "lv_nerr wird ausgegeben."
+   ]
+  }
+ ]
+}

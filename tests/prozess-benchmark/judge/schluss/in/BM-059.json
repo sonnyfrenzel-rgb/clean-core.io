@@ -1,0 +1,722 @@
+{
+ "id": "BM-059",
+ "titel": "Zahlungsfreigabe im Vier-Augen-Prinzip vor dem Zahllauf (Dynpro-Modulpool)",
+ "prozess": "Ein Mitarbeiter der Kreditorenbuchhaltung ruft die Freigabetransaktion auf, gibt Laufdatum und Identifikation eines F110-Zahlungsvorschlags ein und wählt Lesen. Das Programm sperrt den Zahllauf exklusiv; ist er von einem anderen Benutzer gesperrt, wird der Sperrinhaber gemeldet. Sonst liest es den Ersteller des Vorschlags aus einem kundeneigenen Protokoll, die Zahlungen des Vorschlags mit Belegnummer samt bezahlten Posten und die bereits gesicherten Freigaben. Beim Freigeben wird zuerst das Vier-Augen-Prinzip geprüft: Der Ersteller des Vorschlags darf nicht freigeben. Für jede markierte offene Zahlung werden die Freigabeberechtigung im zahlenden Buchungskreis und die persönliche Betragsgrenze geprüft; bis zur Grenze gibt ein Freigeber allein endgültig frei, darüber entsteht nur eine Erstfreigabe, und ein zweiter, vom Erstfreigeber verschiedener Benutzer gibt endgültig frei. Ablehnungen verlangen einen Grund. Beim Sichern werden nach einer Sicherheitsabfrage die Fortschreibung der Freigabetabelle und je nach Lage die Workflow-Ereignisse für Zweitfreigabe und erfolgte Freigabe im Verbucher vorgemerkt und mit COMMIT WORK asynchron angestoßen. Der Verbuchungsbaustein schreibt Freigabesätze und Historie und bricht ab, wenn eine endgültig freigegebene Zahlung zurückgesetzt würde. Erst wenn alle Zahlungen endgültig freigegeben sind, plant der Benutzer nach einer weiteren Sicherheitsabfrage den Zahllauf per Batch-Input über F110 ein; Fehler der Einplanung werden gemeldet. Zurück fragt bei ungesicherten Änderungen nach und löst die Sperre, Abbrechen verlässt die Transaktion ohne Rückfrage.",
+ "verboten": [
+  "mzfi_payrelf01.abap:180 — kein Fachsatz „die Zahlung wird ausgeführt bzw. bezahlt“ (die Freigabe setzt nur einen Status in der internen Tabelle; gezahlt wird erst im Zahllauf F110, der hier höchstens eingeplant wird)",
+  "mzfi_payrelf01.abap:138 — kein Fachsatz „ohne bekannten Ersteller des Vorschlags wird die Freigabe verweigert“ (fehlt der Satz in ZFI_PAYRUN_LOG, ist gv_creator leer und die Vier-Augen-Prüfung greift nie)",
+  "mzfi_payrelf01.abap:226 — kein Fachsatz „abgelehnte Zahlungen werden aus dem Zahlungsvorschlag entfernt oder gesperrt“ (nur der Status in der Freigabetabelle ändert sich; der Vorschlag in REGUH/REGUP bleibt unverändert)",
+  "mzfi_payrelf01.abap:297 — kein Fachsatz „die Freigaben sind zu diesem Zeitpunkt in ZFI_PAYREL fortgeschrieben“ (COMMIT WORK ohne AND WAIT; die Verbuchung läuft asynchron und kann noch mit Typ-A-Meldung abbrechen)"
+ ],
+ "saetze": [
+  {
+   "id": "BM-059-B01",
+   "soll": "Ohne Sperre auf einen Zahllauf blendet das Einstiegsbild Freigeben, Ablehnen, Sichern und Zahllauf-Start aus; bei ungesicherten Änderungen ist nur der Start des Zahllaufs ausgeblendet.",
+   "zeilen": [
+    461,
+    471
+   ],
+   "code": [
+    "461:   IF gv_locked = abap_false.",
+    "471:   SET PF-STATUS 'STATUS_0100' EXCLUDING lt_excl."
+   ],
+   "X": [
+    "Für gv_locked mit dem Wert abap_false wird eine Zeile aufgenommen.",
+    "Für gv_locked mit dem Wert abap_false wird eine Zeile aufgenommen, sonst eine Zeile aufgenommen.",
+    "Der GUI-Status STATUS_0100 wird gesetzt."
+   ],
+   "Y": [
+    "Wenn das Feld gv_locked nicht gesetzt ist, wird eine Zeile aufgenommen.",
+    "Der GUI-Status STATUS_0100 wird gesetzt."
+   ],
+   "Z": [
+    "Ist der Zahllauf nicht gesperrt, werden die Funktionen Freigabe, Ablehnung, Sichern und Zahllaufstart auf der Oberfläche deaktiviert."
+   ]
+  },
+  {
+   "id": "BM-059-B02",
+   "soll": "Abbrechen oder Beenden verlässt die Transaktion sofort ohne Rückfrage, ungesicherte Freigaben gehen verloren.",
+   "zeilen": [
+    389
+   ],
+   "code": [
+    "389:   LEAVE PROGRAM."
+   ],
+   "X": [
+    "Die Screenfolge wird beendet."
+   ],
+   "Y": [
+    "Das Programm wird beendet."
+   ],
+   "Z": [
+    "Beim Beenden-Befehl auf Dynpro 0100 wird das Programm verlassen."
+   ]
+  },
+  {
+   "id": "BM-059-B03",
+   "soll": "Mit der Funktion Lesen wird der auf dem Bild eingegebene Zahllauf (Laufdatum und Identifikation) exklusiv gegen parallele Bearbeitung gesperrt.",
+   "zeilen": [
+    35,
+    409
+   ],
+   "code": [
+    "35:   CALL FUNCTION 'ENQUEUE_EZFI_PAYREL'",
+    "409:       PERFORM lock_run."
+   ],
+   "X": [
+    "Der Funktionsbaustein ENQUEUE_EZFI_PAYREL wird aufgerufen.",
+    "Das Unterprogramm lock_run wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt."
+   ],
+   "Y": [
+    "Der Funktionsbaustein ENQUEUE_EZFI_PAYREL wird aufgerufen.",
+    "Das Unterprogramm lock_run wird aufgerufen; es ruft ENQUEUE_EZFI_PAYREL auf und gibt eine Meldung aus."
+   ],
+   "Z": [
+    "Der Zahllauf wird über die Sperrfunktion ENQUEUE_EZFI_PAYREL mit dem Sperrmodus E für den Mandanten, das eingegebene Laufdatum und die Laufidentifikation im Dialogmodus gesperrt.",
+    "Beim Funktionscode READ wird der Zahllauf gesperrt und der Zahlungsvorschlag eingelesen."
+   ]
+  },
+  {
+   "id": "BM-059-B04",
+   "soll": "Ist der Zahllauf bereits von einem anderen Benutzer gesperrt, wird der Sperrinhaber gemeldet und keine Zahlung angezeigt.",
+   "zeilen": [
+    46,
+    50
+   ],
+   "code": [
+    "46:   IF sy-subrc <> 0.",
+    "50:     MESSAGE s010 WITH gs_screen-laufd gs_screen-laufi sy-msgv1 DISPLAY LIKE 'E'."
+   ],
+   "X": [
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Ohne Treffer wird eine Meldung ausgegeben, sonst read_proposal aufgerufen.",
+    "Eine Meldung wird ausgegeben."
+   ],
+   "Y": [
+    "Ist die Sperre über ENQUEUE_EZFI_PAYREL nicht zu erhalten, wird eine Statusmeldung ausgegeben, sonst read_proposal aufgerufen.",
+    "Die Statusmeldung 010 wird ausgegeben, angezeigt wie eine Fehlermeldung."
+   ],
+   "Z": []
+  },
+  {
+   "id": "BM-059-B05",
+   "soll": "Nach erfolgreicher Sperre wird der Zahlungsvorschlag gelesen.",
+   "zeilen": [
+    53
+   ],
+   "code": [
+    "53:     PERFORM read_proposal."
+   ],
+   "X": [
+    "Ohne Treffer wird eine Meldung ausgegeben, sonst read_proposal aufgerufen.",
+    "Für andere sy-subrc wird read_proposal aufgerufen.",
+    "Das Unterprogramm read_proposal wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt."
+   ],
+   "Y": [
+    "Ist die Sperre über ENQUEUE_EZFI_PAYREL nicht zu erhalten, wird eine Statusmeldung ausgegeben, sonst read_proposal aufgerufen.",
+    "Das Unterprogramm read_proposal wird aufgerufen; es liest ZFI_PAYRUN_LOG, REGUH und REGUP und gibt eine Meldung aus."
+   ],
+   "Z": [
+    "War die Sperrung des Zahllaufs erfolgreich, wird der Sperrstatus gesetzt und das Einlesen des Zahlungsvorschlags angestoßen."
+   ]
+  },
+  {
+   "id": "BM-059-B06",
+   "soll": "Der Ersteller des Zahlungsvorschlags wird aus dem kundeneigenen Protokoll der Vorschlagsläufe ermittelt.",
+   "zeilen": [
+    87
+   ],
+   "code": [
+    "87:   SELECT SINGLE ernam FROM zfi_payrun_log INTO gv_creator"
+   ],
+   "X": [
+    "ernam des Satzes wird gelesen."
+   ],
+   "Y": [
+    "Der Erfasser aus zfi_payrun_log wird gelesen."
+   ],
+   "Z": [
+    "Aus der Tabelle ZFI_PAYRUN_LOG wird der Ersteller des Vorschlagslaufs zum angegebenen Laufdatum und zur Laufidentifikation gelesen."
+   ]
+  },
+  {
+   "id": "BM-059-B07",
+   "soll": "Gelesen werden nur Zahlungen des Vorschlags mit Zahlungsbelegnummer; Ausnahmen ohne Belegnummer bleiben außen vor.",
+   "zeilen": [
+    92
+   ],
+   "code": [
+    "92:   SELECT * FROM reguh INTO TABLE lt_reguh"
+   ],
+   "X": [
+    "Es werden Sätze aus reguh selektiert."
+   ],
+   "Y": [
+    "Es werden Sätze aus reguh selektiert."
+   ],
+   "Z": [
+    "Aus der Tabelle REGUH werden alle Zahlungsvorschlagssätze mit gesetztem Vorschlagskennzeichen und vorhandener Belegnummer zum Laufdatum und zur Laufidentifikation gelesen."
+   ]
+  },
+  {
+   "id": "BM-059-B08",
+   "soll": "Enthält der Vorschlag keine solche Zahlung, wird dies als Warnung gemeldet und das Lesen beendet.",
+   "zeilen": [
+    97,
+    98,
+    99
+   ],
+   "code": [
+    "97:   IF sy-subrc <> 0.",
+    "98:     MESSAGE s013 WITH gv_laufd gv_laufi DISPLAY LIKE 'W'.",
+    "99:     RETURN."
+   ],
+   "X": [
+    "Ohne Treffer wird eine Meldung ausgegeben und der Block verlassen.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "Eine Meldung wird ausgegeben.",
+    "Es wird eine Meldung ausgegeben und der Block verlassen."
+   ],
+   "Y": [
+    "Ohne Treffer wird eine Statusmeldung ausgegeben und der Block verlassen.",
+    "Die Statusmeldung 013 wird ausgegeben, angezeigt wie eine Warnung."
+   ],
+   "Z": [
+    "Werden keine passenden Zahlungsvorschlagsdaten in der Tabelle REGUH gefunden, wird die Warnmeldung 013 ausgegeben und das Einlesen abgebrochen."
+   ]
+  },
+  {
+   "id": "BM-059-B09",
+   "soll": "Zu jeder Zahlung wird die Anzahl der bezahlten Posten aus den Positionen des Vorschlags bestimmt.",
+   "zeilen": [
+    103
+   ],
+   "code": [
+    "103:   SELECT * FROM regup INTO TABLE gt_regup"
+   ],
+   "X": [
+    "Es werden Sätze aus regup selektiert."
+   ],
+   "Y": [
+    "Es werden Sätze aus regup selektiert."
+   ],
+   "Z": [
+    "Aus der Tabelle REGUP werden alle bezahlten Posten des Vorschlags zum Laufdatum und zur Identifikation gelesen."
+   ]
+  },
+  {
+   "id": "BM-059-B10",
+   "soll": "Früher gesicherte Freigaben und Ablehnungen werden je Zahlung mit Status, Freigebern und Ablehnungsgrund übernommen.",
+   "zeilen": [
+    109,
+    131,
+    132
+   ],
+   "code": [
+    "109:   SELECT * FROM zfi_payrel INTO TABLE lt_rel",
+    "131:     IF sy-subrc = 0.",
+    "132:       gs_pay-status    = ls_rel-status."
+   ],
+   "X": [
+    "Es werden Sätze aus zfi_payrel selektiert."
+   ],
+   "Y": [
+    "Es werden Sätze aus zfi_payrel selektiert."
+   ],
+   "Z": [
+    "Aus der Tabelle ZFI_PAYREL werden alle bereits erfassten Freigabedaten zum Laufdatum und zur Laufidentifikation gelesen.",
+    "Wurde zu Buchungskreis und Belegnummer ein Eintrag in ZFI_PAYREL gefunden, werden der bisherige Status, die Freigeber und der Ablehnungsgrund übernommen."
+   ]
+  },
+  {
+   "id": "BM-059-B11",
+   "soll": "Der Ersteller des Vorschlags darf keine Zahlung dieses Laufs freigeben; er erhält eine Fehlermeldung und die Freigabe wird abgebrochen (Vier-Augen-Prinzip).",
+   "zeilen": [
+    157,
+    158,
+    159
+   ],
+   "code": [
+    "157:   IF gv_creator = sy-uname.",
+    "158:     MESSAGE s021 WITH gv_laufd gv_laufi DISPLAY LIKE 'E'.",
+    "159:     RETURN."
+   ],
+   "X": [
+    "Für gv_creator mit dem Wert sy-uname wird eine Meldung ausgegeben und der Block verlassen.",
+    "Bei gv_creator gleich sy-uname wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "Eine Meldung wird ausgegeben.",
+    "Es wird eine Meldung ausgegeben und der Block verlassen."
+   ],
+   "Y": [
+    "Wenn das Feld gv_creator gleich sy-uname ist, wird eine Statusmeldung ausgegeben und der Block verlassen.",
+    "Die Statusmeldung 021 wird ausgegeben, angezeigt wie eine Fehlermeldung."
+   ],
+   "Z": [
+    "Entspricht der Ersteller des Zahlungsvorschlags dem aktuellen Benutzer, wird die Freigabe mit der Fehlermeldung 021 verweigert."
+   ]
+  },
+  {
+   "id": "BM-059-B12",
+   "soll": "Freigegeben werden nur markierte Zahlungen, die weder endgültig freigegeben noch abgelehnt sind.",
+   "zeilen": [
+    162
+   ],
+   "code": [
+    "162:   LOOP AT gt_pay INTO gs_pay"
+   ],
+   "X": [
+    "Jede Zeile aus gt_pay wird einzeln verarbeitet."
+   ],
+   "Y": [
+    "Die Zeilen aus gt_pay, bei denen das Feld mark gesetzt ist, der Status ungleich gc_status_final ist und der Status ungleich gc_status_reject ist, werden einzeln verarbeitet."
+   ],
+   "Z": [
+    "Alle markierten Zahlungen, die weder endgültig freigegeben noch abgelehnt sind, werden nacheinander verarbeitet."
+   ]
+  },
+  {
+   "id": "BM-059-B13",
+   "soll": "Für jede Zahlung wird die Freigabeberechtigung im zahlenden Buchungskreis geprüft; ohne Berechtigung wird die Zahlung übersprungen und mitgezählt.",
+   "zeilen": [
+    169,
+    172
+   ],
+   "code": [
+    "169:     AUTHORITY-CHECK OBJECT 'Z_PAYREL'",
+    "172:     IF sy-subrc <> 0."
+   ],
+   "X": [
+    "Die Berechtigung auf Z_PAYREL wird geprüft."
+   ],
+   "Y": [
+    "Die Berechtigung auf Z_PAYREL wird geprüft.",
+    "Ohne Berechtigung auf Z_PAYREL wird der Schleifendurchlauf übersprungen."
+   ],
+   "Z": []
+  },
+  {
+   "id": "BM-059-B14",
+   "soll": "Die Betragsgrenze des Freigebers wird je Buchungskreis und Zahlungswährung aus der kundeneigenen Grenzentabelle gelesen; fehlt der Eintrag, gilt die Grenze null.",
+   "zeilen": [
+    180
+   ],
+   "code": [
+    "180:     SELECT SINGLE maxbt FROM zfi_payrel_lim INTO lv_limit"
+   ],
+   "X": [
+    "maxbt des Satzes wird gelesen."
+   ],
+   "Y": [
+    "Das Feld maxbt aus zfi_payrel_lim wird gelesen."
+   ],
+   "Z": [
+    "Aus der Tabelle ZFI_PAYREL_LIM wird der maximale Freigabebetrag für den Benutzer, den Buchungskreis und die Währung gelesen."
+   ]
+  },
+  {
+   "id": "BM-059-B15",
+   "soll": "Wartet eine Zahlung bereits auf die Zweitfreigabe, wird sie endgültig freigegeben, sofern der Benutzer nicht selbst der Erstfreigeber ist; sonst wird sie mit Hinweis übersprungen.",
+   "zeilen": [
+    186,
+    188,
+    189,
+    192
+   ],
+   "code": [
+    "186:     IF gs_pay-status = gc_status_first.",
+    "188:       IF gs_pay-rel1_user = sy-uname.",
+    "189:         MESSAGE i024 WITH gs_pay-vblnr gs_pay-rel1_user.",
+    "192:       gs_pay-status    = gc_status_final."
+   ],
+   "X": [
+    "Für gs_pay-rel1_user mit dem Wert sy-uname wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ],
+   "Y": [
+    "Wenn das Feld gs_pay-rel1_user gleich sy-uname ist, wird eine Informationsmeldung ausgegeben und der Schleifendurchlauf übersprungen.",
+    "Die Informationsmeldung 024 wird ausgegeben."
+   ],
+   "Z": [
+    "Hat die Zahlung den Status der Erstfreigabe und ist der Benutzer nicht der Erstfreigeber, erhält sie den Status F für die endgültige Freigabe und der Benutzer wird als Zweitfreigeber eingetragen."
+   ]
+  },
+  {
+   "id": "BM-059-B16",
+   "soll": "Liegt der Zahlbetrag (Absolutwert in Zahlungswährung) über der Grenze des Freigebers, erhält die Zahlung nur die Erstfreigabe und braucht einen zweiten Freigeber.",
+   "zeilen": [
+    196
+   ],
+   "code": [
+    "196:       gs_pay-status    = gc_status_first."
+   ],
+   "X": [],
+   "Y": [],
+   "Z": []
+  },
+  {
+   "id": "BM-059-B17",
+   "soll": "Bis zur Grenze gibt ein einzelner Freigeber die Zahlung endgültig frei.",
+   "zeilen": [
+    199
+   ],
+   "code": [
+    "199:       gs_pay-status    = gc_status_final."
+   ],
+   "X": [],
+   "Y": [],
+   "Z": []
+  },
+  {
+   "id": "BM-059-B18",
+   "soll": "Am Ende wird gemeldet, wie viele Zahlungen freigegeben und wie viele mangels Berechtigung übersprungen wurden.",
+   "zeilen": [
+    211
+   ],
+   "code": [
+    "211:   MESSAGE s025 WITH lv_cnt lv_skip."
+   ],
+   "X": [
+    "Eine Meldung wird ausgegeben."
+   ],
+   "Y": [
+    "Die Statusmeldung 025 wird ausgegeben."
+   ],
+   "Z": []
+  },
+  {
+   "id": "BM-059-B19",
+   "soll": "Zum Ablehnen muss ein Ablehnungsgrund erfasst werden; bei Abbruch oder leerem Grund wird nichts abgelehnt.",
+   "zeilen": [
+    229,
+    243
+   ],
+   "code": [
+    "229:   CALL FUNCTION 'POPUP_GET_VALUES'",
+    "243:   IF lv_rc <> 'A' AND lv_reason IS NOT INITIAL."
+   ],
+   "X": [
+    "Es wird die ls_field-tabname auf ZFI_PAYREL gesetzt, die ls_field-fieldname auf REASON gesetzt, die ls_field-field_obl auf X gesetzt, eine Zeile aufgenommen und POPUP_GET_VALUES aufgerufen.",
+    "Der Code übergibt 'Ablehnungsgrund'(t04 an POPUP_GET_VALUES und übernimmt dessen Ausgabe nach lv_rc.",
+    "Das konvertierte Ergebnis wird in lv_rc übernommen."
+   ],
+   "Y": [
+    "Es wird das Feld ls_field-tabname auf ZFI_PAYREL gesetzt, das Feld ls_field-fieldname auf REASON gesetzt, das Feld ls_field-field_obl auf X gesetzt, eine Zeile aufgenommen und POPUP_GET_VALUES aufgerufen.",
+    "Der Code übergibt 'Ablehnungsgrund'(t04 an POPUP_GET_VALUES und übernimmt dessen Ausgabe nach lv_rc."
+   ],
+   "Z": [
+    "Über den Funktionsbaustein POPUP_GET_VALUES wird ein Dialogfenster zur Eingabe des Ablehnungsgrunds aufgerufen.",
+    "Wurde die Erfassung nicht abgebrochen und ein Ablehnungsgrund eingegeben, erhalten alle markierten und nicht endgültig freigegebenen Zahlungen den Status A mit Grund und Benutzername."
+   ]
+  },
+  {
+   "id": "BM-059-B20",
+   "soll": "Markierte, noch nicht endgültig freigegebene Zahlungen werden mit Grund und ablehnendem Benutzer als abgelehnt gekennzeichnet.",
+   "zeilen": [
+    244,
+    245
+   ],
+   "code": [
+    "244:     LOOP AT gt_pay INTO gs_pay WHERE mark = 'X' AND status <> gc_status_final.",
+    "245:       gs_pay-status    = gc_status_reject."
+   ],
+   "X": [
+    "Jede Zeile aus gt_pay wird einzeln verarbeitet."
+   ],
+   "Y": [
+    "Die Zeilen aus gt_pay, bei denen das Feld mark gesetzt ist und der Status ungleich gc_status_final ist, werden einzeln verarbeitet."
+   ],
+   "Z": []
+  },
+  {
+   "id": "BM-059-B21",
+   "soll": "Gesichert wird nur, wenn ungesicherte Änderungen vorliegen und der Benutzer die Sicherheitsabfrage bestätigt.",
+   "zeilen": [
+    261,
+    263,
+    276
+   ],
+   "code": [
+    "261:   CHECK gv_changed = abap_true.",
+    "263:   CALL FUNCTION 'POPUP_TO_CONFIRM'",
+    "276:   IF gv_answer <> '1'."
+   ],
+   "X": [
+    "Nur gv_changed mit dem Wert abap_true gehen weiter; kleinere werden übersprungen, die Schleife läuft weiter.",
+    "Der Code übergibt 'Zahlungsfreigabe an POPUP_TO_CONFIRM und übernimmt dessen Ausgabe nach gv_answer.",
+    "Das konvertierte Ergebnis wird in gv_answer übernommen.",
+    "Für gv_answer ungleich 1 wird der Block verlassen.",
+    "Bei gv_answer ungleich 1 wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben."
+   ],
+   "Y": [
+    "Nur wenn das Feld gv_changed gesetzt ist, geht es weiter; sonst wird das Unterprogramm save_releases an dieser Stelle verlassen.",
+    "Der Code übergibt 'Zahlungsfreigabe an POPUP_TO_CONFIRM und übernimmt dessen Ausgabe nach gv_answer.",
+    "Wenn das Feld gv_answer ungleich 1 ist, wird vor der Datenbankoperation zurückgekehrt."
+   ],
+   "Z": [
+    "Liegen keine ungesicherten Änderungen vor, wird die Verbuchungsroutine für Freigaben nicht ausgeführt.",
+    "Über den Funktionsbaustein POPUP_TO_CONFIRM wird eine Sicherheitsabfrage zum verbindlichen Sichern der Freigaben und Ablehnungen angezeigt.",
+    "Wird die Bestätigungsabfrage nicht mit Sichern beantwortet, wird der Speichervorgang abgebrochen."
+   ]
+  },
+  {
+   "id": "BM-059-B22",
+   "soll": "Die Freigabestände des Laufs werden zur Fortschreibung der Freigabetabelle im Verbucher vorgemerkt.",
+   "zeilen": [
+    281
+   ],
+   "code": [
+    "281:   CALL FUNCTION 'Z_FI_PAYREL_UPDATE' IN UPDATE TASK"
+   ],
+   "X": [
+    "Der Baustein Z_FI_PAYREL_UPDATE wird zur Verbuchung registriert. An der Aufrufstelle wird nichts geändert. Angestoßen wird er erst mit dem COMMIT WORK in Zeile 313."
+   ],
+   "Y": [
+    "Der Baustein Z_FI_PAYREL_UPDATE wird zur Verbuchung registriert. An der Aufrufstelle wird nichts geändert. Angestoßen wird er erst mit dem COMMIT WORK in Zeile 313."
+   ],
+   "Z": [
+    "Über den Verbuchungsfunktionsbaustein Z_FI_PAYREL_UPDATE werden die Zahlungsfreigaben in der Verbuchung V1 für Laufdatum, Identifikation und Benutzer registriert."
+   ]
+  },
+  {
+   "id": "BM-059-B23",
+   "soll": "Wartet mindestens eine Zahlung des Laufs auf eine Zweitfreigabe, wird das Workflow-Ereignis SECONDRELEASEREQUIRED zum Zahllauf vorgemerkt.",
+   "zeilen": [
+    295,
+    296
+   ],
+   "code": [
+    "295:   IF sy-subrc = 0.",
+    "296:     CALL FUNCTION 'SWE_EVENT_CREATE' IN UPDATE TASK"
+   ],
+   "X": [
+    "Bei Treffer wird SWE_EVENT_CREATE aufgerufen.",
+    "Der Baustein SWE_EVENT_CREATE wird zur Verbuchung registriert. An der Aufrufstelle wird nichts geändert. Angestoßen wird er erst mit dem COMMIT WORK in Zeile 313."
+   ],
+   "Y": [
+    "Bei Treffer wird SWE_EVENT_CREATE aufgerufen.",
+    "Der Baustein SWE_EVENT_CREATE wird zur Verbuchung registriert. An der Aufrufstelle wird nichts geändert. Angestoßen wird er erst mit dem COMMIT WORK in Zeile 313."
+   ],
+   "Z": [
+    "Befindet sich mindestens eine Zahlung im Status der Erstfreigabe, wird das Workflow-Ereignis SECONDRELEASEREQUIRED für das Objekttyp ZPAYRUN in der Verbuchung erzeugt."
+   ]
+  },
+  {
+   "id": "BM-059-B24",
+   "soll": "Ist mindestens eine Zahlung des Laufs endgültig freigegeben, wird das Workflow-Ereignis RELEASED zum Zahllauf vorgemerkt.",
+   "zeilen": [
+    305,
+    306
+   ],
+   "code": [
+    "305:   IF sy-subrc = 0.",
+    "306:     CALL FUNCTION 'SWE_EVENT_CREATE' IN UPDATE TASK"
+   ],
+   "X": [
+    "Bei Treffer wird SWE_EVENT_CREATE aufgerufen.",
+    "Der Baustein SWE_EVENT_CREATE wird zur Verbuchung registriert. An der Aufrufstelle wird nichts geändert. Angestoßen wird er erst mit dem COMMIT WORK in Zeile 313."
+   ],
+   "Y": [
+    "Bei Treffer wird SWE_EVENT_CREATE aufgerufen.",
+    "Der Baustein SWE_EVENT_CREATE wird zur Verbuchung registriert. An der Aufrufstelle wird nichts geändert. Angestoßen wird er erst mit dem COMMIT WORK in Zeile 313."
+   ],
+   "Z": [
+    "Befindet sich mindestens eine Zahlung im Status der endgültigen Freigabe, wird das Workflow-Ereignis RELEASED für den Objekttyp ZPAYRUN in der Verbuchung erzeugt."
+   ]
+  },
+  {
+   "id": "BM-059-B25",
+   "soll": "Erst COMMIT WORK stößt Fortschreibung und Ereignisse asynchron an; die Erfolgsmeldung erscheint, ohne auf das Ende der Verbuchung zu warten.",
+   "zeilen": [
+    313,
+    316
+   ],
+   "code": [
+    "313:   COMMIT WORK.",
+    "316:   MESSAGE s031 WITH gv_laufd gv_laufi."
+   ],
+   "X": [
+    "Mit COMMIT WORK wird die Verbuchung der zuvor registrierten Bausteine angestoßen. Ohne AND WAIT wartet der Code das Verbuchungsergebnis nicht ab; ausgeführt oder persistiert ist damit nicht belegt.",
+    "Eine Meldung wird ausgegeben."
+   ],
+   "Y": [
+    "Mit COMMIT WORK wird die Verbuchung der zuvor registrierten Bausteine angestoßen. Ohne AND WAIT wartet der Code das Verbuchungsergebnis nicht ab; ausgeführt oder persistiert ist damit nicht belegt.",
+    "Die Statusmeldung 031 wird ausgegeben."
+   ],
+   "Z": []
+  },
+  {
+   "id": "BM-059-B26",
+   "soll": "Soll eine in der Freigabetabelle bereits endgültig freigegebene Zahlung einen anderen Status erhalten, bricht der Verbuchungsbaustein die gesamte Verbuchung ab.",
+   "zeilen": [
+    586,
+    592,
+    593
+   ],
+   "code": [
+    "586:     SELECT SINGLE * FROM zfi_payrel INTO ls_old",
+    "592:     IF sy-subrc = 0 AND ls_old-status = 'F' AND ls_pay-status <> 'F'.",
+    "593:       MESSAGE a060(zfi_pay) WITH ls_pay-vblnr ls_old-rel2_user."
+   ],
+   "X": [
+    "Es werden Sätze aus zfi_payrel selektiert.",
+    "Für sy-subrc = 0 AND ls_old-status = 'F' AND ls_pay-status <> 'F' wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ],
+   "Y": [
+    "Es werden Sätze aus zfi_payrel selektiert.",
+    "Wenn ein Treffer vorliegt, der Status gleich F ist und der Status ungleich F ist, wird eine Abbruchmeldung ausgegeben.",
+    "Die Abbruchmeldung 060(ZFI_PAY) wird ausgegeben; das Programm wird abgebrochen."
+   ],
+   "Z": [
+    "In der Verbuchung wird für jede Zahlung mit Status der bestehende Datensatz aus ZFI_PAYREL anhand von Laufdatum, Laufidentifikation, Buchungskreis und Belegnummer gelesen."
+   ]
+  },
+  {
+   "id": "BM-059-B27",
+   "soll": "Sonst wird je entschiedener Zahlung der Freigabesatz mit Status, Freigebern, Grund und Änderungsdaten geschrieben und die Sicherung in einer Historientabelle protokolliert.",
+   "zeilen": [
+    610,
+    617
+   ],
+   "code": [
+    "610:     MODIFY zfi_payrel FROM ls_rel.",
+    "617:   INSERT zfi_payrel_h FROM TABLE lt_hist ACCEPTING DUPLICATE KEYS."
+   ],
+   "X": [
+    "Eine Zeile in zfi_payrel wird eingefügt oder überschrieben. sy-subrc wird danach nicht ausgewertet."
+   ],
+   "Y": [
+    "Eine Zeile in zfi_payrel wird eingefügt oder überschrieben. sy-subrc wird danach nicht ausgewertet."
+   ],
+   "Z": [
+    "Der Freigabedatensatz mit aktuellem Status, Änderungsdatum und Änderungszeit wird in die Tabelle ZFI_PAYREL geschrieben.",
+    "Der Freigabestand wird mit einem aktuellen Zeitstempel in die Historientabelle ZFI_PAYREL_H eingefügt."
+   ]
+  },
+  {
+   "id": "BM-059-B28",
+   "soll": "Der Zahllauf kann nur eingeplant werden, wenn alle Zahlungen des Vorschlags endgültig freigegeben sind; sonst wird die Zahl der offenen, erstfreigegebenen oder abgelehnten Zahlungen gemeldet.",
+   "zeilen": [
+    329,
+    333,
+    334
+   ],
+   "code": [
+    "329:   lv_open = REDUCE i( INIT n = 0",
+    "333:   IF lv_open > 0.",
+    "334:     MESSAGE s041 WITH lv_open DISPLAY LIKE 'E'."
+   ],
+   "X": [
+    "Für lv_open größer 0 wird eine Meldung ausgegeben und der Block verlassen.",
+    "Eine Meldung wird ausgegeben.",
+    "Es wird eine Meldung ausgegeben und der Block verlassen."
+   ],
+   "Y": [
+    "Wenn das Feld lv_open größer als 0 ist, wird eine Statusmeldung ausgegeben und der Block verlassen.",
+    "Die Statusmeldung 041 wird ausgegeben, angezeigt wie eine Fehlermeldung."
+   ],
+   "Z": [
+    "Sind nicht alle Zahlungen im Status der endgültigen Freigabe, wird die Fehlermeldung 041 ausgegeben und das Starten des Zahllaufs abgebrochen."
+   ]
+  },
+  {
+   "id": "BM-059-B29",
+   "soll": "Nach einer Sicherheitsabfrage wird der Zahllauf zu Laufdatum und Identifikation per Batch-Input über die Transaktion F110 eingeplant.",
+   "zeilen": [
+    338,
+    351,
+    367
+   ],
+   "code": [
+    "338:   CALL FUNCTION 'POPUP_TO_CONFIRM'",
+    "351:   IF gv_answer <> '1'.",
+    "367:   CALL TRANSACTION 'F110' USING gt_bdcdata"
+   ],
+   "X": [
+    "Der Code übergibt 'Zahllauf an POPUP_TO_CONFIRM und übernimmt dessen Ausgabe nach gv_answer.",
+    "Das konvertierte Ergebnis wird in gv_answer übernommen.",
+    "Für gv_answer ungleich 1 wird der Block verlassen.",
+    "Bei gv_answer ungleich 1 wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "Die Anlage wird über die Transaktion F110 angestoßen. Ob und was persistiert wird, entscheidet die aufgerufene Transaktion."
+   ],
+   "Y": [
+    "Der Code übergibt 'Zahllauf an POPUP_TO_CONFIRM und übernimmt dessen Ausgabe nach gv_answer.",
+    "Wenn das Feld gv_answer ungleich 1 ist, wird vor der Datenbankoperation zurückgekehrt.",
+    "Die Transaktion F110 wird per Batch-Input im Modus E angestoßen und synchron verbucht. Ob und was persistiert wird, entscheidet die aufgerufene Transaktion."
+   ],
+   "Z": [
+    "Über den Funktionsbaustein POPUP_TO_CONFIRM wird eine Bestätigung zum Einplanen des Zahllaufs angefordert.",
+    "Wird das Einplanen nicht mit 1 bestätigt, wird der Vorgang abgebrochen.",
+    "Über einen Batch-Input wird die Transaktion F110 mit Laufdatum und Identifikation zur sofortigen Einplanung des Zahllaufs synchron aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-059-B30",
+   "soll": "Scheitert der Batch-Input, wird ein Fehler gemeldet, sonst die Einplanung des Zahllaufs bestätigt.",
+   "zeilen": [
+    371,
+    372,
+    374
+   ],
+   "code": [
+    "371:   IF sy-subrc <> 0.",
+    "372:     MESSAGE s043 WITH gv_laufd gv_laufi sy-subrc DISPLAY LIKE 'E'.",
+    "374:     MESSAGE s044 WITH gv_laufd gv_laufi."
+   ],
+   "X": [
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Ohne Treffer wird eine Meldung ausgegeben, sonst eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben.",
+    "Für andere sy-subrc wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ],
+   "Y": [
+    "Meldet die Transaktion F110 einen Fehler, wird eine Statusmeldung ausgegeben, sonst eine Statusmeldung ausgegeben.",
+    "Die Statusmeldung 043 wird ausgegeben, angezeigt wie eine Fehlermeldung.",
+    "Die Statusmeldung 044 wird ausgegeben."
+   ],
+   "Z": [
+    "Schlägt der Aufruf der Transaktion F110 fehl, wird die Fehlermeldung 043 ausgegeben; andernfalls wird die Erfolgsmeldung 044 angezeigt."
+   ]
+  },
+  {
+   "id": "BM-059-B31",
+   "soll": "Beim Zurück-Navigieren mit ungesicherten Änderungen fragt eine Sicherheitsabfrage nach; bei Bestätigung wird die Sperre gelöst und das Bild verlassen.",
+   "zeilen": [
+    420,
+    421,
+    437,
+    438,
+    439
+   ],
+   "code": [
+    "420:       IF gv_changed = abap_true.",
+    "421:         CALL FUNCTION 'POPUP_TO_CONFIRM'",
+    "437:       IF gv_answer = '1'.",
+    "438:         PERFORM unlock_run.",
+    "439:         LEAVE TO SCREEN 0."
+   ],
+   "X": [
+    "Für gv_changed mit dem Wert abap_true wird POPUP_TO_CONFIRM aufgerufen.",
+    "Für gv_changed mit dem Wert abap_true wird POPUP_TO_CONFIRM aufgerufen, sonst die gv_answer auf 1 gesetzt.",
+    "Der Code übergibt 'Zahlungsfreigabe an POPUP_TO_CONFIRM und übernimmt dessen Ausgabe nach gv_answer.",
+    "Das konvertierte Ergebnis wird in gv_answer übernommen.",
+    "Für gv_answer mit dem Wert 1 wird unlock_run aufgerufen und die Screenfolge beendet.",
+    "Bei gv_answer gleich 1 wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "Das Unterprogramm unlock_run wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Es wird unlock_run aufgerufen und die Screenfolge beendet.",
+    "Die Screenfolge wird beendet."
+   ],
+   "Y": [
+    "Wenn das Feld gv_changed gesetzt ist, wird POPUP_TO_CONFIRM aufgerufen, sonst das Feld gv_answer auf 1 gesetzt.",
+    "Der Code übergibt 'Zahlungsfreigabe an POPUP_TO_CONFIRM und übernimmt dessen Ausgabe nach gv_answer.",
+    "Wenn das Feld gv_answer gleich 1 ist, wird unlock_run aufgerufen und die Screenfolge beendet.",
+    "Das Unterprogramm unlock_run wird aufgerufen; es ruft DEQUEUE_EZFI_PAYREL auf.",
+    "Die Screenfolge wird beendet."
+   ],
+   "Z": [
+    "Beim Funktionscode BACK mit ungesicherten Änderungen wird über POPUP_TO_CONFIRM eine Abfrage zum Datenverlust angezeigt."
+   ]
+  }
+ ]
+}

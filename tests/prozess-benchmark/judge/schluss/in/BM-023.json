@@ -1,0 +1,79 @@
+{
+ "id": "BM-023",
+ "titel": "Verschrottung über Wertgrenze nur mit Grund und Kostenstelle (MB_DOCUMENT_BADI)",
+ "prozess": "Beim Buchen eines Materialbelegs ruft die Bestandsführung vor der Verbuchung die BAdI-Implementierung. Sie durchläuft alle Belegpositionen und betrachtet nur Verschrottungen (551) und deren Storno (552). Liegt der Buchungswert einer solchen Position über der fest codierten Grenze von 5.000 in Hauswährung, müssen Bewegungsgrund und Kostenstelle gepflegt sein. Fehlt eines davon, gibt die Implementierung eine Fehlermeldung mit Material und Wert aus, was die Buchung abbricht. Alle anderen Positionen und Verschrottungen unterhalb der Grenze passieren ohne Wirkung.",
+ "verboten": [
+  "source.abap:13 — kein Fachsatz „Die Verschrottung wird zur Genehmigung weitergeleitet“ (es gibt keinen Workflow, nur einen Abbruch)",
+  "source.abap:11 — kein Fachsatz „Die Wertgrenze ist je Werk einstellbar“ (die Grenze ist fest im Code)",
+  "source.abap:10 — kein Fachsatz „Alle Warenausgänge werden geprüft“ (nur 551 und 552)"
+ ],
+ "saetze": [
+  {
+   "id": "BM-023-B01",
+   "soll": "Vor dem Verbuchen eines Materialbelegs werden alle Positionen geprüft, aber nur Verschrottungen und deren Stornos (Bewegungsart 551/552) werden betrachtet.",
+   "zeilen": [
+    3,
+    9,
+    10
+   ],
+   "code": [
+    "3:   METHOD if_ex_mb_document_badi~mb_document_before_update.",
+    "9:     LOOP AT xmseg INTO ls_mseg.",
+    "10:       CHECK ls_mseg-bwart = '551' OR ls_mseg-bwart = '552'."
+   ],
+   "X": [
+    "Ist die Bewegungsart der Belegposition weder 551 noch 552, wird die Verarbeitung der aktuellen Position abgebrochen und mit der nächsten fortgefahren."
+   ],
+   "Y": [
+    "Jede Zeile aus xmseg wird einzeln verarbeitet.",
+    "Nur wenn die Bewegungsart gleich 551 ist oder die Bewegungsart gleich 552 ist, wird der Schleifendurchlauf fortgesetzt; sonst wird er übersprungen, und die Schleife läuft mit dem nächsten Durchlauf weiter."
+   ],
+   "Z": [
+    "Jede Zeile aus xmseg wird einzeln verarbeitet.",
+    "Nur ls_mseg-bwart = '551' OR ls_mseg-bwart = '552' gehen weiter; kleinere werden übersprungen, die Schleife läuft weiter."
+   ]
+  },
+  {
+   "id": "BM-023-B02",
+   "soll": "Liegt der Buchungswert einer Verschrottungsposition über 5.000 in Hauswährung, müssen Bewegungsgrund und Kostenstelle gefüllt sein.",
+   "zeilen": [
+    11,
+    12
+   ],
+   "code": [
+    "11:       IF ls_mseg-dmbtr > lv_limit.",
+    "12:         IF ls_mseg-grund IS INITIAL OR ls_mseg-kostl IS INITIAL."
+   ],
+   "X": [
+    "Ist der Betrag in Hauswährung größer als 5000.00 und ist entweder der Bewegungsgrund oder die Kostenstelle nicht gepflegt, wird die Fehlermeldung e001(zmm) unter Übergabe der Materialnummer und des Betrags in Hauswährung ausgegeben."
+   ],
+   "Y": [
+    "Wenn das Feld ls_mseg-grund leer ist oder die Kostenstelle leer ist, wird eine Fehlermeldung ausgegeben."
+   ],
+   "Z": [
+    "Für ls_mseg-grund IS INITIAL OR ls_mseg-kostl IS INITIAL wird eine Meldung ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-023-B03",
+   "soll": "Fehlt eines davon, wird mit Material und Wert eine Fehlermeldung ausgegeben und die Buchung damit abgebrochen.",
+   "zeilen": [
+    13
+   ],
+   "code": [
+    "13:           MESSAGE e001(zmm) WITH ls_mseg-matnr ls_mseg-dmbtr."
+   ],
+   "X": [
+    "Ist der Betrag in Hauswährung größer als 5000.00 und ist entweder der Bewegungsgrund oder die Kostenstelle nicht gepflegt, wird die Fehlermeldung e001(zmm) unter Übergabe der Materialnummer und des Betrags in Hauswährung ausgegeben."
+   ],
+   "Y": [
+    "Wenn das Feld ls_mseg-grund leer ist oder die Kostenstelle leer ist, wird eine Fehlermeldung ausgegeben.",
+    "Die Fehlermeldung 001(ZMM) wird ausgegeben."
+   ],
+   "Z": [
+    "Für ls_mseg-grund IS INITIAL OR ls_mseg-kostl IS INITIAL wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  }
+ ]
+}

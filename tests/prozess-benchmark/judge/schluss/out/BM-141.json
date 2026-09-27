@@ -1,0 +1,101 @@
+{
+ "id": "BM-141",
+ "urteile": [
+  {
+   "id": "BM-141-B01",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Nur Y nennt das Lesen des letzten Infotyp-0009-Satzes Subtyp 0."
+  },
+  {
+   "id": "BM-141-B02",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "grammatik",
+     "falsch"
+    ]
+   },
+   "kurz": "Keiner übersetzt Zahlweg C als Barzahlung; Z zusätzlich mit falschem 'kleinere'."
+  },
+  {
+   "id": "BM-141-B03",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Y nennt Zählen und Ausgabe; X/Z nur Ausgabe mit Variablenbedingung."
+  },
+  {
+   "id": "BM-141-B04",
+   "X": {
+    "urteil": "gleich",
+    "mangel": [
+     "redundant"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": [
+     "redundant"
+    ]
+   },
+   "kurz": "Alle geben die Anzahl mit sprechendem Text aus."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

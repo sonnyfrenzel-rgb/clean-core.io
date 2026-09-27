@@ -1,0 +1,296 @@
+{
+ "id": "BM-134",
+ "titel": "FSCM Dispute Management: Klärungsfälle aus EDI-Zahlungsavis mit Kürzungen anlegen (IDoc-Eingang, CATCH SYSTEM-EXCEPTIONS, EXIT in verschachtelten Schleifen)",
+ "prozess": "Der Eingangsbaustein erhält ein Paket von EDI-Zahlungsavisen, in denen Handelskunden Rechnungskürzungen melden. Er liest einmal die Zuordnung der Kundengründe zu Klärungsgründen. Je IDoc übernimmt er Kopf- und Kürzungssegmente. Ist der Kunde unbekannt, ist das Avis fehlerhaft. Sonst wandelt er je Kürzung den Betrag aus dem Text um; ist er ungültig, bricht er das Avis mit Fehler ab, Kürzungen bis null übergeht er. Zur Rechnungsreferenz liest er die offenen Posten des Kunden; ist die Rechnung nicht offen, bricht er das Avis mit Fehler ab. Den ersten Posten ohne bestehenden Klärungsfall versieht er mit einem neuen Klärungsfall über den gekürzten Betrag und den abgeleiteten Grund (sonst 99) und speichert die Zuordnung mit Avisnummer. Scheitert die Anlage, vermerkt er die Meldung und macht mit der nächsten Kürzung weiter. Ist das Avis fehlerfrei, setzt er Status 53; andernfalls rollt er alle noch nicht festgeschriebenen Änderungen zurück und setzt Status 51 mit dem Fehlertext. Hat ein IDoc Status 51, meldet er dem Workflow einen Fehler. Da der Baustein selbst nicht festschreibt, kann ein Rollback auch Änderungen früherer IDocs desselben Pakets zurücknehmen.",
+ "verboten": [
+  "lzdsp_f01.abap:59 — kein Fachsatz „nach einer gescheiterten Anlage werden die übrigen Kürzungen nicht mehr bearbeitet“: EXIT verlässt nur die Postenschleife, die nächste Kürzung wird weiter verarbeitet und erst am Ende zurückgerollt",
+  "z_idoc_input_zdispute.abap:53 — kein Fachsatz „nur die Änderungen des fehlerhaften IDocs werden zurückgenommen“: der Baustein schreibt nichts fest, der Rollback trifft alle offenen Änderungen des Pakets, auch die vorher mit 53 gemeldeter IDocs",
+  "lzdsp_f01.abap:62 — kein Fachsatz „die Kürzung wird auf alle offenen Posten der Rechnung verteilt“: nach dem ersten angelegten Fall wird die Postenschleife verlassen",
+  "gesamte Scheibe — kein Fachsatz „die Kürzung wird ausgebucht oder der Posten ausgeglichen“: es werden nur Klärungsfälle angelegt"
+ ],
+ "saetze": [
+  {
+   "id": "BM-134-B01",
+   "soll": "Die Zuordnung der Kürzungsgründe des Kunden zu Klärungsgründen wird einmal je Paket gelesen.",
+   "zeilen": [
+    154
+   ],
+   "code": [
+    "154:   SELECT * FROM zdsp_grund INTO TABLE gt_grund."
+   ],
+   "X": [
+    "Es werden Sätze aus zdsp_grund selektiert."
+   ],
+   "Y": [
+    "Es werden Sätze aus zdsp_grund selektiert."
+   ],
+   "Z": [
+    "Aus der Tabelle ZDSP_GRUND werden alle Einträge zur Zuordnung von Klärungsgründen in eine interne Tabelle geladen."
+   ]
+  },
+  {
+   "id": "BM-134-B02",
+   "soll": "Je IDoc werden Kopfsegment (Buchungskreis, Kunde, Avisnummer, Währung) und Kürzungssegmente (Rechnungsreferenz, Betrag, Kundengrund) übernommen.",
+   "zeilen": [
+    160,
+    161
+   ],
+   "code": [
+    "160:     LOOP AT idoc_data INTO ls_edidd WHERE docnum = ls_edidc-docnum.",
+    "161:       CASE ls_edidd-segnam."
+   ],
+   "X": [
+    "Jede Zeile aus idoc_data wird einzeln verarbeitet."
+   ],
+   "Y": [
+    "Die Zeilen aus idoc_data, bei denen das Feld docnum gleich ls_edidc-docnum ist, werden einzeln verarbeitet."
+   ],
+   "Z": [
+    "Zu dem aktuellen IDoc werden alle Segmente aus IDOC_DATA anhand der IDoc-Nummer DOCNUM durchlaufen.",
+    "Lautet der Segmentname Z1DSPHD, werden die Avis-Kopfdaten aus dem Segmentinhalt übernommen.",
+    "Lautet der Segmentname Z1DSPIT, wird die Avis-Position aus dem Segmentinhalt an die Positionsliste angehängt."
+   ]
+  },
+  {
+   "id": "BM-134-B03",
+   "soll": "Ist der Kunde des Avis unbekannt, gilt das Avis als fehlerhaft.",
+   "zeilen": [
+    23,
+    25,
+    28
+   ],
+   "code": [
+    "23:   SELECT SINGLE kunnr FROM kna1 INTO @DATA(lv_kunnr)",
+    "25:   IF sy-subrc <> 0.",
+    "28:     RETURN."
+   ],
+   "X": [
+    "Kundennummer des Kunden wird gelesen.",
+    "Ohne Treffer wird der Block verlassen.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben."
+   ],
+   "Y": [
+    "Die Kundennummer des Kunden wird gelesen.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt."
+   ],
+   "Z": [
+    "In der Tabelle KNA1 wird die Kundennummer KUNNR anhand der Kundennummer aus den Avis-Kopfdaten gesucht.",
+    "Wurde die Kundennummer in der Tabelle KNA1 nicht gefunden, wird die Verarbeitung mit einem Fehlerkennzeichen und der Meldung, dass der Kunde unbekannt ist, abgebrochen."
+   ]
+  },
+  {
+   "id": "BM-134-B04",
+   "soll": "Jeder Kürzungsbetrag wird aus dem Text umgewandelt; ist er ungültig, wird die Verarbeitung des Avis mit Fehler abgebrochen.",
+   "zeilen": [
+    33,
+    36
+   ],
+   "code": [
+    "33:     CATCH SYSTEM-EXCEPTIONS conversion_errors = 1.",
+    "36:     IF sy-subrc = 1."
+   ],
+   "X": [
+    "Für sy-subrc mit dem Wert 1 wird der Block verlassen.",
+    "Bei sy-subrc gleich 1 wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben."
+   ],
+   "Y": [
+    "Bei Rückgabewert 1 wird die Schleife verlassen."
+   ],
+   "Z": [
+    "Tritt bei der Konvertierung des Kürzungsbetrags ein Fehler auf, wird das Fehlerkennzeichen gesetzt, eine Fehlermeldung zum ungültigen Betrag erzeugt und die Schleife über die Avis-Positionen abgebrochen."
+   ]
+  },
+  {
+   "id": "BM-134-B05",
+   "soll": "Kürzungen von null oder weniger werden übergangen.",
+   "zeilen": [
+    41
+   ],
+   "code": [
+    "41:     CHECK lv_betrag > 0."
+   ],
+   "X": [
+    "Nur Beträge größer 0 gehen weiter; kleinere werden übersprungen, die Schleife läuft weiter."
+   ],
+   "Y": [
+    "Nur Beträge größer 0 gehen weiter; kleinere und gleiche werden übersprungen, die Schleife läuft weiter."
+   ],
+   "Z": [
+    "Ist der Kürzungsbetrag nicht größer als 0, wird die Bearbeitung der aktuellen Avis-Position übersprungen."
+   ]
+  },
+  {
+   "id": "BM-134-B06",
+   "soll": "Zur Rechnungsreferenz werden die offenen Posten des Kunden im Buchungskreis gelesen; ist die Rechnung nicht offen, wird die Verarbeitung des Avis mit Fehler abgebrochen.",
+   "zeilen": [
+    43,
+    48
+   ],
+   "code": [
+    "43:     SELECT bukrs, gjahr, belnr, buzei, wrbtr FROM bsid",
+    "48:     IF lt_op IS INITIAL."
+   ],
+   "X": [
+    "Das Ergebnis enthält Buchungskreis, gjahr, belnr, buzei und wrbtr.",
+    "Es werden Sätze aus bsid selektiert.",
+    "Ohne Treffer wird der Block verlassen.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben."
+   ],
+   "Y": [
+    "Das Ergebnis enthält Buchungskreis, Geschäftsjahr, Belegnummer, buzei und Betrag in Belegwährung.",
+    "Es werden offene Debitorenposten selektiert.",
+    "Ohne Treffer wird die Schleife verlassen."
+   ],
+   "Z": [
+    "Aus der Tabelle BSID werden Buchungskreis BUKRS, Geschäftsjahr GJAHR, Belegnummer BELNR, Buchungszeile BUZEI und Betrag WRBTR passend zu Buchungskreis, Kundennummer und Rechnungsnummer gelesen.",
+    "Werden in der Tabelle BSID keine offenen Posten gefunden, wird das Fehlerkennzeichen gesetzt, die Fehlermeldung zur nicht offenen Rechnung erzeugt und die Positionsverarbeitung beendet."
+   ]
+  },
+  {
+   "id": "BM-134-B07",
+   "soll": "Hat ein offener Posten schon einen Klärungsfall, wird der nächste Posten der Rechnung betrachtet.",
+   "zeilen": [
+    55,
+    60
+   ],
+   "code": [
+    "55:       SELECT SINGLE case_id FROM zdsp_items INTO @lv_case",
+    "60:       IF sy-subrc = 0."
+   ],
+   "X": [
+    "Fall des Satzes wird gelesen."
+   ],
+   "Y": [
+    "Der Fall aus zdsp_items wird gelesen.",
+    "Bei Treffer wird der Schleifendurchlauf übersprungen."
+   ],
+   "Z": [
+    "Aus der Tabelle ZDSP_ITEMS wird anhand von Buchungskreis, Geschäftsjahr, Belegnummer und Buchungszeile die Klärungsfall-ID CASE_ID gelesen.",
+    "Existiert für den offenen Posten bereits ein Eintrag in der Tabelle ZDSP_ITEMS, wird dieser Posten übersprungen."
+   ]
+  },
+  {
+   "id": "BM-134-B08",
+   "soll": "Der Klärungsgrund wird aus dem Kundengrund abgeleitet; ist keiner zugeordnet, gilt Grund 99.",
+   "zeilen": [
+    63
+   ],
+   "code": [
+    "63:       lv_grund = VALUE #( gt_grund[ kunden_grund = ls_it-grund ]-reason DEFAULT '99' )."
+   ],
+   "X": [],
+   "Y": [],
+   "Z": []
+  },
+  {
+   "id": "BM-134-B09",
+   "soll": "Für den ersten Posten ohne Klärungsfall wird ein Klärungsfall mit dem gekürzten Betrag, der Avis-Währung und dem Grund angelegt und die Zuordnung Posten–Fall mit Avisnummer gespeichert.",
+   "zeilen": [
+    64,
+    69,
+    90
+   ],
+   "code": [
+    "64:       PERFORM dispute_anlegen USING    is_hd ls_op lv_betrag lv_grund",
+    "69:       INSERT zdsp_items FROM @( VALUE zdsp_items( bukrs   = ls_op-bukrs",
+    "90:   CALL FUNCTION 'Z_FSCM_DISPUTE_CREATE'"
+   ],
+   "X": [
+    "Das Unterprogramm dispute_anlegen wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Der Code übergibt is_hd-bukrs an Z_FSCM_DISPUTE_CREATE und übernimmt dessen Ausgabe nach cv_case.",
+    "Das konvertierte Ergebnis wird in cv_case übernommen."
+   ],
+   "Y": [
+    "Das Unterprogramm dispute_anlegen wird aufgerufen; es ruft Z_FSCM_DISPUTE_CREATE auf.",
+    "Der Code übergibt is_hd-bukrs an Z_FSCM_DISPUTE_CREATE und übernimmt dessen Ausgabe nach cv_case."
+   ],
+   "Z": [
+    "Für den offenen Posten wird das Unterprogramm DISPUTE_ANLEGEN mit dem Kürzungsbetrag und dem ermittelten Grund aufgerufen.",
+    "In die Tabelle ZDSP_ITEMS wird ein Satz mit Buchungskreis, Geschäftsjahr, Belegnummer, Buchungszeile, Klärungsfall-ID und Avisnummer eingefügt.",
+    "Der Funktionsbaustein Z_FSCM_DISPUTE_CREATE wird aufgerufen, um anhand von Buchungskreis, Kundennummer, Postendaten, Betrag, Währung und Grund einen Klärungsfall anzulegen und eine Klärungsfall-ID zurückzugeben."
+   ]
+  },
+  {
+   "id": "BM-134-B10",
+   "soll": "Scheitert die Anlage, wird die Fehlermeldung vermerkt und mit der nächsten Kürzung des Avis weitergemacht.",
+   "zeilen": [
+    66,
+    103,
+    105
+   ],
+   "code": [
+    "66:       IF cv_ok = abap_false.",
+    "103:   IF sy-subrc <> 0.",
+    "105:     MESSAGE ID sy-msgid TYPE 'E' NUMBER sy-msgno"
+   ],
+   "X": [
+    "Für cv_ok mit dem Wert abap_false wird der Block verlassen.",
+    "Bei cv_ok gleich abap_false wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ],
+   "Y": [
+    "Wenn das Feld cv_ok nicht gesetzt ist, wird die Schleife verlassen.",
+    "Scheitert der Aufruf von Z_FSCM_DISPUTE_CREATE, wird der Meldungstext in cv_msg übernommen.",
+    "Der Meldungstext wird in cv_msg übernommen; angezeigt wird dabei nichts."
+   ],
+   "Z": [
+    "Schlägt das Anlegen des Klärungsfalls fehl, wird die Schleife über die offenen Posten abgebrochen."
+   ]
+  },
+  {
+   "id": "BM-134-B11",
+   "soll": "Ist das Avis fehlerfrei, erhält das IDoc den Status 53; sonst werden alle noch nicht festgeschriebenen Änderungen zurückgerollt und das IDoc erhält den Status 51 mit dem Fehlertext.",
+   "zeilen": [
+    117,
+    172,
+    173,
+    176,
+    177
+   ],
+   "code": [
+    "117:   APPEND VALUE #( docnum = iv_docnum",
+    "172:     IF lv_ok = abap_true.",
+    "173:       PERFORM status_setzen TABLES idoc_status",
+    "176:       ROLLBACK WORK.",
+    "177:       PERFORM status_setzen TABLES idoc_status"
+   ],
+   "X": [
+    "Eine Zeile wird in ct_status aufgenommen.",
+    "Für lv_ok mit dem Wert abap_true wird status_setzen aufgerufen.",
+    "Für lv_ok mit dem Wert abap_true wird status_setzen aufgerufen, sonst ROLLBACK WORK ausgeführt und status_setzen aufgerufen.",
+    "Das Unterprogramm status_setzen wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Für andere lv_ok wird ROLLBACK WORK ausgeführt und status_setzen aufgerufen.",
+    "Mit ROLLBACK WORK wird die Änderung verworfen; nichts ist persistiert.",
+    "Es wird ROLLBACK WORK ausgeführt und status_setzen aufgerufen.",
+    "Das Unterprogramm status_setzen wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt."
+   ],
+   "Y": [
+    "Eine Zeile wird in ct_status aufgenommen.",
+    "Wenn das Feld lv_ok gesetzt ist, wird status_setzen aufgerufen, sonst ROLLBACK WORK ausgeführt und status_setzen aufgerufen.",
+    "Das Unterprogramm status_setzen wird aufgerufen.",
+    "Mit ROLLBACK WORK werden die noch nicht festgeschriebenen Änderungen verworfen.",
+    "Das Unterprogramm status_setzen wird aufgerufen."
+   ],
+   "Z": [
+    "War die Verarbeitung des Avis erfolgreich, wird für die IDoc-Nummer ein Statussatz mit dem Status 53 und dem Text Klärungsfälle angelegt hinzugefügt.",
+    "War die Verarbeitung des Avis nicht erfolgreich, werden alle Datenbankänderungen zurückgerollt und für die IDoc-Nummer wird ein Statussatz mit dem Status 51 und der Fehlermeldung hinzugefügt."
+   ]
+  },
+  {
+   "id": "BM-134-B12",
+   "soll": "Hat mindestens ein IDoc des Pakets Status 51, meldet der Baustein dem Workflow einen Fehler.",
+   "zeilen": [
+    182
+   ],
+   "code": [
+    "182:   workflow_result = COND #( WHEN line_exists( idoc_status[ status = '51' ] )"
+   ],
+   "X": [],
+   "Y": [],
+   "Z": [
+    "Enthält die Statustabelle mindestens einen Satz mit dem Status 51, wird das Workflow-Ergebnis auf 99999 gesetzt; andernfalls wird es auf 0 gesetzt."
+   ]
+  }
+ ]
+}

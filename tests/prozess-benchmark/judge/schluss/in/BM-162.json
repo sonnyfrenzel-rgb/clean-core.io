@@ -1,0 +1,73 @@
+{
+ "id": "BM-162",
+ "titel": "IS-Oil: Temperaturkorrektur einer Tankmenge auf 15 °C mit Ausdehnungskoeffizient",
+ "prozess": "Der Funktionsbaustein wird von Erfassungsprogrammen des Tanklagers mit Material, gemessener Literzahl und Messtemperatur gerufen. Zuerst prüft er, ob die Temperatur zwischen -30 °C und 60 °C liegt, und bricht sonst mit einer Ausnahme ab. Dann liest er den Ausdehnungskoeffizienten des Materials aus einer Kundentabelle; ist keiner gepflegt, endet er mit Nachricht und der Ausnahme „kein Koeffizient“. Andernfalls rechnet er die Menge linear auf 15 °C um: gemessene Menge mal (1 minus Koeffizient mal Temperaturdifferenz zu 15 °C). Ist der Koeffizient im Satz leer, wird der Faktor 1 verwendet und die Menge unverändert zurückgegeben. Es wird nichts gebucht und nichts geschrieben.",
+ "verboten": [
+  "source.abap:30 — kein Fachsatz „die Korrektur erfolgt nach ASTM-Tabelle 54B bzw. Dichte-abhängig“: gerechnet wird eine lineare Näherung mit einem einzigen Koeffizienten je Material",
+  "source.abap:25 — kein Fachsatz „ohne Koeffizient wird die gemessene Menge übernommen“: der Baustein endet mit Ausnahme, die Exportmenge bleibt leer; nur ein gepflegter, aber leerer Koeffizient führt zu Faktor 1",
+  "gesamte Scheibe — kein Fachsatz „Tankbestand oder Materialbeleg wird gebucht“: der Baustein rechnet nur"
+ ],
+ "saetze": [
+  {
+   "id": "BM-162-B01",
+   "soll": "Liegt die gemessene Temperatur unter -30 °C oder über 60 °C, bricht die Umrechnung mit der Ausnahme „Temperatur unplausibel“ ab.",
+   "zeilen": [
+    18,
+    19
+   ],
+   "code": [
+    "18:   IF iv_temp_c < -30 OR iv_temp_c > 60.",
+    "19:     RAISE temperatur_unplausibel."
+   ],
+   "X": [],
+   "Y": [
+    "Ist die Temperatur kleiner als -30 oder größer als 60, wird die Ausnahme TEMPERATUR_UNPLAUSIBEL ausgelöst."
+   ],
+   "Z": []
+  },
+  {
+   "id": "BM-162-B02",
+   "soll": "Der Ausdehnungskoeffizient des Materials wird aus der Kundentabelle gelesen; fehlt er, endet die Umrechnung mit der Ausnahme „kein Koeffizient“.",
+   "zeilen": [
+    22,
+    24,
+    25
+   ],
+   "code": [
+    "22:   SELECT SINGLE * FROM zoil_koeff INTO ls_koef",
+    "24:   IF sy-subrc <> 0.",
+    "25:     MESSAGE e012(zoil) WITH iv_matnr RAISING kein_koeffizient."
+   ],
+   "X": [
+    "Es werden Sätze aus zoil_koeff selektiert.",
+    "Ohne Treffer wird die Ausnahme kein_koeffizient ausgelöst.",
+    "Die Ausnahme kein_koeffizient wird ausgelöst; die Meldung 012(ZOIL) erscheint nur, wenn der Aufrufer die Ausnahme nicht behandelt."
+   ],
+   "Y": [
+    "Aus der Tabelle ZOIL_KOEFF wird der Datensatz zur Materialnummer MATNR gelesen.",
+    "Wird kein Eintrag in der Tabelle ZOIL_KOEFF gefunden, wird die Fehlermeldung E012 der Nachrichtenklasse ZOIL mit der Materialnummer ausgegeben und die Ausnahme KEIN_KOEFFIZIENT ausgelöst."
+   ],
+   "Z": [
+    "Es werden Sätze aus zoil_koeff selektiert.",
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-162-B03",
+   "soll": "Die Menge bei 15 °C ergibt sich aus der gemessenen Menge mal (1 − Koeffizient × (Temperatur − 15)); ist der Koeffizient leer, wird die Menge unverändert übernommen.",
+   "zeilen": [
+    30
+   ],
+   "code": [
+    "30:   ev_menge_l15 = iv_menge_l * COND #( WHEN ls_koef-alpha IS INITIAL THEN 1"
+   ],
+   "X": [],
+   "Y": [
+    "Ist das Feld ALPHA in der Tabelle ZOIL_KOEFF initial, wird die Menge bei 15 Grad als die übergebene Menge multipliziert mit 1 berechnet.",
+    "Ist das Feld ALPHA in der Tabelle ZOIL_KOEFF nicht initial, wird die Menge bei 15 Grad aus der übergebenen Menge multipliziert mit der Differenz aus 1 und dem Produkt des Feldes ALPHA mit der um 15 verringerten Temperatur berechnet."
+   ],
+   "Z": []
+  }
+ ]
+}

@@ -1,0 +1,95 @@
+{
+ "id": "BM-084",
+ "titel": "Workflow-Ereignis bei Änderung eines Kreditors mit Bankverbindung",
+ "prozess": "Beim Sichern eines Kreditors ruft der Kundenexit den Baustein mit den Kreditor-Kopfdaten auf. Er liest die bereits gespeicherten Bankverbindungen des Kreditors. Gibt es keine, verlässt er sich ohne Workflow – bei Neuanlagen wird also nichts ausgelöst. Sonst löst er für den Kreditor das Ereignis BANKCHANGED des kundeneigenen Objekttyps ZLFA1 aus, an dem ein Freigabe-Workflow hängen soll. Obwohl der Kommentar von geänderten Bankverbindungen spricht, prüft der Code nicht, ob sich die Bankdaten tatsächlich ändern. Scheitert die Ereigniserzeugung, erscheint lediglich eine Warnung; das Sichern läuft weiter, wirksam wird das Ereignis erst mit dem COMMIT des Aufrufers.",
+ "verboten": [
+  "source.abap:19 — kein Fachsatz „nur bei geänderter Bankverbindung“ (der Code vergleicht keine Bankdaten; jede Änderung eines Kreditors mit gespeicherter Bank löst das Ereignis aus, trotz Kommentar).",
+  "source.abap:19 — kein Fachsatz „Freigabe-Workflow ist gestartet“ (das Ereignis wird erst mit dem COMMIT des Aufrufers wirksam; hier kein COMMIT).",
+  "source.abap:28 — kein Fachsatz „Sichern wird abgelehnt“ (Warnung, kein Fehler)."
+ ],
+ "saetze": [
+  {
+   "id": "BM-084-B01",
+   "soll": "Es werden die bereits gespeicherten Bankverbindungen des Kreditors gelesen.",
+   "zeilen": [
+    12
+   ],
+   "code": [
+    "12:   SELECT * FROM lfbk INTO TABLE lt_lfbk_old"
+   ],
+   "X": [
+    "Aus der Tabelle LFBK werden alle Einträge zur Lieferantennummer gelesen."
+   ],
+   "Y": [
+    "Es werden Sätze aus lfbk selektiert."
+   ],
+   "Z": [
+    "Es werden Sätze aus lfbk selektiert."
+   ]
+  },
+  {
+   "id": "BM-084-B02",
+   "soll": "Hat der Kreditor noch keine gespeicherte Bankverbindung, wird kein Workflow angestoßen.",
+   "zeilen": [
+    14,
+    15
+   ],
+   "code": [
+    "14:   IF lines( lt_lfbk_old ) = 0.",
+    "15:     EXIT.          \"Neuanlage oder ohne Bank - kein Workflow"
+   ],
+   "X": [
+    "Ist die Anzahl der gelesenen Einträge aus der Tabelle LFBK gleich 0, wird die Verarbeitung beendet."
+   ],
+   "Y": [
+    "Für lines( lt_lfbk_old ) = 0 wird der Block verlassen."
+   ],
+   "Z": [
+    "Wenn die Bedingung „lines( lt_lfbk_old ) = 0“ erfüllt ist, wird der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-084-B03",
+   "soll": "Sonst wird für den Kreditor das Workflow-Ereignis BANKCHANGED ausgelöst.",
+   "zeilen": [
+    19
+   ],
+   "code": [
+    "19:   CALL FUNCTION 'SWE_EVENT_CREATE'"
+   ],
+   "X": [
+    "Über den Funktionsbaustein SWE_EVENT_CREATE wird für den Objekttyp ZLFA1 und die Lieferantennummer das Ereignis BANKCHANGED erzeugt.",
+    "Tritt beim Erzeugen des Ereignisses ein Fehler auf (Rückgabewert ungleich 0), wird die Warnmeldung w001(zfi_wf) mit der Lieferantennummer ausgegeben."
+   ],
+   "Y": [
+    "Der Funktionsbaustein SWE_EVENT_CREATE wird aufgerufen."
+   ],
+   "Z": [
+    "Der Funktionsbaustein SWE_EVENT_CREATE wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-084-B04",
+   "soll": "Kann das Ereignis nicht erzeugt werden, erscheint eine Warnung mit der Kreditornummer; das Sichern wird nicht verhindert.",
+   "zeilen": [
+    27,
+    28
+   ],
+   "code": [
+    "27:   IF sy-subrc <> 0.",
+    "28:     MESSAGE w001(zfi_wf) WITH is_lfa1-lifnr."
+   ],
+   "X": [
+    "Tritt beim Erzeugen des Ereignisses ein Fehler auf (Rückgabewert ungleich 0), wird die Warnmeldung w001(zfi_wf) mit der Lieferantennummer ausgegeben."
+   ],
+   "Y": [
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ],
+   "Z": [
+    "Scheitert der Aufruf von SWE_EVENT_CREATE, wird eine Warnung ausgegeben.",
+    "Die Warnung 001(ZFI_WF) wird ausgegeben."
+   ]
+  }
+ ]
+}

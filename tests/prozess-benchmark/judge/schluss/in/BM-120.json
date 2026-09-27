@@ -1,0 +1,521 @@
+{
+ "id": "BM-120",
+ "titel": "Freischaltung (WCM) im Modulpool: Auftrag sperren, Schritte setzen und im Vier-Augen-Prinzip prüfen, zurücknehmen, verbuchen, Status „freigeschaltet“",
+ "prozess": "Der Monteur ruft die Freischalttransaktion auf und gibt einen Instandhaltungsauftrag ein. Mit „Weiter“ prüft das Programm, dass es ein Instandhaltungsauftrag und freigegeben ist, merkt sich, ob er technisch abgeschlossen ist, und sperrt ihn; jeder Fehler wird am Einstiegsbild gemeldet. Dann liest es die Freischaltschritte aller Vorgänge in Vorgangs- und Schrittfolge; ohne Schritte hebt es die Sperre auf und meldet einen Fehler. Sonst merkt es den Auftrag im Benutzerkontext und zeigt die Schrittliste. Dort vermerkt „Setzen“ markierte offene oder zurückgenommene Schritte als gesetzt mit Benutzer und Zeitpunkt. „Prüfen“ macht markierte gesetzte Schritte wirksam; hat der Prüfer den Schritt selbst gesetzt, bricht es mit Fehler ab, außer für den Benutzer WCM_ADMIN, und bereits in dieser Aktion geprüfte Schritte bleiben geprüft. „Zurücknehmen“ ist nur bei technisch abgeschlossenem Auftrag erlaubt und setzt markierte wirksame Schritte zurück. „Sichern“ meldet ohne Änderungen nur einen Hinweis; sonst werden alle Schritte zur Verbuchung vorgemerkt, bei keinem offenen oder nur gesetzten Schritt erhält der Auftrag den Anwenderstatus „freigeschaltet“, und alles wird synchron festgeschrieben, wobei die Verbuchung Schritte und Statusprotokoll schreibt. „Zurück“ fragt bei ungesicherten Änderungen nach: Ja sichert, Abbrechen bleibt in der Liste, Nein verwirft; danach wird die Sperre aufgehoben und zum Einstieg zurückgekehrt. Abbrechen oder Beenden hebt die Sperre ohne Rückfrage auf und verlässt die Transaktion.",
+ "verboten": [
+  "mzpm_freischalt_f01.abap:165 — kein Fachsatz „der Auftrag gilt nur als freigeschaltet, wenn alle Schritte wirksam sind“: geprüft wird nur, dass kein Schritt OFFEN oder GESETZT ist; sind alle Schritte zurückgenommen, wird E0010 ebenfalls gesetzt",
+  "mzpm_freischalt_f01.abap:110 — kein Fachsatz „das Vier-Augen-Prinzip gilt ausnahmslos“: der Benutzer WCM_ADMIN darf eigene Schritte prüfen",
+  "mzpm_freischalt_f01.abap:111 — kein Fachsatz „bei einem Vier-Augen-Verstoß bleiben alle markierten Schritte unverändert“: die vorher in derselben Schleife geprüften Schritte stehen bereits auf AKT und werden beim nächsten Sichern geschrieben",
+  "gesamte Scheibe — kein Fachsatz „die Berechtigung des Benutzers für Werk oder Auftrag wird geprüft“: das Programm enthält keine Berechtigungsprüfung; die PBO-Module (Include MZPM_FREISCHALT_O01) liegen nicht im Fall"
+ ],
+ "saetze": [
+  {
+   "id": "BM-120-B01",
+   "soll": "Abbrechen oder Beenden hebt die Sperre auf den Auftrag auf und verlässt die Transaktion ohne Rückfrage; ungesicherte Änderungen verfallen.",
+   "zeilen": [
+    225,
+    227,
+    230
+   ],
+   "code": [
+    "225:   CASE ok_code.",
+    "227:       CALL FUNCTION 'DEQUEUE_EZPM_FREISCH'",
+    "230:       LEAVE PROGRAM."
+   ],
+   "X": [
+    "Wird der Befehl CANC oder EXIT gewählt, wird die Auftragssperre über den Funktionsbaustein DEQUEUE_EZPM_FREISCH freigegeben.",
+    "Nach Freigabe der Sperre bei CANC oder EXIT wird das Programm verlassen."
+   ],
+   "Y": [
+    "Der Funktionsbaustein DEQUEUE_EZPM_FREISCH wird aufgerufen.",
+    "Es wird DEQUEUE_EZPM_FREISCH aufgerufen und die Screenfolge beendet.",
+    "Die Screenfolge wird beendet."
+   ],
+   "Z": [
+    "Der Funktionsbaustein DEQUEUE_EZPM_FREISCH wird aufgerufen.",
+    "Es wird DEQUEUE_EZPM_FREISCH aufgerufen und das Programm beendet.",
+    "Das Programm wird beendet."
+   ]
+  },
+  {
+   "id": "BM-120-B02",
+   "soll": "Mit „Weiter“ wird der eingegebene Auftrag geprüft; ist er kein Instandhaltungsauftrag, wird er mit Fehlermeldung abgewiesen.",
+   "zeilen": [
+    48,
+    56,
+    57,
+    241,
+    244
+   ],
+   "code": [
+    "48:   SELECT SINGLE a~aufnr, a~auart, a~objnr, a~werks, f~iwerk,",
+    "56:   IF sy-subrc <> 0.",
+    "57:     MESSAGE e230 WITH gv_aufnr.",
+    "241:   CASE ok_code.",
+    "244:       PERFORM auftrag_lesen."
+   ],
+   "X": [
+    "Aus den Tabellen AUFK, AFIH und ILOA werden Auftragsdaten, Equipmentnummer und Technischer Platz zur Auftragsnummer mit dem Auftragstyp 30 gelesen.",
+    "Wird kein passender Auftrag gefunden, wird die Fehlermeldung E230 mit der Auftragsnummer ausgegeben.",
+    "Wird auf Bild 0100 der Funktionscode WEIT gewählt, wird das Unterprogramm zur Auftragsprüfung AUFTRAG_LESEN aufgerufen.",
+    "Nach erfolgreicher Auftragsprüfung wird das Unterprogramm zum Laden der Schritte SCHRITTE_LESEN aufgerufen, die Auftragsnummer im SPA/GPA-Parameter ANR abgelegt und auf Bild 0200 gewechselt.",
+    "Wird auf Bild 0100 der Funktionscode BACK gewählt, wird das Programm verlassen."
+   ],
+   "Y": [
+    "Es werden Sätze aus aufk selektiert.",
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben.",
+    "Das Unterprogramm auftrag_lesen wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Es wird auftrag_lesen aufgerufen und schritte_lesen aufgerufen."
+   ],
+   "Z": [
+    "Es werden Auftragsstammsätze selektiert.",
+    "Ohne Treffer wird eine Fehlermeldung ausgegeben.",
+    "Die Fehlermeldung 230 wird ausgegeben.",
+    "Das Unterprogramm auftrag_lesen wird aufgerufen; es ruft STATUS_CHECK und ENQUEUE_EZPM_FREISCH auf, liest Auftragsstammsätze und gibt eine Meldung aus.",
+    "Die Unterprogramme auftrag_lesen und schritte_lesen werden nacheinander aufgerufen, jedes ohne Parameter."
+   ]
+  },
+  {
+   "id": "BM-120-B03",
+   "soll": "Ist der Auftrag nicht freigegeben, wird er mit Fehlermeldung abgewiesen.",
+   "zeilen": [
+    60,
+    67,
+    68
+   ],
+   "code": [
+    "60:   CALL FUNCTION 'STATUS_CHECK'",
+    "67:   IF sy-subrc <> 0.",
+    "68:     MESSAGE e231 WITH gv_aufnr."
+   ],
+   "X": [
+    "Über den Funktionsbaustein STATUS_CHECK wird geprüft, ob für das Auftragsobjekt der Status I0002 aktiv ist.",
+    "Ist der Status I0002 für den Auftrag nicht aktiv, wird die Fehlermeldung E231 mit der Auftragsnummer ausgegeben."
+   ],
+   "Y": [
+    "Der Funktionsbaustein STATUS_CHECK wird aufgerufen.",
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ],
+   "Z": [
+    "Der Funktionsbaustein STATUS_CHECK wird aufgerufen.",
+    "Scheitert der Aufruf von STATUS_CHECK, wird eine Fehlermeldung ausgegeben.",
+    "Die Fehlermeldung 231 wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-120-B04",
+   "soll": "Es wird vermerkt, ob der Auftrag technisch abgeschlossen ist.",
+   "zeilen": [
+    71,
+    78
+   ],
+   "code": [
+    "71:   CALL FUNCTION 'STATUS_CHECK'",
+    "78:   gv_teco = xsdbool( sy-subrc = 0 )."
+   ],
+   "X": [
+    "Über den Funktionsbaustein STATUS_CHECK wird geprüft, ob für das Auftragsobjekt der Status I0045 aktiv ist; das Prüfergebnis wird für den technischen Abschluss vermerkt."
+   ],
+   "Y": [
+    "Der Funktionsbaustein STATUS_CHECK wird aufgerufen."
+   ],
+   "Z": [
+    "Der Funktionsbaustein STATUS_CHECK wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-120-B05",
+   "soll": "Der Auftrag wird für die Freischaltung gesperrt; bearbeitet ihn schon jemand, wird mit Fehlermeldung abgewiesen.",
+   "zeilen": [
+    80,
+    87,
+    88
+   ],
+   "code": [
+    "80:   CALL FUNCTION 'ENQUEUE_EZPM_FREISCH'",
+    "87:   IF sy-subrc <> 0.",
+    "88:     MESSAGE e232 WITH gv_aufnr sy-msgv1."
+   ],
+   "X": [
+    "Über den Funktionsbaustein ENQUEUE_EZPM_FREISCH wird eine Sperre für die Auftragsnummer angefordert.",
+    "Kann die Sperre für den Auftrag nicht gesetzt werden, wird die Fehlermeldung E232 mit der Auftragsnummer und dem sperrenden Benutzer ausgegeben."
+   ],
+   "Y": [
+    "Der Funktionsbaustein ENQUEUE_EZPM_FREISCH wird aufgerufen.",
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ],
+   "Z": [
+    "Der Funktionsbaustein ENQUEUE_EZPM_FREISCH wird aufgerufen.",
+    "Ist die Sperre über ENQUEUE_EZPM_FREISCH nicht zu erhalten, wird eine Fehlermeldung ausgegeben.",
+    "Die Fehlermeldung 232 wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-120-B06",
+   "soll": "Die Freischaltschritte aller Vorgänge des Auftrags werden in Vorgangs- und Schrittfolge gelesen; gibt es keine, wird die Sperre aufgehoben und mit Fehlermeldung abgewiesen.",
+   "zeilen": [
+    99,
+    108,
+    109,
+    112,
+    245
+   ],
+   "code": [
+    "99:   SELECT f~aufpl, f~aplzl, v~vornr, v~ltxa1, f~schritt, f~objekt,",
+    "108:   IF gt_steps IS INITIAL.",
+    "109:     CALL FUNCTION 'DEQUEUE_EZPM_FREISCH'",
+    "112:     MESSAGE e233 WITH gv_aufnr.",
+    "245:       PERFORM schritte_lesen."
+   ],
+   "X": [
+    "Aus den Tabellen ZPM_FREISCH, AFVC und AFKO werden alle Freischaltschritte zu den Vorgängen des Auftrags sortiert nach Vorgangs- und Schrittnummer gelesen.",
+    "Sind keine Freischaltschritte zum Auftrag vorhanden, wird die Auftragssperre über den Funktionsbaustein DEQUEUE_EZPM_FREISCH freigegeben.",
+    "Sind keine Freischaltschritte zum Auftrag vorhanden, wird die Fehlermeldung E233 mit der Auftragsnummer ausgegeben.",
+    "Nach erfolgreicher Auftragsprüfung wird das Unterprogramm zum Laden der Schritte SCHRITTE_LESEN aufgerufen, die Auftragsnummer im SPA/GPA-Parameter ANR abgelegt und auf Bild 0200 gewechselt."
+   ],
+   "Y": [
+    "Es werden Sätze aus zpm_freisch selektiert.",
+    "Ohne Treffer wird DEQUEUE_EZPM_FREISCH aufgerufen und eine Meldung ausgegeben.",
+    "Der Funktionsbaustein DEQUEUE_EZPM_FREISCH wird aufgerufen.",
+    "Es wird DEQUEUE_EZPM_FREISCH aufgerufen und eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben.",
+    "Es wird auftrag_lesen aufgerufen und schritte_lesen aufgerufen.",
+    "Das Unterprogramm schritte_lesen wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt."
+   ],
+   "Z": [
+    "Es werden Sätze aus zpm_freisch selektiert.",
+    "Ohne Treffer wird DEQUEUE_EZPM_FREISCH aufgerufen und eine Fehlermeldung ausgegeben.",
+    "Der Funktionsbaustein DEQUEUE_EZPM_FREISCH wird aufgerufen.",
+    "Die Fehlermeldung 233 wird ausgegeben.",
+    "Die Unterprogramme auftrag_lesen und schritte_lesen werden nacheinander aufgerufen, jedes ohne Parameter.",
+    "Das Unterprogramm schritte_lesen wird aufgerufen; es ruft DEQUEUE_EZPM_FREISCH auf, liest ZPM_FREISCH und gibt eine Meldung aus."
+   ]
+  },
+  {
+   "id": "BM-120-B07",
+   "soll": "Danach wird die Auftragsnummer im Benutzerkontext vorgemerkt und die Schrittliste angezeigt.",
+   "zeilen": [
+    246,
+    247
+   ],
+   "code": [
+    "246:       SET PARAMETER ID 'ANR' FIELD gv_aufnr.",
+    "247:       LEAVE TO SCREEN 0200."
+   ],
+   "X": [
+    "Nach erfolgreicher Auftragsprüfung wird das Unterprogramm zum Laden der Schritte SCHRITTE_LESEN aufgerufen, die Auftragsnummer im SPA/GPA-Parameter ANR abgelegt und auf Bild 0200 gewechselt."
+   ],
+   "Y": [
+    "Die Screenfolge wird beendet."
+   ],
+   "Z": [
+    "Es geht weiter mit Bild 0200."
+   ]
+  },
+  {
+   "id": "BM-120-B08",
+   "soll": "„Setzen“ vermerkt markierte offene oder zurückgenommene Schritte als gesetzt mit Benutzer und Zeitpunkt; andere markierte Schritte bleiben mit Hinweis unverändert.",
+   "zeilen": [
+    123,
+    124,
+    125,
+    128,
+    273
+   ],
+   "code": [
+    "123:   LOOP AT gt_steps ASSIGNING FIELD-SYMBOL(<ls_st>) WHERE mark = abap_true.",
+    "124:     IF <ls_st>-status <> 'OFFEN' AND <ls_st>-status <> 'ZURUECK'.",
+    "125:       MESSAGE i234 WITH <ls_st>-vornr <ls_st>-schritt.",
+    "128:     <ls_st>-status      = 'GESETZT'.",
+    "273:       PERFORM schritt_setzen."
+   ],
+   "X": [
+    "Alle in der Tabelle markierten Freischaltschritte werden nacheinander verarbeitet.",
+    "Besitzt ein markierter Freischaltschritt weder den Status OFFEN noch ZURUECK, wird die Informationsmeldung I234 ausgegeben und der Schritt übersprungen.",
+    "Für markierte Schritte im Status OFFEN oder ZURUECK wird der Status auf GESETZT gesetzt, der aktuelle Benutzer und Zeitstempel vermerkt, die Markierung gelöscht und das Änderungskennzeichen gesetzt.",
+    "Wird auf Bild 0200 der Funktionscode SETZ gewählt, wird das Unterprogramm SCHRITT_SETZEN ausgeführt."
+   ],
+   "Y": [
+    "Jede Zeile aus gt_steps wird einzeln verarbeitet.",
+    "Für <ls_st>-status <> 'OFFEN' AND <ls_st>-status <> 'ZURUECK' wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben.",
+    "Die Status wird auf GESETZT gesetzt.",
+    "Das Unterprogramm schritt_setzen wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt."
+   ],
+   "Z": [
+    "Die Zeilen aus gt_steps, bei denen das Feld mark gesetzt ist, werden einzeln verarbeitet.",
+    "Wenn der Status ungleich OFFEN ist und der Status ungleich ZURUECK ist, wird eine Informationsmeldung ausgegeben und der Schleifendurchlauf übersprungen.",
+    "Die Informationsmeldung 234 wird ausgegeben.",
+    "Der Status wird auf GESETZT gesetzt.",
+    "Das Unterprogramm schritt_setzen wird aufgerufen; es gibt eine Meldung aus."
+   ]
+  },
+  {
+   "id": "BM-120-B09",
+   "soll": "„Prüfen“ macht markierte gesetzte Schritte wirksam (AKT) mit Prüfer und Zeitpunkt; nicht gesetzte markierte Schritte werden übergangen.",
+   "zeilen": [
+    143,
+    144,
+    148,
+    276
+   ],
+   "code": [
+    "143:   LOOP AT gt_steps ASSIGNING FIELD-SYMBOL(<ls_st>) WHERE mark = abap_true.",
+    "144:     CHECK <ls_st>-status = 'GESETZT'.",
+    "148:     <ls_st>-status       = 'AKT'.",
+    "276:       PERFORM schritt_pruefen."
+   ],
+   "X": [
+    "Alle in der Tabelle markierten Freischaltschritte werden zur Prüfung durchlaufen.",
+    "Es werden nur Freischaltschritte mit dem Status GESETZT weiterverarbeitet.",
+    "Erfüllt der Schritt das Vier-Augen-Prinzip, wird der Status auf AKT gesetzt, der aktuelle Benutzer als Prüfer mit Zeitstempel vermerkt, die Markierung gelöscht und das Änderungskennzeichen gesetzt.",
+    "Wird auf Bild 0200 der Funktionscode PRUEF gewählt, wird das Unterprogramm SCHRITT_PRUEFEN ausgeführt."
+   ],
+   "Y": [
+    "Jede Zeile aus gt_steps wird einzeln verarbeitet.",
+    "Nur Status mit dem Wert GESETZT gehen weiter; kleinere werden übersprungen, die Schleife läuft weiter.",
+    "Die Status wird auf AKT gesetzt.",
+    "Das Unterprogramm schritt_pruefen wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt."
+   ],
+   "Z": [
+    "Die Zeilen aus gt_steps, bei denen das Feld mark gesetzt ist, werden einzeln verarbeitet.",
+    "Nur wenn der Status gleich GESETZT ist, wird der Schleifendurchlauf fortgesetzt; sonst wird er übersprungen, und die Schleife läuft mit dem nächsten Durchlauf weiter.",
+    "Der Status wird auf AKT gesetzt.",
+    "Das Unterprogramm schritt_pruefen wird aufgerufen; es gibt eine Meldung aus."
+   ]
+  },
+  {
+   "id": "BM-120-B10",
+   "soll": "Hat der Prüfer den Schritt selbst gesetzt, wird die Prüfung mit Fehlermeldung abgebrochen, außer der Benutzer ist WCM_ADMIN.",
+   "zeilen": [
+    145,
+    146
+   ],
+   "code": [
+    "145:     IF <ls_st>-gesetzt_von = sy-uname AND sy-uname <> 'WCM_ADMIN'.",
+    "146:       MESSAGE e236 WITH <ls_st>-vornr <ls_st>-schritt."
+   ],
+   "X": [
+    "Wurde der Freischaltschritt vom aktuellen Benutzer gesetzt und ist der Benutzer ungleich WCM_ADMIN, wird die Fehlermeldung E236 mit Vorgangs- und Schrittnummer ausgegeben.",
+    "Erfüllt der Schritt das Vier-Augen-Prinzip, wird der Status auf AKT gesetzt, der aktuelle Benutzer als Prüfer mit Zeitstempel vermerkt, die Markierung gelöscht und das Änderungskennzeichen gesetzt."
+   ],
+   "Y": [
+    "Für <ls_st>-gesetzt_von = sy-uname AND sy-uname <> 'WCM_ADMIN' wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ],
+   "Z": [
+    "Wenn das Feld ls_st-gesetzt_von gleich sy-uname ist und das Feld sy-uname ungleich WCM_ADMIN ist, wird eine Fehlermeldung ausgegeben.",
+    "Die Fehlermeldung 236 wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-120-B11",
+   "soll": "„Zurücknehmen“ ist nur bei technisch abgeschlossenem Auftrag erlaubt und setzt markierte wirksame Schritte mit Benutzer auf zurückgenommen.",
+   "zeilen": [
+    164,
+    165,
+    167,
+    169,
+    279
+   ],
+   "code": [
+    "164:   IF gv_teco = abap_false.",
+    "165:     MESSAGE e237 WITH gv_aufnr.",
+    "167:   LOOP AT gt_steps ASSIGNING FIELD-SYMBOL(<ls_st>)",
+    "169:     <ls_st>-status      = 'ZURUECK'.",
+    "279:       PERFORM schritt_zuruecknehmen."
+   ],
+   "X": [
+    "Ist der Auftrag nicht technisch abgeschlossen, wird die Fehlermeldung E237 mit der Auftragsnummer ausgegeben.",
+    "Ist der Auftrag technisch abgeschlossen, werden alle markierten Freischaltschritte mit Status AKT auf den Status ZURUECK gesetzt, der aktuelle Benutzer vermerkt, die Markierung gelöscht und das Änderungskennzeichen gesetzt.",
+    "Wird auf Bild 0200 der Funktionscode ZURUE gewählt, wird das Unterprogramm SCHRITT_ZURUECKNEHMEN ausgeführt."
+   ],
+   "Y": [
+    "Für gv_teco mit dem Wert abap_false wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben.",
+    "Jede Zeile aus gt_steps wird einzeln verarbeitet.",
+    "Die Status wird auf ZURUECK gesetzt.",
+    "Das Unterprogramm schritt_zuruecknehmen wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt."
+   ],
+   "Z": [
+    "Wenn das Feld gv_teco nicht gesetzt ist, wird eine Fehlermeldung ausgegeben.",
+    "Die Fehlermeldung 237 wird ausgegeben.",
+    "Die Zeilen aus gt_steps, bei denen das Feld mark gesetzt ist und der Status gleich AKT ist, werden einzeln verarbeitet.",
+    "Der Status wird auf ZURUECK gesetzt.",
+    "Das Unterprogramm schritt_zuruecknehmen wird aufgerufen; es gibt eine Meldung aus."
+   ]
+  },
+  {
+   "id": "BM-120-B12",
+   "soll": "„Sichern“ ohne Änderungen meldet nur, dass nichts zu sichern ist.",
+   "zeilen": [
+    187,
+    188,
+    189,
+    282
+   ],
+   "code": [
+    "187:   IF gv_changed = abap_false.",
+    "188:     MESSAGE s238.",
+    "189:     RETURN.",
+    "282:       PERFORM sichern."
+   ],
+   "X": [
+    "Liegen keine Änderungen vor, wird die Erfolgsmeldung S238 ausgegeben und das Sichern abgebrochen.",
+    "Liegen Änderungen vor, wird der Verbuchungsbaustein Z_PM_FREISCH_VERBUCHEN im Verbuchungstask mit den aktuellen Freischaltschritten aufgerufen.",
+    "Wird auf Bild 0200 der Funktionscode SAVE gewählt, wird das Unterprogramm SICHERN ausgeführt."
+   ],
+   "Y": [
+    "Für gv_changed mit dem Wert abap_false wird eine Meldung ausgegeben und der Block verlassen.",
+    "Bei gv_changed gleich abap_false wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "Eine Meldung wird ausgegeben.",
+    "Es wird eine Meldung ausgegeben und der Block verlassen.",
+    "Das Unterprogramm sichern wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt."
+   ],
+   "Z": [
+    "Wenn das Feld gv_changed nicht gesetzt ist, wird eine Statusmeldung ausgegeben und vor der Datenbankoperation zurückgekehrt.",
+    "Die Statusmeldung 238 wird ausgegeben.",
+    "Das Unterprogramm sichern wird aufgerufen; es ruft Z_PM_FREISCH_VERBUCHEN (zur Verbuchung) und STATUS_CHANGE_EXTERN auf, schreibt mit COMMIT WORK fest und gibt eine Meldung aus."
+   ]
+  },
+  {
+   "id": "BM-120-B13",
+   "soll": "Sonst werden alle Schritte des Auftrags zur Verbuchung vorgemerkt.",
+   "zeilen": [
+    193
+   ],
+   "code": [
+    "193:   CALL FUNCTION 'Z_PM_FREISCH_VERBUCHEN' IN UPDATE TASK"
+   ],
+   "X": [
+    "Liegen Änderungen vor, wird der Verbuchungsbaustein Z_PM_FREISCH_VERBUCHEN im Verbuchungstask mit den aktuellen Freischaltschritten aufgerufen."
+   ],
+   "Y": [
+    "Der Baustein Z_PM_FREISCH_VERBUCHEN wird zur Verbuchung registriert. An der Aufrufstelle wird nichts geändert. Angestoßen wird er erst mit dem COMMIT WORK in Zeile 210."
+   ],
+   "Z": [
+    "Der Baustein Z_PM_FREISCH_VERBUCHEN wird zur Verbuchung registriert. An der Aufrufstelle wird nichts geändert. Angestoßen wird er erst mit dem COMMIT WORK in Zeile 210."
+   ]
+  },
+  {
+   "id": "BM-120-B14",
+   "soll": "Ist kein Schritt mehr offen oder nur gesetzt, erhält der Auftrag den Anwenderstatus E0010 „freigeschaltet“.",
+   "zeilen": [
+    200,
+    202
+   ],
+   "code": [
+    "200:   IF NOT line_exists( gt_steps[ status = 'OFFEN' ] )",
+    "202:     CALL FUNCTION 'STATUS_CHANGE_EXTERN'"
+   ],
+   "X": [
+    "Sind keine Freischaltschritte mit dem Status OFFEN oder GESETZT mehr vorhanden, wird für den Auftrag über STATUS_CHANGE_EXTERN der Anwenderstatus E0010 gesetzt."
+   ],
+   "Y": [
+    "Für NOT line_exists( gt_steps[ status = 'OFFEN' ] ) AND NOT line_exists( gt_steps[ status = 'GESETZT' ] ) wird STATUS_CHANGE_EXTERN aufgerufen.",
+    "Der Funktionsbaustein STATUS_CHANGE_EXTERN wird aufgerufen."
+   ],
+   "Z": [
+    "Wenn die Bedingung „NOT line_exists( gt_steps[ status = 'OFFEN' ] ) AND NOT line_exists( gt_steps[ status = 'GESETZT' ] )“ erfüllt ist, wird STATUS_CHANGE_EXTERN aufgerufen.",
+    "Der Funktionsbaustein STATUS_CHANGE_EXTERN wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-120-B15",
+   "soll": "Alles wird synchron festgeschrieben und die Sicherung bestätigt.",
+   "zeilen": [
+    210,
+    212
+   ],
+   "code": [
+    "210:   COMMIT WORK AND WAIT.",
+    "212:   MESSAGE s240 WITH gv_aufnr."
+   ],
+   "X": [
+    "Die Änderungen werden synchron auf der Datenbank festgeschrieben, das Änderungskennzeichen zurückgesetzt und die Erfolgsmeldung S240 ausgegeben."
+   ],
+   "Y": [
+    "Mit COMMIT WORK wird die Verbuchung der zuvor registrierten Bausteine angestoßen. Mit AND WAIT wird auf die Verbuchung gewartet; sy-subrc wird danach aber nicht ausgewertet.",
+    "Eine Meldung wird ausgegeben."
+   ],
+   "Z": [
+    "Mit COMMIT WORK wird die Verbuchung der zuvor registrierten Bausteine angestoßen. Mit AND WAIT wird auf die Verbuchung gewartet; sy-subrc wird danach aber nicht ausgewertet.",
+    "Die Statusmeldung 240 wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-120-B16",
+   "soll": "Die Verbuchung schreibt die Schritte und protokolliert je Schritt den Status mit Benutzer, Datum und Uhrzeit.",
+   "zeilen": [
+    389,
+    391
+   ],
+   "code": [
+    "389:   MODIFY zpm_freisch FROM TABLE it_freisch.",
+    "391:   INSERT zpm_freisch_log FROM TABLE @( VALUE #( FOR ls_f IN it_freisch[]"
+   ],
+   "X": [
+    "In der Verbuchung werden die übergebenen Freischaltschritte in der Datenbanktabelle ZPM_FREISCH aktualisiert bzw. eingefügt.",
+    "Für jeden übergebenen Freischaltschritt wird ein Protokollsatz mit Auftragsnummer, Schritt, neuem Status, Benutzer, Datum und Uhrzeit in die Tabelle ZPM_FREISCH_LOG geschrieben."
+   ],
+   "Y": [
+    "Eine Zeile in zpm_freisch wird eingefügt oder überschrieben. sy-subrc wird danach nicht ausgewertet."
+   ],
+   "Z": [
+    "Eine Zeile in zpm_freisch wird eingefügt oder überschrieben. sy-subrc wird danach nicht ausgewertet."
+   ]
+  },
+  {
+   "id": "BM-120-B17",
+   "soll": "„Zurück“ fragt bei ungesicherten Änderungen, ob gesichert werden soll: Ja sichert, Abbrechen bleibt auf der Liste, Nein verwirft; danach wird die Sperre aufgehoben und zum Einstieg zurückgekehrt.",
+   "zeilen": [
+    285,
+    286,
+    294,
+    295,
+    296,
+    297,
+    300,
+    304
+   ],
+   "code": [
+    "285:       IF gv_changed = abap_true.",
+    "286:         CALL FUNCTION 'POPUP_TO_CONFIRM'",
+    "294:         IF lv_answer = '1'.",
+    "295:           PERFORM sichern.",
+    "296:         ELSEIF lv_answer = 'A'.",
+    "297:           RETURN.",
+    "300:       CALL FUNCTION 'DEQUEUE_EZPM_FREISCH'",
+    "304:       LEAVE TO SCREEN 0100."
+   ],
+   "X": [
+    "Wird der Funktionscode BACK gewählt und liegen ungesicherte Änderungen vor, wird über POPUP_TO_CONFIRM eine Abfrage zum Sichern der Freischaltung angezeigt.",
+    "Wird die Bestätigungsabfrage mit Ja (Wert 1) beantwortet, wird das Unterprogramm SICHERN aufgerufen.",
+    "Vor dem Rücksprung auf Bild 0100 wird die Auftragssperre über den Funktionsbaustein DEQUEUE_EZPM_FREISCH freigegeben und der Zwischenstand bereinigt."
+   ],
+   "Y": [
+    "Für gv_changed mit dem Wert abap_true wird POPUP_TO_CONFIRM aufgerufen.",
+    "Der Code übergibt 'Freischaltung' an POPUP_TO_CONFIRM und übernimmt dessen Ausgabe nach lv_answer.",
+    "Das konvertierte Ergebnis wird in lv_answer übernommen.",
+    "Für lv_answer mit dem Wert 1 wird sichern aufgerufen.",
+    "Für lv_answer mit dem Wert 1 wird sichern aufgerufen, sonst der Block verlassen.",
+    "Das Unterprogramm sichern wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Für lv_answer mit dem Wert A wird der Block verlassen.",
+    "Der Funktionsbaustein DEQUEUE_EZPM_FREISCH wird aufgerufen.",
+    "Die Screenfolge wird beendet."
+   ],
+   "Z": [
+    "Wenn das Feld gv_changed gesetzt ist, wird POPUP_TO_CONFIRM aufgerufen.",
+    "Der Code übergibt 'Freischaltung' an POPUP_TO_CONFIRM und übernimmt dessen Ausgabe nach lv_answer.",
+    "Wenn das Feld lv_answer gleich 1 ist, wird sichern aufgerufen.",
+    "Das Unterprogramm sichern wird aufgerufen; es ruft Z_PM_FREISCH_VERBUCHEN (zur Verbuchung) und STATUS_CHANGE_EXTERN auf, schreibt mit COMMIT WORK fest und gibt eine Meldung aus.",
+    "Wenn das Feld lv_answer gleich A ist, wird der Block verlassen.",
+    "Der Funktionsbaustein DEQUEUE_EZPM_FREISCH wird aufgerufen.",
+    "Es geht weiter mit Bild 0100."
+   ]
+  }
+ ]
+}

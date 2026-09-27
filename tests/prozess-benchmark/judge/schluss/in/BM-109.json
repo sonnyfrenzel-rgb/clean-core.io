@@ -1,0 +1,222 @@
+{
+ "id": "BM-109",
+ "titel": "Sicherheitsdatenblatt-Erstversand: fällige Kunden/Stoffe ermitteln, Versandjob einplanen",
+ "prozess": "Der Report wird mit einem Zeitraum für den Warenausgang und einem Versandkennzeichen gestartet. Er liest Kunde und Material aller Lieferungen, deren Warenausgang in diesem Zeitraum vollständig gebucht ist, und verdichtet sie auf eindeutige Kombinationen; ohne Lieferungen endet er. Zu den Materialien ermittelt er die zugeordneten realen Stoffe und liest, falls es solche gibt, welche Kunden das Sicherheitsdatenblatt zu diesen Stoffen bereits erhalten haben. Je Kombination werden Materialien ohne Gefahrstoff und bereits belieferte Kunden übersprungen; alle übrigen werden als „SDB fällig“ gelistet und vorgemerkt. Ist kein Versand gewünscht oder nichts fällig, endet der Lauf nach der Liste. Andernfalls legt er einen Hintergrundjob an, legt die fälligen Kombinationen unter der Jobnummer in der Datenbank ab, plant den Versandreport in den Job ein und gibt den Job zum sofortigen Start frei. Fehler beim Anlegen des Jobs werden nicht ausgewertet, und die Protokollierung des Versands geschieht in diesem Report nicht mehr.",
+ "verboten": [
+  "source.abap:104 — kein Knoten und kein Fachsatz „der Versand wird im Protokoll vermerkt“: LOG_SCHREIBEN wird nirgends aufgerufen; ob der Versandjob protokolliert, ist aus dem Fall nicht zu wissen",
+  "source.abap:89 — kein Fachsatz „das Sicherheitsdatenblatt wird versandt“: der Report plant den Versandjob nur ein, der Versand selbst liegt außerhalb des Falls",
+  "source.abap:81 — kein Fachsatz „schlägt das Anlegen des Jobs fehl, wird abgebrochen“: sy-subrc wird nicht ausgewertet"
+ ],
+ "saetze": [
+  {
+   "id": "BM-109-B01",
+   "soll": "Es werden Kunde und Material aller Lieferungen gelesen, deren Warenausgang im eingegebenen Zeitraum vollständig gebucht ist; jede Kombination aus Kunde und Material zählt einmal.",
+   "zeilen": [
+    34,
+    41
+   ],
+   "code": [
+    "34:   SELECT k~vbeln k~kunnr p~matnr INTO TABLE gt_pos",
+    "41:   DELETE ADJACENT DUPLICATES FROM gt_pos COMPARING kunnr matnr."
+   ],
+   "X": [
+    "Aus den Tabellen LIKP, LIPS und VBUK werden Liefernummer (LIKP-VBELN), Kundennummer (LIKP-KUNNR) und Materialnummer (LIPS-MATNR) für Lieferungen selektiert, deren Ist-Warenausgangsdatum (LIKP-WADAT_IST) in der Selektion liegt und deren Gesamt-Warenbewegungsstatus (VBUK-WBSTK) gleich C ist.",
+    "Die selektierten Lieferpositionen werden nach Kundennummer und Materialnummer sortiert und doppelte Einträge werden entfernt."
+   ],
+   "Y": [
+    "Es werden Sätze aus likp selektiert."
+   ],
+   "Z": [
+    "Das Ergebnis enthält Belegnummer, Kundennummer und Materialnummer.",
+    "Es werden Lieferungen selektiert."
+   ]
+  },
+  {
+   "id": "BM-109-B02",
+   "soll": "Ohne solche Lieferungen endet der Lauf.",
+   "zeilen": [
+    42,
+    43
+   ],
+   "code": [
+    "42:   IF gt_pos IS INITIAL.",
+    "43:     RETURN."
+   ],
+   "X": [
+    "Falls keine Lieferpositionen gefunden wurden, wird die Verarbeitung beendet."
+   ],
+   "Y": [
+    "Ohne Treffer wird der Block verlassen.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben."
+   ],
+   "Z": [
+    "Ohne Treffer wird der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-109-B03",
+   "soll": "Zu den gelieferten Materialien werden die zugeordneten realen Stoffe ermittelt.",
+   "zeilen": [
+    47
+   ],
+   "code": [
+    "47:   SELECT m~matnr h~subid INTO TABLE gt_link"
+   ],
+   "X": [
+    "Aus den Tabellen ESTMJ und ESTRH werden Materialnummer (ESTMJ-MATNR) und Spezifikations-ID (ESTRH-SUBID) zu den selektierten Materialien gelesen, wenn die Spezifikationsart (ESTRH-SUBCAT) REAL_SUB entspricht."
+   ],
+   "Y": [
+    "Es werden Sätze aus estmj selektiert."
+   ],
+   "Z": [
+    "Das Ergebnis enthält Materialnummer und subid.",
+    "Es werden Sätze aus estmj zu den Einträgen aus gt_pos selektiert."
+   ]
+  },
+  {
+   "id": "BM-109-B04",
+   "soll": "Nur wenn Gefahrstoffe gefunden wurden, wird gelesen, welche Kunden das Sicherheitsdatenblatt zu diesen Stoffen bereits erhalten haben.",
+   "zeilen": [
+    53,
+    54
+   ],
+   "code": [
+    "53:   IF gt_link IS NOT INITIAL.",
+    "54:     SELECT * FROM zehs_sdb_log INTO TABLE gt_log"
+   ],
+   "X": [
+    "Wurden Spezifikationszuordnungen gefunden, werden alle Einträge aus der Tabelle ZEHS_SDB_LOG zu den ermittelten Spezifikations-IDs gelesen."
+   ],
+   "Y": [
+    "Es werden Sätze aus zehs_sdb_log selektiert."
+   ],
+   "Z": [
+    "Es werden Sätze aus zehs_sdb_log zu den Einträgen aus gt_link selektiert."
+   ]
+  },
+  {
+   "id": "BM-109-B05",
+   "soll": "Lieferpositionen ohne zugeordneten realen Stoff werden übersprungen.",
+   "zeilen": [
+    60,
+    61
+   ],
+   "code": [
+    "60:     READ TABLE gt_link INTO gs_link WITH KEY matnr = gs_pos-matnr.",
+    "61:     IF sy-subrc <> 0."
+   ],
+   "X": [
+    "Zur Materialnummer der aktuellen Lieferposition wird die zugehörige Spezifikation gesucht; wird keine Spezifikation gefunden, wird die Position übersprungen."
+   ],
+   "Y": [
+    "In der Tabelle wird nach einer passenden Zeile gesucht."
+   ],
+   "Z": [
+    "In der Tabelle gt_link wird nach einer passenden Zeile gesucht.",
+    "Ohne Treffer wird der Schleifendurchlauf übersprungen."
+   ]
+  },
+  {
+   "id": "BM-109-B06",
+   "soll": "Hat der Kunde das Sicherheitsdatenblatt zum Stoff schon erhalten, wird die Kombination übersprungen.",
+   "zeilen": [
+    64,
+    67
+   ],
+   "code": [
+    "64:     READ TABLE gt_log WITH TABLE KEY kunnr = gs_pos-kunnr",
+    "67:     IF sy-subrc = 0."
+   ],
+   "X": [
+    "In den Protokolldaten wird geprüft, ob für den Kunden und die Spezifikation bereits ein Eintrag existiert; liegt bereits ein Eintrag vor, wird die Position übersprungen."
+   ],
+   "Y": [
+    "In der Tabelle wird nach einer passenden Zeile gesucht."
+   ],
+   "Z": [
+    "In der Tabelle gt_log wird nach einer passenden Zeile gesucht.",
+    "Bei Treffer wird der Schleifendurchlauf übersprungen."
+   ]
+  },
+  {
+   "id": "BM-109-B07",
+   "soll": "Jede fällige Kombination wird vorgemerkt und mit Kunde, Stoff und Lieferung als „SDB fällig“ gelistet.",
+   "zeilen": [
+    74
+   ],
+   "code": [
+    "74:     WRITE: / gs_pos-kunnr, gs_link-subid, gs_pos-vbeln, 'SDB fällig'."
+   ],
+   "X": [
+    "Kundennummer, Spezifikations-ID, Liefernummer und der Text SDB fällig werden ausgegeben."
+   ],
+   "Y": [
+    "Es wird eine Zeile aufgenommen, Kundennummer ausgegeben, gs_link-subid ausgegeben, Belegnummer ausgegeben und SDB fällig ausgegeben.",
+    "Bei Treffern werden Kundennummer, gs_link-subid, Belegnummer und SDB fällig als Liste ausgegeben.",
+    "Kundennummer wird ausgegeben.",
+    "gs_link-subid wird ausgegeben.",
+    "Belegnummer wird ausgegeben.",
+    "SDB fällig wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code."
+   ],
+   "Z": [
+    "Es wird eine Zeile aufgenommen, Kundennummer ausgegeben, gs_link-subid ausgegeben, Belegnummer ausgegeben und SDB fällig ausgegeben.",
+    "Bei Treffern werden Kundennummer, gs_link-subid, Belegnummer und SDB fällig als Liste ausgegeben.",
+    "SDB fällig wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code."
+   ]
+  },
+  {
+   "id": "BM-109-B08",
+   "soll": "Ohne Versandkennzeichen oder ohne fällige Kombination endet der Lauf nach der Liste.",
+   "zeilen": [
+    77,
+    78
+   ],
+   "code": [
+    "77:   IF p_vers IS INITIAL OR gt_todo IS INITIAL.",
+    "78:     RETURN."
+   ],
+   "X": [
+    "Wenn der Versandparameter nicht gesetzt ist oder keine zu versendenden Einträge vorliegen, wird die Verarbeitung beendet."
+   ],
+   "Y": [
+    "Für p_vers IS INITIAL OR gt_todo IS INITIAL wird der Block verlassen."
+   ],
+   "Z": [
+    "Wenn das Feld p_vers leer ist oder das Feld gt_todo leer ist, wird der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-109-B09",
+   "soll": "Mit Versandkennzeichen wird ein Hintergrundjob ZEHS_SDB_VERSAND angelegt, die fälligen Kombinationen werden unter der Jobnummer in der Datenbank abgelegt, der Versandreport wird in den Job eingeplant und der Job zum sofortigen Start freigegeben.",
+   "zeilen": [
+    81,
+    88,
+    89,
+    92
+   ],
+   "code": [
+    "81:   CALL FUNCTION 'JOB_OPEN'",
+    "88:   EXPORT todo = gt_todo TO DATABASE indx(zs) ID gv_jobcount.",
+    "89:   SUBMIT zehs_sdb_versand WITH p_memid = gv_jobcount",
+    "92:   CALL FUNCTION 'JOB_CLOSE'"
+   ],
+   "X": [
+    "Der Hintergrundjob ZEHS_SDB_VERSAND wird über den Baustein JOB_OPEN geöffnet.",
+    "Die Liste der zu bearbeitenden Einträge wird unter der Job-Identifikationsnummer in der Zwischentabelle INDX im Bereich ZS zwischengespeichert.",
+    "Das Programm ZEHS_SDB_VERSAND wird mit der Job-Identifikationsnummer als Parameter in den Hintergrundjob ZEHS_SDB_VERSAND eingelastet.",
+    "Der Hintergrundjob wird über den Baustein JOB_CLOSE mit Sofortstart freigegeben und abgeschlossen."
+   ],
+   "Y": [
+    "Der Code übergibt gv_jobname an JOB_OPEN und übernimmt dessen Ausgabe nach gv_jobcount.",
+    "Das konvertierte Ergebnis wird in gv_jobcount übernommen.",
+    "Das Kindprogramm zehs_sdb_versand wird gestartet. Was das Kind tut, ist nicht Teil dieses Satzes.",
+    "Der Funktionsbaustein JOB_CLOSE wird aufgerufen."
+   ],
+   "Z": [
+    "Der Code übergibt gv_jobname an JOB_OPEN und übernimmt dessen Ausgabe nach gv_jobcount.",
+    "Das Programm zehs_sdb_versand wird als Schritt des Hintergrundjobs gv_jobname eingeplant. Was das Programm im Job tut, ist nicht Teil dieses Satzes.",
+    "Der Funktionsbaustein JOB_CLOSE wird aufgerufen."
+   ]
+  }
+ ]
+}

@@ -1,0 +1,676 @@
+{
+ "id": "BM-196",
+ "titel": "Frachtbrief mit Gefahrgutangaben je Transport: Druck und PDF-Mail an den Spediteur über die Nachrichtensteuerung",
+ "prozess": "Die Nachrichtensteuerung des Transports ruft für die Nachrichtenart ZFB1 die Routine ENTRY und für ZFB5 die Routine ENTRY_MAIL auf. Beide lesen zur Transportnummer der Nachricht den Transportkopf und die zugeordneten Lieferungen; fehlt eins davon, wird ein Fehler ins Nachrichtenprotokoll geschrieben und die Nachricht mit Rückgabecode 1 beendet. Anschließend werden Lieferköpfe, Lieferpositionen und der Spediteur gelesen und der kundeneigene Gefahrgutbaustein aufgerufen. Dieser verwirft Positionen ohne Menge und Leergut, liest die gültigen Gefahrgutstammdaten der Materialien, bildet je Gefahrgutposition mit Gewicht in kg eine Gefahrgutzeile (andere Einheiten werden übersprungen) und summiert je UN-Nummer und Beförderungskategorie die Punkte nach ADR 1.1.3.6; freigestellt ist der Transport ohne Kategorie 0 und mit höchstens 1000 Punkten. Findet der Baustein keine Gefahrgutstammdaten, gilt der Transport als gefahrgutfrei; fehlen Positionen, endet die Nachricht fehlerhaft. Nicht freigestellte Transporte erhalten einen Protokollhinweis auf die Kennzeichnungspflicht. Für den Druck ermittelt das Programm den Smart-Forms-Baustein, übernimmt Drucker, Sofortdruck und Vorschau aus der Nachricht, erhöht bei nicht freigestelltem Gefahrgut die Kopienzahl um eine Ausfertigung für die Fahrzeugmappe, belegt bei Archivierungsmodus 2 oder 3 den Archivindex vor und gibt den Frachtbrief aus. Für die Mail bestimmt das Programm die Standard-Mailadresse des Spediteurs, bricht ohne Spediteur oder Adresse mit Protokolleintrag ab und lenkt die Mail für den Benutzer KRAUSE_M auf eine Testadresse um. Dann erzeugt es den Frachtbrief ohne Druck als Formulardaten, wandelt sie in ein PDF und versendet eine Mail mit PDF-Anhang; nach erfolgreichem Versand wird festgeschrieben, Fehler beim Erstellen oder Senden werden protokolliert. Beide Einstiege melden Rückgabecode 0 oder 1 an die Nachrichtensteuerung.",
+ "verboten": [
+  "zle_frachtbrief_f01.abap:240 — kein Fachsatz „der Frachtbrief wird per SAPscript gedruckt“ oder „der GGVS-Freitext aus dem Transportkopf wird ausgegeben“: das FORM wird nirgends aufgerufen, der Aufruf in ENTRY ist auskommentiert",
+  "zle_frachtbrief_f01.abap:77 — kein Fachsatz „ohne Spediteur wird die Druck-Nachricht als fehlerhaft beendet“: die Prüfung ist auskommentiert; erst die Mail-Nachricht bricht ohne Spediteur ab",
+  "z_le_gefahrgut_daten.abap:44 — kein Fachsatz „ein Transport nur mit Leergut oder Nullmengen gilt als gefahrgutfrei, weil keine Stammdaten gefunden werden“: ist die Positionstabelle nach dem Aussortieren leer, entfällt bei FOR ALL ENTRIES die gesamte WHERE-Bedingung und es werden alle Stammsätze gelesen, die Ausnahme KEINE_GEFAHRGUTDATEN fällt nicht; das Ergebnis ist ein leerer Gefahrgutblock mit 0 Punkten und Freistellung über den regulären Rückgabeweg",
+  "z_le_gefahrgut_daten.abap:61 — kein Fachsatz „Gewichte in anderen Einheiten werden in Kilogramm umgerechnet“: der Umrechnungsbaustein ist auskommentiert, solche Positionen werden übersprungen",
+  "zle_frachtbrief_f02.abap:50 — kein Fachsatz „fehlt die Mailadresse, wird auf die Dispo-Kontakte des Spediteurs ausgewichen“: der Rückgriff auf ZLE_SPED_KONTAKT ist auskommentiert",
+  "zle_frachtbrief_f02.abap:24 — kein Fachsatz „bei Probeausgabe am Bildschirm wird keine Mail versendet“ oder „die Mail-Ausgabe wird archiviert“: im Mail-Zweig werden Bildschirmkennzeichen, Kopienzahl und Archivierungsmodus nicht ausgewertet",
+  "gesamte Scheibe — kein Fachsatz „der Transportstatus wird gesetzt oder der Transport geändert“: das Programm liest Transport- und Lieferdaten nur; geschrieben werden nur Nachrichtenprotokoll, Spool/Archiv und die Mailsendung"
+ ],
+ "saetze": [
+  {
+   "id": "BM-196-B01",
+   "soll": "Beim Ausgeben einer Frachtbrief-Nachricht wird der Transportkopf zur Transportnummer der Nachricht gelesen.",
+   "zeilen": [
+    168
+   ],
+   "code": [
+    "168:   SELECT SINGLE * FROM vttk INTO gs_vttk"
+   ],
+   "X": [
+    "Es werden Sätze aus vttk selektiert."
+   ],
+   "Y": [
+    "Es werden Transporte selektiert."
+   ],
+   "Z": []
+  },
+  {
+   "id": "BM-196-B02",
+   "soll": "Gibt es den Transport nicht, wird ein Fehler ins Nachrichtenprotokoll geschrieben und die Verarbeitung ohne Ausgabe als fehlerhaft beendet.",
+   "zeilen": [
+    170,
+    171,
+    173
+   ],
+   "code": [
+    "170:   IF sy-subrc <> 0.",
+    "171:     prot '010' 'E' nast-objky(10).",
+    "173:     RETURN."
+   ],
+   "X": [
+    "Ohne Treffer wird die gv_retcode auf 1 gesetzt und der Block verlassen.",
+    "Ohne Treffer wird der Block verlassen.",
+    "sy-subrc ungleich 0 setzen die gv_retcode auf 1.",
+    "Es wird die gv_retcode auf 1 gesetzt und der Block verlassen."
+   ],
+   "Y": [
+    "Ohne Treffer wird das Feld gv_retcode auf 1 gesetzt und der Block verlassen.",
+    "Wenn kein Treffer vorliegt, wird das Feld gv_retcode auf 1 gesetzt."
+   ],
+   "Z": []
+  },
+  {
+   "id": "BM-196-B03",
+   "soll": "Die dem Transport zugeordneten Lieferungen werden gelesen; enthält der Transport keine Lieferung, wird dies protokolliert und die Nachricht als fehlerhaft beendet.",
+   "zeilen": [
+    177,
+    180,
+    181
+   ],
+   "code": [
+    "177:   SELECT * FROM vttp INTO TABLE gt_vttp",
+    "180:   IF sy-subrc <> 0.",
+    "181:     prot '012' 'E' gs_vttk-tknum."
+   ],
+   "X": [
+    "Es werden Sätze aus vttp selektiert.",
+    "Ohne Treffer wird die gv_retcode auf 1 gesetzt und der Block verlassen.",
+    "Ohne Treffer wird der Block verlassen.",
+    "sy-subrc ungleich 0 setzen die gv_retcode auf 1."
+   ],
+   "Y": [
+    "Es werden Transportpositionen selektiert.",
+    "Ohne Treffer wird das Feld gv_retcode auf 1 gesetzt und der Block verlassen.",
+    "Wenn kein Treffer vorliegt, wird das Feld gv_retcode auf 1 gesetzt."
+   ],
+   "Z": []
+  },
+  {
+   "id": "BM-196-B04",
+   "soll": "Zu den Lieferungen des Transports werden die Lieferköpfe für den Frachtbrief und die Lieferpositionen für die Gefahrgutermittlung gelesen.",
+   "zeilen": [
+    187,
+    193
+   ],
+   "code": [
+    "187:   SELECT * FROM likp INTO TABLE lt_likp",
+    "193:   SELECT vbeln posnr matnr pstyv lfimg vrkme ntgew gewei"
+   ],
+   "X": [
+    "Es werden Sätze aus likp selektiert.",
+    "Es werden Sätze aus lips selektiert."
+   ],
+   "Y": [
+    "Es werden Lieferungen zu den Einträgen aus gt_vttp selektiert.",
+    "Es werden Lieferpositionen zu den Einträgen aus gt_vttp selektiert."
+   ],
+   "Z": []
+  },
+  {
+   "id": "BM-196-B05",
+   "soll": "Der Spediteur des Transports wird gelesen; ein Transport ohne Spediteur ist für den Druck kein Fehler.",
+   "zeilen": [
+    199
+   ],
+   "code": [
+    "199:   SELECT SINGLE * FROM lfa1 INTO gs_lfa1"
+   ],
+   "X": [
+    "Es werden Sätze aus lfa1 selektiert."
+   ],
+   "Y": [
+    "Es werden Lieferanten selektiert."
+   ],
+   "Z": []
+  },
+  {
+   "id": "BM-196-B06",
+   "soll": "Die Gefahrgutangaben und die Freistellung nach der 1000-Punkte-Regel werden über den kundeneigenen Gefahrgutbaustein ermittelt.",
+   "zeilen": [
+    205,
+    214
+   ],
+   "code": [
+    "205:   PERFORM gefahrgut_ermitteln.",
+    "214:   CALL FUNCTION 'Z_LE_GEFAHRGUT_DATEN'"
+   ],
+   "X": [
+    "Das Unterprogramm gefahrgut_ermitteln wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Der Code übergibt gt_lips an Z_LE_GEFAHRGUT_DATEN und übernimmt dessen Ausgabe nach gt_gg.",
+    "Das konvertierte Ergebnis wird in gt_gg übernommen."
+   ],
+   "Y": [
+    "Das Unterprogramm gefahrgut_ermitteln wird aufgerufen; es ruft Z_LE_GEFAHRGUT_DATEN auf.",
+    "Der Code übergibt gt_lips an Z_LE_GEFAHRGUT_DATEN und übernimmt dessen Ausgabe nach gt_gg."
+   ],
+   "Z": []
+  },
+  {
+   "id": "BM-196-B07",
+   "soll": "Hat der Transport keine Lieferpositionen, bricht der Gefahrgutbaustein mit einer Ausnahme ab und die Nachricht wird mit einem Protokolleintrag als fehlerhaft beendet.",
+   "zeilen": [
+    52,
+    53,
+    237
+   ],
+   "code": [
+    "52:   IF it_lips IS INITIAL.",
+    "53:     MESSAGE e050(zle) RAISING keine_positionen.",
+    "237:       prot '021' 'E' gs_vttk-tknum."
+   ],
+   "X": [
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ],
+   "Y": [
+    "Ist die Tabelle it_lips leer, wird die Ausnahme keine_positionen ausgelöst.",
+    "Die Ausnahme keine_positionen wird ausgelöst; die Meldung 050(ZLE) erscheint nur, wenn der Aufrufer die Ausnahme nicht behandelt."
+   ],
+   "Z": [
+    "Es wird geprüft, ob die übergebene Tabelle der Lieferpositionen IT_LIPS initial ist.",
+    "Ist die Tabelle der Lieferpositionen IT_LIPS initial, wird die Fehlermeldung E050 der Nachrichtenklasse ZLE ausgegeben und die Ausnahme KEINE_POSITIONEN ausgelöst."
+   ]
+  },
+  {
+   "id": "BM-196-B08",
+   "soll": "Positionen ohne Liefermenge und Leergutpositionen werden bei der Gefahrgutermittlung nicht berücksichtigt.",
+   "zeilen": [
+    58,
+    60
+   ],
+   "code": [
+    "58:   DELETE lt_lips WHERE lfimg IS INITIAL.",
+    "60:   DELETE lt_lips WHERE pstyv = 'ZLEG'."
+   ],
+   "X": [],
+   "Y": [],
+   "Z": [
+    "Aus der lokalen Kopie der Lieferpositionen werden Positionen ohne Liefermenge sowie Leergut- und Palettenpositionen mit dem Positionstyp ZLEG gelöscht."
+   ]
+  },
+  {
+   "id": "BM-196-B09",
+   "soll": "Zu den Materialien der verbleibenden Positionen werden die am Tagesdatum gültigen Gefahrgutstammdaten gelesen.",
+   "zeilen": [
+    62
+   ],
+   "code": [
+    "62:   SELECT * FROM zle_gg_stamm INTO TABLE lt_stamm"
+   ],
+   "X": [
+    "Es werden Sätze aus zle_gg_stamm selektiert."
+   ],
+   "Y": [
+    "Es werden Sätze aus zle_gg_stamm zu den Einträgen aus lt_lips selektiert."
+   ],
+   "Z": [
+    "Aus der Tabelle ZLE_GG_STAMM werden alle Einträge zu den Materialnummern der verbliebenen Lieferpositionen gelesen, deren Gültigkeitszeitraum das aktuelle Tagesdatum umfasst."
+   ]
+  },
+  {
+   "id": "BM-196-B10",
+   "soll": "Findet sich für kein Material ein Gefahrgutstammsatz, gilt der Transport als gefahrgutfrei und der Frachtbrief wird ohne Gefahrgutblock als freigestellt ausgegeben.",
+   "zeilen": [
+    68,
+    235
+   ],
+   "code": [
+    "68:     MESSAGE e051(zle) RAISING keine_gefahrgutdaten.",
+    "235:       gv_freigest = abap_true."
+   ],
+   "X": [
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ],
+   "Y": [
+    "Ohne Treffer wird die Ausnahme keine_gefahrgutdaten ausgelöst.",
+    "Die Ausnahme keine_gefahrgutdaten wird ausgelöst; die Meldung 051(ZLE) erscheint nur, wenn der Aufrufer die Ausnahme nicht behandelt."
+   ],
+   "Z": [
+    "Wurden keine Gefahrgutstammdaten gefunden, wird die Fehlermeldung E051 der Nachrichtenklasse ZLE ausgegeben und die Ausnahme KEINE_GEFAHRGUTDATEN ausgelöst."
+   ]
+  },
+  {
+   "id": "BM-196-B11",
+   "soll": "Je Lieferposition mit Gefahrgutmaterial wird eine Gefahrgutzeile mit UN-Nummer, Klasse, Verpackungsgruppe, Tunnelcode, Beförderungskategorie und dem Nettogewicht als Menge gebildet.",
+   "zeilen": [
+    72,
+    75,
+    100
+   ],
+   "code": [
+    "72:   LOOP AT lt_lips INTO ls_lips.",
+    "75:     CHECK sy-subrc = 0.",
+    "100:     ls_gg-menge       = ls_lips-ntgew."
+   ],
+   "X": [
+    "Jede Zeile aus lt_lips wird einzeln verarbeitet.",
+    "Nur sy-subrc mit dem Wert 0 gehen weiter; kleinere werden übersprungen, die Schleife läuft weiter."
+   ],
+   "Y": [
+    "Jede Zeile aus lt_lips wird einzeln verarbeitet.",
+    "Nur wenn ein Treffer vorliegt, wird der Schleifendurchlauf fortgesetzt; sonst wird er übersprungen, und die Schleife läuft mit dem nächsten Durchlauf weiter."
+   ],
+   "Z": [
+    "Für jede verbleibende Lieferposition wird eine Schleife durchlaufen.",
+    "Wurde kein passender Gefahrgutstammsatz zur Materialnummer gefunden, wird die Bearbeitung der aktuellen Lieferposition beendet und mit der nächsten fortgefahren.",
+    "Aus den Stammdaten und den Lieferpositionsdaten werden Beförderungskategorie, UN-Nummer, Beleg- und Positionsnummer, Materialnummer, Bezeichnung, Klasse, Verpackungsgruppe, Tunnelcode und Nettogewicht übernommen und an die Gefahrguttabelle angehängt."
+   ]
+  },
+  {
+   "id": "BM-196-B12",
+   "soll": "Gefahrgutpositionen, deren Gewicht nicht in Kilogramm geführt ist, werden ohne Umrechnung übergangen und fehlen damit im Gefahrgutblock und in der Punkteberechnung.",
+   "zeilen": [
+    79,
+    80
+   ],
+   "code": [
+    "79:     IF ls_lips-gewei <> 'KG'.",
+    "80:       CONTINUE."
+   ],
+   "X": [],
+   "Y": [
+    "Wenn das Feld ls_lips-gewei ungleich KG ist, wird der Schleifendurchlauf übersprungen."
+   ],
+   "Z": [
+    "Ist die Gewichtseinheit der Lieferposition ungleich KG, wird die aktuelle Position übersprungen."
+   ]
+  },
+  {
+   "id": "BM-196-B13",
+   "soll": "Je UN-Nummer und Beförderungskategorie wird die Menge summiert und mit dem Multiplikator der Kategorie (50, 3, 1 oder 0) zu Punkten nach ADR 1.1.3.6 aufaddiert.",
+   "zeilen": [
+    108,
+    111
+   ],
+   "code": [
+    "108:     AT END OF un_nr.",
+    "111:       lv_punkte = lv_punkte + ls_gg-menge * SWITCH i( ls_gg-befkat"
+   ],
+   "X": [],
+   "Y": [],
+   "Z": [
+    "Am Gruppenstufenende einer UN-Nummer wird die Summe der Mengen dieser Gruppe gebildet.",
+    "Liegt Beförderungskategorie 0 vor, wird ein Kennzeichen gesetzt; für Kategorie 1 wird die Menge mit 50, für Kategorie 2 mit 3 und für Kategorie 3 mit 1 multipliziert und zu den Gesamtpunkten addiert, während sonstige Kategorien mit 0 multipliziert werden."
+   ]
+  },
+  {
+   "id": "BM-196-B14",
+   "soll": "Der Transport ist freigestellt, wenn kein Gefahrgut der Beförderungskategorie 0 geladen ist und die Summe höchstens 1000 Punkte beträgt.",
+   "zeilen": [
+    110,
+    120
+   ],
+   "code": [
+    "110:       lv_kat0 = xsdbool( lv_kat0 = abap_true OR ls_gg-befkat = '0' ).",
+    "120:   ev_freigestellt = xsdbool( lv_kat0 = abap_false AND lv_punkte <= 1000 )."
+   ],
+   "X": [],
+   "Y": [],
+   "Z": [
+    "Liegt Beförderungskategorie 0 vor, wird ein Kennzeichen gesetzt; für Kategorie 1 wird die Menge mit 50, für Kategorie 2 mit 3 und für Kategorie 3 mit 1 multipliziert und zu den Gesamtpunkten addiert, während sonstige Kategorien mit 0 multipliziert werden.",
+    "Die ermittelte Gesamtpunktzahl wird zurückgegeben, und die Freistellung wird als wahr gekennzeichnet, sofern keine Beförderungskategorie 0 vorhanden ist und die Punktzahl höchstens 1000 beträgt."
+   ]
+  },
+  {
+   "id": "BM-196-B15",
+   "soll": "Ist ein Transport mit Gefahrgut nicht freigestellt, wird ein Hinweis auf die Kennzeichnungspflicht ins Nachrichtenprotokoll geschrieben.",
+   "zeilen": [
+    228,
+    230
+   ],
+   "code": [
+    "228:       IF gv_freigest = abap_false.",
+    "230:         prot '020' 'I' gs_vttk-tknum."
+   ],
+   "X": [],
+   "Y": [],
+   "Z": []
+  },
+  {
+   "id": "BM-196-B16",
+   "soll": "Zum Formular ZLE_FRACHTBRIEF_SF wird der generierte Formularbaustein ermittelt; fehlt er, wird ein Fehler protokolliert und nichts ausgegeben.",
+   "zeilen": [
+    257,
+    266,
+    267
+   ],
+   "code": [
+    "257:   CALL FUNCTION 'SSF_FUNCTION_MODULE_NAME'",
+    "266:   IF sy-subrc <> 0.",
+    "267:     prot '030' 'E' gc_formular."
+   ],
+   "X": [
+    "Der Code übergibt gc_formular an SSF_FUNCTION_MODULE_NAME und übernimmt dessen Ausgabe nach gv_fm_name.",
+    "Das konvertierte Ergebnis wird in gv_fm_name übernommen.",
+    "Ohne Treffer wird die gv_retcode auf 1 gesetzt und der Block verlassen.",
+    "Ohne Treffer wird der Block verlassen.",
+    "sy-subrc ungleich 0 setzen die gv_retcode auf 1."
+   ],
+   "Y": [
+    "Der Code übergibt gc_formular an SSF_FUNCTION_MODULE_NAME und übernimmt dessen Ausgabe nach gv_fm_name.",
+    "Scheitert der Aufruf von SSF_FUNCTION_MODULE_NAME, wird das Feld gv_retcode auf 1 gesetzt und der Block verlassen.",
+    "Wenn der Aufruf von SSF_FUNCTION_MODULE_NAME scheitert, wird das Feld gv_retcode auf 1 gesetzt."
+   ],
+   "Z": []
+  },
+  {
+   "id": "BM-196-B17",
+   "soll": "Beim Druck gehen Drucker, Sofortdruck und Löschen nach Ausgabe aus der Nachricht in die Ausgabe ein, bei Bildschirmausgabe wird eine Vorschau gezeigt.",
+   "zeilen": [
+    274,
+    279
+   ],
+   "code": [
+    "274:   IF iv_mail = abap_true.",
+    "279:     gs_control-preview  = gv_xscreen."
+   ],
+   "X": [],
+   "Y": [],
+   "Z": []
+  },
+  {
+   "id": "BM-196-B18",
+   "soll": "Die Zahl der Ausdrucke richtet sich nach der Nachricht; bei nicht freigestelltem Gefahrgut wird eine zusätzliche Ausfertigung für die Fahrzeugmappe gedruckt.",
+   "zeilen": [
+    286
+   ],
+   "code": [
+    "286:     lv_kopien = COND #( WHEN gv_freigest = abap_false"
+   ],
+   "X": [],
+   "Y": [],
+   "Z": []
+  },
+  {
+   "id": "BM-196-B19",
+   "soll": "Verlangt die Nachricht die Archivierung, wird der Frachtbrief mit Archivindex zum Transport im Archivobjekt ZLEFRACHTB abgelegt.",
+   "zeilen": [
+    293,
+    294
+   ],
+   "code": [
+    "293:     IF nast-tdarmod = '2' OR nast-tdarmod = '3'.",
+    "294:       gs_toa_dara-function    = 'DARA'."
+   ],
+   "X": [
+    "Für nast-tdarmod = '2' OR nast-tdarmod = '3' wird die Funktionsbaustein auf DARA gesetzt, die gs_toa_dara-sap_object auf VTTK gesetzt und die gs_arc_param-sap_object auf VTTK gesetzt.",
+    "nast-tdarmod = '2' OR nast-tdarmod = '3' setzen die Funktionsbaustein auf DARA.",
+    "nast-tdarmod = '2' OR nast-tdarmod = '3' setzen die gs_toa_dara-sap_object auf VTTK.",
+    "nast-tdarmod = '2' OR nast-tdarmod = '3' setzen die gs_arc_param-sap_object auf VTTK."
+   ],
+   "Y": [
+    "Wenn das Feld nast-tdarmod gleich 2 ist oder das Feld nast-tdarmod gleich 3 ist, wird der Funktionsbaustein auf DARA gesetzt, das Feld gs_toa_dara-sap_object auf VTTK gesetzt und das Feld gs_arc_param-sap_object auf VTTK gesetzt.",
+    "Wenn das Feld nast-tdarmod gleich 2 ist oder das Feld nast-tdarmod gleich 3 ist, wird der Funktionsbaustein auf DARA gesetzt.",
+    "Wenn das Feld nast-tdarmod gleich 2 ist oder das Feld nast-tdarmod gleich 3 ist, wird das Feld gs_toa_dara-sap_object auf VTTK gesetzt.",
+    "Wenn das Feld nast-tdarmod gleich 2 ist oder das Feld nast-tdarmod gleich 3 ist, wird das Feld gs_arc_param-sap_object auf VTTK gesetzt."
+   ],
+   "Z": []
+  },
+  {
+   "id": "BM-196-B20",
+   "soll": "Der Frachtbrief wird mit Transport, Spediteur, Lieferungen, Gefahrgutzeilen, Punktesumme und Freistellungskennzeichen über den ermittelten Formularbaustein ausgegeben.",
+   "zeilen": [
+    307
+   ],
+   "code": [
+    "307:   CALL FUNCTION gv_fm_name"
+   ],
+   "X": [
+    "Der Code übergibt gs_toa_dara an gv_fm_name und übernimmt dessen Ausgabe nach gs_job_info. Welcher Baustein das ist, entscheidet die Eingabe zur Laufzeit.",
+    "Das konvertierte Ergebnis wird in gs_job_info übernommen."
+   ],
+   "Y": [
+    "Der Code übergibt gs_toa_dara an gv_fm_name und übernimmt dessen Ausgabe nach gs_job_info. Welcher Baustein das ist, steht erst zur Laufzeit in gv_fm_name fest."
+   ],
+   "Z": []
+  },
+  {
+   "id": "BM-196-B21",
+   "soll": "Schlägt die Formularausgabe fehl, wird ein Fehler protokolliert und die Nachricht als fehlerhaft gemeldet.",
+   "zeilen": [
+    328,
+    329,
+    331
+   ],
+   "code": [
+    "328:   IF sy-subrc <> 0.",
+    "329:     prot '031' 'E' gc_formular.",
+    "331:     RETURN."
+   ],
+   "X": [
+    "Ohne Treffer wird die gv_retcode auf 1 gesetzt und der Block verlassen.",
+    "Ohne Treffer wird der Block verlassen.",
+    "sy-subrc ungleich 0 setzen die gv_retcode auf 1.",
+    "Es wird die gv_retcode auf 1 gesetzt und der Block verlassen."
+   ],
+   "Y": [
+    "Scheitert der Aufruf von gv_fm_name, wird das Feld gv_retcode auf 1 gesetzt und der Block verlassen.",
+    "Wenn der Aufruf von gv_fm_name scheitert, wird das Feld gv_retcode auf 1 gesetzt."
+   ],
+   "Z": []
+  },
+  {
+   "id": "BM-196-B22",
+   "soll": "Die Druck-Nachricht meldet der Nachrichtensteuerung Rückgabecode 1 bei jedem protokollierten Fehler und sonst 0.",
+   "zeilen": [
+    150,
+    151,
+    153
+   ],
+   "code": [
+    "150:   IF gv_retcode <> 0.",
+    "151:     return_code = 1.",
+    "153:     return_code = 0."
+   ],
+   "X": [
+    "Für gv_retcode ungleich 0 wird die return_code auf 1 gesetzt.",
+    "Für gv_retcode ungleich 0 wird die return_code auf 1 gesetzt, sonst die return_code auf 0 gesetzt.",
+    "gv_retcode ungleich 0 setzen die return_code auf 1.",
+    "Für andere gv_retcode wird die return_code auf 0 gesetzt.",
+    "Andere gv_retcode setzen die return_code auf 0."
+   ],
+   "Y": [
+    "Wenn das Feld gv_retcode ungleich 0 ist, wird das Feld return_code auf 1 gesetzt, sonst das Feld return_code auf 0 gesetzt.",
+    "Wenn das Feld gv_retcode ungleich 0 ist, wird das Feld return_code auf 1 gesetzt.",
+    "Sonst wird das Feld return_code auf 0 gesetzt."
+   ],
+   "Z": []
+  },
+  {
+   "id": "BM-196-B23",
+   "soll": "Für die Mail-Nachricht wird nach dem Lesen der Transportdaten die Mailadresse des Spediteurs bestimmt; fehlt der Spediteur, wird ein Fehler protokolliert.",
+   "zeilen": [
+    424,
+    446,
+    448
+   ],
+   "code": [
+    "424:     PERFORM empfaenger_ermitteln.",
+    "446:   IF gs_lfa1-lifnr IS INITIAL.",
+    "448:     prot '040' 'E' gs_vttk-tknum."
+   ],
+   "X": [
+    "Für gv_retcode mit dem Wert 0 wird empfaenger_ermitteln aufgerufen.",
+    "Das Unterprogramm empfaenger_ermitteln wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Ohne gs_lfa1-lifnr wird die gv_retcode auf 1 gesetzt und der Block verlassen.",
+    "Ohne gs_lfa1-lifnr wird der Block verlassen.",
+    "Eine leere gs_lfa1-lifnr setzen die gv_retcode auf 1."
+   ],
+   "Y": [
+    "Wenn das Feld gv_retcode gleich 0 ist, wird empfaenger_ermitteln aufgerufen.",
+    "Das Unterprogramm empfaenger_ermitteln wird aufgerufen; es liest E-Mail-Adressen.",
+    "Ohne Lieferantennummer wird das Feld gv_retcode auf 1 gesetzt und der Block verlassen.",
+    "Wenn die Lieferantennummer leer ist, wird das Feld gv_retcode auf 1 gesetzt."
+   ],
+   "Z": []
+  },
+  {
+   "id": "BM-196-B24",
+   "soll": "Empfänger ist die Standard-Mailadresse der Firmenadresse des Spediteurs; hat der Spediteur keine, wird ein Fehler protokolliert und nichts versendet.",
+   "zeilen": [
+    454,
+    458,
+    459
+   ],
+   "code": [
+    "454:   SELECT SINGLE smtp_addr FROM adr6 INTO gv_smtp",
+    "458:   IF sy-subrc <> 0 OR gv_smtp IS INITIAL.",
+    "459:     prot '041' 'E' gs_lfa1-lifnr."
+   ],
+   "X": [
+    "smtp_addr des Satzes wird gelesen.",
+    "Für sy-subrc <> 0 OR gv_smtp IS INITIAL wird die gv_retcode auf 1 gesetzt und der Block verlassen.",
+    "sy-subrc <> 0 OR gv_smtp IS INITIAL setzen die gv_retcode auf 1."
+   ],
+   "Y": [
+    "Das Feld smtp_addr der E-Mail-Adresse wird gelesen.",
+    "Wenn kein Treffer vorliegt oder das Feld gv_smtp leer ist, wird das Feld gv_retcode auf 1 gesetzt und der Block verlassen.",
+    "Wenn kein Treffer vorliegt oder das Feld gv_smtp leer ist, wird das Feld gv_retcode auf 1 gesetzt."
+   ],
+   "Z": []
+  },
+  {
+   "id": "BM-196-B25",
+   "soll": "Läuft die Verarbeitung unter dem Benutzer KRAUSE_M, geht die Mail statt an den Spediteur an eine feste Testadresse.",
+   "zeilen": [
+    470,
+    471
+   ],
+   "code": [
+    "470:   IF sy-uname = 'KRAUSE_M'.",
+    "471:     gv_smtp = 'frachtbrief-test@kunde.example'."
+   ],
+   "X": [
+    "Für sy-uname mit dem Wert KRAUSE_M wird die gv_smtp auf frachtbrief-test@kunde.example gesetzt.",
+    "sy-uname mit dem Wert KRAUSE_M setzen die gv_smtp auf frachtbrief-test@kunde.example."
+   ],
+   "Y": [
+    "Wenn das Feld sy-uname gleich KRAUSE_M ist, wird das Feld gv_smtp auf frachtbrief-test@kunde.example gesetzt.",
+    "Wenn das Feld sy-uname gleich KRAUSE_M ist, wird das Feld gv_smtp auf frachtbrief-test@kunde.example gesetzt."
+   ],
+   "Z": []
+  },
+  {
+   "id": "BM-196-B26",
+   "soll": "Für die Mail wird der Frachtbrief ohne Druck und ohne Archivierung als Formulardaten erzeugt und in ein PDF umgewandelt; misslingt die Umwandlung, wird ein Fehler protokolliert.",
+   "zeilen": [
+    334,
+    337,
+    352,
+    353,
+    428
+   ],
+   "code": [
+    "334:   CHECK iv_mail = abap_true.",
+    "337:   CALL FUNCTION 'CONVERT_OTF'",
+    "352:   IF sy-subrc <> 0 OR gv_pdf IS INITIAL.",
+    "353:     prot '042' 'E' gs_vttk-tknum.",
+    "428:     PERFORM formular_ausgeben USING abap_true."
+   ],
+   "X": [
+    "Nur iv_mail mit dem Wert abap_true gehen weiter; kleinere werden übersprungen, die Schleife läuft weiter.",
+    "Der Code übergibt 'PDF' an CONVERT_OTF und übernimmt dessen Ausgabe nach lv_size.",
+    "Das konvertierte Ergebnis wird in lv_size übernommen.",
+    "Für sy-subrc <> 0 OR gv_pdf IS INITIAL wird die gv_retcode auf 1 gesetzt.",
+    "sy-subrc <> 0 OR gv_pdf IS INITIAL setzen die gv_retcode auf 1.",
+    "Für gv_retcode mit dem Wert 0 wird formular_ausgeben aufgerufen.",
+    "Das Unterprogramm formular_ausgeben wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt."
+   ],
+   "Y": [
+    "Nur wenn das Feld iv_mail gesetzt ist, geht es weiter; sonst wird das Unterprogramm formular_ausgeben an dieser Stelle verlassen.",
+    "Der Code übergibt 'PDF' an CONVERT_OTF und übernimmt dessen Ausgabe nach lv_size.",
+    "Wenn der Aufruf von CONVERT_OTF scheitert oder das Feld gv_pdf leer ist, wird das Feld gv_retcode auf 1 gesetzt.",
+    "Wenn der Aufruf von CONVERT_OTF scheitert oder das Feld gv_pdf leer ist, wird das Feld gv_retcode auf 1 gesetzt.",
+    "Wenn das Feld gv_retcode gleich 0 ist, wird formular_ausgeben aufgerufen.",
+    "Das Unterprogramm formular_ausgeben wird aufgerufen; es ruft SSF_FUNCTION_MODULE_NAME und CONVERT_OTF auf."
+   ],
+   "Z": []
+  },
+  {
+   "id": "BM-196-B27",
+   "soll": "An den Spediteur wird eine Mail mit Betreff und Begleittext zum Transport und dem Frachtbrief als PDF-Anhang erstellt und sofort gesendet.",
+   "zeilen": [
+    503,
+    505,
+    511,
+    518,
+    523
+   ],
+   "code": [
+    "503:       lo_send = cl_bcs=>create_persistent( ).",
+    "505:       lo_doc = cl_document_bcs=>create_document(",
+    "511:       lo_doc->add_attachment(",
+    "518:       lo_send->add_recipient(",
+    "523:       lv_ok = lo_send->send( i_with_error_screen = space )."
+   ],
+   "X": [
+    "Der Rückgabewert der Methode create_persistent von cl_bcs wird nach lo_send übernommen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "Der Rückgabewert der Methode create_document von cl_document_bcs wird nach lo_doc übernommen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "Die Methode add_attachment von lo_doc wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "Die Methode add_recipient von lo_send wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "Der Rückgabewert der Methode send von lo_send wird nach lv_ok übernommen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ],
+   "Y": [
+    "Der Rückgabewert der Methode create_persistent von cl_bcs wird nach lo_send übernommen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "Der Rückgabewert der Methode create_document von cl_document_bcs wird nach lo_doc übernommen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "Die Methode add_attachment von lo_doc wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "Die Methode add_recipient von lo_send wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "Der Rückgabewert der Methode send von lo_send wird nach lv_ok übernommen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ],
+   "Z": []
+  },
+  {
+   "id": "BM-196-B28",
+   "soll": "Scheitert das Erstellen oder Senden der Mail, wird ein Fehler protokolliert und die Nachricht als fehlerhaft gemeldet.",
+   "zeilen": [
+    525,
+    526,
+    535
+   ],
+   "code": [
+    "525:     CATCH cx_bcs INTO lx_bcs.",
+    "526:       prot '043' 'E' gs_vttk-tknum.",
+    "535:     prot '045' 'E' gs_vttk-tknum."
+   ],
+   "X": [
+    "Für lv_ok mit dem Wert abap_true wird COMMIT WORK ausgeführt, sonst die gv_retcode auf 1 gesetzt.",
+    "Für andere lv_ok wird die gv_retcode auf 1 gesetzt."
+   ],
+   "Y": [
+    "Wenn das Feld lv_ok gesetzt ist, wird COMMIT WORK ausgeführt, sonst das Feld gv_retcode auf 1 gesetzt."
+   ],
+   "Z": []
+  },
+  {
+   "id": "BM-196-B29",
+   "soll": "Nach erfolgreichem Senden wird die Sendung festgeschrieben, damit sie aus der Sendewarteschlange hinausgeht.",
+   "zeilen": [
+    531,
+    533
+   ],
+   "code": [
+    "531:   IF lv_ok = abap_true.",
+    "533:     COMMIT WORK."
+   ],
+   "X": [
+    "Für lv_ok mit dem Wert abap_true wird COMMIT WORK ausgeführt.",
+    "Für lv_ok mit dem Wert abap_true wird COMMIT WORK ausgeführt, sonst die gv_retcode auf 1 gesetzt.",
+    "Mit COMMIT WORK wird die Änderung persistiert."
+   ],
+   "Y": [
+    "Wenn das Feld lv_ok gesetzt ist, wird COMMIT WORK ausgeführt, sonst das Feld gv_retcode auf 1 gesetzt.",
+    "Mit COMMIT WORK wird die Änderung persistiert."
+   ],
+   "Z": []
+  },
+  {
+   "id": "BM-196-B30",
+   "soll": "Die Mail-Nachricht meldet Rückgabecode 0, wenn kein Schritt einen Fehler gesetzt hat, sonst 1.",
+   "zeilen": [
+    435
+   ],
+   "code": [
+    "435:   return_code = COND #( WHEN gv_retcode = 0 THEN 0 ELSE 1 )."
+   ],
+   "X": [],
+   "Y": [],
+   "Z": []
+  }
+ ]
+}

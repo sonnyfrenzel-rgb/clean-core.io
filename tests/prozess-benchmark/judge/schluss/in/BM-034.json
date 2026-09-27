@@ -1,0 +1,318 @@
+{
+ "id": "BM-034",
+ "titel": "Monatliche Konsignationsabrechnung mit Entnahmeaufstellung und Anstoß von RMVKON00",
+ "prozess": "Einmal im Monat startet die Kreditorenbuchhaltung oder ein Job den Report mit Buchungskreisen, optional Lieferanten und Buchungszeitraum, einem Ablageverzeichnis, dem Abrechnungs- und dem Testlauf-Schalter. Er legt ein Anwendungsprotokoll an, liest die Lieferanten mit aktiver Konsignationsvereinbarung sowie alle noch nicht abgerechneten Konsignationsentnahmen und verwirft Entnahmen von Lieferanten ohne Vereinbarung. Bleibt nichts, meldet er das, protokolliert eine Warnung und endet. Sonst gruppiert er die Entnahmen je Lieferant und Buchungskreis und summiert ihren Wert; unter dem vereinbarten Mindestbetrag wird die Abrechnung auf den nächsten Lauf verschoben. Für die übrigen schreibt er je Lieferant eine CSV-Entnahmeaufstellung; scheitert das, wird der Lieferant mit Fehler protokolliert. Ist Abrechnen gewählt und kein Testlauf, startet er die Standardabrechnung RMVKON00 für den Lieferanten und zählt anschließend die noch offenen Entnahmen: keine heißt Erfolg, sonst wird die Restzahl als Fehler protokolliert. Andernfalls wird nur die Erzeugung der Aufstellung protokolliert. Zum Schluss wird das Protokoll gespeichert und festgeschrieben.",
+ "verboten": [
+  "zmm_konsi_abrechnung_f01.abap:117 — kein Fachsatz „Der Report bucht die Verbindlichkeit selbst“ (das erledigt der Standardreport; der Z-Report prüft nur danach)",
+  "zmm_konsi_abrechnung_f01.abap:99 — kein Fachsatz „Die Aufstellung wird an den Lieferanten gemailt“ (sie wird nur als Datei abgelegt)",
+  "zmm_konsi_abrechnung_f01.abap:62 — kein Fachsatz „Kleinbeträge werden ausgebucht“ (sie bleiben offen bis zum nächsten Lauf)",
+  "zmm_konsi_abrechnung_f01.abap:122 — kein Fachsatz „Der Erfolg wird aus der Liste von RMVKON00 gelesen“ (die Liste geht in den Speicher und wird nicht ausgewertet)"
+ ],
+ "saetze": [
+  {
+   "id": "BM-034-B01",
+   "soll": "Zu Beginn wird ein Anwendungsprotokoll für die Konsignationsabrechnung mit 90 Tagen Aufbewahrung angelegt.",
+   "zeilen": [
+    40,
+    59
+   ],
+   "code": [
+    "40:   PERFORM log_anlegen.",
+    "59:   CALL FUNCTION 'BAL_LOG_CREATE'"
+   ],
+   "X": [
+    "Das Unterprogramm log_anlegen wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Es wird log_anlegen aufgerufen und daten_lesen aufgerufen.",
+    "Der Code übergibt ls_log an BAL_LOG_CREATE und übernimmt dessen Ausgabe nach gv_handle.",
+    "Das konvertierte Ergebnis wird in gv_handle übernommen."
+   ],
+   "Y": [
+    "Das Unterprogramm log_anlegen wird aufgerufen; es ruft BAL_LOG_CREATE auf.",
+    "Die Unterprogramme log_anlegen und daten_lesen werden nacheinander aufgerufen, jedes ohne Parameter.",
+    "Der Code übergibt ls_log an BAL_LOG_CREATE und übernimmt dessen Ausgabe nach gv_handle."
+   ],
+   "Z": [
+    "Zu Beginn der Verarbeitung wird das Anwendungsprotokoll für das Objekt ZMM und das Unterobjekt KONSI mit einer Verweildauer von 90 Tagen angelegt."
+   ]
+  },
+  {
+   "id": "BM-034-B02",
+   "soll": "Es werden die Lieferanten mit aktiver Konsignationsvereinbarung und die noch nicht abgerechneten Konsignationsentnahmen der gewählten Buchungskreise, Lieferanten und Buchungsdaten gelesen.",
+   "zeilen": [
+    70,
+    73
+   ],
+   "code": [
+    "70:   SELECT * FROM zmm_konsi_lief INTO TABLE gt_konsi",
+    "73:   SELECT lifnr bukrs werks matnr mblnr mjahr zeile budat"
+   ],
+   "X": [
+    "Es werden Sätze aus zmm_konsi_lief selektiert.",
+    "Es werden Sätze aus rkwa selektiert."
+   ],
+   "Y": [
+    "Es werden Sätze aus zmm_konsi_lief selektiert.",
+    "Es werden Sätze aus rkwa selektiert."
+   ],
+   "Z": [
+    "Aus der Tabelle ZMM_KONSI_LIEF werden alle aktiven Konsignationslieferanten gelesen.",
+    "Aus der Tabelle RKWA werden alle noch nicht abgerechneten Konsignationsentnahmen gemäß den selektierten Buchungskreisen, Lieferanten und Buchungsdaten gelesen."
+   ]
+  },
+  {
+   "id": "BM-034-B03",
+   "soll": "Entnahmen von Lieferanten ohne aktive Vereinbarung werden verworfen.",
+   "zeilen": [
+    83,
+    85,
+    86
+   ],
+   "code": [
+    "83:     READ TABLE gt_konsi TRANSPORTING NO FIELDS",
+    "85:     IF sy-subrc <> 0.",
+    "86:       DELETE gt_rkwa."
+   ],
+   "X": [
+    "In der Tabelle wird nach einer passenden Zeile gesucht."
+   ],
+   "Y": [
+    "In der Tabelle gt_konsi wird nach einer passenden Zeile gesucht."
+   ],
+   "Z": [
+    "Für jede gelesene Entnahme wird geprüft, ob der zugehörige Lieferant in den aktiven Konsignationslieferanten vorhanden ist; ist dies nicht der Fall, wird der Datensatz aus den Entnahmen gelöscht."
+   ]
+  },
+  {
+   "id": "BM-034-B04",
+   "soll": "Bleibt nichts übrig, wird gemeldet, dass nichts abzurechnen ist, eine Warnung protokolliert, das Protokoll gesichert und der Lauf beendet.",
+   "zeilen": [
+    42,
+    43,
+    44,
+    45,
+    46
+   ],
+   "code": [
+    "42:   IF gt_rkwa IS INITIAL.",
+    "43:     MESSAGE s020.",
+    "44:     PERFORM log_meldung USING 'W' space 'Keine offenen Entnahmen'.",
+    "45:     PERFORM log_sichern.",
+    "46:     RETURN."
+   ],
+   "X": [
+    "Ohne Treffer wird eine Meldung ausgegeben, log_meldung aufgerufen, log_sichern aufgerufen und der Block verlassen.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "Eine Meldung wird ausgegeben.",
+    "Es wird eine Meldung ausgegeben, log_meldung aufgerufen, log_sichern aufgerufen und der Block verlassen.",
+    "Das Unterprogramm log_meldung wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Das Unterprogramm log_sichern wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt."
+   ],
+   "Y": [
+    "Ist die Tabelle gt_rkwa leer, wird eine Statusmeldung ausgegeben, log_meldung aufgerufen, log_sichern aufgerufen und der Block verlassen.",
+    "Die Statusmeldung 020 wird ausgegeben.",
+    "Das Unterprogramm log_meldung wird aufgerufen; es ruft BAL_LOG_MSG_ADD auf.",
+    "Das Unterprogramm log_sichern wird aufgerufen; es ruft BAL_DB_SAVE auf und schreibt mit COMMIT WORK fest."
+   ],
+   "Z": [
+    "Sind nach der Selektion und Filterung keine offenen Entnahmen vorhanden, wird eine Erfolgsmeldung gesendet, eine Warnung in das Anwendungsprotokoll geschrieben, das Protokoll auf der Datenbank gesichert und die Verarbeitung beendet."
+   ]
+  },
+  {
+   "id": "BM-034-B05",
+   "soll": "Die Entnahmen werden je Lieferant und Buchungskreis gruppiert und ihr Wert summiert.",
+   "zeilen": [
+    99,
+    105
+   ],
+   "code": [
+    "99:   LOOP AT gt_rkwa INTO DATA(ls_rkwa)",
+    "105:       lv_summe = lv_summe + ls_mem-wrbtr."
+   ],
+   "X": [
+    "Jede Zeile aus gt_rkwa wird einzeln verarbeitet."
+   ],
+   "Y": [
+    "Die Zeilen aus gt_rkwa werden gruppenweise verarbeitet."
+   ],
+   "Z": []
+  },
+  {
+   "id": "BM-034-B06",
+   "soll": "Liegt die Summe unter dem vereinbarten Mindestbetrag des Lieferanten, wird die Abrechnung verschoben und das protokolliert.",
+   "zeilen": [
+    111,
+    112
+   ],
+   "code": [
+    "111:     IF lv_summe < ls_konsi-min_betrag.",
+    "112:       PERFORM log_meldung USING 'I' ls_grp-lifnr 'Unter Mindestbetrag, verschoben'."
+   ],
+   "X": [
+    "Für lv_summe kleiner ls_konsi-min_betrag wird log_meldung aufgerufen.",
+    "Das Unterprogramm log_meldung wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt."
+   ],
+   "Y": [
+    "Wenn das Feld lv_summe kleiner als ls_konsi-min_betrag ist, wird log_meldung aufgerufen und der Schleifendurchlauf übersprungen.",
+    "Das Unterprogramm log_meldung wird aufgerufen; es ruft BAL_LOG_MSG_ADD auf."
+   ],
+   "Z": [
+    "Liegt die Entnahmesumme eines Lieferanten unter seinem hinterlegten Mindestbetrag, wird ein Informationshinweis im Protokoll erfasst und mit dem nächsten Lieferanten fortgefahren."
+   ]
+  },
+  {
+   "id": "BM-034-B07",
+   "soll": "Sonst wird je Lieferant eine CSV-Entnahmeaufstellung mit Datum, Materialbeleg, Material, Menge, Einheit, Wert und Währung für das Lieferantenportal geschrieben.",
+   "zeilen": [
+    141,
+    148
+   ],
+   "code": [
+    "141:   OPEN DATASET lv_file FOR OUTPUT IN TEXT MODE ENCODING UTF-8.",
+    "148:     TRANSFER lv_line TO lv_file."
+   ],
+   "X": [],
+   "Y": [],
+   "Z": [
+    "Die CSV-Datei für den Lieferanten wird im angegebenen Verzeichnis geöffnet; schlägt das Öffnen fehl, wird der Vorgang für die Datei abgebrochen.",
+    "Für jede Entnahme des Lieferanten werden Buchungsdatum, Materialbelegnummer, Materialnummer, Menge, Mengeneinheit, Betrag und Währung in die Datei geschrieben."
+   ]
+  },
+  {
+   "id": "BM-034-B08",
+   "soll": "Lässt sich die Datei nicht öffnen, wird der Lieferant mit Fehler protokolliert und nicht abgerechnet.",
+   "zeilen": [
+    118,
+    119,
+    142
+   ],
+   "code": [
+    "118:     IF lv_ok = abap_false.",
+    "119:       PERFORM log_meldung USING 'E' ls_grp-lifnr 'Datei nicht geschrieben'.",
+    "142:   IF sy-subrc <> 0."
+   ],
+   "X": [
+    "Für lv_ok mit dem Wert abap_false wird log_meldung aufgerufen.",
+    "Das Unterprogramm log_meldung wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Ohne Treffer wird der Block verlassen."
+   ],
+   "Y": [
+    "Wenn das Feld lv_ok nicht gesetzt ist, wird log_meldung aufgerufen und der Schleifendurchlauf übersprungen.",
+    "Das Unterprogramm log_meldung wird aufgerufen; es ruft BAL_LOG_MSG_ADD auf.",
+    "Lässt sich die Datei nicht öffnen, wird der Block verlassen."
+   ],
+   "Z": [
+    "Die CSV-Datei für den Lieferanten wird im angegebenen Verzeichnis geöffnet; schlägt das Öffnen fehl, wird der Vorgang für die Datei abgebrochen.",
+    "Konnte die Datei für einen Lieferanten nicht geschrieben werden, wird ein Fehler im Anwendungsprotokoll vermerkt und der Lieferant übersprungen."
+   ]
+  },
+  {
+   "id": "BM-034-B09",
+   "soll": "Ist Abrechnen gewählt und kein Testlauf, wird die Standard-Konsignationsabrechnung für Buchungskreis und Lieferant gestartet.",
+   "zeilen": [
+    123,
+    166
+   ],
+   "code": [
+    "123:     IF p_abr = 'X' AND p_test = space.",
+    "166:   SUBMIT rmvkon00 WITH SELECTION-TABLE lt_par"
+   ],
+   "X": [
+    "Für p_abr = 'X' AND p_test = space wird abrechnen aufgerufen.",
+    "Für p_abr = 'X' AND p_test = space wird abrechnen aufgerufen, sonst log_meldung aufgerufen.",
+    "Das Kindprogramm rmvkon00 wird gestartet. Was das Kind tut, ist nicht Teil dieses Satzes."
+   ],
+   "Y": [
+    "Wenn das Feld p_abr gesetzt ist und das Feld p_test nicht gesetzt ist, wird abrechnen aufgerufen, sonst log_meldung aufgerufen.",
+    "Das Kindprogramm rmvkon00 wird gestartet. Was das Kind tut, ist nicht Teil dieses Satzes."
+   ],
+   "Z": [
+    "Ist die Abrechnung aktiviert und der Testmodus nicht gesetzt, wird das Abrechnungsprogramm RMVKON00 für den Buchungskreis und den Lieferanten ausgeführt.",
+    "Ist die Abrechnung nicht aktiviert oder der Testmodus aktiv, wird lediglich vermerkt, dass nur die Aufstellung erzeugt wurde."
+   ]
+  },
+  {
+   "id": "BM-034-B10",
+   "soll": "Danach wird gezählt, wie viele Entnahmen im Zeitraum noch offen sind: keine bedeutet erfolgreich abgerechnet, sonst wird die Zahl offener von den übergebenen Entnahmen als Fehler protokolliert.",
+   "zeilen": [
+    171,
+    176,
+    177,
+    180
+   ],
+   "code": [
+    "171:   SELECT COUNT(*) FROM rkwa INTO lv_offen",
+    "176:   IF lv_offen = 0.",
+    "177:     PERFORM log_meldung USING 'S' pv_lifnr 'Abgerechnet'.",
+    "180:     PERFORM log_meldung USING 'E' pv_lifnr lv_text."
+   ],
+   "X": [
+    "Die Zahl der Sätze wird ermittelt.",
+    "Für lv_offen mit dem Wert 0 wird log_meldung aufgerufen.",
+    "Für lv_offen mit dem Wert 0 wird log_meldung aufgerufen, sonst log_meldung aufgerufen.",
+    "Das Unterprogramm log_meldung wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Für andere lv_offen wird log_meldung aufgerufen.",
+    "Das Unterprogramm log_meldung wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt."
+   ],
+   "Y": [
+    "Die Zahl der Sätze wird ermittelt.",
+    "Wenn das Feld lv_offen gleich 0 ist, wird log_meldung aufgerufen, sonst log_meldung aufgerufen.",
+    "Das Unterprogramm log_meldung wird aufgerufen; es ruft BAL_LOG_MSG_ADD auf.",
+    "Das Unterprogramm log_meldung wird aufgerufen; es ruft BAL_LOG_MSG_ADD auf."
+   ],
+   "Z": [
+    "Nach dem Abrechnungslauf wird in der Tabelle RKWA die Anzahl der verbliebenen offenen Belege gezählt; sind keine Belege mehr offen, wird eine Erfolgsmeldung protokolliert, andernfalls wird eine Fehlermeldung mit der Anzahl der offenen Belege erfasst."
+   ]
+  },
+  {
+   "id": "BM-034-B11",
+   "soll": "Ohne Abrechnung oder im Testlauf wird nur protokolliert, dass die Aufstellung erzeugt wurde.",
+   "zeilen": [
+    127
+   ],
+   "code": [
+    "127:       PERFORM log_meldung USING 'I' ls_grp-lifnr 'Nur Aufstellung erzeugt'."
+   ],
+   "X": [
+    "Für p_abr = 'X' AND p_test = space wird abrechnen aufgerufen, sonst log_meldung aufgerufen.",
+    "Sonst wird log_meldung aufgerufen.",
+    "Das Unterprogramm log_meldung wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt."
+   ],
+   "Y": [
+    "Wenn das Feld p_abr gesetzt ist und das Feld p_test nicht gesetzt ist, wird abrechnen aufgerufen, sonst log_meldung aufgerufen.",
+    "Das Unterprogramm log_meldung wird aufgerufen; es ruft BAL_LOG_MSG_ADD auf."
+   ],
+   "Z": [
+    "Ist die Abrechnung nicht aktiviert oder der Testmodus aktiv, wird lediglich vermerkt, dass nur die Aufstellung erzeugt wurde."
+   ]
+  },
+  {
+   "id": "BM-034-B12",
+   "soll": "Alle Meldungen landen im Anwendungsprotokoll, das am Ende gespeichert und festgeschrieben wird.",
+   "zeilen": [
+    194,
+    206,
+    211
+   ],
+   "code": [
+    "194:   CALL FUNCTION 'BAL_LOG_MSG_ADD'",
+    "206:   CALL FUNCTION 'BAL_DB_SAVE'",
+    "211:   COMMIT WORK."
+   ],
+   "X": [
+    "Der Funktionsbaustein BAL_LOG_MSG_ADD wird aufgerufen.",
+    "Es wird eine Zeile aufgenommen, BAL_DB_SAVE aufgerufen und COMMIT WORK ausgeführt.",
+    "Der Funktionsbaustein BAL_DB_SAVE wird aufgerufen.",
+    "Mit COMMIT WORK wird die Änderung persistiert."
+   ],
+   "Y": [
+    "Der Funktionsbaustein BAL_LOG_MSG_ADD wird aufgerufen.",
+    "Es wird eine Zeile aufgenommen, BAL_DB_SAVE aufgerufen und COMMIT WORK ausgeführt.",
+    "Der Funktionsbaustein BAL_DB_SAVE wird aufgerufen.",
+    "Mit COMMIT WORK wird die Änderung persistiert."
+   ],
+   "Z": [
+    "Nach Abschluss der Verarbeitung aller Lieferanten wird das Anwendungsprotokoll in der Datenbank gespeichert."
+   ]
+  }
+ ]
+}

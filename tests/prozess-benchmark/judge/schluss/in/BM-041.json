@@ -1,0 +1,119 @@
+{
+ "id": "BM-041",
+ "titel": "Überfällige offene Debitorenposten zum Stichtag summieren",
+ "prozess": "Der Report wird vom Debitorenbuchhalter mit Buchungskreis, Kundennummer und Stichtag gestartet. Er liest alle offenen Posten dieses Kunden und bestimmt je Posten die Nettofälligkeit aus Basisdatum und erstem Zahlungsziel. Posten, die vor dem Stichtag fällig waren, werden gelistet und vorzeichengerecht (Haben negativ) aufsummiert. Nicht überfällige Posten werden übergangen. Zum Schluss wird die Summe der überfälligen Beträge ausgegeben. Es gibt keinen Fehlerpfad: ohne offene Posten erscheint nur die Summenzeile mit null.",
+ "verboten": [
+  "source.abap:21 — kein Fachsatz „Skontofristen bzw. Zahlungsziel 2 und 3 werden berücksichtigt“ (nur ZBD1T wird addiert)",
+  "source.abap:15 — kein Fachsatz „ausgeglichene Posten werden einbezogen“ (BSID enthält nur offene Posten, BSAD wird nicht gelesen)",
+  "source.abap:31 — kein Fachsatz „Kunde wird gemahnt oder gesperrt“ (der Report gibt nur eine Liste aus)"
+ ],
+ "saetze": [
+  {
+   "id": "BM-041-B01",
+   "soll": "Es werden alle offenen Debitorenposten des eingegebenen Kunden im eingegebenen Buchungskreis gelesen.",
+   "zeilen": [
+    15
+   ],
+   "code": [
+    "15:   SELECT * FROM bsid INTO TABLE lt_bsid"
+   ],
+   "X": [
+    "Es werden Sätze aus bsid mit dem eingegebenen Buchungskreis und dem eingegebenen Kundennummer selektiert."
+   ],
+   "Y": [
+    "Es werden offene Debitorenposten mit dem eingegebenen Buchungskreis und dem eingegebenen Kundennummer selektiert."
+   ],
+   "Z": [
+    "Aus der Tabelle BSID werden alle offenen Posten zum angegebenen Buchungskreis BUKRS und Debitor KUNNR gelesen."
+   ]
+  },
+  {
+   "id": "BM-041-B02",
+   "soll": "Für jeden Posten wird die Nettofälligkeit als Basisdatum plus Tage des ersten Zahlungsziels bestimmt.",
+   "zeilen": [
+    21
+   ],
+   "code": [
+    "21:     lv_faell = ls_bsid-zfbdt + ls_bsid-zbd1t."
+   ],
+   "X": [],
+   "Y": [],
+   "Z": [
+    "Das Fälligkeitsdatum wird aus dem Basisdatum für die Fälligkeitsberechnung ZFBDT zuzüglich der Tage der Skontofrist ZBD1T berechnet."
+   ]
+  },
+  {
+   "id": "BM-041-B03",
+   "soll": "Nur Posten, deren Nettofälligkeit vor dem Stichtag liegt, gelten als überfällig; Habenposten gehen mit negativem Vorzeichen in die Summe ein.",
+   "zeilen": [
+    22,
+    23,
+    25
+   ],
+   "code": [
+    "22:     IF lv_faell < p_stich.",
+    "23:       lv_betrag = COND #( WHEN ls_bsid-shkzg = 'H' THEN - ls_bsid-dmbtr",
+    "25:       lv_summe = lv_summe + lv_betrag."
+   ],
+   "X": [
+    "Für lv_faell kleiner p_stich wird ls_bsid-belnr ausgegeben, ls_bsid-gjahr ausgegeben, lv_faell ausgegeben und Betrag ausgegeben."
+   ],
+   "Y": [
+    "Wenn das Feld lv_faell kleiner als p_stich ist, wird Belegnummer ausgegeben, Geschäftsjahr ausgegeben, lv_faell ausgegeben und Betrag ausgegeben."
+   ],
+   "Z": [
+    "Liegt das ermittelte Fälligkeitsdatum vor dem Stichtag, wird der Posten als überfällig weiterverarbeitet; andernfalls wird er nicht berücksichtigt.",
+    "Ist das Soll/Haben-Kennzeichen SHKZG gleich 'H', wird der Betrag in Hauswährung DMBTR mit negativem Vorzeichen übernommen.",
+    "Ist das Soll/Haben-Kennzeichen SHKZG ungleich 'H', wird der Betrag in Hauswährung DMBTR mit positivem Vorzeichen übernommen.",
+    "Der ermittelte Betrag wird zur Gesamtsumme der überfälligen Beträge addiert."
+   ]
+  },
+  {
+   "id": "BM-041-B04",
+   "soll": "Jeder überfällige Posten wird mit Belegnummer, Geschäftsjahr, Fälligkeit und Betrag gelistet.",
+   "zeilen": [
+    26
+   ],
+   "code": [
+    "26:       WRITE: / ls_bsid-belnr, ls_bsid-gjahr, lv_faell, lv_betrag."
+   ],
+   "X": [
+    "Für lv_faell kleiner p_stich wird ls_bsid-belnr ausgegeben, ls_bsid-gjahr ausgegeben, lv_faell ausgegeben und Betrag ausgegeben.",
+    "Bei Treffern werden ls_bsid-belnr, ls_bsid-gjahr, lv_faell, Betrag, Summe ueberfaellig: und lv_summe als Liste ausgegeben.",
+    "ls_bsid-belnr wird ausgegeben.",
+    "ls_bsid-gjahr wird ausgegeben.",
+    "lv_faell wird ausgegeben.",
+    "Betrag wird ausgegeben."
+   ],
+   "Y": [
+    "Wenn das Feld lv_faell kleiner als p_stich ist, wird Belegnummer ausgegeben, Geschäftsjahr ausgegeben, lv_faell ausgegeben und Betrag ausgegeben.",
+    "Belegnummer, Geschäftsjahr, lv_faell, Betrag, Summe ueberfaellig: und lv_summe werden ausgegeben."
+   ],
+   "Z": [
+    "Die Belegnummer BELNR, das Geschäftsjahr GJAHR, das Fälligkeitsdatum und der Betrag des überfälligen Postens werden ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-041-B05",
+   "soll": "Am Ende wird die Summe der überfälligen Beträge in Hauswährung ausgegeben.",
+   "zeilen": [
+    31
+   ],
+   "code": [
+    "31:   WRITE: / 'Summe ueberfaellig:', lv_summe."
+   ],
+   "X": [
+    "Bei Treffern werden ls_bsid-belnr, ls_bsid-gjahr, lv_faell, Betrag, Summe ueberfaellig: und lv_summe als Liste ausgegeben.",
+    "Summe ueberfaellig: wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "lv_summe wird ausgegeben."
+   ],
+   "Y": [
+    "Belegnummer, Geschäftsjahr, lv_faell, Betrag, Summe ueberfaellig: und lv_summe werden ausgegeben.",
+    "Summe ueberfaellig: wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code."
+   ],
+   "Z": [
+    "Die Beschriftung 'Summe ueberfaellig:' und die Gesamtsumme der überfälligen Beträge werden ausgegeben."
+   ]
+  }
+ ]
+}

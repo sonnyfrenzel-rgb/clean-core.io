@@ -1,0 +1,211 @@
+{
+ "id": "BM-146",
+ "titel": "Abrechnungsplausibilität: Auszahlungsbetrag gegen Vorperiode aus dem Cluster RD",
+ "prozess": "Nach dem Abrechnungslauf prüft ein Report über die logische Datenbank PNPCE je Mitarbeiter, ob der Auszahlungsbetrag gegenüber der Vorperiode auffällig schwankt. Er liest das Abrechnungsverzeichnis; fehlt es, wird der Mitarbeiter übergangen. Die aktuellen Ergebnisse werden von neu nach alt gelesen; nicht lesbare werden übersprungen. Für die gewählte Periode und die erste ältere Periode wird jeweils die Summe der Lohnart /559 gebildet, danach endet die Suche. Ohne Auszahlung in der Vorperiode entfällt die Prüfung. Sonst wird die prozentuale Abweichung berechnet; fehlt das Ergebnis der gewählten Periode, ergibt sich 100 Prozent. Mitarbeiter über der Schwelle werden mit beiden Beträgen gelistet. Gab es keinen Treffer, meldet der Report am Ende, dass keine Abweichung vorliegt. Er ändert keine Daten.",
+ "verboten": [
+  "source.abap:42 — kein Fachsatz „Rückrechnungsdifferenzen werden ausgewertet“ (nur aktuelle Ergebnisse, keine Vergleiche alter und neuer Stände)",
+  "source.abap:74 — kein Fachsatz „die Auszahlung wird gesperrt oder korrigiert“ (nur Liste)",
+  "source.abap:56 — kein Fachsatz „der Nettobetrag wird aus Brutto minus Abzügen berechnet“ (summiert wird nur /559 aus dem Ergebnis)"
+ ],
+ "saetze": [
+  {
+   "id": "BM-146-B01",
+   "soll": "Für jeden selektierten Mitarbeiter wird das Abrechnungsverzeichnis gelesen; hat er keines, wird er übergangen.",
+   "zeilen": [
+    26,
+    36,
+    37
+   ],
+   "code": [
+    "26:   CALL FUNCTION 'CU_READ_RGDIR'",
+    "36:   IF sy-subrc <> 0.",
+    "37:     REJECT."
+   ],
+   "X": [
+    "Der Code übergibt peras-pernr an CU_READ_RGDIR und übernimmt dessen Ausgabe nach gv_molga."
+   ],
+   "Y": [
+    "Der Funktionsbaustein CU_READ_RGDIR liest das Abrechnungsverzeichnis in die Tabelle gt_rgdir und ermittelt die Ländergruppierung zur Personalnummer.",
+    "Kann das Abrechnungsverzeichnis nicht gelesen werden oder liegt kein Eintrag vor, wird die aktuelle Personalnummer mit REJECT von der weiteren Verarbeitung ausgeschlossen."
+   ],
+   "Z": [
+    "Der Code übergibt peras-pernr an CU_READ_RGDIR und übernimmt dessen Ausgabe nach gv_molga.",
+    "Das konvertierte Ergebnis wird in gv_molga übernommen."
+   ]
+  },
+  {
+   "id": "BM-146-B02",
+   "soll": "Die Abrechnungsergebnisse werden von der neuesten Periode rückwärts durchlaufen, wobei nur aktuelle Ergebnisse berücksichtigt werden.",
+   "zeilen": [
+    41,
+    42
+   ],
+   "code": [
+    "41:   LOOP AT gt_rgdir INTO gs_rgdir.",
+    "42:     CHECK gs_rgdir-srtza = 'A'."
+   ],
+   "X": [
+    "Jede Zeile aus gt_rgdir wird einzeln verarbeitet.",
+    "Nur wenn das Feld gs_rgdir-srtza gleich A ist, wird der Schleifendurchlauf fortgesetzt; sonst wird er übersprungen, und die Schleife läuft mit dem nächsten Durchlauf weiter."
+   ],
+   "Y": [
+    "Die Einträge des Abrechnungsverzeichnisses gt_rgdir werden nacheinander in einer Schleife durchlaufen.",
+    "Hat der Verzeichniseintrag im Feld srtza nicht den Status A für ein aktuelles Abrechnungsergebnis, wird der Eintrag übersprungen."
+   ],
+   "Z": [
+    "Jede Zeile aus gt_rgdir wird einzeln verarbeitet.",
+    "Nur gs_rgdir-srtza mit dem Wert A gehen weiter; kleinere werden übersprungen, die Schleife läuft weiter."
+   ]
+  },
+  {
+   "id": "BM-146-B03",
+   "soll": "Jedes berücksichtigte Ergebnis wird aus dem deutschen Abrechnungscluster gelesen; ein nicht lesbares Ergebnis wird übersprungen.",
+   "zeilen": [
+    43,
+    52
+   ],
+   "code": [
+    "43:     CALL FUNCTION 'PYXX_READ_PAYROLL_RESULT'",
+    "52:     IF sy-subrc <> 0."
+   ],
+   "X": [
+    "Der Funktionsbaustein PYXX_READ_PAYROLL_RESULT wird aufgerufen.",
+    "Scheitert der Aufruf von PYXX_READ_PAYROLL_RESULT, wird der Schleifendurchlauf übersprungen."
+   ],
+   "Y": [
+    "Der Funktionsbaustein PYXX_READ_PAYROLL_RESULT liest das Abrechnungsergebnis aus dem Cluster RD zur Personalnummer und Sequenznummer seqnr.",
+    "Tritt beim Lesen des Abrechnungsergebnisses ein Fehler auf, wird die Schleife mit dem nächsten Verzeichniseintrag fortgesetzt."
+   ],
+   "Z": [
+    "Der Funktionsbaustein PYXX_READ_PAYROLL_RESULT wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-146-B04",
+   "soll": "Für die gewählte Abrechnungsperiode wird der Auszahlungsbetrag als Summe der Lohnart /559 ermittelt.",
+   "zeilen": [
+    55,
+    56
+   ],
+   "code": [
+    "55:     IF gs_rgdir-fpper = gv_fpper.",
+    "56:       gv_curr = REDUCE maxbt( INIT s = 0"
+   ],
+   "X": [],
+   "Y": [
+    "Stimmt die Abrechnungsperiode fpper mit der gesuchten Periode überein, werden die Beträge der Lohnart /559 aus der Abrechnungstabelle RT summiert und als aktueller Betrag festgehalten.",
+    "Liegt die Abrechnungsperiode fpper vor der gesuchten Periode, werden die Beträge der Lohnart /559 aus der Abrechnungstabelle RT als Vorperiodenbetrag summiert und die Schleife über das Verzeichnis beendet."
+   ],
+   "Z": []
+  },
+  {
+   "id": "BM-146-B05",
+   "soll": "Für die erste ältere Periode wird ebenso der Auszahlungsbetrag ermittelt und die Suche beendet.",
+   "zeilen": [
+    60,
+    61,
+    66
+   ],
+   "code": [
+    "60:     ELSEIF gs_rgdir-fpper < gv_fpper.",
+    "61:       gv_prev = REDUCE maxbt( INIT s = 0",
+    "66:       EXIT."
+   ],
+   "X": [
+    "Wenn das Feld gs_rgdir-fpper kleiner als gv_fpper ist, wird die Schleife verlassen."
+   ],
+   "Y": [
+    "Liegt die Abrechnungsperiode fpper vor der gesuchten Periode, werden die Beträge der Lohnart /559 aus der Abrechnungstabelle RT als Vorperiodenbetrag summiert und die Schleife über das Verzeichnis beendet."
+   ],
+   "Z": [
+    "Für gs_rgdir-fpper kleiner gv_fpper wird der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-146-B06",
+   "soll": "Ohne Auszahlung in der Vorperiode wird der Mitarbeiter nicht weiter geprüft.",
+   "zeilen": [
+    70
+   ],
+   "code": [
+    "70:   CHECK gv_prev <> 0."
+   ],
+   "X": [
+    "Nur wenn das Feld gv_prev ungleich 0 ist, geht es weiter; sonst wird der Ereignisblock GET PERAS an dieser Stelle verlassen."
+   ],
+   "Y": [
+    "Ist der ermittelte Betrag der Vorperiode gleich 0, wird die Bearbeitung der aktuellen Personalnummer abgebrochen."
+   ],
+   "Z": [
+    "Nur gv_prev ungleich 0 gehen weiter; kleinere werden übersprungen, die Schleife läuft weiter."
+   ]
+  },
+  {
+   "id": "BM-146-B07",
+   "soll": "Die prozentuale Abweichung des Auszahlungsbetrags zur Vorperiode wird berechnet; fehlt ein Ergebnis der gewählten Periode, zählt es als null und ergibt 100 Prozent.",
+   "zeilen": [
+    71
+   ],
+   "code": [
+    "71:   gv_dev = abs( gv_curr - gv_prev ) * 100 / gv_prev."
+   ],
+   "X": [],
+   "Y": [
+    "Die absolute prozentuale Abweichung zwischen aktuellem Betrag und Vorperiodenbetrag bezogen auf den Vorperiodenbetrag wird berechnet."
+   ],
+   "Z": []
+  },
+  {
+   "id": "BM-146-B08",
+   "soll": "Liegt die Abweichung über der eingegebenen Schwelle, wird der Mitarbeiter mit beiden Beträgen und der Abweichung gelistet.",
+   "zeilen": [
+    72,
+    74
+   ],
+   "code": [
+    "72:   IF gv_dev > p_pct.",
+    "74:     WRITE: / peras-pernr, gv_prev, gv_curr, gv_dev, '%'."
+   ],
+   "X": [
+    "Wenn das Feld gv_dev größer als p_pct ist, wird Personalnummer ausgegeben, gv_prev ausgegeben, gv_curr ausgegeben, gv_dev ausgegeben und % ausgegeben.",
+    "% wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code."
+   ],
+   "Y": [
+    "Ist die ermittelte Abweichung größer als der vorgegebene Schwellenwert p_pct, wird der Trefferzähler um eins erhöht.",
+    "Die Personalnummer, der Vorperiodenbetrag, der aktuelle Betrag und die prozentuale Abweichung werden in einer Listenzeile ausgegeben."
+   ],
+   "Z": [
+    "Für gv_dev größer p_pct wird peras-pernr ausgegeben, gv_prev ausgegeben, gv_curr ausgegeben, gv_dev ausgegeben und % ausgegeben.",
+    "peras-pernr, gv_prev, gv_curr, gv_dev und % werden ausgegeben.",
+    "peras-pernr wird ausgegeben.",
+    "gv_prev wird ausgegeben.",
+    "gv_curr wird ausgegeben.",
+    "gv_dev wird ausgegeben.",
+    "% wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code."
+   ]
+  },
+  {
+   "id": "BM-146-B09",
+   "soll": "Gab es keinen auffälligen Mitarbeiter, wird am Ende gemeldet, dass keine Abweichung über der Schwelle vorliegt.",
+   "zeilen": [
+    78,
+    79
+   ],
+   "code": [
+    "78:   IF gv_hits = 0.",
+    "79:     MESSAGE s398(00) WITH 'Keine Abweichung ueber' p_pct '%'."
+   ],
+   "X": [
+    "Wenn das Feld gv_hits gleich 0 ist, wird eine Statusmeldung ausgegeben.",
+    "Die Statusmeldung 398(00) wird ausgegeben."
+   ],
+   "Y": [
+    "Wurden keine Abweichungen über dem Schwellenwert p_pct festgestellt, wird eine Erfolgsmeldung mit dem Schwellenwert ausgegeben."
+   ],
+   "Z": [
+    "Für gv_hits mit dem Wert 0 wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  }
+ ]
+}

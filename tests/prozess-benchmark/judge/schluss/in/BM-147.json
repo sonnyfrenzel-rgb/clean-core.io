@@ -1,0 +1,168 @@
+{
+ "id": "BM-147",
+ "titel": "Zeitauswertung: Kundenfunktion ZNZ bildet Nachtzuschlag aus der Tagesinputtabelle",
+ "prozess": "Die Zeitauswertung ruft für jeden Mitarbeiter und Tag die Kundenfunktion ZNZ auf. Sie liest die am Tag gültige Nachtzuschlagsregel für den Personalteilbereich; ohne Regel endet sie ohne Zuschlag. Dann werden die Anwesenheitszeitpaare des Tages durchlaufen und je Paar die Minuten nach 22 Uhr und vor 6 Uhr ermittelt. Paare unter der vereinbarten Mindestdauer zählen nicht, die übrigen werden aufsummiert. Ist die Summe null, endet die Funktion. Andernfalls wird eine Zeitlohnart mit den Nachtstunden gebildet, bei Dauernachtschicht mit einer eigenen Lohnart, und für die Abrechnung bereitgestellt. Die frühere Buchung als Zeitsaldo steht hinter IF 1 = 2 und wird nie ausgeführt.",
+ "verboten": [
+  "source.abap:66 — kein Fachsatz „der Nachtzuschlag wird als Zeitsaldo gebucht“ (Aufruf steht in IF 1 = 2, das FORM wird nie erreicht)",
+  "source.abap:62 — kein Fachsatz „der Zuschlag wird in Euro berechnet oder ausgezahlt“ (übergeben werden nur Stunden an eine Zeitlohnart; Bewertung erst in der Abrechnung)",
+  "source.abap:29 — kein Fachsatz „Abwesenheiten in der Nacht werden bezuschlagt“"
+ ],
+ "saetze": [
+  {
+   "id": "BM-147-B01",
+   "soll": "Für den Personalteilbereich des Mitarbeiters wird die am Auswertungstag gültige Nachtzuschlagsregel gelesen; gibt es keine, entsteht kein Zuschlag.",
+   "zeilen": [
+    18,
+    23,
+    25
+   ],
+   "code": [
+    "18:   SELECT SINGLE * FROM zpt_nz_cust INTO ls_cust",
+    "23:   IF sy-subrc <> 0.",
+    "25:     EXIT."
+   ],
+   "X": [
+    "Es werden Sätze aus zpt_nz_cust selektiert.",
+    "Ohne Treffer wird der Block verlassen."
+   ],
+   "Y": [
+    "Aus der Tabelle zpt_nz_cust wird der Datensatz gelesen, dessen Personalbereich mit p0001-werks und dessen Personalteilbereich mit p0001-btrtl übereinstimmen und dessen Gültigkeitsintervall das Tagesdatum einschließt.",
+    "Wird kein passender Datensatz in der Tabelle zpt_nz_cust gefunden, wird die Verarbeitung beendet."
+   ],
+   "Z": [
+    "Es werden Sätze aus zpt_nz_cust selektiert.",
+    "Ohne Treffer wird der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-147-B02",
+   "soll": "Die Zeitpaare des Tages werden durchlaufen, wobei nur Anwesenheiten berücksichtigt werden.",
+   "zeilen": [
+    28,
+    29
+   ],
+   "code": [
+    "28:   LOOP AT tip.",
+    "29:     CHECK tip-abwkz IS INITIAL."
+   ],
+   "X": [
+    "Jede Zeile aus tip wird einzeln verarbeitet.",
+    "Nur Eine leere tip-abwkz gehen weiter; kleinere werden übersprungen, die Schleife läuft weiter."
+   ],
+   "Y": [
+    "Für jedes Paar in der Zeittabelle tip wird die folgende Verarbeitung ausgeführt.",
+    "Ist das Abwesenheitskennzeichen des aktuellen Zeitpaars gefüllt, wird die Bearbeitung dieses Eintrags übersprungen."
+   ],
+   "Z": [
+    "Jede Zeile aus tip wird einzeln verarbeitet.",
+    "Nur wenn das Feld tip-abwkz leer ist, wird der Schleifendurchlauf fortgesetzt; sonst wird er übersprungen, und die Schleife läuft mit dem nächsten Durchlauf weiter."
+   ]
+  },
+  {
+   "id": "BM-147-B03",
+   "soll": "Je Zeitpaar werden die Minuten nach 22 Uhr und vor 6 Uhr als Nachtanteil berechnet.",
+   "zeilen": [
+    32,
+    35,
+    38,
+    41
+   ],
+   "code": [
+    "32:     IF tip-endtm > '220000'.",
+    "35:       lv_min = lv_min + ( tip-endtm - lv_beg ) / 60.",
+    "38:     IF tip-begtm < '060000'.",
+    "41:       lv_min = lv_min + ( lv_end - tip-begtm ) / 60."
+   ],
+   "X": [],
+   "Y": [
+    "Liegt das Ende der Arbeitszeit nach 22:00:00 Uhr, werden die Minuten zwischen dem späteren Wert aus Arbeitszeitbeginn und 22:00:00 Uhr bis zum Arbeitszeitende ermittelt und zu den Zuschlagsminuten addiert.",
+    "Liegt der Beginn der Arbeitszeit vor 06:00:00 Uhr, werden die Minuten zwischen Arbeitszeitbeginn und dem früheren Wert aus Arbeitszeitende und 06:00:00 Uhr ermittelt und zu den Zuschlagsminuten addiert."
+   ],
+   "Z": []
+  },
+  {
+   "id": "BM-147-B04",
+   "soll": "Zeitpaare, deren Nachtanteil unter der vereinbarten Mindestdauer liegt, zählen nicht.",
+   "zeilen": [
+    44,
+    45
+   ],
+   "code": [
+    "44:     IF lv_min < ls_cust-minmin.",
+    "45:       CONTINUE."
+   ],
+   "X": [],
+   "Y": [
+    "Erreichen die ermittelten Zuschlagsminuten des Zeitpaars nicht die Mindestminuten aus der Customizing-Tabelle, wird das Paar nicht berücksichtigt.",
+    "Erreichen die ermittelten Zuschlagsminuten die Mindestanzahl, werden sie zur Gesamtminutenanzahl aufaddiert."
+   ],
+   "Z": [
+    "Für Mindestwerte kleiner ls_cust-minmin wird der Schleifendurchlauf übersprungen."
+   ]
+  },
+  {
+   "id": "BM-147-B05",
+   "soll": "Die übrigen Nachtminuten werden zu einer Tagessumme addiert.",
+   "zeilen": [
+    47
+   ],
+   "code": [
+    "47:     lv_total = lv_total + lv_min."
+   ],
+   "X": [],
+   "Y": [
+    "Erreichen die ermittelten Zuschlagsminuten die Mindestanzahl, werden sie zur Gesamtminutenanzahl aufaddiert."
+   ],
+   "Z": []
+  },
+  {
+   "id": "BM-147-B06",
+   "soll": "Ergibt sich keine Nachtzeit, wird die Funktion ohne Zuschlag verlassen.",
+   "zeilen": [
+    50,
+    51
+   ],
+   "code": [
+    "50:   IF lv_total = 0.",
+    "51:     EXIT."
+   ],
+   "X": [
+    "Für Summen mit dem Wert 0 wird der Block verlassen.",
+    "Bei lv_total gleich 0 wird der Block verlassen."
+   ],
+   "Y": [
+    "Beträgt die Gesamtsumme der ermittelten Zuschlagsminuten 0, wird die Verarbeitung beendet."
+   ],
+   "Z": [
+    "Wenn die Summe gleich 0 ist, wird der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-147-B07",
+   "soll": "Sonst wird für den Tag eine Zeitlohnart mit den Nachtstunden gebildet, bei Dauernachtschicht mit der eigenen Lohnart für den erhöhten Satz, und an die Abrechnung übergeben.",
+   "zeilen": [
+    57,
+    58,
+    60,
+    62
+   ],
+   "code": [
+    "57:   zl-anzhl = lv_total / 60.",
+    "58:   IF p0007-schkz(2) = 'NS'.",
+    "60:     zl-lgart = ls_cust-lgart_ns.",
+    "62:   APPEND zl."
+   ],
+   "X": [
+    "Eine Zeile wird aufgenommen."
+   ],
+   "Y": [
+    "In die Zeitlohnarten-Tabelle zl werden das Tagesdatum datum, die Standard-Lohnart aus dem Customizing und die Gesamtminuten geteilt durch 60 als Anzahl eingetragen.",
+    "Beginnt das Schichtkennzeichen mit den Buchstaben NS, wird die Lohnart in der Tabelle zl durch die Nachtschicht-Lohnart aus dem Customizing ersetzt.",
+    "Der erstellte Eintrag wird an die Tabelle zl angehängt."
+   ],
+   "Z": [
+    "Eine Zeile wird aufgenommen."
+   ]
+  }
+ ]
+}

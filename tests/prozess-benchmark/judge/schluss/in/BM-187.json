@@ -1,0 +1,151 @@
+{
+ "id": "BM-187",
+ "titel": "BOPF-Validierung Leihgeräteausgabe: Rückgabedatum, Kundensperre, höchstens drei Geräte je Kunde",
+ "prozess": "Beim Ausgeben eines Leihgeräts ruft das BOPF-Framework die Validierung mit den betroffenen Vorgängen auf. Die Validierung liest die Vorgangsdaten und prüft jeden Vorgang einzeln. Liegt die geplante Rückgabe vor dem Ausgabedatum, wird der Vorgang mit Meldung 001 abgelehnt und nicht weiter geprüft. Sonst liest sie zum Kunden die zentrale Auftrags- und Liefersperre; existiert der Kunde nicht oder ist eine der Sperren gesetzt, wird mit Meldung 002 abgelehnt. Andernfalls zählt sie die anderen Leihgeräte, die der Kunde im Status A ausgeliehen hat; ab drei wird mit Meldung 003 abgelehnt. Eine Ablehnung trägt den Vorgang in die Liste der fehlgeschlagenen Schlüssel ein und hängt eine Fehlermeldung an den Vorgang, wobei der Meldungscontainer beim ersten Fehler angelegt wird. Die Kautionsprüfung ist auskommentiert. Die Validierung ändert keine Daten; das Framework verhindert die Ausgabe für die fehlgeschlagenen Vorgänge.",
+ "verboten": [
+  "gesamte Scheibe — kein Fachsatz „ohne hinterlegte Kaution wird die Ausgabe abgelehnt“: die Kautionsprüfung (Meldung 004) ist auskommentiert",
+  "zcl_leih_v_ausgabe.abap:38 — kein Fachsatz „die Validierung sperrt den Kunden oder die Leihgeräte“: gezählt und geprüft wird nur, es wird nichts gesperrt oder geändert",
+  "zcl_leih_v_ausgabe.abap:43 — kein Fachsatz „ein Kunde mit Datumsfehler wird zusätzlich auf Sperre und Höchstzahl geprüft“: nach der ersten Ablehnung geht es mit CONTINUE zum nächsten Vorgang, es erscheint höchstens eine Meldung je Vorgang"
+ ],
+ "saetze": [
+  {
+   "id": "BM-187-B01",
+   "soll": "Beim Ausgeben werden die betroffenen Leihgeräte-Vorgänge gelesen und einzeln geprüft.",
+   "zeilen": [
+    11,
+    18
+   ],
+   "code": [
+    "11:     io_read->retrieve(",
+    "18:     LOOP AT lt_root ASSIGNING FIELD-SYMBOL(<ls_root>)."
+   ],
+   "X": [
+    "Die Methode retrieve von io_read wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "Jede Zeile aus lt_root wird einzeln verarbeitet."
+   ],
+   "Y": [
+    "Über die Leseschnittstelle werden für die übergebenen Schlüssel die Daten des Wurzelknotens der Leihgeräte gelesen."
+   ],
+   "Z": [
+    "Die Methode retrieve von io_read wird aufgerufen; ihr Ergebnis wird in lt_root übernommen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "Jede Zeile aus lt_root wird einzeln verarbeitet."
+   ]
+  },
+  {
+   "id": "BM-187-B02",
+   "soll": "Liegt die geplante Rückgabe vor dem Ausgabedatum, wird der Vorgang mit Meldung 001 abgelehnt und nicht weiter geprüft.",
+   "zeilen": [
+    21,
+    22
+   ],
+   "code": [
+    "21:       IF <ls_root>-rueckgabe_soll < <ls_root>-ausgabe_datum.",
+    "22:         add_fehler( EXPORTING iv_key = <ls_root>-key iv_msgno = '001'"
+   ],
+   "X": [],
+   "Y": [
+    "Liegt das geplante Rückgabedatum rueckgabe_soll vor dem Ausgabedatum ausgabe_datum, wird die Fehlerbehandlung mit der Meldungsnummer 001 aufgerufen und mit dem nächsten Leihgerät fortgefahren."
+   ],
+   "Z": [
+    "Wenn das Feld ls_root-rueckgabe_soll kleiner als ls_root-ausgabe_datum ist, wird der Schleifendurchlauf übersprungen."
+   ]
+  },
+  {
+   "id": "BM-187-B03",
+   "soll": "Zum Kunden werden die zentrale Auftrags- und Liefersperre gelesen.",
+   "zeilen": [
+    28
+   ],
+   "code": [
+    "28:       SELECT SINGLE aufsd, lifsd FROM kna1"
+   ],
+   "X": [
+    "Das Ergebnis enthält aufsd und lifsd.",
+    "aufsd und lifsd des Kunden werden gelesen."
+   ],
+   "Y": [
+    "Aus der Tabelle kna1 werden zur Kundennummer kunnr die zentrale Auftragssperre aufsd und die zentrale Liefersperre lifsd gelesen."
+   ],
+   "Z": [
+    "Das Ergebnis enthält Auftragssperre und lifsd.",
+    "Die Felder aufsd und lifsd des Kunden werden gelesen."
+   ]
+  },
+  {
+   "id": "BM-187-B04",
+   "soll": "Existiert der Kunde nicht oder ist er für Aufträge oder Lieferungen gesperrt, wird der Vorgang mit Meldung 002 abgelehnt.",
+   "zeilen": [
+    31,
+    32
+   ],
+   "code": [
+    "31:       IF sy-subrc <> 0 OR ls_sperre-aufsd IS NOT INITIAL OR ls_sperre-lifsd IS NOT INITIAL.",
+    "32:         add_fehler( EXPORTING iv_key = <ls_root>-key iv_msgno = '002'"
+   ],
+   "X": [],
+   "Y": [
+    "Wird kein Kundendatensatz gefunden oder ist das Feld aufsd oder lifsd nicht initial, wird die Fehlerbehandlung mit der Meldungsnummer 002 aufgerufen und mit dem nächsten Leihgerät fortgefahren."
+   ],
+   "Z": [
+    "Wenn kein Treffer vorliegt, die Auftragssperre nicht leer ist oder das Feld ls_sperre-lifsd nicht leer ist, wird der Schleifendurchlauf übersprungen."
+   ]
+  },
+  {
+   "id": "BM-187-B05",
+   "soll": "Es wird gezählt, wie viele andere Leihgeräte der Kunde derzeit ausgeliehen hat.",
+   "zeilen": [
+    38
+   ],
+   "code": [
+    "38:       SELECT COUNT(*) FROM zleih_root"
+   ],
+   "X": [
+    "Die Zahl der Sätze wird ermittelt."
+   ],
+   "Y": [
+    "In der Tabelle zleih_root wird die Anzahl der Datensätze ermittelt, die für dieselbe Kundennummer kunnr den Status A aufweisen und deren Schlüssel db_key vom aktuellen Schlüssel abweicht."
+   ],
+   "Z": [
+    "Die Zahl der Sätze wird ermittelt."
+   ]
+  },
+  {
+   "id": "BM-187-B06",
+   "soll": "Hat der Kunde bereits drei oder mehr Leihgeräte, wird der Vorgang mit Meldung 003 abgelehnt.",
+   "zeilen": [
+    43,
+    44
+   ],
+   "code": [
+    "43:       IF lv_anzahl >= 3.",
+    "44:         add_fehler( EXPORTING iv_key = <ls_root>-key iv_msgno = '003'"
+   ],
+   "X": [],
+   "Y": [
+    "Ist die ermittelte Anzahl an Leihgeräten größer oder gleich 3, wird die Fehlerbehandlung mit der Meldungsnummer 003 aufgerufen."
+   ],
+   "Z": []
+  },
+  {
+   "id": "BM-187-B07",
+   "soll": "Ein abgelehnter Vorgang wird als fehlgeschlagen markiert und erhält eine Fehlermeldung am Vorgang.",
+   "zeilen": [
+    54,
+    57
+   ],
+   "code": [
+    "54:     INSERT VALUE #( key = iv_key ) INTO TABLE ct_failed_key.",
+    "57:     co_message->add_message("
+   ],
+   "X": [
+    "Die Methode add_message von co_message wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ],
+   "Y": [
+    "Der übergebene Schlüssel wird in die Tabelle der fehlerhaften Schlüssel eingefügt und zum Wurzelknoten wird eine Fehlermeldung vom Typ E der Nachrichtenklasse ZLEIH mit der übergebenen Meldungsnummer erfasst."
+   ],
+   "Z": [
+    "Die Methode add_message von co_message wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ]
+  }
+ ]
+}

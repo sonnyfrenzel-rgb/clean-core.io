@@ -1,0 +1,237 @@
+{
+ "id": "BM-026",
+ "titel": "Freigegebene Bestellanforderungen je Lieferant in Bestellungen umsetzen (BAPI_PO_CREATE1)",
+ "prozess": "Ein Einkäufer oder ein Hintergrundjob startet den Report mit Werk, Einkaufsorganisation, Bestellart, Freigabekennzeichen und dem Testlauf-Schalter (Vorschlag: an). Der Report liest die offenen, nicht gelöschten und entsprechend freigegebenen Bestellanforderungen mit festem Lieferanten. Gibt es keine, meldet er das und endet. Sonst gruppiert er die Banfen nach Lieferant und baut je Lieferant eine Bestellung mit festem Buchungskreis 1000 und Einkäufergruppe 001, deren Positionen in Zehnerschritten auf die Banfen verweisen und deren Menge übernehmen. Die Bestellung wird über BAPI_PO_CREATE1 angelegt, im Testlauf nur geprüft. Meldet der BAPI einen Fehler, wird zurückgerollt, der Lieferant mit Fehler protokolliert und der nächste Lieferant verarbeitet. Im Testlauf wird nur die Positionsanzahl ausgegeben, im Echtlauf wird synchron festgeschrieben und die neue Bestellnummer ausgegeben.",
+ "verboten": [
+  "source.abap:79 — kein Fachsatz „Auch Abbruchmeldungen (Typ A) verhindern die Bestellung“ (geprüft wird nur Typ E)",
+  "source.abap:47 — kein Fachsatz „Der Buchungskreis wird aus dem Werk abgeleitet“ (fest 1000, nur TODO-Kommentar)",
+  "source.abap:60 — kein Fachsatz „Preis und Lieferdatum werden aus der Banf übernommen“ (nur Banf-Bezug und Menge; Rest leitet der BAPI ab)",
+  "gesamte Scheibe — kein Fachsatz „Der Banf-Status wird vom Report auf bestellt gesetzt“ (der Report schreibt EBAN nicht selbst; das geschieht, wenn überhaupt, im Standard beim Anlegen der Bestellung)"
+ ],
+ "saetze": [
+  {
+   "id": "BM-026-B01",
+   "soll": "Es werden die Bestellanforderungen des Werks und der Einkaufsorganisation gelesen, die den gewählten Freigabestand haben, noch nicht bearbeitet, nicht gelöscht und einem festen Lieferanten zugeordnet sind.",
+   "zeilen": [
+    29
+   ],
+   "code": [
+    "29:   SELECT * FROM eban INTO TABLE gt_eban"
+   ],
+   "X": [
+    "Es werden Sätze aus eban mit dem eingegebenen werks, dem eingegebenen ekorg und dem eingegebenen frgkz selektiert."
+   ],
+   "Y": [
+    "Aus der Tabelle EBAN werden alle Bestellanforderungen mit dem angegebenen Werk, der Einkaufsorganisation, dem Freigabekennzeichen, dem Bearbeitungsstatus 'N', ohne Löschvormerkung und mit gepflegtem festen Lieferanten gelesen."
+   ],
+   "Z": [
+    "Es werden Bestellanforderungen mit dem eingegebenen Werk, dem eingegebenen Einkaufsorganisation und dem eingegebenen frgkz selektiert."
+   ]
+  },
+  {
+   "id": "BM-026-B02",
+   "soll": "Gibt es keine, wird „Keine offenen Banfen“ gemeldet und die Verarbeitung beendet.",
+   "zeilen": [
+    36,
+    37,
+    38
+   ],
+   "code": [
+    "36:   IF gt_eban IS INITIAL.",
+    "37:     MESSAGE s001(zmm) WITH 'Keine offenen Banfen'.",
+    "38:     LEAVE LIST-PROCESSING."
+   ],
+   "X": [
+    "Ohne Treffer wird eine Meldung ausgegeben und die Screenfolge beendet.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "Eine Meldung wird ausgegeben.",
+    "Es wird eine Meldung ausgegeben und die Screenfolge beendet.",
+    "Die Screenfolge wird beendet."
+   ],
+   "Y": [
+    "Sind keine Bestellanforderungen vorhanden, wird die Nachricht 'Keine offenen Banfen' ausgegeben und die Listenverarbeitung beendet."
+   ],
+   "Z": [
+    "Ohne Treffer wird eine Statusmeldung ausgegeben und die Listenverarbeitung verlassen.",
+    "Die Statusmeldung 001(ZMM) wird ausgegeben.",
+    "Die Listenverarbeitung wird verlassen; es geht zurück zu dem Bild, von dem sie ausging."
+   ]
+  },
+  {
+   "id": "BM-026-B03",
+   "soll": "Die Banfen werden nach festem Lieferanten gruppiert; je Lieferant entsteht genau eine Bestellung.",
+   "zeilen": [
+    42,
+    45
+   ],
+   "code": [
+    "42:     INSERT gs_eban-flief INTO TABLE gt_lifnr.",
+    "45:   LOOP AT gt_lifnr INTO gv_lifnr."
+   ],
+   "X": [
+    "Jede Zeile aus gt_lifnr wird einzeln verarbeitet."
+   ],
+   "Y": [
+    "Für jede gefundene Bestellanforderung wird der feste Lieferant in die Liste der eindeutigen Lieferanten übernommen.",
+    "Über jeden ermittelten Lieferanten wird eine Schleife zur Anlage der jeweiligen Bestellung durchlaufen."
+   ],
+   "Z": [
+    "Jede Zeile aus gt_lifnr wird einzeln verarbeitet."
+   ]
+  },
+  {
+   "id": "BM-026-B04",
+   "soll": "Der Bestellkopf erhält Bestellart, Lieferant und Einkaufsorganisation aus der Selektion, Buchungskreis 1000 und Einkäufergruppe 001 fest.",
+   "zeilen": [
+    47
+   ],
+   "code": [
+    "47:     gs_header-comp_code = '1000'.            \"TODO: aus T001W/T001K lesen"
+   ],
+   "X": [
+    "Die gs_header-comp_code wird auf 1000 gesetzt."
+   ],
+   "Y": [],
+   "Z": [
+    "Das Feld gs_header-comp_code wird auf 1000 gesetzt."
+   ]
+  },
+  {
+   "id": "BM-026-B05",
+   "soll": "Jede Banf des Lieferanten wird zu einer Bestellposition in Zehnerschritten mit Bezug auf Banf-Nummer und -Position und der Banf-Menge.",
+   "zeilen": [
+    55,
+    56
+   ],
+   "code": [
+    "55:     LOOP AT gt_eban INTO gs_eban WHERE flief = gv_lifnr.",
+    "56:       gv_ebelp = gv_ebelp + 10."
+   ],
+   "X": [
+    "Jede Zeile aus gt_eban wird einzeln verarbeitet."
+   ],
+   "Y": [
+    "Für jede Bestellanforderung des aktuellen Lieferanten wird eine Bestellposition mit fortlaufender Positionsnummer in Zehnerschritten sowie Banf-Nummer, Banf-Position und Menge aufgebaut."
+   ],
+   "Z": [
+    "Die Zeilen aus gt_eban, bei denen das Feld flief gleich gv_lifnr ist, werden einzeln verarbeitet."
+   ]
+  },
+  {
+   "id": "BM-026-B06",
+   "soll": "Die Bestellung wird über das Standard-BAPI angelegt, im Testlauf nur simuliert.",
+   "zeilen": [
+    67
+   ],
+   "code": [
+    "67:     CALL FUNCTION 'BAPI_PO_CREATE1'"
+   ],
+   "X": [
+    "Der Code übergibt gs_header an BAPI_PO_CREATE1 und übernimmt dessen Ausgabe nach gv_ebeln.",
+    "Das konvertierte Ergebnis wird in gv_ebeln übernommen."
+   ],
+   "Y": [
+    "Über den Funktionsbaustein BAPI_PO_CREATE1 wird eine Bestellung mit Buchungskreis '1000', der Belegart, dem Lieferanten, der Einkaufsorganisation, der Einkäufergruppe '001', dem Testlaufkennzeichen und den gesammelten Positionen angelegt."
+   ],
+   "Z": [
+    "Der Code übergibt gs_header an BAPI_PO_CREATE1 und übernimmt dessen Ausgabe nach gv_ebeln."
+   ]
+  },
+  {
+   "id": "BM-026-B07",
+   "soll": "Enthält die Rückmeldung einen Fehler, wird zurückgerollt, für den Lieferanten „keine Bestellung angelegt“ protokolliert und mit dem nächsten Lieferanten fortgefahren.",
+   "zeilen": [
+    81,
+    82,
+    83
+   ],
+   "code": [
+    "81:     IF sy-subrc = 0.",
+    "82:       CALL FUNCTION 'BAPI_TRANSACTION_ROLLBACK'.",
+    "83:       WRITE: / gv_lifnr, 'Fehler - keine Bestellung angelegt'."
+   ],
+   "X": [
+    "Bei Treffer wird BAPI_TRANSACTION_ROLLBACK aufgerufen, gv_lifnr ausgegeben und Fehler - keine Bestellung angelegt ausgegeben.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_ROLLBACK wird aufgerufen.",
+    "Es wird BAPI_TRANSACTION_ROLLBACK aufgerufen, gv_lifnr ausgegeben und Fehler - keine Bestellung angelegt ausgegeben.",
+    "Bei Treffern werden gv_lifnr und Fehler - keine Bestellung angelegt als Liste ausgegeben.",
+    "gv_lifnr wird ausgegeben.",
+    "Fehler - keine Bestellung angelegt wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code."
+   ],
+   "Y": [
+    "In der Rückmeldetabelle der Bestellanlage wird geprüft, ob mindestens ein Fehler vom Typ 'E' vorhanden ist.",
+    "Ist ein Fehler aufgetreten, werden die Änderungen über den Funktionsbaustein BAPI_TRANSACTION_ROLLBACK verworfen.",
+    "Ist ein Fehler aufgetreten, werden der Lieferant und die Meldung 'Fehler - keine Bestellung angelegt' ausgegeben und die Verarbeitung für diesen Lieferanten abgebrochen."
+   ],
+   "Z": [
+    "Bei Treffer wird BAPI_TRANSACTION_ROLLBACK aufgerufen, Lieferantennummer ausgegeben, Fehler - keine Bestellung angelegt ausgegeben und der Schleifendurchlauf übersprungen.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_ROLLBACK wird aufgerufen.",
+    "Fehler - keine Bestellung angelegt wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code."
+   ]
+  },
+  {
+   "id": "BM-026-B08",
+   "soll": "Im Testlauf wird nur die Anzahl der Positionen je Lieferant ausgegeben.",
+   "zeilen": [
+    87,
+    88
+   ],
+   "code": [
+    "87:     IF p_test = 'X'.",
+    "88:       WRITE: / gv_lifnr, 'Testlauf ok,', lines( gt_item ), 'Positionen'."
+   ],
+   "X": [
+    "Mit gesetztem p_test wird gv_lifnr ausgegeben, Testlauf ok, ausgegeben, lines( gt_item ) ausgegeben und Positionen ausgegeben.",
+    "Mit gesetztem p_test wird gv_lifnr ausgegeben, Testlauf ok, ausgegeben, lines( gt_item ) ausgegeben und Positionen ausgegeben, sonst BAPI_TRANSACTION_COMMIT aufgerufen, gv_lifnr ausgegeben, Bestellung ausgegeben, Das vom Funktionsbaustein zurückgegebene Feld ausgegeben und angelegt ausgegeben.",
+    "Bei Treffern werden gv_lifnr, Testlauf ok,, lines( gt_item ) und Positionen als Liste ausgegeben.",
+    "gv_lifnr wird ausgegeben.",
+    "Testlauf ok, wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "lines( gt_item ) wird ausgegeben.",
+    "Positionen wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code."
+   ],
+   "Y": [
+    "Ist der Testlauf aktiv (Wert 'X'), werden der Lieferant, der Hinweis 'Testlauf ok,' und die Anzahl der Positionen ausgegeben.",
+    "Ist der Testlauf nicht aktiv, wird die Verbuchung über den Funktionsbaustein BAPI_TRANSACTION_COMMIT mit Verbuchungswartezeit bestätigt.",
+    "Ist der Testlauf nicht aktiv, werden der Lieferant, der Text 'Bestellung', die erzeugte Belegnummer und der Text 'angelegt' ausgegeben."
+   ],
+   "Z": [
+    "Mit gesetztem p_test wird Lieferantennummer ausgegeben, Testlauf ok, ausgegeben, lines( gt_item ) ausgegeben und Positionen ausgegeben, sonst BAPI_TRANSACTION_COMMIT aufgerufen, Lieferantennummer ausgegeben, Bestellung ausgegeben, Das vom Funktionsbaustein zurückgegebene Feld ausgegeben und angelegt ausgegeben.",
+    "Testlauf ok, wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "Positionen wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code."
+   ]
+  },
+  {
+   "id": "BM-026-B09",
+   "soll": "Im Echtlauf wird die Bestellung synchron festgeschrieben und die neue Bestellnummer je Lieferant ausgegeben.",
+   "zeilen": [
+    90,
+    93
+   ],
+   "code": [
+    "90:       CALL FUNCTION 'BAPI_TRANSACTION_COMMIT'",
+    "93:       WRITE: / gv_lifnr, 'Bestellung', gv_ebeln, 'angelegt'."
+   ],
+   "X": [
+    "Mit gesetztem p_test wird gv_lifnr ausgegeben, Testlauf ok, ausgegeben, lines( gt_item ) ausgegeben und Positionen ausgegeben, sonst BAPI_TRANSACTION_COMMIT aufgerufen, gv_lifnr ausgegeben, Bestellung ausgegeben, Das vom Funktionsbaustein zurückgegebene Feld ausgegeben und angelegt ausgegeben.",
+    "Für andere p_test wird BAPI_TRANSACTION_COMMIT aufgerufen, gv_lifnr ausgegeben, Bestellung ausgegeben, Das vom Funktionsbaustein zurückgegebene Feld ausgegeben und angelegt ausgegeben.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_COMMIT wird aufgerufen.",
+    "Es wird BAPI_TRANSACTION_COMMIT aufgerufen, gv_lifnr ausgegeben, Bestellung ausgegeben, Das vom Funktionsbaustein zurückgegebene Feld ausgegeben und angelegt ausgegeben.",
+    "Bei Treffern werden gv_lifnr, Bestellung, Das vom Funktionsbaustein zurückgegebene Feld und angelegt als Liste ausgegeben.",
+    "gv_lifnr wird ausgegeben.",
+    "Bestellung wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "Das vom Funktionsbaustein zurückgegebene Feld wird ausgegeben.",
+    "angelegt wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code."
+   ],
+   "Y": [
+    "Ist der Testlauf nicht aktiv, wird die Verbuchung über den Funktionsbaustein BAPI_TRANSACTION_COMMIT mit Verbuchungswartezeit bestätigt.",
+    "Ist der Testlauf nicht aktiv, werden der Lieferant, der Text 'Bestellung', die erzeugte Belegnummer und der Text 'angelegt' ausgegeben."
+   ],
+   "Z": [
+    "Mit gesetztem p_test wird Lieferantennummer ausgegeben, Testlauf ok, ausgegeben, lines( gt_item ) ausgegeben und Positionen ausgegeben, sonst BAPI_TRANSACTION_COMMIT aufgerufen, Lieferantennummer ausgegeben, Bestellung ausgegeben, Das vom Funktionsbaustein zurückgegebene Feld ausgegeben und angelegt ausgegeben.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_COMMIT wird aufgerufen.",
+    "Bestellung wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "angelegt wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code."
+   ]
+  }
+ ]
+}

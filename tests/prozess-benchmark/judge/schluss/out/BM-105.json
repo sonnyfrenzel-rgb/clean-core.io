@@ -1,0 +1,94 @@
+{
+ "id": "BM-105",
+ "urteile": [
+  {
+   "id": "BM-105-B01",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Z": {
+    "urteil": "abweichend",
+    "mangel": [
+     "falsch",
+     "zu_allgemein"
+    ]
+   },
+   "kurz": "X Vorschlag aus Benutzerparameter; Y technisch; Z behauptet fälschlich eine logische Datenbank."
+  },
+  {
+   "id": "BM-105-B02",
+   "X": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig",
+     "grammatik"
+    ]
+   },
+   "kurz": "Nur X nennt eingebaute Equipments mit übergeordnetem Equipment im gültigen Zeitsegment."
+  },
+  {
+   "id": "BM-105-B03",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "kurz": "Alle nennen den Abbruch bei Überschreiten der Höchstzahl."
+  },
+  {
+   "id": "BM-105-B04",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "kurz": "X nennt Equipment und übergeordnetes Equipment, Y und Z nur gv_heqnr."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

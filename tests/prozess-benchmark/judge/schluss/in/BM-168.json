@@ -1,0 +1,163 @@
+{
+ "id": "BM-168",
+ "titel": "Variantenkonfiguration: Fertigungsvariante und Plangruppe aus der Merkmalbewertung einer Auftragsposition",
+ "prozess": "Die Methode wird aus der Auftragsfreigabe und der Arbeitsvorbereitung mit Auftragsnummer und Position gerufen. Sie liest die Konfigurationsinstanz der Position und bricht mit einer Ausnahme ab, wenn die Position nicht konfiguriert ist. Dann liest sie die Merkmalbewertung; ist sie nicht lesbar, endet sie ebenfalls mit einer Ausnahme. Die Spannung ist Pflicht und führt, wenn sie fehlt, zur Ausnahme „Merkmal fehlt“; Gehäuse und ATEX-Kennzeichen werden nur übernommen, wenn sie bewertet sind. Aus der Spannung ergibt sich die Grundvariante N1, N3 oder H3, sonst die Sonderausführung SO. Eine ATEX-Ausführung ersetzt die zweite Stelle durch X und setzt einen Prüfplanhinweis; ein Edelstahlgehäuse hängt ein E an, außer die Variante lautet danach genau SO. Schließlich wird die Plangruppe zur Variante gelesen, und fehlt sie, ersetzt ein Hinweis auf manuelle Zuordnung den bisherigen Hinweis. Die Methode ändert nichts.",
+ "verboten": [
+  "zcl_vc_fertvar.abap:68 — kein Fachsatz „die ATEX-Variante bleibt je Spannung unterscheidbar“: N1 und N3 werden beide zu NX, die Spannungsstufe geht verloren",
+  "zcl_vc_fertvar.abap:78 — kein Fachsatz „der ATEX-Prüfplanhinweis bleibt immer erhalten“: fehlt die Plangruppe, wird er überschrieben",
+  "gesamte Scheibe — kein Fachsatz „die Konfiguration oder der Auftrag wird geändert“: die Methode liest nur und gibt Variante, Plangruppe und Hinweis zurück",
+  "zcl_vc_fertvar.abap:71 — kein Fachsatz „Edelstahl gilt für alle Varianten“ und keiner „Sonderausführungen erhalten nie ein E“: nur der Wert SO bleibt ohne E, die ATEX-Sonderausführung SX wird zu SXE"
+ ],
+ "saetze": [
+  {
+   "id": "BM-168-B01",
+   "soll": "Zur Auftragsposition wird die Konfigurationsinstanz gelesen; ist die Position nicht konfiguriert, endet die Ermittlung mit einer Ausnahme.",
+   "zeilen": [
+    29,
+    32,
+    33
+   ],
+   "code": [
+    "29:     SELECT SINGLE cuobj FROM vbap INTO @DATA(lv_cuobj)",
+    "32:     IF lv_cuobj IS INITIAL.",
+    "33:       RAISE EXCEPTION TYPE zcx_vc_fertvar"
+   ],
+   "X": [
+    "Das Feld cuobj der Auftragsposition wird gelesen."
+   ],
+   "Y": [
+    "cuobj des Satzes wird gelesen."
+   ],
+   "Z": [
+    "Zu der übergebenen Verkaufsbelegnummer und Verkaufsposition wird die Konfigurationsnummer (Feld CUOBJ) aus der Tabelle VBAP gelesen.",
+    "Ist die Konfigurationsnummer initial, wird der Fehler zcx_vc_fertvar=>nicht_konfiguriert ausgelöst."
+   ]
+  },
+  {
+   "id": "BM-168-B02",
+   "soll": "Die Merkmalbewertung der Konfiguration wird gelesen; scheitert das, endet die Ermittlung mit einer Ausnahme.",
+   "zeilen": [
+    38,
+    47
+   ],
+   "code": [
+    "38:     CALL FUNCTION 'VC_I_GET_CONFIGURATION'",
+    "47:     IF sy-subrc <> 0."
+   ],
+   "X": [
+    "Der Funktionsbaustein VC_I_GET_CONFIGURATION wird aufgerufen."
+   ],
+   "Y": [
+    "Der Funktionsbaustein VC_I_GET_CONFIGURATION wird aufgerufen."
+   ],
+   "Z": [
+    "Über den Funktionsbaustein VC_I_GET_CONFIGURATION wird die Konfiguration zur Konfigurationsnummer ermittelt.",
+    "Schlägt der Aufruf des Funktionsbausteins VC_I_GET_CONFIGURATION fehl, wird der Fehler zcx_vc_fertvar=>konfig_fehlt ausgelöst."
+   ]
+  },
+  {
+   "id": "BM-168-B03",
+   "soll": "Die Spannung ist Pflichtmerkmal: fehlt ihre Bewertung, endet die Ermittlung mit der Ausnahme „Merkmal fehlt“; Gehäuse und ATEX-Kennzeichen sind optional.",
+   "zeilen": [
+    54,
+    56,
+    59,
+    60
+   ],
+   "code": [
+    "54:         DATA(lv_spannung) = mt_conf[ atnam = 'Z_SPANNUNG' ]-atwrt.",
+    "56:         RAISE EXCEPTION TYPE zcx_vc_fertvar",
+    "59:     DATA(lv_gehaeuse) = VALUE #( mt_conf[ atnam = 'Z_GEHAEUSE' ]-atwrt OPTIONAL ).",
+    "60:     DATA(lv_atex)     = xsdbool( line_exists( mt_conf[ atnam = 'Z_ATEX' atwrt = 'J' ] ) )."
+   ],
+   "X": [],
+   "Y": [],
+   "Z": [
+    "Aus der Konfiguration wird der Merkmalswert zum Merkmal Z_SPANNUNG gelesen; ist dieses Merkmal nicht vorhanden, wird der Fehler zcx_vc_fertvar=>merkmal_fehlt ausgelöst.",
+    "Aus der Konfiguration wird optional der Merkmalswert für Z_GEHAEUSE gelesen und geprüft, ob das Merkmal Z_ATEX mit dem Wert J vorhanden ist."
+   ]
+  },
+  {
+   "id": "BM-168-B04",
+   "soll": "Aus der Spannung ergibt sich die Grundvariante: 230 V → N1, 400 V → N3, 690 V → H3, jede andere Spannung → Sonderausführung SO.",
+   "zeilen": [
+    62
+   ],
+   "code": [
+    "62:     rs_erg-fertvar = SWITCH #( lv_spannung"
+   ],
+   "X": [],
+   "Y": [],
+   "Z": [
+    "Die Fertigungsvariante wird anhand der Spannung auf N1 (bei 230), N3 (bei 400), H3 (bei 690) oder andernfalls auf SO gesetzt."
+   ]
+  },
+  {
+   "id": "BM-168-B05",
+   "soll": "Bei ATEX-Ausführung wird die zweite Stelle der Variante durch X ersetzt und ein Hinweis auf den zwingenden Prüfplan EX01 gesetzt.",
+   "zeilen": [
+    67,
+    68
+   ],
+   "code": [
+    "67:     IF lv_atex = abap_true.",
+    "68:       rs_erg-fertvar+1(1) = 'X'."
+   ],
+   "X": [
+    "Wenn das Feld lv_atex gesetzt ist, wird das Feld rs_erg-fertvar+1(1) auf X gesetzt und das Feld rs_erg-hinweis auf ATEX-Ausfuehrung: Pruefplan EX01 zwingend gesetzt.",
+    "Wenn das Feld lv_atex gesetzt ist, wird das Feld rs_erg-fertvar+1(1) auf X gesetzt.",
+    "Wenn das Feld lv_atex gesetzt ist, wird das Feld rs_erg-hinweis auf ATEX-Ausfuehrung: Pruefplan EX01 zwingend gesetzt."
+   ],
+   "Y": [
+    "Für lv_atex mit dem Wert abap_true wird die rs_erg-fertvar+1(1) auf X gesetzt und die rs_erg-hinweis auf ATEX-Ausfuehrung: Pruefplan EX01 zwingend gesetzt.",
+    "lv_atex mit dem Wert abap_true setzen die rs_erg-fertvar+1(1) auf X.",
+    "Es wird die rs_erg-fertvar+1(1) auf X gesetzt und die rs_erg-hinweis auf ATEX-Ausfuehrung: Pruefplan EX01 zwingend gesetzt.",
+    "lv_atex mit dem Wert abap_true setzen die rs_erg-hinweis auf ATEX-Ausfuehrung: Pruefplan EX01 zwingend."
+   ],
+   "Z": [
+    "Liegt eine ATEX-Ausführung vor, wird an der zweiten Stelle der Fertigungsvariante ein X gesetzt und der Hinweis 'ATEX-Ausfuehrung: Pruefplan EX01 zwingend' hinterlegt."
+   ]
+  },
+  {
+   "id": "BM-168-B06",
+   "soll": "Bei Edelstahlgehäuse wird an die Variante ein E angehängt, außer sie lautet genau SO; eine ATEX-Sonderausführung (SX) erhält das E also doch.",
+   "zeilen": [
+    71,
+    72
+   ],
+   "code": [
+    "71:     IF lv_gehaeuse = 'EDELSTAHL' AND rs_erg-fertvar <> 'SO'.",
+    "72:       rs_erg-fertvar = rs_erg-fertvar && 'E'."
+   ],
+   "X": [],
+   "Y": [],
+   "Z": [
+    "Ist das Gehäuse EDELSTAHL und die Fertigungsvariante ungleich SO, wird an die Fertigungsvariante der Buchstabe E angehängt."
+   ]
+  },
+  {
+   "id": "BM-168-B07",
+   "soll": "Zur Variante wird die Plangruppe aus der Zuordnungstabelle gelesen; fehlt sie, wird ein Hinweis auf manuelle Zuordnung gesetzt.",
+   "zeilen": [
+    75,
+    77,
+    78
+   ],
+   "code": [
+    "75:     SELECT SINGLE plnnr FROM zvc_fertvar INTO @rs_erg-plnnr",
+    "77:     IF sy-subrc <> 0.",
+    "78:       rs_erg-hinweis = |Keine Plangruppe zu { rs_erg-fertvar }, bitte manuell zuordnen|."
+   ],
+   "X": [
+    "Das Feld plnnr aus zvc_fertvar wird gelesen."
+   ],
+   "Y": [
+    "plnnr des Satzes wird gelesen."
+   ],
+   "Z": [
+    "Zu der ermittelten Fertigungsvariante wird die Plangruppennummer (Feld PLNNR) aus der Tabelle ZVC_FERTVAR gelesen.",
+    "Wird in der Tabelle ZVC_FERTVAR kein Eintrag gefunden, wird ein Hinweis zur manuellen Zuordnung der Plangruppe gesetzt."
+   ]
+  }
+ ]
+}

@@ -1,0 +1,428 @@
+{
+ "id": "BM-140",
+ "titel": "Treasury Devisen: tägliche Marktbewertung offener Termingeschäfte, Vortagesvergleich über INDX, Kontrahentenlimite per Ereignis, XML-Export und Positionsliste aus dem Listenspeicher",
+ "prozess": "Der Report läuft abends nach dem Kursimport mit Buchungskreisen, optional Kontrahenten, Stichtag, Exportdatei und Testlaufschalter. Er liest die offenen Devisentermingeschäfte mit Fälligkeit ab Stichtag samt Betrag und Geschäftskurs; gibt es keine, meldet er das und gibt nichts weiter aus. Er liest die Terminpunkte des Stichtags und bewertet jedes Geschäft: Mittelkurs gegen EUR plus Terminpunkte des passenden Laufzeitbands ergeben den Marktterminkurs, der Marktwert ist Fremdwährungsbetrag mal Kursdifferenz zum Geschäftskurs; ohne Mittelkurs bleibt das Geschäft unbewertet. Dann vergleicht er mit den Marktwerten des Vortags aus dem Datencluster; fehlt der Vortagesstand, weist er keine Veränderung aus. Je Kontrahent summiert er die positiven Marktwerte und prüft sie gegen das Limit, ersatzweise gegen das Standardlimit; Überschreitungen werden als Ereignis gemeldet und gesammelt. Anschließend schreibt er Stichtag und Marktwerte als XML in die Exportdatei, sichert im Echtlauf den heutigen Stand im Datencluster und listet die Marktwerte je Kontrahent. Bei Limitüberschreitungen listet er diese hervorgehoben und hängt die Positionsliste der betroffenen Kontrahenten aus einem zweiten Programm über den Listenspeicher an.",
+ "verboten": [
+  "ztrm_fx_mtm_f01.abap:62 — kein Fachsatz „Geschäfte ohne Kurs gehen mit dem Vortageswert in die Limitprüfung“: sie werden gar nicht bewertet und fehlen in Limitprüfung, Export und Liste",
+  "ztrm_fx_mtm_f02.abap:30 — kein Fachsatz „die Auslastung ist der saldierte Marktwert je Kontrahent“: negative Marktwerte werden nicht gegengerechnet",
+  "zcl_trm_cpty_limit.abap:35 — kein Fachsatz „Kontrahenten ohne Limit werden nicht geprüft“: ohne Standardlimit gilt null, jeder positive Marktwert ist dann eine Überschreitung",
+  "ztrm_fx_mtm_f02.abap:109 — kein Fachsatz „die Positionsliste wird gedruckt oder gemailt“: sie wird nur in die eigene Liste übernommen"
+ ],
+ "saetze": [
+  {
+   "id": "BM-140-B01",
+   "soll": "Es werden die offenen Devisengeschäfte (Produktart 60A) der gewählten Buchungskreise und Kontrahenten mit Fälligkeit ab Stichtag gelesen, samt Fremdwährungsbetrag und Geschäftskurs aus der Tagesposition.",
+   "zeilen": [
+    105
+   ],
+   "code": [
+    "105:   SELECT f~kontrh f~rfha f~bukrs f~sfhaart f~delfz"
+   ],
+   "X": [
+    "Es werden Sätze aus vtbfha selektiert."
+   ],
+   "Y": [
+    "Aus den Tabellen VTBFHA und ZTRM_FX_POS werden die offenen Devisengeschäfte der Produktart 60A mit Fälligkeit ab dem Stichtag für die selektierten Buchungskreise und Kontrahenten gelesen."
+   ],
+   "Z": [
+    "Es werden Sätze aus vtbfha selektiert."
+   ]
+  },
+  {
+   "id": "BM-140-B02",
+   "soll": "Gibt es keine, erscheint ein Hinweis und es wird weder exportiert noch gesichert noch gelistet.",
+   "zeilen": [
+    24,
+    25,
+    26,
+    34
+   ],
+   "code": [
+    "24:   IF gt_deal IS INITIAL.",
+    "25:     MESSAGE s310(ztrm) WITH p_datum.",
+    "26:     RETURN.",
+    "34:   CHECK gt_mtm IS NOT INITIAL."
+   ],
+   "X": [
+    "Ist die Tabelle gt_deal leer, wird eine Statusmeldung ausgegeben und der Block verlassen.",
+    "Die Statusmeldung 310(ZTRM) wird ausgegeben.",
+    "Nur wenn das Feld gt_mtm nicht leer ist, geht es weiter; sonst wird der Ereignisblock END-OF-SELECTION an dieser Stelle verlassen."
+   ],
+   "Y": [
+    "Falls keine Geschäfte gefunden wurden, wird die Erfolgsmeldung 310(ztrm) mit dem Selektionsdatum ausgegeben und die Verarbeitung beendet.",
+    "Es wird geprüft, ob bewertete Marktwertdaten vorhanden sind; falls nicht, wird die weitere Verarbeitung abgebrochen."
+   ],
+   "Z": [
+    "Ohne Treffer wird eine Meldung ausgegeben und der Block verlassen.",
+    "Ohne Treffer wird der Block verlassen.",
+    "Eine Meldung wird ausgegeben.",
+    "Es wird eine Meldung ausgegeben und der Block verlassen.",
+    "Nur Eine nicht leere gt_mtm gehen weiter; kleinere werden übersprungen, die Schleife läuft weiter."
+   ]
+  },
+  {
+   "id": "BM-140-B03",
+   "soll": "Die Terminpunkte des Stichtags werden für die gehandelten Währungen gelesen.",
+   "zeilen": [
+    122
+   ],
+   "code": [
+    "122:   SELECT * FROM ztrm_fwd_pts INTO TABLE gt_fwd"
+   ],
+   "X": [
+    "Es werden Sätze aus ztrm_fwd_pts mit dem eingegebenen datum zu den Einträgen aus gt_deal selektiert."
+   ],
+   "Y": [
+    "Aus der Tabelle ZTRM_FWD_PTS werden alle Terminpunkte zu den Währungen der selektierten Geschäfte zum Stichtag gelesen."
+   ],
+   "Z": [
+    "Es werden Sätze aus ztrm_fwd_pts mit dem eingegebenen datum selektiert."
+   ]
+  },
+  {
+   "id": "BM-140-B04",
+   "soll": "Je Geschäft wird der Mittelkurs der Fremdwährung gegen EUR am Stichtag ermittelt; fehlt er, wird ein Hinweis ausgegeben und das Geschäft nicht bewertet.",
+   "zeilen": [
+    144,
+    155,
+    156
+   ],
+   "code": [
+    "144:     CALL FUNCTION 'READ_EXCHANGE_RATE'",
+    "155:     IF sy-subrc <> 0.",
+    "156:       MESSAGE s311(ztrm) WITH ls_deal-fw_waers p_datum."
+   ],
+   "X": [
+    "Der Code übergibt p_datum an READ_EXCHANGE_RATE und übernimmt dessen Ausgabe nach lv_spot.",
+    "Scheitert der Aufruf von READ_EXCHANGE_RATE, wird eine Statusmeldung ausgegeben und der Schleifendurchlauf übersprungen.",
+    "Die Statusmeldung 311(ZTRM) wird ausgegeben."
+   ],
+   "Y": [
+    "Der Funktionsbaustein READ_EXCHANGE_RATE wird aufgerufen, um den Mittelkurs vom Typ M zwischen Fremdwährung und EUR zum Stichtag zu lesen."
+   ],
+   "Z": [
+    "Der Code übergibt p_datum an READ_EXCHANGE_RATE und übernimmt dessen Ausgabe nach lv_spot.",
+    "Das konvertierte Ergebnis wird in lv_spot übernommen.",
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-140-B05",
+   "soll": "Zum Mittelkurs werden die Terminpunkte des kleinsten Laufzeitbands addiert, das die Restlaufzeit abdeckt; deckt keines sie ab, gilt der Mittelkurs.",
+   "zeilen": [
+    161,
+    162,
+    168
+   ],
+   "code": [
+    "161:     LOOP AT gt_fwd INTO DATA(ls_fwd) WHERE fw_waers = ls_deal-fw_waers.",
+    "162:       IF ls_fwd-tage_bis >= ls_mtm-restlz.",
+    "168:     ls_mtm-mkurs = lv_spot + lv_punkt / 10000."
+   ],
+   "X": [
+    "Die Zeilen aus gt_fwd, bei denen das Feld fw_waers gleich ls_deal-fw_waers ist, werden einzeln verarbeitet.",
+    "Wenn das Feld ls_fwd-tage_bis mindestens ls_mtm-restlz ist, wird die Schleife verlassen."
+   ],
+   "Y": [
+    "Die Terminpunkte der Fremdwährung werden durchlaufen, um das passende Laufzeitband zu ermitteln.",
+    "Reicht die Obergrenze des Laufzeitbands für die Restlaufzeit aus, werden die Terminpunkte übernommen und die Schleife beendet."
+   ],
+   "Z": [
+    "Jede Zeile aus gt_fwd wird einzeln verarbeitet.",
+    "Für ls_fwd-tage_bis ab ls_mtm-restlz wird der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-140-B06",
+   "soll": "Der Marktwert eines Geschäfts ist der Fremdwährungsbetrag mal der Differenz aus Marktterminkurs und Geschäftskurs.",
+   "zeilen": [
+    169
+   ],
+   "code": [
+    "169:     ls_mtm-mtm   = ls_deal-fw_betrag * ( ls_mtm-mkurs - ls_deal-kurs )."
+   ],
+   "X": [],
+   "Y": [],
+   "Z": []
+  },
+  {
+   "id": "BM-140-B07",
+   "soll": "Die Marktwerte des Vortags werden aus dem Datencluster gelesen; gibt es keinen Vortagesstand, wird keine Veränderung ausgewiesen.",
+   "zeilen": [
+    183,
+    184,
+    186
+   ],
+   "code": [
+    "183:   IMPORT mtm = gt_prev FROM DATABASE indx(zm) ID gv_indx.",
+    "184:   IF sy-subrc <> 0.",
+    "186:     RETURN."
+   ],
+   "X": [
+    "Bei Rückgabewert ungleich 0 wird der Block verlassen."
+   ],
+   "Y": [],
+   "Z": [
+    "Ohne Treffer wird der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-140-B08",
+   "soll": "Je Geschäft ist die Veränderung der heutige Marktwert minus der Vortageswert; neue Geschäfte ohne Vortageswert zeigen den vollen Marktwert als Veränderung.",
+   "zeilen": [
+    191,
+    193,
+    196
+   ],
+   "code": [
+    "191:     READ TABLE gt_prev INTO DATA(ls_prev)",
+    "193:     IF sy-subrc = 0.",
+    "196:     <ls_mtm>-delta = <ls_mtm>-mtm - <ls_mtm>-mtm_vt."
+   ],
+   "X": [
+    "In der Tabelle gt_prev wird nach einer passenden Zeile gesucht."
+   ],
+   "Y": [],
+   "Z": [
+    "In der Tabelle wird nach einer passenden Zeile gesucht."
+   ]
+  },
+  {
+   "id": "BM-140-B09",
+   "soll": "Je Kontrahent werden die positiven Marktwerte zur Auslastung summiert; negative Marktwerte zählen nicht.",
+   "zeilen": [
+    224,
+    228,
+    229
+   ],
+   "code": [
+    "224:     AT NEW kontrh.",
+    "228:     IF ls_mtm-mtm > 0.",
+    "229:       lv_expo = lv_expo + ls_mtm-mtm."
+   ],
+   "X": [],
+   "Y": [
+    "Zu Beginn eines neuen Kontrahenten wird das Exposure auf null zurückgesetzt.",
+    "Ist der Marktwert des Geschäfts positiv, wird er zum Exposure des Kontrahenten addiert."
+   ],
+   "Z": []
+  },
+  {
+   "id": "BM-140-B10",
+   "soll": "Nach dem letzten Geschäft eines Kontrahenten wird seine Auslastung gegen sein zum Stichtag gültiges Limit geprüft; ohne gepflegtes Limit gilt das Standardlimit aus der Variablentabelle, ohne dieses null.",
+   "zeilen": [
+    71,
+    74,
+    78,
+    83,
+    232,
+    233
+   ],
+   "code": [
+    "71:     SELECT SINGLE low FROM tvarvc INTO @DATA(lv_low)",
+    "74:     mv_std_limit = COND #( WHEN sy-subrc = 0 THEN lv_low ELSE 0 ).",
+    "78:     SELECT SINGLE limit FROM ztrm_cpty_limit INTO @DATA(lv_limit)",
+    "83:       lv_limit = mv_std_limit.",
+    "232:     AT END OF kontrh.",
+    "233:       go_limit->pruefen( iv_kontrh = ls_mtm-kontrh"
+   ],
+   "X": [
+    "Das Feld low des Variableneintrags wird gelesen.",
+    "Das Feld limit aus ztrm_cpty_limit wird gelesen.",
+    "Die Methode pruefen von go_limit wird aufgerufen; sie liest ZTRM_CPTY_LIMIT und löst das Ereignis limit_breach aus."
+   ],
+   "Y": [
+    "Aus der Tabelle TVARVC wird für die Variable ZTRM_STD_LIMIT vom Typ P der Standardlimitwert gelesen.",
+    "Bei erfolgreicher Selektion aus TVARVC wird das Standardlimit übernommen, andernfalls wird es auf 0 gesetzt.",
+    "Aus der Tabelle ZTRM_CPTY_LIMIT wird das Limit zum Kontrahenten für das per Stichtag gültige Zeitintervall gelesen.",
+    "Wurde kein spezifisches Limit in ZTRM_CPTY_LIMIT gefunden, wird das Standardlimit verwendet.",
+    "Am Ende der Geschäfte eines Kontrahenten wird dessen gesamtes Exposure gegen das Limit geprüft.",
+    "Die Methode PRUEFEN der Limitprüfungsklasse wird mit Kontrahent und berechnetem Exposure aufgerufen."
+   ],
+   "Z": [
+    "low des Satzes wird gelesen.",
+    "limit des Satzes wird gelesen.",
+    "Die Methode pruefen von go_limit wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-140-B11",
+   "soll": "Übersteigt die Auslastung das Limit, wird die Überschreitung mit Auslastung und Limit gemeldet und vorgemerkt.",
+   "zeilen": [
+    86,
+    87,
+    205,
+    220
+   ],
+   "code": [
+    "86:     IF iv_expo > lv_limit.",
+    "87:       RAISE EVENT limit_breach",
+    "205:     APPEND VALUE #( kontrh = iv_kontrh expo = iv_expo limit = iv_limit )",
+    "220:   SET HANDLER go_handler->on_breach FOR go_limit."
+   ],
+   "X": [
+    "Eine Zeile wird in gt_breach aufgenommen."
+   ],
+   "Y": [
+    "Ist das Exposure größer als das Kontrahentenlimit, wird das Ereignis LIMIT_BREACH mit Kontrahent, Exposure und Limit ausgelöst."
+   ],
+   "Z": [
+    "Eine Zeile wird in gt_breach aufgenommen."
+   ]
+  },
+  {
+   "id": "BM-140-B12",
+   "soll": "Stichtag und Marktwerte werden als XML in eine Datei auf dem Anwendungsserver für das Risikosystem geschrieben; lässt sich die Datei nicht öffnen, erscheint ein Hinweis.",
+   "zeilen": [
+    245,
+    250,
+    251,
+    252,
+    255
+   ],
+   "code": [
+    "245:   CALL TRANSFORMATION id",
+    "250:   OPEN DATASET p_file FOR OUTPUT IN BINARY MODE.",
+    "251:   IF sy-subrc <> 0.",
+    "252:     MESSAGE s312(ztrm) WITH p_file DISPLAY LIKE 'E'.",
+    "255:   TRANSFER lv_xml TO p_file."
+   ],
+   "X": [
+    "Lässt sich die Datei nicht öffnen, wird eine Statusmeldung ausgegeben und der Block verlassen.",
+    "Die Statusmeldung 312(ZTRM) wird ausgegeben, angezeigt wie eine Fehlermeldung."
+   ],
+   "Y": [
+    "Die Zieldatei wird im Binärmodus für die Ausgabe geöffnet.",
+    "Kann die Zieldatei nicht geöffnet werden, wird die Fehlermeldung 312(ztrm) ausgegeben und das Unterprogramm beendet.",
+    "Der erzeugte XML-Datenstrom wird in die Datei übertragen."
+   ],
+   "Z": [
+    "Ohne Treffer wird eine Meldung ausgegeben und der Block verlassen.",
+    "Ohne Treffer wird der Block verlassen.",
+    "Eine Meldung wird ausgegeben.",
+    "Es wird eine Meldung ausgegeben und der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-140-B13",
+   "soll": "Im Echtlauf werden die heutigen Marktwerte unter dem Stichtag im Datencluster gesichert und festgeschrieben.",
+   "zeilen": [
+    36,
+    266,
+    267
+   ],
+   "code": [
+    "36:   IF p_test IS INITIAL.",
+    "266:   EXPORT mtm = gt_mtm TO DATABASE indx(zm) ID gv_indx.",
+    "267:   COMMIT WORK."
+   ],
+   "X": [
+    "Ist das Feld p_test leer, wird stand_sichern aufgerufen.",
+    "Mit COMMIT WORK wird die Änderung persistiert."
+   ],
+   "Y": [
+    "Falls kein Testlauf ausgewählt ist, wird das Unterprogramm zur Sicherung des Tagesstandes aufgerufen."
+   ],
+   "Z": [
+    "Ohne p_test wird stand_sichern aufgerufen.",
+    "Mit COMMIT WORK wird die Änderung persistiert."
+   ]
+  },
+  {
+   "id": "BM-140-B14",
+   "soll": "Die Liste zeigt je Kontrahent eine Kopfzeile und je Geschäft Währung, Restlaufzeit, Marktkurs, Marktwert und Veränderung.",
+   "zeilen": [
+    284,
+    286,
+    289
+   ],
+   "code": [
+    "284:     AT NEW kontrh.",
+    "286:       WRITE: / 'Kontrahent', ls_mtm-kontrh.",
+    "289:     WRITE: / ls_mtm-rfha, ls_mtm-fw_waers, ls_mtm-restlz,"
+   ],
+   "X": [
+    "Bei Treffern werden Kontrahent und ls_mtm-kontrh als Liste ausgegeben.",
+    "Kontrahent wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "Bei Treffern werden ls_mtm-rfha, ls_mtm-fw_waers, ls_mtm-restlz, ls_mtm-mkurs, ls_mtm-mtm und ls_mtm-delta als Liste ausgegeben."
+   ],
+   "Y": [
+    "Bei jedem neuen Kontrahenten wird die Ausgabe entsprechend formatiert.",
+    "Für einen neuen Kontrahenten wird eine hervorgehobene Gruppenkopfzeile mit dessen Nummer ausgegeben.",
+    "Geschäftsnummer, Fremdwährung, Restlaufzeit, Marktkurs, Marktwert und die Abweichung zum Vortag werden in die Liste ausgegeben."
+   ],
+   "Z": [
+    "Bei Treffern werden Kontrahent und ls_mtm-kontrh als Liste ausgegeben.",
+    "Kontrahent wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "ls_mtm-kontrh wird ausgegeben.",
+    "Bei Treffern werden ls_mtm-rfha, ls_mtm-fw_waers, ls_mtm-restlz, ls_mtm-mkurs, ls_mtm-mtm und ls_mtm-delta als Liste ausgegeben.",
+    "ls_mtm-rfha wird ausgegeben.",
+    "ls_mtm-fw_waers wird ausgegeben.",
+    "ls_mtm-restlz wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-140-B15",
+   "soll": "Gibt es Limitüberschreitungen, werden sie hervorgehoben gelistet.",
+   "zeilen": [
+    293,
+    300
+   ],
+   "code": [
+    "293:   IF gt_breach IS INITIAL.",
+    "300:     WRITE: / 'Limitüberschreitung', ls_brch-kontrh, ls_brch-expo, ls_brch-limit."
+   ],
+   "X": [
+    "Ist die Tabelle gt_breach leer, wird der Block verlassen.",
+    "Bei Treffern werden Limitüberschreitung, ls_brch-kontrh, ls_brch-expo und ls_brch-limit als Liste ausgegeben.",
+    "Limitüberschreitung wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code."
+   ],
+   "Y": [
+    "Falls keine Limitüberschreitungen vorliegen, wird das Unterprogramm zur Ausgabe beendet.",
+    "Kontrahent, Exposure und Limit der Überschreitung werden in die Liste geschrieben."
+   ],
+   "Z": [
+    "Ohne Treffer wird der Block verlassen.",
+    "Bei Treffern werden Limitüberschreitung, ls_brch-kontrh, ls_brch-expo und ls_brch-limit als Liste ausgegeben.",
+    "Limitüberschreitung wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "ls_brch-kontrh wird ausgegeben.",
+    "ls_brch-expo wird ausgegeben.",
+    "ls_brch-limit wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-140-B16",
+   "soll": "Für die betroffenen Kontrahenten wird die Positionsliste erzeugt und an die eigene Liste angehängt, sofern sie im Speicher ankommt.",
+   "zeilen": [
+    307,
+    312,
+    318,
+    319
+   ],
+   "code": [
+    "307:   SUBMIT ztrm_position_liste",
+    "312:   CALL FUNCTION 'LIST_FROM_MEMORY'",
+    "318:   IF sy-subrc = 0.",
+    "319:     CALL FUNCTION 'WRITE_LIST'"
+   ],
+   "X": [
+    "Das Kindprogramm ztrm_position_liste wird gestartet. Was das Kind tut, ist nicht Teil dieses Satzes.",
+    "Der Funktionsbaustein LIST_FROM_MEMORY wird aufgerufen.",
+    "Gelingt der Aufruf von LIST_FROM_MEMORY, wird WRITE_LIST aufgerufen.",
+    "Der Funktionsbaustein WRITE_LIST wird aufgerufen."
+   ],
+   "Y": [
+    "Der Report ZTRM_POSITION_LISTE wird für die betroffenen Kontrahenten zum Stichtag aufgerufen und die erzeugte Liste im Speicher abgelegt.",
+    "Der Funktionsbaustein LIST_FROM_MEMORY wird aufgerufen, um die Positionsliste aus dem Speicher zu laden.",
+    "Konnte die Liste erfolgreich aus dem Speicher gelesen werden, wird sie über den Funktionsbaustein WRITE_LIST ausgegeben."
+   ],
+   "Z": [
+    "Das Kindprogramm ztrm_position_liste wird gestartet. Was das Kind tut, ist nicht Teil dieses Satzes.",
+    "Der Funktionsbaustein LIST_FROM_MEMORY wird aufgerufen.",
+    "Bei Treffer wird WRITE_LIST aufgerufen.",
+    "Der Funktionsbaustein WRITE_LIST wird aufgerufen."
+   ]
+  }
+ ]
+}

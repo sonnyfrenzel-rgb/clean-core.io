@@ -1,0 +1,270 @@
+{
+ "id": "BM-015",
+ "titel": "Retoure mit Fakturabezug: Berechtigung, Rückgabefrist, Mengenprüfung gegen VBFA, Anlage per BAPI",
+ "prozess": "Der Funktionsbaustein wird vom Retourenportal mit Faktura, Auftragsgrund, Rückgabepositionen und Simulationskennzeichen aufgerufen. Zuerst prüft er die Berechtigung zum Anlegen der Retourenauftragsart ZRE. Dann prüft er die Faktura: Sie muss existieren, darf weder storniert noch selbst ein Storno sein, und ihr Datum darf höchstens 365 Tage zurückliegen, es sei denn, der Auftragsgrund ist Kulanz. Danach prüft er jede Rückgabeposition gegen die Fakturapositionen und die bisher retournierte Menge aus dem Belegfluss; alle Fehler werden gesammelt. Jeder Fehler beendet die Verarbeitung vor der Anlage mit der Meldungsliste. Sind alle Prüfungen bestanden, legt er per BAPI einen Retourenauftrag mit Bezug zur Faktura an. Ist die Anlage gescheitert oder Simulation gesetzt, rollt er zurück. Sonst schreibt er einen Eintrag ins Retourenprotokoll und schreibt Retoure und Protokoll gemeinsam fest.",
+ "verboten": [
+  "lzsd_retf01.abap:61 — kein Fachsatz „Mengen werden in derselben Einheit verglichen“: RFMNG aus dem Belegfluss und die Fakturamenge FKIMG können in verschiedenen Einheiten stehen",
+  "lzsd_retf01.abap:106 — kein Fachsatz „eine Gutschrift wird erstellt“: angelegt wird nur der Retourenauftrag",
+  "lzsd_retf01.abap:127 — kein Fachsatz „ohne Protokolleintrag wird die Retoure verworfen“: sy-subrc des INSERT wird nicht ausgewertet",
+  "lzsd_retf01.abap:56 — kein Fachsatz „Gutschriften ohne Retoure werden berücksichtigt“: gezählt wird nur Folgebelegtyp H"
+ ],
+ "saetze": [
+  {
+   "id": "BM-015-B01",
+   "soll": "Ohne Berechtigung zum Anlegen der Retourenauftragsart ZRE wird mit Fehler 500 abgebrochen.",
+   "zeilen": [
+    162,
+    165,
+    166,
+    167
+   ],
+   "code": [
+    "162:   AUTHORITY-CHECK OBJECT 'V_VBAK_AAT'",
+    "165:   IF sy-subrc <> 0.",
+    "166:     PERFORM fehler USING '500' gc_auart_retoure space CHANGING et_return.",
+    "167:     RETURN."
+   ],
+   "X": [
+    "Die Berechtigung auf V_VBAK_AAT wird geprüft.",
+    "Ohne Treffer wird fehler aufgerufen und der Block verlassen.",
+    "Ohne Berechtigung auf V_VBAK_AAT wird der Block verlassen.",
+    "Das Unterprogramm fehler wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Es wird fehler aufgerufen und der Block verlassen."
+   ],
+   "Y": [
+    "Fehlt die Berechtigung zum Anlegen (Aktivität 01) von Belegen der Auftragsart ZRE im Berechtigungsobjekt V_VBAK_AAT, wird die Fehlermeldung 500 ausgegeben und die Verarbeitung beendet."
+   ],
+   "Z": [
+    "Die Berechtigung auf V_VBAK_AAT wird geprüft.",
+    "Ohne Berechtigung auf V_VBAK_AAT wird fehler aufgerufen und der Block verlassen.",
+    "Das Unterprogramm fehler wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-015-B02",
+   "soll": "Existiert die angegebene Faktura nicht, wird mit Fehler 501 abgebrochen.",
+   "zeilen": [
+    19,
+    20,
+    21
+   ],
+   "code": [
+    "19:   SELECT SINGLE * FROM vbrk INTO gs_vbrk WHERE vbeln = iv_faktura.",
+    "20:   IF sy-subrc <> 0.",
+    "21:     PERFORM fehler USING '501' iv_faktura space CHANGING ct_return."
+   ],
+   "X": [
+    "Es werden Sätze aus vbrk selektiert.",
+    "Ohne Treffer wird fehler aufgerufen und der Block verlassen.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "Das Unterprogramm fehler wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Es wird fehler aufgerufen und der Block verlassen."
+   ],
+   "Y": [
+    "Aus der Tabelle VBRK werden die Kopfdaten der Faktura zur übergebenen Fakturanummer gelesen.",
+    "Wird kein Fakturakopf zur Fakturanummer gefunden, wird die Fehlermeldung 501 der Nachrichtenklasse ZSD an die Rückgabetabelle übergeben und die Prüfung beendet."
+   ],
+   "Z": [
+    "Es werden Fakturen selektiert.",
+    "Ohne Treffer wird fehler aufgerufen und der Block verlassen.",
+    "Das Unterprogramm fehler wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-015-B03",
+   "soll": "Stornierte Fakturen und Stornobelege sind nicht retournierbar (Fehler 502).",
+   "zeilen": [
+    26,
+    27
+   ],
+   "code": [
+    "26:   IF gs_vbrk-fksto = abap_true OR gs_vbrk-sfakn IS NOT INITIAL.",
+    "27:     PERFORM fehler USING '502' iv_faktura space CHANGING ct_return."
+   ],
+   "X": [
+    "Für gs_vbrk-fksto = abap_true OR gs_vbrk-sfakn IS NOT INITIAL wird fehler aufgerufen und der Block verlassen.",
+    "Das Unterprogramm fehler wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Es wird fehler aufgerufen und der Block verlassen."
+   ],
+   "Y": [
+    "Ist die Faktura storniert oder handelt es sich selbst um einen Stornobeleg, wird die Fehlermeldung 502 der Nachrichtenklasse ZSD zurückgegeben und die Prüfung beendet."
+   ],
+   "Z": [
+    "Wenn das Feld gs_vbrk-fksto gesetzt ist oder das Feld gs_vbrk-sfakn nicht leer ist, wird fehler aufgerufen und der Block verlassen.",
+    "Das Unterprogramm fehler wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-015-B04",
+   "soll": "Liegt das Fakturadatum mehr als 365 Tage zurück, wird mit Fehler 503 abgebrochen, außer bei Auftragsgrund Kulanz (Z05).",
+   "zeilen": [
+    31,
+    33
+   ],
+   "code": [
+    "31:   IF sy-datum - gs_vbrk-fkdat > gc_frist_tage",
+    "33:     PERFORM fehler USING '503' iv_faktura gs_vbrk-fkdat CHANGING ct_return."
+   ],
+   "X": [
+    "Für sy-datum - gs_vbrk-fkdat > gc_frist_tage AND iv_augru <> gc_augru_kulanz wird fehler aufgerufen und der Block verlassen.",
+    "Das Unterprogramm fehler wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Es wird fehler aufgerufen und der Block verlassen."
+   ],
+   "Y": [
+    "Liegt das Fakturadatum mehr als 365 Tage in der Vergangenheit und entspricht der Auftragsgrund nicht Z05 für Kulanz, wird die Fehlermeldung 503 mit Fakturanummer und Fakturadatum ausgegeben und die Prüfung beendet."
+   ],
+   "Z": [
+    "Wenn die Bedingung „sy-datum - gs_vbrk-fkdat > gc_frist_tage AND iv_augru <> gc_augru_kulanz“ erfüllt ist, wird fehler aufgerufen und der Block verlassen.",
+    "Das Unterprogramm fehler wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-015-B05",
+   "soll": "Jede Rückgabeposition muss eine Position der Faktura sein, sonst Fehler 504.",
+   "zeilen": [
+    49,
+    50,
+    51
+   ],
+   "code": [
+    "49:     READ TABLE gt_vbrp INTO ls_vbrp WITH TABLE KEY posnr = ls_item-posnr.",
+    "50:     IF sy-subrc <> 0.",
+    "51:       PERFORM fehler USING '504' ls_item-posnr space CHANGING ct_return."
+   ],
+   "X": [
+    "In der Tabelle wird nach einer passenden Zeile gesucht.",
+    "Ohne Treffer wird fehler aufgerufen.",
+    "Das Unterprogramm fehler wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt."
+   ],
+   "Y": [
+    "Wird die Positionsnummer der Retoure nicht in den Fakturapositionen gefunden, wird die Fehlermeldung 504 zur Positionsnummer gemeldet und mit der nächsten Position fortgefahren."
+   ],
+   "Z": [
+    "In der Tabelle gt_vbrp wird nach einer passenden Zeile gesucht.",
+    "Ohne Treffer wird fehler aufgerufen und der Schleifendurchlauf übersprungen.",
+    "Das Unterprogramm fehler wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-015-B06",
+   "soll": "Die Rückgabemenge plus der bereits retournierten Menge darf die fakturierte Menge nicht übersteigen, sonst Fehler 505.",
+   "zeilen": [
+    56,
+    61,
+    62
+   ],
+   "code": [
+    "56:     SELECT SUM( rfmng ) FROM vbfa INTO lv_bereits",
+    "61:     IF ls_item-menge + lv_bereits > ls_vbrp-fkimg.",
+    "62:       PERFORM fehler USING '505' ls_item-posnr ls_vbrp-fkimg"
+   ],
+   "X": [
+    "Es werden Sätze aus vbfa selektiert.",
+    "Für ls_item-menge + lv_bereits > ls_vbrp-fkimg wird fehler aufgerufen.",
+    "Das Unterprogramm fehler wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt."
+   ],
+   "Y": [
+    "Aus dem Belegfluss der Tabelle VBFA wird die Summe der bereits retournierten Mengen mit dem Folgebelegtyp H zur Fakturanummer und Positionsnummer ermittelt.",
+    "Ist die Summe aus angefragter Retourenmenge und bereits retournierter Menge größer als die fakturierte Menge der Position, wird die Fehlermeldung 505 zur Positionsnummer und Fakturamenge hinzugefügt."
+   ],
+   "Z": [
+    "Das Ergebnis enthält SUM( und rfmng.",
+    "Es werden Belegfluss-Sätze selektiert.",
+    "Wenn die Bedingung „ls_item-menge + lv_bereits > ls_vbrp-fkimg“ erfüllt ist, wird fehler aufgerufen.",
+    "Das Unterprogramm fehler wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-015-B07",
+   "soll": "Alle Rückgabepositionen werden geprüft; bei mindestens einem Fehler wird keine Retoure angelegt.",
+   "zeilen": [
+    48,
+    176
+   ],
+   "code": [
+    "48:   LOOP AT it_items INTO DATA(ls_item).",
+    "176:   IF et_return IS NOT INITIAL."
+   ],
+   "X": [
+    "Jede Zeile aus it_items wird einzeln verarbeitet.",
+    "Bei Treffern wird der Block verlassen."
+   ],
+   "Y": [
+    "Die übergebenen Positionen der Retoure werden nacheinander in einer Schleife verarbeitet.",
+    "Sind bei der Mengenprüfung Fehler aufgetreten, wird die Verarbeitung beendet."
+   ],
+   "Z": [
+    "Jede Zeile aus it_items wird einzeln verarbeitet.",
+    "Enthält die Tabelle et_return Zeilen, wird der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-015-B08",
+   "soll": "Andernfalls wird ein Retourenauftrag ZRE mit Bezug zur Faktura, dem Auftraggeber der Faktura und dem angegebenen Auftragsgrund angelegt.",
+   "zeilen": [
+    106
+   ],
+   "code": [
+    "106:   CALL FUNCTION 'BAPI_CUSTOMERRETURN_CREATE'"
+   ],
+   "X": [
+    "Der Code übergibt ls_hdr an BAPI_CUSTOMERRETURN_CREATE und übernimmt dessen Ausgabe nach cv_retoure.",
+    "Das konvertierte Ergebnis wird in cv_retoure übernommen.",
+    "Es wird BAPI_CUSTOMERRETURN_CREATE aufgerufen und eine Zeile aufgenommen."
+   ],
+   "Y": [
+    "Über den Funktionsbaustein BAPI_CUSTOMERRETURN_CREATE wird der Retourenauftrag mit Kopf-, Partner-, Positions- und Einteilungsdaten angelegt und die Rückmeldungen werden übernommen."
+   ],
+   "Z": [
+    "Der Code übergibt ls_hdr an BAPI_CUSTOMERRETURN_CREATE und übernimmt dessen Ausgabe nach cv_retoure.",
+    "Es wird BAPI_CUSTOMERRETURN_CREATE aufgerufen und eine Zeile aufgenommen."
+   ]
+  },
+  {
+   "id": "BM-015-B09",
+   "soll": "Wurde keine Retoure angelegt oder ist Simulation gesetzt, wird verworfen und keine Retourennummer zurückgegeben.",
+   "zeilen": [
+    118,
+    119
+   ],
+   "code": [
+    "118:   IF cv_retoure IS INITIAL OR iv_simulate = abap_true.",
+    "119:     CALL FUNCTION 'BAPI_TRANSACTION_ROLLBACK'."
+   ],
+   "X": [
+    "Für cv_retoure IS INITIAL OR iv_simulate = abap_true wird BAPI_TRANSACTION_ROLLBACK aufgerufen und der Block verlassen.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_ROLLBACK wird aufgerufen."
+   ],
+   "Y": [
+    "Wurde keine Belegnummer für den Retourenauftrag erzeugt oder ist der Simulationsmodus aktiv, wird die Verbuchung abgebrochen.",
+    "Über den Baustein BAPI_TRANSACTION_ROLLBACK werden alle Änderungen zurückgerollt und die Belegnummer der Retoure wird geleert."
+   ],
+   "Z": [
+    "Wenn das Feld cv_retoure leer ist oder das Feld iv_simulate gesetzt ist, wird BAPI_TRANSACTION_ROLLBACK aufgerufen und der Block verlassen.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_ROLLBACK wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-015-B10",
+   "soll": "Sonst wird die Retoure mit Faktura, Kunde, Auftragsgrund, Datum und Benutzer im Retourenprotokoll erfasst und alles festgeschrieben.",
+   "zeilen": [
+    127,
+    129
+   ],
+   "code": [
+    "127:   INSERT zsd_ret_log FROM ls_log.",
+    "129:   CALL FUNCTION 'BAPI_TRANSACTION_COMMIT'"
+   ],
+   "X": [
+    "Der Funktionsbaustein BAPI_TRANSACTION_COMMIT wird aufgerufen."
+   ],
+   "Y": [
+    "Ein Protokollsatz mit Retourennummer, Fakturanummer, Kundennummer, Auftragsgrund, Erstellungsdatum und Benutzername wird in die Tabelle ZSD_RET_LOG eingefügt.",
+    "Über den Baustein BAPI_TRANSACTION_COMMIT werden die Änderungen synchron auf der Datenbank festgeschrieben."
+   ],
+   "Z": [
+    "Der Funktionsbaustein BAPI_TRANSACTION_COMMIT wird aufgerufen."
+   ]
+  }
+ ]
+}

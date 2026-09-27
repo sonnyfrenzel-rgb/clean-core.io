@@ -1,0 +1,262 @@
+{
+ "id": "BM-174",
+ "urteile": [
+  {
+   "id": "BM-174-B01",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Z": {
+    "urteil": "abweichend",
+    "mangel": [
+     "falsch",
+     "technisch",
+     "grammatik"
+    ]
+   },
+   "kurz": "X/Y nennen die Codes J und A ohne Fachbedeutung; Z spricht fälschlich von Schleife und kleineren Werten."
+  },
+  {
+   "id": "BM-174-B02",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig",
+     "redundant"
+    ]
+   },
+   "kurz": "Y nennt Aufruf mit Kopf und Positionen, keine Variante die Ergebnisse O/S/F."
+  },
+  {
+   "id": "BM-174-B03",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Alle nennen das Beenden ohne Destination, keine sagt, dass die Lieferung dann als frei gilt; Y fachlich am klarsten."
+  },
+  {
+   "id": "BM-174-B04",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Alle nennen GTS_TEST/DEV-Ausstieg, keine das Ergebnis „frei“."
+  },
+  {
+   "id": "BM-174-B05",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Alle nennen den DE-Ausstieg, keine das Ergebnis „frei“."
+  },
+  {
+   "id": "BM-174-B06",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig",
+     "zu_allgemein"
+    ]
+   },
+   "kurz": "Y nennt Filter, Warennummer und Ausstieg ohne Positionen; X technisch, Z ohne Löschfilter."
+  },
+  {
+   "id": "BM-174-B07",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "falsch",
+     "zu_allgemein",
+     "technisch"
+    ]
+   },
+   "kurz": "Y nennt RFC an GTS und Ergebnis F bei Fehler; X ohne GTS-Bezug, Z spricht von „eingegebener Destination“ und Benachrichtigung."
+  },
+  {
+   "id": "BM-174-B08",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "zu_allgemein",
+     "technisch"
+    ]
+   },
+   "kurz": "Y nennt Protokollsatz mit Feldern; X nur Tabellenname, Z nur Unterprogrammaufruf."
+  },
+  {
+   "id": "BM-174-B09",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "unvollstaendig",
+     "redundant"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "unvollstaendig",
+     "redundant",
+     "grammatik",
+     "zu_allgemein"
+    ]
+   },
+   "kurz": "Y nennt Bedingung S, Sperre GT und Information; X/Z ohne Bedingung."
+  },
+  {
+   "id": "BM-174-B10",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "falsch",
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Keine sagt, dass das Sichern im Dialog verhindert wird; Y behauptet fälschlich, im Dialog werde nach der Fehlermeldung zusätzlich GT gesetzt."
+  },
+  {
+   "id": "BM-174-B11",
+   "X": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "kurz": "Nur Y nennt das Entfernen der Sperre GT in allen anderen Fällen."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

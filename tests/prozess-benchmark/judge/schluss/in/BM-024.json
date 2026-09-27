@@ -1,0 +1,101 @@
+{
+ "id": "BM-024",
+ "titel": "Gesperrte Lieferanten je Einkaufsorganisation (ALV)",
+ "prozess": "Für ein Audit startet ein Einkäufer den Report mit einer Einkaufsorganisation. Der Report liest alle Lieferanten, die in dieser Einkaufsorganisation eine Einkaufssperre haben oder zentral zur Buchung gesperrt sind. Gibt es keine, gibt er einen entsprechenden Hinweis aus und endet. Sonst zeigt er Nummer, Name, Land und die beiden Sperrkennzeichen in einer ALV-Liste an. Scheitert die Erzeugung der Liste, bricht er mit einer Fehlermeldung ab. Am Lieferantenstamm wird nichts geändert.",
+ "verboten": [
+  "source.abap:16 — kein Fachsatz „Lieferanten mit Löschvormerkung werden gelistet“ (LOEVM wird nicht gelesen)",
+  "source.abap:29 — kein Fachsatz „Die Sperre kann aus der Liste aufgehoben werden“ (reine Anzeige, keine Funktionen)",
+  "source.abap:16 — kein Fachsatz „Nur Lieferanten mit beiden Sperren“ (die Bedingung ist ODER)"
+ ],
+ "saetze": [
+  {
+   "id": "BM-024-B01",
+   "soll": "Es werden die Lieferanten der eingegebenen Einkaufsorganisation gelesen, die dort für den Einkauf gesperrt oder zentral gebucht gesperrt sind.",
+   "zeilen": [
+    16
+   ],
+   "code": [
+    "16:   SELECT a~lifnr a~name1 a~land1 m~sperm a~sperr"
+   ],
+   "X": [
+    "Aus den Tabellen LFA1 und LFM1 werden für die angegebene Einkaufsorganisation p_ekorg die Felder Lieferantennummer (LIFNR), Name (NAME1), Länderschlüssel (LAND1), Einkaufssperre (SPERM) und Zentralsperre (SPERR) gelesen, sofern entweder die Einkaufssperre m~sperm gleich 'X' oder die Zentralsperre a~sperr gleich 'X' ist."
+   ],
+   "Y": [
+    "Das Ergebnis enthält Lieferantennummer, Name, Länderschlüssel, sperm und sperr.",
+    "Es werden Lieferanten mit dem eingegebenen Einkaufsorganisation selektiert."
+   ],
+   "Z": [
+    "Es werden Sätze aus lfa1 mit dem eingegebenen m~ekorg selektiert."
+   ]
+  },
+  {
+   "id": "BM-024-B02",
+   "soll": "Gibt es keine, wird „Keine gesperrten Lieferanten“ ausgegeben und der Report endet.",
+   "zeilen": [
+    21,
+    22,
+    23
+   ],
+   "code": [
+    "21:   IF gt_lief IS INITIAL.",
+    "22:     WRITE / 'Keine gesperrten Lieferanten'(001).",
+    "23:     RETURN."
+   ],
+   "X": [
+    "Wurden keine gesperrten Lieferanten gefunden, wird der Text 'Keine gesperrten Lieferanten' ausgegeben und die Verarbeitung beendet."
+   ],
+   "Y": [
+    "Ohne Treffer wird Keine gesperrten Lieferanten ausgegeben und der Block verlassen.",
+    "Keine gesperrten Lieferanten wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code."
+   ],
+   "Z": [
+    "Ohne Treffer wird 'Keine gesperrten Lieferanten'(001) ausgegeben und der Block verlassen.",
+    "Es wird 'Keine gesperrten Lieferanten'(001) ausgegeben und der Block verlassen.",
+    "'Keine gesperrten Lieferanten'(001) wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-024-B03",
+   "soll": "Sonst werden Lieferantennummer, Name, Land und beide Sperrkennzeichen als ALV-Liste angezeigt.",
+   "zeilen": [
+    27,
+    29
+   ],
+   "code": [
+    "27:       cl_salv_table=>factory( IMPORTING r_salv_table = go_alv",
+    "29:       go_alv->display( )."
+   ],
+   "X": [
+    "Über den Aufruf der Methode CL_SALV_TABLE=>FACTORY wird eine ALV-Tabelleninstanz für die Liste der gesperrten Lieferanten erzeugt.",
+    "Über die Methode DISPLAY wird die erzeugte ALV-Tabelle mit den Lieferantendaten zur Anzeige gebracht."
+   ],
+   "Y": [
+    "Die Methode factory von cl_salv_table wird aufgerufen; ihr Ergebnis wird in go_alv übernommen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "Die Methode display von go_alv wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ],
+   "Z": [
+    "Der Rückgabewert der Methode factory von cl_salv_table wird nach cl_salv_table übernommen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "Die Methode display von go_alv wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-024-B04",
+   "soll": "Lässt sich die Liste nicht erzeugen, bricht der Report mit einer Fehlermeldung ab.",
+   "zeilen": [
+    31
+   ],
+   "code": [
+    "31:       MESSAGE 'ALV konnte nicht erzeugt werden' TYPE 'E'."
+   ],
+   "X": [
+    "Tritt bei der Erzeugung oder Anzeige der ALV-Tabelle ein Fehler der Ausnahmeklasse CX_SALV_MSG auf, wird die Fehlermeldung 'ALV konnte nicht erzeugt werden' mit dem Typ 'E' ausgegeben."
+   ],
+   "Y": [
+    "Die Fehlermeldung „ALV konnte nicht erzeugt werden“ wird ausgegeben."
+   ],
+   "Z": [
+    "Eine Meldung wird ausgegeben."
+   ]
+  }
+ ]
+}

@@ -1,0 +1,286 @@
+{
+ "id": "BM-132",
+ "titel": "RE-FX Nebenkostenabrechnung: Kosten einer Abrechnungseinheit zeitanteilig nach Fläche oder Personen verteilen, mit Vorauszahlungen verrechnen und ins FI buchen",
+ "prozess": "Der Report wird einmal jährlich je Abrechnungseinheit und Geschäftsjahr gestartet, standardmäßig als Testlauf. Er liest die Abrechnungseinheit; ist sie unbekannt, bricht er ab. Er summiert die umlagefähigen Kosten des Jahres und liest die Mieter, deren Nutzungszeitraum das Jahr berührt, wobei Nutzungen ohne Ende-Datum ausfallen. Je Mieter begrenzt er den Zeitraum auf das Jahr, liest die monatliche Vorauszahlung aus der Vertragskondition Z200 und rechnet sie auf die Nutzungsmonate hoch. Dann bildet er je Mieter eine Basis aus Personenzahl oder Fläche mal Nutzungstagen, berechnet daraus einen Kostensatz und verteilt die Gesamtkosten; der Saldo ist Kostenanteil minus Vorauszahlungen. Gibt es Kosten, aber keine Basis, setzt er die Gesamtkosten zurück und bricht mit einer Fehlermeldung ab. Im Echtlauf bucht er je Mieter mit Saldo einen FI-Beleg auf den Debitor gegen das Erlöskonto; bei Fehlern rollt er zurück und merkt sich die Meldung, sonst schreibt er fest und protokolliert Belegnummer und Saldo in einer eigenen Tabelle. Zum Schluss listet er alle Mieter mit Anteil, Vorauszahlung, Saldo, Beleg und Meldung. Ein Rollback nach einem Fehler kann den Protokollsatz des zuvor gebuchten Mieters mit zurücknehmen.",
+ "verboten": [
+  "zre_nk_abr_f01.abap:28 — kein Fachsatz „Mieter ohne Vorauszahlungskondition haben keine Vorauszahlung“: ohne Treffer bleibt der Betrag des vorher gelesenen Mieters stehen",
+  "zre_nk_abr_f01.abap:121 — kein Fachsatz „jede erfolgreiche Buchung steht sicher im Ergebnisprotokoll“: scheitert die Buchung des nächsten Mieters, rollt der Rollback den noch nicht festgeschriebenen Protokollsatz mit zurück",
+  "zre_nk_abr_f01.abap:25 — kein Fachsatz „unbefristete Nutzungen werden bis Jahresende abgerechnet“: sie sind schon in der Selektion ausgeschlossen, der Zweig für ein leeres Ende-Datum greift nie",
+  "zre_nk_abr_f01.abap:63 — kein Fachsatz „ohne erfasste Kosten bricht die Abrechnung ab“: bei null Kosten gibt es keine Division durch null, alle Mieter erhalten ihre Vorauszahlungen als Guthaben"
+ ],
+ "saetze": [
+  {
+   "id": "BM-132-B01",
+   "soll": "Die Abrechnungseinheit wird mit Umlageschlüssel, Buchungskreis, Erlöskonto und Währung gelesen; ist sie unbekannt, bricht der Lauf mit einer Fehlermeldung ab.",
+   "zeilen": [
+    17,
+    19,
+    20
+   ],
+   "code": [
+    "17:   SELECT SINGLE * FROM zre_nk_ae INTO gs_ae",
+    "19:   IF sy-subrc <> 0.",
+    "20:     MESSAGE e030(zre) WITH p_ae."
+   ],
+   "X": [
+    "Aus der Tabelle ZRE_NK_AE wird der Datensatz zur Abrechnungseinheit p_ae gelesen.",
+    "Wird zur Abrechnungseinheit p_ae kein Eintrag in der Tabelle ZRE_NK_AE gefunden (sy-subrc ungleich 0), wird die Fehlermeldung E030(zre) mit der Abrechnungseinheit ausgegeben."
+   ],
+   "Y": [
+    "Es werden Sätze aus zre_nk_ae mit dem eingegebenen ae_id selektiert.",
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ],
+   "Z": [
+    "Es werden Sätze aus zre_nk_ae mit dem eingegebenen ae_id selektiert.",
+    "Ohne Treffer wird eine Fehlermeldung ausgegeben.",
+    "Die Fehlermeldung 030(ZRE) wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-132-B02",
+   "soll": "Die umlagefähigen Kosten der Einheit im Abrechnungsjahr werden summiert.",
+   "zeilen": [
+    24
+   ],
+   "code": [
+    "24:   SELECT SUM( betrag ) FROM zre_nk_kosten INTO gv_gesamt"
+   ],
+   "X": [
+    "Aus der Tabelle ZRE_NK_KOSTEN wird die Summe aller Beträge (BETRAG) für die Abrechnungseinheit p_ae und das Geschäftsjahr p_gjahr ermittelt."
+   ],
+   "Y": [
+    "Es werden Sätze aus zre_nk_kosten mit dem eingegebenen ae_id und dem eingegebenen gjahr selektiert."
+   ],
+   "Z": [
+    "Das Ergebnis enthält SUM( und Betrag.",
+    "Es werden Sätze aus zre_nk_kosten mit dem eingegebenen ae_id und dem eingegebenen Geschäftsjahr selektiert."
+   ]
+  },
+  {
+   "id": "BM-132-B03",
+   "soll": "Es werden die Mieter der Einheit gelesen, deren Nutzungszeitraum das Abrechnungsjahr berührt; Nutzungen ohne Ende-Datum fallen dabei aus der Selektion.",
+   "zeilen": [
+    51
+   ],
+   "code": [
+    "51:   SELECT t~recnnr, c~intreno, t~kunnr, t~flaeche, t~personen,"
+   ],
+   "X": [
+    "Aus den Tabellen ZRE_NK_TEILN und VICNCN werden Vertragsnummer (RECNNR), Immobilien-Vertragskennzeichen (INTRENO), Kundennummer (KUNNR), Fläche, Personen sowie Von- und Bis-Datum für die Abrechnungseinheit p_ae im Zeitraum zwischen dem 01.01. und 31.12. des Geschäftsjahres gelesen."
+   ],
+   "Y": [
+    "Es werden Sätze aus zre_nk_teiln mit dem eingegebenen t~ae_id selektiert."
+   ],
+   "Z": [
+    "Es werden Sätze aus zre_nk_teiln mit dem eingegebenen t~ae_id selektiert."
+   ]
+  },
+  {
+   "id": "BM-132-B04",
+   "soll": "Der Nutzungszeitraum jedes Mieters wird auf das Abrechnungsjahr begrenzt.",
+   "zeilen": [
+    63
+   ],
+   "code": [
+    "63:     <ls_t>-von = COND #( WHEN <ls_t>-von < gv_beginn THEN gv_beginn ELSE <ls_t>-von )."
+   ],
+   "X": [
+    "Liegt das Von-Datum vor dem 01.01. des Geschäftsjahres, wird es auf den 01.01. gesetzt; liegt das Bis-Datum nach dem 31.12. des Geschäftsjahres oder ist es initial, wird es auf den 31.12. gesetzt."
+   ],
+   "Y": [],
+   "Z": []
+  },
+  {
+   "id": "BM-132-B05",
+   "soll": "Je Mieter wird die monatliche Nebenkostenvorauszahlung aus der Vertragskondition Z200 gelesen und mit der Zahl der Nutzungsmonate (Tage durch 30) multipliziert.",
+   "zeilen": [
+    67,
+    71
+   ],
+   "code": [
+    "67:     SELECT SINGLE unitprice FROM vicdcond INTO @DATA(lv_vz)",
+    "71:     <ls_t>-voraus = lv_vz * lv_mon."
+   ],
+   "X": [
+    "Aus der Tabelle VICDCOND wird der Betrag (UNITPRICE) der Konditionsart Z200 zum internen Vertragskennzeichen des Teilnehmers gelesen.",
+    "Die Vorauszahlung des Teilnehmers wird anhand der Anzahl der Monate im Nutzungszeitraum und des Konditionsbetrags berechnet."
+   ],
+   "Y": [
+    "unitprice des Satzes wird gelesen."
+   ],
+   "Z": [
+    "Das Feld unitprice aus vicdcond wird gelesen."
+   ]
+  },
+  {
+   "id": "BM-132-B06",
+   "soll": "Die Verteilungsbasis je Mieter ist die Personenzahl oder die Fläche, je nach Umlageschlüssel der Einheit, mal die Nutzungstage.",
+   "zeilen": [
+    95
+   ],
+   "code": [
+    "95:     <ls_t>-basis = COND decfloat34( WHEN gs_ae-umlageschl = 'PE' THEN <ls_t>-personen"
+   ],
+   "X": [
+    "Für jeden Abrechnungsteilnehmer wird die Bemessungsgrundlage berechnet: bei Umlageschlüssel PE anhand der Personenzahl, andernfalls anhand der Fläche, jeweils multipliziert mit der Anzahl der Tage im Nutzungszeitraum."
+   ],
+   "Y": [],
+   "Z": []
+  },
+  {
+   "id": "BM-132-B07",
+   "soll": "Aus Gesamtkosten und Summe aller Basen wird ein Kostensatz je Basiseinheit berechnet.",
+   "zeilen": [
+    102
+   ],
+   "code": [
+    "102:       lv_satz = gv_gesamt / lv_summe."
+   ],
+   "X": [
+    "Der Kostensatz wird durch Division der Gesamtkosten durch die Gesamtsumme der Bemessungsgrundlagen ermittelt; anschließend werden für jeden Teilnehmer die anteiligen Kosten sowie der Saldo abzüglich der Vorauszahlung berechnet."
+   ],
+   "Y": [],
+   "Z": []
+  },
+  {
+   "id": "BM-132-B08",
+   "soll": "Jeder Mieter trägt Kostensatz mal Basis; sein Saldo ist dieser Anteil abzüglich der Vorauszahlungen.",
+   "zeilen": [
+    104
+   ],
+   "code": [
+    "104:         <ls_t>-kosten = lv_satz * <ls_t>-basis."
+   ],
+   "X": [
+    "Der Kostensatz wird durch Division der Gesamtkosten durch die Gesamtsumme der Bemessungsgrundlagen ermittelt; anschließend werden für jeden Teilnehmer die anteiligen Kosten sowie der Saldo abzüglich der Vorauszahlung berechnet."
+   ],
+   "Y": [],
+   "Z": []
+  },
+  {
+   "id": "BM-132-B09",
+   "soll": "Ist bei vorhandenen Kosten keine Verteilungsbasis vorhanden, werden die Gesamtkosten zurückgesetzt und der Lauf bricht mit einer Fehlermeldung ab.",
+   "zeilen": [
+    82,
+    108
+   ],
+   "code": [
+    "82:       MESSAGE e032(zre) WITH p_ae p_gjahr.",
+    "108:       CLEAR gv_gesamt."
+   ],
+   "X": [
+    "Tritt bei der Anteilsberechnung eine Division durch Null auf (cx_sy_zerodivide), wird die Fehlermeldung E032(zre) mit Abrechnungseinheit p_ae und Geschäftsjahr p_gjahr ausgegeben."
+   ],
+   "Y": [
+    "Eine Meldung wird ausgegeben."
+   ],
+   "Z": [
+    "Die Fehlermeldung 032(ZRE) wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-132-B10",
+   "soll": "Im Echtlauf wird für jeden Mieter mit Saldo ein FI-Beleg der Belegart NK gebucht: Nachzahlung oder Guthaben auf dem Debitor gegen das Erlöskonto der Einheit.",
+   "zeilen": [
+    30,
+    125,
+    139
+   ],
+   "code": [
+    "30:   IF p_test IS INITIAL.",
+    "125:     CHECK <ls_t>-saldo <> 0.",
+    "139:     CALL FUNCTION 'BAPI_ACC_DOCUMENT_POST'"
+   ],
+   "X": [
+    "Ist das Testlauf-Kennzeichen p_test nicht gesetzt (initial), wird das Unterprogramm BUCHEN zur Verbuchung ins FI aufgerufen.",
+    "Ist der Saldo eines Teilnehmers gleich 0, wird dessen Verbuchung übersprungen.",
+    "Über den Funktionsbaustein BAPI_ACC_DOCUMENT_POST wird ein Buchhaltungsbeleg der Belegart NK mit Debitor und Erlöskonto zur Verbuchung des Saldos im Buchungskreis übergeben."
+   ],
+   "Y": [
+    "Ohne p_test wird buchen aufgerufen.",
+    "Nur ls_t>-saldo ungleich 0 gehen weiter; kleinere werden übersprungen, die Schleife läuft weiter.",
+    "Der Code übergibt ls_head an BAPI_ACC_DOCUMENT_POST und übernimmt dessen Ausgabe nach lv_key.",
+    "Das konvertierte Ergebnis wird in lv_key übernommen."
+   ],
+   "Z": [
+    "Ist das Feld p_test leer, wird buchen aufgerufen.",
+    "Nur wenn das Feld ls_t-saldo ungleich 0 ist, wird der Schleifendurchlauf fortgesetzt; sonst wird er übersprungen, und die Schleife läuft mit dem nächsten Durchlauf weiter.",
+    "Der Code übergibt ls_head an BAPI_ACC_DOCUMENT_POST und übernimmt dessen Ausgabe nach lv_key."
+   ]
+  },
+  {
+   "id": "BM-132-B11",
+   "soll": "Meldet die Buchung einen Fehler, wird zurückgerollt und die Fehlermeldung beim Mieter vermerkt.",
+   "zeilen": [
+    150,
+    151
+   ],
+   "code": [
+    "150:     IF line_exists( lt_ret[ type = 'E' ] ) OR line_exists( lt_ret[ type = 'A' ] ).",
+    "151:       CALL FUNCTION 'BAPI_TRANSACTION_ROLLBACK'."
+   ],
+   "X": [
+    "Enthält die Rückmeldung der Belegbuchung Fehler- oder Abbruchmeldungen (Typ E oder A), wird die Buchungstransaktion über BAPI_TRANSACTION_ROLLBACK zurückgerollt und die Fehlermeldung am Teilnehmer vermerkt."
+   ],
+   "Y": [
+    "Für line_exists( lt_ret[ type = 'E' ] ) OR line_exists( lt_ret[ type = 'A' ] ) wird BAPI_TRANSACTION_ROLLBACK aufgerufen.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_ROLLBACK wird aufgerufen."
+   ],
+   "Z": [
+    "Wenn die Bedingung „line_exists( lt_ret[ type = 'E' ] ) OR line_exists( lt_ret[ type = 'A' ] )“ erfüllt ist, wird BAPI_TRANSACTION_ROLLBACK aufgerufen und der Schleifendurchlauf übersprungen.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_ROLLBACK wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-132-B12",
+   "soll": "Eine erfolgreiche Buchung wird festgeschrieben und mit Belegnummer im Ergebnisprotokoll vermerkt; am Ende wird das Protokoll festgeschrieben.",
+   "zeilen": [
+    156,
+    160,
+    166
+   ],
+   "code": [
+    "156:     CALL FUNCTION 'BAPI_TRANSACTION_COMMIT'",
+    "160:     INSERT zre_nk_erg FROM @( VALUE zre_nk_erg( ae_id  = p_ae",
+    "166:   COMMIT WORK."
+   ],
+   "X": [
+    "Verläuft die Belegbuchung ohne Fehler- oder Abbruchmeldungen, wird die Transaktion über BAPI_TRANSACTION_COMMIT mit gesetztem Warteparameter bestätigt.",
+    "In die Tabelle ZRE_NK_ERG wird ein Ergebnisdatensatz mit Abrechnungseinheit p_ae, Geschäftsjahr p_gjahr, Vertragsnummer (RECNNR), Saldo (SALDO) und Belegnummer (BELNR) eingefügt.",
+    "Nach Abschluss der Schleife über alle Teilnehmer wird ein COMMIT WORK ausgeführt."
+   ],
+   "Y": [
+    "Der Funktionsbaustein BAPI_TRANSACTION_COMMIT wird aufgerufen.",
+    "Mit COMMIT WORK wird die Änderung persistiert."
+   ],
+   "Z": [
+    "Der Funktionsbaustein BAPI_TRANSACTION_COMMIT wird aufgerufen.",
+    "Mit COMMIT WORK wird die Änderung persistiert."
+   ]
+  },
+  {
+   "id": "BM-132-B13",
+   "soll": "Für alle Mieter werden Kostenanteil, Vorauszahlung, Saldo, Belegnummer und Meldung gelistet, im Testlauf ohne Belegnummer.",
+   "zeilen": [
+    35
+   ],
+   "code": [
+    "35:     WRITE: / ls_t-recnnr, ls_t-kosten, ls_t-voraus, ls_t-saldo,"
+   ],
+   "X": [
+    "Für jeden Abrechnungsteilnehmer werden Vertragsnummer, Kosten, Vorauszahlung, Saldo, Belegnummer und Meldungstext in die Liste ausgegeben."
+   ],
+   "Y": [
+    "Bei Treffern werden ls_t-recnnr, ls_t-kosten, ls_t-voraus, ls_t-saldo, ls_t-belnr und ls_t-meldung als Liste ausgegeben.",
+    "ls_t-recnnr wird ausgegeben.",
+    "ls_t-kosten wird ausgegeben.",
+    "ls_t-voraus wird ausgegeben.",
+    "ls_t-saldo wird ausgegeben."
+   ],
+   "Z": [
+    "Bei Treffern werden ls_t-recnnr, ls_t-kosten, ls_t-voraus, ls_t-saldo, Belegnummer und ls_t-meldung als Liste ausgegeben."
+   ]
+  }
+ ]
+}

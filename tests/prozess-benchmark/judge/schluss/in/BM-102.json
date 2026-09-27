@@ -1,0 +1,107 @@
+{
+ "id": "BM-102",
+ "titel": "Zählerstand plausibilisieren: letzter Messbeleg, Rückwärtszählung, Zählerüberlauf",
+ "prozess": "Der Baustein wird vor dem Anlegen eines Zählerstands mit Messpunkt, neuem Zählerstand und Ablesedatum aufgerufen. Er liest zum Messpunkt den Zählerüberlaufwert, sofern der Messpunkt als Zähler gekennzeichnet ist; ist er kein Zähler, bleibt der Überlaufwert leer, ohne dass das auffällt. Danach ermittelt er den jüngsten nicht stornierten Messbeleg bis zum Ablesedatum und berechnet den Zuwachs als Differenz; ohne Vorbeleg gilt der volle neue Stand als Zuwachs. Ist der Zuwachs negativ und kein Überlauf gepflegt, bricht der Baustein mit der Ausnahme READING_TOO_LOW ab. Andernfalls wird ein negativer Zuwachs als Zählerüberlauf gedeutet und um den Überlaufwert erhöht, und der Zuwachs wird zurückgegeben. Geschrieben wird nichts.",
+ "verboten": [
+  "source.abap:15 — kein Fachsatz „Messpunkte ohne Zählerkennzeichen werden abgewiesen“: sy-subrc wird nicht geprüft, ein Nicht-Zähler läuft ohne Überlaufwert weiter",
+  "gesamte Scheibe — kein Fachsatz „der Messbeleg wird angelegt“: der Baustein liest und rechnet nur",
+  "source.abap:28 — kein Fachsatz „ohne Vorbeleg wird die Erfassung abgelehnt“: ohne Vorbeleg ist der letzte Stand 0 und der volle Stand gilt als Zuwachs"
+ ],
+ "saetze": [
+  {
+   "id": "BM-102-B01",
+   "soll": "Zum Messpunkt wird, sofern er ein Zähler ist, der Zählerüberlaufwert gelesen.",
+   "zeilen": [
+    15
+   ],
+   "code": [
+    "15:   SELECT SINGLE cjump FROM imptt"
+   ],
+   "X": [
+    "cjump des Satzes wird gelesen."
+   ],
+   "Y": [
+    "Aus der Tabelle IMPTT wird für den angegebenen Messpunkt mit Zählerkennzeichen INDCT gleich 'X' der Zählerüberlauf CJUMP gelesen."
+   ],
+   "Z": [
+    "Das Feld cjump des Messpunkts wird gelesen."
+   ]
+  },
+  {
+   "id": "BM-102-B02",
+   "soll": "Es wird der jüngste nicht stornierte Messbeleg bis zum Ablesedatum ermittelt.",
+   "zeilen": [
+    20
+   ],
+   "code": [
+    "20:   SELECT idate, itime, readg FROM imrg"
+   ],
+   "X": [
+    "Das Ergebnis enthält idate, itime und readg.",
+    "Es werden Sätze aus imrg selektiert."
+   ],
+   "Y": [
+    "Aus der Tabelle IMRG wird für den Messpunkt der zeitlich jüngste, nicht stornierte Eintrag mit einem Ablesedatum bis einschließlich des angegebenen Datums mit den Feldern IDATE, ITIME und READG gelesen."
+   ],
+   "Z": [
+    "Das Ergebnis enthält idate, itime und readg.",
+    "Es werden Messbelege selektiert."
+   ]
+  },
+  {
+   "id": "BM-102-B03",
+   "soll": "Der Zuwachs ergibt sich aus neuem Zählerstand minus letztem Zählerstand; ohne Vorbeleg zählt der volle neue Stand.",
+   "zeilen": [
+    28
+   ],
+   "code": [
+    "28:   ev_diff = iv_readg - VALUE imrc_readg( lt_last[ 1 ]-readg OPTIONAL )."
+   ],
+   "X": [],
+   "Y": [
+    "Die Zählerstandsdifferenz wird berechnet, indem der zuletzt erfasste Zählerstand vom übergebenen Zählerstand abgezogen wird."
+   ],
+   "Z": []
+  },
+  {
+   "id": "BM-102-B04",
+   "soll": "Ist der neue Zählerstand kleiner als der letzte und für den Zähler kein Überlauf gepflegt, wird die Erfassung mit der Ausnahme READING_TOO_LOW abgelehnt.",
+   "zeilen": [
+    29,
+    30
+   ],
+   "code": [
+    "29:   IF ev_diff < 0 AND lv_cjump IS INITIAL.",
+    "30:     MESSAGE e102(zpm) WITH iv_point RAISING reading_too_low."
+   ],
+   "X": [
+    "Für ev_diff < 0 AND lv_cjump IS INITIAL wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ],
+   "Y": [
+    "Ist die Differenz kleiner als 0 und ist kein Zählerüberlauf vorhanden, wird unter Angabe des Messpunkts die Fehlermeldung 102 der Nachrichtenklasse zpm ausgegeben und die Ausnahme READING_TOO_LOW ausgelöst.",
+    "Ist die Differenz nicht kleiner als 0 oder ist ein Zählerüberlauf vorhanden, wird keine Fehlermeldung ausgegeben und die Verarbeitung fortgesetzt."
+   ],
+   "Z": [
+    "Wenn das Feld ev_diff kleiner als 0 ist und das Feld lv_cjump leer ist, wird die Ausnahme reading_too_low ausgelöst.",
+    "Die Ausnahme reading_too_low wird ausgelöst; die Meldung 102(ZPM) erscheint nur, wenn der Aufrufer die Ausnahme nicht behandelt."
+   ]
+  },
+  {
+   "id": "BM-102-B05",
+   "soll": "Ist ein Überlauf gepflegt, wird ein negativer Zuwachs als Zählerüberlauf gewertet und um den Überlaufwert erhöht.",
+   "zeilen": [
+    32
+   ],
+   "code": [
+    "32:   ev_diff = COND #( WHEN ev_diff < 0 THEN ev_diff + lv_cjump"
+   ],
+   "X": [],
+   "Y": [
+    "Ist die Differenz kleiner als 0, wird sie um den Zählerüberlauf erhöht.",
+    "Ist die Differenz nicht kleiner als 0, bleibt sie unverändert."
+   ],
+   "Z": []
+  }
+ ]
+}

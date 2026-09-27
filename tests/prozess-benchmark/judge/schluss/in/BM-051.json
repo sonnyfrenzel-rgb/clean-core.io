@@ -1,0 +1,326 @@
+{
+ "id": "BM-051",
+ "titel": "Überweisungsdatei für die Bankensoftware aus einem ausgeführten Zahllauf erzeugen",
+ "prozess": "Nach dem Zahllauf startet die Kreditorenbuchhaltung den Report mit Laufdatum, Laufidentifikation, zahlendem Buchungskreis, Zahlungsmethode, Dateipfad und Testlauf-Schalter. Zuerst werden die Berechtigung für das Zahlprogramm und der Status des Laufs geprüft; fehlt eines, bricht der Report ab. Dann werden die Zahlungen des Echtlaufs gelesen; ohne Zahlungen endet der Report mit einem Hinweis. Zahlungen ohne IBAN oder BIC landen in einer Fehlerliste, für alle anderen wird aus den Rechnungsreferenzen ein Verwendungszweck gebildet und ein Einzelsatz aufgebaut; Anzahl und eine währungsübergreifende Summe werden mitgezählt. Nur im Echtlauf wird die Datei mit Kopf-, Einzel- und Summensätzen geschrieben und die Erzeugung in einer Z-Tabelle protokolliert; ein bereits vorhandener Protokollsatz führt nur zu einem Hinweis. Am Ende werden Zähler und abgewiesene Zahlungen ausgegeben. Eine Doppelerzeugungsprüfung gibt es nicht mehr.",
+ "verboten": [
+  "zfi_payfile_f01.abap:84 — kein Fachsatz „Zahlungen werden an die Bank übertragen“ (es wird nur eine Datei auf dem Applikationsserver geschrieben)",
+  "zfi_payfile_f01.abap:29 — kein Fachsatz „doppelte Dateien werden verhindert“ (die Prüfung ist auskommentiert)",
+  "zfi_payfile_f01.abap:74 — kein Fachsatz „Summen je Währung“ (eine einzige Kontrollsumme über alle Währungen)",
+  "zfi_payfile_f01.abap:43 — kein Fachsatz „Zahlungen ohne IBAN werden storniert oder aus dem Zahllauf entfernt“ (sie fehlen nur in der Datei)"
+ ],
+ "saetze": [
+  {
+   "id": "BM-051-B01",
+   "soll": "Vor der Dateierzeugung wird geprüft, ob der Anwender für den zahlenden Buchungskreis Zahlungsträger erstellen darf; sonst bricht der Report mit Fehlermeldung ab.",
+   "zeilen": [
+    69,
+    72,
+    73
+   ],
+   "code": [
+    "69:   AUTHORITY-CHECK OBJECT 'F_REGU_BUK'",
+    "72:   IF sy-subrc <> 0.",
+    "73:     MESSAGE e010 WITH p_zbukr."
+   ],
+   "X": [
+    "Die Berechtigung auf F_REGU_BUK wird geprüft.",
+    "Ohne Berechtigung auf F_REGU_BUK für den eingegebenen p_zbukr wird eine Fehlermeldung ausgegeben.",
+    "Die Fehlermeldung 010 wird ausgegeben."
+   ],
+   "Y": [
+    "Die Berechtigung auf F_REGU_BUK wird geprüft.",
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ],
+   "Z": [
+    "Für das Berechtigungsobjekt F_REGU_BUK wird geprüft, ob die Berechtigung zur Zahllaufausführung mit Aktivität 25 für den Buchungskreis p_zbukr vorliegt.",
+    "Ist die Berechtigungsprüfung für den Buchungskreis p_zbukr erfolgreich, wird mit der Zahllaufprüfung fortgefahren.",
+    "Fehlt die Berechtigung für den Buchungskreis p_zbukr, wird die Fehlermeldung E010 ausgegeben und die Verarbeitung abgebrochen."
+   ]
+  },
+  {
+   "id": "BM-051-B02",
+   "soll": "Der Zahllauf zu Laufdatum und Identifikation muss existieren und echt ausgeführt sein, sonst bricht der Report ab.",
+   "zeilen": [
+    76,
+    79,
+    80
+   ],
+   "code": [
+    "76:   SELECT SINGLE * FROM reguv INTO gs_reguv",
+    "79:   IF sy-subrc <> 0 OR gs_reguv-xecht IS INITIAL.",
+    "80:     MESSAGE e011 WITH p_laufd p_laufi."
+   ],
+   "X": [
+    "Es werden Sätze aus reguv mit dem eingegebenen laufd und dem eingegebenen laufi selektiert.",
+    "Wenn kein Treffer vorliegt oder das Feld gs_reguv-xecht leer ist, wird eine Fehlermeldung ausgegeben.",
+    "Die Fehlermeldung 011 wird ausgegeben."
+   ],
+   "Y": [
+    "Es werden Sätze aus reguv mit dem eingegebenen laufd und dem eingegebenen laufi selektiert.",
+    "Für sy-subrc <> 0 OR gs_reguv-xecht IS INITIAL wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ],
+   "Z": [
+    "Aus der Tabelle REGUV werden die Zahllaufdaten zum eingegebenen Laufdatum p_laufd und der Lauf-Identifikation p_laufi gelesen.",
+    "Wurde der Zahllauf in der Tabelle REGUV gefunden und ist er als Echtlauf xecht gekennzeichnet, wird die Verarbeitung fortgesetzt.",
+    "Wird der Zahllauf nicht gefunden oder handelt es sich um keinen Echtlauf, wird die Fehlermeldung E011 mit Laufdatum p_laufd und Lauf-Identifikation p_laufi ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-051-B03",
+   "soll": "Gelesen werden die Zahlungen des Echtlaufs für den zahlenden Buchungskreis und die gewählte Zahlungsmethode (Vorschlag U = Überweisung).",
+   "zeilen": [
+    36
+   ],
+   "code": [
+    "36:   SELECT * FROM reguh INTO TABLE gt_reguh"
+   ],
+   "X": [
+    "Es werden Sätze aus reguh mit dem eingegebenen laufd, dem eingegebenen laufi, dem eingegebenen zbukr und dem eingegebenen rzawe selektiert."
+   ],
+   "Y": [
+    "Es werden Sätze aus reguh mit dem eingegebenen laufd, dem eingegebenen laufi, dem eingegebenen zbukr und dem eingegebenen rzawe selektiert."
+   ],
+   "Z": [
+    "Aus der Tabelle REGUH werden alle Zahlungssätze zum Laufdatum p_laufd, der Lauf-Identifikation p_laufi, leerem Vorschlagskennzeichen xvorl, dem Buchungskreis p_zbukr und dem Zahlungsweg p_rzawe in die interne Tabelle gt_reguh gelesen."
+   ]
+  },
+  {
+   "id": "BM-051-B04",
+   "soll": "Gibt es keine Zahlungen, erhält der Anwender einen Hinweis und der Report endet.",
+   "zeilen": [
+    42,
+    43,
+    44
+   ],
+   "code": [
+    "42:   IF gt_reguh IS INITIAL.",
+    "43:     MESSAGE s001 WITH p_laufd p_laufi.",
+    "44:     RETURN."
+   ],
+   "X": [
+    "Ohne Treffer wird eine Statusmeldung ausgegeben und der Block verlassen.",
+    "Die Statusmeldung 001 wird ausgegeben."
+   ],
+   "Y": [
+    "Ohne Treffer wird eine Meldung ausgegeben und der Block verlassen.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "Eine Meldung wird ausgegeben.",
+    "Es wird eine Meldung ausgegeben und der Block verlassen."
+   ],
+   "Z": [
+    "Sind keine regulierten Zahlungen vorhanden, wird die Erfolgsmeldung S001 mit Laufdatum p_laufd und Lauf-Identifikation p_laufi ausgegeben und die weitere Verarbeitung beendet; andernfalls wird fortgefahren."
+   ]
+  },
+  {
+   "id": "BM-051-B05",
+   "soll": "Zahlungen ohne IBAN oder BIC des Empfängers werden nicht in die Datei übernommen, sondern mit Grund in einer Fehlerliste gesammelt.",
+   "zeilen": [
+    103,
+    108
+   ],
+   "code": [
+    "103:     IF <ls_reguh>-ziban IS INITIAL OR <ls_reguh>-zswif IS INITIAL.",
+    "108:       APPEND gs_err TO gt_err."
+   ],
+   "X": [
+    "Wenn das Feld ls_reguh-ziban leer ist oder das Feld ls_reguh-zswif leer ist, wird der Text auf IBAN/BIC fehlt - Zahlung nicht in Datei gesetzt, eine Zeile aufgenommen und der Schleifendurchlauf übersprungen.",
+    "Wenn das Feld ls_reguh-ziban leer ist oder das Feld ls_reguh-zswif leer ist, wird der Text auf IBAN/BIC fehlt - Zahlung nicht in Datei gesetzt.",
+    "Eine Zeile wird in gt_err aufgenommen."
+   ],
+   "Y": [
+    "Für <ls_reguh>-ziban IS INITIAL OR <ls_reguh>-zswif IS INITIAL wird die Text auf IBAN/BIC fehlt - Zahlung nicht in Datei gesetzt und eine Zeile aufgenommen.",
+    "<ls_reguh>-ziban IS INITIAL OR <ls_reguh>-zswif IS INITIAL setzen die Text auf IBAN/BIC fehlt - Zahlung nicht in Datei.",
+    "Es wird die Text auf IBAN/BIC fehlt - Zahlung nicht in Datei gesetzt und eine Zeile aufgenommen.",
+    "Eine Zeile wird in gt_err aufgenommen."
+   ],
+   "Z": [
+    "Ist die IBAN oder der SWIFT-Code des Zahlungsempfängers initial, wird ein Fehlereintrag mit Belegnummer und Empfängernummer in der Tabelle gt_err abgelegt und die Schleife beim nächsten Datensatz fortgesetzt; andernfalls erfolgt die Rechnungsselektion."
+   ]
+  },
+  {
+   "id": "BM-051-B06",
+   "soll": "Der Verwendungszweck wird aus den Referenznummern der mit der Zahlung beglichenen Rechnungen gebildet und auf 140 Zeichen gekürzt.",
+   "zeilen": [
+    113,
+    122
+   ],
+   "code": [
+    "113:     SELECT xblnr FROM regup INTO TABLE lt_xblnr",
+    "122:     CONCATENATE LINES OF lt_xblnr INTO lv_zweck SEPARATED BY ','."
+   ],
+   "X": [
+    "Es werden Sätze aus regup selektiert."
+   ],
+   "Y": [
+    "Es werden Sätze aus regup selektiert."
+   ],
+   "Z": [
+    "Aus der Tabelle REGUP werden alle Rechnungsreferenzen xblnr passend zu Laufdatum, Lauf-Identifikation, Buchungskreis, Kreditor, Debitor, Empfänger und Zahlbelegnummer des Zahlungssatzes gelesen.",
+    "Die ermittelten Referenznummern werden durch Kommas getrennt zu einer gemeinsamen Verwendungszweck-Zeile verkettet."
+   ]
+  },
+  {
+   "id": "BM-051-B07",
+   "soll": "Je Zahlung entsteht ein Einzelsatz mit Zahlungsbelegnummer, Empfängername, IBAN, BIC, Betrag (als positiver Wert), Währung und Verwendungszweck.",
+   "zeilen": [
+    128,
+    130
+   ],
+   "code": [
+    "128:     lv_betrag = abs( <ls_reguh>-rwbtr ).",
+    "130:     lv_line = |D;{ <ls_reguh>-vblnr };{ <ls_reguh>-znme1 };{ <ls_reguh>-ziban };|"
+   ],
+   "X": [],
+   "Y": [],
+   "Z": [
+    "Der Absolutbetrag der Zahlung wird ermittelt, zur CSV-Datenzeile mit Kennung D, Belegnummer, Name, IBAN, SWIFT-Code, Währung und Verwendungszweck zusammengestellt, an die Ausgabetabelle gt_lines angehängt sowie Anzahl und Gesamtsumme aufsummiert."
+   ]
+  },
+  {
+   "id": "BM-051-B08",
+   "soll": "Anzahl und Kontrollsumme der Zahlungen werden fortgeschrieben; die Summe addiert Beträge unabhängig von ihrer Währung.",
+   "zeilen": [
+    134
+   ],
+   "code": [
+    "134:     gv_sum   = gv_sum + lv_betrag."
+   ],
+   "X": [],
+   "Y": [],
+   "Z": [
+    "Der Absolutbetrag der Zahlung wird ermittelt, zur CSV-Datenzeile mit Kennung D, Belegnummer, Name, IBAN, SWIFT-Code, Währung und Verwendungszweck zusammengestellt, an die Ausgabetabelle gt_lines angehängt sowie Anzahl und Gesamtsumme aufsummiert."
+   ]
+  },
+  {
+   "id": "BM-051-B09",
+   "soll": "Nur im Echtlauf wird die Datei auf dem Applikationsserver geschrieben; lässt sie sich nicht öffnen, bricht der Report mit Fehlermeldung ab.",
+   "zeilen": [
+    49,
+    144,
+    145,
+    146
+   ],
+   "code": [
+    "49:   IF p_test IS INITIAL.",
+    "144:   OPEN DATASET p_file FOR OUTPUT IN TEXT MODE ENCODING UTF-8.",
+    "145:   IF sy-subrc <> 0.",
+    "146:     MESSAGE e020 WITH p_file."
+   ],
+   "X": [
+    "Ist das Feld p_test leer, wird write_file aufgerufen und log_run aufgerufen.",
+    "Lässt sich die Datei nicht öffnen, wird eine Fehlermeldung ausgegeben.",
+    "Die Fehlermeldung 020 wird ausgegeben."
+   ],
+   "Y": [
+    "Ohne p_test wird write_file aufgerufen und log_run aufgerufen.",
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ],
+   "Z": [
+    "Ist das Testlauf-Kennzeichen p_test nicht gesetzt, werden das Schreiben der Datei und die Protokollierung aufgerufen; andernfalls werden diese Schritte übersprungen.",
+    "Die Datei unter dem Pfad p_file wird auf dem Applikationsserver im Textmodus mit UTF-8-Codierung zur Ausgabe geöffnet.",
+    "Konnte die Datei unter p_file erfolgreich geöffnet werden, wird mit der Datenausgabe fortgefahren.",
+    "Kann die Datei unter p_file nicht geöffnet werden, wird die Fehlermeldung E020 mit dem Dateipfad ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-051-B10",
+   "soll": "Die Datei besteht aus einem Kopfsatz mit Buchungskreis, Lauf und Erstelldatum, den Einzelsätzen und einem Summensatz mit Anzahl und Kontrollsumme.",
+   "zeilen": [
+    151,
+    154,
+    158,
+    159
+   ],
+   "code": [
+    "151:   TRANSFER lv_line TO p_file.",
+    "154:     TRANSFER lv_line TO p_file.",
+    "158:   TRANSFER lv_line TO p_file.",
+    "159:   CLOSE DATASET p_file."
+   ],
+   "X": [],
+   "Y": [],
+   "Z": [
+    "Ein Kopfsatz mit Kennung H, Buchungskreis p_zbukr, Laufdatum p_laufd, Lauf-Identifikation p_laufi und Tagesdatum sy-datum wird in die Datei übertragen.",
+    "Die jeweilige Zahlungszeile wird in die Ausgabedatei übertragen.",
+    "Ein Summensatz mit Kennung T, Gesamtzahl gv_count und Summe gv_sum wird in die Datei übertragen und die Datei geschlossen."
+   ]
+  },
+  {
+   "id": "BM-051-B11",
+   "soll": "Im Echtlauf wird die Dateierzeugung mit Datei, Anzahl, Summe, Benutzer und Zeitpunkt in einer kundeneigenen Protokolltabelle festgehalten.",
+   "zeilen": [
+    177
+   ],
+   "code": [
+    "177:   INSERT zfi_payfile_log FROM ls_log."
+   ],
+   "X": [],
+   "Y": [],
+   "Z": [
+    "Ein Protokolldatensatz mit Laufdatum p_laufd, Lauf-Identifikation p_laufi, Buchungskreis p_zbukr, Dateiname p_file, Anzahl gv_count, Summe gv_sum, Benutzerkennung sy-uname, Erstellungsdatum sy-datum und Uhrzeit sy-uzeit wird in die Tabelle ZFI_PAYFILE_LOG eingefügt."
+   ]
+  },
+  {
+   "id": "BM-051-B12",
+   "soll": "Existiert für den Lauf bereits ein Protokollsatz, wird nur ein Hinweis ausgegeben; die Datei ist dann trotzdem neu geschrieben.",
+   "zeilen": [
+    178,
+    180
+   ],
+   "code": [
+    "178:   IF sy-subrc <> 0.",
+    "180:     MESSAGE s021 WITH p_laufd p_laufi DISPLAY LIKE 'W'."
+   ],
+   "X": [
+    "Schlägt die Datenbankänderung fehl, wird eine Statusmeldung ausgegeben.",
+    "Die Statusmeldung 021 wird ausgegeben, angezeigt wie eine Warnung."
+   ],
+   "Y": [
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ],
+   "Z": [
+    "Existiert der Protokolldatensatz in der Tabelle ZFI_PAYFILE_LOG bereits, wird die Meldung S021 mit Laufdatum p_laufd und Lauf-Identifikation p_laufi als Warnung ausgegeben; andernfalls erfolgt keine Meldung."
+   ]
+  },
+  {
+   "id": "BM-051-B13",
+   "soll": "Zum Schluss werden Anzahl, Summe, Testlauf-Kennzeichen und alle abgewiesenen Zahlungen mit Grund ausgegeben.",
+   "zeilen": [
+    55,
+    57
+   ],
+   "code": [
+    "55:   WRITE: / 'Zahlungen in Datei:', gv_count, 'Summe:', gv_sum, 'Testlauf:', p_test.",
+    "57:     WRITE: / gs_err-vblnr, gs_err-empfg, gs_err-text COLOR COL_NEGATIVE."
+   ],
+   "X": [
+    "Zahlungen in Datei:, Anzahl, Summe:, Summe, Testlauf: und p_test werden ausgegeben.",
+    "Zahlungen in Datei: wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "Summe: wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "Testlauf: wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "Bei Treffern werden gs_err-vblnr, gs_err-empfg und Text als Liste ausgegeben."
+   ],
+   "Y": [
+    "Zahlungen in Datei:, Anzahl, Summe:, Summe, Testlauf: und p_test werden ausgegeben.",
+    "Zahlungen in Datei: wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "Anzahl wird ausgegeben.",
+    "Summe: wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "Summe wird ausgegeben.",
+    "Testlauf: wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "p_test wird ausgegeben.",
+    "Bei Treffern werden gs_err-vblnr, gs_err-empfg und gs_err-text COLOR COL_NEGATIVE als Liste ausgegeben.",
+    "gs_err-vblnr wird ausgegeben.",
+    "gs_err-empfg wird ausgegeben.",
+    "gs_err-text COLOR COL_NEGATIVE wird ausgegeben."
+   ],
+   "Z": [
+    "Die Anzahl der verarbeiteten Zahlungen gv_count, die Gesamtsumme gv_sum und der Testlauf-Status p_test werden in die Protokollausgabe geschrieben.",
+    "Für jeden fehlerhaften Zahlungssatz werden Belegnummer, Empfängernummer und Fehlertext rot hervorgehoben auf der Liste ausgegeben."
+   ]
+  }
+ ]
+}

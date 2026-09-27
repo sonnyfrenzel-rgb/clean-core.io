@@ -1,0 +1,524 @@
+{
+ "id": "BM-098",
+ "titel": "Freigabe-Workflow für Bankverbindungsänderungen am Kreditor: Prüfbaustein, Workflow-Klasse, Agentenregel, Überwachung",
+ "prozess": "Nach einem Zahlungsbetrugsfall unterliegen Änderungen an Bankverbindungen von Kreditoren einer Vier-Augen-Freigabe. Bei jeder Kreditoränderung prüft ein Baustein der Ereignisverknüpfung den jüngsten Änderungsbeleg: Der Freigabe-Workflow startet nur, wenn der Änderer nicht auf der Ausnahmeliste steht und der Beleg die Bankverbindung betrifft. Im ersten Schritt setzt der Workflow im Buchungskreis die Zahlsperre B und protokolliert die bisherige Sperre; war B bereits gesetzt, geschieht nichts. Als Freigeber gelten die gültigen festen Freigeber des Buchungskreises ohne den Antragsteller, ersatzweise der Leiter seiner Organisationseinheit. Der Änderer selbst darf nicht freigeben. Bei Freigabe wird die Zahlsperre auf den protokollierten Vorwert zurückgesetzt; bei Ablehnung werden neu angelegte Bankverbindungen gelöscht, geänderte Felder auf ihren alten Wert gesetzt, bei gelöschten Verbindungen bricht der Schritt ab – danach wird der Kreditor zentral zum Buchen gesperrt. Jede Entscheidung wird protokolliert und der Antragsteller benachrichtigt. Ein täglicher Job erinnert die Bearbeiter offener Freigaben nach der Erinnerungsfrist und leitet nach der Eskalationsfrist an den Leiter der Kreditorenbuchhaltung weiter.",
+ "verboten": [
+  "z_wf_check_bank_change.abap:36 — kein Fachsatz „jede Bankdatenänderung durchläuft die Freigabe“ (Benutzer der Ausnahmeliste sind ausgenommen).",
+  "zcl_wf_vendor_bank.abap:102 — kein Fachsatz „die Freigabe stellt immer die Zahlsperre vor der Änderung wieder her“ (war schon B gesetzt, wird nichts protokolliert und die Freigabe greift auf eine ältere Sperre zurück).",
+  "zcl_wf_vendor_bank.abap:210 — kein Fachsatz „eine geänderte Kontonummer wird bei Ablehnung automatisch zurückgesetzt“ (Schlüsseländerungen erscheinen als Löschen+Anlegen; der Löschfall bricht ab).",
+  "zfi_bank_wf_monitor.abap:70 — kein Fachsatz „alle offenen Workitems werden erinnert“ (nur Status READY, nicht STARTED)."
+ ],
+ "saetze": [
+  {
+   "id": "BM-098-B01",
+   "soll": "Bei jeder Änderung eines Kreditors wird der jüngste Änderungsbeleg gelesen; ohne Beleg startet kein Freigabe-Workflow.",
+   "zeilen": [
+    180,
+    186,
+    187
+   ],
+   "code": [
+    "180:   SELECT * FROM cdhdr INTO TABLE lt_hdr",
+    "186:   IF sy-subrc <> 0.",
+    "187:     RAISE no_bank_change."
+   ],
+   "X": [
+    "Aus der Tabelle CDHDR wird der zeitlich letzte Änderungsbeleg der Objektklasse KRED zum Kreditor gelesen.",
+    "Wird kein Änderungsbeleg gefunden, wird der Fehler NO_BANK_CHANGE ausgelöst."
+   ],
+   "Y": [
+    "Es werden Sätze aus cdhdr selektiert."
+   ],
+   "Z": [
+    "Es werden Sätze aus cdhdr selektiert."
+   ]
+  },
+  {
+   "id": "BM-098-B02",
+   "soll": "Hat ein vom Freigabeverfahren ausgenommener Benutzer (gültiger Eintrag der Ausnahmeliste) geändert, startet kein Workflow.",
+   "zeilen": [
+    191,
+    195
+   ],
+   "code": [
+    "191:   SELECT SINGLE uname FROM zwf_trusted_usr INTO lv_uname",
+    "195:     RAISE trusted_user."
+   ],
+   "X": [
+    "Aus der Tabelle ZWF_TRUSTED_USR wird geprüft, ob der Benutzer des Änderungsbelegs zum Tagesdatum gültig ist.",
+    "Ist der Benutzer in der Tabelle der vertrauenswürdigen Benutzer eingetragen, wird der Fehler TRUSTED_USER ausgelöst."
+   ],
+   "Y": [
+    "Das Feld uname aus zwf_trusted_usr wird gelesen."
+   ],
+   "Z": [
+    "uname des Satzes wird gelesen."
+   ]
+  },
+  {
+   "id": "BM-098-B03",
+   "soll": "Nur wenn der Änderungsbeleg Positionen zur Bankverbindung enthält, darf der Workflow starten.",
+   "zeilen": [
+    199,
+    204,
+    205
+   ],
+   "code": [
+    "199:   SELECT COUNT(*) FROM cdpos INTO lv_count",
+    "204:   IF lv_count = 0.",
+    "205:     RAISE no_bank_change."
+   ],
+   "X": [
+    "In der Tabelle CDPOS wird die Anzahl der Änderungspositionen zur Tabelle LFBK für den Änderungsbeleg ermittelt.",
+    "Wurden keine Änderungen an der Tabelle LFBK festgestellt, wird der Fehler NO_BANK_CHANGE ausgelöst."
+   ],
+   "Y": [
+    "Die Zahl der Sätze wird ermittelt."
+   ],
+   "Z": [
+    "Die Zahl der Sätze wird ermittelt."
+   ]
+  },
+  {
+   "id": "BM-098-B04",
+   "soll": "Der Workflow arbeitet mit einem Objekt aus Kreditornummer und Buchungskreis.",
+   "zeilen": [
+    260
+   ],
+   "code": [
+    "260:     CREATE OBJECT lo_obj."
+   ],
+   "X": [],
+   "Y": [],
+   "Z": []
+  },
+  {
+   "id": "BM-098-B05",
+   "soll": "Im ersten Schritt wird die Zahlsperre des Kreditors im Buchungskreis gelesen; ist der Kreditor dort nicht angelegt, endet der Schritt mit Fehler.",
+   "zeilen": [
+    301,
+    304,
+    305
+   ],
+   "code": [
+    "301:     SELECT SINGLE zahls FROM lfb1 INTO lv_zahls",
+    "304:     IF sy-subrc <> 0.",
+    "305:       RAISE EXCEPTION TYPE zcx_wf_bank"
+   ],
+   "X": [
+    "Aus der Tabelle LFB1 wird die Zahlsperre des Kreditors im Buchungskreis gelesen.",
+    "Wird kein Kreditor im Buchungskreis gefunden, wird eine Ausnahme ausgelöst."
+   ],
+   "Y": [
+    "Das Feld zahls des Lieferanten wird gelesen."
+   ],
+   "Z": [
+    "zahls des Satzes wird gelesen."
+   ]
+  },
+  {
+   "id": "BM-098-B06",
+   "soll": "Ist bereits die Zahlsperre B gesetzt, geschieht nichts weiter.",
+   "zeilen": [
+    309,
+    310
+   ],
+   "code": [
+    "309:     IF lv_zahls = 'B'.",
+    "310:       RETURN.                               \"bereits gesperrt"
+   ],
+   "X": [
+    "Ist die Zahlsperre bereits auf B gesetzt, wird die Methode ohne weitere Änderungen verlassen."
+   ],
+   "Y": [
+    "Wenn das Feld lv_zahls gleich B ist, wird vor der Datenbankoperation zurückgekehrt."
+   ],
+   "Z": [
+    "Für lv_zahls mit dem Wert B wird der Block verlassen.",
+    "Bei lv_zahls gleich B wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben."
+   ]
+  },
+  {
+   "id": "BM-098-B07",
+   "soll": "Sonst wird die Zahlsperre B direkt im Buchungskreissegment gesetzt und die bisherige Zahlsperre mit Datum, Uhrzeit und Benutzer protokolliert.",
+   "zeilen": [
+    314,
+    325
+   ],
+   "code": [
+    "314:     UPDATE lfb1 SET zahls = 'B'",
+    "325:     INSERT zwf_bank_hist FROM ls_hist."
+   ],
+   "X": [
+    "In der Tabelle LFB1 wird die Zahlsperre des Kreditors im Buchungskreis auf B gesetzt.",
+    "In die Tabelle ZWF_BANK_HIST wird ein Sperreintrag mit der bisherigen Zahlsperre sowie Datum, Uhrzeit und Benutzer eingefügt."
+   ],
+   "Y": [
+    "Das Feld zahls des Lieferanten wird geändert. Ob eine Zeile getroffen wird, garantiert der Code nicht."
+   ],
+   "Z": [
+    "Die zahls in lfb1 wird geändert. Ob eine Zeile getroffen wird, garantiert der Code nicht."
+   ]
+  },
+  {
+   "id": "BM-098-B08",
+   "soll": "Die Freigeber sind die im Buchungskreis zum heutigen Tag gültigen festen Freigeber ohne den Antragsteller.",
+   "zeilen": [
+    112,
+    117,
+    122
+   ],
+   "code": [
+    "112:   SELECT * FROM zwf_bank_appr INTO TABLE lt_appr",
+    "117:     CHECK ls_appr-uname <> lv_requester.       \"Vier-Augen-Prinzip",
+    "122:   IF actor_tab[] IS NOT INITIAL."
+   ],
+   "X": [
+    "Aus der Tabelle ZWF_BANK_APPR werden die zum Tagesdatum gültigen Freigeber des Buchungskreises gelesen.",
+    "Entspricht der Freigeber nicht dem Antragsteller, wird er als Bearbeiter vom Typ US in die Ergebnistabelle übernommen.",
+    "Wurde mindestens ein Freigeber ermittelt, wird die Regelausführung beendet."
+   ],
+   "Y": [
+    "Es werden Sätze aus zwf_bank_appr selektiert.",
+    "Nur wenn das Feld ls_appr-uname ungleich lv_requester ist, wird der Schleifendurchlauf fortgesetzt; sonst wird er übersprungen, und die Schleife läuft mit dem nächsten Durchlauf weiter.",
+    "Ist das Feld actor_tab[] nicht leer, wird der Block verlassen."
+   ],
+   "Z": [
+    "Es werden Sätze aus zwf_bank_appr selektiert.",
+    "Nur ls_appr-uname ungleich lv_requester gehen weiter; kleinere werden übersprungen, die Schleife läuft weiter.",
+    "Mit einer nicht leeren actor_tab[] wird der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-098-B09",
+   "soll": "Gibt es keinen, wird über die Personalnummer des Antragstellers der Leiter seiner Organisationseinheit als Freigeber bestimmt; gelingt das nicht, wird niemand gefunden.",
+   "zeilen": [
+    127,
+    133,
+    136,
+    150
+   ],
+   "code": [
+    "127:   SELECT SINGLE pernr FROM pa0105 INTO lv_pernr",
+    "133:     RAISE nobody_found.",
+    "136:   CALL FUNCTION 'RH_GET_LEADER'",
+    "150:     RAISE nobody_found."
+   ],
+   "X": [
+    "Aus der Tabelle PA0105 wird die zum Tagesdatum gültige Personalnummer des Antragstellers zum Subtyp 0001 gelesen.",
+    "Wird keine Personalnummer gefunden, wird der Fehler NOBODY_FOUND ausgelöst.",
+    "Über den Funktionsbaustein RH_GET_LEADER wird die Führungskraft zur Personalnummer im Planplan 01 zum Tagesdatum ermittelt.",
+    "Kann keine Führungskraft ermittelt werden, wird der Fehler NOBODY_FOUND ausgelöst."
+   ],
+   "Y": [
+    "Die Personalnummer aus pa0105 wird gelesen.",
+    "Der Code übergibt '01' an RH_GET_LEADER und übernimmt dessen Ausgabe nach lv_ltype."
+   ],
+   "Z": [
+    "pernr des Satzes wird gelesen.",
+    "Der Code übergibt '01' an RH_GET_LEADER und übernimmt dessen Ausgabe nach lv_ltype.",
+    "Das konvertierte Ergebnis wird in lv_ltype übernommen."
+   ]
+  },
+  {
+   "id": "BM-098-B10",
+   "soll": "Bei der Freigabe darf der Benutzer, der die Bankverbindung zuletzt geändert hat, nicht selbst freigeben.",
+   "zeilen": [
+    335,
+    336,
+    337
+   ],
+   "code": [
+    "335:     ls_hdr = last_change( ).",
+    "336:     IF ls_hdr-username = iv_approver.",
+    "337:       RAISE EXCEPTION TYPE zcx_wf_bank"
+   ],
+   "X": [
+    "Über die Methode last_change wird der letzte Änderungsbeleg des Kreditors ermittelt.",
+    "Entspricht der Freigeber dem Erfasser der letzten Änderung, wird eine Ausnahme wegen Verstoßes gegen das Vier-Augen-Prinzip ausgelöst."
+   ],
+   "Y": [],
+   "Z": []
+  },
+  {
+   "id": "BM-098-B11",
+   "soll": "Nach der Freigabe wird die Zahlsperre auf den Wert vor der letzten protokollierten Sperre zurückgesetzt und die Freigabe protokolliert.",
+   "zeilen": [
+    343,
+    350,
+    361
+   ],
+   "code": [
+    "343:     SELECT * FROM zwf_bank_hist INTO TABLE lt_hist",
+    "350:     UPDATE lfb1 SET zahls = ls_hist-old_zahls",
+    "361:     INSERT zwf_bank_hist FROM ls_hist."
+   ],
+   "X": [
+    "Aus der Tabelle ZWF_BANK_HIST wird der zeitlich letzte Sperreintrag mit der Aktion BLOCK zum Kreditor und Buchungskreis gelesen.",
+    "In der Tabelle LFB1 wird die Zahlsperre auf den vor der Sperrung gültigen Wert zurückgesetzt.",
+    "In die Tabelle ZWF_BANK_HIST wird ein Freigabeeintrag mit der Aktion APPROVE und dem Freigeber eingefügt."
+   ],
+   "Y": [
+    "Es werden Sätze aus zwf_bank_hist selektiert.",
+    "Das Feld zahls des Lieferanten wird geändert. Ob eine Zeile getroffen wird, garantiert der Code nicht."
+   ],
+   "Z": [
+    "Es werden Sätze aus zwf_bank_hist selektiert.",
+    "Die zahls in lfb1 wird geändert. Ob eine Zeile getroffen wird, garantiert der Code nicht."
+   ]
+  },
+  {
+   "id": "BM-098-B12",
+   "soll": "Bei Ablehnung wird die Bankdatenänderung des letzten Änderungsbelegs zurückgedreht.",
+   "zeilen": [
+    368,
+    395,
+    396
+   ],
+   "code": [
+    "368:     restore_bank_data( ).",
+    "395:     ls_hdr = last_change( ).",
+    "396:     SELECT * FROM cdpos INTO TABLE lt_pos"
+   ],
+   "X": [
+    "Über den Aufruf der Methode restore_bank_data werden die ursprünglichen Bankdaten wiederhergestellt.",
+    "Der letzte Änderungsbeleg des Kreditors wird über die Methode last_change ermittelt.",
+    "Aus der Tabelle CDPOS werden alle Änderungspositionen zur Tabelle LFBK für die Belegnummer des letzten Änderungsbelegs selektiert."
+   ],
+   "Y": [
+    "Es werden Sätze aus cdpos selektiert."
+   ],
+   "Z": [
+    "Es werden Sätze aus cdpos selektiert."
+   ]
+  },
+  {
+   "id": "BM-098-B13",
+   "soll": "Eine neu angelegte Bankverbindung wird wieder gelöscht.",
+   "zeilen": [
+    407,
+    410
+   ],
+   "code": [
+    "407:       CASE ls_pos-chngind.",
+    "410:           DELETE FROM lfbk"
+   ],
+   "X": [
+    "Handelt es sich um eine Neuanlage (Änderungskennzeichen I), wird die neu angelegte Bankverbindung aus der Tabelle LFBK gelöscht.",
+    "Handelt es sich um eine Änderung (Änderungskennzeichen U), wird der bestehende Bankdatensatz aus der Tabelle LFBK gelesen."
+   ],
+   "Y": [],
+   "Z": []
+  },
+  {
+   "id": "BM-098-B14",
+   "soll": "Wurde eine Bankverbindung gelöscht, bricht das Zurückdrehen mit der Aufforderung zur manuellen Wiederherstellung ab.",
+   "zeilen": [
+    417
+   ],
+   "code": [
+    "417:           RAISE EXCEPTION TYPE zcx_wf_bank"
+   ],
+   "X": [],
+   "Y": [],
+   "Z": []
+  },
+  {
+   "id": "BM-098-B15",
+   "soll": "Bei einer Feldänderung wird der alte Wert des geänderten Feldes wieder in die Bankverbindung geschrieben.",
+   "zeilen": [
+    421,
+    426,
+    428,
+    429
+   ],
+   "code": [
+    "421:           SELECT SINGLE * FROM lfbk INTO ls_lfbk",
+    "426:           ASSIGN COMPONENT ls_pos-fname OF STRUCTURE ls_lfbk TO <lv_field>.",
+    "428:             <lv_field> = ls_pos-value_old.",
+    "429:             MODIFY lfbk FROM ls_lfbk."
+   ],
+   "X": [
+    "Handelt es sich um eine Änderung (Änderungskennzeichen U), wird der bestehende Bankdatensatz aus der Tabelle LFBK gelesen.",
+    "Wurde das Feld im Bankdatensatz gefunden, wird es auf den alten Wert zurückgesetzt und in der Tabelle LFBK aktualisiert."
+   ],
+   "Y": [
+    "Es werden Sätze aus lfbk selektiert.",
+    "Eine Komponente der Struktur wird an das Feldsymbol gebunden.",
+    "Ist das Feld zugewiesen, wird eine Zeile eingefügt oder überschrieben.",
+    "Eine Zeile in lfbk wird eingefügt oder überschrieben. sy-subrc wird danach nicht ausgewertet."
+   ],
+   "Z": [
+    "Es werden Sätze aus lfbk selektiert.",
+    "Eine Komponente der Struktur wird an das Feldsymbol gebunden.",
+    "Bei Treffer wird eine Zeile eingefügt oder überschrieben.",
+    "Eine Zeile in lfbk wird eingefügt oder überschrieben. sy-subrc wird danach nicht ausgewertet."
+   ]
+  },
+  {
+   "id": "BM-098-B16",
+   "soll": "Nach einer Ablehnung wird der Kreditor zentral zum Buchen gesperrt, die Zahlsperre bleibt bestehen und die Ablehnung wird mit Grund protokolliert.",
+   "zeilen": [
+    371,
+    381
+   ],
+   "code": [
+    "371:     UPDATE lfa1 SET sperr = 'X'",
+    "381:     INSERT zwf_bank_hist FROM ls_hist."
+   ],
+   "X": [
+    "In der Tabelle LFA1 wird die zentrale Buchungssperre des Kreditors auf X gesetzt.",
+    "In die Tabelle ZWF_BANK_HIST wird ein Ablehnungseintrag mit der Aktion REJECT, Freigeber und Ablehnungsgrund eingefügt."
+   ],
+   "Y": [
+    "Das Feld sperr des Lieferanten wird geändert. Ob eine Zeile getroffen wird, garantiert der Code nicht."
+   ],
+   "Z": [
+    "Die sperr in lfa1 wird geändert. Ob eine Zeile getroffen wird, garantiert der Code nicht."
+   ]
+  },
+  {
+   "id": "BM-098-B17",
+   "soll": "Der Antragsteller erhält eine Nachricht, ob die Bankverbindung freigegeben oder abgelehnt wurde.",
+   "zeilen": [
+    443,
+    455
+   ],
+   "code": [
+    "443:     IF iv_result = 'A'.",
+    "455:     CALL FUNCTION 'SO_NEW_DOCUMENT_SEND_API1'"
+   ],
+   "X": [
+    "Ist das Ergebnis gleich A, wird der Betreff auf freigegebene Bankverbindung gesetzt; andernfalls wird er auf abgelehnte Bankverbindung gesetzt.",
+    "Über den Funktionsbaustein SO_NEW_DOCUMENT_SEND_API1 wird eine Benachrichtigung an den Antragsteller versendet."
+   ],
+   "Y": [
+    "Es wird das Feld ls_rcv-rec_type auf B gesetzt, eine Zeile aufgenommen und SO_NEW_DOCUMENT_SEND_API1 aufgerufen.",
+    "Der Funktionsbaustein SO_NEW_DOCUMENT_SEND_API1 wird aufgerufen."
+   ],
+   "Z": [
+    "Es wird die ls_rcv-rec_type auf B gesetzt, eine Zeile aufgenommen und SO_NEW_DOCUMENT_SEND_API1 aufgerufen.",
+    "Der Funktionsbaustein SO_NEW_DOCUMENT_SEND_API1 wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-098-B18",
+   "soll": "Täglich werden alle protokollierten Zahlsperren geprüft; wurde seit dem Sperrdatum freigegeben oder abgelehnt, ist nichts zu tun.",
+   "zeilen": [
+    23,
+    28,
+    34
+   ],
+   "code": [
+    "23:   SELECT * FROM zwf_bank_hist INTO TABLE gt_hist",
+    "28:     SELECT SINGLE @abap_true FROM zwf_bank_hist",
+    "34:     IF sy-subrc = 0."
+   ],
+   "X": [
+    "Aus der Tabelle ZWF_BANK_HIST werden alle Einträge mit der Aktion BLOCK selektiert.",
+    "Aus der Tabelle ZWF_BANK_HIST wird geprüft, ob für den Kreditor und Buchungskreis ab dem Sperrdatum bereits eine Freigabe oder Ablehnung existiert.",
+    "Liegt bereits eine Entscheidung vor, wird die Bearbeitung für diesen Eintrag übersprungen."
+   ],
+   "Y": [
+    "Es werden Sätze aus zwf_bank_hist selektiert.",
+    "Es wird geprüft, ob es einen passenden Satz in zwf_bank_hist gibt.",
+    "Bei Treffer wird der Schleifendurchlauf übersprungen."
+   ],
+   "Z": [
+    "Es werden Sätze aus zwf_bank_hist selektiert.",
+    "abap_true des Satzes wird gelesen."
+   ]
+  },
+  {
+   "id": "BM-098-B19",
+   "soll": "Ist eine offene Sperre mindestens so alt wie die Eskalationsfrist, werden die bereiten Workitems an den Leiter der Kreditorenbuchhaltung weitergeleitet.",
+   "zeilen": [
+    39,
+    40,
+    72
+   ],
+   "code": [
+    "39:     IF gv_age >= p_esc.",
+    "40:       PERFORM remind USING gs_hist p_escu.",
+    "72:       CALL FUNCTION 'SAP_WAPI_FORWARD_WORKITEM'"
+   ],
+   "X": [
+    "Ist das Alter der Sperre größer oder gleich der Eskalationsfrist, wird die Weiterleitung an den Eskalationsbenutzer aufgerufen und der Eskalationszähler um 1 erhöht.",
+    "Ist ein Weiterleitungsbenutzer angegeben, wird das Workitem über den Funktionsbaustein SAP_WAPI_FORWARD_WORKITEM an diesen Benutzer weitergeleitet."
+   ],
+   "Y": [
+    "Wenn das Feld gv_age mindestens p_esc ist, wird remind aufgerufen.",
+    "Das Unterprogramm remind wird aufgerufen; es ruft SAP_WAPI_WORKITEMS_TO_OBJECT, SAP_WAPI_FORWARD_WORKITEM und Z_WF_SEND_REMINDER auf.",
+    "Ist das Feld pv_user nicht leer, wird SAP_WAPI_FORWARD_WORKITEM aufgerufen, sonst Z_WF_SEND_REMINDER aufgerufen.",
+    "Der Funktionsbaustein SAP_WAPI_FORWARD_WORKITEM wird aufgerufen."
+   ],
+   "Z": [
+    "Für gv_age ab p_esc wird remind aufgerufen.",
+    "Für gv_age ab p_esc wird remind aufgerufen, sonst remind aufgerufen.",
+    "Das Unterprogramm remind wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Mit einer nicht leeren pv_user wird SAP_WAPI_FORWARD_WORKITEM aufgerufen.",
+    "Mit einer nicht leeren pv_user wird SAP_WAPI_FORWARD_WORKITEM aufgerufen, sonst Z_WF_SEND_REMINDER aufgerufen.",
+    "Der Funktionsbaustein SAP_WAPI_FORWARD_WORKITEM wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-098-B20",
+   "soll": "Ist sie mindestens so alt wie die Erinnerungsfrist, erhalten die Bearbeiter der bereiten Workitems eine Erinnerung.",
+   "zeilen": [
+    43,
+    78
+   ],
+   "code": [
+    "43:       PERFORM remind USING gs_hist space.",
+    "78:       CALL FUNCTION 'Z_WF_SEND_REMINDER'"
+   ],
+   "X": [
+    "Ist das Alter kleiner als die Eskalationsfrist, aber mindestens gleich der Erinnerungsfrist, wird die Erinnerung ohne Benutzer aufgerufen und der Erinnerungszähler um 1 erhöht.",
+    "Ist kein Weiterleitungsbenutzer angegeben, wird über den Funktionsbaustein Z_WF_SEND_REMINDER eine Erinnerung für das Workitem versendet."
+   ],
+   "Y": [
+    "Wenn das Feld gv_age mindestens p_days ist, wird remind aufgerufen.",
+    "Das Unterprogramm remind wird aufgerufen; es ruft SAP_WAPI_WORKITEMS_TO_OBJECT, SAP_WAPI_FORWARD_WORKITEM und Z_WF_SEND_REMINDER auf.",
+    "Ist das Feld pv_user nicht leer, wird SAP_WAPI_FORWARD_WORKITEM aufgerufen, sonst Z_WF_SEND_REMINDER aufgerufen.",
+    "Der Funktionsbaustein Z_WF_SEND_REMINDER wird aufgerufen."
+   ],
+   "Z": [
+    "Für gv_age ab p_esc wird remind aufgerufen, sonst remind aufgerufen.",
+    "Für gv_age ab p_days wird remind aufgerufen.",
+    "Das Unterprogramm remind wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Mit einer nicht leeren pv_user wird SAP_WAPI_FORWARD_WORKITEM aufgerufen, sonst Z_WF_SEND_REMINDER aufgerufen.",
+    "Sonst wird Z_WF_SEND_REMINDER aufgerufen.",
+    "Der Funktionsbaustein Z_WF_SEND_REMINDER wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-098-B21",
+   "soll": "Zum Schluss werden die Anzahlen von Erinnerungen und Eskalationen ausgegeben.",
+   "zeilen": [
+    49,
+    50
+   ],
+   "code": [
+    "49:   WRITE: / 'Erinnerungen:', gv_rem.",
+    "50:   WRITE: / 'Eskalationen:', gv_esc."
+   ],
+   "X": [
+    "Die Anzahl der durchgeführten Erinnerungen und Eskalationen wird auf der Liste ausgegeben."
+   ],
+   "Y": [
+    "Es wird COMMIT WORK ausgeführt, Erinnerungen: ausgegeben, gv_rem ausgegeben, Eskalationen: ausgegeben und gv_esc ausgegeben.",
+    "Erinnerungen:, gv_rem, Eskalationen: und gv_esc werden ausgegeben.",
+    "Erinnerungen: wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "Eskalationen: wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code."
+   ],
+   "Z": [
+    "Es wird COMMIT WORK ausgeführt, Erinnerungen: ausgegeben, gv_rem ausgegeben, Eskalationen: ausgegeben und gv_esc ausgegeben.",
+    "Erinnerungen:, gv_rem, Eskalationen: und gv_esc werden ausgegeben.",
+    "Erinnerungen: wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "gv_rem wird ausgegeben.",
+    "Eskalationen: wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "gv_esc wird ausgegeben."
+   ]
+  }
+ ]
+}

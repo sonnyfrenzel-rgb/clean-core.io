@@ -1,0 +1,160 @@
+{
+ "id": "BM-070",
+ "urteile": [
+  {
+   "id": "BM-070-B01",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein"
+    ]
+   },
+   "kurz": "Nur X nennt die mehrstufige Auflösung mit PP01 und Menge 1."
+  },
+  {
+   "id": "BM-070-B02",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "kurz": "Nur X nennt die Ausnahme."
+  },
+  {
+   "id": "BM-070-B03",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "abweichend",
+    "mangel": [
+     "falsch",
+     "technisch"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "kurz": "X nennt Lagerpositionen mit Stufe; Y behauptet jede Zeile; Z Feldbedingung postp = L."
+  },
+  {
+   "id": "BM-070-B04",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "grammatik",
+     "redundant"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "kurz": "X und Z nennen Vermerk und Überspringen; Y ohne Überspringen."
+  },
+  {
+   "id": "BM-070-B05",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "grammatik",
+     "redundant"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "X nur die Löschvormerkung; Y beide Fälle technisch; Z beide ohne Sonst-Beziehung."
+  },
+  {
+   "id": "BM-070-B06",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "falsch"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "grammatik"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "kurz": "X nennt den Status fälschlich werksspezifisch; Y und Z technisch."
+  },
+  {
+   "id": "BM-070-B07",
+   "X": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "kurz": "Keine Variante nennt die Rückgabe der Befundliste."
+  }
+ ],
+ "verboten_verletzt": [
+  {
+   "variante": "Y",
+   "satz": "Jede Zeile aus lt_stb wird einzeln verarbeitet.",
+   "grund": "Unterstellt die Prüfung aller Stücklistenpositionen; geprüft werden nur Lagerpositionen (POSTP = 'L')."
+  }
+ ],
+ "soll_zweifel": []
+}

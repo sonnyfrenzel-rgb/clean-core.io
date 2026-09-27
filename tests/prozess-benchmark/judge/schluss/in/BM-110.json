@@ -1,0 +1,194 @@
+{
+ "id": "BM-110",
+ "titel": "Kalibrierung Prüfmittel im Dynpro: Abweichung bewerten, Ergebnis sichern, n.i.O. sperren und melden",
+ "prozess": "Der Prüfer erfasst am Dynpro Equipment, Sollwert, Istwert und zulässige Toleranz eines Prüfmittels. Mit „Prüfen“ wird ohne Sollwert mit Fehlermeldung abgebrochen; sonst berechnet das Programm die prozentuale Abweichung vom Sollwert und setzt das Ergebnis auf in Ordnung, wenn sie innerhalb der Toleranz liegt, sonst auf nicht in Ordnung. Mit „Sichern“ wird ohne vorherige Bewertung mit Fehlermeldung abgebrochen. Sonst wird das Ergebnis mit Datum und Prüfer in einer Kundentabelle gespeichert. Bei nicht in Ordnung setzt das Programm am Equipment den Anwenderstatus E0003 und legt eine Instandhaltungsmeldung der Art M2 an und sichert sie. Danach werden alle Änderungen festgeschrieben, eine Erfolgsmeldung erscheint und das Bild wird für das nächste Prüfmittel geleert. Fehler beim Speichern, beim Statuswechsel oder beim Anlegen der Meldung werden nicht ausgewertet.",
+ "verboten": [
+  "mzpm_kalib_i01.abap:32 — kein Fachsatz „ein bereits erfasstes Ergebnis wird abgewiesen“: sy-subrc des INSERT wird nicht ausgewertet, ein Schlüsselkonflikt bleibt unbemerkt und der Ablauf geht weiter",
+  "mzpm_kalib_i01.abap:44 — kein Fachsatz „schlägt das Anlegen der Meldung fehl, wird das Sichern abgebrochen“: die BAPI-Rückgabe wird nicht ausgewertet, danach folgt trotzdem COMMIT WORK",
+  "gesamte Scheibe — kein Fachsatz „das Prüfmittel wird bei i.O. wieder entsperrt“: bei i.O. wird kein Status geändert",
+  "mzpm_kalib_i01.abap:23 — kein Fachsatz „ein Ergebnis wird beim Prüfen gespeichert“: Prüfen bewertet nur, gespeichert wird erst mit SAVE"
+ ],
+ "saetze": [
+  {
+   "id": "BM-110-B01",
+   "soll": "Mit der Funktion „Prüfen“ wird die Kalibrierung bewertet; ohne Sollwert wird mit Fehlermeldung abgebrochen und das Bild bleibt eingabebereit.",
+   "zeilen": [
+    17,
+    18,
+    19
+   ],
+   "code": [
+    "17:     WHEN 'PRUEF'.",
+    "18:       IF gs_kal-sollwert = 0.",
+    "19:         MESSAGE e401(zpm)."
+   ],
+   "X": [
+    "Wenn der Funktionscode PRUEF gewählt wurde und der Sollwert gleich 0 ist, wird die Fehlermeldung E401 ausgegeben.",
+    "Wenn der Funktionscode PRUEF gewählt wurde und die prozentuale Abweichung zwischen Istwert und Sollwert kleiner oder gleich der Toleranz ist, wird das Ergebnis auf IO gesetzt; andernfalls wird es auf NIO gesetzt."
+   ],
+   "Y": [
+    "Für gs_kal-sollwert mit dem Wert 0 wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ],
+   "Z": [
+    "Wenn das Feld gs_kal-sollwert gleich 0 ist, wird eine Fehlermeldung ausgegeben.",
+    "Die Fehlermeldung 401(ZPM) wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-110-B02",
+   "soll": "Die prozentuale Abweichung des Istwerts vom Sollwert wird berechnet.",
+   "zeilen": [
+    21
+   ],
+   "code": [
+    "21:       lv_abw = abs( gs_kal-istwert - gs_kal-sollwert ) * 100"
+   ],
+   "X": [
+    "Wenn der Funktionscode PRUEF gewählt wurde und die prozentuale Abweichung zwischen Istwert und Sollwert kleiner oder gleich der Toleranz ist, wird das Ergebnis auf IO gesetzt; andernfalls wird es auf NIO gesetzt."
+   ],
+   "Y": [],
+   "Z": []
+  },
+  {
+   "id": "BM-110-B03",
+   "soll": "Liegt die Abweichung innerhalb der Toleranz, ist das Ergebnis „in Ordnung“, sonst „nicht in Ordnung“.",
+   "zeilen": [
+    23
+   ],
+   "code": [
+    "23:       gs_kal-ergebnis = COND #( WHEN lv_abw <= gs_kal-toleranz THEN 'IO'"
+   ],
+   "X": [
+    "Wenn der Funktionscode PRUEF gewählt wurde und die prozentuale Abweichung zwischen Istwert und Sollwert kleiner oder gleich der Toleranz ist, wird das Ergebnis auf IO gesetzt; andernfalls wird es auf NIO gesetzt."
+   ],
+   "Y": [],
+   "Z": []
+  },
+  {
+   "id": "BM-110-B04",
+   "soll": "Beim Sichern ohne vorherige Bewertung wird mit Fehlermeldung abgebrochen.",
+   "zeilen": [
+    26,
+    27,
+    28
+   ],
+   "code": [
+    "26:     WHEN 'SAVE'.",
+    "27:       IF gs_kal-ergebnis IS INITIAL.",
+    "28:         MESSAGE e402(zpm)."
+   ],
+   "X": [
+    "Wenn der Funktionscode SAVE gewählt wurde und das Ergebnis initial ist, wird die Fehlermeldung E402 ausgegeben.",
+    "Wenn der Funktionscode SAVE gewählt wurde, werden das aktuelle Systemdatum und der Benutzername gesetzt und der Kalibrierdatensatz in die Tabelle ZPM_KALIB_ERG eingefügt."
+   ],
+   "Y": [
+    "Ohne gs_kal-ergebnis wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ],
+   "Z": [
+    "Ist das Feld gs_kal-ergebnis leer, wird eine Fehlermeldung ausgegeben.",
+    "Die Fehlermeldung 402(ZPM) wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-110-B05",
+   "soll": "Das Kalibrierergebnis wird mit Datum und Prüfer in der Ergebnistabelle gespeichert.",
+   "zeilen": [
+    32
+   ],
+   "code": [
+    "32:       INSERT zpm_kalib_erg FROM gs_kal."
+   ],
+   "X": [
+    "Wenn der Funktionscode SAVE gewählt wurde, werden das aktuelle Systemdatum und der Benutzername gesetzt und der Kalibrierdatensatz in die Tabelle ZPM_KALIB_ERG eingefügt."
+   ],
+   "Y": [],
+   "Z": []
+  },
+  {
+   "id": "BM-110-B06",
+   "soll": "Ist das Ergebnis „nicht in Ordnung“, wird am Prüfmittel-Equipment der Anwenderstatus E0003 gesetzt.",
+   "zeilen": [
+    34,
+    36
+   ],
+   "code": [
+    "34:       IF gs_kal-ergebnis = 'NIO'.",
+    "36:         CALL FUNCTION 'STATUS_CHANGE_EXTERN'"
+   ],
+   "X": [
+    "Ist das Ergebnis gleich NIO, wird für das Equipment mit dem Objektpräfix IE über STATUS_CHANGE_EXTERN der Anwenderstatus E0003 gesetzt.",
+    "Ist das Ergebnis gleich NIO, wird über den Baustein BAPI_ALM_NOTIF_CREATE eine Instandhaltungsmeldung der Meldungsart M2 für das Equipment mit dem Kurztext Kalibrierung nicht in Ordnung angelegt.",
+    "Ist das Ergebnis gleich NIO, wird die erzeugte Instandhaltungsmeldung über BAPI_ALM_NOTIF_SAVE mit ihrer Meldungsnummer gesichert."
+   ],
+   "Y": [
+    "Für gs_kal-ergebnis mit dem Wert NIO wird STATUS_CHANGE_EXTERN aufgerufen, die ls_notif-short_text auf Kalibrierung nicht in Ordnung gesetzt, BAPI_ALM_NOTIF_CREATE aufgerufen und BAPI_ALM_NOTIF_SAVE aufgerufen.",
+    "Der Funktionsbaustein STATUS_CHANGE_EXTERN wird aufgerufen.",
+    "gs_kal-ergebnis mit dem Wert NIO setzen die ls_notif-short_text auf Kalibrierung nicht in Ordnung."
+   ],
+   "Z": [
+    "Wenn das Feld gs_kal-ergebnis gleich NIO ist, wird STATUS_CHANGE_EXTERN aufgerufen, das Feld ls_notif-short_text auf Kalibrierung nicht in Ordnung gesetzt, BAPI_ALM_NOTIF_CREATE aufgerufen und BAPI_ALM_NOTIF_SAVE aufgerufen.",
+    "Der Funktionsbaustein STATUS_CHANGE_EXTERN wird aufgerufen.",
+    "Wenn das Feld gs_kal-ergebnis gleich NIO ist, wird das Feld ls_notif-short_text auf Kalibrierung nicht in Ordnung gesetzt."
+   ]
+  },
+  {
+   "id": "BM-110-B07",
+   "soll": "Zusätzlich wird zum Equipment eine Instandhaltungsmeldung der Art M2 „Kalibrierung nicht in Ordnung“ angelegt und gesichert.",
+   "zeilen": [
+    44,
+    52
+   ],
+   "code": [
+    "44:         CALL FUNCTION 'BAPI_ALM_NOTIF_CREATE'",
+    "52:         CALL FUNCTION 'BAPI_ALM_NOTIF_SAVE'"
+   ],
+   "X": [
+    "Ist das Ergebnis gleich NIO, wird über den Baustein BAPI_ALM_NOTIF_CREATE eine Instandhaltungsmeldung der Meldungsart M2 für das Equipment mit dem Kurztext Kalibrierung nicht in Ordnung angelegt.",
+    "Ist das Ergebnis gleich NIO, wird die erzeugte Instandhaltungsmeldung über BAPI_ALM_NOTIF_SAVE mit ihrer Meldungsnummer gesichert."
+   ],
+   "Y": [
+    "Für gs_kal-ergebnis mit dem Wert NIO wird STATUS_CHANGE_EXTERN aufgerufen, die ls_notif-short_text auf Kalibrierung nicht in Ordnung gesetzt, BAPI_ALM_NOTIF_CREATE aufgerufen und BAPI_ALM_NOTIF_SAVE aufgerufen.",
+    "Es wird die ls_notif-short_text auf Kalibrierung nicht in Ordnung gesetzt, BAPI_ALM_NOTIF_CREATE aufgerufen und BAPI_ALM_NOTIF_SAVE aufgerufen.",
+    "Der Code übergibt 'M2' an BAPI_ALM_NOTIF_CREATE und übernimmt dessen Ausgabe nach ls_hdr_exp.",
+    "Das konvertierte Ergebnis wird in ls_hdr_exp übernommen.",
+    "Der Funktionsbaustein BAPI_ALM_NOTIF_SAVE wird aufgerufen."
+   ],
+   "Z": [
+    "Wenn das Feld gs_kal-ergebnis gleich NIO ist, wird STATUS_CHANGE_EXTERN aufgerufen, das Feld ls_notif-short_text auf Kalibrierung nicht in Ordnung gesetzt, BAPI_ALM_NOTIF_CREATE aufgerufen und BAPI_ALM_NOTIF_SAVE aufgerufen.",
+    "Der Code übergibt 'M2' an BAPI_ALM_NOTIF_CREATE und übernimmt dessen Ausgabe nach ls_hdr_exp.",
+    "Der Funktionsbaustein BAPI_ALM_NOTIF_SAVE wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-110-B08",
+   "soll": "Alle Änderungen werden festgeschrieben, der Prüfer erhält eine Erfolgsmeldung und das Bild wird für das nächste Prüfmittel geleert.",
+   "zeilen": [
+    58,
+    59,
+    61
+   ],
+   "code": [
+    "58:       COMMIT WORK.",
+    "59:       MESSAGE s403(zpm) WITH gs_kal-equnr gs_kal-ergebnis.",
+    "61:       LEAVE TO SCREEN 0100."
+   ],
+   "X": [
+    "Nach dem Speichern werden die Änderungen festgeschrieben, die Erfolgsmeldung S403 mit Equipmentnummer und Ergebnis ausgegeben, die Kalibrierdaten initialisiert und zum Dynpro 0100 zurückgekehrt."
+   ],
+   "Y": [
+    "Mit COMMIT WORK wird die Änderung persistiert.",
+    "Es wird COMMIT WORK ausgeführt und eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben.",
+    "Die Screenfolge wird beendet."
+   ],
+   "Z": [
+    "Mit COMMIT WORK wird die Änderung persistiert.",
+    "Es wird COMMIT WORK ausgeführt und eine Statusmeldung ausgegeben.",
+    "Die Statusmeldung 403(ZPM) wird ausgegeben.",
+    "Es geht weiter mit Bild 0100."
+   ]
+  }
+ ]
+}

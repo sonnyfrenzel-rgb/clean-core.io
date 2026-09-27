@@ -1,0 +1,111 @@
+{
+ "id": "BM-041",
+ "urteile": [
+  {
+   "id": "BM-041-B01",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "grammatik"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": [
+     "grammatik"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "kurz": "X nennt nur die Tabelle bsid statt offener Debitorenposten; Y und Z treffen den Kern."
+  },
+  {
+   "id": "BM-041-B02",
+   "X": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "kurz": "Nur Z beschreibt die Fälligkeitsberechnung aus Basisdatum plus erstem Zahlungsziel."
+  },
+  {
+   "id": "BM-041-B03",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "kurz": "X und Y nennen nur den technischen Vergleich lv_faell < p_stich ohne Überfälligkeit, Vorzeichen und Summe; Z vollständig."
+  },
+  {
+   "id": "BM-041-B04",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "kurz": "X listet Variablennamen mehrfach, Y teils fachlich aber mit lv_faell und ohne Bezug zur Überfälligkeit; Z fachlich."
+  },
+  {
+   "id": "BM-041-B05",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "falsch"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "kurz": "X und Y nennen nur Text und lv_summe (X zudem fälschlich nur 'bei Treffern'); Z nennt die Gesamtsumme der überfälligen Beträge."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

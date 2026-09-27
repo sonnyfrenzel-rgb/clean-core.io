@@ -1,0 +1,97 @@
+{
+ "id": "BM-165",
+ "titel": "Außenhandel: Sanktionslistenprüfung des Warenempfängers beim Sichern des Kundenauftrags",
+ "prozess": "Der Exit läuft beim Sichern jedes Kundenauftrags kurz vor der Verbuchung. Zuerst liest er den Aktivierungsschalter ZSD_SANKTION_AKTIV aus der Variablentabelle und endet ohne Prüfung, wenn er nicht auf X steht. Sonst sucht er unter den Belegpartnern den Warenempfänger auf Kopfebene. Anschließend zählt er die Einträge der eigenen Sanktionsliste, deren Land oder Name exakt mit dem Warenempfänger übereinstimmt. Gibt es einen Treffer, bricht er das Sichern mit einer Fehlermeldung zu Kunde und Land ab, und der Anwender bleibt im Auftrag. Ohne Treffer wird normal gesichert. Die frühere Prüfung, ob überhaupt ein Warenempfänger gefunden wurde, ist auskommentiert.",
+ "verboten": [
+  "source.abap:15 — kein Fachsatz „ohne Warenempfänger wird die Prüfung übersprungen“: die Erfolgsprüfung ist auskommentiert, ohne Treffer prüft der Exit mit dem zuletzt in der Kopfzeile stehenden Partner",
+  "source.abap:19 — kein Fachsatz „ähnliche Namen werden erkannt“: verglichen wird nur auf exakte Gleichheit von Name bzw. Land",
+  "source.abap:23 — kein Fachsatz „der Auftrag wird mit Liefersperre gesichert“: der Exit setzt keine Sperre, er verhindert das Sichern"
+ ],
+ "saetze": [
+  {
+   "id": "BM-165-B01",
+   "soll": "Die Prüfung läuft nur, wenn der Schalter ZSD_SANKTION_AKTIV in der Variablentabelle auf X steht.",
+   "zeilen": [
+    9,
+    13
+   ],
+   "code": [
+    "9:   SELECT SINGLE low FROM tvarvc INTO lv_aktiv",
+    "13:   CHECK lv_aktiv = 'X'."
+   ],
+   "X": [
+    "low des Satzes wird gelesen.",
+    "Nur lv_aktiv mit dem Wert X gehen weiter; kleinere werden übersprungen, die Schleife läuft weiter."
+   ],
+   "Y": [
+    "Aus der Tabelle TVARVC wird für den Namen ZSD_SANKTION_AKTIV, den Typ P und die Nummer 0000 der Wert des Feldes LOW gelesen.",
+    "Ist der gelesene Wert nicht gleich X, wird die Verarbeitung der Routine an dieser Stelle beendet."
+   ],
+   "Z": [
+    "Das Feld low des Variableneintrags wird gelesen.",
+    "Nur wenn das Feld lv_aktiv gesetzt ist, geht es weiter; sonst wird das Unterprogramm userexit_save_document_prepare an dieser Stelle verlassen."
+   ]
+  },
+  {
+   "id": "BM-165-B02",
+   "soll": "Der Warenempfänger des Auftragskopfs wird aus den Partnern des Belegs ermittelt.",
+   "zeilen": [
+    15
+   ],
+   "code": [
+    "15:   READ TABLE xvbpa WITH KEY posnr = '000000'"
+   ],
+   "X": [
+    "In der Tabelle wird nach einer passenden Zeile gesucht."
+   ],
+   "Y": [
+    "Aus der internen Belegpartnertabelle XVBPA wird der Eintrag zur Positionsnummer 000000 mit der Partnerrolle WE (Warenempfänger) gelesen."
+   ],
+   "Z": [
+    "In der Tabelle xvbpa wird nach einer passenden Zeile gesucht."
+   ]
+  },
+  {
+   "id": "BM-165-B03",
+   "soll": "Es wird geprüft, ob das Land oder der Name des Warenempfängers exakt auf der Sanktionsliste steht.",
+   "zeilen": [
+    19
+   ],
+   "code": [
+    "19:   SELECT COUNT(*) FROM zgts_sanktion"
+   ],
+   "X": [
+    "Die Zahl der Sätze wird ermittelt."
+   ],
+   "Y": [
+    "In der Tabelle ZGTS_SANKTION wird die Anzahl der Einträge gezählt, bei denen das Land LAND1 mit dem Land des Partners oder der Name NAME1 mit dem Namen des Partners übereinstimmt."
+   ],
+   "Z": [
+    "Die Zahl der Sätze wird ermittelt."
+   ]
+  },
+  {
+   "id": "BM-165-B04",
+   "soll": "Bei einem Treffer wird das Sichern des Auftrags mit einer Fehlermeldung zu Kunde und Land verhindert.",
+   "zeilen": [
+    22,
+    23
+   ],
+   "code": [
+    "22:   IF sy-dbcnt > 0.",
+    "23:     MESSAGE e101(zgts) WITH xvbpa-kunnr xvbpa-land1."
+   ],
+   "X": [
+    "Für sy-dbcnt größer 0 wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ],
+   "Y": [
+    "Wurde mindestens ein übereinstimmender Eintrag in der Tabelle ZGTS_SANKTION gefunden, wird die Fehlermeldung 101 der Nachrichtenklasse ZGTS mit der Partnernummer und dem Partnerland ausgegeben."
+   ],
+   "Z": [
+    "Wenn das Feld sy-dbcnt größer als 0 ist, wird eine Fehlermeldung ausgegeben.",
+    "Die Fehlermeldung 101(ZGTS) wird ausgegeben."
+   ]
+  }
+ ]
+}

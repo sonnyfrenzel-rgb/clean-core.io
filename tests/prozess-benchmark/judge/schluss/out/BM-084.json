@@ -1,0 +1,100 @@
+{
+ "id": "BM-084",
+ "urteile": [
+  {
+   "id": "BM-084-B01",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Keine Variante sagt, dass Bankverbindungen gelesen werden; X nennt immerhin LFBK zur Lieferantennummer."
+  },
+  {
+   "id": "BM-084-B02",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "kurz": "Alle beschreiben nur das Verlassen bei 0 Einträgen, keine sagt 'kein Workflow'/'keine Bankverbindung'."
+  },
+  {
+   "id": "BM-084-B03",
+   "X": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Nur X nennt Ereignis BANKCHANGED für den Kreditor; Y und Z nur den Bausteinaufruf."
+  },
+  {
+   "id": "BM-084-B04",
+   "X": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "zu_allgemein",
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "kurz": "X und Z nennen die Warnung bei gescheiterter Ereigniserzeugung, Y nur 'ohne Treffer ... eine Meldung'."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

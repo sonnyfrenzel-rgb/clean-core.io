@@ -1,0 +1,78 @@
+{
+ "id": "BM-005",
+ "urteile": [
+  {
+   "id": "BM-005-B01",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein"
+    ]
+   },
+   "kurz": "X Bestellnummer nur als Feld, Y vollständig mit Feldnamen, Z nur \"Meldung\" mit Code-Bedingung."
+  },
+  {
+   "id": "BM-005-B02",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig",
+     "redundant"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein",
+     "unvollstaendig",
+     "redundant",
+     "falsch"
+    ]
+   },
+   "kurz": "X ohne Positionsnummer/Menge und Löschfilter technisch, Y vollständig, Z unterschlägt den Löschfilter."
+  },
+  {
+   "id": "BM-005-B03",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "kurz": "X/Y nennen nur \"Warnung\", Z nur \"Meldung\", keiner sagt, dass Sichern weiterläuft."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

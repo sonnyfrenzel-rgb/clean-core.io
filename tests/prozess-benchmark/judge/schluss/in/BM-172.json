@@ -1,0 +1,256 @@
+{
+ "id": "BM-172",
+ "titel": "IS-Retail POS-Eingang: Kassenumsätze je Filiale per IDoc verdichten und fortschreiben",
+ "prozess": "Die IDoc-Eingangsverarbeitung übergibt dem Baustein ein Paket von Tagesumsatz-IDocs der Filialkassen. Je IDoc werden Filiale, Tag und die Verkaufspositionen je EAN gelesen, Nullzeilen übergangen und der Umsatz abzüglich Rabatt gebildet. Fehlt die Filiale oder sind Filiale und Tag bereits gesperrt, bekommt das IDoc Status 51. Sonst wird zu jeder EAN der Artikel ermittelt; unbekannte EANs werden für das Clearing gesammelt, sofort in eine Fehlertabelle geschrieben und aus der Umsatzrechnung genommen. Menge und Umsatz werden je Artikel aufsummiert, wobei ein Artikel mit mehreren EANs mehrere Summenzeilen bekommen kann. Bleibt kein Artikelumsatz, erhält das IDoc Status 51; andernfalls wird die Fortschreibung der eigenen Umsatzstatistik in der Verbuchung vorgemerkt und das IDoc erhält Status 53, bei unbekannten EANs mit Warnung. Die Sperre wird am Ende jedes IDocs freigegeben, also vor der eigentlichen Verbuchung. Die Korrekturroutine für Kassendifferenzen wird nie gerufen.",
+ "verboten": [
+  "lzposf01.abap:75 — kein Fachsatz „je Artikel entsteht genau eine Summenzeile“: die EAN steht im Satz links vom Artikel, jeder EAN-Wechsel beendet die Gruppe, ein Artikel mit mehreren EANs erhält mehrere Summenzeilen",
+  "z_idoc_input_zposums.abap:69 — kein Fachsatz „Filiale und Tag bleiben bis zur Fortschreibung gesperrt“: die Sperre wird freigegeben, bevor die Verbuchung läuft",
+  "lzposf01.abap:86 — kein Fachsatz „Kassendifferenzen werden in den Umsatz eingerechnet“: das FORM wird nirgends gerufen",
+  "lzposf01.abap:59 — kein Fachsatz „bei unbekannter EAN wird die Verarbeitung abgebrochen“: die Meldung steht unter IF 1 = 2 und wird nie erreicht"
+ ],
+ "saetze": [
+  {
+   "id": "BM-172-B01",
+   "soll": "Je IDoc werden Kopfsegment (Filiale, Tag) und Verkaufspositionen je EAN gelesen; der Umsatz einer Position ist Umsatz abzüglich Rabatt.",
+   "zeilen": [
+    47,
+    55,
+    150
+   ],
+   "code": [
+    "47:     CASE ct_data-segnam.",
+    "55:         APPEND VALUE #( ean11  = ls_p-ean11",
+    "150:     PERFORM segmente_lesen TABLES idoc_data USING idoc_contrl-docnum."
+   ],
+   "X": [
+    "Aus den IDoc-Datenzeilen zum aktuellen IDoc werden der Kopfdatensatz sowie für Positionszeilen mit einer Menge ungleich 0 die EAN, die Menge und der um den Rabatt verminderte Umsatz übernommen."
+   ],
+   "Y": [
+    "Eine Zeile wird in gt_pos aufgenommen.",
+    "Das Unterprogramm segmente_lesen wird aufgerufen."
+   ],
+   "Z": [
+    "Eine Zeile wird in gt_pos aufgenommen.",
+    "Das Unterprogramm segmente_lesen wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-172-B02",
+   "soll": "Positionen mit Menge null (Storno-Nullzeilen der Kasse) werden übergangen.",
+   "zeilen": [
+    52
+   ],
+   "code": [
+    "52:         IF ls_p-menge = 0.            \"Storno-Nullzeilen der Kasse"
+   ],
+   "X": [
+    "Aus den IDoc-Datenzeilen zum aktuellen IDoc werden der Kopfdatensatz sowie für Positionszeilen mit einer Menge ungleich 0 die EAN, die Menge und der um den Rabatt verminderte Umsatz übernommen."
+   ],
+   "Y": [
+    "Für Mengen mit dem Wert 0 wird der Schleifendurchlauf übersprungen."
+   ],
+   "Z": []
+  },
+  {
+   "id": "BM-172-B03",
+   "soll": "Fehlt die Filiale im Kopf, erhält das IDoc Status 51 und wird nicht weiter verarbeitet.",
+   "zeilen": [
+    151,
+    152
+   ],
+   "code": [
+    "151:     IF gs_kopf-filiale IS INITIAL.",
+    "152:       status_setzen idoc_contrl-docnum '51' 'E' '001' space."
+   ],
+   "X": [
+    "Ist keine Filiale im Kopfsegment angegeben, wird der IDoc-Status auf 51 mit Fehlermeldung E001 gesetzt und mit dem nächsten IDoc fortgefahren."
+   ],
+   "Y": [
+    "Ist das Feld gs_kopf-filiale leer, wird der Schleifendurchlauf übersprungen."
+   ],
+   "Z": []
+  },
+  {
+   "id": "BM-172-B04",
+   "soll": "Filiale und Tag werden gesperrt; ist die Sperre nicht zu bekommen, erhält das IDoc Status 51.",
+   "zeilen": [
+    157,
+    165,
+    166
+   ],
+   "code": [
+    "157:     CALL FUNCTION 'ENQUEUE_EZPOS_FIL'",
+    "165:     IF sy-subrc <> 0.",
+    "166:       status_setzen idoc_contrl-docnum '51' 'E' '002' gs_kopf-filiale."
+   ],
+   "X": [
+    "Für die Filiale und das Datum aus dem Kopfdatensatz wird die Sperre ENQUEUE_EZPOS_FIL aufgerufen."
+   ],
+   "Y": [
+    "Der Funktionsbaustein ENQUEUE_EZPOS_FIL wird aufgerufen.",
+    "Ist die Sperre über ENQUEUE_EZPOS_FIL nicht zu erhalten, wird der Schleifendurchlauf übersprungen."
+   ],
+   "Z": [
+    "Der Funktionsbaustein ENQUEUE_EZPOS_FIL wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-172-B05",
+   "soll": "Zu jeder EAN wird der Artikel ermittelt; unbekannte EANs werden mit Filiale, Tag und Menge für das Clearing gesammelt und aus der Umsatzrechnung genommen.",
+   "zeilen": [
+    71,
+    78,
+    80,
+    90
+   ],
+   "code": [
+    "71:   SELECT matnr, ean11 FROM mean",
+    "78:     READ TABLE lt_mean INTO DATA(ls_mean)",
+    "80:     IF sy-subrc = 0.",
+    "90:   DELETE gt_pos WHERE matnr IS INITIAL."
+   ],
+   "X": [
+    "Zu den EAN-Nummern der Positionen werden Artikelnummer und EAN aus der Tabelle MEAN gelesen.",
+    "Für jede Position wird anhand der EAN geprüft, ob ein passender Eintrag in der Tabelle MEAN gefunden wurde.",
+    "Wurde die EAN in Tabelle MEAN gefunden, wird die zugehörige Artikelnummer in die Position übernommen.",
+    "Wurde die EAN in Tabelle MEAN nicht gefunden, wird ein Fehlereintrag mit IDoc-Nummer, Filiale, Datum, EAN und Menge gemerkt."
+   ],
+   "Y": [
+    "Das Ergebnis enthält Materialnummer und ean11.",
+    "Es werden Sätze aus mean zu den Einträgen aus gt_pos selektiert.",
+    "In der Tabelle lt_mean wird nach einer passenden Zeile gesucht."
+   ],
+   "Z": [
+    "Das Ergebnis enthält matnr und ean11.",
+    "Es werden Sätze aus mean selektiert.",
+    "In der Tabelle wird nach einer passenden Zeile gesucht."
+   ]
+  },
+  {
+   "id": "BM-172-B06",
+   "soll": "Menge und Umsatz werden je Artikel aufsummiert.",
+   "zeilen": [
+    107,
+    109,
+    171
+   ],
+   "code": [
+    "107:     ls_sum-menge  = ls_sum-menge + ls_pos-menge.",
+    "109:     AT END OF matnr.",
+    "171:     PERFORM verdichten."
+   ],
+   "X": [
+    "Die Positionen werden nach Artikelnummer sortiert und kumulierte Mengen sowie Umsätze je Artikel gebildet."
+   ],
+   "Y": [
+    "Die Unterprogramme artikel_ermitteln und verdichten werden nacheinander aufgerufen, jedes ohne Parameter.",
+    "Das Unterprogramm verdichten wird aufgerufen."
+   ],
+   "Z": [
+    "Es wird artikel_ermitteln aufgerufen und verdichten aufgerufen.",
+    "Das Unterprogramm verdichten wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-172-B07",
+   "soll": "Die unbekannten EANs werden sofort in die Clearingtabelle geschrieben, bereits vorhandene Einträge bleiben unverändert.",
+   "zeilen": [
+    173,
+    174
+   ],
+   "code": [
+    "173:     IF gt_fehl IS NOT INITIAL.",
+    "174:       INSERT zpos_fehler FROM TABLE gt_fehl ACCEPTING DUPLICATE KEYS."
+   ],
+   "X": [
+    "Sind fehlerhafte EAN-Positionen vorhanden, werden diese in die Tabelle ZPOS_FEHLER eingefügt, wobei doppelte Schlüssel ignoriert werden."
+   ],
+   "Y": [],
+   "Z": []
+  },
+  {
+   "id": "BM-172-B08",
+   "soll": "Bleibt kein Artikelumsatz übrig, erhält das IDoc Status 51.",
+   "zeilen": [
+    177,
+    178
+   ],
+   "code": [
+    "177:     IF gt_sum IS INITIAL.",
+    "178:       status_setzen idoc_contrl-docnum '51' 'E' '003' gs_kopf-filiale."
+   ],
+   "X": [
+    "Sind keine verdichteten Artikelpositionen vorhanden, wird der IDoc-Status auf 51 mit Fehlermeldung E003 gesetzt."
+   ],
+   "Y": [],
+   "Z": []
+  },
+  {
+   "id": "BM-172-B09",
+   "soll": "Sonst werden die Artikelumsätze der Filiale zur Fortschreibung in der Verbuchung vorgemerkt, und das IDoc erhält Status 53 – mit Warnung, wenn es unbekannte EANs gab.",
+   "zeilen": [
+    180,
+    185,
+    186,
+    189
+   ],
+   "code": [
+    "180:       CALL FUNCTION 'Z_POS_UMSATZ_VERBUCHEN' IN UPDATE TASK",
+    "185:       IF gt_fehl IS INITIAL.",
+    "186:         status_setzen idoc_contrl-docnum '53' 'S' '010' gs_kopf-filiale.",
+    "189:         status_setzen idoc_contrl-docnum '53' 'W' '011' gs_kopf-filiale."
+   ],
+   "X": [
+    "Sind verdichtete Artikelpositionen vorhanden, wird der Verbuchungsbaustein Z_POS_UMSATZ_VERBUCHEN mit den Kopfdaten und den Summenzeilen im Verbuchungsprozess aufgerufen.",
+    "Sind keine fehlerhaften Positionen aufgetreten, wird der IDoc-Status auf 53 mit Erfolgsmeldung S010 gesetzt.",
+    "Sind fehlerhafte Positionen aufgetreten, wird der IDoc-Status auf 53 mit Warnmeldung W011 gesetzt."
+   ],
+   "Y": [
+    "Sonst wird Z_POS_UMSATZ_VERBUCHEN aufgerufen.",
+    "Der Baustein Z_POS_UMSATZ_VERBUCHEN wird zur Verbuchung registriert. An der Aufrufstelle wird nichts geändert. Ob ein COMMIT WORK ihn auf jedem Weg anstößt, ist im gelieferten Code nicht bestimmt."
+   ],
+   "Z": [
+    "Sonst wird Z_POS_UMSATZ_VERBUCHEN aufgerufen.",
+    "Der Baustein Z_POS_UMSATZ_VERBUCHEN wird zur Verbuchung registriert. An der Aufrufstelle wird nichts geändert. Ob ein COMMIT WORK ihn auf jedem Weg anstößt, ist im gelieferten Code nicht bestimmt."
+   ]
+  },
+  {
+   "id": "BM-172-B10",
+   "soll": "Die Sperre für Filiale und Tag wird am Ende jedes IDocs wieder freigegeben.",
+   "zeilen": [
+    193
+   ],
+   "code": [
+    "193:     CALL FUNCTION 'DEQUEUE_EZPOS_FIL'"
+   ],
+   "X": [
+    "Die Sperre für die Filiale und das Datum wird über den Funktionsbaustein DEQUEUE_EZPOS_FIL wieder aufgehoben."
+   ],
+   "Y": [
+    "Der Funktionsbaustein DEQUEUE_EZPOS_FIL wird aufgerufen."
+   ],
+   "Z": [
+    "Der Funktionsbaustein DEQUEUE_EZPOS_FIL wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-172-B11",
+   "soll": "Der aufrufenden IDoc-Verarbeitung wird gemeldet, dass die Fortschreibung in der Verbuchung läuft.",
+   "zeilen": [
+    199
+   ],
+   "code": [
+    "199:   in_update_task = 'X'."
+   ],
+   "X": [
+    "Das Kennzeichen für die Verbuchungsausführung wird auf X gesetzt und die Verarbeitung des Funktionsbausteins abgeschlossen."
+   ],
+   "Y": [
+    "Das Feld in_update_task wird auf X gesetzt."
+   ],
+   "Z": [
+    "Die in_update_task wird auf X gesetzt."
+   ]
+  }
+ ]
+}

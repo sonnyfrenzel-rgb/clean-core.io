@@ -1,0 +1,342 @@
+{
+ "id": "BM-192",
+ "titel": "Zählerstandserfassung aus der Ablese-App: Gateway Deep Insert mit Plausibilisierung und Upload per BAPI",
+ "prozess": "Die Ablese-App sendet eine Ablesung mit Kopf (Seriennummer, Ablesedatum und -zeit, Ablesegrund, Hinweis) und den Ständen der Zählwerke als Deep Insert an den OData-Service. Anfragen an eine andere Entitätsmenge werden als nicht unterstützt abgewiesen. Der Service übernimmt die Nutzdaten in eine tiefe Struktur; fehlen Zählwerksstände oder die Berechtigung zum Hochladen, lehnt er die Anfrage mit einer Geschäftsausnahme ab. Außer für den hart codierten Lasttest-Benutzer plausibilisiert eine Hilfsklasse die Ablesung: Das Gerät muss über die Seriennummer eindeutig zu finden sein, sonst bricht die Prüfung sofort ab; ein Ablesedatum in der Zukunft ist unplausibel. Je Zählwerk prüft sie, ob es zum Ablesedatum am Gerät eingebaut ist, und vergleicht den Stand mit der letzten gültigen Ablesung; bei Erstablesung entfällt der Vergleich. Ein kleinerer Stand gilt als Zählerüberlauf mit Warnung, wenn der rechnerische Verbrauch höchstens ein Zehntel des Zählbereichs beträgt, sonst als Fehler. Ist die Ablesung unplausibel, lehnt der Service sie mit den Prüfmeldungen ab; Warnungen werden nicht weitergegeben. Andernfalls legt er die Ableseergebnisse per BAPI an; meldet dieser einen Fehler oder Abbruch, wird zurückgenommen und mit den Bausteinmeldungen abgelehnt, sonst synchron festgeschrieben. Abschließend liest er je Zählwerk die Nummer des angelegten Ablesebelegs nach und gibt die Ablesung mit Status POSTED an die App zurück.",
+ "verboten": [
+  "zcl_zisu_meter_dpc_ext.abap:71 — kein Fachsatz „jede Ablesung wird vor dem Upload plausibilisiert“: für den Benutzer MR_LOADTEST wird der Prüfer gar nicht aufgerufen",
+  "zcl_zisu_meter_dpc_ext.abap:94 — kein Fachsatz „Warnungen der Plausibilisierung (Zählerüberlauf) werden an die App gemeldet“: die Weitergabe ist auskommentiert, bei plausibler Ablesung werden die Prüfmeldungen verworfen",
+  "zcl_isu_mr_validator.abap:145 — kein Fachsatz „die Ablesung wird gegen ein Foto der Zähleranzeige geprüft“: die Methode wird nie aufgerufen, ihr Aufruf ist auskommentiert",
+  "zcl_zisu_meter_dpc_ext.abap:61 — kein Fachsatz „der Ableser darf nur Geräte seiner Ableseeinheit erfassen“: geprüft wird nur die Aktivität Anlegen, keine Ableseeinheit oder Geräteebene"
+ ],
+ "saetze": [
+  {
+   "id": "BM-192-B01",
+   "soll": "Angenommen werden nur Anlagen über die Entitätsmenge der Zählerablesungen; jede andere Menge wird als nicht unterstützt abgewiesen.",
+   "zeilen": [
+    193,
+    194
+   ],
+   "code": [
+    "193:     IF iv_entity_set_name <> gc_set_reading.",
+    "194:       RAISE EXCEPTION TYPE /iwbep/cx_mgw_tech_exception"
+   ],
+   "X": [],
+   "Y": [],
+   "Z": [
+    "Entspricht der Name des Entity-Sets nicht 'MeterReadingSet', wird eine technische Ausnahme vom Typ /IWBEP/CX_MGW_TECH_EXCEPTION ausgelöst."
+   ]
+  },
+  {
+   "id": "BM-192-B02",
+   "soll": "Kopf der Ablesung und die Stände der Zählwerke werden aus der Anfrage der App übernommen.",
+   "zeilen": [
+    201
+   ],
+   "code": [
+    "201:     io_data_provider->read_entry_data( IMPORTING es_data = ls_deep )."
+   ],
+   "X": [
+    "Die Methode read_entry_data von io_data_provider wird aufgerufen; ihr Ergebnis wird in ls_deep übernommen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ],
+   "Y": [
+    "Die Methode read_entry_data von io_data_provider wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ],
+   "Z": [
+    "Die Eingabedaten des Aufrufs werden über den Daten-Provider in die Belegstruktur eingelesen."
+   ]
+  },
+  {
+   "id": "BM-192-B03",
+   "soll": "Enthält die Anfrage keine Zählwerksstände, wird sie mit der Meldung „Keine Zählwerke übermittelt“ abgelehnt.",
+   "zeilen": [
+    203,
+    207
+   ],
+   "code": [
+    "203:     IF ls_deep-toregisters IS INITIAL.",
+    "207:       RAISE EXCEPTION TYPE /iwbep/cx_mgw_busi_exception"
+   ],
+   "X": [
+    "Die Methode get_message_container von mo_context wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ],
+   "Y": [
+    "Die Methode get_message_container von mo_context wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ],
+   "Z": [
+    "Sind keine Zählwerke in den Eingabedaten vorhanden, wird die Fehlermeldung Keine Zählwerke übermittelt hinzugefügt und eine fachliche Ausnahme vom Typ /IWBEP/CX_MGW_BUSI_EXCEPTION ausgelöst."
+   ]
+  },
+  {
+   "id": "BM-192-B04",
+   "soll": "Ohne Berechtigung zum Hochladen von Zählerständen wird die Anfrage abgelehnt.",
+   "zeilen": [
+    213,
+    216
+   ],
+   "code": [
+    "213:     AUTHORITY-CHECK OBJECT 'Z_MR_MOBIL'",
+    "216:       RAISE EXCEPTION TYPE /iwbep/cx_mgw_busi_exception"
+   ],
+   "X": [
+    "Die Berechtigung auf Z_MR_MOBIL wird geprüft."
+   ],
+   "Y": [
+    "Die Berechtigung auf Z_MR_MOBIL wird geprüft."
+   ],
+   "Z": [
+    "Es wird geprüft, ob der Benutzer die Berechtigung für das Berechtigungsobjekt 'Z_MR_MOBIL' mit der Aktivität '01' besitzt.",
+    "Besitzt der Benutzer die erforderliche Berechtigung nicht, wird eine fachliche Ausnahme vom Typ /IWBEP/CX_MGW_BUSI_EXCEPTION mit der Meldung Keine Berechtigung zum Hochladen von Zählerständen ausgelöst."
+   ]
+  },
+  {
+   "id": "BM-192-B05",
+   "soll": "Für den Lasttest-Benutzer MR_LOADTEST entfällt die Plausibilisierung vollständig.",
+   "zeilen": [
+    223
+   ],
+   "code": [
+    "223:     IF sy-uname = 'MR_LOADTEST'."
+   ],
+   "X": [],
+   "Y": [],
+   "Z": [
+    "Ist der aktuelle Benutzer 'MR_LOADTEST', wird die Validierung übersprungen und das Prüfungsergebnis direkt als erfolgreich gesetzt.",
+    "Ist der Benutzer ungleich 'MR_LOADTEST', werden die Kopfdaten und Zählwerke über die Methode validate der Klasse ZCL_ISU_MR_VALIDATOR validiert."
+   ]
+  },
+  {
+   "id": "BM-192-B06",
+   "soll": "Das Gerät wird über die Seriennummer ermittelt; ist es unbekannt oder nicht eindeutig, ist die Ablesung unplausibel.",
+   "zeilen": [
+    63,
+    69
+   ],
+   "code": [
+    "63:     SELECT equnr FROM equi",
+    "69:     CASE lines( lt_equi )."
+   ],
+   "X": [
+    "Es werden Equipments selektiert."
+   ],
+   "Y": [
+    "Es werden Sätze aus equi selektiert."
+   ],
+   "Z": [
+    "Aus der Tabelle EQUI werden bis zu 2 Einträge mit der Equipmentnummer (EQUNR) zur angegebenen Seriennummer und mit Equipmenttyp (EQTYP) 'I' gelesen.",
+    "Wurde kein passender Eintrag in Tabelle EQUI gefunden, wird die Fehlermeldung 001 der Nachrichtenklasse ZISU_MR zur Nachrichtentabelle hinzugefügt und die Verarbeitung abgebrochen.",
+    "Wurde genau ein Eintrag in Tabelle EQUI gefunden, wird dessen Equipmentnummer für die weiteren Prüfungen übernommen.",
+    "Wurden mehrere Einträge in Tabelle EQUI gefunden, wird die Fehlermeldung 002 der Nachrichtenklasse ZISU_MR zur Nachrichtentabelle hinzugefügt und die Verarbeitung abgebrochen."
+   ]
+  },
+  {
+   "id": "BM-192-B07",
+   "soll": "Ein Ablesedatum in der Zukunft macht die Ablesung unplausibel.",
+   "zeilen": [
+    83
+   ],
+   "code": [
+    "83:     IF is_head-readdate > sy-datum."
+   ],
+   "X": [
+    "Wenn das Feld is_head-readdate größer als sy-datum ist, wird eine Zeile aufgenommen."
+   ],
+   "Y": [
+    "Für is_head-readdate größer sy-datum wird eine Zeile aufgenommen."
+   ],
+   "Z": [
+    "Liegt das Ablesedatum nach dem aktuellen Tagesdatum, wird die Fehlermeldung 003 der Nachrichtenklasse ZISU_MR zur Nachrichtentabelle hinzugefügt."
+   ]
+  },
+  {
+   "id": "BM-192-B08",
+   "soll": "Je Zählwerk wird geprüft, ob es zum Ablesedatum am Gerät eingebaut ist; sonst ist die Ablesung unplausibel.",
+   "zeilen": [
+    91,
+    97
+   ],
+   "code": [
+    "91:       SELECT SINGLE stanzvor, stanznac FROM etdz",
+    "97:       IF sy-subrc <> 0."
+   ],
+   "X": [
+    "Das Ergebnis enthält stanzvor und stanznac.",
+    "Die Felder stanzvor und stanznac aus etdz werden gelesen.",
+    "Ohne Treffer wird eine Zeile aufgenommen und der Schleifendurchlauf übersprungen."
+   ],
+   "Y": [
+    "Das Ergebnis enthält stanzvor und stanznac.",
+    "stanzvor und stanznac des Satzes werden gelesen.",
+    "Ohne Treffer wird eine Zeile aufgenommen."
+   ],
+   "Z": [
+    "Aus der Tabelle ETDZ werden die Vor- und Nachkommastellen (STANZVOR, STANZNAC) für die Equipmentnummer und Zählwerksnummer zum Ablesedatum gelesen.",
+    "Ist das Zählwerk zum Ablesedatum nicht in Tabelle ETDZ vorhanden, wird die Fehlermeldung 004 der Nachrichtenklasse ZISU_MR hinzugefügt und mit dem nächsten Zählwerk fortgefahren."
+   ]
+  },
+  {
+   "id": "BM-192-B09",
+   "soll": "Liegt eine frühere gültige Ablesung vor, wird der neue Stand mit dem letzten verglichen; bei Erstablesung entfällt der Vergleich.",
+   "zeilen": [
+    105,
+    112
+   ],
+   "code": [
+    "105:       SELECT v_zwstand, adat FROM eabl",
+    "112:       IF lt_last IS INITIAL."
+   ],
+   "X": [
+    "Das Ergebnis enthält v_zwstand und adat.",
+    "Es werden Sätze aus eabl selektiert.",
+    "Ohne Treffer wird der Schleifendurchlauf übersprungen."
+   ],
+   "Y": [
+    "Das Ergebnis enthält v_zwstand und adat.",
+    "Es werden Sätze aus eabl selektiert."
+   ],
+   "Z": [
+    "Aus der Tabelle EABL wird der letzte abgelesene Zählerstand (V_ZWSTAND) und das Ablesedatum (ADAT) zur Equipmentnummer und Zählwerksnummer mit Ablesestatus (ABLSTAT) gleich '1' gelesen.",
+    "Liegt kein vorheriger Ablesebeleg in Tabelle EABL vor, wird die Prüfung für dieses Zählwerk beendet und mit dem nächsten fortgefahren."
+   ]
+  },
+  {
+   "id": "BM-192-B10",
+   "soll": "Ist der neue Stand kleiner als der letzte, wird ein Zählerüberlauf angenommen, wenn der daraus folgende Verbrauch höchstens ein Zehntel des Zählbereichs beträgt, was nur eine Warnung ergibt; sonst ist die Ablesung unplausibel.",
+   "zeilen": [
+    118,
+    121,
+    124
+   ],
+   "code": [
+    "118:       IF ls_reg-reading < lv_prev.",
+    "121:         lv_overflow = COND #( WHEN lv_max > 0",
+    "124:         IF lv_overflow > lv_max / 10 OR lv_overflow = 0."
+   ],
+   "X": [
+    "Wenn die Bedingung „lv_overflow > lv_max / 10 OR lv_overflow = 0“ erfüllt ist, wird eine Zeile aufgenommen, sonst eine Zeile aufgenommen."
+   ],
+   "Y": [
+    "Für lv_overflow > lv_max / 10 OR lv_overflow = 0 wird eine Zeile aufgenommen.",
+    "Für lv_overflow > lv_max / 10 OR lv_overflow = 0 wird eine Zeile aufgenommen, sonst eine Zeile aufgenommen."
+   ],
+   "Z": [
+    "Ist der aktuelle Zählerstand kleiner als der vorherige Zählerstand, wird ein möglicher Zählerüberlauf anhand der Vorkommastellen aus Tabelle ETDZ berechnet.",
+    "Ist der berechnete Überlaufwert größer als ein Zehntel des Maximalwerts oder gleich 0, wird die Fehlermeldung 005 der Nachrichtenklasse ZISU_MR zur Nachrichtentabelle hinzugefügt.",
+    "Liegt der Überlaufwert bei höchstens einem Zehntel des Maximalwerts und ist ungleich 0, wird die Warnmeldung 006 der Nachrichtenklasse ZISU_MR hinzugefügt."
+   ]
+  },
+  {
+   "id": "BM-192-B11",
+   "soll": "Ist die Ablesung unplausibel, wird sie mit den Prüfmeldungen an die App abgelehnt.",
+   "zeilen": [
+    234,
+    238
+   ],
+   "code": [
+    "234:     IF lv_ok = abap_false.",
+    "238:       RAISE EXCEPTION TYPE /iwbep/cx_mgw_busi_exception"
+   ],
+   "X": [
+    "Die Methode get_message_container von mo_context wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ],
+   "Y": [
+    "Die Methode get_message_container von mo_context wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ],
+   "Z": [
+    "War die Validierung nicht erfolgreich, werden die Rückmeldungen in den Meldungscontainer übernommen und eine fachliche Ausnahme vom Typ /IWBEP/CX_MGW_BUSI_EXCEPTION ausgelöst."
+   ]
+  },
+  {
+   "id": "BM-192-B12",
+   "soll": "Die Zählwerksstände werden mit Seriennummer, Ablesedatum, -zeit, -grund und Ablesehinweis als Ableseergebnisse im Versorgersystem angelegt.",
+   "zeilen": [
+    246,
+    255
+   ],
+   "code": [
+    "246:     lt_upload = VALUE #( FOR ls_r IN ls_deep-toregisters",
+    "255:     CALL FUNCTION 'BAPI_MTRREADDOC_UPLOAD'"
+   ],
+   "X": [
+    "Der Funktionsbaustein BAPI_MTRREADDOC_UPLOAD wird aufgerufen."
+   ],
+   "Y": [
+    "Der Funktionsbaustein BAPI_MTRREADDOC_UPLOAD wird aufgerufen."
+   ],
+   "Z": [
+    "Der Funktionsbaustein BAPI_MTRREADDOC_UPLOAD wird aufgerufen, um die Zählerableseergebnisse hochzuladen."
+   ]
+  },
+  {
+   "id": "BM-192-B13",
+   "soll": "Meldet die Anlage einen Fehler, wird alles zurückgenommen und die Anfrage mit den Meldungen des Bausteins abgelehnt.",
+   "zeilen": [
+    260,
+    261,
+    264
+   ],
+   "code": [
+    "260:     IF line_exists( lt_return[ type = 'E' ] ) OR line_exists( lt_return[ type = 'A' ] ).",
+    "261:       CALL FUNCTION 'BAPI_TRANSACTION_ROLLBACK'.",
+    "264:       RAISE EXCEPTION TYPE /iwbep/cx_mgw_busi_exception"
+   ],
+   "X": [
+    "Wenn die Bedingung „line_exists( lt_return[ type = 'E' ] ) OR line_exists( lt_return[ type = 'A' ] )“ erfüllt ist, wird BAPI_TRANSACTION_ROLLBACK aufgerufen.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_ROLLBACK wird aufgerufen.",
+    "Die Methode get_message_container von mo_context wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ],
+   "Y": [
+    "Für line_exists( lt_return[ type = 'E' ] ) OR line_exists( lt_return[ type = 'A' ] ) wird BAPI_TRANSACTION_ROLLBACK aufgerufen.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_ROLLBACK wird aufgerufen.",
+    "Die Methode get_message_container von mo_context wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ],
+   "Z": [
+    "Enthält die Rückmeldung des Upload-BAPI Fehler vom Typ 'E' oder 'A', werden die Datenbankänderungen per BAPI_TRANSACTION_ROLLBACK zurückgerollt, die Meldungen übernommen und eine fachliche Ausnahme ausgelöst."
+   ]
+  },
+  {
+   "id": "BM-192-B14",
+   "soll": "Sonst wird die Anlage synchron festgeschrieben.",
+   "zeilen": [
+    269
+   ],
+   "code": [
+    "269:     CALL FUNCTION 'BAPI_TRANSACTION_COMMIT'"
+   ],
+   "X": [
+    "Der Funktionsbaustein BAPI_TRANSACTION_COMMIT wird aufgerufen."
+   ],
+   "Y": [
+    "Der Funktionsbaustein BAPI_TRANSACTION_COMMIT wird aufgerufen."
+   ],
+   "Z": [
+    "Wurde der Upload fehlerfrei ausgeführt, werden die Änderungen mit dem Funktionsbaustein BAPI_TRANSACTION_COMMIT und gesetzter Warteoption auf der Datenbank festgeschrieben."
+   ]
+  },
+  {
+   "id": "BM-192-B15",
+   "soll": "Die Nummern der angelegten Ablesebelege werden je Zählwerk ermittelt und mit dem Status POSTED an die App zurückgegeben.",
+   "zeilen": [
+    275,
+    282,
+    283
+   ],
+   "code": [
+    "275:       SELECT SINGLE ablbelnr FROM eabl",
+    "282:     ls_deep-status = 'POSTED'.",
+    "283:     copy_data_to_ref("
+   ],
+   "X": [
+    "Das Feld ablbelnr aus eabl wird gelesen.",
+    "Der Status wird auf POSTED gesetzt."
+   ],
+   "Y": [
+    "ablbelnr des Satzes wird gelesen.",
+    "Die Status wird auf POSTED gesetzt."
+   ],
+   "Z": [
+    "Aus der Tabelle EABL wird die Ablesebelegnummer (ABLBELNR) zur ermittelten Equipmentnummer, Zählwerksnummer und zum Ablesedatum ermittelt und im jeweiligen Zählwerk hinterlegt.",
+    "Der Status des Belegs wird auf 'POSTED' gesetzt und die Belegdaten werden in den Referenzparameter der Antwort kopiert."
+   ]
+  }
+ ]
+}

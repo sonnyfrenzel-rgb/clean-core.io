@@ -1,0 +1,522 @@
+{
+ "id": "BM-017",
+ "titel": "Kommissionierung mit Gewichtssplit: Pakete je Versandstelle per aRFC, Split per BAPI, Kommissionierung per WS_DELIVERY_UPDATE",
+ "prozess": "Der Report läuft nachts als Job mit Versandstellen, Lieferterminen, einem LKW-Maximalgewicht, der Zahl paralleler Pakete, einer Servergruppe und dem Testlaufkennzeichen. Er liest nicht kommissionierte Auslieferungen ohne vollständigen Warenausgang und endet mit einem Hinweis, wenn es keine gibt. Je Versandstelle startet er ein Paket asynchron in der Servergruppe; fehlen freie Prozesse, wartet er kurz und versucht es erneut, bei Kommunikationsfehlern verarbeitet er das Paket lokal. Im Paket wird jede Lieferung gesperrt, ihre Positionen werden mit Gewicht in kg geladen, und in Positionsreihenfolge wird bestimmt, welche Positionen das Maximalgewicht überschreiten würden. Im Echtlauf werden diese per BAPI in eine neue Lieferung ausgelagert; ein Fehler verwirft den Split und überspringt die Lieferung. Danach werden die verbleibenden Positionen mit voller Liefermenge kommissioniert, außer chargenpflichtigen Positionen ohne Charge; im Testlauf werden nur Anzahlen gemeldet. Jede Lieferung erhält eine Ergebniszeile und wird entsperrt. Der Report wartet höchstens zehn Minuten auf alle Pakete und gibt dann eine farbige Ergebnisliste aus.",
+ "verboten": [
+  "zcl_sd_pick_split.abap:113 — kein Fachsatz „die Charge wird im Lager ermittelt“: die Position wird übersprungen und bleibt unkommissioniert, der Kommentar im Code beschreibt nichts, was geschieht",
+  "z_sd_pick_split_rfc.abap:76 — kein Fachsatz „im Testlauf werden nur die nach dem Split verbleibenden Positionen betrachtet“: im Testlauf wird nicht ausgelagert, gezählt werden alle Positionen",
+  "zcl_sd_pick_split.abap:83 — kein Fachsatz „keine Lieferung überschreitet das Maximalgewicht“: eine erste Position über dem Maximum bleibt, und die neue Lieferung wird nicht erneut geprüft",
+  "zsd_pick_split.abap:63 — kein Fachsatz „die Liste enthält alle Lieferungen“: nach 10 Minuten wird ohne ausstehende Pakete ausgegeben"
+ ],
+ "saetze": [
+  {
+   "id": "BM-017-B01",
+   "soll": "Der Job liest Auslieferungen der Lieferart LF der gewählten Versandstellen und Liefertermine, die noch nicht kommissioniert sind und keinen vollständigen Warenausgang haben.",
+   "zeilen": [
+    38
+   ],
+   "code": [
+    "38:   SELECT l~vstel l~vbeln"
+   ],
+   "X": [
+    "Das Ergebnis enthält Versandstelle und Belegnummer.",
+    "Es werden Lieferungen selektiert."
+   ],
+   "Y": [
+    "Es werden Sätze aus likp selektiert."
+   ],
+   "Z": [
+    "Aus den Tabellen LIKP und VBUK werden Versandstelle und Lieferungsnummer für die selektierten Versandstellen und Lieferdaten mit Lieferart LF, offenem Kommissionierstatus A und nicht abgeschlossenem Warenausgangsstatus gelesen."
+   ]
+  },
+  {
+   "id": "BM-017-B02",
+   "soll": "Ohne solche Lieferungen endet der Job mit einem Hinweis.",
+   "zeilen": [
+    47,
+    48,
+    49
+   ],
+   "code": [
+    "47:   IF sy-subrc <> 0.",
+    "48:     MESSAGE s700.",
+    "49:     RETURN."
+   ],
+   "X": [
+    "Ohne Treffer wird eine Statusmeldung ausgegeben und der Block verlassen.",
+    "Die Statusmeldung 700 wird ausgegeben."
+   ],
+   "Y": [
+    "Ohne Treffer wird eine Meldung ausgegeben und der Block verlassen.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "Eine Meldung wird ausgegeben.",
+    "Es wird eine Meldung ausgegeben und der Block verlassen."
+   ],
+   "Z": [
+    "Werden keine entsprechenden Lieferungen gefunden, wird die Statusnachricht s700 ausgegeben und die Verarbeitung beendet."
+   ]
+  },
+  {
+   "id": "BM-017-B03",
+   "soll": "Die Lieferungen einer Versandstelle bilden jeweils ein Paket, das asynchron in der angegebenen Servergruppe verarbeitet wird.",
+   "zeilen": [
+    56,
+    57,
+    84
+   ],
+   "code": [
+    "56:     AT END OF vstel.",
+    "57:       PERFORM paket_starten.",
+    "84:     CALL FUNCTION 'Z_SD_PICK_SPLIT_RFC'"
+   ],
+   "X": [
+    "Das Unterprogramm paket_starten wird aufgerufen; es ruft Z_SD_PICK_SPLIT_RFC auf und gibt eine Meldung aus.",
+    "Der Baustein Z_SD_PICK_SPLIT_RFC wird asynchron in einer eigenen Task gestartet. Ein Ergebnis liegt zu diesem Zeitpunkt nicht vor."
+   ],
+   "Y": [
+    "Das Unterprogramm paket_starten wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Der Baustein Z_SD_PICK_SPLIT_RFC wird asynchron in einer eigenen Task gestartet. Ein Ergebnis liegt zu diesem Zeitpunkt nicht vor."
+   ],
+   "Z": [
+    "Beim Wechsel der Versandstelle wird die Verarbeitung des aktuellen Lieferpakets aufgerufen und die Paketliste danach geleert.",
+    "In einer Wiederholungsschleife wird der Funktionsbaustein Z_SD_PICK_SPLIT_RFC für das Lieferpaket asynchron in der angegebenen Servergruppe aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-017-B04",
+   "soll": "Sind keine Workprozesse frei, wartet der Job bis zu 5 Sekunden auf einen freien Platz und startet das Paket erneut.",
+   "zeilen": [
+    97,
+    103
+   ],
+   "code": [
+    "97:     CASE sy-subrc.",
+    "103:         WAIT UNTIL gv_running < p_tasks UP TO 5 SECONDS."
+   ],
+   "X": [],
+   "Y": [],
+   "Z": [
+    "Wurde die asynchrone Aufgabe erfolgreich gestartet, wird der Zähler aktiver Aufgaben um 1 erhöht und die Startschleife verlassen.",
+    "Sind keine freien Systemressourcen verfügbar, wird bis zu 5 Sekunden gewartet, bis die Zahl aktiver Aufgaben unter den Schwellenwert sinkt.",
+    "Tritt ein Kommunikations- oder Systemfehler auf, wird die Statusnachricht s702 ausgegeben, das Lieferpaket lokal verarbeitet und die Startschleife beendet."
+   ]
+  },
+  {
+   "id": "BM-017-B05",
+   "soll": "Bei einem Kommunikations- oder Systemfehler wird das Paket nach einem Hinweis im eigenen Prozess synchron verarbeitet.",
+   "zeilen": [
+    105,
+    106,
+    118
+   ],
+   "code": [
+    "105:         MESSAGE s702 WITH lv_msg.",
+    "106:         PERFORM paket_lokal.",
+    "118:   CALL FUNCTION 'Z_SD_PICK_SPLIT_RFC'"
+   ],
+   "X": [
+    "Die Statusmeldung 702 wird ausgegeben.",
+    "Es wird eine Statusmeldung ausgegeben, paket_lokal aufgerufen und die Schleife verlassen.",
+    "Das Unterprogramm paket_lokal wird aufgerufen; es ruft Z_SD_PICK_SPLIT_RFC auf.",
+    "Der Code übergibt gt_paket an Z_SD_PICK_SPLIT_RFC und übernimmt dessen Ausgabe nach lt_res.",
+    "Es wird Z_SD_PICK_SPLIT_RFC aufgerufen und eine Zeile aufgenommen."
+   ],
+   "Y": [
+    "Eine Meldung wird ausgegeben.",
+    "Es wird eine Meldung ausgegeben, paket_lokal aufgerufen und der Block verlassen.",
+    "Das Unterprogramm paket_lokal wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Der Code übergibt gt_paket an Z_SD_PICK_SPLIT_RFC und übernimmt dessen Ausgabe nach lt_res.",
+    "Das konvertierte Ergebnis wird in lt_res übernommen.",
+    "Es wird Z_SD_PICK_SPLIT_RFC aufgerufen und eine Zeile aufgenommen."
+   ],
+   "Z": [
+    "Tritt ein Kommunikations- oder Systemfehler auf, wird die Statusnachricht s702 ausgegeben, das Lieferpaket lokal verarbeitet und die Startschleife beendet.",
+    "In der lokalen Verarbeitung wird der Funktionsbaustein Z_SD_PICK_SPLIT_RFC synchron ausgeführt und dessen Ergebnis an die Gesamtergebnisliste angehängt."
+   ]
+  },
+  {
+   "id": "BM-017-B06",
+   "soll": "Die Ergebnisse jedes Pakets werden bei seiner Rückmeldung übernommen; eine fehlerhafte Rückmeldung wird als Fehlerzeile vermerkt.",
+   "zeilen": [
+    134,
+    140
+   ],
+   "code": [
+    "134:   RECEIVE RESULTS FROM FUNCTION 'Z_SD_PICK_SPLIT_RFC'",
+    "140:   IF sy-subrc <> 0."
+   ],
+   "X": [
+    "Scheitert die Rückmeldung der parallelen Task, wird eine Zeile aufgenommen, sonst eine Zeile aufgenommen."
+   ],
+   "Y": [
+    "Ohne Treffer wird eine Zeile aufgenommen.",
+    "Ohne Treffer wird eine Zeile aufgenommen, sonst eine Zeile aufgenommen."
+   ],
+   "Z": []
+  },
+  {
+   "id": "BM-017-B07",
+   "soll": "Der Job wartet höchstens 10 Minuten auf alle Pakete; fehlen danach Rückmeldungen, erscheint ein Hinweis und die Liste bleibt unvollständig.",
+   "zeilen": [
+    63,
+    64,
+    65
+   ],
+   "code": [
+    "63:   WAIT UNTIL gv_running = 0 UP TO 600 SECONDS.",
+    "64:   IF gv_running > 0.",
+    "65:     MESSAGE i701 WITH gv_running."
+   ],
+   "X": [
+    "Wenn das Feld gv_running größer als 0 ist, wird eine Informationsmeldung ausgegeben.",
+    "Die Informationsmeldung 701 wird ausgegeben."
+   ],
+   "Y": [
+    "Für gv_running größer 0 wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ],
+   "Z": [
+    "Es wird bis zu 600 Sekunden gewartet, bis alle parallel laufenden Verarbeitungsaufgaben beendet sind.",
+    "Sind nach der Wartezeit noch Aufgaben aktiv, wird die Informationsnachricht i701 mit der Anzahl der noch laufenden Aufgaben ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-017-B08",
+   "soll": "Am Ende wird je Lieferung eine farbige Liste mit neuer Lieferung, Status und Text ausgegeben.",
+   "zeilen": [
+    156,
+    167
+   ],
+   "code": [
+    "156:   WRITE: / 'Lieferung', 15 'Neue Lieferung', 32 'Status', 40 'Text'.",
+    "167:     WRITE: / ls_res-vbeln, 15 ls_res-vbeln_neu, 32 ls_res-status,"
+   ],
+   "X": [
+    "Lieferung wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "Neue Lieferung wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "Status wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "Text wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "Bei Treffern werden Belegnummer, ls_res-vbeln_neu, Status und Text als Liste ausgegeben."
+   ],
+   "Y": [
+    "Lieferung, 15 'Neue Lieferung', 32 'Status' und 40 'Text' werden ausgegeben.",
+    "Lieferung wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "15 'Neue Lieferung' wird ausgegeben.",
+    "32 'Status' wird ausgegeben.",
+    "40 'Text' wird ausgegeben.",
+    "Bei Treffern werden Belegnummer, 15 ls_res-vbeln_neu, Status und Text als Liste ausgegeben.",
+    "Belegnummer wird ausgegeben.",
+    "15 ls_res-vbeln_neu wird ausgegeben.",
+    "Status wird ausgegeben."
+   ],
+   "Z": [
+    "Ein Listenkopf mit Spalten für Lieferung, neue Lieferung, Status und Text wird ausgegeben.",
+    "Für jedes Ergebnis wird die Zeilenfarbe anhand des Status auf positiv bei S, hervorhebend bei W oder negativ gesetzt und die Ergebniszeile ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-017-B09",
+   "soll": "Im Paket wird jede Lieferung gesperrt; ist sie in Bearbeitung, wird sie mit Fehler übersprungen.",
+   "zeilen": [
+    192,
+    199
+   ],
+   "code": [
+    "192:     CALL FUNCTION 'ENQUEUE_EVVBLKE'",
+    "199:     IF sy-subrc <> 0."
+   ],
+   "X": [
+    "Der Funktionsbaustein ENQUEUE_EVVBLKE wird aufgerufen.",
+    "Ist die Sperre über ENQUEUE_EVVBLKE nicht zu erhalten, wird eine Zeile aufgenommen und der Schleifendurchlauf übersprungen."
+   ],
+   "Y": [
+    "Der Funktionsbaustein ENQUEUE_EVVBLKE wird aufgerufen.",
+    "Ohne Treffer wird eine Zeile aufgenommen."
+   ],
+   "Z": [
+    "Für jede Lieferung des übergebenen Pakets wird eine Sperre über den Funktionsbaustein ENQUEUE_EVVBLKE gesetzt."
+   ]
+  },
+  {
+   "id": "BM-017-B10",
+   "soll": "Für die Lieferung werden alle Positionen mit Liefermenge und Bruttogewicht gelesen; ohne Positionen wird die Lieferung mit Fehler übersprungen und entsperrt.",
+   "zeilen": [
+    211,
+    313,
+    317
+   ],
+   "code": [
+    "211:         CALL FUNCTION 'DEQUEUE_EVVBLKE'",
+    "313:     SELECT posnr matnr werks lgort charg lfimg vrkme brgew gewei",
+    "317:     IF sy-subrc <> 0."
+   ],
+   "X": [
+    "Es wird eine Zeile aufgenommen, DEQUEUE_EVVBLKE aufgerufen und der Schleifendurchlauf übersprungen.",
+    "Der Funktionsbaustein DEQUEUE_EVVBLKE wird aufgerufen.",
+    "Es werden Lieferpositionen selektiert."
+   ],
+   "Y": [
+    "Es wird eine Zeile aufgenommen und DEQUEUE_EVVBLKE aufgerufen.",
+    "Der Funktionsbaustein DEQUEUE_EVVBLKE wird aufgerufen.",
+    "Es werden Sätze aus lips selektiert."
+   ],
+   "Z": [
+    "Tritt bei der Vorbereitung der Lieferung ein Klassenfehler auf, wird der Fehlertext in die Ergebnistabelle übernommen, die Liefersperre über DEQUEUE_EVVBLKE aufgehoben und die Bearbeitung dieser Lieferung abgebrochen.",
+    "Aus der Tabelle LIPS werden Positionsnummer, Materialnummer, Werk, Lagerort, Charge, Liefermenge, Verkaufseinheit, Bruttogewicht und Gewichtseinheit für Positionen mit einer Liefermenge größer als 0 gelesen.",
+    "Werden zur Lieferung keine Positionen gefunden, wird eine Ausnahme ausgelöst."
+   ]
+  },
+  {
+   "id": "BM-017-B11",
+   "soll": "Gewichte in anderen Einheiten werden in kg umgerechnet; scheitert die Umrechnung, wird die Lieferung mit Fehler übersprungen.",
+   "zeilen": [
+    324,
+    333
+   ],
+   "code": [
+    "324:       CALL FUNCTION 'UNIT_CONVERSION_SIMPLE'",
+    "333:       IF sy-subrc <> 0."
+   ],
+   "X": [
+    "Der Code übergibt ls_item-brgew an UNIT_CONVERSION_SIMPLE und übernimmt dessen Ausgabe nach ls_item-brgew."
+   ],
+   "Y": [
+    "Der Code übergibt ls_item>-brgew an UNIT_CONVERSION_SIMPLE und übernimmt dessen Ausgabe nach ls_item>-brgew.",
+    "Das konvertierte Ergebnis wird in ls_item>-brgew übernommen."
+   ],
+   "Z": [
+    "Für jede Position mit einer Gewichtseinheit ungleich KG wird das Bruttogewicht über den Funktionsbaustein UNIT_CONVERSION_SIMPLE nach KG umgerechnet."
+   ]
+  },
+  {
+   "id": "BM-017-B12",
+   "soll": "In Positionsreihenfolge werden Positionen auf den LKW geladen, solange das Maximalgewicht nicht überschritten wird; die erste Position bleibt immer in der Lieferung, auch wenn sie allein zu schwer ist.",
+   "zeilen": [
+    348,
+    349
+   ],
+   "code": [
+    "348:       IF lv_sum = 0 OR lv_sum + ls_item-brgew <= mv_maxgw.",
+    "349:         lv_sum = lv_sum + ls_item-brgew."
+   ],
+   "X": [],
+   "Y": [],
+   "Z": []
+  },
+  {
+   "id": "BM-017-B13",
+   "soll": "Jede Position, die das Maximalgewicht überschreiten würde, wird mit voller Menge zum Split vorgemerkt.",
+   "zeilen": [
+    348
+   ],
+   "code": [
+    "348:       IF lv_sum = 0 OR lv_sum + ls_item-brgew <= mv_maxgw."
+   ],
+   "X": [],
+   "Y": [],
+   "Z": []
+  },
+  {
+   "id": "BM-017-B14",
+   "soll": "Im Echtlauf werden die vorgemerkten Positionen in eine neue Lieferung ausgelagert.",
+   "zeilen": [
+    220,
+    222
+   ],
+   "code": [
+    "220:     IF lt_split IS NOT INITIAL AND iv_test = abap_false.",
+    "222:       CALL FUNCTION 'BAPI_OUTB_DELIVERY_SPLIT_DEC'"
+   ],
+   "X": [
+    "Wenn das Feld lt_split nicht leer ist und das Feld iv_test nicht gesetzt ist, wird BAPI_OUTB_DELIVERY_SPLIT_DEC aufgerufen und BAPI_TRANSACTION_COMMIT aufgerufen.",
+    "Der Code übergibt lv_vbeln an BAPI_OUTB_DELIVERY_SPLIT_DEC und übernimmt dessen Ausgabe nach lv_neu."
+   ],
+   "Y": [
+    "Für lt_split IS NOT INITIAL AND iv_test = abap_false wird BAPI_OUTB_DELIVERY_SPLIT_DEC aufgerufen und BAPI_TRANSACTION_COMMIT aufgerufen.",
+    "Der Code übergibt lv_vbeln an BAPI_OUTB_DELIVERY_SPLIT_DEC und übernimmt dessen Ausgabe nach lv_neu.",
+    "Das konvertierte Ergebnis wird in lv_neu übernommen."
+   ],
+   "Z": [
+    "Liegen abzusplittende Positionen vor und ist kein Testlauf aktiv, wird der Split über den Funktionsbaustein BAPI_OUTB_DELIVERY_SPLIT_DEC ausgeführt."
+   ]
+  },
+  {
+   "id": "BM-017-B15",
+   "soll": "Scheitert der Split, wird er verworfen, die Lieferung mit der Fehlermeldung vermerkt und entsperrt, und sie wird nicht kommissioniert.",
+   "zeilen": [
+    230,
+    231,
+    232,
+    235
+   ],
+   "code": [
+    "230:       READ TABLE lt_return INTO DATA(ls_ret) WITH KEY type = 'E'.",
+    "231:       IF sy-subrc = 0.",
+    "232:         CALL FUNCTION 'BAPI_TRANSACTION_ROLLBACK'.",
+    "235:         CALL FUNCTION 'DEQUEUE_EVVBLKE'"
+   ],
+   "X": [
+    "Wenn das Feld lt_split nicht leer ist und das Feld iv_test nicht gesetzt ist, wird BAPI_OUTB_DELIVERY_SPLIT_DEC aufgerufen und BAPI_TRANSACTION_COMMIT aufgerufen.",
+    "In der Tabelle lt_return wird nach einer passenden Zeile gesucht.",
+    "Bei Treffer wird BAPI_TRANSACTION_ROLLBACK aufgerufen, eine Zeile aufgenommen, DEQUEUE_EVVBLKE aufgerufen und der Schleifendurchlauf übersprungen.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_ROLLBACK wird aufgerufen.",
+    "Der Funktionsbaustein DEQUEUE_EVVBLKE wird aufgerufen."
+   ],
+   "Y": [
+    "Für lt_split IS NOT INITIAL AND iv_test = abap_false wird BAPI_OUTB_DELIVERY_SPLIT_DEC aufgerufen und BAPI_TRANSACTION_COMMIT aufgerufen.",
+    "In der Tabelle wird nach einer passenden Zeile gesucht.",
+    "Bei Treffer wird BAPI_TRANSACTION_ROLLBACK aufgerufen, eine Zeile aufgenommen und DEQUEUE_EVVBLKE aufgerufen.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_ROLLBACK wird aufgerufen.",
+    "Es wird BAPI_TRANSACTION_ROLLBACK aufgerufen, eine Zeile aufgenommen und DEQUEUE_EVVBLKE aufgerufen.",
+    "Der Funktionsbaustein DEQUEUE_EVVBLKE wird aufgerufen."
+   ],
+   "Z": [
+    "Meldet der Liefersplit einen Fehler, werden die Änderungen über BAPI_TRANSACTION_ROLLBACK zurückgenommen, die Fehlermeldung protokolliert, die Sperre über DEQUEUE_EVVBLKE freigegeben und die Lieferung übersprungen."
+   ]
+  },
+  {
+   "id": "BM-017-B16",
+   "soll": "Gelingt er, wird er festgeschrieben und die ausgelagerten Positionen werden nicht mehr kommissioniert.",
+   "zeilen": [
+    240,
+    243
+   ],
+   "code": [
+    "240:       CALL FUNCTION 'BAPI_TRANSACTION_COMMIT'",
+    "243:       lo_split->remove_split_items( lt_split )."
+   ],
+   "X": [
+    "Wenn das Feld lt_split nicht leer ist und das Feld iv_test nicht gesetzt ist, wird BAPI_OUTB_DELIVERY_SPLIT_DEC aufgerufen und BAPI_TRANSACTION_COMMIT aufgerufen.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_COMMIT wird aufgerufen.",
+    "Die Methode remove_split_items von lo_split wird aufgerufen."
+   ],
+   "Y": [
+    "Für lt_split IS NOT INITIAL AND iv_test = abap_false wird BAPI_OUTB_DELIVERY_SPLIT_DEC aufgerufen und BAPI_TRANSACTION_COMMIT aufgerufen.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_COMMIT wird aufgerufen.",
+    "Die Methode remove_split_items von lo_split wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ],
+   "Z": [
+    "Verläuft der Liefersplit fehlerfrei, werden die Datenbankänderungen über BAPI_TRANSACTION_COMMIT festgeschrieben und die abgespaltenen Positionen aus der internen Bearbeitung entfernt."
+   ]
+  },
+  {
+   "id": "BM-017-B17",
+   "soll": "Chargenpflichtige Positionen ohne Charge werden nicht kommissioniert, sondern nur gezählt.",
+   "zeilen": [
+    375,
+    378
+   ],
+   "code": [
+    "375:       SELECT SINGLE xchpf FROM marc INTO lv_xchpf",
+    "378:       IF lv_xchpf = abap_true AND ls_item-charg IS INITIAL."
+   ],
+   "X": [
+    "Das Feld xchpf des Werksdatensatzes zum Material wird gelesen.",
+    "Wenn das Feld lv_xchpf gesetzt ist und die Charge leer ist, wird der Schleifendurchlauf übersprungen."
+   ],
+   "Y": [
+    "xchpf des Satzes wird gelesen."
+   ],
+   "Z": [
+    "Für jede Position wird aus der Tabelle MARC anhand von Materialnummer und Werk geprüft, ob das Material chargenpflichtig ist.",
+    "Ist ein Material chargenpflichtig und in der Position keine Charge angegeben, wird die Position bei der Kommissionierung übersprungen."
+   ]
+  },
+  {
+   "id": "BM-017-B18",
+   "soll": "Ist keine Position kommissionierbar oder ist Testlauf gesetzt, wird nur ein Text mit den Anzahlen zurückgegeben.",
+   "zeilen": [
+    393,
+    398
+   ],
+   "code": [
+    "393:     IF lt_vbpok IS INITIAL.",
+    "398:     IF iv_test = abap_true."
+   ],
+   "X": [
+    "Ist die Tabelle lt_vbpok leer, wird der Block verlassen.",
+    "Wenn das Feld iv_test gesetzt ist, wird der Block verlassen."
+   ],
+   "Y": [
+    "Ohne Treffer wird der Block verlassen.",
+    "Ohne Treffer wird der Block verlassen.",
+    "Für iv_test mit dem Wert abap_true wird der Block verlassen.",
+    "Bei iv_test gleich abap_true wird der Block verlassen."
+   ],
+   "Z": [
+    "Konnte keine einzige Position für die Kommissionierung vorbereitet werden, wird eine Hinweismeldung mit der Anzahl chargenloser Positionen zurückgegeben und die Kommissionierung beendet.",
+    "Ist der Testlauf aktiv, wird lediglich ein Informationstext über die kommissionierbaren Positionen und fehlenden Chargen zurückgegeben und die Kommissionierung beendet."
+   ]
+  },
+  {
+   "id": "BM-017-B19",
+   "soll": "Sonst wird für die übrigen Positionen die volle Liefermenge als Kommissioniermenge synchron gebucht und festgeschrieben.",
+   "zeilen": [
+    407
+   ],
+   "code": [
+    "407:     CALL FUNCTION 'WS_DELIVERY_UPDATE'"
+   ],
+   "X": [
+    "Der Code übergibt ls_vbkok an WS_DELIVERY_UPDATE und übernimmt dessen Ausgabe nach lv_error."
+   ],
+   "Y": [
+    "Der Code übergibt ls_vbkok an WS_DELIVERY_UPDATE und übernimmt dessen Ausgabe nach lv_error.",
+    "Das konvertierte Ergebnis wird in lv_error übernommen."
+   ],
+   "Z": [
+    "Im Echtlauf wird die Kommissionierung der Lieferung über den Funktionsbaustein WS_DELIVERY_UPDATE verbucht."
+   ]
+  },
+  {
+   "id": "BM-017-B20",
+   "soll": "Das Ergebnis lautet „fehlgeschlagen“ oder nennt kommissionierte Positionen und offene Positionen ohne Charge.",
+   "zeilen": [
+    422
+   ],
+   "code": [
+    "422:     IF sy-subrc <> 0 OR lv_error = abap_true."
+   ],
+   "X": [
+    "Wenn der Aufruf von WS_DELIVERY_UPDATE scheitert oder das Feld lv_error gesetzt ist, wird der Text auf Kommissionierung fehlgeschlagen gesetzt.",
+    "Wenn der Aufruf von WS_DELIVERY_UPDATE scheitert oder das Feld lv_error gesetzt ist, wird der Text auf Kommissionierung fehlgeschlagen gesetzt."
+   ],
+   "Y": [
+    "Für sy-subrc <> 0 OR lv_error = abap_true wird die Text auf Kommissionierung fehlgeschlagen gesetzt.",
+    "sy-subrc <> 0 OR lv_error = abap_true erhalten Kommissionierung fehlgeschlagen."
+   ],
+   "Z": [
+    "Tritt bei der Verbuchung der Kommissionierung ein Fehler auf, wird ein Fehlertext gesetzt; andernfalls wird die Anzahl der erfolgreich kommissionierten Positionen gemeldet."
+   ]
+  },
+  {
+   "id": "BM-017-B21",
+   "soll": "Eine gesplittete Lieferung wird mit neuer Lieferungsnummer als Warnung gemeldet, ein nur im Testlauf erkannter Split ebenfalls als Warnung, sonst als Erfolg; danach wird die Lieferung entsperrt.",
+   "zeilen": [
+    250,
+    253,
+    261
+   ],
+   "code": [
+    "250:     IF lv_neu IS NOT INITIAL.",
+    "253:     ELSEIF lt_split IS NOT INITIAL.",
+    "261:     CALL FUNCTION 'DEQUEUE_EVVBLKE'"
+   ],
+   "X": [
+    "Ist das Feld lv_neu nicht leer, wird eine Zeile aufgenommen.",
+    "Enthält die Tabelle lt_split Zeilen, wird eine Zeile aufgenommen.",
+    "Der Funktionsbaustein DEQUEUE_EVVBLKE wird aufgerufen."
+   ],
+   "Y": [
+    "Mit einer nicht leeren lv_neu wird eine Zeile aufgenommen.",
+    "Mit einer nicht leeren lv_neu wird eine Zeile aufgenommen, sonst eine Zeile aufgenommen beziehungsweise eine Zeile aufgenommen.",
+    "Bei Treffern wird eine Zeile aufgenommen.",
+    "Der Funktionsbaustein DEQUEUE_EVVBLKE wird aufgerufen."
+   ],
+   "Z": [
+    "Wurde eine neue Lieferung durch Split erzeugt, wird ein Eintrag mit Status W, neuer Lieferungsnummer und Split-Hinweis in das Ergebnis geschrieben.",
+    "Nach Abschluss der Bearbeitung einer Lieferung wird die Liefersperre über den Funktionsbaustein DEQUEUE_EVVBLKE aufgehoben."
+   ]
+  }
+ ]
+}

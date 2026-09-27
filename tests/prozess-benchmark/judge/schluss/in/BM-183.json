@@ -1,0 +1,108 @@
+{
+ "id": "BM-183",
+ "titel": "Frachtpreis aus Shared-Objects-Tarifcache: Neuaufbau bei fehlender Version, Gewichtsstaffel",
+ "prozess": "Die Frachtkostenkalkulation fragt den Preis für eine Relation und ein Gewicht an. Die Methode öffnet den im Hauptspeicher des Applikationsservers gehaltenen Speditionstarif lesend. Gibt es dort keine aktive oder nur eine inkonsistente Version, baut ein Ladeprogramm den Tarifspeicher neu auf, und die Methode öffnet ihn erneut; scheitert auch das, bricht sie unbehandelt ab. Anschließend ermittelt sie den Tarifsatz der Relation und gibt den Speicher wieder frei. Fehlt ein Tarif für die Relation, bricht sie mit dem Fehler KEIN_TARIF ab. Sonst gilt bis 1.000 kg der Grundpreis; darüber wird das Mehrgewicht anteilig mit dem Satz je 100 kg aufgeschlagen. Der Preis wird nur zurückgegeben, nicht gespeichert.",
+ "verboten": [
+  "source.abap:25 — kein Fachsatz „je angefangene 100 kg wird aufgeschlagen“: gerechnet wird anteilig ohne Aufrundung auf volle 100 kg",
+  "source.abap:12 — kein Fachsatz „schlägt auch der Neuaufbau fehl, wird ein Fehler gemeldet“: der zweite Öffnungsversuch steht außerhalb des TRY-Blocks, eine erneute Ausnahme bricht unbehandelt ab",
+  "gesamte Scheibe — kein Fachsatz „der Frachtpreis wird in der Lieferung oder im Transport gespeichert“: die Methode berechnet nur und gibt den Preis zurück"
+ ],
+ "saetze": [
+  {
+   "id": "BM-183-B01",
+   "soll": "Für die Frachtpreisberechnung wird der im Hauptspeicher gehaltene Speditionstarif geöffnet.",
+   "zeilen": [
+    9
+   ],
+   "code": [
+    "9:         lo_area = zcl_tm_tarif_area=>attach_for_read( )."
+   ],
+   "X": [
+    "Der Rückgabewert der Methode attach_for_read von zcl_tm_tarif_area wird nach lo_area übernommen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ],
+   "Y": [
+    "Der Lesezugriff auf den Frachttarifbereich im Shared-Objects-Gebiet ZCL_TM_TARIF_AREA wird hergestellt."
+   ],
+   "Z": [
+    "Der Rückgabewert der Methode attach_for_read von zcl_tm_tarif_area wird nach lo_area übernommen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-183-B02",
+   "soll": "Liegt keine gültige Tarifversion im Speicher, wird der Tarifspeicher neu aufgebaut und danach geöffnet.",
+   "zeilen": [
+    10,
+    11,
+    12
+   ],
+   "code": [
+    "10:       CATCH cx_shm_no_active_version cx_shm_inconsistent.",
+    "11:         zcl_tm_tarif_loader=>build_area( ).",
+    "12:         lo_area = zcl_tm_tarif_area=>attach_for_read( )."
+   ],
+   "X": [
+    "Die Methode build_area von zcl_tm_tarif_loader wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "Der Rückgabewert der Methode attach_for_read von zcl_tm_tarif_area wird nach lo_area übernommen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ],
+   "Y": [
+    "Liegt keine aktive oder eine inkonsistente Gebietsversion vor, wird der Frachttarifbereich über ZCL_TM_TARIF_LOADER neu aufgebaut und der Lesezugriff erneut hergestellt."
+   ],
+   "Z": [
+    "Der Rückgabewert der Methode build_area von zcl_tm_tarif_loader wird nach zcl_tm_tarif_loader übernommen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "Der Rückgabewert der Methode attach_for_read von zcl_tm_tarif_area wird nach lo_area übernommen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-183-B03",
+   "soll": "Zur angefragten Relation wird der Tarifsatz ermittelt.",
+   "zeilen": [
+    15
+   ],
+   "code": [
+    "15:     ls_satz = lo_area->root->get_satz( iv_route )."
+   ],
+   "X": [
+    "Der Rückgabewert der Methode get_satz von >root wird nach ls_satz übernommen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ],
+   "Y": [
+    "Für die übergebene Route wird der zugehörige Tarifsatz aus dem Frachttarifbereich gelesen."
+   ],
+   "Z": [
+    "Der Rückgabewert der Methode get_satz von >root wird nach ls_satz übernommen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-183-B04",
+   "soll": "Gibt es für die Relation keinen Tarif, wird die Kalkulation mit dem Fehler KEIN_TARIF abgebrochen.",
+   "zeilen": [
+    18,
+    19
+   ],
+   "code": [
+    "18:     IF ls_satz IS INITIAL.",
+    "19:       RAISE EXCEPTION TYPE zcx_tm_tarif"
+   ],
+   "X": [],
+   "Y": [
+    "Ist der Tarifsatz initial, wird eine Ausnahme vom Typ ZCX_TM_TARIF mit der Meldung kein_tarif und der Route ausgelöst."
+   ],
+   "Z": []
+  },
+  {
+   "id": "BM-183-B05",
+   "soll": "Bis 1.000 kg gilt der Grundpreis, darüber wird das Mehrgewicht anteilig mit dem Satz je 100 kg aufgeschlagen.",
+   "zeilen": [
+    25
+   ],
+   "code": [
+    "25:     rv_preis = COND #( WHEN iv_gewicht <= 1000 THEN ls_satz-grundpreis"
+   ],
+   "X": [],
+   "Y": [
+    "Ist das Gewicht kleiner oder gleich 1000, wird der Frachtpreis auf den Grundpreis des Tarifsatzes gesetzt.",
+    "Ist das Gewicht größer als 1000, wird der Frachtpreis aus dem Grundpreis zuzüglich des um 1000 verminderten und durch 100 geteilten Gewichts multipliziert mit dem Satz je 100 kg berechnet."
+   ],
+   "Z": []
+  }
+ ]
+}

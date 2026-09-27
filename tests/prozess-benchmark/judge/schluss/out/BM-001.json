@@ -1,0 +1,90 @@
+{
+ "id": "BM-001",
+ "urteile": [
+  {
+   "id": "BM-001-B01",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "zu_allgemein",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "zu_allgemein",
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "kurz": "X und Y nennen nur \"Aufträge selektiert\" ohne Belegtyp und Selektion, Z trifft alles."
+  },
+  {
+   "id": "BM-001-B02",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "kurz": "X/Y nennen nur Feld gbstk, Z sagt Gesamtbearbeitungsstatus je Auftrag."
+  },
+  {
+   "id": "BM-001-B03",
+   "X": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "kurz": "X schweigt, Y nur Variablenvergleich gv_gbstk, Z fachlich korrekt."
+  },
+  {
+   "id": "BM-001-B04",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "kurz": "X mit zwei technischen Feldern und Einzelsätzen, Y nur Status technisch, Z vollständig."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

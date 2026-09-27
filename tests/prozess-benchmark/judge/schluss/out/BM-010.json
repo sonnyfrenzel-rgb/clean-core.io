@@ -1,0 +1,182 @@
+{
+ "id": "BM-010",
+ "urteile": [
+  {
+   "id": "BM-010-B01",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "kurz": "X nur Tabelle, Y ohne Soll/Sonderhauptbuch-Filter, Z vollständig."
+  },
+  {
+   "id": "BM-010-B02",
+   "X": {
+    "urteil": "abweichend",
+    "mangel": [
+     "technisch",
+     "falsch"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "kurz": "X kehrt die Bedingung um (\"kleinere übersprungen\"), Y nur Codebedingung, Z sagt Fälligkeit und Verdichtung."
+  },
+  {
+   "id": "BM-010-B03",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "kurz": "X/Y richtig, aber nur p_minbt statt Mindestbetrag; Z fachlich."
+  },
+  {
+   "id": "BM-010-B04",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": [
+     "redundant"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "kurz": "X zerlegt in Einzelausgaben mit Variablen, Y/Z sagen \"bereits gesperrt\" protokolliert."
+  },
+  {
+   "id": "BM-010-B05",
+   "X": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "kurz": "Alle treffen die Testlaufliste, X/Y technisch und wiederholt."
+  },
+  {
+   "id": "BM-010-B06",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "kurz": "X deutet Sperrfehler als \"ohne Treffer\", Y/Z beschreiben Überspringen bei Fremdsperre."
+  },
+  {
+   "id": "BM-010-B07",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "kurz": "X/Y ohne Sperrwert 07 als Änderung und Freigabe nur als Bausteinaufruf, Z vollständig."
+  },
+  {
+   "id": "BM-010-B08",
+   "X": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "kurz": "Alle sagen Festschreiben per COMMIT."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

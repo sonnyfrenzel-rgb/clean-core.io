@@ -1,0 +1,335 @@
+{
+ "id": "BM-013",
+ "titel": "Eigene Kreditprüfung im Sichern-Exit: Obligo aus S066/S067/BSID gegen KNKK-Limit, Liefersperre oder Ablehnung",
+ "prozess": "Der Exit läuft beim Sichern eines Kundenauftrags im Standard-Auftrag. Er prüft nur Kundenaufträge beim Anlegen oder beim Ändern mit geändertem Nettowert. Dazu liest er für Auftraggeber und Kreditkontrollbereich Kreditlimit, Risikoklasse und Kreditsperre. Ohne Kreditstammsatz gilt der Auftrag als in Ordnung; ein im Kreditmanagement gesperrter Kunde führt zur Ablehnung. Sonst ermittelt er das Obligo aus offenen Aufträgen, Lieferungen und Fakturen der Infostrukturen und dem Saldo der offenen Posten, addiert die Wertänderung des Auftrags und vergleicht mit dem Limit plus einer Toleranz von 10 % (Risikoklasse 001), 5 % (002) oder null. Liegt das Obligo darüber, lautet das Ergebnis Sperren. Das Ergebnis wird zur Protokollierung verbucht. Bei Sperren erhält der Auftrag die Liefersperre Z1, der Erfasser eine Warnung und der Kreditmanager ein Workflow-Ereignis; bei Ablehnen bricht das Sichern mit einer Fehlermeldung ab; bei in Ordnung wird eine frühere Sperre Z1 aufgehoben. Beträge verschiedener Währungen werden ohne Umrechnung addiert.",
+ "verboten": [
+  "zcl_sd_credit_check.abap:70 — kein Fachsatz „der Auftragswert wird in die Währung des Kreditkontrollbereichs umgerechnet“: Nettowert in Belegwährung, S066/S067-Werte und Hauswährungsbeträge werden ohne Umrechnung addiert",
+  "mv45afzz_credit.abap:28 — kein Fachsatz „der Kreditmanager wird zum neuen Auftrag benachrichtigt“: bei der Anlage ist die endgültige Auftragsnummer in USEREXIT_SAVE_DOCUMENT_PREPARE noch nicht vergeben, der Objektschlüssel des Ereignisses verweist dann nicht auf den gesicherten Auftrag",
+  "zcl_sd_credit_check.abap:59 — kein Fachsatz „Kunden ohne Kreditlimit werden gesperrt“: ohne Kreditstammsatz wird gar nicht geprüft",
+  "zcl_sd_credit_check.abap:86 — kein Fachsatz „Protokoll sofort geschrieben“: die Verbuchung läuft erst mit dem COMMIT des Auftrags und entfällt bei Ablehnung"
+ ],
+ "saetze": [
+  {
+   "id": "BM-013-B01",
+   "soll": "Die Kreditprüfung läuft nur für Kundenaufträge beim Anlegen oder Ändern, beim Ändern nur, wenn sich der Nettowert geändert hat.",
+   "zeilen": [
+    11,
+    12,
+    14
+   ],
+   "code": [
+    "11:   CHECK vbak-vbtyp = 'C'.                           \"nur Kundenaufträge",
+    "12:   CHECK t180-trtyp = 'H' OR t180-trtyp = 'V'.       \"Anlegen / Ändern",
+    "14:   CHECK t180-trtyp = 'H' OR vbak-netwr <> yvbak-netwr."
+   ],
+   "X": [
+    "Ist der Belegtyp (vbak-vbtyp) ungleich C, wird die Bearbeitung beendet.",
+    "Ist der Transaktionstyp (t180-trtyp) weder H noch V, wird die Bearbeitung beendet.",
+    "Ist der Transaktionstyp (t180-trtyp) ungleich H und der Nettowert (vbak-netwr) unverändert gegenüber dem Altwert (yvbak-netwr), wird die Bearbeitung beendet."
+   ],
+   "Y": [
+    "Nur wenn das Feld vbak-vbtyp gleich C ist, geht es weiter; sonst wird das Unterprogramm userexit_save_document_prepare an dieser Stelle verlassen.",
+    "Nur wenn das Feld t180-trtyp gleich H ist oder das Feld t180-trtyp gleich V ist, geht es weiter; sonst wird das Unterprogramm userexit_save_document_prepare an dieser Stelle verlassen.",
+    "Nur wenn das Feld t180-trtyp gleich H ist oder der Nettowert ungleich yvbak-netwr ist, geht es weiter; sonst wird das Unterprogramm userexit_save_document_prepare an dieser Stelle verlassen."
+   ],
+   "Z": [
+    "Nur vbak-vbtyp mit dem Wert C gehen weiter; kleinere werden übersprungen, die Schleife läuft weiter.",
+    "Nur t180-trtyp = 'H' OR t180-trtyp = 'V' gehen weiter; kleinere werden übersprungen, die Schleife läuft weiter.",
+    "Nur t180-trtyp = 'H' OR vbak-netwr <> yvbak-netwr gehen weiter; kleinere werden übersprungen, die Schleife läuft weiter."
+   ]
+  },
+  {
+   "id": "BM-013-B02",
+   "soll": "Für Auftraggeber und Kreditkontrollbereich des Auftrags werden Kreditlimit, Risikoklasse und Kreditsperre gelesen.",
+   "zeilen": [
+    16,
+    81
+   ],
+   "code": [
+    "16:   CREATE OBJECT lo_credit",
+    "81:     SELECT SINGLE * FROM knkk INTO ms_knkk"
+   ],
+   "X": [
+    "Für die Kundennummer (vbak-kunnr) und den Kreditkontrollbereich (vbak-kkber) wird ein Objekt zur Kreditprüfung instanziiert.",
+    "Aus der Tabelle KNKK wird der Kreditstammsatz zur übergebenen Kundennummer und zum Kreditkontrollbereich gelesen."
+   ],
+   "Y": [
+    "Es werden Sätze aus knkk selektiert."
+   ],
+   "Z": [
+    "Es werden Sätze aus knkk selektiert."
+   ]
+  },
+  {
+   "id": "BM-013-B03",
+   "soll": "Hat der Kunde keinen Kreditstammsatz, gilt der Auftrag ohne Prüfung als in Ordnung.",
+   "zeilen": [
+    96,
+    97
+   ],
+   "code": [
+    "96:     IF mv_found = abap_false.",
+    "97:       RETURN."
+   ],
+   "X": [
+    "Wurde kein Kreditstammsatz gefunden, wird die Prüfung ohne weitere Aktionen beendet und das Ergebnis verbleibt auf O."
+   ],
+   "Y": [
+    "Wenn das Feld mv_found nicht gesetzt ist, wird vor der Datenbankoperation zurückgekehrt."
+   ],
+   "Z": [
+    "Für mv_found mit dem Wert abap_false wird der Block verlassen.",
+    "Bei mv_found gleich abap_false wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben."
+   ]
+  },
+  {
+   "id": "BM-013-B04",
+   "soll": "Ist der Kunde im Kreditmanagement gesperrt, lautet das Ergebnis Ablehnen.",
+   "zeilen": [
+    101,
+    102
+   ],
+   "code": [
+    "101:     IF ms_knkk-crblb = abap_true.",
+    "102:       rs_result-decision = c_reject."
+   ],
+   "X": [
+    "Ist die Gesamtsperre (ms_knkk-crblb) aktiv, wird die Entscheidung auf R (abgelehnt) gesetzt und die Prüfung beendet."
+   ],
+   "Y": [
+    "Wenn das Feld ms_knkk-crblb gesetzt ist, wird vor der Datenbankoperation zurückgekehrt."
+   ],
+   "Z": [
+    "Für ms_knkk-crblb mit dem Wert abap_true wird der Block verlassen.",
+    "Bei ms_knkk-crblb gleich abap_true wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben."
+   ]
+  },
+  {
+   "id": "BM-013-B05",
+   "soll": "Das Obligo setzt sich aus dem Kreditwert offener Aufträge, offener Lieferungen und offener Fakturen aus den Infostrukturen sowie dem Saldo der offenen Posten aller Buchungskreise des Kreditkontrollbereichs zusammen.",
+   "zeilen": [
+    141,
+    146,
+    151,
+    161
+   ],
+   "code": [
+    "141:     SELECT SUM( oeikw ) FROM s066 INTO lv_oeikw",
+    "146:     SELECT SUM( olikw ) SUM( ofakw ) FROM s067 INTO (lv_olikw, lv_ofakw)",
+    "151:     SELECT dmbtr shkzg FROM bsid INTO (lv_dmbtr, lv_shkzg)",
+    "161:     rv_exposure = lv_oeikw + lv_olikw + lv_ofakw + lv_op."
+   ],
+   "X": [
+    "Aus der Tabelle S066 wird der offene Auftragswert (oeikw) für das Kreditkonto und den Kreditkontrollbereich summiert gelesen.",
+    "Aus der Tabelle S067 werden der offene Lieferwert (olikw) und der offene Fakturawert (ofakw) für das Kreditkonto und den Kreditkontrollbereich summiert gelesen.",
+    "Aus der Tabelle BSID werden Betrag in Hauswährung (dmbtr) und Soll/Haben-Kennzeichen (shkzg) für offene Posten des Kunden in allen Buchungskreisen des Kreditkontrollbereichs gelesen."
+   ],
+   "Y": [
+    "Das Ergebnis enthält SUM( und oeikw.",
+    "Es werden Sätze aus s066 selektiert.",
+    "Das Ergebnis enthält SUM(, olikw und ofakw.",
+    "Es werden Sätze aus s067 selektiert.",
+    "Das Ergebnis enthält Betrag in Hauswährung und Soll/Haben-Kennzeichen.",
+    "Es werden offene Debitorenposten selektiert."
+   ],
+   "Z": [
+    "Es werden Sätze aus s066 selektiert.",
+    "Es werden Sätze aus s067 selektiert.",
+    "Es werden Sätze aus bsid selektiert."
+   ]
+  },
+  {
+   "id": "BM-013-B06",
+   "soll": "Habenposten mindern, Sollposten erhöhen den Saldo der offenen Posten.",
+   "zeilen": [
+    154
+   ],
+   "code": [
+    "154:       IF lv_shkzg = 'H'."
+   ],
+   "X": [
+    "Handelt es sich um eine Haben-Buchung (shkzg = H), wird der Betrag vom Saldo der offenen Posten abgezogen.",
+    "Handelt es sich nicht um eine Haben-Buchung, wird der Betrag zum Saldo der offenen Posten hinzugerechnet."
+   ],
+   "Y": [],
+   "Z": []
+  },
+  {
+   "id": "BM-013-B07",
+   "soll": "Zum Obligo wird die Differenz aus neuem und altem Nettowert des Auftrags addiert.",
+   "zeilen": [
+    107
+   ],
+   "code": [
+    "107:     rs_result-exposure = get_exposure( ) + iv_new_value - iv_old_value."
+   ],
+   "X": [
+    "Das Kreditlimit wird aus der Tabelle KNKK übernommen und das Gesamtobligo aus den offenen Werten zuzüglich der Nettowertdifferenz ermittelt."
+   ],
+   "Y": [],
+   "Z": []
+  },
+  {
+   "id": "BM-013-B08",
+   "soll": "Die Toleranz über dem Limit beträgt 10 % für Risikoklasse 001, 5 % für 002 und sonst null.",
+   "zeilen": [
+    110
+   ],
+   "code": [
+    "110:     CASE ms_knkk-ctlpc."
+   ],
+   "X": [
+    "Beträgt die Risikoklasse (ctlpc) 001, wird der Toleranzfaktor auf 1.10 gesetzt.",
+    "Beträgt die Risikoklasse (ctlpc) 002, wird der Toleranzfaktor auf 1.05 gesetzt.",
+    "Ist keine der definierten Risikoklassen hinterlegt, wird der Toleranzfaktor auf 1.00 gesetzt."
+   ],
+   "Y": [],
+   "Z": []
+  },
+  {
+   "id": "BM-013-B09",
+   "soll": "Übersteigt das Obligo das Limit samt Toleranz, lautet das Ergebnis Sperren, sonst in Ordnung.",
+   "zeilen": [
+    119,
+    120
+   ],
+   "code": [
+    "119:     IF rs_result-exposure > rs_result-limit * lv_toleranz.",
+    "120:       rs_result-decision = c_block."
+   ],
+   "X": [
+    "Ist das Gesamtobligo größer als das mit dem Toleranzfaktor multiplizierte Kreditlimit, wird die Entscheidung auf B (gesperrt) gesetzt."
+   ],
+   "Y": [],
+   "Z": []
+  },
+  {
+   "id": "BM-013-B10",
+   "soll": "Nur wenn ein Kreditstammsatz existiert und der Kunde nicht im Kreditmanagement gesperrt ist, wird das Prüfergebnis (Sperren oder in Ordnung) mit Obligo, Limit und Benutzer zur Protokollierung mit dem Auftrag verbucht; Aufträge ohne Kreditstammsatz und Ablehnungen werden nicht protokolliert.",
+   "zeilen": [
+    97,
+    103,
+    123
+   ],
+   "code": [
+    "97:       RETURN.",
+    "103:       RETURN.",
+    "123:     CALL FUNCTION 'Z_SD_CREDIT_LOG_UPD' IN UPDATE TASK"
+   ],
+   "X": [
+    "Wurde kein Kreditstammsatz gefunden, wird die Prüfung ohne weitere Aktionen beendet und das Ergebnis verbleibt auf O.",
+    "Ist die Gesamtsperre (ms_knkk-crblb) aktiv, wird die Entscheidung auf R (abgelehnt) gesetzt und die Prüfung beendet.",
+    "Der Verbuchungsbaustein Z_SD_CREDIT_LOG_UPD wird mit Kundennummer, Kreditkontrollbereich, Prüfergebnis und Benutzername im Update-Task aufgerufen."
+   ],
+   "Y": [
+    "Wenn das Feld mv_found nicht gesetzt ist, wird vor der Datenbankoperation zurückgekehrt.",
+    "Wenn das Feld ms_knkk-crblb gesetzt ist, wird vor der Datenbankoperation zurückgekehrt.",
+    "Der Baustein Z_SD_CREDIT_LOG_UPD wird zur Verbuchung registriert. An der Aufrufstelle wird nichts geändert. Ob ein COMMIT WORK ihn auf jedem Weg anstößt, ist im gelieferten Code nicht bestimmt."
+   ],
+   "Z": [
+    "Für mv_found mit dem Wert abap_false wird der Block verlassen.",
+    "Bei mv_found gleich abap_false wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "Für ms_knkk-crblb mit dem Wert abap_true wird der Block verlassen.",
+    "Bei ms_knkk-crblb gleich abap_true wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "Der Baustein Z_SD_CREDIT_LOG_UPD wird zur Verbuchung registriert. An der Aufrufstelle wird nichts geändert. Ob ein COMMIT WORK ihn auf jedem Weg anstößt, ist im gelieferten Code nicht bestimmt."
+   ]
+  },
+  {
+   "id": "BM-013-B11",
+   "soll": "Bei Ergebnis Sperren erhält der Auftrag die Liefersperre Z1, der Erfasser eine Warnung mit Obligo und Limit, und der Kreditmanager wird per Workflow-Ereignis benachrichtigt.",
+   "zeilen": [
+    24,
+    26,
+    27,
+    28,
+    169
+   ],
+   "code": [
+    "24:   CASE ls_result-decision.",
+    "26:       vbak-lifsk = 'Z1'.                            \"Kreditsperre Lieferung",
+    "27:       MESSAGE w210(zsd) WITH ls_result-exposure ls_result-limit.",
+    "28:       lo_credit->notify_credit_manager( iv_vbeln = vbak-vbeln ).",
+    "169:     CALL FUNCTION 'SWE_EVENT_CREATE'"
+   ],
+   "X": [
+    "Lautet die Entscheidung B (gesperrt), wird die Liefersperre (vbak-lifsk) auf Z1 gesetzt.",
+    "Lautet die Entscheidung B (gesperrt), wird eine Warnmeldung mit aktuellem Obligo und Kreditlimit ausgegeben.",
+    "Lautet die Entscheidung B (gesperrt), wird die Benachrichtigung des Kreditmanagers mit der Belegnummer (vbak-vbeln) aufgerufen.",
+    "Über den Funktionsbaustein SWE_EVENT_CREATE wird das Ereignis ZCREDITBLOCK für den Objekttyp BUS2032 mit der Auftragsnummer ausgelöst.",
+    "Lautet die Entscheidung R (abgelehnt), wird die Fehlermeldung e211(zsd) mit der Kundennummer (vbak-kunnr) ausgegeben.",
+    "Liegt keine Sperre oder Ablehnung vor und ist die Liefersperre (vbak-lifsk) auf Z1 gesetzt, wird diese Liefersperre gelöscht."
+   ],
+   "Y": [
+    "Es wird das Sperrkennzeichen auf Z1 gesetzt und eine Warnung ausgegeben.",
+    "Das Sperrkennzeichen wird auf Z1 gesetzt.",
+    "Die Warnung 210(ZSD) wird ausgegeben.",
+    "Die Methode notify_credit_manager von lo_credit wird aufgerufen; sie ruft SWE_EVENT_CREATE auf und gibt eine Meldung aus.",
+    "Der Funktionsbaustein SWE_EVENT_CREATE wird aufgerufen."
+   ],
+   "Z": [
+    "Es wird die Sperrkennzeichen auf Z1 gesetzt und eine Meldung ausgegeben.",
+    "Die Sperrkennzeichen wird auf Z1 gesetzt.",
+    "Eine Meldung wird ausgegeben.",
+    "Die Methode notify_credit_manager von lo_credit wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "Der Funktionsbaustein SWE_EVENT_CREATE wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-013-B12",
+   "soll": "Scheitert das Auslösen des Ereignisses, erhält der Erfasser nur einen Hinweis.",
+   "zeilen": [
+    177,
+    178
+   ],
+   "code": [
+    "177:     IF sy-subrc <> 0.",
+    "178:       MESSAGE s212(zsd) DISPLAY LIKE 'W'."
+   ],
+   "X": [],
+   "Y": [
+    "Scheitert der Aufruf von SWE_EVENT_CREATE, wird eine Statusmeldung ausgegeben.",
+    "Die Statusmeldung 212(ZSD) wird ausgegeben, angezeigt wie eine Warnung."
+   ],
+   "Z": [
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-013-B13",
+   "soll": "Bei Ergebnis Ablehnen wird das Sichern mit einer Fehlermeldung abgebrochen.",
+   "zeilen": [
+    30
+   ],
+   "code": [
+    "30:       MESSAGE e211(zsd) WITH vbak-kunnr."
+   ],
+   "X": [
+    "Lautet die Entscheidung R (abgelehnt), wird die Fehlermeldung e211(zsd) mit der Kundennummer (vbak-kunnr) ausgegeben."
+   ],
+   "Y": [
+    "Die Fehlermeldung 211(ZSD) wird ausgegeben."
+   ],
+   "Z": [
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-013-B14",
+   "soll": "Bei Ergebnis in Ordnung wird eine früher gesetzte Kreditliefersperre Z1 wieder aufgehoben.",
+   "zeilen": [
+    33,
+    34
+   ],
+   "code": [
+    "33:       IF vbak-lifsk = 'Z1'.",
+    "34:         CLEAR vbak-lifsk."
+   ],
+   "X": [
+    "Liegt keine Sperre oder Ablehnung vor und ist die Liefersperre (vbak-lifsk) auf Z1 gesetzt, wird diese Liefersperre gelöscht."
+   ],
+   "Y": [],
+   "Z": []
+  }
+ ]
+}

@@ -1,0 +1,541 @@
+{
+ "id": "BM-080",
+ "titel": "Automatische Chargenfreigabe: Ergebnisbewertung, Verwendungsentscheid, Chargenklassifizierung und QS-Mail",
+ "prozess": "Der Report läuft stündlich als Job oder im Dialog bei der QS-Leitung. Er liest die Prüflose mit Charge, für die noch kein Verwendungsentscheid vorliegt; gibt es keine, meldet er das und zeigt am Ende ein leeres Protokoll. Jedes Los wird gesperrt und bewertet: fehlen Ergebnisse zu Pflichtmerkmalen, bleibt es offen; ein zurückgewiesenes Merkmal oder ein Mittelwert außerhalb einer gesetzten Toleranz führt zur Rückweisung; sonst wird angenommen. Offene Lose werden nur protokolliert, im Testlauf nur der geplante Entscheid. Sonst setzt der Report den Verwendungsentscheid A1 oder R1 mit Bestandsbuchung; scheitert das, rollt er zurück und bricht für dieses Los ab. Danach schreibt er das Freigabemerkmal der Charge auf FREI oder GESPERRT samt Datum fort. Bei Rückweisung setzt er die Charge zusätzlich auf nicht frei und informiert auf Wunsch die QS per Mail. Jedes entschiedene Los wird ins GMP-Protokoll geschrieben und entsperrt; zum Schluss zeigt der Report alle Ergebnisse als ALV-Liste mit Ampeln.",
+ "verboten": [
+  "zqm_charge_freigabe_f01.abap:98 — kein Fachsatz „Jedes Prüflos wird im GMP-Protokoll festgehalten“ (gesperrte, offene, Testlauf- und VE-Fehler-Lose landen nur in der ALV-Liste, nicht in ZQM_FREIGABE_LOG)",
+  "zqm_charge_freigabe_f02.abap:119 — kein Fachsatz „Ein Fehler beim Sperren der Charge wird protokolliert“ (er wird nur zurückgerollt; der Protokolltext bleibt unverändert)",
+  "zqm_charge_freigabe_cl.abap:98 — kein Fachsatz „Toleranzgrenze 0 wird geprüft“ (eine Grenze mit Wert 0 gilt wegen IS NOT INITIAL als nicht gesetzt)",
+  "gesamte Scheibe — kein Fachsatz „Entscheid, Klassifizierung und Chargensperre werden gemeinsam gebucht oder gemeinsam verworfen“ (jeder Schritt hat eigenes Commit/Rollback)"
+ ],
+ "saetze": [
+  {
+   "id": "BM-080-B01",
+   "soll": "Es werden Prüflose des Werks mit Charge und ohne Verwendungsentscheid zu den gewählten Herkünften (Vorschlag 04), Materialien und Entstehungsdaten gelesen.",
+   "zeilen": [
+    152
+   ],
+   "code": [
+    "152:   SELECT prueflos werk matnr charg ktextmat losmenge"
+   ],
+   "X": [
+    "Es werden Sätze aus qals mit dem eingegebenen werk selektiert."
+   ],
+   "Y": [
+    "Aus der Tabelle QALS werden Prueflosnummer, Werk, Materialnummer, Chargennummer, Materialkurztext und Losmenge fuer das selektierte Werk, die Prueflosarten, die Materialnummern und das Entstehungsdatum gelesen, sofern eine Charge vorhanden und das Verwendungsentscheid-Kennzeichen stat35 noch leer ist."
+   ],
+   "Z": [
+    "Das Ergebnis enthält prueflos, werk, Materialnummer, Charge, ktextmat und losmenge.",
+    "Es werden Prüflose mit dem eingegebenen werk selektiert."
+   ]
+  },
+  {
+   "id": "BM-080-B02",
+   "soll": "Gibt es keine, wird ein Hinweis ausgegeben; die Ausgabe am Ende läuft trotzdem mit leerem Protokoll.",
+   "zeilen": [
+    24,
+    25,
+    26,
+    35
+   ],
+   "code": [
+    "24:   IF gt_lose IS INITIAL.",
+    "25:     MESSAGE s100.",
+    "26:     RETURN.",
+    "35: END-OF-SELECTION."
+   ],
+   "X": [
+    "Ohne Treffer wird eine Meldung ausgegeben und der Block verlassen.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "Eine Meldung wird ausgegeben.",
+    "Es wird eine Meldung ausgegeben und der Block verlassen."
+   ],
+   "Y": [
+    "Wurden keine Prueflose gefunden, wird die Erfolgsmeldung s100 ausgegeben und die Programmausfuehrung beendet.",
+    "Der Verarbeitungsblock END-OF-SELECTION wird gestartet."
+   ],
+   "Z": [
+    "Ist die Tabelle gt_lose leer, wird eine Statusmeldung ausgegeben und der Block verlassen.",
+    "Die Statusmeldung 100 wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-080-B03",
+   "soll": "Jedes Prüflos wird gesperrt; ist es gesperrt, wird es gelb mit dem sperrenden Benutzer protokolliert und übersprungen.",
+   "zeilen": [
+    177,
+    184,
+    188
+   ],
+   "code": [
+    "177:   CALL FUNCTION 'ENQUEUE_EQQALS1'",
+    "184:   IF sy-subrc <> 0.",
+    "188:     RETURN."
+   ],
+   "X": [
+    "Der Funktionsbaustein ENQUEUE_EQQALS1 wird aufgerufen.",
+    "Ohne Treffer wird die ls_prot-ampel auf 2 gesetzt, eine Zeile aufgenommen und der Block verlassen.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "sy-subrc ungleich 0 setzen die ls_prot-ampel auf 2.",
+    "Es wird eine Zeile aufgenommen und der Block verlassen."
+   ],
+   "Y": [
+    "Fuer das Prueflos wird ueber den Funktionsbaustein ENQUEUE_EQQALS1 eine Sperre gesetzt."
+   ],
+   "Z": [
+    "Der Funktionsbaustein ENQUEUE_EQQALS1 wird aufgerufen.",
+    "Ist die Sperre über ENQUEUE_EQQALS1 nicht zu erhalten, wird das Feld ls_prot-ampel auf 2 gesetzt, eine Zeile aufgenommen und der Block verlassen.",
+    "Wenn die Sperre über ENQUEUE_EQQALS1 nicht zu erhalten ist, wird das Feld ls_prot-ampel auf 2 gesetzt."
+   ]
+  },
+  {
+   "id": "BM-080-B04",
+   "soll": "Zur Bewertung werden die Merkmalsvorgaben mit Toleranzen und die Merkmalsergebnisse des Prüfloses gelesen; ohne Merkmale bleibt das Los offen.",
+   "zeilen": [
+    83,
+    87,
+    93,
+    191
+   ],
+   "code": [
+    "83:     SELECT vorglfnr merknr kurztext toleranzob toleranzun steuerkz",
+    "87:     IF sy-subrc <> 0.",
+    "93:     SELECT vorglfnr merknr mittelwert mbewertg",
+    "191:   lv_entsch = go_bew->bewerten( EXPORTING iv_prueflos = is_los-prueflos"
+   ],
+   "X": [
+    "Es werden Sätze aus qamv selektiert.",
+    "Ohne Treffer wird die Text auf Keine Pruefmerkmale gesetzt und der Block verlassen.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "sy-subrc ungleich 0 erhalten Keine Pruefmerkmale.",
+    "Es werden Sätze aus qamr selektiert.",
+    "Der Rückgabewert der Methode bewerten von go_bew wird nach lv_entsch übernommen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ],
+   "Y": [
+    "Fuer das Prueflos wird die Bewertungsmethode aufgerufen.",
+    "Aus der Tabelle QAMV werden Vorgangsleitzahl, Merkmalsnummer, Kurztext, obere Toleranzgrenze, untere Toleranzgrenze und das Steuerkennzeichen zu dem Prueflos gelesen.",
+    "Werden keine Pruefmerkmale in der Tabelle QAMV gefunden, wird die Entscheidung auf O (offen) gesetzt, der Text Keine Pruefmerkmale uebergeben und die Bewertung verlassen.",
+    "Aus der Tabelle QAMR werden Vorgangsleitzahl, Merkmalsnummer, Mittelwert und Merkmalsbewertung zu dem Prueflos selektiert."
+   ],
+   "Z": [
+    "Das Ergebnis enthält vorglfnr, merknr, kurztext, toleranzob, toleranzun und steuerkz.",
+    "Es werden Sätze aus qamv selektiert.",
+    "Ohne Treffer wird der Text auf Keine Pruefmerkmale gesetzt und der Block verlassen.",
+    "Wenn kein Treffer vorliegt, wird der Text auf Keine Pruefmerkmale gesetzt.",
+    "Das Ergebnis enthält vorglfnr, merknr, mittelwert und mbewertg.",
+    "Es werden Sätze aus qamr selektiert.",
+    "Der Rückgabewert der Methode bewerten von go_bew wird nach lv_entsch übernommen."
+   ]
+  },
+  {
+   "id": "BM-080-B05",
+   "soll": "Fehlt zu einem Pflichtmerkmal das bewertete Ergebnis, bleibt das Los offen; fehlende Kannmerkmale werden übergangen.",
+   "zeilen": [
+    102,
+    104,
+    109
+   ],
+   "code": [
+    "102:       IF sy-subrc <> 0 OR ls_ergebnis-mbewertg IS INITIAL.",
+    "104:         IF ls_vorgabe-steuerkz+3(1) = space.",
+    "109:         RETURN."
+   ],
+   "X": [
+    "Für sy-subrc <> 0 OR ls_ergebnis-mbewertg IS INITIAL wird der Block verlassen."
+   ],
+   "Y": [
+    "Liegt zu einem Pruefmerkmal kein Ergebnis vor oder ist die Merkmalsbewertung initial und ist das Merkmal laut vierter Stelle des Steuerkennzeichens ein Kannmerkmal, wird dieses Merkmal uebersprungen.",
+    "Liegt zu einem Pflichtmerkmal kein Pruefergebnis vor oder ist die Merkmalsbewertung initial, wird die Entscheidung auf O (offen) gesetzt und die Bewertung mit einem Fehlerhinweis abgebrochen."
+   ],
+   "Z": [
+    "Wenn kein Treffer vorliegt oder das Feld ls_ergebnis-mbewertg leer ist, wird der Block verlassen.",
+    "Wenn das Feld ls_vorgabe-steuerkz+3(1) nicht gesetzt ist, wird der Schleifendurchlauf übersprungen."
+   ]
+  },
+  {
+   "id": "BM-080-B06",
+   "soll": "Ist ein Merkmal zurückgewiesen, wird das Los zurückgewiesen.",
+   "zeilen": [
+    112,
+    115
+   ],
+   "code": [
+    "112:       IF ls_ergebnis-mbewertg = 'R'.",
+    "115:         RETURN."
+   ],
+   "X": [
+    "Für ls_ergebnis-mbewertg mit dem Wert R wird der Block verlassen.",
+    "Bei ls_ergebnis-mbewertg gleich R wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben."
+   ],
+   "Y": [
+    "Ist die Bewertung eines Merkmals R (rueckgewiesen), wird die Entscheidung auf R gesetzt, ein Rueckweisungstext gesetzt und die Bewertung beendet."
+   ],
+   "Z": [
+    "Wenn das Feld ls_ergebnis-mbewertg gleich R ist, wird der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-080-B07",
+   "soll": "Auch ein angenommenes Merkmal führt zur Rückweisung, wenn sein Mittelwert eine gesetzte obere Toleranz überschreitet oder eine gesetzte untere Toleranz unterschreitet.",
+   "zeilen": [
+    119,
+    121,
+    134,
+    137
+   ],
+   "code": [
+    "119:       DATA(lv_verletzt) = toleranz_verletzt( is_vorgabe  = ls_vorgabe",
+    "121:       IF lv_verletzt = abap_true.",
+    "134:     IF is_vorgabe-toleranzob IS NOT INITIAL",
+    "137:     ELSEIF is_vorgabe-toleranzun IS NOT INITIAL"
+   ],
+   "X": [
+    "Für lv_verletzt mit dem Wert abap_true wird der Block verlassen.",
+    "Bei lv_verletzt gleich abap_true wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben."
+   ],
+   "Y": [
+    "Liegt der gemessene Mittelwert eines Pruefmerkmals ausserhalb der vorgegebenen oberen oder unteren Toleranzgrenze, wird die Entscheidung auf R (rueckgewiesen) gesetzt und die Bewertung verlassen."
+   ],
+   "Z": [
+    "Wenn das Feld lv_verletzt gesetzt ist, wird der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-080-B08",
+   "soll": "Sind alle Merkmale in Ordnung, wird das Los angenommen.",
+   "zeilen": [
+    81,
+    128
+   ],
+   "code": [
+    "81:     rv_entsch = gc_annahme.",
+    "128:     ev_text = 'Alle Merkmale in Ordnung'."
+   ],
+   "X": [
+    "Die Text wird auf Alle Merkmale in Ordnung gesetzt."
+   ],
+   "Y": [
+    "Sind alle Pruefmerkmale erfuellt und innerhalb der Toleranzen, wird der Text Alle Merkmale in Ordnung gesetzt und die Bewertung mit dem Ergebnis A (Annahme) abgeschlossen."
+   ],
+   "Z": [
+    "Der Text wird auf Alle Merkmale in Ordnung gesetzt."
+   ]
+  },
+  {
+   "id": "BM-080-B09",
+   "soll": "Ein offenes Los wird gelb protokolliert, entsperrt und nicht entschieden.",
+   "zeilen": [
+    196,
+    200,
+    201
+   ],
+   "code": [
+    "196:   CASE lv_entsch.",
+    "200:       PERFORM entsperren USING is_los-prueflos.",
+    "201:       RETURN."
+   ],
+   "X": [
+    "Es wird die ls_prot-ampel auf 2 gesetzt, eine Zeile aufgenommen, entsperren aufgerufen und der Block verlassen.",
+    "Das Unterprogramm entsperren wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt."
+   ],
+   "Y": [
+    "Ist das Pruefergebnis offen (O), wird das Los im Protokoll mit gelber Ampel (2) erfasst und nach dem Entsperren die Losverarbeitung abgebrochen.",
+    "Bei offener Pruefentscheidung wird die Unterroutine zum Entsperren des Pruefloses aufgerufen.",
+    "Lautet die Entscheidung Annahme (A), wird der Verwendungsentscheid-Code auf A1 gesetzt.",
+    "Lautet die Entscheidung Rueckweisung (R), wird der Verwendungsentscheid-Code auf R1 gesetzt."
+   ],
+   "Z": [
+    "Es wird das Feld ls_prot-ampel auf 2 gesetzt, eine Zeile aufgenommen, entsperren aufgerufen und der Block verlassen.",
+    "Das Unterprogramm entsperren wird aufgerufen; es ruft DEQUEUE_EQQALS1 auf."
+   ]
+  },
+  {
+   "id": "BM-080-B10",
+   "soll": "Annahme führt zum Entscheidungscode A1, Rückweisung zu R1.",
+   "zeilen": [
+    203,
+    205
+   ],
+   "code": [
+    "203:       ls_prot-vcode = gc_code_ok.",
+    "205:       ls_prot-vcode = gc_code_nok."
+   ],
+   "X": [],
+   "Y": [
+    "Lautet die Entscheidung Annahme (A), wird der Verwendungsentscheid-Code auf A1 gesetzt.",
+    "Lautet die Entscheidung Rueckweisung (R), wird der Verwendungsentscheid-Code auf R1 gesetzt."
+   ],
+   "Z": []
+  },
+  {
+   "id": "BM-080-B11",
+   "soll": "Im Testlauf (Vorschlag) wird nur der geplante Entscheid grün protokolliert und das Los entsperrt.",
+   "zeilen": [
+    208,
+    212,
+    213
+   ],
+   "code": [
+    "208:   IF p_test = abap_true.",
+    "212:     PERFORM entsperren USING is_los-prueflos.",
+    "213:     RETURN."
+   ],
+   "X": [
+    "Für p_test mit dem Wert abap_true wird die ls_prot-ampel auf 3 gesetzt, eine Zeile aufgenommen, entsperren aufgerufen und der Block verlassen.",
+    "Bei p_test gleich abap_true wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "p_test mit dem Wert abap_true setzen die ls_prot-ampel auf 3.",
+    "Es wird eine Zeile aufgenommen, entsperren aufgerufen und der Block verlassen.",
+    "Das Unterprogramm entsperren wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt."
+   ],
+   "Y": [
+    "Ist der Testlauf-Modus aktiv, wird ein Protokolleintrag mit gruener Ampel (3) und Testlauftext vermerkt und die Verarbeitung dieses Loses nach dem Entsperren beendet.",
+    "Im Testlauf wird die Unterroutine zum Entsperren des Pruefloses aufgerufen."
+   ],
+   "Z": [
+    "Wenn das Feld p_test gesetzt ist, wird das Feld ls_prot-ampel auf 3 gesetzt, eine Zeile aufgenommen, entsperren aufgerufen und der Block verlassen.",
+    "Wenn das Feld p_test gesetzt ist, wird das Feld ls_prot-ampel auf 3 gesetzt.",
+    "Das Unterprogramm entsperren wird aufgerufen; es ruft DEQUEUE_EQQALS1 auf."
+   ]
+  },
+  {
+   "id": "BM-080-B12",
+   "soll": "Sonst wird der Verwendungsentscheid mit dem Code aus der Auswahlmenge ZCHARGE und Bestandsbuchung gesetzt; bei Fehler wird zurückgerollt, das Los rot mit Fehlertext protokolliert, entsperrt und nicht weiter bearbeitet.",
+   "zeilen": [
+    216,
+    217,
+    301,
+    310,
+    311
+   ],
+   "code": [
+    "216:   PERFORM ve_setzen USING is_los ls_prot-vcode CHANGING lv_ok lv_text.",
+    "217:   IF lv_ok = abap_false.",
+    "301:   CALL FUNCTION 'BAPI_INSPLOT_SETUSAGEDECISION'",
+    "310:   IF ls_ret-type CA 'EA'.",
+    "311:     CALL FUNCTION 'BAPI_TRANSACTION_ROLLBACK'."
+   ],
+   "X": [
+    "Das Unterprogramm ve_setzen wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Für lv_ok mit dem Wert abap_false wird die ls_prot-ampel auf 1 gesetzt, eine Zeile aufgenommen, entsperren aufgerufen und der Block verlassen.",
+    "Bei lv_ok gleich abap_false wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "lv_ok mit dem Wert abap_false setzen die ls_prot-ampel auf 1.",
+    "Der Code übergibt is_los-prueflos an BAPI_INSPLOT_SETUSAGEDECISION und übernimmt dessen Ausgabe nach ls_ret.",
+    "Das konvertierte Ergebnis wird in ls_ret übernommen.",
+    "Für ls_ret-type CA 'EA' wird BAPI_TRANSACTION_ROLLBACK aufgerufen und der Block verlassen.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_ROLLBACK wird aufgerufen."
+   ],
+   "Y": [
+    "Die Unterroutine zum Setzen des Verwendungsentscheids wird aufgerufen.",
+    "Fuer das Prueflos wird ueber den Funktionsbaustein BAPI_INSPLOT_SETUSAGEDECISION die Verwendungsentscheidung mit Bestandsbuchung unter Auswahlmenge ZCHARGE und dem ermittelten Code durchgefuehrt.",
+    "Treten beim Setzen des Verwendungsentscheids Fehler oder Abbrueche (Meldungstyp E oder A) auf, wird der Fehlertext uebernommen und das Unterprogramm beendet.",
+    "Bei fehlerhafter Verwendungsentscheidung wird ueber BAPI_TRANSACTION_ROLLBACK ein Rollback durchgefuehrt.",
+    "Konnte der Verwendungsentscheid nicht erfolgreich gesetzt werden, wird das Los mit roter Ampel (1) und Fehlertext ins Protokoll aufgenommen, entsperrt und die Verarbeitung beendet."
+   ],
+   "Z": [
+    "Das Unterprogramm ve_setzen wird aufgerufen; es ruft BAPI_INSPLOT_SETUSAGEDECISION und BAPI_TRANSACTION_ROLLBACK auf und schreibt mit BAPI_TRANSACTION_COMMIT fest.",
+    "Wenn das Feld lv_ok nicht gesetzt ist, wird das Feld ls_prot-ampel auf 1 gesetzt, eine Zeile aufgenommen, entsperren aufgerufen und der Block verlassen.",
+    "Wenn das Feld lv_ok nicht gesetzt ist, wird das Feld ls_prot-ampel auf 1 gesetzt.",
+    "Der Code übergibt is_los-prueflos an BAPI_INSPLOT_SETUSAGEDECISION und übernimmt dessen Ausgabe nach ls_ret.",
+    "Wenn die Bedingung „ls_ret-type CA 'EA'“ erfüllt ist, wird BAPI_TRANSACTION_ROLLBACK aufgerufen und der Block verlassen.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_ROLLBACK wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-080-B13",
+   "soll": "Nach erfolgreichem Entscheid wird festgeschrieben.",
+   "zeilen": [
+    316
+   ],
+   "code": [
+    "316:   CALL FUNCTION 'BAPI_TRANSACTION_COMMIT'"
+   ],
+   "X": [
+    "Der Funktionsbaustein BAPI_TRANSACTION_COMMIT wird aufgerufen."
+   ],
+   "Y": [
+    "Verlaeuft das Setzen des Verwendungsentscheids ohne Fehler, werden die Aenderungen mit BAPI_TRANSACTION_COMMIT und Warteparameter bestaetigt."
+   ],
+   "Z": [
+    "Der Funktionsbaustein BAPI_TRANSACTION_COMMIT wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-080-B14",
+   "soll": "In der Chargenklassifizierung (Klasse Z_CHARGE, Klassenart 023) wird das Merkmal Z_FREIGABE bei Annahme auf FREI, sonst auf GESPERRT gesetzt und das Freigabedatum auf heute; die übrigen Merkmalwerte bleiben erhalten.",
+   "zeilen": [
+    225,
+    340,
+    353,
+    361
+   ],
+   "code": [
+    "225:   PERFORM klassifizierung USING is_los lv_entsch CHANGING lv_ok.",
+    "340:   CALL FUNCTION 'BAPI_OBJCL_GETDETAIL'",
+    "353:   APPEND VALUE #( charact    = gc_merkmal",
+    "361:   CALL FUNCTION 'BAPI_OBJCL_CHANGE'"
+   ],
+   "X": [
+    "Das Unterprogramm klassifizierung wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Der Funktionsbaustein BAPI_OBJCL_GETDETAIL wird aufgerufen.",
+    "Eine Zeile wird in lt_char aufgenommen.",
+    "Der Funktionsbaustein BAPI_OBJCL_CHANGE wird aufgerufen."
+   ],
+   "Y": [
+    "Die Unterroutine zur Chargenklassifizierung wird aufgerufen.",
+    "Fuer das Material und die Charge werden ueber den Funktionsbaustein BAPI_OBJCL_GETDETAIL die Merkmale der Klasse Z_CHARGE mit Klassenart 023 gelesen.",
+    "Ueber BAPI_OBJCL_CHANGE werden das Chargenmerkmal Z_FREIGABE (auf FREI bzw. GESPERRT) sowie das Freigabedatum Z_FREIGABEDATUM mit dem Tagesdatum aktualisiert."
+   ],
+   "Z": [
+    "Das Unterprogramm klassifizierung wird aufgerufen; es ruft BAPI_OBJCL_GETDETAIL, BAPI_OBJCL_CHANGE und BAPI_TRANSACTION_ROLLBACK auf und schreibt mit BAPI_TRANSACTION_COMMIT fest.",
+    "Der Funktionsbaustein BAPI_OBJCL_GETDETAIL wird aufgerufen.",
+    "Eine Zeile wird in lt_char aufgenommen.",
+    "Der Funktionsbaustein BAPI_OBJCL_CHANGE wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-080-B15",
+   "soll": "Scheitert die Klassifizierung, wird sie zurückgerollt und im Protokolltext vermerkt; der Verwendungsentscheid bleibt bestehen.",
+   "zeilen": [
+    226,
+    373,
+    374
+   ],
+   "code": [
+    "226:   IF lv_ok = abap_false.",
+    "373:   IF line_exists( lt_return[ type = 'E' ] ).",
+    "374:     CALL FUNCTION 'BAPI_TRANSACTION_ROLLBACK'."
+   ],
+   "X": [
+    "Für line_exists( lt_return[ type = 'E' ] ) wird BAPI_TRANSACTION_ROLLBACK aufgerufen und der Block verlassen.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_ROLLBACK wird aufgerufen.",
+    "Es wird BAPI_TRANSACTION_ROLLBACK aufgerufen und der Block verlassen."
+   ],
+   "Y": [
+    "Tritt bei der Klassifizierungsaenderung ein Fehler auf, wird das Unterprogramm ohne Erfolgsstatus beendet.",
+    "Bei einem Klassifizierungsfehler wird ueber BAPI_TRANSACTION_ROLLBACK ein Datenbank-Rollback ausgeloest.",
+    "Konnte die Klassifizierung nicht fortgeschrieben werden, wird der Protokolltext um einen entsprechenden Hinweis ergaenzt."
+   ],
+   "Z": [
+    "Wenn in lt_return eine passende Zeile existiert, wird BAPI_TRANSACTION_ROLLBACK aufgerufen und der Block verlassen.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_ROLLBACK wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-080-B16",
+   "soll": "Bei Rückweisung wird die Charge im Werk auf „nicht frei“ gesetzt.",
+   "zeilen": [
+    230,
+    231,
+    395
+   ],
+   "code": [
+    "230:   IF lv_entsch = gc_rueckw.",
+    "231:     PERFORM charge_sperren USING is_los.",
+    "395:   CALL FUNCTION 'BAPI_BATCH_CHANGE'"
+   ],
+   "X": [
+    "Für lv_entsch mit dem Wert gc_rueckw wird charge_sperren aufgerufen und die ls_prot-ampel auf 1 gesetzt.",
+    "Für lv_entsch mit dem Wert gc_rueckw wird charge_sperren aufgerufen und die ls_prot-ampel auf 1 gesetzt, sonst die ls_prot-ampel auf 3 gesetzt.",
+    "Das Unterprogramm charge_sperren wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "lv_entsch mit dem Wert gc_rueckw setzen die ls_prot-ampel auf 1.",
+    "Der Funktionsbaustein BAPI_BATCH_CHANGE wird aufgerufen."
+   ],
+   "Y": [
+    "Es wird geprueft, ob die Entscheidung Rueckweisung (R) lautet.",
+    "Im Falle einer Rueckweisung wird die Unterroutine zum Sperren der Charge aufgerufen.",
+    "Ueber den Funktionsbaustein BAPI_BATCH_CHANGE wird das Kennzeichen fuer die Chargensperre restricted fuer Material, Charge und Werk auf wahr gesetzt."
+   ],
+   "Z": [
+    "Wenn das Feld lv_entsch gleich gc_rueckw ist, wird charge_sperren aufgerufen und das Feld ls_prot-ampel auf 1 gesetzt, sonst das Feld ls_prot-ampel auf 3 gesetzt.",
+    "Das Unterprogramm charge_sperren wird aufgerufen; es ruft BAPI_BATCH_CHANGE und BAPI_TRANSACTION_ROLLBACK auf und schreibt mit BAPI_TRANSACTION_COMMIT fest.",
+    "Wenn das Feld lv_entsch gleich gc_rueckw ist, wird das Feld ls_prot-ampel auf 1 gesetzt.",
+    "Der Funktionsbaustein BAPI_BATCH_CHANGE wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-080-B17",
+   "soll": "Bei Rückweisung und gesetztem Mailschalter erhält der QS-Verteiler eine Mail mit Charge, Prüflos, Material, Grund und Losmenge; ein Mailfehler bricht den Ablauf nicht ab.",
+   "zeilen": [
+    232,
+    432,
+    436,
+    439
+   ],
+   "code": [
+    "232:     IF p_mail = abap_true.",
+    "432:       lo_doc  = cl_document_bcs=>create_document( i_type    = 'RAW'",
+    "436:       lo_dli = cl_distributionlist_bcs=>getu_persistent( i_dliname = p_dli",
+    "439:       lo_send->send( )."
+   ],
+   "X": [
+    "Für p_mail mit dem Wert abap_true wird mail_senden aufgerufen.",
+    "Der Rückgabewert der Methode create_document von cl_document_bcs wird nach lo_doc übernommen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "Der Rückgabewert der Methode getu_persistent von cl_distributionlist_bcs wird nach lo_dli übernommen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "Die Methode send von lo_send wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ],
+   "Y": [
+    "Ist der E-Mail-Versand aktiviert, wird bei Rueckweisung eine Benachrichtigung an die Verteilerliste versendet."
+   ],
+   "Z": [
+    "Wenn das Feld p_mail gesetzt ist, wird mail_senden aufgerufen.",
+    "Der Rückgabewert der Methode create_document von cl_document_bcs wird nach lo_doc übernommen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "Der Rückgabewert der Methode getu_persistent von cl_distributionlist_bcs wird nach lo_dli übernommen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "Die Methode send von lo_send wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-080-B18",
+   "soll": "Entschiedene Lose werden rot (Rückweisung) oder grün (Annahme) protokolliert und in das GMP-Protokoll mit Benutzer und Zeitpunkt geschrieben; danach wird das Los entsperrt.",
+   "zeilen": [
+    241,
+    242,
+    461
+   ],
+   "code": [
+    "241:   PERFORM protokoll_schreiben USING ls_prot.",
+    "242:   PERFORM entsperren USING is_los-prueflos.",
+    "461:   INSERT zqm_freigabe_log FROM ls_log."
+   ],
+   "X": [
+    "Es wird eine Zeile aufgenommen, protokoll_schreiben aufgerufen und entsperren aufgerufen.",
+    "Das Unterprogramm protokoll_schreiben wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Das Unterprogramm entsperren wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt."
+   ],
+   "Y": [
+    "Die Unterroutine zum Schreiben des Freigabeprotokolls wird aufgerufen.",
+    "Ein Protokollsatz mit Prueflos, Materialnummer, Charge, Entscheidung, Verwendungsentscheid-Code, Text, Benutzername sowie aktuellem Datum und Uhrzeit wird in die Datenbanktabelle ZQM_FREIGABE_LOG eingefuegt und mit COMMIT WORK festgeschrieben.",
+    "Nach der Verarbeitung wird die Unterroutine zum Entsperren des Pruefloses aufgerufen."
+   ],
+   "Z": [
+    "Es wird eine Zeile aufgenommen, protokoll_schreiben aufgerufen und entsperren aufgerufen.",
+    "Das Unterprogramm protokoll_schreiben wird aufgerufen; es legt Sätze an in ZQM_FREIGABE_LOG und schreibt mit COMMIT WORK fest.",
+    "Das Unterprogramm entsperren wird aufgerufen; es ruft DEQUEUE_EQQALS1 auf."
+   ]
+  },
+  {
+   "id": "BM-080-B19",
+   "soll": "Am Ende wird das Protokoll mit Ampel, Prüflos, Material, Charge, Bewertung, VE-Code und Ergebnis als ALV-Liste ausgegeben.",
+   "zeilen": [
+    36,
+    268
+   ],
+   "code": [
+    "36:   PERFORM ausgabe.",
+    "268:   CALL FUNCTION 'REUSE_ALV_GRID_DISPLAY'"
+   ],
+   "X": [
+    "Das Unterprogramm ausgabe wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Der Funktionsbaustein REUSE_ALV_GRID_DISPLAY wird aufgerufen."
+   ],
+   "Y": [
+    "Die Unterroutine zur Ausgabe des Verarbeitungsprotokolls wird aufgerufen.",
+    "Das Verarbeitungsprotokoll wird ueber den Baustein REUSE_ALV_GRID_DISPLAY als tabellarische ALV-Liste mit Ampelstatus ausgegeben.",
+    "Der Verarbeitungsblock END-OF-SELECTION wird abgeschlossen."
+   ],
+   "Z": [
+    "Das Unterprogramm ausgabe wird aufgerufen; es ruft REUSE_ALV_GRID_DISPLAY auf.",
+    "Der Funktionsbaustein REUSE_ALV_GRID_DISPLAY wird aufgerufen."
+   ]
+  }
+ ]
+}

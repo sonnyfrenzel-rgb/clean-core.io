@@ -1,0 +1,370 @@
+{
+ "id": "BM-191",
+ "titel": "Massendruck Teilnahmebestätigungen im Veranstaltungsmanagement als Adobe Form mit Druckprotokoll",
+ "prozess": "Der Report läuft als täglicher Job und druckt Teilnahmebestätigungen für Veranstaltungen des Veranstaltungsmanagements. Er liest die aktiven Veranstaltungen der Planvariante, deren Ende im Selektionszeitraum liegt; gibt es keine, meldet er das und beendet die Selektion ohne Druck. Abgesagte Veranstaltungen werden entfernt, danach werden zu den übrigen die aktiven Teilnahmebeziehungen gelesen; sind alle abgesagt, liest dieser Zugriff wegen der leeren Treibertabelle alle Beziehungssätze, die Schleife verwirft sie aber. Dann öffnet er einen gemeinsamen Druckauftrag ohne Dialog und ermittelt den Formularbaustein zum Adobe-Formular ZPE_TEILNAHMEBEST; scheitert eines davon, bricht der Lauf mit Fehlermeldung ab. Je Teilnahmebeziehung wird die Veranstaltung nachgeschlagen und der Teilnehmername bestimmt: für Mitarbeiter aus den Personaldaten (ersatzweise die Personalnummer), für externe Personen aus dem Personenobjekt; andere Teilnehmerarten werden übersprungen. Bereits im Druckprotokoll stehende Bestätigungen werden nur mit Wiederholungskennzeichen erneut gedruckt. Die Bestätigung wird über den dynamisch ermittelten Formularbaustein ausgegeben; scheitert das, wird eine Fehlerzeile geschrieben, sonst außerhalb der Vorschau ein Protokollsatz mit Datum und Benutzer geschrieben und gezählt. Am Gruppenende einer Veranstaltung wird eine Summenzeile ausgegeben, die bei übersprungenem letztem Teilnehmer entfällt. Zum Schluss wird der Druckauftrag geschlossen, bei Fehlern mit Warnung, und die Zahl gedruckter und fehlerhafter Bestätigungen ausgegeben.",
+ "verboten": [
+  "zpe_teilnbest_f01.abap:40 — kein Fachsatz „sind alle Veranstaltungen abgesagt, werden keine Teilnehmer gelesen“: FOR ALL ENTRIES mit leerer Treibertabelle ignoriert die gesamte WHERE-Bedingung und liest alle Beziehungssätze; gedruckt wird trotzdem nichts, weil die Veranstaltungsprüfung in der Schleife jeden Satz verwirft",
+  "zpe_teilnbest.abap:99 — kein Fachsatz „für jede Veranstaltung wird eine Summenzeile ausgegeben“: CONTINUE und die beiden CHECKs überspringen die Gruppenstufe; ist der letzte Teilnehmer einer Veranstaltung übersprungen (Firma, bereits gedruckt), fehlt deren Summenzeile und ihr Zähler läuft in die nächste Veranstaltung weiter",
+  "zpe_teilnbest_f01.abap:114 — kein Fachsatz „die Teilnahmebestätigung wird per E-Mail versendet“: das FORM wird nirgends aufgerufen, der Druck geht nur in den Spool bzw. die Vorschau",
+  "zpe_teilnbest.abap:84 — kein Fachsatz „Firmen erhalten eine Sammelbestätigung“: das steht nur im Kommentar; dieses Programm überspringt andere Teilnehmerarten lediglich"
+ ],
+ "saetze": [
+  {
+   "id": "BM-191-B01",
+   "soll": "Es werden die aktiven Veranstaltungen der Planvariante gelesen, deren Ende im gewählten Zeitraum liegt.",
+   "zeilen": [
+    132
+   ],
+   "code": [
+    "132:   SELECT objid begda endda stext FROM hrp1000"
+   ],
+   "X": [
+    "Es werden Sätze aus hrp1000 mit dem eingegebenen plvar selektiert."
+   ],
+   "Y": [
+    "Das Ergebnis enthält objid, begda, endda und stext.",
+    "Es werden Sätze aus hrp1000 mit dem eingegebenen plvar selektiert."
+   ],
+   "Z": [
+    "Aus der Tabelle HRP1000 werden Objekt-ID, Beginn- und Endedatum sowie der Langtext für aktive Veranstaltungen des Objekttyps 'E' mit Planungsstatus '1' in der Anmeldesprache gelesen."
+   ]
+  },
+  {
+   "id": "BM-191-B02",
+   "soll": "Gibt es keine solche Veranstaltung, wird ein Hinweis ausgegeben und die Verarbeitung ohne Druck beendet.",
+   "zeilen": [
+    140,
+    141,
+    142
+   ],
+   "code": [
+    "140:   IF sy-subrc <> 0.",
+    "141:     MESSAGE s011 DISPLAY LIKE 'E'.",
+    "142:     STOP."
+   ],
+   "X": [
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ],
+   "Y": [
+    "Ohne Treffer wird eine Statusmeldung ausgegeben.",
+    "Die Statusmeldung 011 wird ausgegeben, angezeigt wie eine Fehlermeldung."
+   ],
+   "Z": [
+    "Werden keine passenden Veranstaltungen in der Tabelle HRP1000 gefunden, wird die Meldung s011 als Fehler angezeigt und die Verarbeitung abgebrochen."
+   ]
+  },
+  {
+   "id": "BM-191-B03",
+   "soll": "Abgesagte Veranstaltungen werden aus der Druckmenge entfernt.",
+   "zeilen": [
+    147,
+    154
+   ],
+   "code": [
+    "147:   SELECT * FROM hrp1026 INTO TABLE lt_1026",
+    "154:     DELETE gt_events WHERE objid = ls_1026-objid."
+   ],
+   "X": [
+    "Es werden Sätze aus hrp1026 mit dem eingegebenen plvar selektiert."
+   ],
+   "Y": [
+    "Es werden Sätze aus hrp1026 mit dem eingegebenen plvar zu den Einträgen aus gt_events selektiert."
+   ],
+   "Z": [
+    "Aus der Tabelle HRP1026 werden für alle selektierten Veranstaltungen die Datensätze gelesen, bei denen ein Absagegrund gepflegt ist.",
+    "Für jede abgesagte Veranstaltung wird der entsprechende Eintrag aus den selektierten Veranstaltungen gelöscht."
+   ]
+  },
+  {
+   "id": "BM-191-B04",
+   "soll": "Zu den verbleibenden Veranstaltungen werden die aktiven Teilnahmebeziehungen zu den Teilnehmern gelesen.",
+   "zeilen": [
+    158
+   ],
+   "code": [
+    "158:   SELECT objid sclas sobid FROM hrp1001"
+   ],
+   "X": [
+    "Es werden Sätze aus hrp1001 mit dem eingegebenen plvar selektiert."
+   ],
+   "Y": [
+    "Das Ergebnis enthält objid, sclas und sobid.",
+    "Es werden Sätze aus hrp1001 mit dem eingegebenen plvar zu den Einträgen aus gt_events selektiert."
+   ],
+   "Z": [
+    "Aus der Tabelle HRP1001 werden Veranstaltungskennung, Objekttyp und Objekt-ID des Teilnehmers für die Verknüpfung '025' in Verknüpfungsrichtung 'B' mit Planungsstatus '1' gelesen."
+   ]
+  },
+  {
+   "id": "BM-191-B05",
+   "soll": "Für alle Bestätigungen wird ein gemeinsamer Druckauftrag ohne Dialog geöffnet, bei Vorschau ohne sofortige Ausgabe; scheitert das, bricht der Lauf mit Fehlermeldung ab.",
+   "zeilen": [
+    26,
+    27,
+    37
+   ],
+   "code": [
+    "26:   gs_outpar-reqimm   = xsdbool( p_prev = abap_false ).",
+    "27:   CALL FUNCTION 'FP_JOB_OPEN'",
+    "37:     MESSAGE e020 WITH sy-subrc."
+   ],
+   "X": [
+    "Der Funktionsbaustein FP_JOB_OPEN wird aufgerufen.",
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ],
+   "Y": [
+    "Der Funktionsbaustein FP_JOB_OPEN wird aufgerufen.",
+    "Scheitert der Aufruf von FP_JOB_OPEN, wird eine Fehlermeldung ausgegeben.",
+    "Die Fehlermeldung 020 wird ausgegeben."
+   ],
+   "Z": [
+    "Der Formulardruckauftrag wird über den Funktionsbaustein FP_JOB_OPEN mit den konfigurierten Ausgabeparametern geöffnet.",
+    "Tritt beim Öffnen des Druckauftrags ein Fehler auf, wird die Fehlermeldung e020 mit dem Rückgabewert ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-191-B06",
+   "soll": "Zum Formular ZPE_TEILNAHMEBEST wird der Formularbaustein ermittelt; ist das Formular nicht verwendbar, bricht der Lauf mit Fehlermeldung ab.",
+   "zeilen": [
+    42,
+    48
+   ],
+   "code": [
+    "42:       CALL FUNCTION 'FP_FUNCTION_MODULE_NAME'",
+    "48:       MESSAGE lx_fp TYPE 'E'."
+   ],
+   "X": [
+    "Der Code übergibt gc_form an FP_FUNCTION_MODULE_NAME und übernimmt dessen Ausgabe nach gv_fm_name.",
+    "Das konvertierte Ergebnis wird in gv_fm_name übernommen.",
+    "Eine Meldung wird ausgegeben."
+   ],
+   "Y": [
+    "Der Code übergibt gc_form an FP_FUNCTION_MODULE_NAME und übernimmt dessen Ausgabe nach gv_fm_name.",
+    "Die Fehlermeldung lx_fp wird ausgegeben."
+   ],
+   "Z": [
+    "Über den Funktionsbaustein FP_FUNCTION_MODULE_NAME wird der Name des generierten Funktionsbausteins für das Formular 'ZPE_TEILNAHMEBEST' ermittelt.",
+    "Tritt bei der Ermittlung des Formularfunktionsbausteins ein API-Fehler auf, wird die Ausnahme als Fehlermeldung ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-191-B07",
+   "soll": "Für interne Mitarbeiter wird der zum Veranstaltungsende gültige Name aus den Personaldaten gelesen, ersatzweise die Personalnummer verwendet.",
+   "zeilen": [
+    64,
+    69
+   ],
+   "code": [
+    "64:         SELECT SINGLE vorna, nachn, anred FROM pa0002",
+    "69:         IF sy-subrc = 0."
+   ],
+   "X": [
+    "Das Ergebnis enthält vorna, nachn und anred.",
+    "vorna, nachn und anred des Satzes werden gelesen."
+   ],
+   "Y": [
+    "Das Ergebnis enthält vorna, nachn und anred.",
+    "Die Felder vorna, nachn und anred des Satzes Personaldaten werden gelesen."
+   ],
+   "Z": [
+    "Handelt es sich beim Teilnehmer um eine interne Person ('P'), werden Vorname, Nachname und Anrede aus der Tabelle PA0002 zum Endedatum der Veranstaltung gelesen.",
+    "Wurden Personaldaten in der Tabelle PA0002 gefunden, wird der Teilnehmername aus Vor- und Nachname zusammengesetzt und die Anrede übernommen.",
+    "Wurden keine Personaldaten in der Tabelle PA0002 gefunden, wird die Teilnehmer-ID als Name gesetzt."
+   ]
+  },
+  {
+   "id": "BM-191-B08",
+   "soll": "Für externe Personen wird die Bezeichnung des Personenobjekts als Name verwendet.",
+   "zeilen": [
+    77
+   ],
+   "code": [
+    "77:         SELECT SINGLE stext FROM hrp1000 INTO gs_attendee-name"
+   ],
+   "X": [
+    "stext des Satzes mit dem eingegebenen plvar wird gelesen."
+   ],
+   "Y": [
+    "Das Feld stext aus hrp1000 mit dem eingegebenen plvar wird gelesen."
+   ],
+   "Z": [
+    "Handelt es sich beim Teilnehmer um eine externe Person ('H'), wird die Bezeichnung aus der Tabelle HRP1000 zum Endedatum der Veranstaltung in der Anmeldesprache als Name gelesen."
+   ]
+  },
+  {
+   "id": "BM-191-B09",
+   "soll": "Andere Teilnehmerarten wie Firmen oder Kunden erhalten keine Einzelbestätigung.",
+   "zeilen": [
+    61,
+    86
+   ],
+   "code": [
+    "61:     CASE gs_rel-sclas.",
+    "86:         CONTINUE."
+   ],
+   "X": [],
+   "Y": [],
+   "Z": [
+    "Handelt es sich beim Teilnehmer um eine interne Person ('P'), werden Vorname, Nachname und Anrede aus der Tabelle PA0002 zum Endedatum der Veranstaltung gelesen.",
+    "Handelt es sich beim Teilnehmer um eine externe Person ('H'), wird die Bezeichnung aus der Tabelle HRP1000 zum Endedatum der Veranstaltung in der Anmeldesprache als Name gelesen.",
+    "Handelt es sich weder um eine interne noch um eine externe Person, wird die Verarbeitung für diesen Teilnehmer übersprungen."
+   ]
+  },
+  {
+   "id": "BM-191-B10",
+   "soll": "Eine bereits protokollierte Bestätigung wird nur bei gesetztem Wiederholungskennzeichen erneut gedruckt.",
+   "zeilen": [
+    90,
+    95
+   ],
+   "code": [
+    "90:     SELECT SINGLE @abap_true FROM zpe_tb_log INTO @DATA(lv_done)",
+    "95:     CHECK sy-subrc <> 0 OR p_rept = abap_true."
+   ],
+   "X": [
+    "abap_true des Satzes mit dem eingegebenen plvar wird gelesen.",
+    "Nur sy-subrc <> 0 OR p_rept = abap_true gehen weiter; kleinere werden übersprungen, die Schleife läuft weiter."
+   ],
+   "Y": [
+    "Es wird geprüft, ob es einen passenden Satz in zpe_tb_log mit dem eingegebenen plvar gibt.",
+    "Nur wenn kein Treffer vorliegt oder das Feld p_rept gesetzt ist, wird der Schleifendurchlauf fortgesetzt; sonst wird er übersprungen, und die Schleife läuft mit dem nächsten Durchlauf weiter."
+   ],
+   "Z": [
+    "In der Tabelle ZPE_TB_LOG wird anhand von Planvariante, Veranstaltungs-ID, Objekttyp und Teilnehmer-ID geprüft, ob bereits ein Protokolleintrag vorliegt.",
+    "Wurde bereits ein Protokolleintrag gefunden und ist der Wiederholungsdruck nicht aktiv, wird die weitere Bearbeitung des Teilnehmers abgebrochen."
+   ]
+  },
+  {
+   "id": "BM-191-B11",
+   "soll": "Die Teilnahmebestätigung wird mit Veranstaltungs- und Teilnehmerdaten über das Adobe-Formular ausgegeben.",
+   "zeilen": [
+    192
+   ],
+   "code": [
+    "192:   CALL FUNCTION gv_fm_name"
+   ],
+   "X": [
+    "Es wird die Länderschlüssel auf DE gesetzt und gv_fm_name aufgerufen.",
+    "Der Funktionsbaustein gv_fm_name wird aufgerufen. Welcher Baustein das ist, entscheidet die Eingabe zur Laufzeit."
+   ],
+   "Y": [
+    "Es wird der Länderschlüssel auf DE gesetzt und gv_fm_name aufgerufen.",
+    "Der Funktionsbaustein gv_fm_name wird aufgerufen. Welcher Baustein das ist, steht erst zur Laufzeit in gv_fm_name fest."
+   ],
+   "Z": [
+    "Das Formular zur Teilnahmebestätigung wird über den dynamisch ermittelten Funktionsbaustein mit den Veranstaltungs- und Teilnehmerdaten aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-191-B12",
+   "soll": "Scheitert die Ausgabe, wird der Teilnehmer als Fehler in der Liste gezählt und nicht protokolliert.",
+   "zeilen": [
+    204,
+    206
+   ],
+   "code": [
+    "204:   IF sy-subrc <> 0.",
+    "206:     WRITE: / icon_led_red AS ICON, gs_rel-objid, gs_rel-sobid(12),"
+   ],
+   "X": [
+    "Ohne Treffer wird icon_led_red AS ICON ausgegeben, gs_rel-objid ausgegeben, gs_rel-sobid(12) ausgegeben, 'Ausgabe fehlgeschlagen'(e01) ausgegeben, sy-subrc ausgegeben und der Block verlassen.",
+    "Bei Treffern werden icon_led_red AS ICON, gs_rel-objid, gs_rel-sobid(12), 'Ausgabe fehlgeschlagen'(e01) und sy-subrc als Liste ausgegeben.",
+    "Es wird icon_led_red AS ICON ausgegeben, gs_rel-objid ausgegeben, gs_rel-sobid(12) ausgegeben, 'Ausgabe fehlgeschlagen'(e01) ausgegeben, sy-subrc ausgegeben und der Block verlassen.",
+    "icon_led_red AS ICON wird ausgegeben.",
+    "gs_rel-objid wird ausgegeben.",
+    "gs_rel-sobid(12) wird ausgegeben."
+   ],
+   "Y": [
+    "Scheitert der Aufruf von gv_fm_name, wird icon_led_red ausgegeben, gs_rel-objid ausgegeben, gs_rel-sobid ausgegeben, Ausgabe fehlgeschlagen ausgegeben, sy-subrc ausgegeben und der Block verlassen."
+   ],
+   "Z": [
+    "Schlägt der Formularaufruf fehl, wird der Fehlerzähler erhöht, eine rote Status-Ikone mit Fehlermeldung und Fehlercode ausgegeben und das Unterprogramm beendet."
+   ]
+  },
+  {
+   "id": "BM-191-B13",
+   "soll": "Außerhalb der Vorschau wird der erfolgreiche Druck mit Datum und Benutzer im Druckprotokoll festgehalten.",
+   "zeilen": [
+    212,
+    219
+   ],
+   "code": [
+    "212:   IF p_prev = abap_false.",
+    "219:     MODIFY zpe_tb_log FROM ls_log."
+   ],
+   "X": [
+    "Für p_prev mit dem Wert abap_false wird eine Zeile eingefügt oder überschrieben.",
+    "Eine Zeile in zpe_tb_log wird eingefügt oder überschrieben. Angekündigt, nicht persistiert: im gelieferten Code steht kein COMMIT WORK. sy-subrc wird danach nicht ausgewertet."
+   ],
+   "Y": [
+    "Wenn das Feld p_prev nicht gesetzt ist, wird eine Zeile eingefügt oder überschrieben.",
+    "Eine Zeile in zpe_tb_log wird eingefügt oder überschrieben. sy-subrc wird danach nicht ausgewertet."
+   ],
+   "Z": [
+    "Ist die Druckvorschau nicht aktiv, wird ein Protokollsatz mit Planvariante, Veranstaltungs-ID, Teilnehmerobjekttyp, Teilnehmer-ID, Druckdatum und Benutzer in die Tabelle ZPE_TB_LOG geschrieben.",
+    "Ist die Druckvorschau aktiv, unterbleibt die Protokollierung in der Tabelle ZPE_TB_LOG."
+   ]
+  },
+  {
+   "id": "BM-191-B14",
+   "soll": "Am Ende einer Veranstaltung wird eine Zeile mit der Zahl der für sie gedruckten Bestätigungen ausgegeben.",
+   "zeilen": [
+    99,
+    100
+   ],
+   "code": [
+    "99:     AT END OF objid.",
+    "100:       WRITE: / gs_event-objid, gs_event-stext(40), gs_event-endda, gv_evt_cnt."
+   ],
+   "X": [
+    "Bei Treffern werden gs_event-objid, gs_event-stext(40), gs_event-endda und gv_evt_cnt als Liste ausgegeben.",
+    "gs_event-objid wird ausgegeben.",
+    "gs_event-stext(40) wird ausgegeben.",
+    "gs_event-endda wird ausgegeben.",
+    "gv_evt_cnt wird ausgegeben."
+   ],
+   "Y": [
+    "Bei Treffern werden gs_event-objid, gs_event-stext, gs_event-endda und gv_evt_cnt als Liste ausgegeben."
+   ],
+   "Z": [
+    "Beim Erreichen des letzten Eintrags zu einer Veranstaltungs-ID wird die Gruppenstufenverarbeitung angestoßen.",
+    "Die Veranstaltungs-ID, die Bezeichnung, das Endedatum und die Anzahl der gedruckten Bestätigungen werden ausgegeben und der Veranstaltungszähler zurückgesetzt."
+   ]
+  },
+  {
+   "id": "BM-191-B15",
+   "soll": "Der Druckauftrag wird geschlossen und die Gesamtzahl gedruckter und fehlerhafter Bestätigungen ausgegeben.",
+   "zeilen": [
+    106,
+    117,
+    118
+   ],
+   "code": [
+    "106:   CALL FUNCTION 'FP_JOB_CLOSE'",
+    "117:   WRITE: / 'Bestaetigungen gedruckt:'(t01), gv_ok.",
+    "118:   WRITE: / 'Fehlerhafte Ausgaben:'(t02), gv_err."
+   ],
+   "X": [
+    "Der Funktionsbaustein FP_JOB_CLOSE wird aufgerufen.",
+    "'Bestaetigungen gedruckt:'(t01), gv_ok, 'Fehlerhafte Ausgaben:'(t02) und gv_err werden ausgegeben.",
+    "'Bestaetigungen gedruckt:'(t01) wird ausgegeben.",
+    "gv_ok wird ausgegeben.",
+    "'Fehlerhafte Ausgaben:'(t02) wird ausgegeben.",
+    "gv_err wird ausgegeben."
+   ],
+   "Y": [
+    "Der Funktionsbaustein FP_JOB_CLOSE wird aufgerufen.",
+    "Bestaetigungen gedruckt:, gv_ok, Fehlerhafte Ausgaben: und gv_err werden ausgegeben.",
+    "Bestaetigungen gedruckt: wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "Fehlerhafte Ausgaben: wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code."
+   ],
+   "Z": [
+    "Der Formulardruckauftrag wird über den Funktionsbaustein FP_JOB_CLOSE abgeschlossen.",
+    "Tritt beim Schließen des Druckauftrags ein Fehler auf, wird die Meldung s021 als Warnung ausgegeben.",
+    "Eine horizontale Trennlinie sowie die Gesamtzahlen der gedruckten Bestätigungen und der fehlerhaften Ausgaben werden ausgegeben."
+   ]
+  }
+ ]
+}

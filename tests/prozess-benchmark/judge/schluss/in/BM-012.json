@@ -1,0 +1,348 @@
+{
+ "id": "BM-012",
+ "titel": "IDoc-Eingang ORDERS05: Bestellung prüfen, Kunde und Material umschlüsseln, Auftrag per BAPI anlegen, Status 51/53",
+ "prozess": "Der Baustein wird von der ALE-Eingangsverarbeitung mit einem Paket von ORDERS05-IDocs eines Händlers aufgerufen. Für jedes IDoc übernimmt er Bestellart, Währung, Kundenbestellnummer mit Datum, den Auftraggeber (GLN) sowie die Positionen mit Menge, Einheit und Materialidentifikation; fehlen Positionen oder Bestellnummer, lehnt er das IDoc ab. Dann bildet er Händler und GLN über eine Zuordnungstabelle auf Debitor, Vertriebsbereich und Auftragsart ab und lehnt ab, wenn keine Zuordnung existiert oder der Debitor zentral für Aufträge gesperrt ist. Kundenmaterialnummern schlüsselt er über die Kunden-Material-Info um; ein unbekanntes Kundenmaterial führt zur Ablehnung, eigene Materialnummern werden ungeprüft ins interne Format gewandelt. Vor der Anlage prüft er, ob beim Auftraggeber bereits ein Auftrag mit derselben Kundenbestellnummer existiert, und lehnt Dubletten ab. Dann legt er den Kundenauftrag per BAPI an; eine Fehler- oder Abbruchmeldung macht das IDoc fehlerhaft. Jedes IDoc erhält Status 51 mit Fehlermeldung oder Status 53 mit der Auftragsnummer. Enthält das Paket mindestens einen Fehler, meldet er dem Workflow ein Fehlerergebnis. Der Baustein selbst schreibt nichts fest; das COMMIT setzt die aufrufende ALE-Schicht.",
+ "verboten": [
+  "lzsd_edi_ordf01.abap:162 — kein Fachsatz „der Auftrag ist damit gespeichert“: der Baustein ruft kein COMMIT WORK, festgeschrieben wird erst durch die ALE-Eingangsschicht",
+  "lzsd_edi_ordf01.abap:57 — kein output-Knoten und kein Abbruch: MESSAGE … INTO füllt nur Meldungsvariablen für den IDoc-Status",
+  "lzsd_edi_ordf01.abap:108 — kein Fachsatz „ungültige Materialnummern werden abgelehnt“: sy-subrc wird nicht ausgewertet",
+  "lzsd_edi_ordf01.abap:83 — kein Fachsatz „Liefer- oder Fakturasperren verhindern den Auftrag“: geprüft wird nur die zentrale Auftragssperre"
+ ],
+ "saetze": [
+  {
+   "id": "BM-012-B01",
+   "soll": "Jedes IDoc des Eingangspakets wird für sich verarbeitet; ein Fehler in einem Schritt überspringt die folgenden Schritte dieses IDocs.",
+   "zeilen": [
+    275,
+    279,
+    282,
+    285
+   ],
+   "code": [
+    "275:   LOOP AT idoc_contrl INTO gs_edidc.",
+    "279:     IF gv_error = abap_false.",
+    "282:     IF gv_error = abap_false.",
+    "285:     IF gv_error = abap_false."
+   ],
+   "X": [
+    "Jede Zeile aus idoc_contrl wird einzeln verarbeitet.",
+    "Für gv_error mit dem Wert abap_false wird auftraggeber_ermitteln aufgerufen.",
+    "Für gv_error mit dem Wert abap_false wird material_umschluesseln aufgerufen.",
+    "Für gv_error mit dem Wert abap_false wird auftrag_anlegen aufgerufen."
+   ],
+   "Y": [
+    "Jede Zeile aus idoc_contrl wird einzeln verarbeitet.",
+    "Wenn das Feld gv_error nicht gesetzt ist, wird auftraggeber_ermitteln aufgerufen.",
+    "Wenn das Feld gv_error nicht gesetzt ist, wird material_umschluesseln aufgerufen.",
+    "Wenn das Feld gv_error nicht gesetzt ist, wird auftrag_anlegen aufgerufen."
+   ],
+   "Z": [
+    "Für jeden übergebenen IDoc-Kontrollsatz aus IDOC_CONTRL wird die Verarbeitung durchlaufen.",
+    "Liegt kein Fehler vor, wird das Unterprogramm AUFTRAGGEBER_ERMITTELN aufgerufen.",
+    "Liegt kein Fehler vor, wird das Unterprogramm MATERIAL_UMSCHLUESSELN aufgerufen.",
+    "Liegt kein Fehler vor, wird das Unterprogramm AUFTRAG_ANLEGEN aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-012-B02",
+   "soll": "Aus dem Kopfsegment werden Bestellart und Währung übernommen.",
+   "zeilen": [
+    53
+   ],
+   "code": [
+    "53:     CASE pt_data-segnam."
+   ],
+   "X": [],
+   "Y": [],
+   "Z": [
+    "Handelt es sich um das Segment E1EDK01, werden Auftragsart und Währung übernommen."
+   ]
+  },
+  {
+   "id": "BM-012-B03",
+   "soll": "Aus den Referenzsegmenten wird nur die Kundenbestellnummer mit Bestelldatum (Qualifier 001) übernommen.",
+   "zeilen": [
+    60
+   ],
+   "code": [
+    "60:         IF ls_k02-qualf = '001'.          \"Bestellnummer Kunde"
+   ],
+   "X": [],
+   "Y": [],
+   "Z": [
+    "Handelt es sich um das Segment E1EDK02 mit dem Qualifikator 001, werden die Kundenbestellnummer und das Bestelldatum übernommen."
+   ]
+  },
+  {
+   "id": "BM-012-B04",
+   "soll": "Aus den Partnersegmenten wird nur der Auftraggeber (AG) übernommen.",
+   "zeilen": [
+    66
+   ],
+   "code": [
+    "66:         IF ls_ka1-parvw = 'AG'."
+   ],
+   "X": [],
+   "Y": [],
+   "Z": [
+    "Handelt es sich um das Segment E1EDKA1 mit der Partnerrolle AG, wird die Partnernummer des Auftraggebers übernommen."
+   ]
+  },
+  {
+   "id": "BM-012-B05",
+   "soll": "Jedes Positionssegment ergibt eine Bestellposition mit Menge und Einheit; die Objektidentifikation liefert dazu Kundenmaterial (001) oder eigene Materialnummer (002).",
+   "zeilen": [
+    53,
+    80
+   ],
+   "code": [
+    "53:     CASE pt_data-segnam.",
+    "80:         CASE ls_p19-qualf."
+   ],
+   "X": [],
+   "Y": [],
+   "Z": [
+    "Handelt es sich um das Segment E1EDK01, werden Auftragsart und Währung übernommen.",
+    "Handelt es sich beim Segment E1EDP19 um den Qualifikator 001, wird die Kundenmaterialnummer an der aktuellen Position hinterlegt; beim Qualifikator 002 wird die Lieferantenmaterialnummer hinterlegt."
+   ]
+  },
+  {
+   "id": "BM-012-B06",
+   "soll": "Fehlen Positionen oder die Kundenbestellnummer, wird das IDoc mit Fehler 110 abgelehnt.",
+   "zeilen": [
+    90
+   ],
+   "code": [
+    "90:   IF gt_items IS INITIAL OR gs_head-bstkd IS INITIAL."
+   ],
+   "X": [
+    "Für gt_items IS INITIAL OR gs_head-bstkd IS INITIAL wird eine Meldung ausgegeben."
+   ],
+   "Y": [
+    "Wenn das Feld gt_items leer ist oder das Feld gs_head-bstkd leer ist, wird der Meldungstext in gv_msg übernommen."
+   ],
+   "Z": [
+    "Sind keine Positionen vorhanden oder ist die Kundenbestellnummer initial, wird ein Fehlerkennzeichen gesetzt und die Fehlermeldung E110(ZSD) ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-012-B07",
+   "soll": "Händler und Auftraggeber-GLN werden über eine Zuordnungstabelle auf Debitor, Vertriebsbereich und Auftragsart abgebildet; ohne Zuordnung wird mit Fehler 111 abgelehnt.",
+   "zeilen": [
+    103,
+    106,
+    109
+   ],
+   "code": [
+    "103:   SELECT SINGLE * FROM zsd_edi_kunde INTO ls_map",
+    "106:   IF sy-subrc <> 0.",
+    "109:     RETURN."
+   ],
+   "X": [
+    "Es werden Sätze aus zsd_edi_kunde selektiert.",
+    "Ohne Treffer wird eine Meldung ausgegeben und der Block verlassen.",
+    "Ohne Treffer wird der Block verlassen.",
+    "Es wird eine Meldung ausgegeben und der Block verlassen."
+   ],
+   "Y": [
+    "Es werden Sätze aus zsd_edi_kunde selektiert.",
+    "Ohne Treffer wird der Meldungstext in gv_msg übernommen und der Block verlassen."
+   ],
+   "Z": [
+    "Aus der Tabelle ZSD_EDI_KUNDE wird anhand der Absendernummer SNDPRN und der Partnernummer PARTN die Kundenzuordnung gelesen.",
+    "Wird kein Datensatz in der Tabelle ZSD_EDI_KUNDE gefunden, wird ein Fehlerkennzeichen gesetzt, die Fehlermeldung E111(ZSD) ausgegeben und die Verarbeitung der Ermittlung abgebrochen."
+   ]
+  },
+  {
+   "id": "BM-012-B08",
+   "soll": "Hat der Debitor eine zentrale Auftragssperre, wird das IDoc mit Fehler 112 abgelehnt.",
+   "zeilen": [
+    117,
+    118
+   ],
+   "code": [
+    "117:   SELECT SINGLE aufsd FROM kna1 INTO lv_aufsd WHERE kunnr = gs_head-kunnr.",
+    "118:   IF lv_aufsd IS NOT INITIAL."
+   ],
+   "X": [
+    "aufsd des Kunden wird gelesen.",
+    "Mit einer nicht leeren lv_aufsd wird eine Meldung ausgegeben."
+   ],
+   "Y": [
+    "Die Auftragssperre des Kunden wird gelesen.",
+    "Ist die Auftragssperre nicht leer, wird der Meldungstext in gv_msg übernommen."
+   ],
+   "Z": [
+    "Aus der Tabelle KNA1 wird das Auftragsperrfeld AUFSD zur ermittelten Kundennummer KUNNR gelesen.",
+    "Ist eine Auftragssperre in AUFSD gepflegt, wird ein Fehlerkennzeichen gesetzt und die Fehlermeldung E112(ZSD) ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-012-B09",
+   "soll": "Kundenmaterialnummern werden über die Kunden-Material-Info in eigene Materialnummern umgeschlüsselt; ein unbekanntes Kundenmaterial lehnt das IDoc mit Fehler 113 ab und beendet die Umschlüsselung.",
+   "zeilen": [
+    131,
+    132,
+    137
+   ],
+   "code": [
+    "131:     IF <ls_item>-kdmat IS NOT INITIAL.",
+    "132:       SELECT SINGLE matnr FROM knmt INTO <ls_item>-matnr",
+    "137:       IF sy-subrc <> 0."
+   ],
+   "X": [
+    "matnr des Satzes wird gelesen.",
+    "Ohne Treffer wird eine Meldung ausgegeben und der Block verlassen.",
+    "Ohne Treffer wird der Block verlassen."
+   ],
+   "Y": [
+    "Die Materialnummer aus knmt wird gelesen.",
+    "Ohne Treffer wird der Meldungstext in gv_msg übernommen und die Schleife verlassen."
+   ],
+   "Z": [
+    "Ist eine Kundenmaterialnummer KDMAT gepflegt, wird aus der Tabelle KNMT die Materialnummer MATNR anhand von Verkaufsorganisation, Vertriebsweg, Kundennummer und Kundenmaterialnummer ermittelt.",
+    "Wird zu der Kundenmaterialnummer kein Eintrag in Tabelle KNMT gefunden, wird ein Fehlerkennzeichen gesetzt, die Fehlermeldung E113(ZSD) ausgegeben und die Positionsschleife abgebrochen.",
+    "Ist keine Kundenmaterialnummer KDMAT gepflegt, wird der Funktionsbaustein CONVERSION_EXIT_MATN1_INPUT zur Konvertierung der Lieferantenmaterialnummer aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-012-B10",
+   "soll": "Ohne Kundenmaterial wird die gelieferte eigene Materialnummer ins interne Format gewandelt, ohne das Ergebnis zu prüfen.",
+   "zeilen": [
+    143
+   ],
+   "code": [
+    "143:       CALL FUNCTION 'CONVERSION_EXIT_MATN1_INPUT'"
+   ],
+   "X": [
+    "Sonst wird CONVERSION_EXIT_MATN1_INPUT aufgerufen.",
+    "Der Code übergibt ls_item>-lfmat an CONVERSION_EXIT_MATN1_INPUT und übernimmt dessen Ausgabe nach ls_item>-matnr.",
+    "Das konvertierte Ergebnis wird in ls_item>-matnr übernommen."
+   ],
+   "Y": [
+    "Sonst wird CONVERSION_EXIT_MATN1_INPUT aufgerufen.",
+    "Der Code übergibt ls_item-lfmat an CONVERSION_EXIT_MATN1_INPUT und übernimmt dessen Ausgabe nach ls_item-matnr."
+   ],
+   "Z": [
+    "Ist keine Kundenmaterialnummer KDMAT gepflegt, wird der Funktionsbaustein CONVERSION_EXIT_MATN1_INPUT zur Konvertierung der Lieferantenmaterialnummer aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-012-B11",
+   "soll": "Existiert beim selben Auftraggeber bereits ein Auftrag mit dieser Kundenbestellnummer, wird das IDoc als Dublette mit Fehler 114 abgelehnt.",
+   "zeilen": [
+    169,
+    174,
+    177
+   ],
+   "code": [
+    "169:   SELECT SINGLE k~vbeln FROM vbak AS k",
+    "174:   IF sy-subrc = 0.",
+    "177:     RETURN."
+   ],
+   "X": [
+    "Belegnummer des Auftrags wird gelesen.",
+    "Bei Treffer wird eine Meldung ausgegeben und der Block verlassen.",
+    "Bei Treffer wird der Block verlassen.",
+    "Es wird eine Meldung ausgegeben und der Block verlassen."
+   ],
+   "Y": [
+    "Die Belegnummer des Auftrags wird gelesen.",
+    "Bei Treffer wird der Meldungstext in gv_msg übernommen und der Block verlassen."
+   ],
+   "Z": [
+    "Aus den Tabellen VBAK und VBKD wird geprüft, ob zur Kundennummer KUNNR und zur Bestellnummer BSTKD bereits ein Kundenauftrag existiert.",
+    "Wird ein bestehender Auftrag zur selben Kundenbestellnummer gefunden, wird ein Fehlerkennzeichen gesetzt, die Fehlermeldung E114(ZSD) ausgegeben und die Auftragsanlage abgebrochen."
+   ]
+  },
+  {
+   "id": "BM-012-B12",
+   "soll": "Andernfalls wird ein Kundenauftrag der zugeordneten Auftragsart mit Auftraggeber, Bestelldaten und je Bestellposition einer Position (Nummern 10, 20, …) und Einteilung angelegt.",
+   "zeilen": [
+    197
+   ],
+   "code": [
+    "197:   CALL FUNCTION 'BAPI_SALESORDER_CREATEFROMDAT2'"
+   ],
+   "X": [
+    "Der Code übergibt ls_hdr an BAPI_SALESORDER_CREATEFROMDAT2 und übernimmt dessen Ausgabe nach gv_vbeln.",
+    "Das konvertierte Ergebnis wird in gv_vbeln übernommen."
+   ],
+   "Y": [
+    "Der Code übergibt ls_hdr an BAPI_SALESORDER_CREATEFROMDAT2 und übernimmt dessen Ausgabe nach gv_vbeln."
+   ],
+   "Z": [
+    "Der Kundenauftrag wird über den Funktionsbaustein BAPI_SALESORDER_CREATEFROMDAT2 angelegt."
+   ]
+  },
+  {
+   "id": "BM-012-B13",
+   "soll": "Meldet die Anlage einen Fehler oder Abbruch, wird das IDoc mit der ersten dieser Meldungen als fehlerhaft markiert.",
+   "zeilen": [
+    208,
+    209
+   ],
+   "code": [
+    "208:   LOOP AT lt_ret INTO ls_ret WHERE type CA 'EA'.",
+    "209:     gv_error = abap_true."
+   ],
+   "X": [
+    "Jede Zeile aus lt_ret wird einzeln verarbeitet."
+   ],
+   "Y": [
+    "Die Zeilen aus lt_ret, bei denen die Bedingung „type CA 'EA'“ erfüllt ist, werden einzeln verarbeitet."
+   ],
+   "Z": [
+    "Enthält die Rückmeldetabelle Fehlermeldungen der Typen E oder A, wird ein Fehlerkennzeichen gesetzt, die Fehlermeldung übernommen und die Prüfung beendet."
+   ]
+  },
+  {
+   "id": "BM-012-B14",
+   "soll": "Fehlerhafte IDocs erhalten Status 51 mit der Fehlermeldung, erfolgreiche Status 53 mit der neuen Auftragsnummer als Anwendungsobjekt.",
+   "zeilen": [
+    232,
+    233,
+    238
+   ],
+   "code": [
+    "232:   IF gv_error = abap_true.",
+    "233:     pt_status-status = '51'.",
+    "238:     pt_status-status = '53'."
+   ],
+   "X": [
+    "Für gv_error mit dem Wert abap_true wird die Status auf 51 gesetzt und eine Zeile aufgenommen.",
+    "Für gv_error mit dem Wert abap_true wird die Status auf 51 gesetzt und eine Zeile aufgenommen, sonst die Status auf 53 gesetzt, die pt_status-msgty auf S gesetzt, die pt_status-msgid auf ZSD gesetzt, die pt_status-msgno auf 115 gesetzt und eine Zeile aufgenommen.",
+    "gv_error mit dem Wert abap_true setzen die Status auf 51.",
+    "Für andere gv_error wird die Status auf 53 gesetzt, die pt_status-msgty auf S gesetzt, die pt_status-msgid auf ZSD gesetzt, die pt_status-msgno auf 115 gesetzt und eine Zeile aufgenommen.",
+    "Andere gv_error setzen die Status auf 53.",
+    "Es wird die Status auf 53 gesetzt, die pt_status-msgty auf S gesetzt, die pt_status-msgid auf ZSD gesetzt und die pt_status-msgno auf 115 gesetzt."
+   ],
+   "Y": [
+    "Wenn das Feld gv_error gesetzt ist, wird der Status auf 51 gesetzt und eine Zeile aufgenommen, sonst der Status auf 53 gesetzt, das Feld pt_status-msgty auf S gesetzt, das Feld pt_status-msgid auf ZSD gesetzt, das Feld pt_status-msgno auf 115 gesetzt und eine Zeile aufgenommen.",
+    "Wenn das Feld gv_error gesetzt ist, wird der Status auf 51 gesetzt.",
+    "Sonst wird der Status auf 53 gesetzt."
+   ],
+   "Z": [
+    "Liegt ein Fehler vor, wird der IDoc-Status auf 51 gesetzt, ein Gesamtfahler gemerkt und der Fehlerparameter Error_IDOCs zurückgegeben.",
+    "Liegt kein Fehler vor, wird der IDoc-Status auf 53 mit Erfolgsmeldung ZSD 115 gesetzt und die Belegnummer als verarbeitetes IDoc und Anwendungsobjekt gemeldet."
+   ]
+  },
+  {
+   "id": "BM-012-B15",
+   "soll": "Ist mindestens ein IDoc des Pakets fehlerhaft, meldet der Baustein dem Workflow ein Fehlerergebnis.",
+   "zeilen": [
+    292,
+    293
+   ],
+   "code": [
+    "292:   IF gv_anyerr = abap_true.",
+    "293:     workflow_result = c_wf_result_error."
+   ],
+   "X": [],
+   "Y": [],
+   "Z": [
+    "Ist bei mindestens einem IDoc ein Fehler aufgetreten, wird das Workflow-Ergebnis auf Fehler gesetzt; andernfalls wird es auf erfolgreich gesetzt."
+   ]
+  }
+ ]
+}

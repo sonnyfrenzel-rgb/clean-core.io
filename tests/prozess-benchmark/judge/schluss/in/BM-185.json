@@ -1,0 +1,98 @@
+{
+ "id": "BM-185",
+ "titel": "Änderungshistorie Mietkonditionen aus Änderungsbelegen, Gruppenwechsel je Änderungsnummer",
+ "prozess": "Die Sachbearbeitung startet den Report mit einer Mietvertragsnummer und optional einem Ab-Datum. Der Report liest die Änderungsbelege des Objekts ZMIETVERTR zu diesem Vertrag für die kundeneigene Konditionstabelle ab dem Datum, ohne Datum alle. Ob Belege gefunden wurden, wird nicht geprüft, weil die Prüfung auskommentiert ist; ohne Treffer bleibt die Liste leer. Die Änderungen werden nach Änderungsnummer und Feld sortiert. Bei jeder neuen Änderungsnummer erscheint eine Kopfzeile; Datum und Benutzer sind darin leer, weil sie im Gruppenwechsel rechts vom Gruppenfeld stehen. Für jedes geänderte Feld werden Bezeichnung, alter und neuer Wert eingerückt ausgegeben. Es wird nichts geändert.",
+ "verboten": [
+  "source.abap:28 — kein Fachsatz „je Änderung werden Datum und Benutzer ausgegeben“: innerhalb von AT NEW changenr sind alle Felder rechts von CHANGENR (UDATE, USERNAME) initial, die Kopfzeile zeigt nur die Änderungsnummer",
+  "source.abap:9 — kein Fachsatz „ohne Änderungen wird ein Hinweis ausgegeben“: die Auswertung von sy-subrc ist auskommentiert, es erscheint dann eine leere Liste",
+  "gesamte Scheibe — kein Fachsatz „Konditionsänderungen werden zurückgesetzt oder protokolliert“: der Report liest vorhandene Änderungsbelege nur und listet sie"
+ ],
+ "saetze": [
+  {
+   "id": "BM-185-B01",
+   "soll": "Zum eingegebenen Mietvertrag werden die Änderungsbelege der Mietkonditionen ab dem eingegebenen Datum gelesen; ohne Datum alle.",
+   "zeilen": [
+    9
+   ],
+   "code": [
+    "9:   CALL FUNCTION 'CHANGEDOCUMENT_READ'"
+   ],
+   "X": [
+    "Der Funktionsbaustein CHANGEDOCUMENT_READ wird aufgerufen."
+   ],
+   "Y": [
+    "Über den Funktionsbaustein CHANGEDOCUMENT_READ werden die Änderungsbelege für das Objekt ZMIETVERTR, die angegebene Vertragsnummer, das Änderungsdatum und die Tabelle ZRE_MIETKOND gelesen."
+   ],
+   "Z": [
+    "Der Funktionsbaustein CHANGEDOCUMENT_READ wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-185-B02",
+   "soll": "Die Änderungen werden nach Änderungsnummer und Feld sortiert einzeln durchgegangen.",
+   "zeilen": [
+    26
+   ],
+   "code": [
+    "26:   LOOP AT gt_cdred INTO DATA(ls_cd)."
+   ],
+   "X": [
+    "Jede Zeile aus gt_cdred wird einzeln verarbeitet."
+   ],
+   "Y": [
+    "Die ermittelten Änderungsbelegpositionen werden nacheinander in einer Schleife verarbeitet."
+   ],
+   "Z": [
+    "Jede Zeile aus gt_cdred wird einzeln verarbeitet."
+   ]
+  },
+  {
+   "id": "BM-185-B03",
+   "soll": "Zu Beginn jeder Änderungsnummer wird eine Kopfzeile mit der Änderungsnummer ausgegeben.",
+   "zeilen": [
+    27,
+    28
+   ],
+   "code": [
+    "27:     AT NEW changenr.",
+    "28:       WRITE: / ls_cd-changenr, ls_cd-udate, ls_cd-username."
+   ],
+   "X": [
+    "Bei Treffern werden ls_cd-changenr, ls_cd-udate und ls_cd-username als Liste ausgegeben.",
+    "ls_cd-changenr wird ausgegeben.",
+    "ls_cd-udate wird ausgegeben.",
+    "ls_cd-username wird ausgegeben."
+   ],
+   "Y": [
+    "Liegt eine neue Änderungsbelegnummer vor, werden die Änderungsbelegnummer, das Änderungsdatum und der Benutzername ausgegeben."
+   ],
+   "Z": [
+    "Bei Treffern werden ls_cd-changenr, ls_cd-udate und ls_cd-username als Liste ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-185-B04",
+   "soll": "Für jedes geänderte Feld werden Feldbezeichnung, alter und neuer Wert ausgegeben.",
+   "zeilen": [
+    30
+   ],
+   "code": [
+    "30:     WRITE: /5 ls_cd-ftext, ls_cd-f_old, '->', ls_cd-f_new."
+   ],
+   "X": [
+    "Bei Treffern werden 5 ls_cd-ftext, ls_cd-f_old, -> und ls_cd-f_new als Liste ausgegeben.",
+    "5 ls_cd-ftext wird ausgegeben.",
+    "ls_cd-f_old wird ausgegeben.",
+    "-> wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "ls_cd-f_new wird ausgegeben."
+   ],
+   "Y": [
+    "Die Feldbezeichnung sowie der alte und der neue Wert der Änderung werden ausgegeben."
+   ],
+   "Z": [
+    "Bei Treffern werden ls_cd-ftext, ls_cd-f_old, -> und ls_cd-f_new als Liste ausgegeben.",
+    "-> wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code."
+   ]
+  }
+ ]
+}

@@ -1,0 +1,91 @@
+{
+ "id": "BM-045",
+ "urteile": [
+  {
+   "id": "BM-045-B01",
+   "X": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "kurz": "Nur Y beschreibt die Bildung der Objektnummer."
+  },
+  {
+   "id": "BM-045-B02",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "X und Z nennen nur cosp und Geschäftsjahr, ohne Werttyp/Version/Objekt; Y vollständig."
+  },
+  {
+   "id": "BM-045-B03",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "zu_allgemein",
+     "redundant"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein",
+     "redundant"
+    ]
+   },
+   "kurz": "X und Z nennen nur 'eine Meldung' bzw. Nummer 398(00) ohne Inhalt; Y nennt den Hinweis auf fehlende Istkosten."
+  },
+  {
+   "id": "BM-045-B04",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "X und Z geben nur Variablennamen aus, ohne Periodensummierung; Y beschreibt Summe und Ausgabe."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

@@ -1,0 +1,169 @@
+{
+ "id": "BM-070",
+ "titel": "Mehrstufige Stücklistenprüfung der Lagerkomponenten (Klasse)",
+ "prozess": "Die Arbeitsvorbereitung ruft die Prüfung mit Material, Werk und Stichtag auf. Die Methode löst die Stückliste mehrstufig auf; gelingt das nicht, bricht sie mit einer Ausnahme ab. Für jede Lagerposition liest sie die Werksdaten der Komponente. Fehlen sie, vermerkt sie „nicht angelegt“ und geht zur nächsten Komponente. Sonst vermerkt sie eine Löschvormerkung oder – wenn keine vorliegt – das Dispomerkmal ND. Zusätzlich prüft sie über den werksübergreifenden Materialstatus 01 oder Z9, ob die Komponente gesperrt ist, und vermerkt das. Am Ende gibt sie die Befundliste zurück, ohne Daten zu ändern.",
+ "verboten": [
+  "gesamte Scheibe — kein Fachsatz „Fehlerhafte Komponenten werden korrigiert oder die Stückliste geändert“ (die Klasse liest nur und liefert Befunde)",
+  "zcl_pp_bom_check.abap:75 — kein Fachsatz „Eine gelöschte Komponente wird zusätzlich auf ND geprüft“ (ELSEIF: ND wird nur geprüft, wenn keine Löschvormerkung vorliegt)",
+  "zcl_pp_bom_check.abap:58 — kein Fachsatz „Alle Stücklistenpositionen werden geprüft“ (nur Lagerpositionen)"
+ ],
+ "saetze": [
+  {
+   "id": "BM-070-B01",
+   "soll": "Die Stückliste des Materials wird zum Stichtag im Werk mehrstufig mit der Anwendung PP01 für die Menge 1 aufgelöst.",
+   "zeilen": [
+    39
+   ],
+   "code": [
+    "39:     CALL FUNCTION 'CS_BOM_EXPL_MAT_V2'"
+   ],
+   "X": [
+    "Die mehrstufige Stückliste zum angegebenen Material, Werk und Gültigkeitsdatum wird mit der Anwendung PP01 und der Einsatzmenge 1 über den Funktionsbaustein CS_BOM_EXPL_MAT_V2 aufgelöst."
+   ],
+   "Y": [
+    "Der Funktionsbaustein CS_BOM_EXPL_MAT_V2 wird aufgerufen."
+   ],
+   "Z": [
+    "Der Funktionsbaustein CS_BOM_EXPL_MAT_V2 wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-070-B02",
+   "soll": "Lässt sie sich nicht auflösen (Material oder Stückliste fehlt), wird die Prüfung mit einer Ausnahme abgebrochen.",
+   "zeilen": [
+    53,
+    54
+   ],
+   "code": [
+    "53:     IF sy-subrc <> 0.",
+    "54:       RAISE EXCEPTION TYPE zcx_pp_bom_error."
+   ],
+   "X": [
+    "Tritt bei der Stücklistenauflösung ein Fehler auf, wird die Ausnahme ZCX_PP_BOM_ERROR ausgelöst."
+   ],
+   "Y": [],
+   "Z": []
+  },
+  {
+   "id": "BM-070-B03",
+   "soll": "Geprüft werden nur Lagerpositionen, jeweils mit ihrer Stücklistenstufe.",
+   "zeilen": [
+    58
+   ],
+   "code": [
+    "58:     LOOP AT lt_stb INTO ls_stb WHERE postp = 'L'."
+   ],
+   "X": [
+    "Für jede aufgelöste Stücklistenposition mit dem Positionstyp L werden die Komponentennummer und die Auflösungsstufe übernommen."
+   ],
+   "Y": [
+    "Jede Zeile aus lt_stb wird einzeln verarbeitet."
+   ],
+   "Z": [
+    "Die Zeilen aus lt_stb, bei denen das Feld postp gleich L ist, werden einzeln verarbeitet."
+   ]
+  },
+  {
+   "id": "BM-070-B04",
+   "soll": "Ist eine Komponente im Werk nicht angelegt, wird „Komponente im Werk nicht angelegt“ vermerkt und die Komponente nicht weiter geprüft.",
+   "zeilen": [
+    63,
+    66,
+    67
+   ],
+   "code": [
+    "63:       SELECT SINGLE * FROM marc INTO ls_marc",
+    "66:       IF sy-subrc <> 0.",
+    "67:         ls_issue-text = 'Komponente im Werk nicht angelegt'."
+   ],
+   "X": [
+    "Aus der Tabelle MARC wird der Werkssatz zur Komponente im übergebenen Werk gelesen.",
+    "Wurde kein Werkssatz in der Tabelle MARC gefunden, wird der Text 'Komponente im Werk nicht angelegt' in die Meldungstabelle eingefügt und die Prüfung der aktuellen Komponente beendet."
+   ],
+   "Y": [
+    "Es werden Sätze aus marc selektiert.",
+    "Ohne Treffer wird die Text auf Komponente im Werk nicht angelegt gesetzt und eine Zeile aufgenommen.",
+    "sy-subrc ungleich 0 setzen die Text auf Komponente im Werk nicht angelegt.",
+    "Es wird die Text auf Komponente im Werk nicht angelegt gesetzt und eine Zeile aufgenommen."
+   ],
+   "Z": [
+    "Es werden Werksdatensätze zu Materialien selektiert.",
+    "Ohne Treffer wird der Text auf Komponente im Werk nicht angelegt gesetzt, eine Zeile aufgenommen und der Schleifendurchlauf übersprungen.",
+    "Wenn kein Treffer vorliegt, wird der Text auf Komponente im Werk nicht angelegt gesetzt."
+   ]
+  },
+  {
+   "id": "BM-070-B05",
+   "soll": "Eine zum Löschen vorgemerkte Komponente wird vermerkt; andernfalls wird eine Komponente mit Dispomerkmal ND als nicht disponiert vermerkt.",
+   "zeilen": [
+    72,
+    75
+   ],
+   "code": [
+    "72:       IF ls_marc-lvorm = 'X'.",
+    "75:       ELSEIF ls_marc-dismm = 'ND'."
+   ],
+   "X": [
+    "Ist im Werkssatz das Löschvormerkungskennzeichen auf X gesetzt, wird der Text 'Komponente zum Loeschen vorgemerkt' in die Meldungstabelle aufgenommen."
+   ],
+   "Y": [
+    "Mit gesetztem ls_marc-lvorm wird die Text auf Komponente zum Loeschen vorgemerkt gesetzt und eine Zeile aufgenommen.",
+    "Mit gesetztem ls_marc-lvorm wird die Text auf Komponente zum Loeschen vorgemerkt gesetzt und eine Zeile aufgenommen, sonst die Text auf Komponente ohne Disposition (ND) gesetzt und eine Zeile aufgenommen.",
+    "ls_marc-lvorm mit dem Wert X setzen die Text auf Komponente zum Loeschen vorgemerkt.",
+    "Für ls_marc-dismm mit dem Wert ND wird die Text auf Komponente ohne Disposition (ND) gesetzt und eine Zeile aufgenommen.",
+    "ls_marc-dismm mit dem Wert ND setzen die Text auf Komponente ohne Disposition (ND)."
+   ],
+   "Z": [
+    "Mit gesetztem ls_marc-lvorm wird der Text auf Komponente zum Loeschen vorgemerkt gesetzt und eine Zeile aufgenommen.",
+    "Wenn das Feld ls_marc-lvorm gesetzt ist, wird der Text auf Komponente zum Loeschen vorgemerkt gesetzt.",
+    "Wenn das Feld ls_marc-dismm gleich ND ist, wird der Text auf Komponente ohne Disposition (ND) gesetzt und eine Zeile aufgenommen.",
+    "Wenn das Feld ls_marc-dismm gleich ND ist, wird der Text auf Komponente ohne Disposition (ND) gesetzt."
+   ]
+  },
+  {
+   "id": "BM-070-B06",
+   "soll": "Hat die Komponente den werksübergreifenden Materialstatus 01 oder Z9, wird sie zusätzlich als werksübergreifend gesperrt vermerkt.",
+   "zeilen": [
+    80,
+    81,
+    92,
+    95
+   ],
+   "code": [
+    "80:       DATA(lv_gesperrt) = is_blocked( ls_stb-idnrk ).",
+    "81:       IF lv_gesperrt = abap_true.",
+    "92:     SELECT SINGLE mstae FROM mara INTO lv_mstae",
+    "95:     IF lv_mstae = '01' OR lv_mstae = 'Z9'."
+   ],
+   "X": [
+    "Aus der Tabelle MARA wird der werksspezifische Materialstatus zum Material gelesen.",
+    "Ist der Materialstatus gleich 01 oder Z9, wird die Komponente als gesperrt gekennzeichnet.",
+    "Für die Komponente wird über die interne Prüfung ermittelt, ob eine werksübergreifende Sperre vorliegt.",
+    "Ist die Komponente werksübergreifend gesperrt, wird der Text 'Werksuebergreifend gesperrt' in die Meldungstabelle aufgenommen."
+   ],
+   "Y": [
+    "Für lv_gesperrt mit dem Wert abap_true wird die Text auf Werksuebergreifend gesperrt gesetzt und eine Zeile aufgenommen.",
+    "lv_gesperrt mit dem Wert abap_true setzen die Text auf Werksuebergreifend gesperrt.",
+    "mstae des Satzes wird gelesen."
+   ],
+   "Z": [
+    "Wenn das Feld lv_gesperrt gesetzt ist, wird der Text auf Werksuebergreifend gesperrt gesetzt und eine Zeile aufgenommen.",
+    "Wenn das Feld lv_gesperrt gesetzt ist, wird der Text auf Werksuebergreifend gesperrt gesetzt.",
+    "Das Feld mstae des Materials wird gelesen."
+   ]
+  },
+  {
+   "id": "BM-070-B07",
+   "soll": "Die Methode gibt die Liste aller Befunde zurück.",
+   "zeilen": [
+    86
+   ],
+   "code": [
+    "86:   ENDMETHOD."
+   ],
+   "X": [],
+   "Y": [],
+   "Z": []
+  }
+ ]
+}

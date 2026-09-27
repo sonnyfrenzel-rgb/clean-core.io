@@ -1,0 +1,483 @@
+{
+ "id": "BM-096",
+ "titel": "IDoc-Eingang Materialstamm aus MDM-Hub: Segmentmapping, Serialisierung, BAPI je Werk",
+ "prozess": "Die ALE-Eingangsverarbeitung übergibt dem Baustein ein Paket von Materialstamm-IDocs aus dem MDM-Hub. Ein anderer Nachrichtentyp als ZMATMAS bricht ab. Je IDoc werden zuerst die Segmente in die Daten der Materialpflege übertragen: Materialnummer (ins interne Format gewandelt), Branche, Materialart und Mandantendaten, Kurztexte je Sprache, Werksdaten je Werk, alternative Mengeneinheiten und die Kundenfelder Designverantwortung und RoHS; unbekannte Segmente werden ignoriert. Danach prüft der Baustein, ob für das Material bereits ein jüngeres IDoc verbucht wurde, und überspringt in diesem Fall das ältere mit Status 68. Die Prüfung verlangt eine Materialnummer, eine definierte Materialart und definierte Werke. Ein fehlerfreies IDoc wird verbucht: Das Material wird gesperrt, zuerst werden Mandantendaten, Texte, Mengeneinheiten und Kundenfelder und danach je Werk die Werksdaten gepflegt; beim ersten Fehler wird abgebrochen. Nur wenn alles fehlerfrei ist, wird festgeschrieben, sonst alles verworfen; danach wird die Sperre gelöst. Erfolgreiche IDocs schreiben den Serialisierungsstand fort und erhalten Status 53, fehlerhafte Status 51 mit der vermerkten Meldung und ein Workflow-Fehlerergebnis.",
+ "verboten": [
+  "lzmatmas_inf02.abap:136 — kein Fachsatz „bereits gepflegte Werke bleiben bei einem Werksfehler erhalten“ (alle Aufrufe liegen in einer LUW und werden gemeinsam verworfen).",
+  "gesamte Scheibe — kein Fachsatz über die Einkaufssperre (Feld pur_status nur auskommentiert).",
+  "lzmatmas_inf02.abap:83 — kein Fachsatz „ein gesperrtes Material wird automatisch später erneut versucht“ (Status 51; Nachbearbeitung nur manuell bzw. per Job außerhalb des Falls).",
+  "lzmatmas_inf01.abap:31 — kein Fehlerpfad für eine nicht wandelbare Materialnummer (sy-subrc wird nicht geprüft; erst die Prüfung auf leere Nummer greift)."
+ ],
+ "saetze": [
+  {
+   "id": "BM-096-B01",
+   "soll": "Jedes IDoc des Pakets wird nur mit dem Nachrichtentyp ZMATMAS verarbeitet; ein anderer Typ bricht den Baustein ab.",
+   "zeilen": [
+    376,
+    377
+   ],
+   "code": [
+    "376:     IF gs_edidc-mestyp <> 'ZMATMAS'.",
+    "377:       RAISE wrong_function_called."
+   ],
+   "X": [],
+   "Y": [],
+   "Z": [
+    "Entspricht der Nachrichtentyp mestyp im IDoc-Steuersatz nicht dem Wert 'ZMATMAS', wird die Ausnahme WRONG_FUNCTION_CALLED ausgelöst."
+   ]
+  },
+  {
+   "id": "BM-096-B02",
+   "soll": "Die Segmente des IDocs werden in die Daten für die Materialpflege übertragen; unbekannte Segmente werden ignoriert.",
+   "zeilen": [
+    79,
+    80,
+    381
+   ],
+   "code": [
+    "79:   LOOP AT pt_data INTO ls_edidd WHERE docnum = pv_docnum.",
+    "80:     CASE ls_edidd-segnam.",
+    "381:     PERFORM parse_segments TABLES idoc_data"
+   ],
+   "X": [
+    "Die Zeilen aus pt_data, bei denen das Feld docnum gleich pv_docnum ist, werden einzeln verarbeitet.",
+    "Das Unterprogramm parse_segments wird aufgerufen; es ruft CONVERSION_EXIT_MATN1_INPUT auf.",
+    "Die Unterprogramme parse_segments und check_serialization werden nacheinander aufgerufen."
+   ],
+   "Y": [
+    "Jede Zeile aus pt_data wird einzeln verarbeitet.",
+    "Das Unterprogramm parse_segments wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Es wird parse_segments aufgerufen und check_serialization aufgerufen."
+   ],
+   "Z": [
+    "Für das aktuelle IDoc werden die Segmente über das Unterprogramm PARSE_SEGMENTS anhand der IDoc-Nummer docnum aufbereitet.",
+    "Für jedes Segment in pt_data, das zur aktuellen IDoc-Nummer docnum gehört, wird eine Auswertungsschleife durchlaufen.",
+    "Handelt es sich um das Segment 'ZE1MARAM', wird die Materialnummer matnr über den Funktionsbaustein CONVERSION_EXIT_MATN1_INPUT in das interne Format konvertiert."
+   ]
+  },
+  {
+   "id": "BM-096-B03",
+   "soll": "Aus dem Kopfsegment werden die ins interne Format gewandelte Materialnummer, Branche und Materialart sowie Warengruppe, Basismengeneinheit, alte Materialnummer, Nettogewicht mit Einheit und Produkthierarchie übernommen.",
+   "zeilen": [
+    84,
+    92,
+    95
+   ],
+   "code": [
+    "84:         CALL FUNCTION 'CONVERSION_EXIT_MATN1_INPUT'",
+    "92:         gs_head-ind_sector = gs_e1maram-mbrsh.",
+    "95:         map_field gs_mara gs_marax matl_group."
+   ],
+   "X": [
+    "Der Code übergibt gs_e1maram-matnr an CONVERSION_EXIT_MATN1_INPUT und übernimmt dessen Ausgabe nach gs_head-material."
+   ],
+   "Y": [
+    "Der Code übergibt gs_e1maram-matnr an CONVERSION_EXIT_MATN1_INPUT und übernimmt dessen Ausgabe nach gs_head-material.",
+    "Das konvertierte Ergebnis wird in gs_head-material übernommen."
+   ],
+   "Z": [
+    "Handelt es sich um das Segment 'ZE1MARAM', wird die Materialnummer matnr über den Funktionsbaustein CONVERSION_EXIT_MATN1_INPUT in das interne Format konvertiert."
+   ]
+  },
+  {
+   "id": "BM-096-B04",
+   "soll": "Kurztexte werden je Sprache übernommen.",
+   "zeilen": [
+    105
+   ],
+   "code": [
+    "105:         ls_makt-langu     = gs_e1maktm-spras."
+   ],
+   "X": [],
+   "Y": [],
+   "Z": []
+  },
+  {
+   "id": "BM-096-B05",
+   "soll": "Je Werkssegment werden Dispomerkmal, Disponent, Einkäufergruppe, Beschaffungsart und Profit-Center übernommen.",
+   "zeilen": [
+    112
+   ],
+   "code": [
+    "112:         ls_marc-plant      = gs_e1marcm-werks."
+   ],
+   "X": [],
+   "Y": [],
+   "Z": []
+  },
+  {
+   "id": "BM-096-B06",
+   "soll": "Alternative Mengeneinheiten werden mit Zähler und Nenner der Umrechnung übernommen.",
+   "zeilen": [
+    122
+   ],
+   "code": [
+    "122:         ls_marm-alt_unit   = gs_e1marmm-meinh."
+   ],
+   "X": [],
+   "Y": [],
+   "Z": []
+  },
+  {
+   "id": "BM-096-B07",
+   "soll": "Die Kundenfelder Designverantwortung und RoHS-Kennzeichen werden als Erweiterung übergeben.",
+   "zeilen": [
+    134
+   ],
+   "code": [
+    "134:         ls_te-material       = gs_head-material."
+   ],
+   "X": [],
+   "Y": [],
+   "Z": []
+  },
+  {
+   "id": "BM-096-B08",
+   "soll": "Ist für das Material bereits ein jüngeres IDoc verbucht (später erstellt nach Datum und Uhrzeit), wird dieses IDoc mit Status 68 und Warnung übersprungen.",
+   "zeilen": [
+    165,
+    171,
+    386,
+    387
+   ],
+   "code": [
+    "165:   SELECT SINGLE * FROM zmm_idoc_serial INTO ls_serial",
+    "171:   IF ls_serial-credat > ps_edidc-credat",
+    "386:     IF gv_skip = 'X'.",
+    "387:       PERFORM add_status TABLES idoc_status"
+   ],
+   "X": [
+    "Es werden Sätze aus zmm_idoc_serial selektiert.",
+    "Wenn die Bedingung „ls_serial-credat > ps_edidc-credat OR ( ls_serial-credat = ps_edidc-credat AND ls_serial-cretim > ps_edidc-cretim )“ erfüllt ist, wird das Feld pv_skip auf X gesetzt.",
+    "Wenn die Bedingung „ls_serial-credat > ps_edidc-credat OR ( ls_serial-credat = ps_edidc-credat AND ls_serial-cretim > ps_edidc-cretim )“ erfüllt ist, wird das Feld pv_skip auf X gesetzt.",
+    "Mit gesetztem gv_skip wird add_status aufgerufen und der Schleifendurchlauf übersprungen.",
+    "Das Unterprogramm add_status wird aufgerufen."
+   ],
+   "Y": [
+    "Es werden Sätze aus zmm_idoc_serial selektiert.",
+    "Für ls_serial-credat > ps_edidc-credat OR ( ls_serial-credat = ps_edidc-credat AND ls_serial-cretim > ps_edidc-cretim ) wird die pv_skip auf X gesetzt.",
+    "ls_serial-credat > ps_edidc-credat OR ( ls_serial-credat = ps_edidc-credat AND ls_serial-cretim > ps_edidc-cretim ) setzen die pv_skip auf X.",
+    "Mit gesetztem gv_skip wird add_status aufgerufen.",
+    "Das Unterprogramm add_status wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt."
+   ],
+   "Z": [
+    "Aus der Tabelle ZMM_IDOC_SERIAL wird der Serialisierungsdatensatz zur Materialnummer matnr gelesen.",
+    "Ist das Erstellungsdatum credat in ZMM_IDOC_SERIAL größer als das Erstellungsdatum des IDocs oder bei identischem Datum die Uhrzeit cretim größer, wird das Kennzeichen zum Überspringen auf 'X' gesetzt.",
+    "Ist das Überspringen-Kennzeichen auf 'X' gesetzt, wird über das Unterprogramm ADD_STATUS der Status '68' hinzugefügt und die Verarbeitung des aktuellen IDocs beendet."
+   ]
+  },
+  {
+   "id": "BM-096-B09",
+   "soll": "Fehlt die Materialnummer, ist das IDoc fehlerhaft (Meldung 001).",
+   "zeilen": [
+    186,
+    187
+   ],
+   "code": [
+    "186:   IF gs_head-material IS INITIAL.",
+    "187:     PERFORM set_error USING '001' space space."
+   ],
+   "X": [
+    "Ist das Feld gs_head-material leer, wird set_error aufgerufen, das Feld pv_error auf X gesetzt und der Block verlassen.",
+    "Das Unterprogramm set_error wird aufgerufen.",
+    "Wenn das Feld gs_head-material leer ist, wird das Feld pv_error auf X gesetzt."
+   ],
+   "Y": [
+    "Ohne gs_head-material wird set_error aufgerufen, die pv_error auf X gesetzt und der Block verlassen.",
+    "Ohne gs_head-material wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "Das Unterprogramm set_error wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Es wird set_error aufgerufen, die pv_error auf X gesetzt und der Block verlassen.",
+    "Eine leere gs_head-material setzen die pv_error auf X."
+   ],
+   "Z": [
+    "Ist keine Materialnummer angegeben (Feld gs_head-material ist initial), wird der Fehler '001' gesetzt, das Fehlerkennzeichen auf 'X' gesetzt und die Prüfung beendet."
+   ]
+  },
+  {
+   "id": "BM-096-B10",
+   "soll": "Ist die Materialart nicht definiert, ist das IDoc fehlerhaft (Meldung 002).",
+   "zeilen": [
+    192,
+    195
+   ],
+   "code": [
+    "192:   SELECT SINGLE mtart FROM t134 INTO lv_mtart",
+    "195:     PERFORM set_error USING '002' gs_head-matl_type space."
+   ],
+   "X": [
+    "Das Feld mtart aus t134 wird gelesen.",
+    "Ohne Treffer wird set_error aufgerufen, das Feld pv_error auf X gesetzt und der Block verlassen.",
+    "Das Unterprogramm set_error wird aufgerufen."
+   ],
+   "Y": [
+    "mtart des Satzes wird gelesen.",
+    "Ohne Treffer wird set_error aufgerufen, die pv_error auf X gesetzt und der Block verlassen.",
+    "Das Unterprogramm set_error wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Es wird set_error aufgerufen, die pv_error auf X gesetzt und der Block verlassen."
+   ],
+   "Z": [
+    "Aus der Tabelle T134 wird die Materialart mtart für die angegebene Materialart matl_type gelesen.",
+    "Wird die Materialart in der Tabelle T134 nicht gefunden (sy-subrc ungleich 0), wird der Fehler '002' gesetzt, das Fehlerkennzeichen auf 'X' gesetzt und die Validierung abgebrochen."
+   ]
+  },
+  {
+   "id": "BM-096-B11",
+   "soll": "Ist eines der gelieferten Werke nicht definiert, ist das IDoc fehlerhaft (Meldung 003 mit Werk und Material).",
+   "zeilen": [
+    201,
+    204
+   ],
+   "code": [
+    "201:     SELECT SINGLE werks FROM t001w INTO lv_werks",
+    "204:       PERFORM set_error USING '003' ls_marc-plant gs_head-material."
+   ],
+   "X": [
+    "Das Werk des Werks wird gelesen.",
+    "Ohne Treffer wird set_error aufgerufen, das Feld pv_error auf X gesetzt und der Block verlassen.",
+    "Das Unterprogramm set_error wird aufgerufen."
+   ],
+   "Y": [
+    "werks des Satzes wird gelesen.",
+    "Ohne Treffer wird set_error aufgerufen, die pv_error auf X gesetzt und der Block verlassen.",
+    "Das Unterprogramm set_error wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Es wird set_error aufgerufen, die pv_error auf X gesetzt und der Block verlassen."
+   ],
+   "Z": [
+    "Aus der Tabelle T001W wird das Werk werks anhand des Werks plant aus dem Werksdatensatz gelesen.",
+    "Wird das Werk in der Tabelle T001W nicht gefunden (sy-subrc ungleich 0), wird der Fehler '003' gesetzt, das Fehlerkennzeichen auf 'X' gesetzt und die Validierung abgebrochen."
+   ]
+  },
+  {
+   "id": "BM-096-B12",
+   "soll": "Nur ein fehlerfrei geprüftes IDoc wird verbucht.",
+   "zeilen": [
+    393,
+    394
+   ],
+   "code": [
+    "393:     IF gv_error IS INITIAL.",
+    "394:       PERFORM post_material CHANGING gv_error."
+   ],
+   "X": [
+    "Ist das Feld gv_error leer, wird post_material aufgerufen.",
+    "Das Unterprogramm post_material wird aufgerufen; es ruft ENQUEUE_EMMARAE, BAPI_MATERIAL_SAVEDATA und BAPI_TRANSACTION_ROLLBACK auf und schreibt mit BAPI_TRANSACTION_COMMIT fest."
+   ],
+   "Y": [
+    "Ohne gv_error wird post_material aufgerufen.",
+    "Das Unterprogramm post_material wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt."
+   ],
+   "Z": [
+    "Ist bis dahin kein Fehler aufgetreten (gv_error ist initial), wird das Unterprogramm POST_MATERIAL zur Verbuchung aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-096-B13",
+   "soll": "Vor der Verbuchung wird das Material gesperrt; ist es gesperrt, ist das IDoc fehlerhaft (Meldung 004 mit dem sperrenden Benutzer).",
+   "zeilen": [
+    224,
+    231,
+    232
+   ],
+   "code": [
+    "224:   CALL FUNCTION 'ENQUEUE_EMMARAE'",
+    "231:   IF sy-subrc <> 0.",
+    "232:     PERFORM set_error USING '004' gs_head-material sy-msgv1."
+   ],
+   "X": [
+    "Der Funktionsbaustein ENQUEUE_EMMARAE wird aufgerufen.",
+    "Ist die Sperre über ENQUEUE_EMMARAE nicht zu erhalten, wird set_error aufgerufen, das Feld pv_error auf X gesetzt und der Block verlassen.",
+    "Das Unterprogramm set_error wird aufgerufen.",
+    "Wenn die Sperre über ENQUEUE_EMMARAE nicht zu erhalten ist, wird das Feld pv_error auf X gesetzt."
+   ],
+   "Y": [
+    "Der Funktionsbaustein ENQUEUE_EMMARAE wird aufgerufen.",
+    "Ohne Treffer wird set_error aufgerufen, die pv_error auf X gesetzt und der Block verlassen.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "Das Unterprogramm set_error wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Es wird set_error aufgerufen, die pv_error auf X gesetzt und der Block verlassen.",
+    "sy-subrc ungleich 0 setzen die pv_error auf X."
+   ],
+   "Z": [
+    "Für das Material wird über den Funktionsbaustein ENQUEUE_EMMARAE eine Sperre angefordert.",
+    "Kann die Sperre für das Material nicht gesetzt werden (sy-subrc ungleich 0), wird der Fehler '004' gesetzt, das Fehlerkennzeichen auf 'X' gesetzt und die Verbuchung abgebrochen."
+   ]
+  },
+  {
+   "id": "BM-096-B14",
+   "soll": "Zuerst werden Mandantendaten, Kurztexte, Mengeneinheiten und Kundenfelder angelegt oder geändert; ein Fehler dabei macht das IDoc fehlerhaft (Meldung 005).",
+   "zeilen": [
+    237,
+    250,
+    251
+   ],
+   "code": [
+    "237:   CALL FUNCTION 'BAPI_MATERIAL_SAVEDATA'",
+    "250:   IF ls_return-type CA 'EA'.",
+    "251:     PERFORM set_error USING '005' ls_return-message(50) space."
+   ],
+   "X": [
+    "Der Code übergibt gs_head an BAPI_MATERIAL_SAVEDATA und übernimmt dessen Ausgabe nach ls_return.",
+    "Wenn die Bedingung „ls_return-type CA 'EA'“ erfüllt ist, wird set_error aufgerufen und das Feld pv_error auf X gesetzt.",
+    "Das Unterprogramm set_error wird aufgerufen.",
+    "Wenn die Bedingung „ls_return-type CA 'EA'“ erfüllt ist, wird das Feld pv_error auf X gesetzt."
+   ],
+   "Y": [
+    "Der Code übergibt gs_head an BAPI_MATERIAL_SAVEDATA und übernimmt dessen Ausgabe nach ls_return.",
+    "Das konvertierte Ergebnis wird in ls_return übernommen.",
+    "Für ls_return-type CA 'EA' wird set_error aufgerufen und die pv_error auf X gesetzt.",
+    "Das Unterprogramm set_error wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Es wird set_error aufgerufen und die pv_error auf X gesetzt.",
+    "ls_return-type CA 'EA' setzen die pv_error auf X."
+   ],
+   "Z": [
+    "Über den Funktionsbaustein BAPI_MATERIAL_SAVEDATA werden die Kopf- und Mandantendaten, Kurztexte, Mengeneinheiten und Erweiterungsfelder des Materials angelegt bzw. geändert.",
+    "Gibt der BAPI-Aufruf für die Mandantendaten einen Fehler vom Typ 'E' oder 'A' zurück, wird die Fehlermeldung '005' erfasst und das Fehlerkennzeichen auf 'X' gesetzt.",
+    "Tritt bei den Mandantendaten kein Fehler auf, wird für jedes Werk in gt_marc eine Verbuchungsschleife durchlaufen."
+   ]
+  },
+  {
+   "id": "BM-096-B15",
+   "soll": "Danach werden je Werk die Werksdaten mit Disposition- und Einkaufssicht gepflegt; beim ersten fehlerhaften Werk wird abgebrochen (Meldung 006).",
+   "zeilen": [
+    254,
+    265,
+    272,
+    273
+   ],
+   "code": [
+    "254:     LOOP AT gt_marc INTO ls_marc.",
+    "265:       CALL FUNCTION 'BAPI_MATERIAL_SAVEDATA'",
+    "272:       IF ls_return-type CA 'EA'.",
+    "273:         PERFORM set_error USING '006' ls_marc-plant ls_return-message(50)."
+   ],
+   "X": [
+    "Jede Zeile aus gt_marc wird einzeln verarbeitet.",
+    "Es wird das Feld ls_marcx-mrp_type auf X gesetzt, das Feld ls_marcx-mrp_ctrler auf X gesetzt, das Feld ls_marcx-pur_group auf X gesetzt, das Feld ls_marcx-proc_type auf X gesetzt, das Feld ls_marcx-profit_ctr auf X gesetzt und BAPI_MATERIAL_SAVEDATA aufgerufen.",
+    "Der Code übergibt ls_head an BAPI_MATERIAL_SAVEDATA und übernimmt dessen Ausgabe nach ls_return.",
+    "Wenn die Bedingung „ls_return-type CA 'EA'“ erfüllt ist, wird set_error aufgerufen, das Feld pv_error auf X gesetzt und die Schleife verlassen.",
+    "Das Unterprogramm set_error wird aufgerufen.",
+    "Wenn die Bedingung „ls_return-type CA 'EA'“ erfüllt ist, wird das Feld pv_error auf X gesetzt."
+   ],
+   "Y": [
+    "Jede Zeile aus gt_marc wird einzeln verarbeitet.",
+    "Es wird die ls_marcx-mrp_type auf X gesetzt, die ls_marcx-mrp_ctrler auf X gesetzt, die ls_marcx-pur_group auf X gesetzt, die ls_marcx-proc_type auf X gesetzt, die ls_marcx-profit_ctr auf X gesetzt und BAPI_MATERIAL_SAVEDATA aufgerufen.",
+    "Der Code übergibt ls_head an BAPI_MATERIAL_SAVEDATA und übernimmt dessen Ausgabe nach ls_return.",
+    "Das konvertierte Ergebnis wird in ls_return übernommen.",
+    "Für ls_return-type CA 'EA' wird set_error aufgerufen, die pv_error auf X gesetzt und der Block verlassen.",
+    "Das Unterprogramm set_error wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Es wird set_error aufgerufen, die pv_error auf X gesetzt und der Block verlassen.",
+    "ls_return-type CA 'EA' setzen die pv_error auf X."
+   ],
+   "Z": [
+    "Tritt bei den Mandantendaten kein Fehler auf, wird für jedes Werk in gt_marc eine Verbuchungsschleife durchlaufen.",
+    "Die Werksdaten werden je Werk über den Funktionsbaustein BAPI_MATERIAL_SAVEDATA gespeichert.",
+    "Gibt der BAPI-Aufruf für ein Werk einen Fehler vom Typ 'E' oder 'A' zurück, wird die Fehlermeldung '006' gesetzt, das Fehlerkennzeichen auf 'X' gesetzt und die Werksschleife beendet."
+   ]
+  },
+  {
+   "id": "BM-096-B16",
+   "soll": "Sind alle Aufrufe fehlerfrei, wird die Materialpflege festgeschrieben, sonst vollständig verworfen; danach wird die Sperre freigegeben.",
+   "zeilen": [
+    280,
+    281,
+    285,
+    288
+   ],
+   "code": [
+    "280:   IF pv_error IS INITIAL.",
+    "281:     CALL FUNCTION 'BAPI_TRANSACTION_COMMIT'",
+    "285:     CALL FUNCTION 'BAPI_TRANSACTION_ROLLBACK'.",
+    "288:   CALL FUNCTION 'DEQUEUE_EMMARAE'"
+   ],
+   "X": [
+    "Ist das Feld pv_error leer, wird BAPI_TRANSACTION_COMMIT aufgerufen, sonst BAPI_TRANSACTION_ROLLBACK aufgerufen.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_COMMIT wird aufgerufen.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_ROLLBACK wird aufgerufen.",
+    "Der Funktionsbaustein DEQUEUE_EMMARAE wird aufgerufen."
+   ],
+   "Y": [
+    "Ohne pv_error wird BAPI_TRANSACTION_COMMIT aufgerufen.",
+    "Ohne pv_error wird BAPI_TRANSACTION_COMMIT aufgerufen, sonst BAPI_TRANSACTION_ROLLBACK aufgerufen.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_COMMIT wird aufgerufen.",
+    "Sonst wird BAPI_TRANSACTION_ROLLBACK aufgerufen.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_ROLLBACK wird aufgerufen.",
+    "Der Funktionsbaustein DEQUEUE_EMMARAE wird aufgerufen."
+   ],
+   "Z": [
+    "Liegt bei der Verbuchung kein Fehler vor, werden die Änderungen über den Funktionsbaustein BAPI_TRANSACTION_COMMIT mit Warteoption festgeschrieben.",
+    "Liegt bei der Verbuchung ein Fehler vor, werden alle Datenbankänderungen über den Funktionsbaustein BAPI_TRANSACTION_ROLLBACK verworfen.",
+    "Die Materialsperre wird über den Funktionsbaustein DEQUEUE_EMMARAE wieder freigegeben."
+   ]
+  },
+  {
+   "id": "BM-096-B17",
+   "soll": "Nach erfolgreicher Verbuchung werden IDoc-Nummer und Erstellzeitpunkt als letzter Stand des Materials gespeichert und das IDoc erhält Status 53 mit der Materialnummer.",
+   "zeilen": [
+    303,
+    319,
+    398,
+    399
+   ],
+   "code": [
+    "303:   MODIFY zmm_idoc_serial FROM ls_serial.",
+    "319:       ls_status-msgty = 'S'.",
+    "398:       PERFORM update_serialization USING gs_edidc.",
+    "399:       PERFORM add_status TABLES idoc_status"
+   ],
+   "X": [
+    "Eine Zeile in zmm_idoc_serial wird eingefügt oder überschrieben. sy-subrc wird danach nicht ausgewertet.",
+    "Es wird das Feld ls_status-msgty auf S gesetzt und das Feld ls_status-msgno auf 010 gesetzt.",
+    "Das Feld ls_status-msgty wird auf S gesetzt.",
+    "Ist das Feld gv_error leer, wird update_serialization aufgerufen, add_status aufgerufen und das Feld return_variables-wf_param auf Processed_IDOCs gesetzt, sonst add_status aufgerufen, das Feld workflow_result auf 99999 gesetzt und das Feld return_variables-wf_param auf Error_IDOCs gesetzt.",
+    "Das Unterprogramm update_serialization wird aufgerufen; es schreibt in ZMM_IDOC_SERIAL.",
+    "Das Unterprogramm add_status wird aufgerufen."
+   ],
+   "Y": [
+    "Eine Zeile in zmm_idoc_serial wird eingefügt oder überschrieben. Angekündigt, nicht persistiert: im gelieferten Code steht kein COMMIT WORK. sy-subrc wird danach nicht ausgewertet.",
+    "Es wird die ls_status-msgty auf S gesetzt und die ls_status-msgno auf 010 gesetzt.",
+    "Die ls_status-msgty wird auf S gesetzt.",
+    "Ohne gv_error wird update_serialization aufgerufen, add_status aufgerufen und die return_variables-wf_param auf Processed_IDOCs gesetzt.",
+    "Ohne gv_error wird update_serialization aufgerufen, add_status aufgerufen und die return_variables-wf_param auf Processed_IDOCs gesetzt, sonst add_status aufgerufen, die workflow_result auf 99999 gesetzt und die return_variables-wf_param auf Error_IDOCs gesetzt.",
+    "Das Unterprogramm update_serialization wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Es wird update_serialization aufgerufen, add_status aufgerufen und die return_variables-wf_param auf Processed_IDOCs gesetzt.",
+    "Das Unterprogramm add_status wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt."
+   ],
+   "Z": [
+    "In der Tabelle ZMM_IDOC_SERIAL wird der Datensatz mit Materialnummer matnr, IDoc-Nummer docnum, Erstellungsdatum credat und Erstellungszeit cretim fortgeschrieben.",
+    "Ist kein Verarbeitungsfehler aufgetreten, wird über das Unterprogramm UPDATE_SERIALIZATION die Serialisierungstabelle aktualisiert.",
+    "Ist kein Verarbeitungsfehler aufgetreten, wird über ADD_STATUS der Erfolgsstatus '53' gesetzt und der Rückgabeparameter 'Processed_IDOCs' mit der IDoc-Nummer festgehalten."
+   ]
+  },
+  {
+   "id": "BM-096-B18",
+   "soll": "Ein fehlerhaftes IDoc erhält Status 51 mit der vermerkten Fehlermeldung, und das Workflow-Ergebnis meldet einen Fehler.",
+   "zeilen": [
+    327,
+    403,
+    405
+   ],
+   "code": [
+    "327:       ls_status-msgty = 'E'.",
+    "403:       PERFORM add_status TABLES idoc_status",
+    "405:       workflow_result = '99999'."
+   ],
+   "X": [
+    "Das Feld ls_status-msgty wird auf E gesetzt.",
+    "Ist das Feld gv_error leer, wird update_serialization aufgerufen, add_status aufgerufen und das Feld return_variables-wf_param auf Processed_IDOCs gesetzt, sonst add_status aufgerufen, das Feld workflow_result auf 99999 gesetzt und das Feld return_variables-wf_param auf Error_IDOCs gesetzt.",
+    "Das Unterprogramm add_status wird aufgerufen.",
+    "Sonst wird das Feld workflow_result auf 99999 gesetzt."
+   ],
+   "Y": [
+    "Die ls_status-msgty wird auf E gesetzt.",
+    "Ohne gv_error wird update_serialization aufgerufen, add_status aufgerufen und die return_variables-wf_param auf Processed_IDOCs gesetzt, sonst add_status aufgerufen, die workflow_result auf 99999 gesetzt und die return_variables-wf_param auf Error_IDOCs gesetzt.",
+    "Sonst wird add_status aufgerufen, die workflow_result auf 99999 gesetzt und die return_variables-wf_param auf Error_IDOCs gesetzt.",
+    "Das Unterprogramm add_status wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Es wird add_status aufgerufen, die workflow_result auf 99999 gesetzt und die return_variables-wf_param auf Error_IDOCs gesetzt.",
+    "Sonst setzen die workflow_result auf 99999."
+   ],
+   "Z": [
+    "Ist ein Verarbeitungsfehler aufgetreten, wird über ADD_STATUS der Fehlerstatus '51' gesetzt, das Workflow-Ergebnis auf '99999' gesetzt und der Rückgabeparameter 'Error_IDOCs' mit der IDoc-Nummer festgehalten."
+   ]
+  }
+ ]
+}

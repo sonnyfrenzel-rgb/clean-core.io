@@ -1,0 +1,68 @@
+{
+ "id": "BM-004",
+ "urteile": [
+  {
+   "id": "BM-004-B01",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "grammatik"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "kurz": "X/Y nur Feldkürzel, Z nennt alle drei Sperren."
+  },
+  {
+   "id": "BM-004-B02",
+   "X": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "kurz": "Nur Z nennt die Ausnahme bei fehlendem Kunden."
+  },
+  {
+   "id": "BM-004-B03",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig",
+     "redundant"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "kurz": "X/Y wiederholen den Lesesatz ohne Bedingung und Vertriebsbereich, Z trifft Bedingung und KNVV."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

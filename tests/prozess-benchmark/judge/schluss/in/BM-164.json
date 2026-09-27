@@ -1,0 +1,96 @@
+{
+ "id": "BM-164",
+ "titel": "Leergutkonto: offener Mehrweg-Saldo je Kunde und Leergutmaterial",
+ "prozess": "Der Report wird mit Kundennummer und Stichtag gestartet. Er liest aus einer Kundentabelle alle Leergutbewegungen dieses Kunden bis zum Stichtag mit Leergutmaterial, Richtung und Menge. Ist der angemeldete Benutzer MUELLERK, werden vorher alle Bewegungen über 500 Einheiten aus der Rechnung entfernt – eine Test-Hintertür, die das Ergebnis für diesen Benutzer verfälscht. Danach werden die Bewegungen je Leergutmaterial gruppiert und saldiert: Ausgaben (A) erhöhen den Saldo, jede andere Richtung mindert ihn. Nur Materialien mit offenem Saldo werden mit Kunde, Material und Saldo gelistet. Es wird nichts gebucht oder geändert.",
+ "verboten": [
+  "source.abap:15 — kein Fachsatz „Bewegungen über 500 Einheiten werden als unplausibel ausgesondert“: das geschieht nur für einen einzelnen Benutzernamen, für alle anderen zählen sie",
+  "source.abap:20 — kein Fachsatz „nur Rücknahmen (R) mindern den Saldo“: jede Richtung außer A wird abgezogen, auch unbekannte Kennzeichen",
+  "gesamte Scheibe — kein Fachsatz „Leergut wird dem Kunden berechnet oder gutgeschrieben“: der Report liest und listet nur"
+ ],
+ "saetze": [
+  {
+   "id": "BM-164-B01",
+   "soll": "Es werden die Leergutbewegungen des eingegebenen Kunden bis zum Stichtag gelesen.",
+   "zeilen": [
+    10
+   ],
+   "code": [
+    "10:   SELECT lgmat, richtung, menge"
+   ],
+   "X": [
+    "Das Ergebnis enthält lgmat, richtung und menge.",
+    "Es werden Sätze aus zsd_leergut mit dem eingegebenen Kundennummer selektiert."
+   ],
+   "Y": [
+    "Aus der Tabelle ZSD_LEERGUT werden für die übergebene Kundennummer KUNNR und Buchungsdaten BUDAT bis einschließlich zum Stichtag die Felder LGMAT, RICHTUNG und MENGE gelesen."
+   ],
+   "Z": [
+    "Das Ergebnis enthält lgmat, richtung und Menge.",
+    "Es werden Sätze aus zsd_leergut mit dem eingegebenen Kundennummer selektiert."
+   ]
+  },
+  {
+   "id": "BM-164-B02",
+   "soll": "Für den Benutzer MUELLERK werden Bewegungen über 500 Einheiten vor der Saldierung verworfen.",
+   "zeilen": [
+    15,
+    16
+   ],
+   "code": [
+    "15:   IF sy-uname = 'MUELLERK'.          \"Test Mueller 2019 - bitte drinlassen",
+    "16:     DELETE lt_bew WHERE menge > 500."
+   ],
+   "X": [],
+   "Y": [
+    "Ist der Benutzername gleich 'MUELLERK', werden alle Bewegungen mit einer Menge größer als 500 aus den Bewegungsdaten gelöscht; andernfalls bleiben sie unverändert."
+   ],
+   "Z": []
+  },
+  {
+   "id": "BM-164-B03",
+   "soll": "Je Leergutmaterial wird der Saldo gebildet: Ausgaben an den Kunden erhöhen ihn, alle anderen Bewegungen mindern ihn.",
+   "zeilen": [
+    18,
+    20
+   ],
+   "code": [
+    "18:   LOOP AT lt_bew INTO DATA(ls_bew)",
+    "20:     DATA(lv_saldo) = REDUCE menge_d( INIT s = 0"
+   ],
+   "X": [
+    "Jede Zeile aus lt_bew wird einzeln verarbeitet."
+   ],
+   "Y": [
+    "Über die Bewegungsdaten wird je Leergutmaterial LGMAT ein Saldo ermittelt, indem Mengen mit der Richtung 'A' addiert und Mengen mit anderer Richtung subtrahiert werden."
+   ],
+   "Z": [
+    "Die Zeilen aus lt_bew werden gruppenweise verarbeitet."
+   ]
+  },
+  {
+   "id": "BM-164-B04",
+   "soll": "Nur Leergutmaterialien mit einem von null verschiedenen Saldo werden mit Kunde und Saldo ausgegeben.",
+   "zeilen": [
+    25,
+    26
+   ],
+   "code": [
+    "25:     IF lv_saldo <> 0.",
+    "26:       WRITE: / p_kunnr, <lv_lgmat>, lv_saldo."
+   ],
+   "X": [
+    "Für lv_saldo ungleich 0 wird Kundennummer ausgegeben, lv_lgmat ausgegeben und lv_saldo ausgegeben.",
+    "Bei Treffern werden Kundennummer, lv_lgmat und lv_saldo als Liste ausgegeben.",
+    "Kundennummer wird ausgegeben.",
+    "lv_lgmat wird ausgegeben.",
+    "lv_saldo wird ausgegeben."
+   ],
+   "Y": [
+    "Ist der berechnete Saldo ungleich 0, werden die Kundennummer, das Leergutmaterial und der Saldo ausgegeben; andernfalls erfolgt keine Ausgabe."
+   ],
+   "Z": [
+    "Wenn das Feld lv_saldo ungleich 0 ist, wird Kundennummer ausgegeben, lv_lgmat ausgegeben und lv_saldo ausgegeben."
+   ]
+  }
+ ]
+}

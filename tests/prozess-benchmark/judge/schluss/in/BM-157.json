@@ -1,0 +1,533 @@
+{
+ "id": "BM-157",
+ "titel": "Überstundenfreigabe aus Zeitauswertungsergebnissen (Cluster B2) mit Zeitumbuchung, Ablehnung und Nachlauf",
+ "prozess": "Der Zeitbeauftragte prüft monatlich die Überstunden; vorgeschlagen wird der Vormonat, und ohne Personalnummer oder Organisationseinheit wird die Auswahl abgewiesen. Der Report liest die Mitarbeiter zum Monatsende und die Kappungsgrenzen je Mitarbeiterkreis. Je Mitarbeiter liest er das Zeitauswertungsergebnis der Periode (nicht lesbare werden gezählt), summiert die ungenehmigten Überstunden und vergleicht sie mit der Grenze (ohne Grenze null). Mitarbeiter über der Grenze erscheinen mit Überschuss und dem Status einer früheren Entscheidung oder „offen“; gibt es keine, endet der Report mit Hinweis. In der Liste öffnet ein Doppelklick die Personalstammdaten. Bei „Freigeben“ werden – mit Berechtigung – die markierten offenen Zeilen verarbeitet: Mitarbeiter sperren, Zeitumbuchungsvorgabe zur Auszahlung des Überschusses anlegen, entsperren, Freigabe vermerken und per Workflow-Ereignis benachrichtigen; am Ende wird alles festgeschrieben. „Ablehnen“ vermerkt markierte offene Zeilen als abgelehnt. „Nachlauf“ plant die Zeitauswertung für alle markierten Mitarbeiter als Hintergrundjob ein. Danach wird die Liste aufgefrischt.",
+ "verboten": [
+  "zpt_ot_approval_f02.abap:66 — kein Fachsatz „die Überstunden werden sofort ausgezahlt oder der Saldo abgebaut“ (angelegt wird nur eine Vorgabe; wirksam erst mit der nächsten Zeitauswertung und Abrechnung)",
+  "zpt_ot_approval_f02.abap:180 — kein Fachsatz „die Zeitauswertung läuft nur für freigegebene Mitarbeiter“ (alle markierten Zeilen, gleich welcher Status)",
+  "zpt_ot_approval_f02.abap:113 — kein Fachsatz „abgelehnte Stunden werden gelöscht oder umgebucht“ (nur Vermerk in der Kundentabelle)",
+  "zpt_ot_approval_f02.abap:136 — kein Fachsatz über Inhalt oder Empfänger der Benachrichtigung (Workflow nicht im Fall)"
+ ],
+ "saetze": [
+  {
+   "id": "BM-157-B01",
+   "soll": "Beim Aufruf wird der Vormonat als Abrechnungsperiode vorgeschlagen.",
+   "zeilen": [
+    22,
+    23
+   ],
+   "code": [
+    "22:   gv_date = gv_date - 1.",
+    "23:   p_pabrj = gv_date(4)."
+   ],
+   "X": [],
+   "Y": [
+    "Beim Initialisieren werden das Abrechnungsjahr und die Abrechnungsperiode mit den Werten des Vormonats bezogen auf das aktuelle Tagesdatum vorbelegt."
+   ],
+   "Z": []
+  },
+  {
+   "id": "BM-157-B02",
+   "soll": "Ohne Personalnummer und ohne Organisationseinheit wird die Auswahl abgewiesen.",
+   "zeilen": [
+    27,
+    28
+   ],
+   "code": [
+    "27:   IF s_pernr[] IS INITIAL AND s_orgeh[] IS INITIAL.",
+    "28:     MESSAGE e398(00) WITH 'Personalnummer oder Org.-Einheit angeben'."
+   ],
+   "X": [
+    "Wenn das Feld s_pernr[] leer ist und das Feld s_orgeh[] leer ist, wird eine Fehlermeldung ausgegeben.",
+    "Die Fehlermeldung 398(00) wird ausgegeben."
+   ],
+   "Y": [
+    "Sind auf dem Selektionsbild weder Personalnummern noch Organisationseinheiten angegeben, wird die Fehlermeldung E398 mit der Aufforderung zur Eingabe ausgegeben."
+   ],
+   "Z": [
+    "Für s_pernr[] IS INITIAL AND s_orgeh[] IS INITIAL wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-157-B03",
+   "soll": "Es werden die Mitarbeiter der Auswahl gelesen, die am Monatsende der Periode zugeordnet sind, dazu die am Monatsende gültigen Kappungsgrenzen je Mitarbeiterkreis.",
+   "zeilen": [
+    47,
+    55,
+    64
+   ],
+   "code": [
+    "47:   CALL FUNCTION 'RP_LAST_DAY_OF_MONTHS'",
+    "55:   SELECT pernr persk orgeh FROM pa0001 INTO TABLE gt_emp",
+    "64:   SELECT * FROM zpt_ot_limit INTO TABLE gt_limit"
+   ],
+   "X": [
+    "Der Code übergibt gv_begda an RP_LAST_DAY_OF_MONTHS und übernimmt dessen Ausgabe nach gv_endda.",
+    "Das Ergebnis enthält Personalnummer, persk und orgeh.",
+    "Es werden Organisatorische Zuordnungen selektiert.",
+    "Es werden Sätze aus zpt_ot_limit selektiert."
+   ],
+   "Y": [
+    "Über den Funktionsbaustein RP_LAST_DAY_OF_MONTHS wird für den Monatsersten der gewählten Periode der letzte Tag des Monats ermittelt.",
+    "Aus der Tabelle PA0001 werden die Felder pernr, persk und orgeh für die selektierten Personalnummern und Organisationseinheiten gelesen, deren Gültigkeitszeitraum den Monatsletzten umfasst.",
+    "Aus der Tabelle ZPT_OT_LIMIT werden alle Kappungsgrenzen gelesen, die am letzten Tag des Monats gültig sind."
+   ],
+   "Z": [
+    "Der Code übergibt gv_begda an RP_LAST_DAY_OF_MONTHS und übernimmt dessen Ausgabe nach gv_endda.",
+    "Das konvertierte Ergebnis wird in gv_endda übernommen.",
+    "Es werden Sätze aus pa0001 selektiert.",
+    "Es werden Sätze aus zpt_ot_limit selektiert."
+   ]
+  },
+  {
+   "id": "BM-157-B04",
+   "soll": "Für jeden Mitarbeiter wird das Zeitauswertungsergebnis der Periode gelesen; nicht lesbare Ergebnisse werden gezählt und übergangen.",
+   "zeilen": [
+    78,
+    82,
+    96,
+    97
+   ],
+   "code": [
+    "78:   LOOP AT gt_emp INTO ls_emp.",
+    "82:     CALL FUNCTION 'HR_TIME_RESULTS_GET'",
+    "96:     IF sy-subrc <> 0.",
+    "97:       gv_errors = gv_errors + 1."
+   ],
+   "X": [
+    "Jede Zeile aus gt_emp wird einzeln verarbeitet.",
+    "Der Funktionsbaustein HR_TIME_RESULTS_GET wird aufgerufen.",
+    "Scheitert der Aufruf von HR_TIME_RESULTS_GET, wird der Schleifendurchlauf übersprungen."
+   ],
+   "Y": [
+    "Für jeden ausgewählten Mitarbeiter werden nacheinander die Zeitergebnisse verarbeitet.",
+    "Über den Funktionsbaustein HR_TIME_RESULTS_GET werden die Zeitauswertungsergebnisse der Tabelle ZES für die Personalnummer, das Abrechnungsjahr und die Periode aus dem Cluster B2 gelesen."
+   ],
+   "Z": [
+    "Jede Zeile aus gt_emp wird einzeln verarbeitet.",
+    "Der Funktionsbaustein HR_TIME_RESULTS_GET wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-157-B05",
+   "soll": "Die Salden der ungenehmigten Überstunden werden summiert; Mitarbeiter ohne solche Stunden entfallen.",
+   "zeilen": [
+    101,
+    102,
+    104
+   ],
+   "code": [
+    "101:     LOOP AT lt_zes INTO ls_zes WHERE ztart = gc_ztart_ot.",
+    "102:       lv_hours = lv_hours + ls_zes-anzhl.",
+    "104:     CHECK lv_hours > 0."
+   ],
+   "X": [
+    "Die Zeilen aus lt_zes, bei denen das Feld ztart gleich gc_ztart_ot ist, werden einzeln verarbeitet.",
+    "Nur wenn das Feld lv_hours größer als 0 ist, wird der Schleifendurchlauf fortgesetzt; sonst wird er übersprungen, und die Schleife läuft mit dem nächsten Durchlauf weiter."
+   ],
+   "Y": [
+    "Aus der Tabelle ZES werden alle Zeiteinträge mit der Überstunden-Zeitart 9040 summiert.",
+    "Sind keine Überstunden vorhanden (Stundensumme kleiner oder gleich 0), wird die weitere Verarbeitung für den Mitarbeiter beendet."
+   ],
+   "Z": [
+    "Jede Zeile aus lt_zes wird einzeln verarbeitet.",
+    "Nur lv_hours größer 0 gehen weiter; kleinere werden übersprungen, die Schleife läuft weiter."
+   ]
+  },
+  {
+   "id": "BM-157-B06",
+   "soll": "Die Kappungsgrenze des Mitarbeiterkreises wird nachgeschlagen; ist keine gepflegt, gilt null und alle Stunden sind freigabepflichtig.",
+   "zeilen": [
+    106,
+    107
+   ],
+   "code": [
+    "106:     READ TABLE gt_limit INTO ls_limit WITH KEY persk = ls_emp-persk.",
+    "107:     IF sy-subrc <> 0."
+   ],
+   "X": [
+    "In der Tabelle gt_limit wird nach einer passenden Zeile gesucht."
+   ],
+   "Y": [
+    "Wird in den Kappungsgrenzen kein passender Eintrag zum Mitarbeiterkreis des Mitarbeiters gefunden, wird die Grenze auf 0 gesetzt, sodass alle Überstunden als genehmigungspflichtig gelten."
+   ],
+   "Z": [
+    "In der Tabelle wird nach einer passenden Zeile gesucht."
+   ]
+  },
+  {
+   "id": "BM-157-B07",
+   "soll": "Liegen die Stunden innerhalb der Grenze, entfällt der Mitarbeiter; sonst wird der Überschuss berechnet.",
+   "zeilen": [
+    111,
+    120
+   ],
+   "code": [
+    "111:     IF lv_hours <= ls_limit-maxhours.",
+    "120:     ls_out-excess = lv_hours - ls_limit-maxhours."
+   ],
+   "X": [
+    "Wenn das Feld lv_hours höchstens ls_limit-maxhours ist, wird der Schleifendurchlauf übersprungen."
+   ],
+   "Y": [
+    "Liegen die ermittelten Überstunden innerhalb oder genau auf der maximalen Stundengrenze maxhours, wird der Mitarbeiter übersprungen.",
+    "Für den Mitarbeiter wird eine Ausgabezeile mit Personalnummer, Organisationseinheit, Gesamtstunden, Grenze und den Überschussstunden zusammengestellt."
+   ],
+   "Z": []
+  },
+  {
+   "id": "BM-157-B08",
+   "soll": "Eine frühere Entscheidung zur Periode wird als Status übernommen, sonst gilt der Mitarbeiter als offen.",
+   "zeilen": [
+    123,
+    127
+   ],
+   "code": [
+    "123:     SELECT SINGLE status FROM zpt_ot_decision INTO ls_out-status",
+    "127:     IF sy-subrc <> 0."
+   ],
+   "X": [
+    "Der Status aus zpt_ot_decision mit dem eingegebenen pabrj und dem eingegebenen pabrp wird gelesen."
+   ],
+   "Y": [
+    "Aus der Tabelle ZPT_OT_DECISION wird der bestehende Genehmigungsstatus zur Personalnummer, zum Abrechnungsjahr und zur Abrechnungsperiode gelesen.",
+    "Wurde in der Tabelle ZPT_OT_DECISION noch kein Entscheidungsstatus hinterlegt, wird der Status initial auf OFFEN gesetzt."
+   ],
+   "Z": [
+    "Status des Satzes mit dem eingegebenen pabrj und dem eingegebenen pabrp wird gelesen."
+   ]
+  },
+  {
+   "id": "BM-157-B09",
+   "soll": "Liegt niemand über der Grenze, endet der Report mit einem Hinweis ohne Liste.",
+   "zeilen": [
+    36,
+    37,
+    38
+   ],
+   "code": [
+    "36:   IF gt_out IS INITIAL.",
+    "37:     MESSAGE s398(00) WITH 'Keine Ueberstunden ueber der Grenze'.",
+    "38:     LEAVE LIST-PROCESSING."
+   ],
+   "X": [
+    "Ist die Tabelle gt_out leer, wird eine Statusmeldung ausgegeben und die Listenverarbeitung verlassen.",
+    "Die Statusmeldung 398(00) wird ausgegeben.",
+    "Die Listenverarbeitung wird verlassen; es geht zurück zu dem Bild, von dem sie ausging."
+   ],
+   "Y": [
+    "Liegen keine Überstundendatensätze in der Ausgabetabelle vor, wird eine Erfolgsmeldung ausgegeben und die Listenverarbeitung abgebrochen.",
+    "Sind Datensätze in der Ausgabetabelle vorhanden, wird die Aufbereitung und Anzeige der Liste über den ALV aufgerufen."
+   ],
+   "Z": [
+    "Ohne Treffer wird eine Meldung ausgegeben und die Screenfolge beendet.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "Eine Meldung wird ausgegeben.",
+    "Es wird eine Meldung ausgegeben und die Screenfolge beendet.",
+    "Die Screenfolge wird beendet."
+   ]
+  },
+  {
+   "id": "BM-157-B10",
+   "soll": "Die Mitarbeiter werden mit Stunden, Grenze, Überschuss und Status in einer markierbaren Liste mit Freigabefunktionen angezeigt, im Titel die Zahl nicht lesbarer Ergebnisse.",
+   "zeilen": [
+    141,
+    150,
+    166
+   ],
+   "code": [
+    "141:   CALL FUNCTION 'REUSE_ALV_FIELDCATALOG_MERGE'",
+    "150:   CALL FUNCTION 'REUSE_ALV_GRID_DISPLAY'",
+    "166:   SET PF-STATUS 'ZOT_APPROVAL' EXCLUDING rt_extab."
+   ],
+   "X": [
+    "Der Funktionsbaustein REUSE_ALV_FIELDCATALOG_MERGE wird aufgerufen.",
+    "Es wird REUSE_ALV_FIELDCATALOG_MERGE aufgerufen und REUSE_ALV_GRID_DISPLAY aufgerufen.",
+    "Der Funktionsbaustein REUSE_ALV_GRID_DISPLAY wird aufgerufen.",
+    "Der GUI-Status ZOT_APPROVAL wird gesetzt."
+   ],
+   "Y": [
+    "Über den Funktionsbaustein REUSE_ALV_FIELDCATALOG_MERGE wird der Feldkatalog auf Basis der Tabelle GT_OUT erzeugt.",
+    "Die Ausgabetabelle wird über REUSE_ALV_GRID_DISPLAY mit optimierter Spaltenbreite, Markierspalte und der Anzahl nicht lesbarer Ergebnisse im Titel zur Benutzerinteraktion dargestellt.",
+    "Der GUI-Status ZOT_APPROVAL wird für die Oberfläche gesetzt."
+   ],
+   "Z": [
+    "Der Funktionsbaustein REUSE_ALV_FIELDCATALOG_MERGE wird aufgerufen.",
+    "Es wird REUSE_ALV_FIELDCATALOG_MERGE aufgerufen und REUSE_ALV_GRID_DISPLAY aufgerufen.",
+    "Der Funktionsbaustein REUSE_ALV_GRID_DISPLAY wird aufgerufen.",
+    "Der GUI-Status ZOT_APPROVAL wird gesetzt."
+   ]
+  },
+  {
+   "id": "BM-157-B11",
+   "soll": "Ein Doppelklick auf eine Zeile öffnet die Personalstammdaten des Mitarbeiters direkt in der Anzeige.",
+   "zeilen": [
+    177,
+    181,
+    182
+   ],
+   "code": [
+    "177:     WHEN '&IC1'.",
+    "181:       SET PARAMETER ID 'PER' FIELD ls_out-pernr.",
+    "182:       CALL TRANSACTION 'PA20' AND SKIP FIRST SCREEN."
+   ],
+   "X": [
+    "Die Transaktion PA20 wird aufgerufen; das Einstiegsbild wird übersprungen."
+   ],
+   "Y": [
+    "Wird die Zeile per Doppelklick ausgewählt, wird die Transaktion PA20 mit der entsprechenden Personalnummer zur Anzeige der Personalstammdaten gestartet."
+   ],
+   "Z": [
+    "Die Anlage wird über die Transaktion PA20 angestoßen. Ob und was persistiert wird, entscheidet die aufgerufene Transaktion."
+   ]
+  },
+  {
+   "id": "BM-157-B12",
+   "soll": "Ohne Freigabeberechtigung wird die Freigabe mit Fehlermeldung abgebrochen.",
+   "zeilen": [
+    201,
+    203,
+    204
+   ],
+   "code": [
+    "201:   AUTHORITY-CHECK OBJECT 'Z_PT_OT'",
+    "203:   IF sy-subrc <> 0.",
+    "204:     MESSAGE e398(00) WITH 'Keine Freigabeberechtigung'."
+   ],
+   "X": [
+    "Die Berechtigung auf Z_PT_OT wird geprüft.",
+    "Ohne Berechtigung auf Z_PT_OT wird eine Fehlermeldung ausgegeben.",
+    "Die Fehlermeldung 398(00) wird ausgegeben."
+   ],
+   "Y": [
+    "Vor der Freigabe wird das Berechtigungsobjekt Z_PT_OT mit der Aktivität 43 geprüft; fehlt die Berechtigung, wird eine Fehlermeldung ausgegeben."
+   ],
+   "Z": [
+    "Die Berechtigung auf Z_PT_OT wird geprüft.",
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-157-B13",
+   "soll": "Freigegeben werden nur markierte, noch offene Zeilen; ist der Mitarbeiter gesperrt, wird das gemeldet und er übersprungen.",
+   "zeilen": [
+    207,
+    209,
+    213,
+    218
+   ],
+   "code": [
+    "207:   LOOP AT gt_out ASSIGNING FIELD-SYMBOL(<ls_out>)",
+    "209:     IF <ls_out>-status <> gc_open.",
+    "213:     CALL FUNCTION 'HR_EMPLOYEE_ENQUEUE'",
+    "218:     IF ls_return-type = 'E'."
+   ],
+   "X": [
+    "Die Zeilen aus gt_out, bei denen das Feld sel gesetzt ist, werden einzeln verarbeitet.",
+    "Für Status ungleich gc_open wird der Schleifendurchlauf übersprungen.",
+    "Der Code übergibt ls_out-pernr an HR_EMPLOYEE_ENQUEUE und übernimmt dessen Ausgabe nach ls_return.",
+    "Für Typen mit dem Wert E wird eine Statusmeldung ausgegeben und der Schleifendurchlauf übersprungen."
+   ],
+   "Y": [
+    "Für jede markierte Zeile wird geprüft, ob der Status ungleich OFFEN ist, und in diesem Fall zur nächsten Zeile gesprungen.",
+    "Die Personalnummer wird über HR_EMPLOYEE_ENQUEUE gesperrt; tritt dabei ein Fehler auf, wird eine Fehlermeldung angezeigt und die Zeile übersprungen."
+   ],
+   "Z": [
+    "Jede Zeile aus gt_out wird einzeln verarbeitet.",
+    "Der Code übergibt ls_out>-pernr an HR_EMPLOYEE_ENQUEUE und übernimmt dessen Ausgabe nach ls_return.",
+    "Das konvertierte Ergebnis wird in ls_return übernommen.",
+    "Für Typen mit dem Wert E wird eine Meldung ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-157-B14",
+   "soll": "Für den Überschuss wird zum Monatsletzten eine Zeitumbuchungsvorgabe zur Auszahlung angelegt und die Sperre wieder gelöst; scheitert die Anlage, wird das gemeldet und der Mitarbeiter übersprungen.",
+   "zeilen": [
+    233,
+    246,
+    250
+   ],
+   "code": [
+    "233:     CALL FUNCTION 'HR_INFOTYPE_OPERATION'",
+    "246:     CALL FUNCTION 'HR_EMPLOYEE_DEQUEUE'",
+    "250:     IF ls_return-type CA 'EA'."
+   ],
+   "X": [
+    "Der Code übergibt '2012' an HR_INFOTYPE_OPERATION und übernimmt dessen Ausgabe nach ls_return.",
+    "Es wird HR_INFOTYPE_OPERATION aufgerufen und HR_EMPLOYEE_DEQUEUE aufgerufen.",
+    "Der Funktionsbaustein HR_EMPLOYEE_DEQUEUE wird aufgerufen.",
+    "Wenn die Bedingung „ls_return-type CA 'EA'“ erfüllt ist, wird eine Statusmeldung ausgegeben und der Schleifendurchlauf übersprungen."
+   ],
+   "Y": [
+    "Für den Mitarbeiter wird über HR_INFOTYPE_OPERATION ein Satz im Infotyp 2012 mit Subtyp ZUEB und der Anzahl der Überschussstunden zum Monatsletzten angelegt.",
+    "Die Personalsperre wird über HR_EMPLOYEE_DEQUEUE wieder aufgehoben.",
+    "Schlägt das Anlegen des Infotyps fehl, wird die Meldung als Fehler angezeigt und mit der nächsten Zeile fortgefahren."
+   ],
+   "Z": [
+    "Der Code übergibt '2012' an HR_INFOTYPE_OPERATION und übernimmt dessen Ausgabe nach ls_return.",
+    "Das konvertierte Ergebnis wird in ls_return übernommen.",
+    "Es wird HR_INFOTYPE_OPERATION aufgerufen und HR_EMPLOYEE_DEQUEUE aufgerufen.",
+    "Der Funktionsbaustein HR_EMPLOYEE_DEQUEUE wird aufgerufen.",
+    "Für ls_return-type CA 'EA' wird eine Meldung ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-157-B15",
+   "soll": "Die Freigabe wird mit Stunden, Benutzer und Datum vermerkt und der Mitarbeiter über ein Workflow-Ereignis benachrichtigt; scheitert das Ereignis, gibt es nur einen Hinweis.",
+   "zeilen": [
+    255,
+    265,
+    303,
+    313
+   ],
+   "code": [
+    "255:     MODIFY zpt_ot_decision FROM @( VALUE #( pernr  = <ls_out>-pernr",
+    "265:     PERFORM notify_employee USING <ls_out>-pernr.",
+    "303:   CALL FUNCTION 'SWE_EVENT_CREATE'",
+    "313:   IF sy-subrc <> 0."
+   ],
+   "X": [
+    "Eine Zeile in zpt_ot_decision wird eingefügt oder überschrieben.",
+    "Das Unterprogramm notify_employee wird aufgerufen; es ruft SWE_EVENT_CREATE auf und gibt eine Meldung aus.",
+    "Der Code übergibt 'ZPTOVERTIM' an SWE_EVENT_CREATE und übernimmt dessen Ausgabe nach lv_evtid.",
+    "Scheitert der Aufruf von SWE_EVENT_CREATE, wird eine Statusmeldung ausgegeben."
+   ],
+   "Y": [
+    "In der Tabelle ZPT_OT_DECISION wird die Entscheidung mit Status FREIGEG, den Stunden, dem Benutzernamen und dem Datum gespeichert und der Status in der Liste aktualisiert.",
+    "Die Benachrichtigung des Mitarbeiters über die Freigabe wird aufgerufen.",
+    "Über den Funktionsbaustein SWE_EVENT_CREATE wird das Workflow-Ereignis APPROVED zum Objekttyp ZPTOVERTIM für die Personalnummer ausgelöst; bei Fehlern erfolgt eine Hinweismeldung."
+   ],
+   "Z": [
+    "Eine Zeile in zpt_ot_decision wird eingefügt oder überschrieben.",
+    "Das Unterprogramm notify_employee wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Der Code übergibt 'ZPTOVERTIM' an SWE_EVENT_CREATE und übernimmt dessen Ausgabe nach lv_evtid.",
+    "Das konvertierte Ergebnis wird in lv_evtid übernommen.",
+    "Ohne Treffer wird eine Meldung ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-157-B16",
+   "soll": "Gab es mindestens eine Freigabe, werden alle Freigaben gemeinsam festgeschrieben und ihre Anzahl gemeldet.",
+   "zeilen": [
+    268,
+    269,
+    270
+   ],
+   "code": [
+    "268:   IF lv_ok > 0.",
+    "269:     COMMIT WORK.",
+    "270:     MESSAGE s398(00) WITH lv_ok 'Freigaben gebucht'."
+   ],
+   "X": [
+    "Wenn das Feld lv_ok größer als 0 ist, wird COMMIT WORK ausgeführt und eine Statusmeldung ausgegeben.",
+    "Mit COMMIT WORK wird die Änderung persistiert.",
+    "Die Statusmeldung 398(00) wird ausgegeben."
+   ],
+   "Y": [
+    "Wurde mindestens eine Freigabe erfolgreich gebucht, werden die Änderungen per COMMIT WORK auf der Datenbank bestätigt und eine Erfolgsmeldung ausgegeben."
+   ],
+   "Z": [
+    "Für lv_ok größer 0 wird COMMIT WORK ausgeführt und eine Meldung ausgegeben.",
+    "Mit COMMIT WORK wird die Änderung persistiert.",
+    "Es wird COMMIT WORK ausgeführt und eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-157-B17",
+   "soll": "Markierte offene Zeilen können abgelehnt werden; die Ablehnung wird vermerkt und festgeschrieben, ohne Treffer gibt es nur einen Hinweis.",
+   "zeilen": [
+    278,
+    280,
+    290,
+    294
+   ],
+   "code": [
+    "278:   LOOP AT gt_out ASSIGNING FIELD-SYMBOL(<ls_out>)",
+    "280:     MODIFY zpt_ot_decision FROM @( VALUE #( pernr  = <ls_out>-pernr",
+    "290:   IF lv_cnt = 0.",
+    "294:   COMMIT WORK."
+   ],
+   "X": [
+    "Die Zeilen aus gt_out, bei denen das Feld sel gesetzt ist und der Status gleich gc_open ist, werden einzeln verarbeitet.",
+    "Eine Zeile in zpt_ot_decision wird eingefügt oder überschrieben.",
+    "Wenn das Feld lv_cnt gleich 0 ist, wird eine Statusmeldung ausgegeben und der Block verlassen.",
+    "Mit COMMIT WORK wird die Änderung persistiert."
+   ],
+   "Y": [
+    "Für alle markierten offenen Zeilen wird in der Tabelle ZPT_OT_DECISION der Status ABGELEHNT mit den Überschussstunden, Benutzerkennung und Tagesdatum gesichert und in der Liste vermerkt.",
+    "Wurden keine offenen Zeilen markiert, wird eine entsprechende Erfolgsmeldung ausgegeben und die Verarbeitung beendet.",
+    "Wurden Zeilen abgelehnt, werden die Änderungen per COMMIT WORK auf der Datenbank gesichert."
+   ],
+   "Z": [
+    "Jede Zeile aus gt_out wird einzeln verarbeitet.",
+    "Eine Zeile in zpt_ot_decision wird eingefügt oder überschrieben.",
+    "Für lv_cnt mit dem Wert 0 wird eine Meldung ausgegeben und der Block verlassen.",
+    "Bei lv_cnt gleich 0 wird der Block verlassen.",
+    "Mit COMMIT WORK wird die Änderung persistiert."
+   ]
+  },
+  {
+   "id": "BM-157-B18",
+   "soll": "Für alle markierten Mitarbeiter kann die Zeitauswertung ab Periodenbeginn als Hintergrundjob eingeplant werden; ohne Markierung oder wenn der Job nicht anlegbar ist, gibt es nur einen Hinweis.",
+   "zeilen": [
+    325,
+    327,
+    332,
+    342,
+    347,
+    354
+   ],
+   "code": [
+    "325:   lr_pernr = VALUE #( FOR o IN gt_out WHERE ( sel = abap_true )",
+    "327:   IF lr_pernr IS INITIAL.",
+    "332:   CALL FUNCTION 'JOB_OPEN'",
+    "342:   IF sy-subrc <> 0.",
+    "347:   SUBMIT rptime00",
+    "354:   CALL FUNCTION 'JOB_CLOSE'"
+   ],
+   "X": [
+    "Ist die Tabelle lr_pernr leer, wird eine Statusmeldung ausgegeben und der Block verlassen.",
+    "Der Code übergibt lv_jobname an JOB_OPEN und übernimmt dessen Ausgabe nach lv_jobcount.",
+    "Scheitert der Aufruf von JOB_OPEN, wird eine Statusmeldung ausgegeben und der Block verlassen.",
+    "Das Programm rptime00 wird als Schritt des Hintergrundjobs lv_jobname eingeplant. Was das Programm im Job tut, ist nicht Teil dieses Satzes.",
+    "Der Funktionsbaustein JOB_CLOSE wird aufgerufen.",
+    "Es wird JOB_CLOSE aufgerufen und eine Statusmeldung ausgegeben."
+   ],
+   "Y": [
+    "Sind keine Zeilen für die Zeitauswertung markiert, wird eine Hinweismeldung ausgegeben und der Vorgang abgebrochen.",
+    "Ein Hintergrundjob mit der Bezeichnung ZPT_OT_RPTIME00 wird über JOB_OPEN angelegt; schlägt dies fehl, wird eine Fehlermeldung ausgegeben und abgebrochen.",
+    "Der Zeitauswertungs-Report rptime00 wird für die markierten Personalnummern ab Periodenbeginn mit der Variante ZNACHLAUF im Hintergrundjob eingeplant.",
+    "Der Hintergrundjob wird über JOB_CLOSE geschlossen, sofort gestartet und eine Erfolgsmeldung mit der Jobnummer ausgegeben."
+   ],
+   "Z": [
+    "Ohne lr_pernr wird eine Meldung ausgegeben und der Block verlassen.",
+    "Ohne lr_pernr wird der Block verlassen.",
+    "Der Code übergibt lv_jobname an JOB_OPEN und übernimmt dessen Ausgabe nach lv_jobcount.",
+    "Das konvertierte Ergebnis wird in lv_jobcount übernommen.",
+    "Ohne Treffer wird eine Meldung ausgegeben und der Block verlassen.",
+    "Ohne Treffer wird der Block verlassen.",
+    "Das Kindprogramm rptime00 wird gestartet. Was das Kind tut, ist nicht Teil dieses Satzes.",
+    "Der Funktionsbaustein JOB_CLOSE wird aufgerufen.",
+    "Es wird JOB_CLOSE aufgerufen und eine Meldung ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-157-B19",
+   "soll": "Nach jeder Funktion außer unbekannten wird die Liste aufgefrischt.",
+   "zeilen": [
+    190,
+    192
+   ],
+   "code": [
+    "190:       RETURN.",
+    "192:   rs_selfield-refresh = abap_true."
+   ],
+   "X": [],
+   "Y": [],
+   "Z": []
+  }
+ ]
+}

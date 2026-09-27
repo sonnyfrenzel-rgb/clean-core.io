@@ -1,0 +1,232 @@
+{
+ "id": "BM-153",
+ "titel": "MSS-Teamkalender: Abwesenheiten der direkt Unterstellten mit P_ORGIN-Prüfung",
+ "prozess": "Der MSS-Teamkalender ruft per RFC einen Baustein, der zu einer Führungskraft die Abwesenheiten ihres Teams in einem Zeitraum liefert. Wird er für einen fremden Benutzer aufgerufen, braucht der Aufrufer eine Vertretungsberechtigung, sonst wird abgewiesen. Zum Benutzer wird die Personalnummer über den Kommunikationssatz ermittelt; fehlt sie, wird abgewiesen. Über den Auswertungsweg der Leiterplanstelle werden die geführten Personen ohne die Führungskraft selbst gelesen; ist die Struktur leer, wird die Liste verworfen und mit „keine Führungskraft“ abgewiesen. Für jedes Teammitglied wird die organisatorische Zuordnung am Periodenende gelesen; ohne Leseberechtigung des aufrufenden Benutzers auf Abwesenheiten wird es ausgeblendet und gezählt. Für die übrigen werden die Abwesenheitstage der in den Zeitraum ragenden Sätze summiert und als FREI, NORMAL oder HOCH (über zehn Tage) eingestuft. Die Übersicht geht absteigend nach Tagen sortiert mit der Zahl ausgeblendeter Mitarbeiter zurück.",
+ "verboten": [
+  "zcl_mss_team_reader.abap:126 — kein Fachsatz „es werden nur die Abwesenheitstage innerhalb des Zeitraums gezählt“ (summiert werden die Tage ganzer Sätze, die in den Zeitraum ragen)",
+  "zcl_mss_team_reader.abap:143 — kein Fachsatz „die Berechtigung wird für die angefragte Führungskraft geprüft“ (geprüft wird der aufrufende Benutzer sy-uname)",
+  "zcl_mss_team_reader.abap:70 — kein Fachsatz „auch indirekt Unterstellte werden geliefert“ (Kundenweg ZMSS_DIR, lt. Kommentar nur direkt)",
+  "gesamte Scheibe — kein write-Knoten (es werden keine Abwesenheiten angelegt oder genehmigt)"
+ ],
+ "saetze": [
+  {
+   "id": "BM-153-B01",
+   "soll": "Wird die Übersicht für einen anderen als den angemeldeten Benutzer angefordert, muss der Aufrufer eine Vertretungsberechtigung haben, sonst wird die Anfrage abgewiesen.",
+   "zeilen": [
+    24,
+    25,
+    27,
+    28
+   ],
+   "code": [
+    "24:   IF iv_uname <> sy-uname.",
+    "25:     AUTHORITY-CHECK OBJECT 'Z_MSS_PRX'",
+    "27:     IF sy-subrc <> 0.",
+    "28:       RAISE no_proxy_authority."
+   ],
+   "X": [
+    "Die Berechtigung auf Z_MSS_PRX wird geprüft."
+   ],
+   "Y": [
+    "Die Berechtigung auf Z_MSS_PRX wird geprüft."
+   ],
+   "Z": [
+    "Weicht der angegebene Benutzername vom aktuellen Benutzer ab, wird für das Berechtigungsobjekt Z_MSS_PRX die Anzeigeberechtigung mit der Aktivität 03 geprüft.",
+    "Schlägt die Berechtigungsprüfung fehl, wird die Verarbeitung mit der Ausnahme NO_PROXY_AUTHORITY abgebrochen."
+   ]
+  },
+  {
+   "id": "BM-153-B02",
+   "soll": "Zum Benutzer wird über den Kommunikationssatz die Personalnummer der Führungskraft im Zeitraum ermittelt; ohne Zuordnung wird die Anfrage abgewiesen.",
+   "zeilen": [
+    33,
+    38,
+    39
+   ],
+   "code": [
+    "33:   SELECT SINGLE pernr FROM pa0105 INTO lv_mgr_pernr",
+    "38:   IF sy-subrc <> 0.",
+    "39:     MESSAGE e020(zmss) WITH iv_uname RAISING no_employee."
+   ],
+   "X": [
+    "pernr des Satzes wird gelesen.",
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ],
+   "Y": [
+    "Die Personalnummer aus pa0105 wird gelesen.",
+    "Ohne Treffer wird die Ausnahme no_employee ausgelöst.",
+    "Die Ausnahme no_employee wird ausgelöst; die Meldung 020(ZMSS) erscheint nur, wenn der Aufrufer die Ausnahme nicht behandelt."
+   ],
+   "Z": [
+    "Aus der Tabelle PA0105 wird die Personalnummer gelesen, bei der die Subart USRTY den Wert 0001 hat, die Benutzer-ID USRID dem angegebenen Benutzernamen entspricht und der Gültigkeitszeitraum mit dem Beginn- und Endedatum überlappt.",
+    "Wird kein passender Satz in der Tabelle PA0105 gefunden, wird die Fehlermeldung 020 aus der Nachrichtenklasse ZMSS ausgegeben und die Ausnahme NO_EMPLOYEE ausgelöst."
+   ]
+  },
+  {
+   "id": "BM-153-B03",
+   "soll": "Über den Auswertungsweg der Leiterplanstelle werden die Personen der geleiteten Einheit ermittelt, ohne die Führungskraft selbst.",
+   "zeilen": [
+    106,
+    124
+   ],
+   "code": [
+    "106:         CALL FUNCTION 'RH_STRUC_GET'",
+    "124:         mt_member = VALUE #( FOR r IN lt_result"
+   ],
+   "X": [
+    "Der Funktionsbaustein RH_STRUC_GET wird aufgerufen."
+   ],
+   "Y": [
+    "Der Funktionsbaustein RH_STRUC_GET wird aufgerufen."
+   ],
+   "Z": [
+    "Über den Funktionsbaustein RH_STRUC_GET wird die Organisationsstruktur für den Objekttyp P mit der Personalnummer der Führungskraft, dem Auswertungsweg ZMSS_DIR und dem angegebenen Datumsbereich ermittelt.",
+    "Aus der ermittelten Organisationsstruktur werden alle Personen mit Objekttyp P mit Ausnahme der Führungskraft selbst als Teammitglieder übernommen."
+   ]
+  },
+  {
+   "id": "BM-153-B04",
+   "soll": "Liefert die Struktur nichts oder bleibt niemand übrig, wird die Teamliste verworfen und die Anfrage mit „keine Führungskraft“ abgewiesen.",
+   "zeilen": [
+    48,
+    119,
+    127,
+    130
+   ],
+   "code": [
+    "48:       MESSAGE lx_org TYPE 'E' RAISING not_a_manager.",
+    "119:         IF sy-subrc <> 0.",
+    "127:         IF mt_member IS INITIAL.",
+    "130:       CLEANUP."
+   ],
+   "X": [
+    "Eine Meldung wird ausgegeben."
+   ],
+   "Y": [
+    "Die Ausnahme not_a_manager wird ausgelöst; die Meldung lx_org erscheint nur, wenn der Aufrufer die Ausnahme nicht behandelt."
+   ],
+   "Z": [
+    "Wird beim Ermitteln des Teams die Ausnahme ZCX_MSS_NO_ORG abgefangen, wird deren Fehlermeldung als Fehlertyp E ausgegeben und die Ausnahme NOT_A_MANAGER ausgelöst.",
+    "Tritt beim Aufruf des Funktionsbausteins RH_STRUC_GET ein Fehler auf, wird die Ausnahme ZCX_MSS_NO_ORG ausgelöst.",
+    "Enthält die Liste der Teammitglieder keine Einträge, wird die Ausnahme ZCX_MSS_NO_ORG ausgelöst.",
+    "Tritt beim Ermitteln des Teams eine Ausnahme auf, wird im CLEANUP-Block die Liste der Teammitglieder initialisiert."
+   ]
+  },
+  {
+   "id": "BM-153-B05",
+   "soll": "Für jedes Teammitglied wird die organisatorische Zuordnung am Ende des Zeitraums gelesen; fehlt sie, bleibt das Mitglied unberücksichtigt.",
+   "zeilen": [
+    142,
+    143,
+    154
+   ],
+   "code": [
+    "142:     LOOP AT mt_member ASSIGNING FIELD-SYMBOL(<ls_member>).",
+    "143:       CALL FUNCTION 'HR_READ_INFOTYPE'",
+    "154:       IF sy-subrc <> 0 OR lt_p0001 IS INITIAL."
+   ],
+   "X": [
+    "Jede Zeile aus mt_member wird einzeln verarbeitet.",
+    "Der Funktionsbaustein HR_READ_INFOTYPE wird aufgerufen."
+   ],
+   "Y": [
+    "Jede Zeile aus mt_member wird einzeln verarbeitet.",
+    "Der Funktionsbaustein HR_READ_INFOTYPE wird aufgerufen.",
+    "Wenn der Aufruf von HR_READ_INFOTYPE scheitert oder das Feld lt_p0001 leer ist, wird der Schleifendurchlauf übersprungen."
+   ],
+   "Z": [
+    "Die Liste der ermittelten Teammitglieder wird satzweise in einer Schleife durchlaufen.",
+    "Über den Funktionsbaustein HR_READ_INFOTYPE wird der Infotyp 0001 zum Endedatum für das jeweilige Teammitglied gelesen.",
+    "Kann der Infotyp 0001 nicht gelesen werden oder liefert er keine Daten, wird das aktuelle Teammitglied übersprungen und mit dem nächsten fortgefahren."
+   ]
+  },
+  {
+   "id": "BM-153-B06",
+   "soll": "Hat der aufrufende Benutzer für dessen Personalbereich, Mitarbeitergruppe, -kreis und Organisationsschlüssel keine Leseberechtigung auf Abwesenheiten, wird das Mitglied ausgeblendet und mitgezählt.",
+   "zeilen": [
+    159,
+    160,
+    197
+   ],
+   "code": [
+    "159:       IF is_authorized( ls_p0001 ) = abap_false.",
+    "160:         mv_hidden = mv_hidden + 1.",
+    "197:     AUTHORITY-CHECK OBJECT 'P_ORGIN'"
+   ],
+   "X": [
+    "Die Berechtigung auf P_ORGIN wird geprüft."
+   ],
+   "Y": [
+    "Wenn die Bedingung „is_authorized( ls_p0001 ) = abap_false“ erfüllt ist, wird der Schleifendurchlauf übersprungen.",
+    "Die Berechtigung auf P_ORGIN wird geprüft."
+   ],
+   "Z": [
+    "Fehlt die Anzeigeberechtigung für die Organisationszuordnung des Teammitglieds, wird der Zähler für ausgeblendete Mitglieder um 1 erhöht und das Mitglied übersprungen.",
+    "Für den Infotyp 2001 wird mit der Leseaktivität R auf Basis von Personalbereich, Mitarbeitergruppe, Mitarbeiterkreis und Organisationsschlüssel aus dem Infotyp 0001 die Berechtigung am Berechtigungsobjekt P_ORGIN geprüft und das Ergebnis zurückgegeben."
+   ]
+  },
+  {
+   "id": "BM-153-B07",
+   "soll": "Für berechtigte Mitglieder werden die Abwesenheiten im Zeitraum gelesen und ihre Abwesenheitstage summiert.",
+   "zeilen": [
+    165,
+    180
+   ],
+   "code": [
+    "165:       CALL FUNCTION 'HR_READ_INFOTYPE'",
+    "180:       ls_line-days  = REDUCE #( INIT d = 0"
+   ],
+   "X": [
+    "Der Funktionsbaustein HR_READ_INFOTYPE wird aufgerufen."
+   ],
+   "Y": [
+    "Der Funktionsbaustein HR_READ_INFOTYPE wird aufgerufen."
+   ],
+   "Z": [
+    "Über den Funktionsbaustein HR_READ_INFOTYPE werden für das berechtigte Teammitglied die Abwesenheiten aus dem Infotyp 2001 für den Zeitraum von Beginn- bis Endedatum gelesen.",
+    "Für das Teammitglied werden die Abwesenheitstage aus dem Infotyp 2001 aufsummiert, bei 0 Tagen die Stufe FREI, bei mehr als 10 Tagen die Stufe HOCH und sonst die Stufe NORMAL festgelegt sowie der Datensatz mit Personalnummer und Organisationseinheit zur Ausgabetabelle hinzugefügt."
+   ]
+  },
+  {
+   "id": "BM-153-B08",
+   "soll": "Jedes Mitglied wird ohne Abwesenheit als „FREI“, bei mehr als zehn Tagen als „HOCH“ und sonst als „NORMAL“ eingestuft.",
+   "zeilen": [
+    183
+   ],
+   "code": [
+    "183:       ls_line-level = SWITCH #( ls_line-days"
+   ],
+   "X": [],
+   "Y": [],
+   "Z": [
+    "Für das Teammitglied werden die Abwesenheitstage aus dem Infotyp 2001 aufsummiert, bei 0 Tagen die Stufe FREI, bei mehr als 10 Tagen die Stufe HOCH und sonst die Stufe NORMAL festgelegt sowie der Datensatz mit Personalnummer und Organisationseinheit zur Ausgabetabelle hinzugefügt."
+   ]
+  },
+  {
+   "id": "BM-153-B09",
+   "soll": "Die Übersicht wird nach Abwesenheitstagen absteigend sortiert und mit der Zahl ausgeblendeter Mitarbeiter an das Portal zurückgegeben.",
+   "zeilen": [
+    51,
+    52,
+    191
+   ],
+   "code": [
+    "51:   et_team   = lo_reader->build_absence_overview( ).",
+    "52:   ev_hidden = lo_reader->mv_hidden.",
+    "191:     SORT rt_team BY days DESCENDING."
+   ],
+   "X": [
+    "Der Rückgabewert der Methode build_absence_overview von lo_reader wird nach et_team übernommen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ],
+   "Y": [
+    "Der Rückgabewert der Methode build_absence_overview von lo_reader wird nach et_team übernommen."
+   ],
+   "Z": [
+    "Durch den Aufruf der Methode BUILD_ABSENCE_OVERVIEW wird die Übersicht der Abwesenheiten des Teams erstellt und an die Ausgabetabelle ET_TEAM übergeben.",
+    "Die Anzahl der wegen fehlender Berechtigung ausgeblendeten Teammitglieder wird an den Ausgabeparameter EV_HIDDEN übergeben.",
+    "Die Ausgabetabelle der Abwesenheiten wird absteigend nach der Anzahl der Abwesenheitstage sortiert."
+   ]
+  }
+ ]
+}

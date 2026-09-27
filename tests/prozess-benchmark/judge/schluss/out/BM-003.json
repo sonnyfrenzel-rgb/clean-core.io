@@ -1,0 +1,94 @@
+{
+ "id": "BM-003",
+ "urteile": [
+  {
+   "id": "BM-003-B01",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "grammatik"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "kurz": "X/Y nur Variable xkwert, Z nennt Konditionswert."
+  },
+  {
+   "id": "BM-003-B02",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "kurz": "X/Y nur Tabellenname, Z nennt Verkaufsorganisation und Warengruppe."
+  },
+  {
+   "id": "BM-003-B03",
+   "X": {
+    "urteil": "abweichend",
+    "mangel": [
+     "technisch",
+     "falsch"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "X erfindet Schleife; Y/Z nur Abbruch, ohne dass der Zuschlag null bleibt."
+  },
+  {
+   "id": "BM-003-B04",
+   "X": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "kurz": "Nur Z beschreibt den Festzuschlag unter Mindestmenge."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

@@ -1,0 +1,305 @@
+{
+ "id": "BM-174",
+ "titel": "Exportkontrolle: Auslieferung beim Sichern per RFC gegen GTS prüfen und mit Liefersperre belegen",
+ "prozess": "Beim Sichern einer Auslieferung, außer im Anzeigemodus, ruft der Exit die eigene Exportprüfung mit Lieferkopf und Positionen auf. Diese gibt ohne Prüfung „frei“ zurück, wenn keine RFC-Destination zum GTS-System gepflegt ist, wenn der Benutzer GTS_TEST ist oder im System DEV gearbeitet wird, wenn der Warenempfänger in Deutschland sitzt oder wenn keine nicht gelöschte Position mit Liefermenge übrig bleibt. Sonst werden die Positionen mit Material, Warennummer und Menge aufbereitet und synchron per RFC an das GTS-System übergeben, das Status und Text zurückgibt; ein Kommunikations- oder Systemfehler ergibt den Status „technischer Fehler“. Jede tatsächlich gestellte Prüfung wird protokolliert. Sperrt GTS die Lieferung, setzt der Exit die Liefersperre GT und informiert den Anwender. Ist GTS nicht erreichbar, wird im Dialog das Sichern mit Fehlermeldung verhindert, im Hintergrund wird die Lieferung mit Liefersperre GT gesichert. In allen anderen Fällen wird eine vorhandene Liefersperre GT entfernt.",
+ "verboten": [
+  "mv50afz1.abap:36 — kein Fachsatz „die Sperre GT wird nur nach positiver GTS-Prüfung entfernt“: auch bei ausgeschalteter Prüfung, Inlandsempfänger, Testbenutzer oder DEV-System ist das Ergebnis O und die Sperre wird entfernt",
+  "lzgtsf01.abap:27 — kein Fachsatz „Positionen ohne Warennummer werden ohne Warennummer übergeben“: das Ergebnis wird nicht geprüft, die Warennummer der vorigen Position bleibt stehen",
+  "z_gts_export_pruefung.abap:34 — kein Fachsatz „EU-Lieferungen werden nicht geprüft“: ausgenommen ist nur das Land DE",
+  "gesamte Scheibe — kein Fachsatz „Ausfuhranmeldung oder Exportlizenz wird angelegt“: es wird nur geprüft, protokolliert und die Liefersperre gesetzt oder entfernt"
+ ],
+ "saetze": [
+  {
+   "id": "BM-174-B01",
+   "soll": "Geprüft werden nur Auslieferungen, und nicht im Anzeigemodus.",
+   "zeilen": [
+    66,
+    67,
+    68
+   ],
+   "code": [
+    "66:   CHECK likp-vbtyp = 'J'.",
+    "67:   IF t180-trtyp = 'A'.",
+    "68:     EXIT."
+   ],
+   "X": [
+    "Nur wenn das Feld likp-vbtyp gleich J ist, geht es weiter; sonst wird das Unterprogramm userexit_save_document_prepare an dieser Stelle verlassen.",
+    "Wenn das Feld t180-trtyp gleich A ist, wird der Block verlassen."
+   ],
+   "Y": [
+    "Ist der Vertriebsbelegtyp VBTYP der Lieferung gleich 'J', wird die Prüfung vorbereitet; andernfalls wird die Verarbeitung abgebrochen.",
+    "Ist der Transaktionstyp TRTYP gleich 'A', wird die Vorbereitung der Prüfung beendet."
+   ],
+   "Z": [
+    "Nur likp-vbtyp mit dem Wert J gehen weiter; kleinere werden übersprungen, die Schleife läuft weiter.",
+    "Für t180-trtyp mit dem Wert A wird der Block verlassen.",
+    "Bei t180-trtyp gleich A wird der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-174-B02",
+   "soll": "Die Exportprüfung wird mit Lieferkopf und Lieferpositionen aufgerufen und liefert ein Ergebnis O (frei), S (gesperrt) oder F (technischer Fehler).",
+   "zeilen": [
+    71,
+    114
+   ],
+   "code": [
+    "71:   CALL FUNCTION 'Z_GTS_EXPORT_PRUEFUNG'",
+    "114:   ev_ergebnis = 'O'."
+   ],
+   "X": [
+    "Der Code übergibt likp an Z_GTS_EXPORT_PRUEFUNG und übernimmt dessen Ausgabe nach lv_ergebnis.",
+    "Das Feld ev_ergebnis wird auf O gesetzt."
+   ],
+   "Y": [
+    "Der Funktionsbaustein Z_GTS_EXPORT_PRUEFUNG wird mit den Lieferkopfdaten LIKP und den Lieferpositionen XLIPS aufgerufen.",
+    "Das Prüfergebnis wird initial auf 'O' gesetzt und der Rückmeldetext wird initialisiert."
+   ],
+   "Z": [
+    "Der Code übergibt likp an Z_GTS_EXPORT_PRUEFUNG und übernimmt dessen Ausgabe nach lv_ergebnis.",
+    "Das konvertierte Ergebnis wird in lv_ergebnis übernommen.",
+    "Die ev_ergebnis wird auf O gesetzt."
+   ]
+  },
+  {
+   "id": "BM-174-B03",
+   "soll": "Ist in der Variablentabelle keine RFC-Destination zum GTS-System gepflegt, gilt die Lieferung ohne Prüfung als frei.",
+   "zeilen": [
+    12,
+    117,
+    118
+   ],
+   "code": [
+    "12:   SELECT SINGLE low FROM tvarvc INTO cv_dest",
+    "117:   PERFORM schalter_lesen CHANGING lv_dest.",
+    "118:   IF lv_dest IS INITIAL."
+   ],
+   "X": [
+    "Das Feld low des Variableneintrags wird gelesen.",
+    "Das Unterprogramm schalter_lesen wird aufgerufen; es liest Variableneinträge.",
+    "Ohne Destination wird der Block verlassen."
+   ],
+   "Y": [
+    "Aus der Tabelle TVARVC wird für den Namen 'ZGTS_RFC_DEST', den Typ 'P' und die Nummer '0000' der Wert des Feldes LOW als RFC-Destination gelesen.",
+    "Das Unterprogramm SCHALTER_LESEN wird aufgerufen, um die RFC-Destination für das GTS-System zu ermitteln.",
+    "Ist keine RFC-Destination gepflegt, wird die Exportprüfung beendet."
+   ],
+   "Z": [
+    "low des Satzes wird gelesen.",
+    "Das Unterprogramm schalter_lesen wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Ohne Destination wird der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-174-B04",
+   "soll": "Für den Benutzer GTS_TEST und im System DEV gilt die Lieferung ohne Prüfung als frei.",
+   "zeilen": [
+    123
+   ],
+   "code": [
+    "123:   IF sy-uname = 'GTS_TEST' OR sy-sysid = 'DEV'."
+   ],
+   "X": [
+    "Wenn das Feld sy-uname gleich GTS_TEST ist oder das Feld sy-sysid gleich DEV ist, wird der Block verlassen."
+   ],
+   "Y": [
+    "Lautet der Benutzername 'GTS_TEST' oder ist das aktuelle System 'DEV', wird die Exportprüfung beendet."
+   ],
+   "Z": [
+    "Für sy-uname = 'GTS_TEST' OR sy-sysid = 'DEV' wird der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-174-B05",
+   "soll": "Liegt das Land des Warenempfängers in Deutschland, gilt die Lieferung ohne Prüfung als frei.",
+   "zeilen": [
+    127,
+    129
+   ],
+   "code": [
+    "127:   SELECT SINGLE land1 FROM kna1 INTO lv_land",
+    "129:   IF lv_land = 'DE'."
+   ],
+   "X": [
+    "Der Länderschlüssel des Kunden wird gelesen.",
+    "Wenn der Länderschlüssel gleich DE ist, wird der Block verlassen."
+   ],
+   "Y": [
+    "Aus der Tabelle KNA1 wird für die Kundennummer KUNNR der Länderschlüssel LAND1 gelesen.",
+    "Ist das Land des Kunden gleich 'DE', wird die Exportprüfung beendet."
+   ],
+   "Z": [
+    "Länderschlüssel des Kunden wird gelesen.",
+    "Für Länderschlüssel mit dem Wert DE wird der Block verlassen.",
+    "Bei lv_land gleich DE wird der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-174-B06",
+   "soll": "Für GTS werden alle nicht gelöschten Lieferpositionen mit positiver Liefermenge mit Material, Warennummer, Menge und Einheit aufbereitet; gibt es keine, gilt die Lieferung als frei.",
+   "zeilen": [
+    25,
+    26,
+    27,
+    133,
+    134
+   ],
+   "code": [
+    "25:   LOOP AT it_lips WHERE updkz <> 'D'.",
+    "26:     CHECK it_lips-lfimg > 0.",
+    "27:     SELECT SINGLE stawn FROM marc INTO @DATA(lv_stawn)",
+    "133:   PERFORM positionen_aufbauen TABLES it_lips lt_items.",
+    "134:   IF lt_items IS INITIAL."
+   ],
+   "X": [
+    "Die Zeilen aus it_lips, bei denen das Feld updkz ungleich D ist, werden einzeln verarbeitet.",
+    "Nur Liefermengen größer 0 gehen weiter; kleinere und gleiche werden übersprungen, die Schleife läuft weiter.",
+    "Das Feld stawn des Werksdatensatzes zum Material wird gelesen.",
+    "Das Unterprogramm positionen_aufbauen wird aufgerufen; es liest Werksdatensätze zu Materialien.",
+    "Ist die Tabelle lt_items leer, wird der Block verlassen."
+   ],
+   "Y": [
+    "Über alle Lieferpositionen der Tabelle IT_LIPS, deren Änderungskennzeichen UPDKZ ungleich 'D' ist, wird eine Schleife ausgeführt.",
+    "Ist die Liefermenge LFIMG der aktuellen Position größer als 0, wird die Bearbeitung fortgesetzt; andernfalls wird die Position übersprungen.",
+    "Aus der Tabelle MARC wird für die Materialnummer MATNR und das Werk WERKS der aktuellen Position die statistische Warennummer STAWN gelesen.",
+    "Das Unterprogramm POSITIONEN_AUFBAUEN wird aufgerufen, um die prüfrelevanten Lieferpositionen zusammenzustellen.",
+    "Sind keine prüfrelevanten Positionen vorhanden, wird die Exportprüfung beendet."
+   ],
+   "Z": [
+    "Jede Zeile aus it_lips wird einzeln verarbeitet.",
+    "Nur it_lips-lfimg größer 0 gehen weiter; kleinere werden übersprungen, die Schleife läuft weiter.",
+    "stawn des Satzes wird gelesen.",
+    "Das Unterprogramm positionen_aufbauen wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Ohne Treffer wird der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-174-B07",
+   "soll": "Das GTS-System prüft die Lieferung synchron per RFC und gibt Status und Text zurück; bei Kommunikations- oder Systemfehler ist das Ergebnis F mit der Fehlermeldung.",
+   "zeilen": [
+    138,
+    152,
+    153
+   ],
+   "code": [
+    "138:   CALL FUNCTION 'Z_GTS_CHECK_DELIVERY' DESTINATION lv_dest",
+    "152:   IF sy-subrc <> 0.",
+    "153:     ev_ergebnis = 'F'."
+   ],
+   "X": [
+    "Z_GTS_CHECK_DELIVERY wird in einem entfernten System über die Destination aus lv_dest aufgerufen. Welches System und was dort geschieht, ist aus dem gelieferten Code nicht ableitbar.",
+    "Das Ergebnis von Z_GTS_CHECK_DELIVERY wird in ev_ergebnis übernommen.",
+    "Scheitert der Aufruf von Z_GTS_CHECK_DELIVERY, wird das Feld ev_ergebnis auf F gesetzt.",
+    "Wenn der Aufruf von Z_GTS_CHECK_DELIVERY scheitert, wird das Feld ev_ergebnis auf F gesetzt."
+   ],
+   "Y": [
+    "Der Funktionsbaustein Z_GTS_CHECK_DELIVERY wird über die ermittelte RFC-Destination mit Belegnummer, Kundennummer, Land und Positionstabelle aufgerufen.",
+    "Tritt beim RFC-Aufruf ein Kommunikations- oder Systemfehler auf (SY-SUBRC ungleich 0), wird das Prüfergebnis auf 'F' gesetzt und die Fehlermeldung übernommen."
+   ],
+   "Z": [
+    "Ein entferntes System wird über die eingegebene Destination benachrichtigt. Welches System und was dort geschieht, ist aus dem gelieferten Code nicht ableitbar.",
+    "Das konvertierte Ergebnis wird in ev_ergebnis übernommen.",
+    "Ohne Treffer wird die ev_ergebnis auf F gesetzt.",
+    "sy-subrc ungleich 0 erhalten F."
+   ]
+  },
+  {
+   "id": "BM-174-B08",
+   "soll": "Jede tatsächlich an GTS gestellte Prüfung wird mit Lieferung, Zeitpunkt, Ergebnis, Text und Benutzer protokolliert.",
+   "zeilen": [
+    54,
+    157
+   ],
+   "code": [
+    "54:   INSERT zgts_log FROM ls_log.",
+    "157:   PERFORM protokoll USING is_likp-vbeln ev_ergebnis ev_text."
+   ],
+   "X": [
+    "Das Unterprogramm protokoll wird aufgerufen; es legt Sätze an in ZGTS_LOG."
+   ],
+   "Y": [
+    "In die Tabelle ZGTS_LOG wird ein Protokollsatz mit Lieferungsnummer, aktuellem Datum, aktueller Uhrzeit, Prüfergebnis, Text und Benutzernamen eingefügt.",
+    "Das Unterprogramm PROTOKOLL wird aufgerufen, um die Belegnummer, das Prüfergebnis und den Text zu speichern."
+   ],
+   "Z": [
+    "Das Unterprogramm protokoll wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-174-B09",
+   "soll": "Ist die Lieferung gesperrt (S), erhält sie die Liefersperre GT und der Anwender eine Information.",
+   "zeilen": [
+    81,
+    82,
+    83
+   ],
+   "code": [
+    "81:     WHEN 'S'.                                 \"Embargo/Sanktion: gesperrt",
+    "82:       likp-lifsk = 'GT'.",
+    "83:       MESSAGE i120(zgts) WITH likp-vbeln lv_text."
+   ],
+   "X": [
+    "Es wird das Sperrkennzeichen auf GT gesetzt und eine Informationsmeldung ausgegeben.",
+    "Das Sperrkennzeichen wird auf GT gesetzt.",
+    "Die Informationsmeldung 120(ZGTS) wird ausgegeben."
+   ],
+   "Y": [
+    "Ist das Prüfergebnis gleich 'S', wird die Liefersperre LIFSK auf 'GT' gesetzt und eine Informationsmeldung 120(zgts) mit der Belegnummer und dem Text ausgegeben."
+   ],
+   "Z": [
+    "Es wird die Sperrkennzeichen auf GT gesetzt und eine Meldung ausgegeben.",
+    "Die Sperrkennzeichen wird auf GT gesetzt.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-174-B10",
+   "soll": "Ist GTS nicht erreichbar (F), wird im Dialog das Sichern mit Fehlermeldung verhindert; im Hintergrund wird die Lieferung mit Liefersperre GT gesichert.",
+   "zeilen": [
+    84,
+    85,
+    86,
+    88
+   ],
+   "code": [
+    "84:     WHEN 'F'.                                 \"GTS nicht erreichbar",
+    "85:       IF sy-batch = abap_false.",
+    "86:         MESSAGE e121(zgts) WITH lv_text.",
+    "88:       likp-lifsk = 'GT'."
+   ],
+   "X": [
+    "Wenn das Feld sy-batch nicht gesetzt ist, wird eine Fehlermeldung ausgegeben.",
+    "Die Fehlermeldung 121(ZGTS) wird ausgegeben.",
+    "Das Sperrkennzeichen wird auf GT gesetzt."
+   ],
+   "Y": [
+    "Ist das Prüfergebnis gleich 'F' und erfolgt die Ausführung im Dialogbetrieb (SY-BATCH ist nicht gesetzt), wird die Fehlermeldung 121(zgts) ausgegeben und die Liefersperre LIFSK auf 'GT' gesetzt.",
+    "Ist das Prüfergebnis gleich 'F' und erfolgt die Ausführung im Hintergrundbetrieb (SY-BATCH ist gesetzt), wird die Liefersperre LIFSK auf 'GT' gesetzt."
+   ],
+   "Z": [
+    "Für sy-batch mit dem Wert abap_false wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben.",
+    "Die Sperrkennzeichen wird auf GT gesetzt."
+   ]
+  },
+  {
+   "id": "BM-174-B11",
+   "soll": "In allen anderen Fällen wird eine vorhandene Liefersperre GT wieder entfernt.",
+   "zeilen": [
+    89,
+    91,
+    92
+   ],
+   "code": [
+    "89:     WHEN OTHERS.",
+    "91:       IF likp-lifsk = 'GT'.",
+    "92:         CLEAR likp-lifsk."
+   ],
+   "X": [],
+   "Y": [
+    "Ist das Prüfergebnis weder 'S' noch 'F' und ist die Liefersperre LIFSK auf 'GT' gesetzt, wird die Liefersperre gelöscht."
+   ],
+   "Z": []
+  }
+ ]
+}

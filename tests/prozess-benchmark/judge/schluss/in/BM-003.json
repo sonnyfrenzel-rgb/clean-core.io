@@ -1,0 +1,85 @@
+{
+ "id": "BM-003",
+ "titel": "Preisformel 901: Mindermengenzuschlag je Warengruppe",
+ "prozess": "Die Formel wird von der Preisfindung beim Bewerten der zugeordneten Zuschlagskondition für jede Auftragsposition aufgerufen. Zuerst setzt sie den Konditionswert auf null. Dann sucht sie für die Verkaufsorganisation des Belegs und die Warengruppe der Position die gepflegte Mindestmenge. Fehlt eine Regel, endet die Formel und der Zuschlag bleibt null. Liegt die Positionsmenge in Lagermengeneinheit unter der Mindestmenge, wird der gepflegte feste Zuschlag als Konditionswert gesetzt, sonst bleibt er null. Die frühere mengenabhängige Berechnung ist auskommentiert.",
+ "verboten": [
+  "source.abap:18 — kein Fachsatz „der Zuschlag wird je Mengeneinheit berechnet“: die mengenabhängige Variante ist auskommentiert, der Zuschlag ist ein Festbetrag",
+  "gesamte Scheibe — kein Fachsatz „der Zuschlag wird in KONV gespeichert“: die Formel liefert nur den Wert, Speichern ist Sache der Preisfindung"
+ ],
+ "saetze": [
+  {
+   "id": "BM-003-B01",
+   "soll": "Der Mindermengenzuschlag ist zunächst null.",
+   "zeilen": [
+    10
+   ],
+   "code": [
+    "10:   xkwert = 0."
+   ],
+   "X": [
+    "Die xkwert wird auf 0 gesetzt."
+   ],
+   "Y": [
+    "Das Feld xkwert wird auf 0 gesetzt."
+   ],
+   "Z": [
+    "Der Konditionswert xkwert wird initial auf 0 gesetzt."
+   ]
+  },
+  {
+   "id": "BM-003-B02",
+   "soll": "Für Verkaufsorganisation und Warengruppe der Position wird die gepflegte Mindestmenge mit ihrem Zuschlag gesucht.",
+   "zeilen": [
+    12
+   ],
+   "code": [
+    "12:   SELECT SINGLE * FROM zsd_minmenge INTO ls_minm"
+   ],
+   "X": [
+    "Es werden Sätze aus zsd_minmenge selektiert."
+   ],
+   "Y": [
+    "Es werden Sätze aus zsd_minmenge selektiert."
+   ],
+   "Z": [
+    "Aus der Tabelle ZSD_MINMENGE wird ein Datensatz zur Verkaufsorganisation komk-vkorg und Warengruppe komp-matkl gelesen."
+   ]
+  },
+  {
+   "id": "BM-003-B03",
+   "soll": "Ist keine Mindestmengenregel gepflegt, bleibt der Zuschlag null.",
+   "zeilen": [
+    15
+   ],
+   "code": [
+    "15:   CHECK sy-subrc = 0."
+   ],
+   "X": [
+    "Nur sy-subrc mit dem Wert 0 gehen weiter; kleinere werden übersprungen, die Schleife läuft weiter."
+   ],
+   "Y": [
+    "Nur wenn ein Treffer vorliegt, geht es weiter; sonst wird das Unterprogramm frm_kondi_wert_901 an dieser Stelle verlassen."
+   ],
+   "Z": [
+    "Ist das Lesen der Tabelle ZSD_MINMENGE nicht erfolgreich (sy-subrc ungleich 0), wird die weitere Verarbeitung der Formel abgebrochen."
+   ]
+  },
+  {
+   "id": "BM-003-B04",
+   "soll": "Liegt die Positionsmenge unter der Mindestmenge, wird der feste Zuschlagsbetrag als Konditionswert übernommen, unabhängig von der Menge.",
+   "zeilen": [
+    17,
+    18
+   ],
+   "code": [
+    "17:   IF komp-mglme < ls_minm-minmenge.",
+    "18:     xkwert = ls_minm-zuschlag."
+   ],
+   "X": [],
+   "Y": [],
+   "Z": [
+    "Ist die Positionsmenge komp-mglme kleiner als die Mindestmenge ls_minm-minmenge, wird der Konditionswert xkwert auf den Zuschlag ls_minm-zuschlag gesetzt; andernfalls bleibt er unverändert."
+   ]
+  }
+ ]
+}

@@ -1,0 +1,182 @@
+{
+ "id": "BM-086",
+ "titel": "IDoc-Eingang Kreditlimit: Segmentschleife schreibt KNKK direkt",
+ "prozess": "Die ALE-Eingangsverarbeitung übergibt dem Baustein ein Paket von IDocs mit neuen Kreditlimits einer Auskunftei. Für jedes IDoc prüft er zuerst den Nachrichtentyp und bricht bei einem anderen als ZCREDLIM ab. Dann wertet er die Segmente aus: Das Kopfsegment liefert die Kundennummer, jedes Kreditsegment Kreditkontrollbereich und Limit. Je Kreditsegment liest er den bestehenden Kreditstammsatz; fehlt er oder ist das Limit negativ, markiert er das IDoc als fehlerhaft und überspringt dessen restliche Segmente. Sonst schreibt er das neue Limit mit Prüfdatum, Änderer und Änderungsdatum direkt in die Tabelle KNKK, ohne Sperre. Anschließend setzt er für das IDoc Status 53 oder – bei Fehler – Status 51 mit Kundennummer und meldet dem Workflow ein Fehlerergebnis. Bereits geschriebene Limits eines später fehlerhaften IDocs bleiben bestehen; unbekannte Segmente werden ignoriert.",
+ "verboten": [
+  "source.abap:64 — kein Fachsatz „bei einem Fehler im IDoc wird kein Limit geändert“ (vorher verarbeitete Kreditsegmente bleiben geschrieben; kein Rollback).",
+  "gesamte Scheibe — kein Fachsatz über die Risikoklasse (Segment ZE1CREDRK nur auskommentiert).",
+  "source.abap:64 — kein Fachsatz „Kreditlimit wird im SAP Credit Management gepflegt“ (direktes Schreiben der klassischen Tabelle KNKK).",
+  "source.abap:44 — kein Fehlerpfad für unbekannte Segmente (sie werden stillschweigend übergangen)."
+ ],
+ "saetze": [
+  {
+   "id": "BM-086-B01",
+   "soll": "Jedes IDoc des Pakets wird nur verarbeitet, wenn es den Nachrichtentyp ZCREDLIM trägt; sonst bricht der Baustein mit WRONG_FUNCTION_CALLED ab.",
+   "zeilen": [
+    38,
+    39
+   ],
+   "code": [
+    "38:     IF ls_edidc-mestyp <> 'ZCREDLIM'.",
+    "39:       RAISE wrong_function_called."
+   ],
+   "X": [],
+   "Y": [
+    "Ist der Nachrichtentyp nicht gleich 'ZCREDLIM', wird die Ausnahme WRONG_FUNCTION_CALLED ausgelöst."
+   ],
+   "Z": []
+  },
+  {
+   "id": "BM-086-B02",
+   "soll": "Die Segmente des IDocs werden der Reihe nach ausgewertet; das Kopfsegment liefert die Kundennummer.",
+   "zeilen": [
+    43,
+    44,
+    46
+   ],
+   "code": [
+    "43:     LOOP AT idoc_data INTO ls_edidd WHERE docnum = ls_edidc-docnum.",
+    "44:       CASE ls_edidd-segnam.",
+    "46:           ls_e1head = ls_edidd-sdata."
+   ],
+   "X": [
+    "Die Zeilen aus idoc_data, bei denen das Feld docnum gleich ls_edidc-docnum ist, werden einzeln verarbeitet."
+   ],
+   "Y": [
+    "Für das jeweilige IDoc werden alle Datensätze mit übereinstimmender Dokumentnummer aus den IDoc-Daten durchlaufen.",
+    "Handelt es sich um das Segment 'ZE1CREDHD', werden die Kopfdaten zwischengespeichert."
+   ],
+   "Z": [
+    "Jede Zeile aus idoc_data wird einzeln verarbeitet."
+   ]
+  },
+  {
+   "id": "BM-086-B03",
+   "soll": "Je Kreditsegment wird der vorhandene Kreditstammsatz des Kunden im genannten Kreditkontrollbereich gelesen.",
+   "zeilen": [
+    49
+   ],
+   "code": [
+    "49:           SELECT SINGLE * FROM knkk INTO ls_knkk"
+   ],
+   "X": [
+    "Es werden Sätze aus knkk selektiert."
+   ],
+   "Y": [
+    "Handelt es sich um das Segment 'ZE1CREDIT', wird der Datensatz aus Tabelle KNKK zur Kundennummer aus den Kopfdaten und zum Kreditkontrollbereich aus den Positionsdaten gelesen."
+   ],
+   "Z": [
+    "Es werden Sätze aus knkk selektiert."
+   ]
+  },
+  {
+   "id": "BM-086-B04",
+   "soll": "Fehlt der Kreditstammsatz oder ist das gelieferte Limit negativ, wird das IDoc als fehlerhaft markiert und die weiteren Segmente werden übersprungen.",
+   "zeilen": [
+    52,
+    56
+   ],
+   "code": [
+    "52:           IF sy-subrc <> 0.",
+    "56:           IF ls_e1item-klimk < 0."
+   ],
+   "X": [
+    "Ohne Treffer wird das Feld lv_error auf X gesetzt und die Schleife verlassen.",
+    "Wenn kein Treffer vorliegt, wird das Feld lv_error auf X gesetzt.",
+    "Wenn das Feld ls_e1item-klimk kleiner als 0 ist, wird das Feld lv_error auf X gesetzt und die Schleife verlassen.",
+    "Wenn das Feld ls_e1item-klimk kleiner als 0 ist, wird das Feld lv_error auf X gesetzt."
+   ],
+   "Y": [
+    "Wird kein passender Datensatz in Tabelle KNKK gefunden, wird ein Fehlerkennzeichen gesetzt und die Bearbeitung der Segmente dieses IDocs abgebrochen.",
+    "Ist das Kreditlimit kleiner als 0, wird ein Fehlerkennzeichen gesetzt und die Bearbeitung der Segmente dieses IDocs abgebrochen."
+   ],
+   "Z": [
+    "Ohne Treffer wird die lv_error auf X gesetzt und der Block verlassen.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "sy-subrc ungleich 0 setzen die lv_error auf X.",
+    "Für negative ls_e1item-klimk wird die lv_error auf X gesetzt und der Block verlassen.",
+    "Negative ls_e1item-klimk setzen die lv_error auf X."
+   ]
+  },
+  {
+   "id": "BM-086-B05",
+   "soll": "Sonst wird das neue Kreditlimit mit heutigem Prüfdatum, Änderer und Änderungsdatum direkt in den Kreditstammsatz geschrieben.",
+   "zeilen": [
+    60,
+    64
+   ],
+   "code": [
+    "60:           ls_knkk-klimk = ls_e1item-klimk.",
+    "64:           UPDATE knkk FROM ls_knkk."
+   ],
+   "X": [
+    "Eine Zeile in knkk wird geändert. Ob eine Zeile getroffen wird, garantiert der Code nicht. sy-subrc wird danach nicht ausgewertet."
+   ],
+   "Y": [
+    "In Tabelle KNKK werden das Kreditlimit aus dem Segment sowie das Datum der letzten internen Prüfung, der Änderungsbenutzer und das Änderungsdatum aktualisiert."
+   ],
+   "Z": [
+    "Eine Zeile in knkk wird geändert. Ob eine Zeile getroffen wird, garantiert der Code nicht. Angekündigt, nicht persistiert: im gelieferten Code steht kein COMMIT WORK. sy-subrc wird danach nicht ausgewertet."
+   ]
+  },
+  {
+   "id": "BM-086-B06",
+   "soll": "Ein fehlerfreies IDoc erhält Status 53 (Anwendungsbeleg gebucht).",
+   "zeilen": [
+    72,
+    73
+   ],
+   "code": [
+    "72:     IF lv_error IS INITIAL.",
+    "73:       ls_status-status = '53'."
+   ],
+   "X": [
+    "Ist das Feld lv_error leer, wird der Status auf 53 gesetzt, das Feld ls_status-msgty auf S gesetzt, das Feld ls_status-msgid auf ZSD_IF gesetzt und das Feld ls_status-msgno auf 010 gesetzt, sonst der Status auf 51 gesetzt, das Feld ls_status-msgty auf E gesetzt, das Feld ls_status-msgid auf ZSD_IF gesetzt, das Feld ls_status-msgno auf 011 gesetzt und das Feld workflow_result auf 99999 gesetzt.",
+    "Wenn das Feld lv_error leer ist, wird der Status auf 53 gesetzt.",
+    "Wenn das Feld lv_error leer ist, wird das Feld ls_status-msgty auf S gesetzt.",
+    "Wenn das Feld lv_error leer ist, wird das Feld ls_status-msgid auf ZSD_IF gesetzt.",
+    "Wenn das Feld lv_error leer ist, wird das Feld ls_status-msgno auf 010 gesetzt."
+   ],
+   "Y": [
+    "Wurde kein Fehler festgestellt, wird der IDoc-Status auf '53' mit der Erfolgsmeldung 010 aus der Nachrichtenklasse 'ZSD_IF' festgelegt.",
+    "Wurde ein Fehler festgestellt, wird der IDoc-Status auf '51' mit der Fehlermeldung 011 aus der Nachrichtenklasse 'ZSD_IF' unter Angabe der Kundennummer gesetzt und das Workflow-Ergebnis auf '99999' gesetzt."
+   ],
+   "Z": [
+    "Ohne lv_error wird die Status auf 53 gesetzt, die ls_status-msgty auf S gesetzt, die ls_status-msgid auf ZSD_IF gesetzt und die ls_status-msgno auf 010 gesetzt.",
+    "Ohne lv_error wird die Status auf 53 gesetzt, die ls_status-msgty auf S gesetzt, die ls_status-msgid auf ZSD_IF gesetzt und die ls_status-msgno auf 010 gesetzt, sonst die Status auf 51 gesetzt, die ls_status-msgty auf E gesetzt, die ls_status-msgid auf ZSD_IF gesetzt, die ls_status-msgno auf 011 gesetzt und die workflow_result auf 99999 gesetzt.",
+    "Eine leere lv_error setzen die Status auf 53.",
+    "Es wird die Status auf 53 gesetzt, die ls_status-msgty auf S gesetzt, die ls_status-msgid auf ZSD_IF gesetzt und die ls_status-msgno auf 010 gesetzt.",
+    "Eine leere lv_error setzen die ls_status-msgty auf S.",
+    "Eine leere lv_error setzen die ls_status-msgid auf ZSD_IF.",
+    "Eine leere lv_error setzen die ls_status-msgno auf 010."
+   ]
+  },
+  {
+   "id": "BM-086-B07",
+   "soll": "Ein fehlerhaftes IDoc erhält Status 51 mit der Kundennummer in der Meldung, und das Workflow-Ergebnis meldet einen Fehler.",
+   "zeilen": [
+    78,
+    83
+   ],
+   "code": [
+    "78:       ls_status-status = '51'.",
+    "83:       workflow_result  = '99999'."
+   ],
+   "X": [
+    "Ist das Feld lv_error leer, wird der Status auf 53 gesetzt, das Feld ls_status-msgty auf S gesetzt, das Feld ls_status-msgid auf ZSD_IF gesetzt und das Feld ls_status-msgno auf 010 gesetzt, sonst der Status auf 51 gesetzt, das Feld ls_status-msgty auf E gesetzt, das Feld ls_status-msgid auf ZSD_IF gesetzt, das Feld ls_status-msgno auf 011 gesetzt und das Feld workflow_result auf 99999 gesetzt.",
+    "Sonst wird der Status auf 51 gesetzt.",
+    "Sonst wird das Feld workflow_result auf 99999 gesetzt."
+   ],
+   "Y": [
+    "Wurde ein Fehler festgestellt, wird der IDoc-Status auf '51' mit der Fehlermeldung 011 aus der Nachrichtenklasse 'ZSD_IF' unter Angabe der Kundennummer gesetzt und das Workflow-Ergebnis auf '99999' gesetzt."
+   ],
+   "Z": [
+    "Ohne lv_error wird die Status auf 53 gesetzt, die ls_status-msgty auf S gesetzt, die ls_status-msgid auf ZSD_IF gesetzt und die ls_status-msgno auf 010 gesetzt, sonst die Status auf 51 gesetzt, die ls_status-msgty auf E gesetzt, die ls_status-msgid auf ZSD_IF gesetzt, die ls_status-msgno auf 011 gesetzt und die workflow_result auf 99999 gesetzt.",
+    "Sonst wird die Status auf 51 gesetzt, die ls_status-msgty auf E gesetzt, die ls_status-msgid auf ZSD_IF gesetzt, die ls_status-msgno auf 011 gesetzt und die workflow_result auf 99999 gesetzt.",
+    "Sonst setzen die Status auf 51.",
+    "Es wird die Status auf 51 gesetzt, die ls_status-msgty auf E gesetzt, die ls_status-msgid auf ZSD_IF gesetzt und die ls_status-msgno auf 011 gesetzt.",
+    "Sonst setzen die workflow_result auf 99999."
+   ]
+  }
+ ]
+}

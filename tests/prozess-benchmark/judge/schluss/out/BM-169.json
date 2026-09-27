@@ -1,0 +1,148 @@
+{
+ "id": "BM-169",
+ "urteile": [
+  {
+   "id": "BM-169-B01",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "zu_allgemein",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Y nennt alle Selektionskriterien; X/Z nur generische Selektion aus KONA."
+  },
+  {
+   "id": "BM-169-B02",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "zu_allgemein",
+     "redundant"
+    ]
+   },
+   "kurz": "X und Y nennen Hinweis und Verlassen der Liste; Z spricht von Screenfolge und Datenbankoperation."
+  },
+  {
+   "id": "BM-169-B03",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Nur Y sagt, dass die Liste im Speicher abgelegt wird."
+  },
+  {
+   "id": "BM-169-B04",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Y nennt vierte Zeile ab Spalte 60, aber nicht den Umsatz null bei unlesbarem Betrag; X/Z nur Bausteinaufrufe."
+  },
+  {
+   "id": "BM-169-B05",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "falsch",
+     "redundant"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "falsch",
+     "redundant"
+    ]
+   },
+   "kurz": "Y fachlich mit Hotspot; X/Z technisch und mit falschem „Zeile eingefügt oder überschrieben“."
+  },
+  {
+   "id": "BM-169-B06",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "falsch"
+    ]
+   },
+   "Z": {
+    "urteil": "abweichend",
+    "mangel": [
+     "falsch",
+     "zu_allgemein"
+    ]
+   },
+   "kurz": "Y beschreibt den Absprung korrekt, behauptet aber, ohne Auswahl werde abgebrochen; X ohne Vorbelegung; Z spricht von Anlage statt Anzeige."
+  }
+ ],
+ "verboten_verletzt": [
+  {
+   "variante": "Y",
+   "satz": "Wurde bei einer Zeilenauswahl keine Absprachenummer ausgewählt, wird die Verarbeitung abgebrochen.",
+   "grund": "Behauptet Wirkungslosigkeit von Klicks außerhalb einer Absprachezeile; ohne HIDE-Information steht beim ersten Klick noch die letzte Absprache im Feld."
+  }
+ ],
+ "soll_zweifel": []
+}

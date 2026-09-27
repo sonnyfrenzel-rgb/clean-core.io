@@ -1,0 +1,229 @@
+{
+ "id": "BM-128",
+ "titel": "PSM-FM: Mittelvorbindungen aus freigegebenen Beschaffungsanträgen anlegen, mit Vorab-Verfügbarkeitsprüfung (dynamisches WHERE, EXIT in innerer Schleife)",
+ "prozess": "Der Report läuft nachts mit Finanzkreis, Geschäftsjahr und optional einer Finanzstelle. Er baut daraus die Selektion und liest alle freigegebenen Beschaffungsanträge; findet er keine, bricht er mit einer Fehlermeldung ab. Dann liest er alle Antragspositionen. Für jeden Antrag prüft er Position für Position, ob die verfügbaren Mittel der Finanzstelle und Finanzposition laut eigener Verfügbarkeitssicht den Positionsbetrag decken; bei der ersten nicht gedeckten Position bricht er die Prüfung ab, meldet den Antrag als zurückgestellt und lässt ihn unverändert. Gedeckte Anträge legt er als Mittelvorbindung der Belegart ZV mit allen Positionen an. Schlägt die Anlage fehl, rollt er zurück und meldet den Fehler mit Meldungsnummer. Gelingt sie, kennzeichnet er den Antrag als angelegt mit der Belegnummer, schreibt alles fest und meldet die Nummer. Findet die Verfügbarkeitslesung keinen Satz, vergleicht er gegen den Wert der vorher geprüften Position.",
+ "verboten": [
+  "source.abap:55 — kein Fachsatz „der Antrag wird abgelehnt“: sein Status bleibt unverändert, er wird im nächsten Lauf erneut geprüft",
+  "source.abap:42 — kein Fachsatz „Positionen ohne Verfügbarkeitssatz gelten als nicht gedeckt“: ohne Treffer bleibt der Wert der vorher geprüften Position stehen",
+  "source.abap:47 — kein Fachsatz „die Verfügbarkeit wird über alle Positionen kumuliert geprüft“: jede Position wird einzeln gegen den verfügbaren Betrag verglichen",
+  "source.abap:62 — kein Fachsatz „die Mittelvorbindung wird genehmigt oder gebucht“: der Report legt sie an, eine Genehmigung findet nicht statt"
+ ],
+ "saetze": [
+  {
+   "id": "BM-128-B01",
+   "soll": "Es werden die freigegebenen Beschaffungsanträge des Finanzkreises und Geschäftsjahres gelesen, eingeschränkt auf eine Finanzstelle, wenn sie angegeben ist.",
+   "zeilen": [
+    25,
+    29
+   ],
+   "code": [
+    "25:   gv_where = COND #( WHEN p_fistl IS INITIAL",
+    "29:   SELECT * FROM zfm_antrag INTO TABLE gt_antr WHERE (gv_where)."
+   ],
+   "X": [
+    "Aus der Tabelle ZFM_ANTRAG werden alle Anträge mit dem Status 'F' für den angegebenen Finanzkreis und das Geschäftsjahr sowie optional für die angegebene Finanzstelle selektiert."
+   ],
+   "Y": [
+    "Es werden Sätze aus zfm_antrag selektiert. Welche Sätze das sind, steht erst zur Laufzeit in gv_where fest."
+   ],
+   "Z": [
+    "Es werden Sätze aus zfm_antrag selektiert. Welche Sätze das sind, entscheidet die Eingabe zur Laufzeit."
+   ]
+  },
+  {
+   "id": "BM-128-B02",
+   "soll": "Gibt es keine freigegebenen Anträge, bricht der Lauf mit einer Fehlermeldung ab.",
+   "zeilen": [
+    30,
+    31
+   ],
+   "code": [
+    "30:   IF gt_antr IS INITIAL.",
+    "31:     MESSAGE e010(zfm) WITH p_fikrs p_gjahr."
+   ],
+   "X": [
+    "Werden keine Anträge gefunden, wird die Fehlermeldung e010(zfm) mit Finanzkreis und Geschäftsjahr ausgegeben und das Programm abgebrochen."
+   ],
+   "Y": [
+    "Ohne Treffer wird eine Fehlermeldung ausgegeben.",
+    "Die Fehlermeldung 010(ZFM) wird ausgegeben."
+   ],
+   "Z": [
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-128-B03",
+   "soll": "Zu den Anträgen werden alle Positionen gelesen.",
+   "zeilen": [
+    34
+   ],
+   "code": [
+    "34:   SELECT * FROM zfm_antrag_pos INTO TABLE gt_pos"
+   ],
+   "X": [
+    "Aus der Tabelle ZFM_ANTRAG_POS werden alle Positionen zu den selektierten Antragsnummern eingelesen."
+   ],
+   "Y": [
+    "Es werden Sätze aus zfm_antrag_pos zu den Einträgen aus gt_antr selektiert."
+   ],
+   "Z": [
+    "Es werden Sätze aus zfm_antrag_pos selektiert."
+   ]
+  },
+  {
+   "id": "BM-128-B04",
+   "soll": "Für jede Position eines Antrags werden die verfügbaren Mittel der Finanzstelle und Finanzposition nachgelesen.",
+   "zeilen": [
+    42
+   ],
+   "code": [
+    "42:       SELECT SINGLE verfuegbar FROM zfm_v_verfuegbar INTO gv_verf"
+   ],
+   "X": [
+    "Aus der Sicht ZFM_V_VERFUEGBAR wird der verfügbare Betrag zu Finanzkreis, Geschäftsjahr, Finanzstelle und Finanzposition ermittelt."
+   ],
+   "Y": [
+    "Das Feld verfuegbar aus zfm_v_verfuegbar wird gelesen."
+   ],
+   "Z": [
+    "verfuegbar des Satzes wird gelesen."
+   ]
+  },
+  {
+   "id": "BM-128-B05",
+   "soll": "Reichen die Mittel für eine Position nicht, wird die Prüfung des Antrags abgebrochen und der Antrag als zurückgestellt gemeldet; er bleibt freigegeben.",
+   "zeilen": [
+    47,
+    54,
+    55
+   ],
+   "code": [
+    "47:       IF gv_verf < gs_pos-betrag.",
+    "54:     IF gv_ok = abap_false.",
+    "55:       WRITE: / gs_antr-antrag_id, 'Mittel nicht ausreichend - zurückgestellt'."
+   ],
+   "X": [
+    "Ist der verfügbare Betrag kleiner als der Positionsbetrag, wird die Prüfung als fehlerhaft gekennzeichnet und die Schleife über die Positionen abgebrochen.",
+    "Wurde die Verfügbarkeitsprüfung nicht bestanden, wird die Meldung ausgegeben, dass die Mittel nicht ausreichend sind und der Antrag zurückgestellt wird; die weitere Bearbeitung dieses Antrags wird übersprungen."
+   ],
+   "Y": [
+    "Wenn das Feld gv_verf kleiner als gs_pos-betrag ist, wird die Schleife verlassen.",
+    "Wenn das Feld gv_ok nicht gesetzt ist, wird gs_antr-antrag_id ausgegeben, Mittel nicht ausreichend - zurückgestellt ausgegeben und der Schleifendurchlauf übersprungen.",
+    "Mittel nicht ausreichend - zurückgestellt wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code."
+   ],
+   "Z": [
+    "Für gv_verf kleiner gs_pos-betrag wird der Block verlassen.",
+    "Für gv_ok mit dem Wert abap_false wird gs_antr-antrag_id ausgegeben und Mittel nicht ausreichend - zurückgestellt ausgegeben.",
+    "Bei Treffern werden gs_antr-antrag_id und Mittel nicht ausreichend - zurückgestellt als Liste ausgegeben.",
+    "gs_antr-antrag_id wird ausgegeben.",
+    "Mittel nicht ausreichend - zurückgestellt wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code."
+   ]
+  },
+  {
+   "id": "BM-128-B06",
+   "soll": "Für gedeckte Anträge wird eine Mittelvorbindung der Belegart ZV mit allen Positionen angelegt.",
+   "zeilen": [
+    62
+   ],
+   "code": [
+    "62:     CALL FUNCTION 'FMFR_CREATE_FROM_DATA'"
+   ],
+   "X": [
+    "Über den Funktionsbaustein FMFR_CREATE_FROM_DATA wird eine Mittelvorbindung mit Belegart 'ZV', Buchungskreis, Titel und den gesammelten Belegpositionen angelegt."
+   ],
+   "Y": [
+    "Der Code übergibt gs_kblk an FMFR_CREATE_FROM_DATA und übernimmt dessen Ausgabe nach gv_belnr."
+   ],
+   "Z": [
+    "Der Code übergibt gs_kblk an FMFR_CREATE_FROM_DATA und übernimmt dessen Ausgabe nach gv_belnr.",
+    "Das konvertierte Ergebnis wird in gv_belnr übernommen."
+   ]
+  },
+  {
+   "id": "BM-128-B07",
+   "soll": "Schlägt die Anlage fehl, wird zurückgerollt und der Fehler mit Meldungsnummer gemeldet.",
+   "zeilen": [
+    72,
+    73,
+    74
+   ],
+   "code": [
+    "72:     IF sy-subrc <> 0.",
+    "73:       CALL FUNCTION 'BAPI_TRANSACTION_ROLLBACK'.",
+    "74:       WRITE: / gs_antr-antrag_id, 'Fehler bei Anlage', sy-msgid, sy-msgno."
+   ],
+   "X": [
+    "Tritt bei der Anlage der Mittelvorbindung ein Fehler auf, wird ein Rollback über den Funktionsbaustein BAPI_TRANSACTION_ROLLBACK ausgeführt.",
+    "Im Fehlerfall wird eine entsprechende Meldung mit Nachrichtenklasse und Nachrichtennummer zur Antrags-ID ausgegeben und die Verarbeitung dieses Antrags abgebrochen."
+   ],
+   "Y": [
+    "Scheitert der Aufruf von FMFR_CREATE_FROM_DATA, wird BAPI_TRANSACTION_ROLLBACK aufgerufen, gs_antr-antrag_id ausgegeben, Fehler bei Anlage ausgegeben, sy-msgid ausgegeben, sy-msgno ausgegeben und der Schleifendurchlauf übersprungen.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_ROLLBACK wird aufgerufen.",
+    "Fehler bei Anlage wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code."
+   ],
+   "Z": [
+    "Ohne Treffer wird BAPI_TRANSACTION_ROLLBACK aufgerufen, gs_antr-antrag_id ausgegeben, Fehler bei Anlage ausgegeben, sy-msgid ausgegeben und sy-msgno ausgegeben.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_ROLLBACK wird aufgerufen.",
+    "Es wird BAPI_TRANSACTION_ROLLBACK aufgerufen, gs_antr-antrag_id ausgegeben, Fehler bei Anlage ausgegeben, sy-msgid ausgegeben und sy-msgno ausgegeben.",
+    "Bei Treffern werden gs_antr-antrag_id, Fehler bei Anlage, sy-msgid und sy-msgno als Liste ausgegeben.",
+    "gs_antr-antrag_id wird ausgegeben.",
+    "Fehler bei Anlage wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "sy-msgid wird ausgegeben.",
+    "sy-msgno wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-128-B08",
+   "soll": "Nach erfolgreicher Anlage wird der Antrag mit der Belegnummer als angelegt gekennzeichnet und alles festgeschrieben.",
+   "zeilen": [
+    77,
+    79
+   ],
+   "code": [
+    "77:     UPDATE zfm_antrag SET status = 'A' belnr = gv_belnr",
+    "79:     CALL FUNCTION 'BAPI_TRANSACTION_COMMIT'"
+   ],
+   "X": [
+    "In der Tabelle ZFM_ANTRAG werden für den bearbeiteten Antrag der Status auf 'A' gesetzt und die erzeugte Belegnummer gespeichert.",
+    "Die Änderungen werden über den Funktionsbaustein BAPI_TRANSACTION_COMMIT mit Warteoption synchron auf der Datenbank festgeschrieben."
+   ],
+   "Y": [
+    "Es wird eine Zeile geändert, BAPI_TRANSACTION_COMMIT aufgerufen, gs_antr-antrag_id ausgegeben, Mittelvorbindung ausgegeben und Das vom Funktionsbaustein zurückgegebene Feld ausgegeben.",
+    "Der Status in zfm_antrag wird geändert. Ob eine Zeile getroffen wird, garantiert der Code nicht. sy-subrc wird danach nicht ausgewertet.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_COMMIT wird aufgerufen."
+   ],
+   "Z": [
+    "Es wird eine Zeile geändert, BAPI_TRANSACTION_COMMIT aufgerufen, gs_antr-antrag_id ausgegeben, Mittelvorbindung ausgegeben und Das vom Funktionsbaustein zurückgegebene Feld ausgegeben.",
+    "Die Status in zfm_antrag wird geändert. Ob eine Zeile getroffen wird, garantiert der Code nicht. Angekündigt, nicht persistiert: im gelieferten Code steht kein COMMIT WORK. sy-subrc wird danach nicht ausgewertet.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_COMMIT wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-128-B09",
+   "soll": "Die Nummer der angelegten Mittelvorbindung wird je Antrag gemeldet.",
+   "zeilen": [
+    82
+   ],
+   "code": [
+    "82:     WRITE: / gs_antr-antrag_id, 'Mittelvorbindung', gv_belnr."
+   ],
+   "X": [
+    "Für den erfolgreich bearbeiteten Antrag werden die Antrags-ID und die erzeugte Belegnummer der Mittelvorbindung ausgegeben."
+   ],
+   "Y": [
+    "Es wird eine Zeile geändert, BAPI_TRANSACTION_COMMIT aufgerufen, gs_antr-antrag_id ausgegeben, Mittelvorbindung ausgegeben und Das vom Funktionsbaustein zurückgegebene Feld ausgegeben.",
+    "Bei Treffern werden gs_antr-antrag_id, Mittelvorbindung und Das vom Funktionsbaustein zurückgegebene Feld als Liste ausgegeben.",
+    "Mittelvorbindung wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code."
+   ],
+   "Z": [
+    "Es wird eine Zeile geändert, BAPI_TRANSACTION_COMMIT aufgerufen, gs_antr-antrag_id ausgegeben, Mittelvorbindung ausgegeben und Das vom Funktionsbaustein zurückgegebene Feld ausgegeben.",
+    "Bei Treffern werden gs_antr-antrag_id, Mittelvorbindung und Das vom Funktionsbaustein zurückgegebene Feld als Liste ausgegeben.",
+    "gs_antr-antrag_id wird ausgegeben.",
+    "Mittelvorbindung wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "Das vom Funktionsbaustein zurückgegebene Feld wird ausgegeben."
+   ]
+  }
+ ]
+}

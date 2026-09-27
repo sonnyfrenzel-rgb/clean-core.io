@@ -1,0 +1,257 @@
+{
+ "id": "BM-092",
+ "titel": "Webshop-Neukunden per Batch-Input XD01 anlegen mit Dublettenprüfung",
+ "prozess": "Ein stündlicher Job übernimmt Neukunden aus dem Webshop. Er liest alle neuen Registrierungen des gewählten Zeitraums aus der Stagingtabelle und endet mit einer Meldung, wenn es keine gibt. Für jede Registrierung sucht er zuerst einen nicht gelöschten Kunden mit gleichem Namen als Suchbegriff, gleicher Postleitzahl und gleichem Land, und – wenn keiner gefunden wird und eine E-Mail-Adresse vorliegt – einen Kunden mit derselben E-Mail-Adresse. Wird ein Kunde gefunden, markiert er die Registrierung als Dublette mit dieser Kundennummer und legt nichts an. Sonst baut er per Makros eine Batch-Input-Mappe für XD01 mit Kontengruppe, Buchungskreis, Vertriebsbereich, Adresse, E-Mail, Umsatzsteuer-Id, Abstimmkonto, Zahlungsbedingung Vorkasse, Währung EUR und Steuerklassifikation und legt damit den Debitor an. Bei Erfolg übernimmt er die neue Kundennummer aus der Anlagemeldung und markiert die Registrierung als angelegt; bei Misserfolg ermittelt er den Fehlertext und markiert sie als fehlerhaft. Jeder Status wird einzeln festgeschrieben, am Ende gibt er die Zähler aus.",
+ "verboten": [
+  "zsd_webshop_cust.abap:79 — kein Fachsatz „fehlt die Erfolgsmeldung, wird die Registrierung als Fehler markiert“ (das Ergebnis des Nachschlagens wird nicht geprüft; es kann Status C ohne Kundennummer entstehen).",
+  "zsd_webshop_cust_f01.abap:16 — kein Fachsatz „Dubletten werden zusammengeführt oder aktualisiert“ (nur die Registrierung wird markiert).",
+  "zsd_webshop_cust.abap:73 — kein Fachsatz „Geschäftspartner wird angelegt“ (klassische Debitorenanlage).",
+  "gesamte Scheibe — kein Fachsatz „Kunde erhält eine Bestätigungs-E-Mail“ (nicht im Code)."
+ ],
+ "saetze": [
+  {
+   "id": "BM-092-B01",
+   "soll": "Es werden alle neuen Webshop-Registrierungen des gewählten Erfassungszeitraums gelesen; gibt es keine, endet der Lauf mit einer Meldung.",
+   "zeilen": [
+    51,
+    54,
+    55,
+    56
+   ],
+   "code": [
+    "51:   SELECT * FROM zsd_web_cust INTO TABLE gt_web",
+    "54:   IF gt_web IS INITIAL.",
+    "55:     MESSAGE s000(zsd) WITH 'Keine neuen Webshop-Kunden'.",
+    "56:     RETURN."
+   ],
+   "X": [
+    "Aus der Tabelle ZSD_WEB_CUST werden alle Kundendatensätze gelesen, deren Status 'N' ist und deren Erfassungsdatum im angegebenen Selektionszeitraum liegt.",
+    "Wurden keine neuen Webshop-Kunden gefunden, wird die Erfolgsmeldung 'Keine neuen Webshop-Kunden' ausgegeben und die Verarbeitung beendet."
+   ],
+   "Y": [
+    "Es werden Sätze aus zsd_web_cust selektiert.",
+    "Ohne Treffer wird eine Meldung ausgegeben und der Block verlassen.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "Eine Meldung wird ausgegeben.",
+    "Es wird eine Meldung ausgegeben und der Block verlassen."
+   ],
+   "Z": [
+    "Es werden Sätze aus zsd_web_cust selektiert.",
+    "Ohne Treffer wird eine Statusmeldung ausgegeben und vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "Die Statusmeldung 000(ZSD) wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-092-B02",
+   "soll": "Für jede Registrierung wird zuerst ein nicht gelöschter Kunde mit gleichem Namen als Suchbegriff, gleicher Postleitzahl und gleichem Land gesucht.",
+   "zeilen": [
+    114
+   ],
+   "code": [
+    "114:   SELECT SINGLE kunnr FROM kna1 INTO pv_kunnr"
+   ],
+   "X": [
+    "In der Kundenstammtabelle KNA1 wird anhand von Name in Großbuchstaben, Postleitzahl und Ländercode nach einem nicht gelöschten Kunden gesucht."
+   ],
+   "Y": [
+    "Kundennummer des Kunden wird gelesen."
+   ],
+   "Z": [
+    "Die Kundennummer des Kunden wird gelesen."
+   ]
+  },
+  {
+   "id": "BM-092-B03",
+   "soll": "Ohne Treffer und mit angegebener E-Mail-Adresse wird ein nicht gelöschter Kunde mit derselben E-Mail-Adresse gesucht.",
+   "zeilen": [
+    123,
+    124
+   ],
+   "code": [
+    "123:   IF ps_web-smtp_addr IS NOT INITIAL.",
+    "124:     SELECT SINGLE k~kunnr FROM kna1 AS k"
+   ],
+   "X": [
+    "Ist im Webshop-Datensatz eine E-Mail-Adresse gepflegt, wird eine weitere Suche nach Dubletten anhand der E-Mail-Adresse angestoßen.",
+    "Über eine Verknüpfung der Tabellen KNA1 und ADR6 wird nach einem nicht gelöschten Kunden mit derselben E-Mail-Adresse gesucht."
+   ],
+   "Y": [
+    "Kundennummer des Kunden wird gelesen."
+   ],
+   "Z": [
+    "Die Kundennummer des Kunden wird gelesen."
+   ]
+  },
+  {
+   "id": "BM-092-B04",
+   "soll": "Wird ein vorhandener Kunde gefunden, wird die Registrierung als Dublette mit dessen Kundennummer markiert und nicht angelegt.",
+   "zeilen": [
+    62,
+    63,
+    67
+   ],
+   "code": [
+    "62:     IF gv_kunnr IS NOT INITIAL.",
+    "63:       UPDATE zsd_web_cust SET status = 'D'",
+    "67:       COMMIT WORK."
+   ],
+   "X": [
+    "Wurde eine bestehende Kundennummer als Dublette identifiziert, wird in der Tabelle ZSD_WEB_CUST der Status 'D' und die gefundene Kundennummer gesetzt."
+   ],
+   "Y": [
+    "Mit einer nicht leeren Kundennummer wird eine Zeile geändert und COMMIT WORK ausgeführt.",
+    "Die Status in zsd_web_cust wird geändert. Ob eine Zeile getroffen wird, garantiert der Code nicht.",
+    "Mit COMMIT WORK wird die Änderung persistiert."
+   ],
+   "Z": [
+    "Ist die Kundennummer nicht leer, wird eine Zeile geändert, COMMIT WORK ausgeführt und der Schleifendurchlauf übersprungen.",
+    "Der Status in zsd_web_cust wird geändert. Ob eine Zeile getroffen wird, garantiert der Code nicht.",
+    "Mit COMMIT WORK wird die Änderung persistiert."
+   ]
+  },
+  {
+   "id": "BM-092-B05",
+   "soll": "Sonst wird eine Batch-Input-Mappe mit Kontengruppe, Buchungskreis, Vertriebsbereich, Adresse, E-Mail, Umsatzsteuer-Id, Abstimmkonto, Zahlungsbedingung Vorkasse, Währung EUR und Steuerklassifikation aufgebaut.",
+   "zeilen": [
+    71,
+    138
+   ],
+   "code": [
+    "71:     PERFORM build_bdc USING gs_web.",
+    "138:   bdc_dynpro 'SAPMF02D' '0100'."
+   ],
+   "X": [],
+   "Y": [
+    "Das Unterprogramm build_bdc wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt."
+   ],
+   "Z": [
+    "Das Unterprogramm build_bdc wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-092-B06",
+   "soll": "Mit dieser Mappe wird der Debitor über die Transaktion XD01 angelegt.",
+   "zeilen": [
+    73
+   ],
+   "code": [
+    "73:     CALL TRANSACTION 'XD01' USING gt_bdc"
+   ],
+   "X": [
+    "Die Transaktion XD01 zur Kundenanlage wird im Hintergrund mit den aufbereiteten Batch-Input-Daten aufgerufen."
+   ],
+   "Y": [
+    "Die Anlage wird über die Transaktion XD01 angestoßen. Ob und was persistiert wird, entscheidet die aufgerufene Transaktion."
+   ],
+   "Z": [
+    "Die Transaktion XD01 wird per Batch-Input im Modus aus p_mode angestoßen und synchron verbucht. Ob und was persistiert wird, entscheidet die aufgerufene Transaktion."
+   ]
+  },
+  {
+   "id": "BM-092-B07",
+   "soll": "Bei Erfolg wird die neue Kundennummer aus der Anlagemeldung übernommen und die Registrierung als angelegt markiert.",
+   "zeilen": [
+    77,
+    79,
+    82
+   ],
+   "code": [
+    "77:     IF sy-subrc = 0.",
+    "79:       READ TABLE gt_msg INTO gs_msg",
+    "82:       UPDATE zsd_web_cust SET status = 'C'"
+   ],
+   "X": [
+    "War die Transaktion XD01 erfolgreich, wird die angelegte Kundennummer aus den Rückmeldungen ermittelt und in der Tabelle ZSD_WEB_CUST zusammen mit dem Status 'C' gespeichert.",
+    "Schlägt die Transaktion XD01 fehl, wird die Unterroutine zur Ermittlung des Fehlertextes aufgerufen."
+   ],
+   "Y": [
+    "Bei Treffer wird eine Zeile geändert.",
+    "Bei Treffer wird eine Zeile geändert, sonst get_error_text aufgerufen und eine Zeile geändert.",
+    "In der Tabelle wird nach einer passenden Zeile gesucht.",
+    "Die Status in zsd_web_cust wird geändert. Ob eine Zeile getroffen wird, garantiert der Code nicht."
+   ],
+   "Z": [
+    "Läuft die Transaktion XD01 ohne Fehler, wird eine Zeile geändert, sonst get_error_text aufgerufen und eine Zeile geändert.",
+    "In der Tabelle gt_msg wird nach einer passenden Zeile gesucht.",
+    "Der Status in zsd_web_cust wird geändert. Ob eine Zeile getroffen wird, garantiert der Code nicht."
+   ]
+  },
+  {
+   "id": "BM-092-B08",
+   "soll": "Bei Misserfolg wird die erste Fehlermeldung – ersatzweise die letzte Meldung – als Text ermittelt und die Registrierung mit diesem Text als fehlerhaft markiert.",
+   "zeilen": [
+    87,
+    88,
+    186,
+    190
+   ],
+   "code": [
+    "87:       PERFORM get_error_text CHANGING gv_text.",
+    "88:       UPDATE zsd_web_cust SET status = 'E'",
+    "186:   READ TABLE gt_msg INTO gs_msg WITH KEY msgtyp = 'E'.",
+    "190:   CALL FUNCTION 'FORMAT_MESSAGE'"
+   ],
+   "X": [
+    "Schlägt die Transaktion XD01 fehl, wird die Unterroutine zur Ermittlung des Fehlertextes aufgerufen.",
+    "Über den Funktionsbaustein FORMAT_MESSAGE wird anhand von Meldungs-ID, Nummer und Variablen der formatierte Fehlertext aufbereitet.",
+    "In der Tabelle ZSD_WEB_CUST wird der Status auf 'E' und der aufbereitete Fehlertext hinterlegt."
+   ],
+   "Y": [
+    "Bei Treffer wird eine Zeile geändert, sonst get_error_text aufgerufen und eine Zeile geändert.",
+    "Für andere sy-subrc wird get_error_text aufgerufen und eine Zeile geändert.",
+    "Das Unterprogramm get_error_text wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Es wird get_error_text aufgerufen und eine Zeile geändert.",
+    "Die Status in zsd_web_cust wird geändert. Ob eine Zeile getroffen wird, garantiert der Code nicht.",
+    "In der Tabelle wird nach einer passenden Zeile gesucht.",
+    "Der Code übergibt gs_msg-msgid an FORMAT_MESSAGE und übernimmt dessen Ausgabe nach pv_text.",
+    "Das konvertierte Ergebnis wird in pv_text übernommen."
+   ],
+   "Z": [
+    "Läuft die Transaktion XD01 ohne Fehler, wird eine Zeile geändert, sonst get_error_text aufgerufen und eine Zeile geändert.",
+    "Das Unterprogramm get_error_text wird aufgerufen; es ruft FORMAT_MESSAGE auf.",
+    "Der Status in zsd_web_cust wird geändert. Ob eine Zeile getroffen wird, garantiert der Code nicht.",
+    "In der Tabelle gt_msg wird nach einer passenden Zeile gesucht.",
+    "Der Code übergibt gs_msg-msgid an FORMAT_MESSAGE und übernimmt dessen Ausgabe nach pv_text."
+   ]
+  },
+  {
+   "id": "BM-092-B09",
+   "soll": "Der Status jeder Registrierung wird einzeln festgeschrieben.",
+   "zeilen": [
+    93
+   ],
+   "code": [
+    "93:     COMMIT WORK."
+   ],
+   "X": [],
+   "Y": [
+    "Mit COMMIT WORK wird die Änderung persistiert."
+   ],
+   "Z": [
+    "Mit COMMIT WORK wird die Änderung persistiert."
+   ]
+  },
+  {
+   "id": "BM-092-B10",
+   "soll": "Zum Schluss werden die Anzahlen angelegter Kunden, Dubletten und Fehler ausgegeben.",
+   "zeilen": [
+    96
+   ],
+   "code": [
+    "96:   WRITE: / 'Angelegt: ', gv_ok,"
+   ],
+   "X": [
+    "Die Gesamtanzahlen der angelegten Kunden, der Dubletten und der Fehler werden auf der Bildschirmausgabe ausgegeben."
+   ],
+   "Y": [
+    "Angelegt: , gv_ok, Dubletten:, gv_dup, Fehler:  und gv_err werden ausgegeben.",
+    "Angelegt:  wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "gv_ok wird ausgegeben."
+   ],
+   "Z": [
+    "Angelegt: , gv_ok, Dubletten:, gv_dup, Fehler:  und gv_err werden ausgegeben.",
+    "Angelegt:  wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code."
+   ]
+  }
+ ]
+}

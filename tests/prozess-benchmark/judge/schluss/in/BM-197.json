@@ -1,0 +1,684 @@
+{
+ "id": "BM-197",
+ "titel": "Frachtauftrag im TM freigeben: BOPF-Determination, Kapazitätsvalidierung, Freigabeaktion und Gateway-Service",
+ "prozess": "Die Disposition arbeitet mit einer Fiori-App, deren OData-Service den Arbeitsvorrat an Frachtaufträgen liefert und die Freigabe auslöst. Für die Liste übersetzt der Service die Filter Frachtauftragsnummer, Frachtführer und Freigabestatus in eine Suche über Frachtaufträge, ignoriert andere Filter, liest die Treffer mit Frachtführer, Fahrzeugtyp, Gesamtgewicht, Gefahrgutkennzeichen und Freigabestand und kürzt erst danach auf die angeforderte Seite. Für die Freigabe nimmt er die Frachtauftragsnummer entgegen, lehnt ohne Nummer oder bei unbekanntem Auftrag mit einem Geschäftsfehler ab und führt sonst die Freigabeaktion aus. Die Aktion prüft die Freigabeberechtigung und lehnt ohne sie alle Aufträge ab; bereits freigegebene Aufträge erhalten nur einen Hinweis, Aufträge ohne Frachtführer werden abgelehnt. Freigegebene Aufträge erhalten Status, Freigeber und Zeitpunkt, einen Änderungsbeleg und, wenn ein Disponent hinterlegt ist, eine Info-Mail; Mailfehler werden verworfen. Schlägt die Aktion fehl, verwirft der Service alle Änderungen und gibt die Meldungen als Fehler zurück; sonst sichert er und liefert den neuen Stand, oder gibt bei abgelehntem Sichern dessen Meldungen zurück. Unabhängig davon schreibt eine Determination bei Positionsänderungen am Frachtauftrag das Bruttogewicht der Ladungspositionen ohne Einheitenumrechnung und das Gefahrgutkennzeichen fort, sofern sich etwas geändert hat. Eine Validierung prüft je disponiertem Frachtauftrag das Gesamtgewicht gegen das Ladegewicht des Fahrzeugtyps zuzüglich einer über TVARVC gepflegten Toleranz sowie Gefahrgut gegen die ADR-Zulassung und markiert Verstöße als inkonsistent; ein ungepflegter Fahrzeugtyp ergibt nur eine Warnung. Wann Determination, Validierung und Aktion laufen, bestimmt die BOPF-Konfiguration, die nicht im Fall liegt.",
+ "verboten": [
+  "zcl_ztm_a_fo_release.abap:210 — kein Fachsatz „freigegebene Frachtaufträge werden per RFC an das Frachtführerportal übertragen“: die Methode wird nirgends aufgerufen, der Aufruf in der Aktion ist auskommentiert",
+  "zcl_ztm_d_fo_weight.abap:74 — kein Fachsatz „Gewichte in anderen Einheiten werden in KG umgerechnet“: die Bruttogewichte werden ohne Blick auf die Einheit addiert und das Ergebnis als KG gekennzeichnet",
+  "zcl_ztm_d_fo_weight.abap:64 — kein Fachsatz „ein Frachtauftrag ohne Positionen erhält Gewicht 0 und kein Gefahrgutkennzeichen“: Aufträge ohne Positionen bilden keine Gruppe, ihre bisherigen Werte bleiben unverändert stehen",
+  "zcl_ztm_fo_dpc_ext.abap:96 — kein Fachsatz „die Freigabe prüft Fahrzeugkapazität und ADR-Zulassung und wird bei Überladung abgelehnt“ als gesicherte Aussage: die Aktion selbst prüft beides nicht (die Gefahrgutprüfung ist auskommentiert), und ob die Kapazitätsvalidierung beim Sichern oder bei der Aktion läuft, legt die BOPF-Konfiguration fest, die nicht im Fall liegt",
+  "zcl_ztm_a_fo_release.abap:200 — kein Fachsatz „die Mail an den Disponenten ist mit der Freigabe sicher versendet“: ohne eigenes COMMIT geht sie erst mit dem Sichern hinaus, und Fehler beim Erstellen werden verworfen",
+  "zcl_ztm_v_fo_capacity.abap:65 — kein Fachsatz „für einen bestimmten Benutzer wird die Kapazitätsprüfung übersteuert“: die Benutzerabfrage ist auskommentiert",
+  "zcl_ztm_fo_dpc_ext.abap:144 — kein Fachsatz „die Liste wird nach Suchbegriff oder $orderby sortiert bzw. nach Fahrzeugtyp gefiltert“: nur drei Filterfelder werden übernommen, Suche und Sortierung werden nicht ausgewertet"
+ ],
+ "saetze": [
+  {
+   "id": "BM-197-B01",
+   "soll": "Ändern sich Positionen eines Frachtauftrags, werden die betroffenen Auftragsköpfe gelesen und nur Frachtaufträge weiterbearbeitet, nicht Frachtbuchungen oder Frachteinheiten.",
+   "zeilen": [
+    266,
+    274,
+    275
+   ],
+   "code": [
+    "266:     io_read->retrieve(",
+    "274:     DELETE lt_root WHERE tor_cat <> /scmtms/if_tor_const=>sc_tor_category-active.",
+    "275:     IF lt_root IS INITIAL."
+   ],
+   "X": [
+    "Die Frachtauftragsdaten des Knotens ROOT werden anhand der übergebenen Schlüssel gelesen.",
+    "Aus den gelesenen Daten werden alle Einträge entfernt, deren Kategorie im Feld TOR_CAT nicht der Kategorie aktiver Frachtauftrag entspricht.",
+    "Sind nach der Filterung keine Frachtaufträge mehr vorhanden, wird die Verarbeitung beendet."
+   ],
+   "Y": [
+    "Die Methode retrieve von io_read wird aufgerufen; ihr Ergebnis wird in lt_root übernommen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "Ist die Tabelle lt_root leer, wird der Block verlassen."
+   ],
+   "Z": [
+    "Die Methode retrieve von io_read wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "Ohne Treffer wird der Block verlassen.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben."
+   ]
+  },
+  {
+   "id": "BM-197-B02",
+   "soll": "Zu den Frachtaufträgen werden die Transportpositionen gelesen und je Frachtauftrag gruppiert.",
+   "zeilen": [
+    279,
+    290
+   ],
+   "code": [
+    "279:     io_read->retrieve_by_association(",
+    "290:     LOOP AT lt_item INTO DATA(ls_item)"
+   ],
+   "X": [
+    "Zu den verbliebenen Frachtaufträgen werden über die Assoziation ROOT-ITEM_TR die Transportpositionen eingelesen.",
+    "Die Transportpositionen werden nach dem Frachtauftragsschlüssel gruppiert durchlaufen."
+   ],
+   "Y": [
+    "Die Methode retrieve_by_association von io_read wird aufgerufen; ihr Ergebnis wird in lt_item übernommen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "Die Zeilen aus lt_item werden gruppenweise verarbeitet."
+   ],
+   "Z": [
+    "Die Methode retrieve_by_association von io_read wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "Jede Zeile aus lt_item wird einzeln verarbeitet."
+   ]
+  },
+  {
+   "id": "BM-197-B03",
+   "soll": "Das Gesamtgewicht ist die Summe der Bruttogewichte der Produkt- und Packstückpositionen; Fahrzeug- und Anhängerpositionen zählen nicht, die Gewichtseinheit wird nicht umgerechnet und als KG gesetzt.",
+   "zeilen": [
+    300,
+    319
+   ],
+   "code": [
+    "300:       DATA(lv_total) = REDUCE /scmtms/qua_gro_wei_val(",
+    "319:       lr_root->zz_total_weight_uom = gc_uom_kg."
+   ],
+   "X": [
+    "Am Frachtauftrag werden das neu berechnete Gesamtgewicht im Feld ZZ_TOTAL_WEIGHT, die Gewichtseinheit KG im Feld ZZ_TOTAL_WEIGHT_UOM und das Gefahrgutkennzeichen im Feld ZZ_DG_INDICATOR aktualisiert."
+   ],
+   "Y": [],
+   "Z": []
+  },
+  {
+   "id": "BM-197-B04",
+   "soll": "Der Frachtauftrag erhält das Gefahrgutkennzeichen, sobald mindestens eine Position als Gefahrgut gekennzeichnet ist.",
+   "zeilen": [
+    308
+   ],
+   "code": [
+    "308:       DATA(lv_dg) = xsdbool( REDUCE i( INIT n = 0"
+   ],
+   "X": [],
+   "Y": [],
+   "Z": []
+  },
+  {
+   "id": "BM-197-B05",
+   "soll": "Gesamtgewicht und Gefahrgutkennzeichen werden nur dann am Frachtauftrag fortgeschrieben, wenn sich einer der Werte geändert hat.",
+   "zeilen": [
+    314,
+    322
+   ],
+   "code": [
+    "314:       IF lr_root->zz_total_weight = lv_total AND lr_root->zz_dg_indicator = lv_dg.",
+    "322:       io_modify->update("
+   ],
+   "X": [
+    "Stimmen das Gesamtgewicht ZZ_TOTAL_WEIGHT und das Gefahrgutkennzeichen ZZ_DG_INDICATOR am Frachtauftrag bereits mit den berechneten Werten überein, wird mit der nächsten Gruppe fortgefahren.",
+    "Am Frachtauftrag werden das neu berechnete Gesamtgewicht im Feld ZZ_TOTAL_WEIGHT, die Gewichtseinheit KG im Feld ZZ_TOTAL_WEIGHT_UOM und das Gefahrgutkennzeichen im Feld ZZ_DG_INDICATOR aktualisiert."
+   ],
+   "Y": [
+    "Wenn das Feld lr_root->zz_total_weight gleich lv_total ist und das Feld lr_root->zz_dg_indicator gleich lv_dg ist, wird der Schleifendurchlauf übersprungen.",
+    "Die Methode update von io_modify wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ],
+   "Z": [
+    "Die Methode update von io_modify wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-197-B06",
+   "soll": "Bei der Kapazitätsprüfung werden die Frachtaufträge gelesen und zu ihren Fahrzeugtypen die zulässigen Ladegewichte und die ADR-Zulassung aus der Fahrzeugkapazitätstabelle gelesen.",
+   "zeilen": [
+    597,
+    605,
+    606
+   ],
+   "code": [
+    "597:     io_read->retrieve(",
+    "605:     IF lt_mtr IS NOT INITIAL.",
+    "606:       SELECT * FROM ztm_veh_cap"
+   ],
+   "X": [
+    "Die Frachtauftragsdaten des Knotens ROOT werden zu den übergebenen Schlüsseln gelesen.",
+    "Sind Fahrzeugtypen an den Frachtaufträgen vorhanden, werden alle zugehörigen Datensätze aus der Tabelle ZTM_VEH_CAP gelesen."
+   ],
+   "Y": [
+    "Die Methode retrieve von io_read wird aufgerufen; ihr Ergebnis wird in lt_root übernommen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "Es werden Sätze aus ztm_veh_cap zu den Einträgen aus lt_mtr selektiert."
+   ],
+   "Z": [
+    "Die Methode retrieve von io_read wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "Es werden Sätze aus ztm_veh_cap selektiert."
+   ]
+  },
+  {
+   "id": "BM-197-B07",
+   "soll": "Die zulässige Überplanung in Prozent wird aus einem Disponenten-Schalter gelesen; ist er nicht gepflegt, gilt keine Toleranz.",
+   "zeilen": [
+    613,
+    618
+   ],
+   "code": [
+    "613:     SELECT SINGLE low FROM tvarvc",
+    "618:     DATA(lv_tol) = COND i( WHEN sy-subrc = 0 THEN lv_low ELSE 0 )."
+   ],
+   "X": [
+    "Aus der Tabelle TVARVC wird für den Parameter ZTM_CAP_TOLERANCE_PCT vom Typ P mit Nummer 0000 das Feld LOW gelesen; wird kein Eintrag gefunden (sy-subrc ungleich 0), wird die Toleranz auf 0 gesetzt."
+   ],
+   "Y": [
+    "Das Feld low des Variableneintrags wird gelesen."
+   ],
+   "Z": [
+    "low des Satzes wird gelesen."
+   ]
+  },
+  {
+   "id": "BM-197-B08",
+   "soll": "Frachtaufträge ohne Fahrzeugtyp werden nicht geprüft.",
+   "zeilen": [
+    623,
+    624
+   ],
+   "code": [
+    "623:       IF ls_root-mtr IS INITIAL.",
+    "624:         CONTINUE."
+   ],
+   "X": [
+    "Ist am Frachtauftrag im Feld MTR kein Fahrzeugtyp angegeben, wird die Prüfung übersprungen und mit dem nächsten Frachtauftrag fortgefahren."
+   ],
+   "Y": [
+    "Ist das Feld ls_root-mtr leer, wird der Schleifendurchlauf übersprungen."
+   ],
+   "Z": []
+  },
+  {
+   "id": "BM-197-B09",
+   "soll": "Ist der Fahrzeugtyp in der Kapazitätstabelle nicht gepflegt, wird nur eine Warnung ausgegeben und der Frachtauftrag gilt als konsistent.",
+   "zeilen": [
+    628,
+    631
+   ],
+   "code": [
+    "628:       IF sy-subrc <> 0.",
+    "631:         eo_message->add_message( is_msg  = ls_msg"
+   ],
+   "X": [
+    "Wird für den Fahrzeugtyp kein Kapazitätseintrag in der Tabelle ZTM_VEH_CAP gefunden (sy-subrc ungleich 0), wird die Warnmeldung ZTM 101 mit dem Fahrzeugtyp hinzugefügt und der Frachtauftrag übersprungen."
+   ],
+   "Y": [
+    "Ohne Treffer wird der Schleifendurchlauf übersprungen.",
+    "Die Methode add_message von eo_message wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ],
+   "Z": [
+    "Die Methode add_message von eo_message wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-197-B10",
+   "soll": "Übersteigt das Gesamtgewicht das zulässige Ladegewicht zuzüglich Toleranz, wird der Frachtauftrag mit einer Fehlermeldung am Gewichtsfeld als nicht konsistent markiert.",
+   "zeilen": [
+    638,
+    640,
+    645,
+    649
+   ],
+   "code": [
+    "638:       DATA(lv_max) = ls_cap-max_gro_wei * ( 100 + lv_tol ) / 100.",
+    "640:       IF ls_root-zz_total_weight > lv_max.",
+    "645:         eo_message->add_message( is_msg       = ls_msg",
+    "649:         INSERT VALUE #( key = ls_root-key ) INTO TABLE et_failed_key."
+   ],
+   "X": [
+    "Überschreitet das Gesamtgewicht ZZ_TOTAL_WEIGHT des Frachtauftrags das um die Toleranz erhöhte Maximalgewicht MAX_GRO_WEI des Fahrzeugtyps, wird die Fehlermeldung ZTM 100 hinzugefügt und der Frachtauftrag als fehlerhaft markiert."
+   ],
+   "Y": [
+    "Die Methode add_message von eo_message wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ],
+   "Z": [
+    "Die Methode add_message von eo_message wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-197-B11",
+   "soll": "Ein Frachtauftrag mit Gefahrgut auf einem nicht ADR-zugelassenen Fahrzeugtyp wird mit Fehlermeldung als nicht konsistent markiert.",
+   "zeilen": [
+    653,
+    657,
+    660
+   ],
+   "code": [
+    "653:       IF ls_root-zz_dg_indicator = abap_true AND ls_cap-adr_zugelassen = abap_false.",
+    "657:         eo_message->add_message( is_msg  = ls_msg",
+    "660:         INSERT VALUE #( key = ls_root-key ) INTO TABLE et_failed_key."
+   ],
+   "X": [
+    "Ist am Frachtauftrag Gefahrgut im Feld ZZ_DG_INDICATOR gekennzeichnet und der Fahrzeugtyp laut Tabelle ZTM_VEH_CAP im Feld ADR_ZUGELASSEN nicht zugelassen, wird die Fehlermeldung ZTM 102 ausgegeben und der Frachtauftrag als fehlerhaft markiert."
+   ],
+   "Y": [
+    "Die Methode add_message von eo_message wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ],
+   "Z": [
+    "Die Methode add_message von eo_message wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-197-B12",
+   "soll": "Die Freigabe setzt die Freigabeberechtigung der Disposition voraus; fehlt sie, wird die Aktion für alle übergebenen Frachtaufträge mit Fehlermeldung abgelehnt.",
+   "zeilen": [
+    54,
+    56,
+    58,
+    59
+   ],
+   "code": [
+    "54:     AUTHORITY-CHECK OBJECT 'Z_TM_FOREL'",
+    "56:     IF sy-subrc <> 0.",
+    "58:       eo_message->add_message( is_msg = ls_msg ).",
+    "59:       ev_static_action_failed = abap_true."
+   ],
+   "X": [
+    "Es wird die Berechtigung für das Berechtigungsobjekt Z_TM_FOREL mit der Aktivität 43 geprüft; schlägt die Prüfung fehl (sy-subrc ungleich 0), wird die Fehlermeldung ZTM 110 hinzugefügt, die Aktion als fehlgeschlagen markiert und die Bearbeitung beendet."
+   ],
+   "Y": [
+    "Die Berechtigung auf Z_TM_FOREL wird geprüft.",
+    "Ohne Berechtigung auf Z_TM_FOREL wird der Block verlassen.",
+    "Die Methode add_message von eo_message wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ],
+   "Z": [
+    "Die Berechtigung auf Z_TM_FOREL wird geprüft.",
+    "Ohne Treffer wird der Block verlassen.",
+    "Ohne Berechtigung auf Z_TM_FOREL wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "Die Methode add_message von eo_message wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-197-B13",
+   "soll": "Ein bereits freigegebener Frachtauftrag wird nicht erneut freigegeben; es gibt nur einen Hinweis und keinen Fehler.",
+   "zeilen": [
+    74,
+    76
+   ],
+   "code": [
+    "74:       IF lr_root->zz_release_status = gc_status_released.",
+    "76:         eo_message->add_message( is_msg  = ls_msg"
+   ],
+   "X": [
+    "Hat der Frachtauftrag im Feld ZZ_RELEASE_STATUS bereits den Freigabestatus R, wird die Warnmeldung ZTM 111 mit der Frachtauftragsnummer ausgegeben und der Auftrag übersprungen."
+   ],
+   "Y": [
+    "Wenn das Feld lr_root->zz_release_status gleich gc_status_released ist, wird der Schleifendurchlauf übersprungen.",
+    "Die Methode add_message von eo_message wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ],
+   "Z": [
+    "Die Methode add_message von eo_message wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-197-B14",
+   "soll": "Ein Frachtauftrag ohne Frachtführer kann nicht freigegeben werden und wird mit Fehlermeldung abgelehnt.",
+   "zeilen": [
+    83,
+    85,
+    88
+   ],
+   "code": [
+    "83:       IF lr_root->tspid IS INITIAL.",
+    "85:         eo_message->add_message( is_msg  = ls_msg",
+    "88:         INSERT VALUE #( key = lr_root->key ) INTO TABLE et_failed_key."
+   ],
+   "X": [
+    "Ist am Frachtauftrag kein Frachtführer im Feld TSPID gepflegt, wird die Fehlermeldung ZTM 112 mit der Frachtauftragsnummer hinzugefügt, der Frachtauftragsschlüssel als fehlerhaft vermerkt und die weitere Bearbeitung dieses Auftrags übersprungen."
+   ],
+   "Y": [
+    "Ist das Feld lr_root->tspid leer, wird der Schleifendurchlauf übersprungen.",
+    "Die Methode add_message von eo_message wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ],
+   "Z": [
+    "Die Methode add_message von eo_message wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-197-B15",
+   "soll": "Bei der Freigabe erhält der Frachtauftrag den Status freigegeben, den freigebenden Benutzer und den Freigabezeitpunkt.",
+   "zeilen": [
+    99,
+    101,
+    103
+   ],
+   "code": [
+    "99:       lr_root->zz_release_status = gc_status_released.",
+    "101:       GET TIME STAMP FIELD lr_root->zz_released_at.",
+    "103:       io_modify->update("
+   ],
+   "X": [
+    "Am Frachtauftragsknoten ROOT werden der Freigabestatus ZZ_RELEASE_STATUS auf R gesetzt, der aktuelle Benutzername als Freigeber ZZ_RELEASED_BY sowie der aktuelle Zeitstempel in ZZ_RELEASED_AT aktualisiert."
+   ],
+   "Y": [
+    "Der aktuelle Zeitstempel wird in lr_root->zz_released_at übernommen.",
+    "Die Methode update von io_modify wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ],
+   "Z": [
+    "Jeder von der logischen Datenbank gelieferte TIME-Satz wird verarbeitet. Welche Sätze das sind, bestimmt die logische Datenbank mit ihrem Selektionsbild, nicht der Report.",
+    "Die Methode update von io_modify wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-197-B16",
+   "soll": "Zur Freigabe wird ein Änderungsbeleg mit altem und neuem Freigabestand geschrieben; ob das gelingt, wird nicht geprüft.",
+   "zeilen": [
+    112,
+    137,
+    145,
+    157
+   ],
+   "code": [
+    "112:       write_change_document( is_old = ls_old",
+    "137:     CALL FUNCTION 'CHANGEDOCUMENT_OPEN'",
+    "145:     CALL FUNCTION 'CHANGEDOCUMENT_SINGLE_CASE'",
+    "157:     CALL FUNCTION 'CHANGEDOCUMENT_CLOSE'"
+   ],
+   "X": [
+    "Für die Änderungen am Frachtauftrag wird die Erstellung eines Änderungsbelegs aufgerufen.",
+    "Zur Vorbereitung des Änderungsbelegs wird der Funktionsbaustein CHANGEDOCUMENT_OPEN für die Objektklasse ZTM_FO und die Frachtauftragsnummer aufgerufen.",
+    "Über den Funktionsbaustein CHANGEDOCUMENT_SINGLE_CASE werden der alte und neue Datenstand der Tabellenstruktur ZZTM_S_FO_REL_CD mit dem Änderungskennzeichen U übergeben.",
+    "Der Änderungsbeleg wird über den Funktionsbaustein CHANGEDOCUMENT_CLOSE mit Objektklasse ZTM_FO, Frachtauftragsnummer, aktuellem Datum, Uhrzeit, Transaktionscode, Benutzernamen und Änderungskennzeichen U abgeschlossen."
+   ],
+   "Y": [
+    "Der Funktionsbaustein CHANGEDOCUMENT_OPEN wird aufgerufen.",
+    "Es wird CHANGEDOCUMENT_OPEN aufgerufen, CHANGEDOCUMENT_SINGLE_CASE aufgerufen und CHANGEDOCUMENT_CLOSE aufgerufen.",
+    "Der Funktionsbaustein CHANGEDOCUMENT_SINGLE_CASE wird aufgerufen.",
+    "Der Funktionsbaustein CHANGEDOCUMENT_CLOSE wird aufgerufen."
+   ],
+   "Z": [
+    "Der Funktionsbaustein CHANGEDOCUMENT_OPEN wird aufgerufen.",
+    "Es wird CHANGEDOCUMENT_OPEN aufgerufen, CHANGEDOCUMENT_SINGLE_CASE aufgerufen und CHANGEDOCUMENT_CLOSE aufgerufen.",
+    "Der Funktionsbaustein CHANGEDOCUMENT_SINGLE_CASE wird aufgerufen.",
+    "Der Funktionsbaustein CHANGEDOCUMENT_CLOSE wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-197-B17",
+   "soll": "Ist ein Disponent am Frachtauftrag hinterlegt, erhält er eine Info-Mail mit Auftragsnummer, Frachtführer, Fahrzeugtyp, Gesamtgewicht und gegebenenfalls einem Gefahrguthinweis.",
+   "zeilen": [
+    115,
+    183,
+    191,
+    197,
+    200
+   ],
+   "code": [
+    "115:       IF lr_root->zz_dispatcher IS NOT INITIAL.",
+    "183:         DATA(lt_text) = VALUE bcsy_text(",
+    "191:         DATA(lo_doc) = cl_document_bcs=>create_document(",
+    "197:         lo_send->add_recipient( cl_sapuser_bcs=>create( is_root-zz_dispatcher ) ).",
+    "200:         lo_send->send( )."
+   ],
+   "X": [
+    "Ist im Feld ZZ_DISPATCHER ein Disponent gepflegt, wird eine Benachrichtigungs-E-Mail an diesen Disponenten versendet."
+   ],
+   "Y": [
+    "Der Rückgabewert der Methode create_document von cl_document_bcs wird nach lo_doc übernommen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "Die Methode add_recipient von lo_send wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "Die Methode send von lo_send wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ],
+   "Z": [
+    "Der Rückgabewert der Methode create_document von cl_document_bcs wird nach lo_doc übernommen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "Die Methode add_recipient von lo_send wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "Die Methode send von lo_send wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-197-B18",
+   "soll": "Fehler beim Erstellen der Mail werden verworfen und verhindern die Freigabe nicht.",
+   "zeilen": [
+    203
+   ],
+   "code": [
+    "203:       CATCH cx_bcs ##NO_HANDLER."
+   ],
+   "X": [],
+   "Y": [],
+   "Z": []
+  },
+  {
+   "id": "BM-197-B19",
+   "soll": "Der Service nimmt die Freigabe als Funktionsaufruf ReleaseFreightOrder an; andere Funktionsaufrufe werden an die generierte Standardverarbeitung weitergereicht.",
+   "zeilen": [
+    376,
+    377
+   ],
+   "code": [
+    "376:     IF iv_action_name <> 'ReleaseFreightOrder'.",
+    "377:       super->/iwbep/if_mgw_appl_srv_runtime~execute_action("
+   ],
+   "X": [
+    "Entspricht der Aktionsname nicht ReleaseFreightOrder, wird der Aufruf an die Aktionsmethode der Oberklasse weitergeleitet und die Verarbeitung beendet."
+   ],
+   "Y": [
+    "Wenn das Feld iv_action_name ungleich ReleaseFreightOrder ist, wird der Block verlassen."
+   ],
+   "Z": [
+    "Für iv_action_name ungleich ReleaseFreightOrder wird der Block verlassen.",
+    "Bei iv_action_name ungleich ReleaseFreightOrder wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben."
+   ]
+  },
+  {
+   "id": "BM-197-B20",
+   "soll": "Fehlt die Frachtauftragsnummer im Aufruf, wird die Anfrage mit einem Geschäftsfehler abgelehnt.",
+   "zeilen": [
+    389,
+    390
+   ],
+   "code": [
+    "389:     IF sy-subrc <> 0 OR ls_param-value IS INITIAL.",
+    "390:       RAISE EXCEPTION TYPE /iwbep/cx_mgw_busi_exception"
+   ],
+   "X": [
+    "Wird der Parameter FreightOrderId in den Aktionsparametern nicht gefunden oder ist sein Wert initial, wird eine Geschäftsausnahme der Klasse /IWBEP/CX_MGW_BUSI_EXCEPTION ausgelöst."
+   ],
+   "Y": [],
+   "Z": []
+  },
+  {
+   "id": "BM-197-B21",
+   "soll": "Die Frachtauftragsnummer wird in den internen Schlüssel des Frachtauftrags umgesetzt; gibt es den Frachtauftrag nicht, wird mit „nicht gefunden“ abgelehnt.",
+   "zeilen": [
+    402,
+    409,
+    410
+   ],
+   "code": [
+    "402:     lo_srv_mgr->convert_altern_key(",
+    "409:     IF lt_key IS INITIAL OR lt_key[ 1 ]-key IS INITIAL.",
+    "410:       RAISE EXCEPTION TYPE /iwbep/cx_mgw_busi_exception"
+   ],
+   "X": [
+    "Die Frachtauftragsnummer wird über den alternativen Schlüssel TOR_ID des Knotens ROOT in den internen Frachtauftragsschlüssel konvertiert.",
+    "Wurde kein interner Schlüssel für den Frachtauftrag ermittelt, wird eine Geschäftsausnahme ausgelöst, dass die Entität FreightOrder nicht gefunden wurde."
+   ],
+   "Y": [
+    "Die Methode convert_altern_key von lo_srv_mgr wird aufgerufen; ihr Ergebnis wird in lt_key übernommen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ],
+   "Z": [
+    "Die Methode convert_altern_key von lo_srv_mgr wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-197-B22",
+   "soll": "Für den Frachtauftrag wird die Freigabeaktion ausgeführt.",
+   "zeilen": [
+    417
+   ],
+   "code": [
+    "417:     lo_srv_mgr->do_action("
+   ],
+   "X": [
+    "Für den Frachtauftragsschlüssel wird die Aktion ZZ_RELEASE_FO aufgerufen."
+   ],
+   "Y": [
+    "Die Methode do_action von lo_srv_mgr wird aufgerufen; ihr Ergebnis wird in lo_message übernommen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ],
+   "Z": [
+    "Die Methode do_action von lo_srv_mgr wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-197-B23",
+   "soll": "Schlägt die Freigabe fehl, werden alle Änderungen der Anfrage verworfen und die Meldungen der Aktion als Fehler an die App zurückgegeben.",
+   "zeilen": [
+    424,
+    425,
+    426
+   ],
+   "code": [
+    "424:     IF lt_failed IS NOT INITIAL.",
+    "425:       lo_tra_mgr->cleanup( ).",
+    "426:       raise_bopf_messages( lo_message )."
+   ],
+   "X": [
+    "Liegen nach der Aktion fehlerhafte Schlüssel vor, werden die Transaktionsdaten verworfen und die aufgetretenen Fehlermeldungen als Geschäftsausnahme weitergeleitet."
+   ],
+   "Y": [
+    "Die Methode cleanup von lo_tra_mgr wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ],
+   "Z": [
+    "Die Methode cleanup von lo_tra_mgr wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-197-B24",
+   "soll": "Andernfalls wird der Frachtauftrag gesichert; lehnt das Sichern ab, werden dessen Meldungen als Fehler an die App zurückgegeben.",
+   "zeilen": [
+    430,
+    434,
+    435
+   ],
+   "code": [
+    "430:     lo_tra_mgr->save(",
+    "434:     IF lv_rejected = abap_true.",
+    "435:       raise_bopf_messages( lo_message )."
+   ],
+   "X": [
+    "Die Transaktionsdaten des Frachtauftrags werden gesichert.",
+    "Wird das Sichern abgelehnt, werden die zurückgemeldeten Meldungen als Geschäftsausnahme weitergeleitet."
+   ],
+   "Y": [
+    "Die Methode save von lo_tra_mgr wird aufgerufen; ihr Ergebnis wird in lv_rejected übernommen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ],
+   "Z": [
+    "Die Methode save von lo_tra_mgr wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-197-B25",
+   "soll": "Die BOPF-Meldungen werden als Texte in den Meldungscontainer des Service übernommen und die Anfrage mit einem Geschäftsfehler beendet.",
+   "zeilen": [
+    541,
+    545,
+    550
+   ],
+   "code": [
+    "541:     io_message->get_messages( IMPORTING et_message = lt_msg ).",
+    "545:       lo_container->add_message_text_only(",
+    "550:     RAISE EXCEPTION TYPE /iwbep/cx_mgw_busi_exception"
+   ],
+   "X": [
+    "Aus dem übergebenen Meldungsobjekt werden alle Meldungen ausgelesen.",
+    "Die ausgelesenen Meldungen werden durchlaufen und jeweils mit Schweregrad und Text in den Meldungscontainer eingefügt.",
+    "Es wird eine Geschäftsausnahme der Klasse /IWBEP/CX_MGW_BUSI_EXCEPTION mit dem befüllten Meldungscontainer ausgelöst."
+   ],
+   "Y": [
+    "Die Methode get_messages von io_message wird aufgerufen; ihr Ergebnis wird in lt_msg übernommen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "Die Methode add_message_text_only von lo_container wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ],
+   "Z": [
+    "Die Methode get_messages von io_message wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "Die Methode add_message_text_only von lo_container wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-197-B26",
+   "soll": "Nach erfolgreichem Sichern liefert der Service den aktuellen Stand des Frachtauftrags mit Frachtführer, Fahrzeugtyp, Gewicht, Gefahrgutkennzeichen und Freigabestatus zurück.",
+   "zeilen": [
+    439,
+    456
+   ],
+   "code": [
+    "439:     lo_srv_mgr->retrieve(",
+    "456:     copy_data_to_ref("
+   ],
+   "X": [
+    "Nach dem Sichern werden die aktuellen Daten des Frachtauftragsknotens ROOT erneut gelesen.",
+    "Die Frachtauftragsdaten werden mit Frachtauftragsnummer, Frachtführer, Fahrzeugtyp, Gesamtgewicht, Gewichtseinheit, Gefahrgutkennzeichen, Freigabestatus und Freigeber in die Rückgabestruktur übernommen."
+   ],
+   "Y": [
+    "Die Methode retrieve von lo_srv_mgr wird aufgerufen; ihr Ergebnis wird in lt_root übernommen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ],
+   "Z": [
+    "Die Methode retrieve von lo_srv_mgr wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-197-B27",
+   "soll": "Die Liste der Frachtaufträge enthält nur Frachtaufträge und lässt sich nach Frachtauftragsnummer, Frachtführer und Freigabestatus filtern; andere Filter werden stillschweigend ignoriert.",
+   "zeilen": [
+    474,
+    478,
+    483,
+    486
+   ],
+   "code": [
+    "474:     lt_sel = VALUE #( ( attribute_name = 'TOR_CAT' sign = 'I' option = 'EQ' low = 'TO' ) ).",
+    "478:       DATA(lv_attr) = SWITCH string( ls_filter-property",
+    "483:       IF lv_attr IS INITIAL.",
+    "486:       lt_sel = VALUE #( BASE lt_sel"
+   ],
+   "X": [],
+   "Y": [
+    "Ist das Feld lv_attr leer, wird der Schleifendurchlauf übersprungen."
+   ],
+   "Z": []
+  },
+  {
+   "id": "BM-197-B28",
+   "soll": "Die passenden Frachtaufträge werden gesucht; ohne Treffer bleibt die Liste leer.",
+   "zeilen": [
+    498,
+    504,
+    505
+   ],
+   "code": [
+    "498:     lo_srv_mgr->query(",
+    "504:     IF lt_key IS INITIAL.",
+    "505:       RETURN."
+   ],
+   "X": [],
+   "Y": [
+    "Die Methode query von lo_srv_mgr wird aufgerufen; ihr Ergebnis wird in lt_key übernommen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "Ist die Tabelle lt_key leer, wird der Block verlassen."
+   ],
+   "Z": [
+    "Die Methode query von lo_srv_mgr wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "Ohne Treffer wird der Block verlassen.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben."
+   ]
+  },
+  {
+   "id": "BM-197-B29",
+   "soll": "Zu den Treffern werden Nummer, Frachtführer, Fahrzeugtyp, Gesamtgewicht, Gefahrgutkennzeichen, Freigabestatus und Freigeber geliefert, die Gesamtzahl gemeldet und erst danach auf die angeforderte Seite gekürzt.",
+   "zeilen": [
+    508,
+    515,
+    525,
+    528
+   ],
+   "code": [
+    "508:     lo_srv_mgr->retrieve(",
+    "515:     et_entityset = VALUE #( FOR ls_root IN lt_root",
+    "525:     es_response_context-inlinecount = lines( et_entityset ).",
+    "528:     /iwbep/cl_mgw_data_util=>paging("
+   ],
+   "X": [],
+   "Y": [
+    "Die Methode retrieve von lo_srv_mgr wird aufgerufen; ihr Ergebnis wird in lt_root übernommen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "Die Methode paging von /iwbep/cl_mgw_data_util wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ],
+   "Z": [
+    "Die Methode retrieve von lo_srv_mgr wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "Die Methode paging von /iwbep/cl_mgw_data_util wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ]
+  }
+ ]
+}

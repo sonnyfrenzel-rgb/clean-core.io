@@ -1,0 +1,645 @@
+{
+ "id": "BM-116",
+ "titel": "Leistungsabhängige Wartung im Massenlauf: Fälligkeit aus Zählerentwicklung hochrechnen, Aufträge parallel je Werk anlegen",
+ "prozess": "Der Job wird mit Wartungsplänen, Planungswerken (Pflicht), einem Testlaufkennzeichen, einem Parallelkennzeichen und einer Servergruppe gestartet; die Servergruppe wird schon bei der Eingabe für die Parallelverarbeitung initialisiert und bei Fehlern abgewiesen. Zu Beginn legt er ein Anwendungslog an und liest die leistungsabhängigen Wartungspläne, also Pläne mit einem Zyklus auf einem Messpunkt, ohne Löschvormerkung und nicht inaktiv; ohne Treffer springt er nach einem Hinweis direkt zum Abschluss. Die Pläne werden je Planungswerk zu Paketen gebündelt. Ohne Parallelverarbeitung wird jedes Paket direkt berechnet, sonst als asynchrone Aufgabe in der Servergruppe gestartet; fehlen freie Prozesse, wartet der Job kurz und versucht es ohne Obergrenze erneut, andere RFC-Fehler werden protokolliert. Rückmeldende Pakete werden gezählt und ihre Ergebnisse übernommen, abgebrochene protokolliert; der Hauptlauf wartet höchstens eine Stunde auf alle Pakete. Im Paket wird jeder Plan gesperrt, ein gesperrter Plan wird mit Status L übersprungen. Für jeden Zyklus rechnet eine Klasse die Fälligkeit hoch: aus den Messbelegen der letzten 365 Tage (mindestens zwei) ergibt sich die Tagesleistung aus erster und letzter Ablesung, Ausgangspunkt ist der Zählerstand beim letzten Abruf laut Kundentabelle, sonst die älteste Ablesung, und fällig ist der Zyklus, wenn Ausgangspunkt plus Zykluslänge erreicht ist. Scheitert die Hochrechnung, erhält der Plan Status F; liegt die Fälligkeit mehr als 30 Tage in der Zukunft, Status N; gibt es schon einen offenen Auftrag, Status O; im Testlauf Status T. Sonst wird ein Instandhaltungsauftrag mit der Fälligkeit als Starttermin angelegt, bei Fehlern zurückgenommen (Status F), bei Erfolg zusammen mit dem Abruf samt aktuellem Zählerstand festgeschrieben (Status A). Danach wird die Sperre aufgehoben. Zum Abschluss wird das Anwendungslog gesichert und das Ergebnis je Plan als Liste angezeigt.",
+ "verboten": [
+  "zpm_mplan_perf_f01.abap:77 — kein Fachsatz „ohne freie Prozesse wird das Paket sequentiell verarbeitet oder nach einigen Versuchen aufgegeben“: die DO-Schleife wiederholt den Start ohne Obergrenze",
+  "zpm_mplan_perf.abap:61 — kein Fachsatz „nach Ablauf der Wartezeit fehlende Pakete werden gemeldet“: nach dem Timeout wird nicht geprüft, ihre Ergebnisse fehlen stillschweigend in Liste und Protokoll",
+  "zcl_pm_usage_forecast.abap:95 — kein Fachsatz „die Tagesleistung ist der Durchschnitt oder Trend aller Ablesungen“: es zählen nur erste und letzte Ablesung des Zeitraums",
+  "gesamte Scheibe — kein Fachsatz „der Wartungsplan wird abgerufen oder terminiert“: es entstehen nur ein Auftrag und ein Eintrag in ZPM_MPLAN_RUN; Planhistorie und Abrufe des Wartungsplans bleiben unverändert"
+ ],
+ "saetze": [
+  {
+   "id": "BM-116-B01",
+   "soll": "Bei Eingabe der Servergruppe wird die Parallelverarbeitung für diese Gruppe initialisiert; ist die Gruppe unbrauchbar, wird die Eingabe mit Fehler abgewiesen.",
+   "zeilen": [
+    21,
+    35,
+    36
+   ],
+   "code": [
+    "21:   CALL FUNCTION 'SPBT_INITIALIZE'",
+    "35:   IF sy-subrc <> 0 AND sy-subrc <> 3.",
+    "36:     MESSAGE e310(zpm) WITH p_group."
+   ],
+   "X": [
+    "Die Servergruppe für die parallele Hintergrundverarbeitung wird initialisiert und die Anzahl der maximalen sowie freien parallelen Dialogprozesse wird ermittelt.",
+    "Kann die Servergruppe nicht initialisiert werden und ist sie nicht bereits initialisiert, wird die Fehlermeldung 310 der Nachrichtenklasse ZPM mit dem Gruppennamen ausgegeben."
+   ],
+   "Y": [
+    "Der Code übergibt p_group an SPBT_INITIALIZE und übernimmt dessen Ausgabe nach gv_max.",
+    "Wenn der Aufruf von SPBT_INITIALIZE scheitert und der Rückgabewert (sy-subrc) ungleich 3 ist, wird eine Fehlermeldung ausgegeben.",
+    "Die Fehlermeldung 310(ZPM) wird ausgegeben."
+   ],
+   "Z": [
+    "Der Code übergibt p_group an SPBT_INITIALIZE und übernimmt dessen Ausgabe nach gv_max.",
+    "Das konvertierte Ergebnis wird in gv_max übernommen.",
+    "Für sy-subrc <> 0 AND sy-subrc <> 3 wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-116-B02",
+   "soll": "Zu Beginn wird ein Anwendungslog für den Lauf angelegt.",
+   "zeilen": [
+    44
+   ],
+   "code": [
+    "44:   CALL FUNCTION 'BAL_LOG_CREATE'"
+   ],
+   "X": [
+    "Ein Anwendungslog für das Objekt ZPM und das Unterobjekt MPLAN_PERF mit einem Verfallsdatum von 90 Tagen ab dem aktuellen Tagesdatum wird angelegt."
+   ],
+   "Y": [
+    "Der Code übergibt gs_log an BAL_LOG_CREATE und übernimmt dessen Ausgabe nach gv_log.",
+    "Es wird BAL_LOG_CREATE aufgerufen und select_plans aufgerufen."
+   ],
+   "Z": [
+    "Der Code übergibt gs_log an BAL_LOG_CREATE und übernimmt dessen Ausgabe nach gv_log.",
+    "Das konvertierte Ergebnis wird in gv_log übernommen.",
+    "Es wird BAL_LOG_CREATE aufgerufen und select_plans aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-116-B03",
+   "soll": "Es werden die leistungsabhängigen Wartungspläne der Selektion ermittelt, also Pläne mit einem Zyklus auf einem Messpunkt, ohne Löschvormerkung und nicht inaktiv.",
+   "zeilen": [
+    52,
+    328
+   ],
+   "code": [
+    "52:   PERFORM select_plans.",
+    "328:   SELECT DISTINCT a~warpl p~iwerk"
+   ],
+   "X": [
+    "Die Selektion der relevanten Wartungspläne wird aufgerufen.",
+    "Aus den Tabellen MPLA, MPOS und MMPT werden eindeutige Wartungspläne und Planungswerke ermittelt, die den Selektionskriterien entsprechen, einen Messpunkt besitzen und in Tabelle JEST weder als gelöscht mit Status I0076 noch als inaktiv mit Status I0320 gekennzeichnet sind."
+   ],
+   "Y": [
+    "Es wird BAL_LOG_CREATE aufgerufen und select_plans aufgerufen.",
+    "Das Unterprogramm select_plans wird aufgerufen; es liest MPLA.",
+    "Das Ergebnis enthält warpl und iwerk.",
+    "Es werden Sätze aus mpla selektiert."
+   ],
+   "Z": [
+    "Es wird BAL_LOG_CREATE aufgerufen und select_plans aufgerufen.",
+    "Das Unterprogramm select_plans wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Es werden Sätze aus mpla selektiert."
+   ]
+  },
+  {
+   "id": "BM-116-B04",
+   "soll": "Gibt es keine solchen Pläne, wird ein Hinweis ausgegeben und direkt zum Abschluss gesprungen.",
+   "zeilen": [
+    53,
+    54,
+    55
+   ],
+   "code": [
+    "53:   IF gt_plan IS INITIAL.",
+    "54:     MESSAGE s311(zpm).",
+    "55:     STOP."
+   ],
+   "X": [
+    "Wurden keine Wartungspläne gefunden, wird die Erfolgsmeldung 311 der Nachrichtenklasse ZPM ausgegeben und die Programmausführung beendet."
+   ],
+   "Y": [
+    "Ist die Tabelle gt_plan leer, wird eine Statusmeldung ausgegeben.",
+    "Die Statusmeldung 311(ZPM) wird ausgegeben."
+   ],
+   "Z": [
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-116-B05",
+   "soll": "Die Pläne werden je Planungswerk zu einem Paket gebündelt.",
+   "zeilen": [
+    355,
+    358
+   ],
+   "code": [
+    "355:   LOOP AT gt_plan INTO DATA(ls_plan)",
+    "358:     lt_pack = VALUE #( FOR ls_m IN GROUP <ls_grp> ( ls_m-warpl ) )."
+   ],
+   "X": [
+    "Die Wartungspläne werden nach Planungswerk gruppiert durchlaufen."
+   ],
+   "Y": [
+    "Die Zeilen aus gt_plan werden gruppenweise verarbeitet."
+   ],
+   "Z": [
+    "Jede Zeile aus gt_plan wird einzeln verarbeitet."
+   ]
+  },
+  {
+   "id": "BM-116-B06",
+   "soll": "Ohne Parallelverarbeitung wird jedes Paket direkt berechnet und sein Ergebnis übernommen.",
+   "zeilen": [
+    360,
+    361
+   ],
+   "code": [
+    "360:     IF p_para IS INITIAL.",
+    "361:       CALL FUNCTION 'Z_PM_MPLAN_CALC'"
+   ],
+   "X": [
+    "Ist die Parallelverarbeitung nicht aktiv, wird der Funktionsbaustein Z_PM_MPLAN_CALC für das Planungswerk synchron aufgerufen und die Ergebnisse werden gesammelt."
+   ],
+   "Y": [
+    "Ist das Feld p_para leer, wird Z_PM_MPLAN_CALC aufgerufen, eine Zeile aufgenommen und der Schleifendurchlauf übersprungen.",
+    "Der Code übergibt lt_pack an Z_PM_MPLAN_CALC und übernimmt dessen Ausgabe nach lt_res."
+   ],
+   "Z": [
+    "Ohne p_para wird Z_PM_MPLAN_CALC aufgerufen und eine Zeile aufgenommen.",
+    "Der Code übergibt lt_pack an Z_PM_MPLAN_CALC und übernimmt dessen Ausgabe nach lt_res.",
+    "Das konvertierte Ergebnis wird in lt_res übernommen.",
+    "Es wird Z_PM_MPLAN_CALC aufgerufen und eine Zeile aufgenommen."
+   ]
+  },
+  {
+   "id": "BM-116-B07",
+   "soll": "Mit Parallelverarbeitung wird jedes Paket als asynchrone Aufgabe in der Servergruppe gestartet.",
+   "zeilen": [
+    374,
+    375
+   ],
+   "code": [
+    "374:     DO.",
+    "375:       CALL FUNCTION 'Z_PM_MPLAN_CALC'"
+   ],
+   "X": [
+    "Bei aktiver Parallelisierung wird der Funktionsbaustein Z_PM_MPLAN_CALC asynchron als neuer RFC-Task in der Servergruppe aufgerufen."
+   ],
+   "Y": [
+    "Der Baustein Z_PM_MPLAN_CALC wird asynchron in einer eigenen Task gestartet. Ein Ergebnis liegt zu diesem Zeitpunkt nicht vor."
+   ],
+   "Z": [
+    "Der Baustein Z_PM_MPLAN_CALC wird asynchron in einer eigenen Task gestartet. Ein Ergebnis liegt zu diesem Zeitpunkt nicht vor."
+   ]
+  },
+  {
+   "id": "BM-116-B08",
+   "soll": "Sind keine Prozesse frei, wird bis zu fünf Sekunden auf fertige Pakete gewartet und der Start wiederholt; bei anderen RFC-Fehlern wird das Paket mit Fehler protokolliert und ausgelassen.",
+   "zeilen": [
+    387,
+    393,
+    396
+   ],
+   "code": [
+    "387:       CASE lv_rc.",
+    "393:           WAIT UNTIL gv_done >= gv_sent UP TO 5 SECONDS.",
+    "396:           PERFORM log_add USING 'E' lv_text."
+   ],
+   "X": [
+    "Startet der asynchrone RFC-Aufruf fehlerfrei, wird der Zähler gesendeter Pakete um 1 erhöht und die Wiederholungsschleife verlassen.",
+    "Stehen keine freien RFC-Ressourcen zur Verfügung, wird bis zu 5 Sekunden gewartet und der Aufruf wiederholt.",
+    "Tritt ein sonstiger RFC-Fehler auf, wird eine Fehlermeldung in das Protokoll eingetragen und die Aufrufschleife beendet."
+   ],
+   "Y": [
+    "Das Unterprogramm log_add wird aufgerufen; es ruft BAL_LOG_MSG_ADD_FREE_TEXT auf.",
+    "Es wird log_add aufgerufen und die Schleife verlassen."
+   ],
+   "Z": [
+    "Das Unterprogramm log_add wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Es wird log_add aufgerufen und der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-116-B09",
+   "soll": "Nach dem Verteilen wartet der Lauf höchstens eine Stunde, bis alle gestarteten Pakete zurückgemeldet haben.",
+   "zeilen": [
+    61
+   ],
+   "code": [
+    "61:   WAIT UNTIL gv_done >= gv_sent UP TO 3600 SECONDS."
+   ],
+   "X": [
+    "Es wird bis zu 3600 Sekunden gewartet, bis alle versendeten Verarbeitungspakete beendet sind."
+   ],
+   "Y": [],
+   "Z": []
+  },
+  {
+   "id": "BM-116-B10",
+   "soll": "Meldet ein Paket zurück, wird es als erledigt gezählt; ist es abgebrochen, wird das protokolliert, sonst werden seine Ergebnisse übernommen.",
+   "zeilen": [
+    412,
+    419,
+    421
+   ],
+   "code": [
+    "412:   RECEIVE RESULTS FROM FUNCTION 'Z_PM_MPLAN_CALC'",
+    "419:   IF sy-subrc <> 0.",
+    "421:     PERFORM log_add USING 'E' lv_text."
+   ],
+   "X": [],
+   "Y": [
+    "Scheitert die Rückmeldung der parallelen Task, wird log_add aufgerufen und der Block verlassen.",
+    "Das Unterprogramm log_add wird aufgerufen; es ruft BAL_LOG_MSG_ADD_FREE_TEXT auf."
+   ],
+   "Z": [
+    "Ohne Treffer wird log_add aufgerufen und der Block verlassen.",
+    "Ohne Treffer wird der Block verlassen.",
+    "Das Unterprogramm log_add wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Es wird log_add aufgerufen und der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-116-B11",
+   "soll": "Protokolleinträge werden als Freitext ins Anwendungslog geschrieben.",
+   "zeilen": [
+    432
+   ],
+   "code": [
+    "432:   CALL FUNCTION 'BAL_LOG_MSG_ADD_FREE_TEXT'"
+   ],
+   "X": [
+    "Der übergebene Nachrichtentext wird mit dem angegebenen Typ als Freitextmeldung in das Anwendungslog geschrieben."
+   ],
+   "Y": [
+    "Der Funktionsbaustein BAL_LOG_MSG_ADD_FREE_TEXT wird aufgerufen."
+   ],
+   "Z": [
+    "Der Funktionsbaustein BAL_LOG_MSG_ADD_FREE_TEXT wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-116-B12",
+   "soll": "Ein leeres Paket wird nicht bearbeitet; sonst werden zu den Plänen die Zyklen mit Messpunkt, Zykluslänge, Equipment, Planungswerk, Auftragsart und Leistungsart gelesen.",
+   "zeilen": [
+    181,
+    183
+   ],
+   "code": [
+    "181:   CHECK it_warpl IS NOT INITIAL.",
+    "183:   SELECT c~warpl, c~point, c~zykl1, p~equnr, p~iwerk, p~auart, p~ilart"
+   ],
+   "X": [
+    "Ist die übergebene Tabelle der Wartungspläne initial, wird die Funktionsbausteinverarbeitung verlassen.",
+    "Aus den Tabellen MMPT und MPOS werden Wartungsplan, Messpunkt, Zykluslänge, Equipment, Planungswerk, Auftragsart und Leistungsart für alle übergebenen Wartungspläne mit vorhandenem Messpunkt selektiert."
+   ],
+   "Y": [
+    "Nur wenn das Feld it_warpl nicht leer ist, geht es weiter; sonst wird der Funktionsbaustein z_pm_mplan_calc an dieser Stelle verlassen.",
+    "Es werden Sätze aus mmpt zu den Einträgen aus it_warpl selektiert."
+   ],
+   "Z": [
+    "Nur Eine nicht leere it_warpl gehen weiter; kleinere werden übersprungen, die Schleife läuft weiter.",
+    "Es werden Sätze aus mmpt selektiert."
+   ]
+  },
+  {
+   "id": "BM-116-B13",
+   "soll": "Jeder Wartungsplan wird vor der Bearbeitung gesperrt; ist er gesperrt, wird er mit Status L übersprungen.",
+   "zeilen": [
+    195,
+    202
+   ],
+   "code": [
+    "195:     CALL FUNCTION 'ENQUEUE_EZPM_MPLA'",
+    "202:     IF sy-subrc <> 0."
+   ],
+   "X": [
+    "Für den Wartungsplan wird eine Sperre über den Sperrbaustein ENQUEUE_EZPM_MPLA angefordert.",
+    "Kann der Wartungsplan nicht gesperrt werden, wird der Status L mit dem Text Wartungsplan gesperrt in die Ergebnistabelle eingetragen und der Zyklus übersprungen."
+   ],
+   "Y": [
+    "Der Funktionsbaustein ENQUEUE_EZPM_MPLA wird aufgerufen.",
+    "Ist die Sperre über ENQUEUE_EZPM_MPLA nicht zu erhalten, wird der Status auf L gesetzt, der Text auf Wartungsplan gesperrt gesetzt, eine Zeile aufgenommen und der Schleifendurchlauf übersprungen.",
+    "Wenn die Sperre über ENQUEUE_EZPM_MPLA nicht zu erhalten ist, wird der Status auf L gesetzt.",
+    "Wenn die Sperre über ENQUEUE_EZPM_MPLA nicht zu erhalten ist, wird der Text auf Wartungsplan gesperrt gesetzt."
+   ],
+   "Z": [
+    "Der Funktionsbaustein ENQUEUE_EZPM_MPLA wird aufgerufen.",
+    "Ohne Treffer wird die Status auf L gesetzt, die Text auf Wartungsplan gesperrt gesetzt und eine Zeile aufgenommen.",
+    "sy-subrc ungleich 0 setzen die Status auf L.",
+    "sy-subrc ungleich 0 setzen die Text auf Wartungsplan gesperrt."
+   ]
+  },
+  {
+   "id": "BM-116-B14",
+   "soll": "Nach der Bearbeitung wird die Sperre wieder aufgehoben.",
+   "zeilen": [
+    212
+   ],
+   "code": [
+    "212:     CALL FUNCTION 'DEQUEUE_EZPM_MPLA'"
+   ],
+   "X": [
+    "Die Datenbanksperre auf dem Wartungsplan wird über den Entsperrbaustein DEQUEUE_EZPM_MPLA aufgehoben."
+   ],
+   "Y": [
+    "Es wird process_plan aufgerufen, eine Zeile aufgenommen und DEQUEUE_EZPM_MPLA aufgerufen.",
+    "Der Funktionsbaustein DEQUEUE_EZPM_MPLA wird aufgerufen."
+   ],
+   "Z": [
+    "Es wird process_plan aufgerufen, eine Zeile aufgenommen und DEQUEUE_EZPM_MPLA aufgerufen.",
+    "Der Funktionsbaustein DEQUEUE_EZPM_MPLA wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-116-B15",
+   "soll": "Für den Zyklus wird das Fälligkeitsdatum hochgerechnet; scheitert die Hochrechnung, erhält der Plan Status F mit dem Grund.",
+   "zeilen": [
+    93,
+    98,
+    209
+   ],
+   "code": [
+    "93:       ps_res-due = lo_fc->due_date( iv_point = ps_cyc-point",
+    "98:       RETURN.",
+    "209:     PERFORM process_plan USING ls_cyc iv_test CHANGING ls_res."
+   ],
+   "X": [
+    "Das Fälligkeitsdatum wird anhand des Messpunkts und der Zykluslänge berechnet.",
+    "Tritt bei der Fälligkeitsberechnung eine Ausnahme auf, wird der Ergebnisstatus F gesetzt, der Fehlertext übernommen und die Bearbeitung des Wartungsplans beendet.",
+    "Die Fälligkeit und Auftragsanlage für den Wartungsplanzyklus wird ermittelt und das Ergebnis an die Ausgabetabelle angehängt."
+   ],
+   "Y": [
+    "Der Rückgabewert der Methode due_date von lo_fc wird nach ps_res-due übernommen.",
+    "Das Unterprogramm process_plan wird aufgerufen; es legt Sätze an in ZPM_MPLAN_RUN, ruft BAPI_ALM_ORDER_MAINTAIN und BAPI_TRANSACTION_ROLLBACK auf und schreibt mit BAPI_TRANSACTION_COMMIT fest.",
+    "Es wird process_plan aufgerufen, eine Zeile aufgenommen und DEQUEUE_EZPM_MPLA aufgerufen."
+   ],
+   "Z": [
+    "Die Methode due_date von lo_fc wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "Das Unterprogramm process_plan wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Es wird process_plan aufgerufen, eine Zeile aufgenommen und DEQUEUE_EZPM_MPLA aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-116-B16",
+   "soll": "Grundlage sind die nicht stornierten Messbelege der letzten 365 Tage; gibt es weniger als zwei, ist keine Hochrechnung möglich.",
+   "zeilen": [
+    292,
+    298,
+    299
+   ],
+   "code": [
+    "292:     SELECT idate, readg FROM imrg",
+    "298:     IF lines( mt_read ) < 2.",
+    "299:       RAISE EXCEPTION TYPE zcx_pm_forecast"
+   ],
+   "X": [
+    "Aus Tabelle IMRG werden Ablesedatum und Zählerstand zum Messpunkt für nicht stornierte Belege der letzten 365 Tage chronologisch gelesen.",
+    "Liegen weniger als zwei Ablesungen vor, wird eine Ausnahme wegen unzureichender Belegmenge ausgelöst."
+   ],
+   "Y": [
+    "Das Ergebnis enthält idate und readg.",
+    "Es werden Messbelege selektiert."
+   ],
+   "Z": [
+    "Das Ergebnis enthält idate und readg.",
+    "Es werden Sätze aus imrg selektiert."
+   ]
+  },
+  {
+   "id": "BM-116-B17",
+   "soll": "Die Tagesleistung ist die Differenz zwischen letzter und erster Ablesung geteilt durch die Tage dazwischen; ist sie nicht positiv, ist keine Hochrechnung möglich.",
+   "zeilen": [
+    266,
+    267,
+    268,
+    311
+   ],
+   "code": [
+    "266:     DATA(lv_rate) = daily_usage( ).",
+    "267:     IF lv_rate <= 0.",
+    "268:       RAISE EXCEPTION TYPE zcx_pm_forecast",
+    "311:     rv_rate = COND #( WHEN lv_days > 0"
+   ],
+   "X": [
+    "Ist die tägliche Verbrauchsrate kleiner oder gleich null, wird eine Ausnahme wegen fehlenden Verbrauchs ausgelöst."
+   ],
+   "Y": [],
+   "Z": []
+  },
+  {
+   "id": "BM-116-B18",
+   "soll": "Ausgangspunkt ist der höchste beim letzten Lauf festgehaltene Zählerstand des Messpunkts, ohne früheren Lauf die älteste Ablesung.",
+   "zeilen": [
+    278,
+    281,
+    282
+   ],
+   "code": [
+    "278:     SELECT MAX( readg ) FROM zpm_mplan_run",
+    "281:     IF lv_call IS INITIAL.",
+    "282:       lv_call = mt_read[ 1 ]-readg."
+   ],
+   "X": [
+    "Aus der Tabelle ZPM_MPLAN_RUN wird der maximale bisher erfasste Zählerstand zum Messpunkt ermittelt.",
+    "Wurde noch kein Zählerstand in früheren Läufen gespeichert, wird der Zählerstand der ersten historischen Ablesung übernommen."
+   ],
+   "Y": [
+    "Das Ergebnis enthält MAX( und readg.",
+    "Es werden Sätze aus zpm_mplan_run selektiert."
+   ],
+   "Z": [
+    "Es werden Sätze aus zpm_mplan_run selektiert."
+   ]
+  },
+  {
+   "id": "BM-116-B19",
+   "soll": "Fällig ist der Zyklus, wenn Ausgangspunkt plus Zykluslänge erreicht ist; die Tage bis dahin werden aus der Tagesleistung ab der letzten Ablesung berechnet, ein bereits überschrittener Stand ergibt das Datum der letzten Ablesung.",
+   "zeilen": [
+    286
+   ],
+   "code": [
+    "286:     rv_date = ls_last-idate + COND i( WHEN lv_days < 0 THEN 0"
+   ],
+   "X": [],
+   "Y": [],
+   "Z": []
+  },
+  {
+   "id": "BM-116-B20",
+   "soll": "Liegt die Fälligkeit mehr als 30 Tage in der Zukunft, erhält der Plan Status N „noch nicht fällig“.",
+   "zeilen": [
+    101,
+    104
+   ],
+   "code": [
+    "101:   IF ps_res-due > sy-datum + lc_horizon.",
+    "104:     RETURN."
+   ],
+   "X": [
+    "Liegt das ermittelte Fälligkeitsdatum mehr als 30 Tage nach dem aktuellen Tagesdatum, wird der Status N mit dem Text noch nicht fällig gesetzt und die Bearbeitung beendet."
+   ],
+   "Y": [
+    "Wenn die Bedingung „ps_res-due > sy-datum + lc_horizon“ erfüllt ist, wird der Status auf N gesetzt, der Text auf noch nicht fällig gesetzt und der Block verlassen.",
+    "Wenn die Bedingung „ps_res-due > sy-datum + lc_horizon“ erfüllt ist, wird der Status auf N gesetzt.",
+    "Wenn die Bedingung „ps_res-due > sy-datum + lc_horizon“ erfüllt ist, wird der Text auf noch nicht fällig gesetzt."
+   ],
+   "Z": [
+    "Für ps_res-due > sy-datum + lc_horizon wird die Status auf N gesetzt, die Text auf noch nicht fällig gesetzt und der Block verlassen.",
+    "ps_res-due > sy-datum + lc_horizon setzen die Status auf N.",
+    "Es wird die Status auf N gesetzt, die Text auf noch nicht fällig gesetzt und der Block verlassen.",
+    "ps_res-due > sy-datum + lc_horizon setzen die Text auf noch nicht fällig."
+   ]
+  },
+  {
+   "id": "BM-116-B21",
+   "soll": "Gibt es zum Plan bereits einen nicht technisch abgeschlossenen, nicht gelöschten Auftrag, erhält er Status O mit diesem Auftrag.",
+   "zeilen": [
+    108,
+    114,
+    118
+   ],
+   "code": [
+    "108:   SELECT SINGLE a~aufnr FROM afih AS a",
+    "114:   IF sy-subrc = 0.",
+    "118:     RETURN."
+   ],
+   "X": [
+    "Aus den Tabellen AFIH und AUFK wird die Auftragsnummer eines nicht technisch abgeschlossenen und nicht gelöschten Auftrags zum Wartungsplan gelesen.",
+    "Wird ein offener Auftrag gefunden, wird der Status O mit der Auftragsnummer und dem Hinweis offener Auftrag vorhanden vermerkt und die Bearbeitung beendet."
+   ],
+   "Y": [
+    "Die Auftragsnummer des Instandhaltungsauftrags wird gelesen.",
+    "Bei Treffer wird der Status auf O gesetzt, der Text auf offener Auftrag vorhanden gesetzt und vor der Datenbankoperation zurückgekehrt.",
+    "Wenn ein Treffer vorliegt, wird der Status auf O gesetzt.",
+    "Wenn ein Treffer vorliegt, wird der Text auf offener Auftrag vorhanden gesetzt."
+   ],
+   "Z": [
+    "a~aufnr des Satzes wird gelesen.",
+    "Bei Treffer wird die Status auf O gesetzt, die Text auf offener Auftrag vorhanden gesetzt und der Block verlassen.",
+    "Bei Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "sy-subrc mit dem Wert 0 setzen die Status auf O.",
+    "sy-subrc mit dem Wert 0 setzen die Text auf offener Auftrag vorhanden.",
+    "Es wird die Text auf offener Auftrag vorhanden gesetzt und der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-116-B22",
+   "soll": "Im Testlauf wird ein fälliger Plan nur mit Status T gemeldet.",
+   "zeilen": [
+    121,
+    124
+   ],
+   "code": [
+    "121:   IF pv_test = abap_true.",
+    "124:     RETURN."
+   ],
+   "X": [
+    "Ist der Testlauf aktiv, wird der Status T mit dem Hinweis fällig (Testlauf) gesetzt und die weitere Bearbeitung beendet."
+   ],
+   "Y": [
+    "Wenn das Feld pv_test gesetzt ist, wird der Status auf T gesetzt, der Text auf fällig (Testlauf) gesetzt und vor der Datenbankoperation zurückgekehrt.",
+    "Wenn das Feld pv_test gesetzt ist, wird der Status auf T gesetzt.",
+    "Wenn das Feld pv_test gesetzt ist, wird der Text auf fällig (Testlauf) gesetzt."
+   ],
+   "Z": [
+    "Für pv_test mit dem Wert abap_true wird die Status auf T gesetzt, die Text auf fällig (Testlauf) gesetzt und der Block verlassen.",
+    "Bei pv_test gleich abap_true wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "pv_test mit dem Wert abap_true setzen die Status auf T.",
+    "Es wird die Status auf T gesetzt, die Text auf fällig (Testlauf) gesetzt und der Block verlassen.",
+    "pv_test mit dem Wert abap_true setzen die Text auf fällig (Testlauf)."
+   ]
+  },
+  {
+   "id": "BM-116-B23",
+   "soll": "Sonst wird ein Instandhaltungsauftrag mit Auftragsart, Planungswerk, Equipment, Leistungsart und dem Fälligkeitsdatum als Starttermin angelegt.",
+   "zeilen": [
+    140
+   ],
+   "code": [
+    "140:   CALL FUNCTION 'BAPI_ALM_ORDER_MAINTAIN'"
+   ],
+   "X": [
+    "Ein Instandhaltungsauftrag mit Auftragsart, Planungswerk, Equipment, Leistungsart, Startdatum und Kurztext wird über den Funktionsbaustein BAPI_ALM_ORDER_MAINTAIN angelegt und gespeichert."
+   ],
+   "Y": [
+    "Der Funktionsbaustein BAPI_ALM_ORDER_MAINTAIN wird aufgerufen."
+   ],
+   "Z": [
+    "Der Funktionsbaustein BAPI_ALM_ORDER_MAINTAIN wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-116-B24",
+   "soll": "Meldet die Anlage einen Fehler, wird sie zurückgenommen und der Plan erhält Status F.",
+   "zeilen": [
+    147,
+    148
+   ],
+   "code": [
+    "147:   IF line_exists( lt_ret[ type = 'E' ] ) OR line_exists( lt_ret[ type = 'A' ] ).",
+    "148:     CALL FUNCTION 'BAPI_TRANSACTION_ROLLBACK'."
+   ],
+   "X": [
+    "Enthält die Rückmeldung der Auftragsanlage Fehler oder Abbrüche, werden die Datenbankänderungen zurückgerollt und der Status F mit der Fehlermeldung gesetzt.",
+    "Wurde der Auftrag erfolgreich angelegt, wird die neue Auftragsnummer übernommen und ein Datensatz mit Wartungsplan, Messpunkt, Auftragsnummer, Fälligkeit, Zählerstand und Tagesdatum in die Tabelle ZPM_MPLAN_RUN eingefügt."
+   ],
+   "Y": [
+    "Wenn die Bedingung „line_exists( lt_ret[ type = 'E' ] ) OR line_exists( lt_ret[ type = 'A' ] )“ erfüllt ist, wird BAPI_TRANSACTION_ROLLBACK aufgerufen und der Status auf F gesetzt, sonst BAPI_TRANSACTION_COMMIT aufgerufen, der Status auf A gesetzt und der Text auf Auftrag angelegt gesetzt.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_ROLLBACK wird aufgerufen.",
+    "Wenn die Bedingung „line_exists( lt_ret[ type = 'E' ] ) OR line_exists( lt_ret[ type = 'A' ] )“ erfüllt ist, wird der Status auf F gesetzt."
+   ],
+   "Z": [
+    "Für line_exists( lt_ret[ type = 'E' ] ) OR line_exists( lt_ret[ type = 'A' ] ) wird BAPI_TRANSACTION_ROLLBACK aufgerufen und die Status auf F gesetzt.",
+    "Für line_exists( lt_ret[ type = 'E' ] ) OR line_exists( lt_ret[ type = 'A' ] ) wird BAPI_TRANSACTION_ROLLBACK aufgerufen und die Status auf F gesetzt, sonst BAPI_TRANSACTION_COMMIT aufgerufen, die Status auf A gesetzt und die Text auf Auftrag angelegt gesetzt.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_ROLLBACK wird aufgerufen.",
+    "Es wird BAPI_TRANSACTION_ROLLBACK aufgerufen und die Status auf F gesetzt.",
+    "line_exists( lt_ret[ type = 'E' ] ) OR line_exists( lt_ret[ type = 'A' ] ) setzen die Status auf F."
+   ]
+  },
+  {
+   "id": "BM-116-B25",
+   "soll": "Gelingt sie, werden Plan, Messpunkt, Auftrag, Fälligkeit und aktueller Zählerstand als Abruf festgehalten, alles wird festgeschrieben und der Plan erhält Status A.",
+   "zeilen": [
+    153,
+    159
+   ],
+   "code": [
+    "153:     INSERT zpm_mplan_run FROM @( VALUE #( warpl = ps_cyc-warpl",
+    "159:     CALL FUNCTION 'BAPI_TRANSACTION_COMMIT'"
+   ],
+   "X": [
+    "Wurde der Auftrag erfolgreich angelegt, wird die neue Auftragsnummer übernommen und ein Datensatz mit Wartungsplan, Messpunkt, Auftragsnummer, Fälligkeit, Zählerstand und Tagesdatum in die Tabelle ZPM_MPLAN_RUN eingefügt.",
+    "Die Datenbankänderungen der Auftragsanlage werden bestätigt und der Status A mit dem Hinweis Auftrag angelegt gesetzt."
+   ],
+   "Y": [
+    "Wenn die Bedingung „line_exists( lt_ret[ type = 'E' ] ) OR line_exists( lt_ret[ type = 'A' ] )“ erfüllt ist, wird BAPI_TRANSACTION_ROLLBACK aufgerufen und der Status auf F gesetzt, sonst BAPI_TRANSACTION_COMMIT aufgerufen, der Status auf A gesetzt und der Text auf Auftrag angelegt gesetzt.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_COMMIT wird aufgerufen."
+   ],
+   "Z": [
+    "Für line_exists( lt_ret[ type = 'E' ] ) OR line_exists( lt_ret[ type = 'A' ] ) wird BAPI_TRANSACTION_ROLLBACK aufgerufen und die Status auf F gesetzt, sonst BAPI_TRANSACTION_COMMIT aufgerufen, die Status auf A gesetzt und die Text auf Auftrag angelegt gesetzt.",
+    "Sonst wird BAPI_TRANSACTION_COMMIT aufgerufen, die Status auf A gesetzt und die Text auf Auftrag angelegt gesetzt.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_COMMIT wird aufgerufen.",
+    "Es wird BAPI_TRANSACTION_COMMIT aufgerufen, die Status auf A gesetzt und die Text auf Auftrag angelegt gesetzt."
+   ]
+  },
+  {
+   "id": "BM-116-B26",
+   "soll": "Zum Abschluss wird das Anwendungslog gesichert und das Ergebnis je Plan als Liste angezeigt.",
+   "zeilen": [
+    65,
+    70,
+    454
+   ],
+   "code": [
+    "65:   CALL FUNCTION 'BAL_DB_SAVE'",
+    "70:   PERFORM display.",
+    "454:       lo_alv->display( )."
+   ],
+   "X": [
+    "Das Anwendungslog wird vollständig auf der Datenbank gesichert.",
+    "Die Bildschirmanzeige der Verarbeitungsergebnisse wird aufgerufen.",
+    "Eine ALV-Ausgabetabelle der Ergebnisse wird initialisiert, alle Funktionsleistenfunktionen werden aktiviert und die Tabelle wird am Bildschirm dargestellt."
+   ],
+   "Y": [
+    "Der Funktionsbaustein BAL_DB_SAVE wird aufgerufen.",
+    "Es wird BAL_DB_SAVE aufgerufen und display aufgerufen.",
+    "Das Unterprogramm display wird aufgerufen; es gibt eine Meldung aus.",
+    "Die Methode display von lo_alv wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ],
+   "Z": [
+    "Der Funktionsbaustein BAL_DB_SAVE wird aufgerufen.",
+    "Es wird BAL_DB_SAVE aufgerufen und display aufgerufen.",
+    "Das Unterprogramm display wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Die Methode display von lo_alv wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ]
+  }
+ ]
+}

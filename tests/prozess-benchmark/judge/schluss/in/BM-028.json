@@ -1,0 +1,219 @@
+{
+ "id": "BM-028",
+ "titel": "Umlagerung Werk an Werk (301) aus Dienstleisterdatei mit Bestandsvorprüfung",
+ "prozess": "Nachts liefert der Logistikdienstleister eine CSV-Datei mit Umlagerungen auf den Applikationsserver; der Report wird mit Dateipfad und Testlauf-Schalter gestartet. Ist die Datei nicht lesbar, bricht er ab. Sonst liest er Zeile für Zeile Material, abgebendes und empfangendes Werk und Lagerort, Menge und Charge. Für jede Zeile prüft er vorab, ob am abgebenden Lagerort genug frei verwendbarer Bestand vorhanden ist; wenn nicht, protokolliert er die Zeile und bucht sie nicht. Andernfalls bucht er eine Umlagerung Werk an Werk (301) mit BAPI_GOODSMVT_CREATE, im Testlauf nur als Simulation. Bei Fehler oder Abbruch wird zurückgerollt und der Fehlertext protokolliert; im Echtlauf wird festgeschrieben und der Materialbeleg ausgegeben, im Testlauf die fehlerfreie Prüfung. Eine Dublettenprüfung oder Archivierung der Datei gibt es nicht.",
+ "verboten": [
+  "source.abap:55 — kein Fachsatz „Der Chargenbestand wird geprüft“ (geprüft wird der Lagerortbestand ohne Charge)",
+  "source.abap:51 — kein Fachsatz „Die Datei wird nach der Verarbeitung archiviert oder gelöscht“ (sie wird nur geschlossen)",
+  "source.abap:80 — kein Fachsatz „Alle Zeilen werden in einem Materialbeleg gebucht“ (ein Beleg je Zeile)",
+  "gesamte Scheibe — kein Fachsatz „Bereits gebuchte Zeilen werden bei Wiederholung erkannt“ (keine Dublettenprüfung)"
+ ],
+ "saetze": [
+  {
+   "id": "BM-028-B01",
+   "soll": "Die nächtliche Umlagerungsdatei des Logistikdienstleisters wird vom Applikationsserver gelesen; ist sie nicht lesbar, bricht der Lauf mit Fehlermeldung ab.",
+   "zeilen": [
+    36,
+    37,
+    38
+   ],
+   "code": [
+    "36:   OPEN DATASET p_file FOR INPUT IN TEXT MODE ENCODING DEFAULT.",
+    "37:   IF sy-subrc <> 0.",
+    "38:     MESSAGE e398(00) WITH 'Datei nicht lesbar:' p_file."
+   ],
+   "X": [
+    "Lässt sich die Datei nicht öffnen, wird eine Fehlermeldung ausgegeben.",
+    "Die Fehlermeldung 398(00) wird ausgegeben."
+   ],
+   "Y": [
+    "Die über den Selektionsparameter angegebene Datei wird im Textmodus auf dem Applikationsserver zum Lesen geöffnet.",
+    "Kann die Datei nicht geöffnet werden, wird eine Fehlermeldung mit dem Dateinamen ausgegeben und die Verarbeitung abgebrochen."
+   ],
+   "Z": [
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-028-B02",
+   "soll": "Jede Zeile liefert Material, abgebendes Werk und Lagerort, empfangendes Werk und Lagerort, Menge (Dezimalkomma wird umgesetzt) und Charge.",
+   "zeilen": [
+    41,
+    45
+   ],
+   "code": [
+    "41:     READ DATASET p_file INTO gv_rec.",
+    "45:     SPLIT gv_rec AT ';' INTO gs_line-matnr gs_line-werks gs_line-lgort"
+   ],
+   "X": [],
+   "Y": [
+    "Aus der geöffneten Datei wird zeilenweise ein Datensatz eingelesen.",
+    "Die eingelesene Zeile wird anhand des Trennzeichens Semikolon in Materialnummer, abgebendes Werk, abgebenden Lagerort, empfangendes Werk, empfangenden Lagerort, Menge und Charge zerlegt und der internen Tabelle hinzugefügt."
+   ],
+   "Z": []
+  },
+  {
+   "id": "BM-028-B03",
+   "soll": "Vor jeder Buchung wird der frei verwendbare Bestand am abgebenden Lagerort gelesen.",
+   "zeilen": [
+    55
+   ],
+   "code": [
+    "55:     SELECT SINGLE labst FROM mard INTO gv_labst"
+   ],
+   "X": [
+    "Das Feld labst des Lagerortbestands wird gelesen."
+   ],
+   "Y": [
+    "Aus der Tabelle MARD wird der frei verwendbare Bestand (LABST) für Materialnummer, abgebendes Werk und abgebenden Lagerort gelesen."
+   ],
+   "Z": [
+    "labst des Satzes wird gelesen."
+   ]
+  },
+  {
+   "id": "BM-028-B04",
+   "soll": "Fehlt das Lagerortsegment oder reicht der Bestand nicht für die Menge, wird die Zeile mit dem vorhandenen Bestand protokolliert und nicht gebucht.",
+   "zeilen": [
+    59,
+    60
+   ],
+   "code": [
+    "59:     IF sy-subrc <> 0 OR gv_labst < gs_line-menge.",
+    "60:       WRITE: / gs_line-matnr, gs_line-werks, gs_line-lgort,"
+   ],
+   "X": [
+    "Wenn kein Treffer vorliegt oder das Feld gv_labst kleiner als gs_line-menge ist, wird Materialnummer ausgegeben, Werk ausgegeben, Lagerort ausgegeben, Bestand nicht ausreichend: ausgegeben, gv_labst ausgegeben und der Schleifendurchlauf übersprungen."
+   ],
+   "Y": [
+    "Wird kein Bestandseintrag gefunden oder ist der frei verwendbare Bestand kleiner als die angegebene Menge, wird eine Hinweismeldung mit Materialnummer, Werk, Lagerort und aktuellem Bestand ausgegeben und mit der nächsten Zeile fortgefahren."
+   ],
+   "Z": [
+    "Für sy-subrc <> 0 OR gv_labst < gs_line-menge wird gs_line-matnr ausgegeben, gs_line-werks ausgegeben, gs_line-lgort ausgegeben, Bestand nicht ausreichend: ausgegeben und gv_labst ausgegeben.",
+    "Bei Treffern werden gs_line-matnr, gs_line-werks, gs_line-lgort, Bestand nicht ausreichend: und gv_labst als Liste ausgegeben.",
+    "gs_line-matnr wird ausgegeben.",
+    "gs_line-werks wird ausgegeben.",
+    "gs_line-lgort wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-028-B05",
+   "soll": "Sonst wird je Zeile eine Umlagerung Werk an Werk mit Bewegungsart 301 zum Tagesdatum gebucht, im Testlauf nur simuliert.",
+   "zeilen": [
+    74,
+    80
+   ],
+   "code": [
+    "74:     gs_item-move_type  = '301'.",
+    "80:     CALL FUNCTION 'BAPI_GOODSMVT_CREATE'"
+   ],
+   "X": [
+    "Das Feld gs_item-move_type wird auf 301 gesetzt.",
+    "Es wird eine Zeile aufgenommen und BAPI_GOODSMVT_CREATE aufgerufen.",
+    "Der Code übergibt gs_head an BAPI_GOODSMVT_CREATE und übernimmt dessen Ausgabe nach gv_mblnr."
+   ],
+   "Y": [
+    "Für das Material wird eine Warenbewegung mit Bewegungsart 301 zum aktuellen Tagesdatum über den Baustein BAPI_GOODSMVT_CREATE ausgeführt."
+   ],
+   "Z": [
+    "Die gs_item-move_type wird auf 301 gesetzt.",
+    "Es wird eine Zeile aufgenommen und BAPI_GOODSMVT_CREATE aufgerufen.",
+    "Der Code übergibt gs_head an BAPI_GOODSMVT_CREATE und übernimmt dessen Ausgabe nach gv_mblnr.",
+    "Das konvertierte Ergebnis wird in gv_mblnr übernommen."
+   ]
+  },
+  {
+   "id": "BM-028-B06",
+   "soll": "Meldet die Buchung einen Fehler oder Abbruch, wird zurückgerollt und der Fehlertext protokolliert.",
+   "zeilen": [
+    92,
+    95,
+    96,
+    97
+   ],
+   "code": [
+    "92:     LOOP AT gt_return INTO gs_return WHERE type CA 'EA'.",
+    "95:     IF sy-subrc = 0.",
+    "96:       CALL FUNCTION 'BAPI_TRANSACTION_ROLLBACK'.",
+    "97:       WRITE: / gs_line-matnr, gs_line-werks, gs_return-message."
+   ],
+   "X": [
+    "Die Zeilen aus gt_return, bei denen die Bedingung „type CA 'EA'“ erfüllt ist, werden einzeln verarbeitet.",
+    "Bei Treffer wird BAPI_TRANSACTION_ROLLBACK aufgerufen, Materialnummer ausgegeben, Werk ausgegeben und gs_return-message ausgegeben.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_ROLLBACK wird aufgerufen."
+   ],
+   "Y": [
+    "Die Rückmeldungen des Bausteins werden auf Fehlermeldungen der Typen E und A geprüft.",
+    "Ist mindestens ein Fehler aufgetreten, werden die Änderungen über BAPI_TRANSACTION_ROLLBACK verworfen und Materialnummer, Werk sowie die Fehlermeldung ausgegeben."
+   ],
+   "Z": [
+    "Jede Zeile aus gt_return wird einzeln verarbeitet.",
+    "Bei Treffer wird BAPI_TRANSACTION_ROLLBACK aufgerufen, gs_line-matnr ausgegeben, gs_line-werks ausgegeben und gs_return-message ausgegeben.",
+    "Bei Treffer wird BAPI_TRANSACTION_ROLLBACK aufgerufen, gs_line-matnr ausgegeben, gs_line-werks ausgegeben und gs_return-message ausgegeben, sonst BAPI_TRANSACTION_COMMIT aufgerufen, gs_line-matnr ausgegeben, gs_line-werks ausgegeben, -> ausgegeben, gs_line-umwrk ausgegeben, Materialbeleg ausgegeben, Das vom Funktionsbaustein zurückgegebene Feld ausgegeben und gv_mjahr ausgegeben beziehungsweise gs_line-matnr ausgegeben, gs_line-werks ausgegeben und Testlauf ohne Fehler ausgegeben.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_ROLLBACK wird aufgerufen.",
+    "Es wird BAPI_TRANSACTION_ROLLBACK aufgerufen, gs_line-matnr ausgegeben, gs_line-werks ausgegeben und gs_return-message ausgegeben.",
+    "Bei Treffern werden gs_line-matnr, gs_line-werks und gs_return-message als Liste ausgegeben.",
+    "gs_line-matnr wird ausgegeben.",
+    "gs_line-werks wird ausgegeben.",
+    "gs_return-message wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-028-B07",
+   "soll": "Im Echtlauf wird die Buchung festgeschrieben und der Materialbeleg mit Jahr protokolliert.",
+   "zeilen": [
+    99,
+    102
+   ],
+   "code": [
+    "99:       CALL FUNCTION 'BAPI_TRANSACTION_COMMIT'",
+    "102:       WRITE: / gs_line-matnr, gs_line-werks, '->', gs_line-umwrk,"
+   ],
+   "X": [
+    "Ist das Feld p_test leer, wird BAPI_TRANSACTION_COMMIT aufgerufen, Materialnummer ausgegeben, Werk ausgegeben, -> ausgegeben, gs_line-umwrk ausgegeben, Materialbeleg ausgegeben, Das vom Funktionsbaustein zurückgegebene Feld ausgegeben und gv_mjahr ausgegeben.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_COMMIT wird aufgerufen.",
+    "-> wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code."
+   ],
+   "Y": [
+    "Tritt kein Fehler auf und ist der Testlauf-Parameter nicht gesetzt, wird die Buchung über BAPI_TRANSACTION_COMMIT mit Wartezeit festgeschrieben und die erzeugte Materialbelegnummer samt Belegjahr ausgegeben."
+   ],
+   "Z": [
+    "Bei Treffer wird BAPI_TRANSACTION_ROLLBACK aufgerufen, gs_line-matnr ausgegeben, gs_line-werks ausgegeben und gs_return-message ausgegeben, sonst BAPI_TRANSACTION_COMMIT aufgerufen, gs_line-matnr ausgegeben, gs_line-werks ausgegeben, -> ausgegeben, gs_line-umwrk ausgegeben, Materialbeleg ausgegeben, Das vom Funktionsbaustein zurückgegebene Feld ausgegeben und gv_mjahr ausgegeben beziehungsweise gs_line-matnr ausgegeben, gs_line-werks ausgegeben und Testlauf ohne Fehler ausgegeben.",
+    "Ohne p_test wird BAPI_TRANSACTION_COMMIT aufgerufen, gs_line-matnr ausgegeben, gs_line-werks ausgegeben, -> ausgegeben, gs_line-umwrk ausgegeben, Materialbeleg ausgegeben, Das vom Funktionsbaustein zurückgegebene Feld ausgegeben und gv_mjahr ausgegeben.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_COMMIT wird aufgerufen.",
+    "Es wird BAPI_TRANSACTION_COMMIT aufgerufen, gs_line-matnr ausgegeben, gs_line-werks ausgegeben, -> ausgegeben, gs_line-umwrk ausgegeben, Materialbeleg ausgegeben, Das vom Funktionsbaustein zurückgegebene Feld ausgegeben und gv_mjahr ausgegeben.",
+    "Bei Treffern werden gs_line-matnr, gs_line-werks, ->, gs_line-umwrk, Materialbeleg, Das vom Funktionsbaustein zurückgegebene Feld und gv_mjahr als Liste ausgegeben.",
+    "gs_line-matnr wird ausgegeben.",
+    "gs_line-werks wird ausgegeben.",
+    "-> wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "gs_line-umwrk wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-028-B08",
+   "soll": "Im Testlauf wird die fehlerfreie Prüfung je Zeile protokolliert.",
+   "zeilen": [
+    105
+   ],
+   "code": [
+    "105:       WRITE: / gs_line-matnr, gs_line-werks, 'Testlauf ohne Fehler'."
+   ],
+   "X": [
+    "Sonst wird Materialnummer ausgegeben, Werk ausgegeben und Testlauf ohne Fehler ausgegeben.",
+    "Testlauf ohne Fehler wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code."
+   ],
+   "Y": [
+    "Tritt kein Fehler auf und ist der Testlauf-Parameter aktiv, wird ausgegeben, dass der Testlauf für Material und Werk fehlerfrei war."
+   ],
+   "Z": [
+    "Bei Treffer wird BAPI_TRANSACTION_ROLLBACK aufgerufen, gs_line-matnr ausgegeben, gs_line-werks ausgegeben und gs_return-message ausgegeben, sonst BAPI_TRANSACTION_COMMIT aufgerufen, gs_line-matnr ausgegeben, gs_line-werks ausgegeben, -> ausgegeben, gs_line-umwrk ausgegeben, Materialbeleg ausgegeben, Das vom Funktionsbaustein zurückgegebene Feld ausgegeben und gv_mjahr ausgegeben beziehungsweise gs_line-matnr ausgegeben, gs_line-werks ausgegeben und Testlauf ohne Fehler ausgegeben.",
+    "Sonst wird gs_line-matnr ausgegeben, gs_line-werks ausgegeben und Testlauf ohne Fehler ausgegeben.",
+    "Bei Treffern werden gs_line-matnr, gs_line-werks und Testlauf ohne Fehler als Liste ausgegeben.",
+    "gs_line-matnr wird ausgegeben.",
+    "gs_line-werks wird ausgegeben.",
+    "Testlauf ohne Fehler wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code."
+   ]
+  }
+ ]
+}

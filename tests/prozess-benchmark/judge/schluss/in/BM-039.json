@@ -1,0 +1,557 @@
+{
+ "id": "BM-039",
+ "titel": "Dynpro-Freigabecockpit für Bestellanforderungen: Freigeben, Ablehnen mit Grund und Workflow",
+ "prozess": "Ein Freigeber startet die Transaktion ZME55; das Programm prüft beim Laden die Transaktionsberechtigung. Beim Aufbau der Liste liest es die heute gültigen Freigabecodes des Anwenders mit Wertgrenzen – ohne Code endet es – und die zur Freigabe gesperrten, offenen Banf-Positionen seiner Freigabegruppen. Angezeigt werden nur Positionen mit gepflegter Strategie, bei denen der nächste fällige Code einer des Anwenders ist, mit berechnetem Positionswert. Beim Freigeben wird jede markierte Position geprüft: über der Wertgrenze des Codes oder bei eigener Banf wird nicht freigegeben, fremd gesperrte werden übersprungen, die übrigen werden per BAPI mit dem Code freigegeben und festgeschrieben bzw. zurückgerollt; zum Schluss werden Erfolge und Fehler gemeldet und die Liste neu geladen. Beim Ablehnen muss etwas markiert sein und in einem Popup ein Grund (mit Wertehilfe) eingegeben werden; dann setzt das Programm je Position den Bearbeitungsstatus direkt in EBAN auf abgelehnt, protokolliert den Grund, erzeugt ein Workflow-Ereignis an den Anforderer und schreibt je Position fest. Weitere Funktionen zeigen eine Position in ME53N, sortieren nach Wert, summieren die markierten Werte und laden die Liste neu; Zurück, Beenden und Abbrechen verlassen das Programm.",
+ "verboten": [
+  "mzmm_pr_release_f01.abap:158 — kein Fachsatz „Die Ablehnung erfolgt über die Standard-Freigabe (Freigabe zurücknehmen)“ (der Status wird direkt in der Tabelle gesetzt, am Standard vorbei)",
+  "mzmm_pr_release_f01.abap:172 — kein Fachsatz „Der Anforderer erhält eine E-Mail“ (es wird nur ein Workflow-Ereignis erzeugt; was daraus folgt, liegt außerhalb des Codes)",
+  "mzmm_pr_release_f01.abap:74 — kein Fachsatz „Über der Wertgrenze wird die Banf an den nächsten Freigeber weitergeleitet“ (sie wird nur nicht freigegeben)",
+  "mzmm_pr_release_i01.abap:37 — kein Fachsatz „Auffrischen setzt Markierungen oder Freigaben zurück“ (es lädt nur die Liste neu)"
+ ],
+ "saetze": [
+  {
+   "id": "BM-039-B01",
+   "soll": "Beim Laden prüft das Programm, ob der Anwender die Transaktion ZME55 ausführen darf, und bricht sonst ab.",
+   "zeilen": [
+    22,
+    24,
+    25
+   ],
+   "code": [
+    "22:   AUTHORITY-CHECK OBJECT 'S_TCODE'",
+    "24:   IF sy-subrc <> 0.",
+    "25:     MESSAGE a059 WITH 'ZME55'."
+   ],
+   "X": [
+    "Die Berechtigung auf S_TCODE wird geprüft.",
+    "Ohne Berechtigung auf S_TCODE wird eine Abbruchmeldung ausgegeben.",
+    "Die Abbruchmeldung 059 wird ausgegeben; das Programm wird abgebrochen."
+   ],
+   "Y": [
+    "Es wird geprüft, ob der ausführende Benutzer zur Transaktion ZME55 am Berechtigungsobjekt S_TCODE berechtigt ist.",
+    "Fehlt die Berechtigung für Transaktion ZME55, wird das Programm mit der Abbruchmeldung A059 beendet."
+   ],
+   "Z": [
+    "Die Berechtigung auf S_TCODE wird geprüft.",
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-039-B02",
+   "soll": "Beim ersten Aufbau der Liste und nach jedem Auffrischen werden die heute gültigen Freigabecodes des Anwenders je Freigabegruppe mit ihrer Wertgrenze gelesen; hat er keinen, endet das Cockpit mit Fehlermeldung.",
+   "zeilen": [
+    33,
+    342,
+    344,
+    345
+   ],
+   "code": [
+    "33:   SELECT * FROM zmm_frg_user INTO TABLE gt_codes",
+    "342:   IF gv_loaded = abap_false.",
+    "344:     IF gt_codes IS INITIAL.",
+    "345:       MESSAGE e050 WITH sy-uname."
+   ],
+   "X": [
+    "Es werden Sätze aus zmm_frg_user selektiert.",
+    "Wenn das Feld gv_loaded nicht gesetzt ist, wird codes_lesen aufgerufen und banf_lesen aufgerufen.",
+    "Ohne Treffer wird eine Fehlermeldung ausgegeben.",
+    "Die Fehlermeldung 050 wird ausgegeben."
+   ],
+   "Y": [
+    "Aus Tabelle ZMM_FRG_USER werden alle Einträge des aktuellen Benutzers gelesen, deren Gültigkeitsbeginn DATAB bis einschließlich heute und deren Gültigkeitsende DATBI ab einschließlich heute liegt.",
+    "Ist die Liste noch nicht geladen, wird das Lesen der Freigabecodes des Benutzers angestoßen.",
+    "Werden keine Freigabecodes für den Benutzer gefunden, wird die Fehlermeldung E050 ausgegeben."
+   ],
+   "Z": [
+    "Es werden Sätze aus zmm_frg_user selektiert.",
+    "Für gv_loaded mit dem Wert abap_false wird codes_lesen aufgerufen und banf_lesen aufgerufen.",
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-039-B03",
+   "soll": "Gelesen werden die zur Freigabe gesperrten, nicht gelöschten und nicht erledigten Banf-Positionen dieser Freigabegruppen.",
+   "zeilen": [
+    50
+   ],
+   "code": [
+    "50:   SELECT * FROM eban INTO TABLE lt_eban"
+   ],
+   "X": [
+    "Es werden Bestellanforderungen zu den Einträgen aus gt_codes selektiert."
+   ],
+   "Y": [
+    "Aus Tabelle EBAN werden alle Positionen zu den Freigabegruppen des Benutzers gelesen, für die das Freigabekennzeichen FRGKZ gleich X gesetzt ist und weder ein Löschkennzeichen noch ein Schließungskennzeichen vorliegt."
+   ],
+   "Z": [
+    "Es werden Sätze aus eban selektiert."
+   ]
+  },
+  {
+   "id": "BM-039-B04",
+   "soll": "Eine Position erscheint nur, wenn ihre Freigabestrategie gepflegt ist, sie noch nicht vollständig freigegeben ist und der nächste fällige Freigabecode einer der Codes des Anwenders ist.",
+   "zeilen": [
+    58,
+    65,
+    66,
+    73,
+    75
+   ],
+   "code": [
+    "58:     SELECT SINGLE * FROM t16fs INTO ls_t16fs",
+    "65:     lv_pos = strlen( ls_eban-frgzu ) + 1.",
+    "66:     IF lv_pos > 8.",
+    "73:     READ TABLE gt_codes TRANSPORTING NO FIELDS",
+    "75:     IF sy-subrc <> 0."
+   ],
+   "X": [
+    "Es werden Sätze aus t16fs selektiert.",
+    "Wenn das Feld lv_pos größer als 8 ist, wird der Schleifendurchlauf übersprungen.",
+    "In der Tabelle gt_codes wird nach einer passenden Zeile gesucht.",
+    "Ohne Treffer wird der Schleifendurchlauf übersprungen."
+   ],
+   "Y": [
+    "Aus Tabelle T16FS wird der Eintrag zur Freigabegruppe und Freigabestrategie der Position gelesen.",
+    "Ist die Position des nächsten Freigabecodes größer als 8, wird die Position übersprungen.",
+    "Gehört der ermittelte nächste Freigabecode nicht zu den Freigabecodes des Benutzers, wird die Position übersprungen."
+   ],
+   "Z": [
+    "Es werden Sätze aus t16fs selektiert.",
+    "In der Tabelle wird nach einer passenden Zeile gesucht."
+   ]
+  },
+  {
+   "id": "BM-039-B05",
+   "soll": "Für jede angezeigte Position wird der Wert aus Preis, Menge und Preiseinheit berechnet; die Liste ist nach Banf und Position sortiert, und ist sie leer, erscheint ein Hinweis.",
+   "zeilen": [
+    80,
+    83,
+    350,
+    351
+   ],
+   "code": [
+    "80:     gs_line-wert = ls_eban-preis * ls_eban-menge / nmax( val1 = 1 val2 = ls_eban-peinh ).",
+    "83:   SORT gt_line BY banfn bnfpo.",
+    "350:     IF gt_line IS INITIAL.",
+    "351:       MESSAGE s051."
+   ],
+   "X": [
+    "Ist die Tabelle gt_line leer, wird eine Statusmeldung ausgegeben.",
+    "Die Statusmeldung 051 wird ausgegeben."
+   ],
+   "Y": [
+    "Der Gesamtwert der Position wird aus Preis, Menge und Preiseinheit berechnet und die Position wird in die Anzeigeliste übernommen.",
+    "Die Anzeigeliste wird nach Bestellanforderungsnummer und Positionsnummer aufsteigend sortiert.",
+    "Enthält die Liste nach dem Einlesen keine Bestellanforderungspositionen, wird die Erfolgsmeldung S051 ausgegeben."
+   ],
+   "Z": [
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-039-B06",
+   "soll": "Mit Zurück, Beenden oder Abbrechen wird das Programm verlassen.",
+   "zeilen": [
+    255,
+    258
+   ],
+   "code": [
+    "255:   CASE ok_code.",
+    "258:       LEAVE PROGRAM."
+   ],
+   "X": [
+    "Das Programm wird beendet."
+   ],
+   "Y": [
+    "Bei den Funktionscodes BACK, EXIT oder CANC wird das Programm sofort beendet."
+   ],
+   "Z": [
+    "Die Screenfolge wird beendet."
+   ]
+  },
+  {
+   "id": "BM-039-B07",
+   "soll": "Beim Freigeben wird jede markierte Position mit dem Code des Anwenders für ihre Freigabegruppe bearbeitet.",
+   "zeilen": [
+    94,
+    95,
+    276
+   ],
+   "code": [
+    "94:   LOOP AT gt_line INTO gs_line WHERE mark = 'X'.",
+    "95:     READ TABLE gt_codes INTO DATA(ls_code) WITH KEY frggr = gs_line-frggr.",
+    "276:       PERFORM markierte_freigeben."
+   ],
+   "X": [
+    "Die Zeilen aus gt_line, bei denen das Feld mark gesetzt ist, werden einzeln verarbeitet.",
+    "In der Tabelle gt_codes wird nach einer passenden Zeile gesucht.",
+    "Das Unterprogramm markierte_freigeben wird aufgerufen; es ruft ENQUEUE_EMEBANE, BAPI_REQUISITION_RELEASE und BAPI_TRANSACTION_ROLLBACK auf, schreibt mit BAPI_TRANSACTION_COMMIT fest und gibt eine Meldung aus."
+   ],
+   "Y": [
+    "Für jede in der Anzeigeliste markierte Bestellanforderungsposition wird die Freigabe angestoßen.",
+    "Wird der Funktionscode RELE ausgelöst, wird das Unterprogramm zur Freigabe der markierten Positionen aufgerufen."
+   ],
+   "Z": [
+    "Jede Zeile aus gt_line wird einzeln verarbeitet.",
+    "In der Tabelle wird nach einer passenden Zeile gesucht.",
+    "Das Unterprogramm markierte_freigeben wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-039-B08",
+   "soll": "Liegt der Positionswert über der Wertgrenze des Codes, wird nicht freigegeben (Vier-Augen-Prinzip) und das gemeldet.",
+   "zeilen": [
+    100,
+    101
+   ],
+   "code": [
+    "100:     IF lv_limit > 0 AND gs_line-wert > lv_limit.",
+    "101:       MESSAGE i054 WITH gs_line-banfn gs_line-bnfpo lv_limit."
+   ],
+   "X": [
+    "Wenn das Feld lv_limit größer als 0 ist und das Feld gs_line-wert größer als lv_limit ist, wird eine Informationsmeldung ausgegeben und der Schleifendurchlauf übersprungen.",
+    "Die Informationsmeldung 054 wird ausgegeben."
+   ],
+   "Y": [
+    "Ist die Wertgrenze des Benutzers größer als 0 und übersteigt der Positionswert diese Grenze, wird die Informationsmeldung I054 ausgegeben und die Position übersprungen."
+   ],
+   "Z": [
+    "Für lv_limit > 0 AND gs_line-wert > lv_limit wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-039-B09",
+   "soll": "Eigene Bestellanforderungen darf der Anwender nicht selbst freigeben.",
+   "zeilen": [
+    106,
+    107
+   ],
+   "code": [
+    "106:     IF gs_line-ernam = sy-uname.",
+    "107:       MESSAGE i055 WITH gs_line-banfn."
+   ],
+   "X": [
+    "Für Erfasser mit dem Wert sy-uname wird eine Informationsmeldung ausgegeben und der Schleifendurchlauf übersprungen.",
+    "Die Informationsmeldung 055 wird ausgegeben."
+   ],
+   "Y": [
+    "Wurde die Bestellanforderung durch den aktuellen Benutzer selbst angelegt, wird die Informationsmeldung I055 ausgegeben und die Freigabe der Position übersprungen."
+   ],
+   "Z": [
+    "Für gs_line-ernam mit dem Wert sy-uname wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-039-B10",
+   "soll": "Ist die Position von jemand anderem gesperrt, wird sie mit Hinweis übersprungen.",
+   "zeilen": [
+    112,
+    119,
+    120
+   ],
+   "code": [
+    "112:     CALL FUNCTION 'ENQUEUE_EMEBANE'",
+    "119:     IF sy-subrc <> 0.",
+    "120:       MESSAGE i056 WITH gs_line-banfn sy-msgv1."
+   ],
+   "X": [
+    "Der Funktionsbaustein ENQUEUE_EMEBANE wird aufgerufen.",
+    "Ist die Sperre über ENQUEUE_EMEBANE nicht zu erhalten, wird eine Informationsmeldung ausgegeben und der Schleifendurchlauf übersprungen.",
+    "Die Informationsmeldung 056 wird ausgegeben."
+   ],
+   "Y": [
+    "Über den Funktionsbaustein ENQUEUE_EMEBANE wird eine Sperre auf die Bestellanforderungsposition angefordert.",
+    "Schlägt die Sperrung fehl, wird die Informationsmeldung I056 ausgegeben und die Position übersprungen."
+   ],
+   "Z": [
+    "Der Funktionsbaustein ENQUEUE_EMEBANE wird aufgerufen.",
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-039-B11",
+   "soll": "Sonst wird die Position mit dem Code freigegeben und bei Erfolg festgeschrieben, bei Fehler zurückgerollt; danach wird die Sperre freigegeben.",
+   "zeilen": [
+    126,
+    144,
+    145,
+    150,
+    154
+   ],
+   "code": [
+    "126:     CALL FUNCTION 'BAPI_REQUISITION_RELEASE'",
+    "144:     IF sy-subrc = 0.",
+    "145:       CALL FUNCTION 'BAPI_TRANSACTION_COMMIT'",
+    "150:       CALL FUNCTION 'BAPI_TRANSACTION_ROLLBACK'.",
+    "154:     CALL FUNCTION 'DEQUEUE_EMEBANE'"
+   ],
+   "X": [
+    "Der Code übergibt gs_line-banfn an BAPI_REQUISITION_RELEASE und übernimmt dessen Ausgabe nach lv_status.",
+    "Gelingt der Aufruf von BAPI_REQUISITION_RELEASE, wird BAPI_TRANSACTION_COMMIT aufgerufen, sonst BAPI_TRANSACTION_ROLLBACK aufgerufen.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_COMMIT wird aufgerufen.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_ROLLBACK wird aufgerufen.",
+    "Der Funktionsbaustein DEQUEUE_EMEBANE wird aufgerufen."
+   ],
+   "Y": [
+    "Über den Funktionsbaustein BAPI_REQUISITION_RELEASE wird die Freigabe der Bestellanforderungsposition mit dem ermittelten Freigabecode ausgeführt.",
+    "Ist die Freigabe erfolgreich, wird die Transaktion über den Baustein BAPI_TRANSACTION_COMMIT mit Wartekennzeichen festgeschrieben und der Zähler der erfolgreichen Freigaben erhöht.",
+    "Schlägt die Freigabe fehl, werden die Änderungen über den Baustein BAPI_TRANSACTION_ROLLBACK verworfen und der Fehlerzähler erhöht.",
+    "Über den Funktionsbaustein DEQUEUE_EMEBANE wird die Sperre der Bestellanforderungsposition aufgehoben."
+   ],
+   "Z": [
+    "Der Code übergibt gs_line-banfn an BAPI_REQUISITION_RELEASE und übernimmt dessen Ausgabe nach lv_status.",
+    "Das konvertierte Ergebnis wird in lv_status übernommen.",
+    "Bei Treffer wird BAPI_TRANSACTION_COMMIT aufgerufen.",
+    "Bei Treffer wird BAPI_TRANSACTION_COMMIT aufgerufen, sonst BAPI_TRANSACTION_ROLLBACK aufgerufen.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_COMMIT wird aufgerufen.",
+    "Für andere sy-subrc wird BAPI_TRANSACTION_ROLLBACK aufgerufen.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_ROLLBACK wird aufgerufen.",
+    "Der Funktionsbaustein DEQUEUE_EMEBANE wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-039-B12",
+   "soll": "Am Ende werden die Anzahlen freigegebener und nicht freigegebener Positionen gemeldet und die Liste beim nächsten Aufbau neu gelesen.",
+   "zeilen": [
+    160,
+    161
+   ],
+   "code": [
+    "160:   MESSAGE s057 WITH gv_anz_ok gv_anz_er.",
+    "161:   gv_loaded = abap_false."
+   ],
+   "X": [
+    "Die Statusmeldung 057 wird ausgegeben."
+   ],
+   "Y": [
+    "Nach Durchlauf aller markierten Positionen wird die Erfolgsmeldung S057 mit der Anzahl erfolgreicher und fehlerhafter Freigaben ausgegeben und das Ladekennzeichen zurückgesetzt."
+   ],
+   "Z": [
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-039-B13",
+   "soll": "Zum Ablehnen muss mindestens eine Position markiert sein; dann wird ein Popup für den Ablehnungsgrund geöffnet, der Pflicht ist.",
+   "zeilen": [
+    278,
+    279,
+    282,
+    299,
+    300
+   ],
+   "code": [
+    "278:       IF NOT line_exists( gt_line[ mark = 'X' ] ).",
+    "279:         MESSAGE w052.",
+    "282:       CALL SCREEN 0200 STARTING AT 10 5 ENDING AT 80 8.",
+    "299:       IF gv_grund IS INITIAL.",
+    "300:         MESSAGE e053."
+   ],
+   "X": [
+    "Wenn die Bedingung „NOT line_exists( gt_line[ mark = 'X' ] )“ erfüllt ist, wird eine Warnung ausgegeben und der Block verlassen.",
+    "Die Warnung 052 wird ausgegeben.",
+    "Das Programm ruft eine Screenfolge ab 0200 auf.",
+    "Ist das Feld gv_grund leer, wird eine Fehlermeldung ausgegeben.",
+    "Die Fehlermeldung 053 wird ausgegeben."
+   ],
+   "Y": [
+    "Wird der Funktionscode REJE ausgelöst und ist keine Zeile markiert, wird die Warnmeldung W052 ausgegeben und die Verarbeitung beendet.",
+    "Wird der Funktionscode REJE bei mindestens einer markierten Zeile ausgelöst, wird das Dialogfenster Dynpro 0200 aufgerufen.",
+    "Wird auf Dynpro 0200 mit OK bestätigt und ist kein Ablehnungsgrund angegeben, wird die Fehlermeldung E053 ausgegeben."
+   ],
+   "Z": [
+    "Für NOT line_exists( gt_line[ mark = 'X' ] ) wird eine Meldung ausgegeben und der Block verlassen.",
+    "Eine Meldung wird ausgegeben.",
+    "Es wird eine Meldung ausgegeben und der Block verlassen.",
+    "Das Programm ruft eine Screenfolge ab 0200 auf.",
+    "Ohne gv_grund wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-039-B14",
+   "soll": "Für die Wertehilfe zum Grund werden die Vorgabetexte in der Anmeldesprache angeboten.",
+   "zeilen": [
+    314,
+    318
+   ],
+   "code": [
+    "314:   SELECT grund_txt FROM zmm_reject_txt",
+    "318:   CALL FUNCTION 'F4IF_INT_TABLE_VALUE_REQUEST'"
+   ],
+   "X": [
+    "Es werden Sätze aus zmm_reject_txt selektiert.",
+    "Der Funktionsbaustein F4IF_INT_TABLE_VALUE_REQUEST wird aufgerufen."
+   ],
+   "Y": [
+    "Aus Tabelle ZMM_REJECT_TXT werden die Texte der Ablehnungsgründe zur aktuellen Anmeldesprache gelesen.",
+    "Über den Funktionsbaustein F4IF_INT_TABLE_VALUE_REQUEST wird die Suchhilfe für das Feld des Ablehnungsgrunds auf dem Dynpro geöffnet."
+   ],
+   "Z": [
+    "Es werden Sätze aus zmm_reject_txt selektiert.",
+    "Der Funktionsbaustein F4IF_INT_TABLE_VALUE_REQUEST wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-039-B15",
+   "soll": "Jede markierte, nicht fremd gesperrte Position wird abgelehnt, indem ihr Bearbeitungsstatus direkt in der Bestellanforderung auf 08 gesetzt und der Grund mit Anwender und Datum protokolliert wird.",
+   "zeilen": [
+    170,
+    178,
+    184,
+    188
+   ],
+   "code": [
+    "170:   LOOP AT gt_line INTO gs_line WHERE mark = 'X'.",
+    "178:     IF sy-subrc <> 0.",
+    "184:     UPDATE eban SET banpr = '08'",
+    "188:     INSERT zmm_pr_reject FROM @( VALUE #( banfn = gs_line-banfn"
+   ],
+   "X": [
+    "Die Zeilen aus gt_line, bei denen das Feld mark gesetzt ist, werden einzeln verarbeitet.",
+    "Ist die Sperre über ENQUEUE_EMEBANE nicht zu erhalten, wird eine Informationsmeldung ausgegeben und der Schleifendurchlauf übersprungen.",
+    "Das Feld banpr der Bestellanforderung wird geändert. Ob eine Zeile getroffen wird, garantiert der Code nicht."
+   ],
+   "Y": [
+    "Für jede in der Anzeigeliste markierte Bestellanforderungsposition wird die Ablehnung durchlaufen.",
+    "Kann die Position nicht gesperrt werden, wird die Informationsmeldung I056 ausgegeben und die Position übersprungen.",
+    "In Tabelle EBAN wird der Bearbeitungsstatus BANPR der Bestellanforderungsposition auf 08 und das Änderungsdatum AEDAT auf das Tagesdatum gesetzt.",
+    "In Tabelle ZMM_PR_REJECT wird ein Eintrag mit Bestellanforderungsnummer, Positionsnummer, Ablehnungsgrund, Benutzername und Tagesdatum gespeichert."
+   ],
+   "Z": [
+    "Jede Zeile aus gt_line wird einzeln verarbeitet.",
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Die banpr in eban wird geändert. Ob eine Zeile getroffen wird, garantiert der Code nicht."
+   ]
+  },
+  {
+   "id": "BM-039-B16",
+   "soll": "Der Anforderer wird über das Workflow-Ereignis ZREJECTED der Bestellanforderung mit Grund und Ablehnendem informiert; scheitert das, gibt es einen Hinweis, die Ablehnung bleibt aber bestehen.",
+   "zeilen": [
+    198,
+    208,
+    209
+   ],
+   "code": [
+    "198:     CALL FUNCTION 'SAP_WAPI_CREATE_EVENT'",
+    "208:     IF lv_rc <> 0.",
+    "209:       MESSAGE i058 WITH gs_line-banfn."
+   ],
+   "X": [
+    "Der Code übergibt 'BUS2105' an SAP_WAPI_CREATE_EVENT und übernimmt dessen Ausgabe nach lv_rc.",
+    "Wenn das Feld lv_rc ungleich 0 ist, wird eine Informationsmeldung ausgegeben.",
+    "Die Informationsmeldung 058 wird ausgegeben."
+   ],
+   "Y": [
+    "Über den Funktionsbaustein SAP_WAPI_CREATE_EVENT wird für die Bestellanforderung das Workflow-Ereignis ZREJECTED zum Objekttyp BUS2105 mit Ablehnungsgrund und Benutzername erzeugt.",
+    "Tritt bei der Erzeugung des Workflow-Ereignisses ein Fehler auf, wird die Informationsmeldung I058 ausgegeben."
+   ],
+   "Z": [
+    "Der Code übergibt 'BUS2105' an SAP_WAPI_CREATE_EVENT und übernimmt dessen Ausgabe nach lv_rc.",
+    "Das konvertierte Ergebnis wird in lv_rc übernommen.",
+    "Für lv_rc ungleich 0 wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-039-B17",
+   "soll": "Jede Ablehnung wird einzeln festgeschrieben und die Sperre freigegeben; danach schließt sich das Popup.",
+   "zeilen": [
+    212,
+    213,
+    304
+   ],
+   "code": [
+    "212:     COMMIT WORK.",
+    "213:     CALL FUNCTION 'DEQUEUE_EMEBANE'",
+    "304:       LEAVE TO SCREEN 0."
+   ],
+   "X": [
+    "Mit COMMIT WORK wird die Änderung persistiert.",
+    "Es wird COMMIT WORK ausgeführt und DEQUEUE_EMEBANE aufgerufen.",
+    "Der Funktionsbaustein DEQUEUE_EMEBANE wird aufgerufen.",
+    "Es wird markierte_ablehnen aufgerufen und die Screenfolge beendet.",
+    "Die Screenfolge wird beendet."
+   ],
+   "Y": [
+    "Die Änderungen werden per COMMIT WORK auf der Datenbank festgeschrieben und die Sperre der Bestellanforderungsposition wird über DEQUEUE_EMEBANE aufgehoben.",
+    "Wird auf Dynpro 0200 mit OK bestätigt und liegt ein Ablehnungsgrund vor, wird das Unterprogramm zur Ablehnung der Positionen mit diesem Grund ausgeführt und das Fenster geschlossen."
+   ],
+   "Z": [
+    "Mit COMMIT WORK wird die Änderung persistiert.",
+    "Es wird COMMIT WORK ausgeführt und DEQUEUE_EMEBANE aufgerufen.",
+    "Der Funktionsbaustein DEQUEUE_EMEBANE wird aufgerufen.",
+    "Es wird markierte_ablehnen aufgerufen und die Screenfolge beendet.",
+    "Die Screenfolge wird beendet."
+   ]
+  },
+  {
+   "id": "BM-039-B18",
+   "soll": "Detail öffnet die erste markierte oder die Position unter dem Cursor in der Banf-Anzeige ME53N; ohne Auswahl erscheint ein Hinweis.",
+   "zeilen": [
+    223,
+    227,
+    228,
+    233
+   ],
+   "code": [
+    "223:   READ TABLE gt_line INTO gs_line WITH KEY mark = 'X'.",
+    "227:     IF sy-subrc <> 0.",
+    "228:       MESSAGE s052.",
+    "233:   CALL TRANSACTION 'ME53N' AND SKIP FIRST SCREEN."
+   ],
+   "X": [
+    "In der Tabelle gt_line wird nach einer passenden Zeile gesucht.",
+    "Ohne Treffer wird eine Statusmeldung ausgegeben und der Block verlassen.",
+    "Die Statusmeldung 052 wird ausgegeben.",
+    "Die Transaktion ME53N wird aufgerufen; das Einstiegsbild wird übersprungen."
+   ],
+   "Y": [
+    "Ist weder eine Zeile markiert noch eine Zeile per Cursor in der Anzeigeliste ermittelbar, wird die Erfolgsmeldung S052 ausgegeben und die Detailanzeige abgebrochen.",
+    "Die Bestellanforderungsnummer der gewählten Zeile wird im SPA/GPA-Parameter BAN abgelegt und die Transaktion ME53N unter Überspringen des Einstiegsbildes aufgerufen."
+   ],
+   "Z": [
+    "In der Tabelle wird nach einer passenden Zeile gesucht.",
+    "Ohne Treffer wird eine Meldung ausgegeben und der Block verlassen.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "Eine Meldung wird ausgegeben.",
+    "Es wird eine Meldung ausgegeben und der Block verlassen.",
+    "Die Anlage wird über die Transaktion ME53N angestoßen. Ob und was persistiert wird, entscheidet die aufgerufene Transaktion."
+   ]
+  },
+  {
+   "id": "BM-039-B19",
+   "soll": "Summe zeigt Anzahl und Gesamtwert der markierten Positionen; Auffrischen lädt die Liste neu.",
+   "zeilen": [
+    241,
+    247,
+    286
+   ],
+   "code": [
+    "241:     lv_summe = lv_summe + gs_line-wert.",
+    "247:     MESSAGE i060 WITH lv_anz lv_summe.",
+    "286:       gv_loaded = abap_false."
+   ],
+   "X": [
+    "Wenn das Feld lv_anz gleich 0 ist, wird eine Statusmeldung ausgegeben, sonst eine Informationsmeldung ausgegeben.",
+    "Die Informationsmeldung 060 wird ausgegeben."
+   ],
+   "Y": [
+    "Für alle markierten Positionen der Anzeigeliste werden die Werte summiert und die Anzahl der Positionen ermittelt.",
+    "Sind markierte Positionen vorhanden, wird die Informationsmeldung I060 mit der Anzahl und der Gesamtsumme ausgegeben.",
+    "Wird der Funktionscode REFR gewählt, wird das Ladekennzeichen auf den Anfangszustand gesetzt."
+   ],
+   "Z": [
+    "Für lv_anz mit dem Wert 0 wird eine Meldung ausgegeben, sonst eine Meldung ausgegeben.",
+    "Für andere lv_anz wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  }
+ ]
+}

@@ -1,0 +1,213 @@
+{
+ "id": "BM-106",
+ "titel": "Zählerstände aus BDE-Datei hochladen: plausibilisieren, Messbeleg anlegen, Testlauf",
+ "prozess": "Der Job wird mit dem Pfad der BDE-Datei und einem Testlaufkennzeichen gestartet. Er öffnet die Datei auf dem Applikationsserver; ist sie nicht lesbar, bricht er mit einer Fehlermeldung ab. Danach liest er die Datei Satz für Satz bis zum Dateiende und zerlegt jeden Satz in Equipment, Messpunkt, Datum, Uhrzeit und Zählerstand. Lässt sich der Zählerstand nicht als Zahl lesen, wird der Satz als fehlerhaft gemeldet und übersprungen. Jeder Zählerstand wird über einen Kundenbaustein gegen den letzten Stand des Messpunkts plausibilisiert; ein rückläufiger Stand wird gemeldet und übersprungen. Im Testlauf gibt der Job nur den ermittelten Zuwachs aus. Im Echtlauf legt er je Satz einen Messbeleg mit Herkunft BDE-Upload an, meldet Fehler beim Anlegen und schreibt jeden erfolgreichen Messbeleg sofort fest. Die Equipmentnummer aus der Datei wird nicht geprüft. Am Dateiende wird die Datei geschlossen.",
+ "verboten": [
+  "source.abap:39 — kein Fachsatz „es wird geprüft, dass der Messpunkt zum Equipment der Datei gehört“: die Equipmentnummer wird eingelesen, aber nirgends verwendet",
+  "source.abap:63 — kein Fachsatz „im Testlauf werden die Messbelege simuliert angelegt“: der Testlauf ruft den Anlagebaustein gar nicht auf",
+  "gesamte Scheibe — kein Fachsatz „fehlerhafte Sätze werden in eine Fehlerdatei geschrieben oder die Datei wird archiviert“: Fehler erscheinen nur in der Liste, die Datei wird nur geschlossen",
+  "source.abap:87 — kein Fachsatz „der Upload wird bei einem Fehler vollständig zurückgerollt“: jeder erfolgreiche Messbeleg wird einzeln festgeschrieben"
+ ],
+ "saetze": [
+  {
+   "id": "BM-106-B01",
+   "soll": "Die BDE-Datei mit Zählerständen wird vom Applikationsserver geöffnet; ist sie nicht lesbar, bricht der Lauf mit Fehlermeldung ab.",
+   "zeilen": [
+    28,
+    29,
+    30
+   ],
+   "code": [
+    "28:   OPEN DATASET p_file FOR INPUT IN TEXT MODE ENCODING DEFAULT.",
+    "29:   IF sy-subrc <> 0.",
+    "30:     MESSAGE e050(zpm) WITH p_file."
+   ],
+   "X": [
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ],
+   "Y": [
+    "Lässt sich die Datei nicht öffnen, wird eine Fehlermeldung ausgegeben.",
+    "Die Fehlermeldung 050(ZPM) wird ausgegeben."
+   ],
+   "Z": [
+    "Die Datei mit dem angegebenen Dateinamen wird auf dem Applikationsserver im Textmodus zum Lesen geöffnet.",
+    "Konnte die Datei nicht geöffnet werden, wird die Fehlermeldung E050(zpm) mit dem Dateinamen ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-106-B02",
+   "soll": "Die Datei wird Satz für Satz bis zum Dateiende gelesen und in Messpunkt, Datum, Uhrzeit und Zählerstand zerlegt.",
+   "zeilen": [
+    33,
+    34,
+    35
+   ],
+   "code": [
+    "33:   DO.",
+    "34:     READ DATASET p_file INTO gv_line.",
+    "35:     IF sy-subrc <> 0."
+   ],
+   "X": [
+    "Ohne Treffer wird der Block verlassen."
+   ],
+   "Y": [
+    "Ist das Dateiende erreicht, wird die Schleife verlassen."
+   ],
+   "Z": [
+    "In einer Schleife wird jeweils eine Zeile aus der Datei gelesen; kann keine Zeile mehr gelesen werden, wird die Schleife beendet."
+   ]
+  },
+  {
+   "id": "BM-106-B03",
+   "soll": "Ein Zählerstand, der sich nicht in eine Zahl umwandeln lässt, wird als fehlerhafter Satz gemeldet und übersprungen.",
+   "zeilen": [
+    42,
+    44
+   ],
+   "code": [
+    "42:         gv_readg = gs_rec-recdc.",
+    "44:         WRITE: / 'Satz fehlerhaft:', gv_line."
+   ],
+   "X": [
+    "Bei Treffern werden Satz fehlerhaft: und gv_line als Liste ausgegeben.",
+    "Satz fehlerhaft: wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "gv_line wird ausgegeben."
+   ],
+   "Y": [
+    "Satz fehlerhaft: und gv_line werden ausgegeben.",
+    "Es wird Satz fehlerhaft: ausgegeben, gv_line ausgegeben und der Schleifendurchlauf übersprungen.",
+    "Satz fehlerhaft: wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code."
+   ],
+   "Z": [
+    "Schlägt die Konvertierung des Zählerstands in ein numerisches Format fehl, wird die Zeile mit dem Hinweis 'Satz fehlerhaft:' ausgegeben und mit dem nächsten Datensatz fortgefahren."
+   ]
+  },
+  {
+   "id": "BM-106-B04",
+   "soll": "Jeder Zählerstand wird gegen den letzten Stand des Messpunkts plausibilisiert; ist er kleiner, wird er gemeldet und übersprungen.",
+   "zeilen": [
+    48,
+    58,
+    59
+   ],
+   "code": [
+    "48:     CALL FUNCTION 'Z_PM_ZAEHLER_PLAUSI'",
+    "58:     IF sy-subrc <> 0.",
+    "59:       WRITE: / gs_rec-point, gs_rec-recdc, 'kleiner als letzter Zählerstand'."
+   ],
+   "X": [
+    "Der Code übergibt gs_rec-point an Z_PM_ZAEHLER_PLAUSI und übernimmt dessen Ausgabe nach gv_diff.",
+    "Das konvertierte Ergebnis wird in gv_diff übernommen.",
+    "Ohne Treffer wird gs_rec-point ausgegeben, gs_rec-recdc ausgegeben und kleiner als letzter Zählerstand ausgegeben.",
+    "Bei Treffern werden gs_rec-point, gs_rec-recdc und kleiner als letzter Zählerstand als Liste ausgegeben.",
+    "gs_rec-point wird ausgegeben.",
+    "gs_rec-recdc wird ausgegeben.",
+    "kleiner als letzter Zählerstand wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code."
+   ],
+   "Y": [
+    "Der Code übergibt gs_rec-point an Z_PM_ZAEHLER_PLAUSI und übernimmt dessen Ausgabe nach gv_diff.",
+    "Scheitert der Aufruf von Z_PM_ZAEHLER_PLAUSI, wird gs_rec-point ausgegeben, gs_rec-recdc ausgegeben, kleiner als letzter Zählerstand ausgegeben und der Schleifendurchlauf übersprungen.",
+    "kleiner als letzter Zählerstand wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code."
+   ],
+   "Z": [
+    "Der Zählerstand wird über den Funktionsbaustein Z_PM_ZAEHLER_PLAUSI anhand von Messpunkt, Ablesewert und Ablesedatum plausibilisiert, wobei die Differenz zum letzten Stand ermittelt wird.",
+    "Ist die Plausibilisierung fehlerhaft, wird der Messpunkt und der Zählerstand mit dem Hinweis 'kleiner als letzter Zählerstand' ausgegeben und mit dem nächsten Datensatz fortgefahren."
+   ]
+  },
+  {
+   "id": "BM-106-B05",
+   "soll": "Im Testlauf wird nur der ermittelte Zuwachs ausgegeben, es entsteht kein Messbeleg.",
+   "zeilen": [
+    63,
+    64
+   ],
+   "code": [
+    "63:     IF p_test = 'X'.",
+    "64:       WRITE: / gs_rec-point, gs_rec-recdc, 'Testlauf, Zuwachs:', gv_diff."
+   ],
+   "X": [
+    "Mit gesetztem p_test wird gs_rec-point ausgegeben, gs_rec-recdc ausgegeben, Testlauf, Zuwachs: ausgegeben und Das vom Funktionsbaustein zurückgegebene Feld ausgegeben.",
+    "Bei Treffern werden gs_rec-point, gs_rec-recdc, Testlauf, Zuwachs: und Das vom Funktionsbaustein zurückgegebene Feld als Liste ausgegeben.",
+    "gs_rec-point wird ausgegeben.",
+    "gs_rec-recdc wird ausgegeben.",
+    "Testlauf, Zuwachs: wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "Das vom Funktionsbaustein zurückgegebene Feld wird ausgegeben."
+   ],
+   "Y": [
+    "Mit gesetztem p_test wird gs_rec-point ausgegeben, gs_rec-recdc ausgegeben, Testlauf, Zuwachs: ausgegeben, Das vom Funktionsbaustein zurückgegebene Feld ausgegeben und der Schleifendurchlauf übersprungen.",
+    "Testlauf, Zuwachs: wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code."
+   ],
+   "Z": [
+    "Ist das Testlauf-Kennzeichen gesetzt, werden Messpunkt, Zählerstand und der ermittelte Zuwachs ausgegeben und mit dem nächsten Datensatz fortgefahren."
+   ]
+  },
+  {
+   "id": "BM-106-B06",
+   "soll": "Im Echtlauf wird zu jedem gültigen Zählerstand ein Messbeleg mit Herkunft BDE-Upload angelegt.",
+   "zeilen": [
+    68
+   ],
+   "code": [
+    "68:     CALL FUNCTION 'MEASUREM_DOCUM_RFC_SINGLE_001'"
+   ],
+   "X": [
+    "Der Code übergibt gs_rec-point an MEASUREM_DOCUM_RFC_SINGLE_001 und übernimmt dessen Ausgabe nach gv_mdocm.",
+    "Das konvertierte Ergebnis wird in gv_mdocm übernommen."
+   ],
+   "Y": [
+    "Der Code übergibt gs_rec-point an MEASUREM_DOCUM_RFC_SINGLE_001 und übernimmt dessen Ausgabe nach gv_mdocm."
+   ],
+   "Z": [
+    "Über den Funktionsbaustein MEASUREM_DOCUM_RFC_SINGLE_001 wird ein Messbeleg mit Messpunkt, Ablesedatum, Ableseuhrzeit, Zählerstand, dem Kurztext 'BDE-Upload' und Herkunftskennzeichen 'A' angelegt."
+   ]
+  },
+  {
+   "id": "BM-106-B07",
+   "soll": "Schlägt das Anlegen fehl, wird der Fehler zum Messpunkt ausgegeben und der Satz übersprungen; sonst wird der Messbeleg sofort festgeschrieben.",
+   "zeilen": [
+    83,
+    84,
+    87
+   ],
+   "code": [
+    "83:     IF sy-subrc <> 0.",
+    "84:       WRITE: / gs_rec-point, 'Fehler beim Anlegen', sy-msgid, sy-msgno.",
+    "87:     COMMIT WORK."
+   ],
+   "X": [
+    "Ohne Treffer wird gs_rec-point ausgegeben, Fehler beim Anlegen ausgegeben, sy-msgid ausgegeben und sy-msgno ausgegeben.",
+    "Bei Treffern werden gs_rec-point, Fehler beim Anlegen, sy-msgid und sy-msgno als Liste ausgegeben.",
+    "gs_rec-point wird ausgegeben.",
+    "Fehler beim Anlegen wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "sy-msgid wird ausgegeben.",
+    "sy-msgno wird ausgegeben.",
+    "Mit COMMIT WORK wird die Änderung persistiert."
+   ],
+   "Y": [
+    "Scheitert der Aufruf von MEASUREM_DOCUM_RFC_SINGLE_001, wird gs_rec-point ausgegeben, Fehler beim Anlegen ausgegeben, sy-msgid ausgegeben, sy-msgno ausgegeben und der Schleifendurchlauf übersprungen.",
+    "Fehler beim Anlegen wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "Mit COMMIT WORK wird die Änderung persistiert."
+   ],
+   "Z": [
+    "Tritt beim Anlegen des Messbelegs ein Fehler auf, werden der Messpunkt, der Hinweistext 'Fehler beim Anlegen' sowie Nachrichtenklasse und -nummer ausgegeben und mit dem nächsten Datensatz fortgefahren.",
+    "Wurde der Messbeleg erfolgreich erzeugt, werden die Datenbankänderungen festgeschrieben."
+   ]
+  },
+  {
+   "id": "BM-106-B08",
+   "soll": "Am Dateiende wird die Datei geschlossen.",
+   "zeilen": [
+    90
+   ],
+   "code": [
+    "90:   CLOSE DATASET p_file."
+   ],
+   "X": [],
+   "Y": [],
+   "Z": [
+    "Nach Beenden der Schleife wird die Datei auf dem Applikationsserver geschlossen."
+   ]
+  }
+ ]
+}

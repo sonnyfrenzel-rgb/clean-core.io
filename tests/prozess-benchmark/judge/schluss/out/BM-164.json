@@ -1,0 +1,91 @@
+{
+ "id": "BM-164",
+ "urteile": [
+  {
+   "id": "BM-164-B01",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig",
+     "grammatik"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig",
+     "grammatik"
+    ]
+   },
+   "kurz": "Nur Y nennt den Stichtag; X/Z nur Kunde und Feldliste."
+  },
+  {
+   "id": "BM-164-B02",
+   "X": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "kurz": "Nur Y beschreibt die Benutzer-Hintertür für MUELLERK."
+  },
+  {
+   "id": "BM-164-B03",
+   "X": {
+    "urteil": "fehlt",
+    "mangel": [
+     "zu_allgemein"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "zu_allgemein",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Nur Y beschreibt die Saldierung A plus, Rest minus; Z nennt nur Gruppierung, X nur Schleife."
+  },
+  {
+   "id": "BM-164-B04",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "kurz": "Y fachlich; X/Z mit Feldnamen lv_saldo/lv_lgmat, X zusätzlich redundant."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

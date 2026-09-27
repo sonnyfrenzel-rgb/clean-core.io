@@ -1,0 +1,83 @@
+{
+ "id": "BM-042",
+ "urteile": [
+  {
+   "id": "BM-042-B01",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Y": {
+    "urteil": "abweichend",
+    "mangel": [
+     "falsch",
+     "technisch",
+     "grammatik"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "kurz": "X technisch mit Feldnamen, Y erfindet 'kleinere' und eine Schleife, Z fachlich korrekt."
+  },
+  {
+   "id": "BM-042-B02",
+   "X": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "kurz": "Nur Z beschreibt die Übernahme der Referenz in die Zuordnung bei Debitorenzeilen."
+  },
+  {
+   "id": "BM-042-B03",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "kurz": "X und Y nennen nur das Feld xopvw; Z erklärt OP-Verwaltungskennzeichen aus SKB1 für Sachkonten."
+  },
+  {
+   "id": "BM-042-B04",
+   "X": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "kurz": "Nur Z nennt die ersten 18 Zeichen des Kopftexts bei OP-geführten Konten."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

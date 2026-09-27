@@ -1,0 +1,164 @@
+{
+ "id": "BM-047",
+ "urteile": [
+  {
+   "id": "BM-047-B01",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "kurz": "X und Z nennen nur das Berechtigungsobjekt und 'eine Zeile'; Y fachlich mit Fehlermeldung."
+  },
+  {
+   "id": "BM-047-B02",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Nur Y nennt die Selektion ungebuchter Abgrenzungen der Periode."
+  },
+  {
+   "id": "BM-047-B03",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "kurz": "X und Z nur Parameterübergabe; Y nennt letzten Monatstag als Buchungsdatum."
+  },
+  {
+   "id": "BM-047-B04",
+   "X": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "zu_allgemein"
+    ]
+   },
+   "Z": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "kurz": "Nur Y erwähnt den Belegaufbau, ohne Soll/Haben-Konten und Belegart."
+  },
+  {
+   "id": "BM-047-B05",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "falsch",
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "kurz": "X und Z technisch; Y fachlich, sagt aber 'gebucht' an der POST-Stelle und lässt die Rückmeldungen aus."
+  },
+  {
+   "id": "BM-047-B06",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "kurz": "X ohne Fortfahren und mit Code-Bedingung, Z mit Code-Bedingung; Y fachlich."
+  },
+  {
+   "id": "BM-047-B07",
+   "X": {
+    "urteil": "abweichend",
+    "mangel": [
+     "falsch",
+     "technisch",
+     "grammatik"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "X behauptet, es gebe keinen Commit, und erfindet 'kleinere'; Y vollständig; Z ohne Belegnummer/Stornodatum."
+  }
+ ],
+ "verboten_verletzt": [
+  {
+   "variante": "Y",
+   "satz": "Ist der Testmodus nicht aktiv, wird der Beleg über den Funktionsbaustein BAPI_ACC_DOCUMENT_POST gebucht und dessen Objektschlüssel übernommen.",
+   "grund": "Behauptet an Zeile 73, der Beleg sei gebucht; festgeschrieben wird erst mit BAPI_TRANSACTION_COMMIT."
+  }
+ ],
+ "soll_zweifel": []
+}

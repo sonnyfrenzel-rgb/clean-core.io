@@ -1,0 +1,96 @@
+{
+ "id": "BM-184",
+ "titel": "Ablaufhinweis Serviceverträge per E-Mail an den Innendienst (CL_BCS)",
+ "prozess": "Ein nächtlicher Job übergibt der Methode die Serviceverträge, die demnächst auslaufen, und die Mailadresse des Vertriebsinnendienstes. Die Methode baut daraus eine Textliste mit Vertragsnummer, Kunde und Vertragsende im Datumsformat des Benutzers. Sie legt einen Sendeauftrag an, setzt die Liste als Textdokument mit dem Betreff „Auslaufende Serviceverträge“, trägt die Internetadresse als Empfänger ein und versendet die Mail. Danach schreibt sie den Versandauftrag mit COMMIT WORK fest. Tritt beim Anlegen, Befüllen oder Versenden ein Fehler des Versanddienstes auf, gibt sie ihn als eigene Ausnahme an den Job weiter. Eine leere Vertragsliste wird nicht abgefangen; dann geht eine Mail ohne Inhalt hinaus.",
+ "verboten": [
+  "source.abap:5 — kein Fachsatz „ohne auslaufende Verträge wird keine Mail versendet“: es gibt keine Prüfung auf eine leere Liste, dann geht eine Mail ohne Inhalt hinaus",
+  "source.abap:16 — kein Fachsatz „die Mail wird mit PDF-Anhang versendet“ oder „an den Kunden versendet“: es ist eine reine Textmail ohne Anhang an die übergebene interne Adresse",
+  "gesamte Scheibe — kein Fachsatz „die Verträge werden verlängert oder gekündigt“: die Methode informiert nur"
+ ],
+ "saetze": [
+  {
+   "id": "BM-184-B01",
+   "soll": "Aus den übergebenen Serviceverträgen wird eine Textliste mit Vertragsnummer, Kunde und Vertragsende erstellt.",
+   "zeilen": [
+    5
+   ],
+   "code": [
+    "5:     DATA(lt_text) = VALUE bcsy_text("
+   ],
+   "X": [],
+   "Y": [],
+   "Z": [
+    "Für jeden Vertrag aus it_vertraege wird eine Textzeile mit der Vertragsnummer vbeln, der Kundennummer kunnr und dem Ablaufdatum venddat im Datumsformat des Benutzers erstellt."
+   ]
+  },
+  {
+   "id": "BM-184-B02",
+   "soll": "Die Liste wird als Textmail mit dem Betreff „Auslaufende Serviceverträge“ an die übergebene Internetadresse versendet.",
+   "zeilen": [
+    10,
+    11,
+    15,
+    16
+   ],
+   "code": [
+    "10:         DATA(lo_send) = cl_bcs=>create_persistent( ).",
+    "11:         lo_send->set_document( cl_document_bcs=>create_document(",
+    "15:         lo_send->add_recipient( cl_cam_address_bcs=>create_internet_address( iv_empfaenger ) ).",
+    "16:         lo_send->send( )."
+   ],
+   "X": [
+    "Der Rückgabewert der Methode create_persistent von cl_bcs wird nach lo_send übernommen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "Die Methode set_document von lo_send wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "Die Methode add_recipient von lo_send wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "Die Methode send von lo_send wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ],
+   "Y": [
+    "Der Rückgabewert der Methode create_persistent von cl_bcs wird nach lo_send übernommen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "Die Methode set_document von lo_send wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "Die Methode add_recipient von lo_send wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "Die Methode send von lo_send wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ],
+   "Z": [
+    "Ein Sendeauftrag wird erzeugt und mit einem Dokument des Typs RAW, dem Betreff Auslaufende Serviceverträge sowie dem zuvor erstellten Text bestückt.",
+    "Die in iv_empfaenger übergebene Internetadresse wird als Empfänger zum Sendeauftrag hinzugefügt.",
+    "Die E-Mail wird zum Versand gesendet."
+   ]
+  },
+  {
+   "id": "BM-184-B03",
+   "soll": "Der Versandauftrag wird sofort festgeschrieben.",
+   "zeilen": [
+    17
+   ],
+   "code": [
+    "17:         COMMIT WORK."
+   ],
+   "X": [
+    "Mit COMMIT WORK wird die Änderung persistiert."
+   ],
+   "Y": [
+    "Mit COMMIT WORK wird die Änderung persistiert."
+   ],
+   "Z": [
+    "Die Änderungen werden mittels COMMIT WORK auf der Datenbank festgeschrieben."
+   ]
+  },
+  {
+   "id": "BM-184-B04",
+   "soll": "Scheitert der Versand, wird der Fehler als eigene Ausnahme an den aufrufenden Job weitergegeben.",
+   "zeilen": [
+    18,
+    19
+   ],
+   "code": [
+    "18:       CATCH cx_bcs INTO DATA(lx_bcs).",
+    "19:         RAISE EXCEPTION TYPE zcx_cs_mail"
+   ],
+   "X": [],
+   "Y": [],
+   "Z": [
+    "Tritt beim Erstellen oder Versenden ein Fehler der Fehlerklasse cx_bcs auf, wird eine Ausnahme vom Typ zcx_cs_mail unter Weitergabe des ursprünglichen Fehlers ausgelöst."
+   ]
+  }
+ ]
+}

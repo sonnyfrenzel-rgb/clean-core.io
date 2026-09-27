@@ -1,0 +1,536 @@
+{
+ "id": "BM-137",
+ "titel": "RE-FX Indexmiete: Mietanpassung nach Verbraucherpreisindex mit Schwelle und Jahresfrist, Vertragsänderung, Mieterbrief per Smart Form und Fehlermail",
+ "prozess": "Die Mietbuchhaltung startet den Report nach Veröffentlichung des Verbraucherpreisindex mit Buchungskreis, Indexmonat, Wirksamkeitsdatum, optional einzelnen Verträgen sowie Testlauf- und Briefschalter. Ein Wirksamkeitsdatum, das kein Monatserster ist, wird schon auf dem Selektionsbild abgewiesen. Der Report liest die laufenden Verträge mit aktiver Wertsicherungsklausel und die Indexwerte des Monats; gibt es keine Verträge, erscheint ein Hinweis und es wird nichts ausgegeben. Je Vertrag berechnet er die Indexveränderung gegen den Basiswert; fehlt der Indexwert, bleibt die Veränderung unter der Schwelle oder fehlt die gültige Mietkondition, wird der Vertrag als übersprungen gelistet. Verträge, deren letzte Anpassung weniger als ein Jahr zurückliegt, fallen ohne Eintrag heraus. Für die übrigen ergibt sich die neue Miete aus alter Miete mal Indexverhältnis, auf Cent gerundet. Im Echtlauf sperrt er jeden Vertrag, legt eine neue Konditionszeile ab dem Wirksamkeitsdatum an, schreibt bei Erfolg fest und schreibt Basiswert, Basismonat und Anpassungsdatum fort, bei Fehler rollt er zurück; danach entsperrt er. Sind Briefdruck gewählt und zentral eingeschaltet und ist das Formular vorhanden, druckt er für jeden angepassten Vertrag ein Anpassungsschreiben; unter dem Benutzer AKR_TEST nur als Vorschau. Verträge mit Fehler, Sperre oder Druckfehler meldet er per Mail an die Objektbetreuung. Zum Schluss zeigt er die Ergebnisliste. Eine alte SAPscript-Briefroutine steht noch im Code, wird aber nie aufgerufen. Die Fortschreibung des Basiswerts wird erst mit dem nächsten Commit wirksam; scheitert die Änderung des folgenden Vertrags, nimmt dessen Rollback sie wieder zurück, obwohl die neue Kondition bereits festgeschrieben ist.",
+ "verboten": [
+  "zre_indexmiete_f02.abap:134 — kein Fachsatz „der Brief wird per SAPscript gedruckt und das Briefdatum vermerkt“: die Routine BRIEF_SAPSCRIPT wird nirgends aufgerufen",
+  "zre_indexmiete_f01.abap:62 — kein Fachsatz „Verträge innerhalb der Jahresfrist werden als übersprungen gelistet“: sie fallen ohne Ergebniszeile heraus",
+  "zre_indexmiete_f02.abap:105 — kein Fachsatz „im Testlauf werden die Briefe nur in der Vorschau gezeigt“: die Vorschau hängt am Benutzernamen, im Testlauf werden gar keine Briefe erzeugt",
+  "zre_indexmiete_f02.abap:35 — kein Fachsatz „die bisherige Konditionszeile wird beendet“: übergeben wird nur eine neue Zeile ab dem Wirksamkeitsdatum",
+  "zre_indexmiete_f02.abap:51 — kein Fachsatz „die Fortschreibung von Basiswert und letzter Anpassung ist zusammen mit der Vertragsänderung festgeschrieben“: das UPDATE steht nach dem COMMIT und wird erst mit dem nächsten Commit wirksam; scheitert die Änderung des nächsten Vertrags, nimmt dessen Rollback die Fortschreibung mit zurück, während die neue Kondition bestehen bleibt"
+ ],
+ "saetze": [
+  {
+   "id": "BM-137-B01",
+   "soll": "Auf dem Selektionsbild wird ein Wirksamkeitsdatum, das kein Monatserster ist, mit einer Fehlermeldung abgewiesen.",
+   "zeilen": [
+    18,
+    19
+   ],
+   "code": [
+    "18:   IF p_ab+6(2) <> '01'.",
+    "19:     MESSAGE e210.            \"Wirksamkeit nur zum Monatsersten"
+   ],
+   "X": [
+    "Ist der Tag des Wirksamkeitsdatums ungleich dem ersten Tag des Monats ('01'), wird die Fehlermeldung 210 der Nachrichtenklasse ZRE ausgegeben."
+   ],
+   "Y": [
+    "Für p_ab+6(2) ungleich 01 wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ],
+   "Z": [
+    "Wenn das Feld p_ab+6(2) ungleich 01 ist, wird eine Fehlermeldung ausgegeben.",
+    "Die Fehlermeldung 210 wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-137-B02",
+   "soll": "Es werden die zum Wirksamkeitsdatum laufenden Verträge des Buchungskreises mit aktiver Wertsicherungsklausel gelesen, samt Index, Basiswert, Schwelle, letzter Anpassung und anzupassender Konditionsart.",
+   "zeilen": [
+    51
+   ],
+   "code": [
+    "51:   SELECT c~bukrs c~recnnr c~intreno c~recntxt"
+   ],
+   "X": [
+    "Aus der Vertragstabelle VICNCN und der Tabelle der Wertsicherungsklauseln ZRE_INDEX_VTR werden Buchungskreis, Vertragsnummer, internes Kennzeichen, Vertragstext, Index-ID, Basiswert, Basismonat, Schwelle, Datum der letzten Anpassung und Konditionsart für aktive Klauseln und zum Wirksamkeitsdatum gültige Verträge selektiert."
+   ],
+   "Y": [
+    "Es werden Sätze aus vicncn mit dem eingegebenen Buchungskreis selektiert."
+   ],
+   "Z": [
+    "Es werden Sätze aus vicncn mit dem eingegebenen Buchungskreis selektiert."
+   ]
+  },
+  {
+   "id": "BM-137-B03",
+   "soll": "Die Indexwerte des gewählten Indexmonats werden gelesen.",
+   "zeilen": [
+    64
+   ],
+   "code": [
+    "64:   SELECT * FROM zre_index_wert INTO TABLE gt_index"
+   ],
+   "X": [
+    "Aus der Tabelle ZRE_INDEX_WERT werden alle Indexwerte für den vorgegebenen Monat eingelesen."
+   ],
+   "Y": [
+    "Es werden Sätze aus zre_index_wert mit dem eingegebenen monat selektiert."
+   ],
+   "Z": [
+    "Es werden Sätze aus zre_index_wert mit dem eingegebenen monat selektiert."
+   ]
+  },
+  {
+   "id": "BM-137-B04",
+   "soll": "Gibt es keine solchen Verträge, erscheint ein Hinweis und es wird weder berechnet noch eine Liste ausgegeben.",
+   "zeilen": [
+    24,
+    25,
+    26,
+    36
+   ],
+   "code": [
+    "24:   IF gt_vtr IS INITIAL.",
+    "25:     MESSAGE s211 WITH p_bukrs DISPLAY LIKE 'E'.",
+    "26:     STOP.",
+    "36:   CHECK gt_erg IS NOT INITIAL."
+   ],
+   "X": [
+    "Werden keine passenden Verträge gefunden, wird die Statusmeldung 211 mit dem Buchungskreis als Fehler dargestellt und die Programmausführung beendet.",
+    "Liegen keine Anpassungsergebnisse vor, wird die Verarbeitung vor der Listausgabe beendet.",
+    "Liegen Anpassungsergebnisse vor, wird die ALV-Ausgabe der Ergebnisse aufgerufen."
+   ],
+   "Y": [
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben.",
+    "Nur Eine nicht leere gt_erg gehen weiter; kleinere werden übersprungen, die Schleife läuft weiter."
+   ],
+   "Z": [
+    "Ist die Tabelle gt_vtr leer, wird eine Statusmeldung ausgegeben.",
+    "Die Statusmeldung 211 wird ausgegeben, angezeigt wie eine Fehlermeldung.",
+    "Nur wenn das Feld gt_erg nicht leer ist, geht es weiter; sonst wird der Ereignisblock END-OF-SELECTION an dieser Stelle verlassen."
+   ]
+  },
+  {
+   "id": "BM-137-B05",
+   "soll": "Fehlt für den Index eines Vertrags der Wert des Monats, wird der Vertrag als übersprungen gelistet.",
+   "zeilen": [
+    82,
+    85
+   ],
+   "code": [
+    "82:     READ TABLE gt_index INTO DATA(ls_index)",
+    "85:     IF sy-subrc <> 0."
+   ],
+   "X": [
+    "Wird für die Index-ID des Vertrags im angegebenen Monat kein Indexwert gefunden, wird der Status auf 'S' gesetzt, der Text 'Indexwert fehlt' hinterlegt und der Vertrag übersprungen."
+   ],
+   "Y": [
+    "In der Tabelle wird nach einer passenden Zeile gesucht.",
+    "Ohne Treffer wird die Status auf S gesetzt und eine Zeile aufgenommen.",
+    "sy-subrc ungleich 0 setzen die Status auf S."
+   ],
+   "Z": [
+    "In der Tabelle gt_index wird nach einer passenden Zeile gesucht.",
+    "Ohne Treffer wird der Status auf S gesetzt, eine Zeile aufgenommen und der Schleifendurchlauf übersprungen.",
+    "Wenn kein Treffer vorliegt, wird der Status auf S gesetzt."
+   ]
+  },
+  {
+   "id": "BM-137-B06",
+   "soll": "Die Indexveränderung wird in Prozent gegenüber dem Basiswert des Vertrags berechnet; bleibt ihr Betrag unter der vereinbarten Schwelle, wird der Vertrag als übersprungen gelistet.",
+   "zeilen": [
+    93,
+    95
+   ],
+   "code": [
+    "93:     lv_proz = ( ls_index-wert - <ls_vtr>-basis_wert ) * 100 / <ls_vtr>-basis_wert.",
+    "95:     IF abs( lv_proz ) < <ls_vtr>-schwelle."
+   ],
+   "X": [
+    "Liegt der absolute Prozentsatz der Indexveränderung unter dem vertraglich vereinbarten Schwellenwert, wird der Status auf 'S' sowie der Text 'Schwelle nicht erreicht' gesetzt und der Vertrag übersprungen."
+   ],
+   "Y": [
+    "Für abs( lv_proz ) < <ls_vtr>-schwelle wird die Status auf S gesetzt, die Text auf Schwelle nicht erreicht gesetzt und eine Zeile aufgenommen.",
+    "abs( lv_proz ) < <ls_vtr>-schwelle setzen die Status auf S.",
+    "abs( lv_proz ) < <ls_vtr>-schwelle setzen die Text auf Schwelle nicht erreicht."
+   ],
+   "Z": [
+    "Wenn die Bedingung „abs( lv_proz ) < <ls_vtr>-schwelle“ erfüllt ist, wird der Status auf S gesetzt, der Text auf Schwelle nicht erreicht gesetzt, eine Zeile aufgenommen und der Schleifendurchlauf übersprungen.",
+    "Wenn die Bedingung „abs( lv_proz ) < <ls_vtr>-schwelle“ erfüllt ist, wird der Status auf S gesetzt.",
+    "Wenn die Bedingung „abs( lv_proz ) < <ls_vtr>-schwelle“ erfüllt ist, wird der Text auf Schwelle nicht erreicht gesetzt."
+   ]
+  },
+  {
+   "id": "BM-137-B07",
+   "soll": "Verträge, deren letzte Anpassung weniger als 365 Tage vor dem Wirksamkeitsdatum liegt, werden ohne Eintrag in der Ergebnisliste übergangen.",
+   "zeilen": [
+    103
+   ],
+   "code": [
+    "103:     CHECK <ls_vtr>-letzte_anp IS INITIAL"
+   ],
+   "X": [
+    "Liegt das Datum der letzten Anpassung zuzüglich 365 Tagen nach dem Wirksamkeitsdatum und ist das Anpassungsdatum nicht initial, wird der Vertrag nicht weiter bearbeitet."
+   ],
+   "Y": [
+    "Nur <ls_vtr>-letzte_anp IS INITIAL OR <ls_vtr>-letzte_anp + gc_min_tage <= p_ab gehen weiter; kleinere werden übersprungen, die Schleife läuft weiter."
+   ],
+   "Z": [
+    "Nur wenn die Bedingung „<ls_vtr>-letzte_anp IS INITIAL OR <ls_vtr>-letzte_anp + gc_min_tage <= p_ab“ erfüllt ist, wird der Schleifendurchlauf fortgesetzt; sonst wird er übersprungen, und die Schleife läuft mit dem nächsten Durchlauf weiter."
+   ]
+  },
+  {
+   "id": "BM-137-B08",
+   "soll": "Die zum Wirksamkeitsdatum gültige Miete der anzupassenden Kondition wird gelesen; fehlt sie, wird der Vertrag als übersprungen gelistet.",
+   "zeilen": [
+    106,
+    111
+   ],
+   "code": [
+    "106:     SELECT SINGLE unitprice FROM vicdcond INTO ls_erg-miete_alt",
+    "111:     IF sy-subrc <> 0."
+   ],
+   "X": [
+    "Aus der Konditionstabelle VICDCOND wird der bisherige Mietbetrag für das Vertragskennzeichen und die Konditionsart zum Wirksamkeitsdatum ermittelt.",
+    "Wird in Tabelle VICDCOND keine gültige Kondition gefunden, wird der Status auf 'S' sowie der Hinweistext gesetzt und zum nächsten Vertrag übergegangen."
+   ],
+   "Y": [
+    "unitprice des Satzes wird gelesen.",
+    "Ohne Treffer wird die Status auf S gesetzt und eine Zeile aufgenommen.",
+    "sy-subrc ungleich 0 setzen die Status auf S."
+   ],
+   "Z": [
+    "Das Feld unitprice aus vicdcond wird gelesen.",
+    "Ohne Treffer wird der Status auf S gesetzt, eine Zeile aufgenommen und der Schleifendurchlauf übersprungen.",
+    "Wenn kein Treffer vorliegt, wird der Status auf S gesetzt."
+   ]
+  },
+  {
+   "id": "BM-137-B09",
+   "soll": "Die neue Miete ist die alte Miete mal aktueller Indexwert durch Basiswert, auf zwei Nachkommastellen gerundet.",
+   "zeilen": [
+    118
+   ],
+   "code": [
+    "118:     ls_erg-miete_neu = round( val = ls_erg-miete_alt * ls_index-wert / <ls_vtr>-basis_wert"
+   ],
+   "X": [
+    "Die neue Miete wird proportional zum Verhältnis von aktuellem Indexwert zu Basiswert kaufmännisch auf zwei Nachkommastellen gerundet berechnet und mit dem Berechnungsstatus 'B' in die Ergebnistabelle gestellt."
+   ],
+   "Y": [],
+   "Z": []
+  },
+  {
+   "id": "BM-137-B10",
+   "soll": "Im Echtlauf wird jeder berechnete Vertrag gesperrt; ist er bereits gesperrt, wird er mit dem sperrenden Benutzer als gesperrt gekennzeichnet.",
+   "zeilen": [
+    29,
+    168,
+    176,
+    177
+   ],
+   "code": [
+    "29:   IF p_test IS INITIAL.",
+    "168:     CALL FUNCTION 'ENQUEUE_EZRE_INDEX'",
+    "176:     IF sy-subrc <> 0.",
+    "177:       <ls_erg>-status = 'G'."
+   ],
+   "X": [
+    "Ist das Testlauf-Kennzeichen nicht gesetzt, wird die Anpassung der Verträge im System durchgeführt.",
+    "Ist das Testlauf-Kennzeichen nicht gesetzt, wird der Druck der Mieterbriefe angestoßen.",
+    "Ist das Testlauf-Kennzeichen nicht gesetzt, wird der E-Mail-Versand für aufgetretene Fehler aufgerufen.",
+    "Für Buchungskreis und Vertragsnummer wird über den Funktionsbaustein ENQUEUE_EZRE_INDEX eine Sperre angefordert.",
+    "Kann der Vertrag nicht gesperrt werden, wird der Status auf 'G' gesetzt, der sperrende Benutzer im Text vermerkt und zum nächsten Vertrag übergegangen."
+   ],
+   "Y": [
+    "Ohne p_test wird vertraege_aendern aufgerufen, briefe_drucken aufgerufen und fehler_mailen aufgerufen.",
+    "Der Funktionsbaustein ENQUEUE_EZRE_INDEX wird aufgerufen.",
+    "Ohne Treffer wird die Status auf G gesetzt.",
+    "sy-subrc ungleich 0 setzen die Status auf G."
+   ],
+   "Z": [
+    "Ist das Feld p_test leer, wird vertraege_aendern aufgerufen, briefe_drucken aufgerufen und fehler_mailen aufgerufen.",
+    "Der Funktionsbaustein ENQUEUE_EZRE_INDEX wird aufgerufen.",
+    "Ist die Sperre über ENQUEUE_EZRE_INDEX nicht zu erhalten, wird der Status auf G gesetzt und der Schleifendurchlauf übersprungen.",
+    "Wenn die Sperre über ENQUEUE_EZRE_INDEX nicht zu erhalten ist, wird der Status auf G gesetzt."
+   ]
+  },
+  {
+   "id": "BM-137-B11",
+   "soll": "Für jeden gesperrten Vertrag wird eine neue Konditionszeile mit der neuen Miete ab dem Wirksamkeitsdatum angelegt.",
+   "zeilen": [
+    186
+   ],
+   "code": [
+    "186:     CALL FUNCTION 'BAPI_RE_CN_CHANGE'"
+   ],
+   "X": [
+    "Über den Funktionsbaustein BAPI_RE_CN_CHANGE wird die neue Konditionszeile mit dem Wirksamkeitsdatum und dem neuen Mietpreis am Vertrag erfasst."
+   ],
+   "Y": [
+    "Der Funktionsbaustein BAPI_RE_CN_CHANGE wird aufgerufen."
+   ],
+   "Z": [
+    "Der Funktionsbaustein BAPI_RE_CN_CHANGE wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-137-B12",
+   "soll": "Scheitert die Änderung, wird zurückgerollt und die Fehlermeldung vermerkt.",
+   "zeilen": [
+    194,
+    195
+   ],
+   "code": [
+    "194:     IF line_exists( lt_ret[ type = 'E' ] ) OR line_exists( lt_ret[ type = 'A' ] ).",
+    "195:       CALL FUNCTION 'BAPI_TRANSACTION_ROLLBACK'."
+   ],
+   "X": [
+    "Liefert die Vertragsänderung Fehler der Meldungsart 'E' oder 'A' zurück, werden die Änderungen per BAPI_TRANSACTION_ROLLBACK verworfen und der Fehlertext mit Status 'F' vermerkt.",
+    "Liefert die Vertragsänderung keine Fehler zurück, werden die Änderungen über den Funktionsbaustein BAPI_TRANSACTION_COMMIT synchron festgeschrieben."
+   ],
+   "Y": [
+    "Für line_exists( lt_ret[ type = 'E' ] ) OR line_exists( lt_ret[ type = 'A' ] ) wird BAPI_TRANSACTION_ROLLBACK aufgerufen und die Status auf F gesetzt.",
+    "Für line_exists( lt_ret[ type = 'E' ] ) OR line_exists( lt_ret[ type = 'A' ] ) wird BAPI_TRANSACTION_ROLLBACK aufgerufen und die Status auf F gesetzt, sonst BAPI_TRANSACTION_COMMIT aufgerufen, eine Zeile geändert und die Status auf A gesetzt.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_ROLLBACK wird aufgerufen.",
+    "Es wird BAPI_TRANSACTION_ROLLBACK aufgerufen und die Status auf F gesetzt.",
+    "line_exists( lt_ret[ type = 'E' ] ) OR line_exists( lt_ret[ type = 'A' ] ) setzen die Status auf F."
+   ],
+   "Z": [
+    "Wenn die Bedingung „line_exists( lt_ret[ type = 'E' ] ) OR line_exists( lt_ret[ type = 'A' ] )“ erfüllt ist, wird BAPI_TRANSACTION_ROLLBACK aufgerufen und der Status auf F gesetzt, sonst BAPI_TRANSACTION_COMMIT aufgerufen, eine Zeile geändert und der Status auf A gesetzt.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_ROLLBACK wird aufgerufen.",
+    "Wenn die Bedingung „line_exists( lt_ret[ type = 'E' ] ) OR line_exists( lt_ret[ type = 'A' ] )“ erfüllt ist, wird der Status auf F gesetzt."
+   ]
+  },
+  {
+   "id": "BM-137-B13",
+   "soll": "Gelingt sie, wird festgeschrieben und im Wertsicherungssatz des Vertrags der neue Indexwert als Basiswert, der Indexmonat und das Wirksamkeitsdatum als letzte Anpassung eingetragen.",
+   "zeilen": [
+    199,
+    202
+   ],
+   "code": [
+    "199:       CALL FUNCTION 'BAPI_TRANSACTION_COMMIT'",
+    "202:       UPDATE zre_index_vtr"
+   ],
+   "X": [
+    "Liefert die Vertragsänderung keine Fehler zurück, werden die Änderungen über den Funktionsbaustein BAPI_TRANSACTION_COMMIT synchron festgeschrieben.",
+    "In der Tabelle ZRE_INDEX_VTR werden der Basiswert auf den aktuellen Indexwert, der Basismonat und das letzte Anpassungsdatum auf das Wirksamkeitsdatum aktualisiert und der Status auf 'A' gesetzt."
+   ],
+   "Y": [
+    "Für line_exists( lt_ret[ type = 'E' ] ) OR line_exists( lt_ret[ type = 'A' ] ) wird BAPI_TRANSACTION_ROLLBACK aufgerufen und die Status auf F gesetzt, sonst BAPI_TRANSACTION_COMMIT aufgerufen, eine Zeile geändert und die Status auf A gesetzt.",
+    "Sonst wird BAPI_TRANSACTION_COMMIT aufgerufen, eine Zeile geändert und die Status auf A gesetzt.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_COMMIT wird aufgerufen.",
+    "Es wird BAPI_TRANSACTION_COMMIT aufgerufen, eine Zeile geändert und die Status auf A gesetzt.",
+    "Die basis_wert in zre_index_vtr wird geändert. Ob eine Zeile getroffen wird, garantiert der Code nicht."
+   ],
+   "Z": [
+    "Wenn die Bedingung „line_exists( lt_ret[ type = 'E' ] ) OR line_exists( lt_ret[ type = 'A' ] )“ erfüllt ist, wird BAPI_TRANSACTION_ROLLBACK aufgerufen und der Status auf F gesetzt, sonst BAPI_TRANSACTION_COMMIT aufgerufen, eine Zeile geändert und der Status auf A gesetzt.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_COMMIT wird aufgerufen.",
+    "Das Feld basis_wert in zre_index_vtr wird geändert. Ob eine Zeile getroffen wird, garantiert der Code nicht."
+   ]
+  },
+  {
+   "id": "BM-137-B14",
+   "soll": "Nach jedem Vertrag wird die Sperre aufgehoben.",
+   "zeilen": [
+    211
+   ],
+   "code": [
+    "211:     CALL FUNCTION 'DEQUEUE_EZRE_INDEX'"
+   ],
+   "X": [
+    "Über den Funktionsbaustein DEQUEUE_EZRE_INDEX wird die Sperre für den Buchungskreis und die Vertragsnummer wieder freigegeben."
+   ],
+   "Y": [
+    "Der Funktionsbaustein DEQUEUE_EZRE_INDEX wird aufgerufen."
+   ],
+   "Z": [
+    "Der Funktionsbaustein DEQUEUE_EZRE_INDEX wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-137-B15",
+   "soll": "Anpassungsschreiben werden nur gedruckt, wenn der Briefdruck gewählt und zentral über die Variablentabelle eingeschaltet ist.",
+   "zeilen": [
+    228,
+    231,
+    234
+   ],
+   "code": [
+    "228:   CHECK p_brief = 'X'.",
+    "231:   SELECT SINGLE low FROM tvarvc INTO lv_aktiv",
+    "234:   IF lv_aktiv <> 'X'."
+   ],
+   "X": [
+    "Ist die Option zum Briefdruck auf dem Selektionsbild nicht markiert, wird die Formularverarbeitung abgebrochen.",
+    "Aus der Parametertabelle TVARVC wird der Schalter 'ZRE_INDEX_BRIEF_AKTIV' gelesen.",
+    "Ist der Briefdruck in Tabelle TVARVC nicht mit 'X' aktiviert, wird die Verarbeitung der Mieterbriefe beendet."
+   ],
+   "Y": [
+    "Nur p_brief mit dem Wert X gehen weiter; kleinere werden übersprungen, die Schleife läuft weiter.",
+    "low des Satzes wird gelesen.",
+    "Ohne gesetztes lv_aktiv wird der Block verlassen.",
+    "Ohne gesetztes lv_aktiv wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben."
+   ],
+   "Z": [
+    "Nur wenn das Feld p_brief gesetzt ist, geht es weiter; sonst wird das Unterprogramm briefe_drucken an dieser Stelle verlassen.",
+    "Das Feld low des Variableneintrags wird gelesen.",
+    "Ohne gesetztes lv_aktiv wird der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-137-B16",
+   "soll": "Fehlt das Formular ZRE_INDEX_BRIEF, erscheint ein Hinweis und es werden keine Briefe gedruckt.",
+   "zeilen": [
+    238,
+    247,
+    248
+   ],
+   "code": [
+    "238:   CALL FUNCTION 'SSF_FUNCTION_MODULE_NAME'",
+    "247:   IF sy-subrc <> 0.",
+    "248:     MESSAGE s212 WITH gc_brief_form DISPLAY LIKE 'E'."
+   ],
+   "X": [
+    "Kann der Funktionsbaustein zum Formular nicht ermittelt werden, wird die Statusmeldung 212 als Fehler ausgegeben und die Formularverarbeitung abgebrochen."
+   ],
+   "Y": [
+    "Der Code übergibt gc_brief_form an SSF_FUNCTION_MODULE_NAME und übernimmt dessen Ausgabe nach lv_fm.",
+    "Das konvertierte Ergebnis wird in lv_fm übernommen.",
+    "Ohne Treffer wird eine Meldung ausgegeben und der Block verlassen.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "Eine Meldung wird ausgegeben.",
+    "Es wird eine Meldung ausgegeben und der Block verlassen."
+   ],
+   "Z": [
+    "Der Code übergibt gc_brief_form an SSF_FUNCTION_MODULE_NAME und übernimmt dessen Ausgabe nach lv_fm.",
+    "Scheitert der Aufruf von SSF_FUNCTION_MODULE_NAME, wird eine Statusmeldung ausgegeben und der Block verlassen.",
+    "Die Statusmeldung 212 wird ausgegeben, angezeigt wie eine Fehlermeldung."
+   ]
+  },
+  {
+   "id": "BM-137-B17",
+   "soll": "Die Briefe gehen ohne Dialog sofort auf den Drucker LOCL; unter dem Benutzer AKR_TEST wird stattdessen nur eine Vorschau mit Dialog gezeigt.",
+   "zeilen": [
+    256,
+    257
+   ],
+   "code": [
+    "256:   IF sy-uname = 'AKR_TEST'.",
+    "257:     ls_ctrl-preview   = abap_true."
+   ],
+   "X": [
+    "Ist der angemeldete Benutzer 'AKR_TEST', wird die Druckvorschau aktiviert und die Dialogunterdrückung ausgeschaltet."
+   ],
+   "Y": [],
+   "Z": []
+  },
+  {
+   "id": "BM-137-B18",
+   "soll": "Für jeden erfolgreich angepassten Vertrag wird ein Anpassungsschreiben mit Wirksamkeitsdatum erzeugt; scheitert der Druck, wird der Vertrag als Druckfehler gekennzeichnet.",
+   "zeilen": [
+    262,
+    274,
+    275
+   ],
+   "code": [
+    "262:     CALL FUNCTION lv_fm",
+    "274:     IF sy-subrc <> 0.",
+    "275:       <ls_erg>-status = 'D'."
+   ],
+   "X": [
+    "Der Mieterbrief wird über den ermittelten Smart-Forms-Funktionsbaustein mit den Vertragsdaten und dem Wirksamkeitsdatum gedruckt.",
+    "Tritt beim Druck des Mieterbriefs ein Fehler auf, wird der Status des Vertrags auf 'D' gesetzt und der Rückgabewert im Hinweistext erfasst."
+   ],
+   "Y": [
+    "Der Funktionsbaustein lv_fm wird aufgerufen. Welcher Baustein das ist, entscheidet die Eingabe zur Laufzeit.",
+    "Ohne Treffer wird die Status auf D gesetzt.",
+    "sy-subrc ungleich 0 setzen die Status auf D."
+   ],
+   "Z": [
+    "Der Funktionsbaustein lv_fm wird aufgerufen. Welcher Baustein das ist, steht erst zur Laufzeit in lv_fm fest.",
+    "Scheitert der Aufruf von lv_fm, wird der Status auf D gesetzt.",
+    "Wenn der Aufruf von lv_fm scheitert, wird der Status auf D gesetzt."
+   ]
+  },
+  {
+   "id": "BM-137-B19",
+   "soll": "Verträge mit Fehler, Sperre oder Druckfehler werden per Mail an die Objektbetreuung des Buchungskreises gemeldet.",
+   "zeilen": [
+    315,
+    318,
+    322,
+    342,
+    343
+   ],
+   "code": [
+    "315:   lt_fehler = VALUE #( FOR ls_e IN gt_erg",
+    "318:   IF lt_fehler IS INITIAL.",
+    "322:   SELECT SINGLE smtp_addr FROM zre_bukrs_mail INTO lv_empf",
+    "342:       lo_send->send( ).",
+    "343:       COMMIT WORK."
+   ],
+   "X": [
+    "Liegen keine Verträge mit Fehlerstatus 'F', 'G' oder 'D' vor, wird der Mailversand beendet.",
+    "Aus der Tabelle ZRE_BUKRS_MAIL wird die E-Mail-Adresse der zuständigen Objektbetreuung für den Buchungskreis gelesen.",
+    "Die Nacharbeits-E-Mail wird versendet und die Verbuchung mittels COMMIT WORK abgeschlossen."
+   ],
+   "Y": [
+    "Ohne Treffer wird der Block verlassen.",
+    "smtp_addr des Satzes mit dem eingegebenen Buchungskreis wird gelesen.",
+    "Die Methode send von lo_send wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "Mit COMMIT WORK wird die Änderung persistiert."
+   ],
+   "Z": [
+    "Ist die Tabelle lt_fehler leer, wird der Block verlassen.",
+    "Das Feld smtp_addr aus zre_bukrs_mail mit dem eingegebenen Buchungskreis wird gelesen.",
+    "Die Methode send von lo_send wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "Mit COMMIT WORK wird die Änderung persistiert."
+   ]
+  },
+  {
+   "id": "BM-137-B20",
+   "soll": "Ist keine Mailadresse hinterlegt oder scheitert der Versand, erscheint nur ein Hinweis.",
+   "zeilen": [
+    324,
+    325,
+    345
+   ],
+   "code": [
+    "324:   IF sy-subrc <> 0.",
+    "325:     MESSAGE s213 WITH p_bukrs.",
+    "345:       MESSAGE lx_bcs TYPE 'S' DISPLAY LIKE 'E'."
+   ],
+   "X": [
+    "Ist in Tabelle ZRE_BUKRS_MAIL keine E-Mail-Adresse für den Buchungskreis hinterlegt, wird die Meldung 213 ausgegeben und der Versand abgebrochen.",
+    "Tritt beim E-Mail-Versand ein Fehler der Ausnahmeklasse cx_bcs auf, wird dieser als Fehlermeldung zur Anzeige gebracht."
+   ],
+   "Y": [
+    "Ohne Treffer wird eine Meldung ausgegeben und der Block verlassen.",
+    "Ohne Treffer wird der Block verlassen.",
+    "Eine Meldung wird ausgegeben.",
+    "Es wird eine Meldung ausgegeben und der Block verlassen.",
+    "Eine Meldung wird ausgegeben."
+   ],
+   "Z": [
+    "Ohne Treffer wird eine Statusmeldung ausgegeben und der Block verlassen.",
+    "Die Statusmeldung 213 wird ausgegeben.",
+    "Die Statusmeldung lx_bcs wird ausgegeben, angezeigt wie eine Fehlermeldung."
+   ]
+  },
+  {
+   "id": "BM-137-B21",
+   "soll": "Zum Schluss werden alle berechneten, angepassten und übersprungenen Verträge mit alter und neuer Miete, Veränderung, Status und Text als Liste angezeigt.",
+   "zeilen": [
+    142
+   ],
+   "code": [
+    "142:   CALL FUNCTION 'REUSE_ALV_GRID_DISPLAY'"
+   ],
+   "X": [
+    "Die Anpassungsergebnisse werden über den Funktionsbaustein REUSE_ALV_GRID_DISPLAY mit dem Titel 'Indexmietanpassung' als Grid angezeigt."
+   ],
+   "Y": [
+    "Es wird REUSE_ALV_FIELDCATALOG_MERGE aufgerufen und REUSE_ALV_GRID_DISPLAY aufgerufen.",
+    "Der Funktionsbaustein REUSE_ALV_GRID_DISPLAY wird aufgerufen."
+   ],
+   "Z": [
+    "Es wird REUSE_ALV_FIELDCATALOG_MERGE aufgerufen und REUSE_ALV_GRID_DISPLAY aufgerufen.",
+    "Der Funktionsbaustein REUSE_ALV_GRID_DISPLAY wird aufgerufen."
+   ]
+  }
+ ]
+}

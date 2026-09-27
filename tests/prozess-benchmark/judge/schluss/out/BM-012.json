@@ -1,0 +1,348 @@
+{
+ "id": "BM-012",
+ "urteile": [
+  {
+   "id": "BM-012-B01",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "kurz": "X/Y nennen Schleife und Flag technisch, Z sagt \"liegt kein Fehler vor\" je Schritt."
+  },
+  {
+   "id": "BM-012-B02",
+   "X": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "kurz": "Nur Z beschreibt die Kopfübernahme."
+  },
+  {
+   "id": "BM-012-B03",
+   "X": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "kurz": "Nur Z nennt Qualifier 001 mit Bestellnummer und Datum."
+  },
+  {
+   "id": "BM-012-B04",
+   "X": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "kurz": "Nur Z nennt die Partnerrolle AG."
+  },
+  {
+   "id": "BM-012-B05",
+   "X": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "unvollstaendig",
+     "redundant"
+    ]
+   },
+   "kurz": "Z nennt die Materialidentifikation, aber nicht Position mit Menge und Einheit."
+  },
+  {
+   "id": "BM-012-B06",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "falsch"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": [
+     "falsch"
+    ]
+   },
+   "kurz": "X/Z behaupten eine ausgegebene Meldung statt MESSAGE INTO, Y richtig aber ohne Ablehnung."
+  },
+  {
+   "id": "BM-012-B07",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein",
+     "redundant",
+     "falsch"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch",
+     "falsch"
+    ]
+   },
+   "kurz": "X/Y nur Tabellenzugriff, Z nennt Zuordnung und Fehler 111, aber \"ausgegeben\"."
+  },
+  {
+   "id": "BM-012-B08",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "falsch"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch",
+     "falsch"
+    ]
+   },
+   "kurz": "Y ohne Ablehnung, Z vollständig bis auf \"ausgegeben\"."
+  },
+  {
+   "id": "BM-012-B09",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "unvollstaendig",
+     "falsch"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch",
+     "falsch"
+    ]
+   },
+   "kurz": "X/Y ohne Kunden-Material-Info-Bezug und Fehler 113, Z vollständig."
+  },
+  {
+   "id": "BM-012-B10",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "kurz": "X/Y nur Konvertierungsaufruf, Z sagt Umwandlung der eigenen Materialnummer."
+  },
+  {
+   "id": "BM-012-B11",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "falsch",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": [
+     "falsch"
+    ]
+   },
+   "kurz": "X/Y nur \"Belegnummer gelesen\", Z sagt Dublettenprüfung mit 114."
+  },
+  {
+   "id": "BM-012-B12",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig",
+     "redundant"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "X/Y nur Übergabe, Z nur \"Auftrag angelegt\" ohne Auftragsart/Positionen."
+  },
+  {
+   "id": "BM-012-B13",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "falsch",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "kurz": "X ohne Typfilter, Y nur Codebedingung, Z sagt Fehler/Abbruch markiert IDoc."
+  },
+  {
+   "id": "BM-012-B14",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "grammatik"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": [
+     "grammatik"
+    ]
+   },
+   "kurz": "X/Y nur Statuszuweisungen, Z nennt 51/53 mit Auftragsnummer."
+  },
+  {
+   "id": "BM-012-B15",
+   "X": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "kurz": "Nur Z nennt das Workflow-Fehlerergebnis."
+  }
+ ],
+ "verboten_verletzt": [
+  {
+   "variante": "X",
+   "satz": "Für gt_items IS INITIAL OR gs_head-bstkd IS INITIAL wird eine Meldung ausgegeben.",
+   "grund": "MESSAGE … INTO gibt nichts aus, füllt nur Meldungsvariablen"
+  },
+  {
+   "variante": "Z",
+   "satz": "Sind keine Positionen vorhanden oder ist die Kundenbestellnummer initial, wird ein Fehlerkennzeichen gesetzt und die Fehlermeldung E110(ZSD) ausgegeben.",
+   "grund": "MESSAGE … INTO gibt nichts aus, füllt nur Meldungsvariablen"
+  }
+ ],
+ "soll_zweifel": []
+}

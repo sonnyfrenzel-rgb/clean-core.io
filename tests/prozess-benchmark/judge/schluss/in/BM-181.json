@@ -1,0 +1,112 @@
+{
+ "id": "BM-181",
+ "titel": "Lieferschein-Druck über Nachrichtensteuerung: ENTRY-Routine ruft Smart Form dynamisch",
+ "prozess": "Die Nachrichtenverarbeitung ruft beim Ausgeben einer Lieferschein-Nachricht die Routine ENTRY mit Rückgabeparameter und Bildschirmkennzeichen auf. Die Routine liest zur Objektnummer der Nachricht den Kopf der Auslieferung. Gibt es die Auslieferung nicht, meldet sie Rückgabecode 1 und bricht ab. Andernfalls ermittelt sie zum Smart Form ZLE_LIEFERSCHEIN_SF den generierten Formularbaustein; ob das gelingt, wird nicht geprüft, weil die frühere Prüfung auskommentiert ist. Dann ruft sie den ermittelten Baustein ohne Druckdialog auf, bei Bildschirmausgabe als Vorschau, und übergibt Auslieferungskopf und Nachricht. Fehlt der Formularbaustein, bricht dieser Aufruf mit einem Laufzeitfehler ab, statt einen Rückgabecode zu liefern. Der Rückgabewert des Aufrufs wird an die Nachrichtenverarbeitung gemeldet, die daraus den Verarbeitungsstatus der Nachricht setzt. Die Routine ändert keine Belegdaten.",
+ "verboten": [
+  "source.abap:31 — kein Fachsatz „der Lieferschein wird per E-Mail oder Fax versendet“: das Übertragungsmedium der Nachricht wird nicht ausgewertet, der Aufruf gibt nur über den Spool bzw. die Vorschau aus",
+  "source.abap:15 — kein Fachsatz „fehlt das Formular, wird die Nachricht mit Rückgabecode 2 als fehlerhaft gemeldet“: die Prüfung ist auskommentiert, der Rückgabewert der Ermittlung wird nicht ausgewertet; mit leerem Bausteinnamen bricht der folgende Aufruf mit Laufzeitfehler ab, statt einen Rückgabecode zu liefern",
+  "source.abap:31 — kein Fachsatz über den Formularinhalt (Positionen, Chargen, Gewichte): das Ziel ist ein zur Laufzeit ermittelter generierter Baustein, dessen Logik nicht im Fall liegt",
+  "gesamte Scheibe — kein Fachsatz „die Auslieferung wird geändert oder der Warenausgang gebucht“: die Routine liest nur und druckt"
+ ],
+ "saetze": [
+  {
+   "id": "BM-181-B01",
+   "soll": "Beim Ausgeben einer Lieferschein-Nachricht wird der Auslieferungskopf zur Nachrichtenobjektnummer gelesen.",
+   "zeilen": [
+    8
+   ],
+   "code": [
+    "8:   SELECT SINGLE * FROM likp INTO ls_likp"
+   ],
+   "X": [
+    "Zu den ersten 10 Stellen des Objektschlüssels aus der Nachrichtensteuerung (NAST-OBJKY) wird der zugehörige Lieferbelegkopf aus Tabelle LIKP mit allen Feldern gelesen."
+   ],
+   "Y": [
+    "Es werden Sätze aus likp selektiert."
+   ],
+   "Z": [
+    "Es werden Lieferungen selektiert."
+   ]
+  },
+  {
+   "id": "BM-181-B02",
+   "soll": "Existiert die Auslieferung nicht, wird die Nachricht mit Rückgabecode 1 als fehlerhaft gemeldet und nichts gedruckt.",
+   "zeilen": [
+    10,
+    11
+   ],
+   "code": [
+    "10:   IF sy-subrc <> 0.",
+    "11:     return_code = 1."
+   ],
+   "X": [
+    "Wurde kein passender Lieferbelegkopf gefunden, wird der Rückgabecode auf 1 gesetzt und die Verarbeitung beendet."
+   ],
+   "Y": [
+    "Ohne Treffer wird die return_code auf 1 gesetzt und der Block verlassen.",
+    "Ohne Treffer wird der Block verlassen.",
+    "sy-subrc ungleich 0 setzen die return_code auf 1.",
+    "Es wird die return_code auf 1 gesetzt und der Block verlassen."
+   ],
+   "Z": [
+    "Ohne Treffer wird das Feld return_code auf 1 gesetzt und der Block verlassen.",
+    "Wenn kein Treffer vorliegt, wird das Feld return_code auf 1 gesetzt."
+   ]
+  },
+  {
+   "id": "BM-181-B03",
+   "soll": "Zum Formular ZLE_LIEFERSCHEIN_SF wird der generierte Formularbaustein ermittelt.",
+   "zeilen": [
+    15
+   ],
+   "code": [
+    "15:   CALL FUNCTION 'SSF_FUNCTION_MODULE_NAME'"
+   ],
+   "X": [],
+   "Y": [
+    "Der Code übergibt 'ZLE_LIEFERSCHEIN_SF' an SSF_FUNCTION_MODULE_NAME und übernimmt dessen Ausgabe nach lv_fm.",
+    "Das konvertierte Ergebnis wird in lv_fm übernommen."
+   ],
+   "Z": [
+    "Der Code übergibt 'ZLE_LIEFERSCHEIN_SF' an SSF_FUNCTION_MODULE_NAME und übernimmt dessen Ausgabe nach lv_fm."
+   ]
+  },
+  {
+   "id": "BM-181-B04",
+   "soll": "Der Lieferschein wird ohne Druckdialog ausgegeben, bei Bildschirmausgabe als Vorschau.",
+   "zeilen": [
+    29,
+    31
+   ],
+   "code": [
+    "29:   ls_ctrl-preview = xsdbool( us_screen = 'X' ).",
+    "31:   CALL FUNCTION lv_fm"
+   ],
+   "X": [
+    "Das Kennzeichen für die Druckansicht wird gesetzt, wenn der Bildschirmausgabe-Parameter den Wert X hat, und die Dialogführung wird unterdrückt.",
+    "Der ermittelte Funktionsbaustein des Formulars wird mit den Steuerparametern, den Kopfdaten der Lieferung sowie den Daten des Nachrichtensatzes aufgerufen."
+   ],
+   "Y": [
+    "Der Funktionsbaustein lv_fm wird aufgerufen. Welcher Baustein das ist, entscheidet die Eingabe zur Laufzeit."
+   ],
+   "Z": [
+    "Der Funktionsbaustein lv_fm wird aufgerufen. Welcher Baustein das ist, steht erst zur Laufzeit in lv_fm fest."
+   ]
+  },
+  {
+   "id": "BM-181-B05",
+   "soll": "Das Ergebnis des Formularaufrufs wird als Rückgabecode an die Nachrichtenverarbeitung gemeldet.",
+   "zeilen": [
+    38
+   ],
+   "code": [
+    "38:   return_code = sy-subrc."
+   ],
+   "X": [
+    "Der Rückgabestatus des Formularaufrufs wird in den Rückgabecode übernommen."
+   ],
+   "Y": [],
+   "Z": []
+  }
+ ]
+}

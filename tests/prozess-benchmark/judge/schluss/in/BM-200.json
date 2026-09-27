@@ -1,0 +1,680 @@
+{
+ "id": "BM-200",
+ "titel": "Indexmietanpassung nach Verbraucherpreisindex mit paralleler Konditionsänderung und Mieteranschreiben per Mail",
+ "prozess": "Der monatliche Job ermittelt die zum Stichtag laufenden Mietverträge mit aktiver Indexvereinbarung und fälliger Prüfung samt gültiger Grundmiete; ist keiner fällig, endet er mit einem Hinweis. Er bestimmt den Indexmonat zwei Monate vor dem Stichtag und fragt den Verbraucherpreisindex beim externen Dienst ab; bei Kommunikationsfehlern, nicht erfolgreicher Antwort oder fehlendem bzw. nur vorläufigem Wert bricht er mit Fehlermeldung ab. Je Vertrag berechnet er die prozentuale Indexveränderung seit der letzten Anpassung und schließt Verträge ohne Grundmiete, mit Anpassung innerhalb der letzten 365 Tage, ohne Basisindex oder unterhalb des Schwellwerts mit Protokollgrund aus. Für die übrigen begrenzt er Erhöhungen auf den Kappungssatz und rechnet die neue Grundmiete. Im Testlauf protokolliert er nur die Zahl der Anpassungen. Im Echtlauf teilt er die Anpassungen in Pakete und startet je Paket eine parallele Task in der Servergruppe; fehlen Ressourcen, wartet er kurz und versucht es erneut, andere Startfehler protokolliert er. Die Task sperrt je Vertrag die Indexvereinbarung, beendet die bisherige Grundmiete zum Vortag, legt die neue ab Stichtag direkt in der Konditionstabelle an, schreibt einen Änderungsbeleg, setzt Basisindex und nächste Prüfung neu, schreibt fest und hebt die Sperre auf; gesperrte Verträge, Verträge ohne Grundmiete und fehlgeschlagene Anlagen (mit Rücknahme) meldet sie mit Status zurück. Das Hauptprogramm wartet höchstens 30 Minuten auf alle Rückmeldungen und protokolliert nicht angepasste Verträge. Danach erzeugt es für jeden erfolgreich angepassten Vertrag ein Anschreiben an den Hauptmieter als PDF und mailt es bei gewähltem Mailversand als Anhang; fehlt der Hauptmieter, scheitert die Formularausgabe oder fehlt die Mailadresse, wird das protokolliert. Zum Schluss werden alle Meldungen als Anwendungsprotokoll gespeichert und Summen ausgegeben.",
+ "verboten": [
+  "zre_index_f02.abap:81 — kein Fachsatz „ohne Mailversand werden die Anschreiben gedruckt oder archiviert“: die Formularausgabe liefert nur ein PDF ohne Spoolauftrag, ohne Mailkennzeichen wird es verworfen; der Kommentar zum DMS-Druck ist vom Code nicht gedeckt",
+  "z_re_index_task.abap:81 — kein Fachsatz „die Beendigung der alten Grundmiete wird im Änderungsbeleg protokolliert“: erfasst wird nur die neue Kondition als Neuanlage, die Abgrenzung der alten Kondition per UPDATE bleibt ohne Beleg",
+  "zre_index_f01.abap:149 — kein Fachsatz „der Index wird von Basis 2015 auf Basis 2020 umbasiert“: das FORM wird nirgends aufgerufen",
+  "zre_index_main.abap:68 — kein Fachsatz „ein Fehler bei der Indexabfrage wird im Anwendungsprotokoll festgehalten“: der Lauf bricht vor der Protokollanlage ab, das Protokoll wird erst am Ende angelegt",
+  "zcl_re_vpi_client.abap:58 — kein Fachsatz „ist die Verbindung zum Indexdienst nicht anlegbar, bricht der Lauf mit Fehlermeldung ab“: das Ergebnis von create_by_destination wird nicht geprüft; mit initialer Client-Referenz endet der Lauf beim nächsten Zugriff im Laufzeitfehler, nicht in der Ausnahme ZCX_RE_VPI"
+ ],
+ "saetze": [
+  {
+   "id": "BM-200-B01",
+   "soll": "Es werden die zum Stichtag laufenden Mietverträge der gewählten Buchungskreise und Vertragsarten ermittelt, die eine aktive Indexvereinbarung mit fälliger Prüfung haben, jeweils mit der zum Stichtag gültigen Grundmiete.",
+   "zeilen": [
+    26
+   ],
+   "code": [
+    "26:   SELECT c~bukrs, c~recnnr, c~intreno, c~recntype,"
+   ],
+   "X": [
+    "Aus den Tabellen VICNCN, ZRE_IDXAGR und VICDCOND werden die fälligen Vertrags- und Indexdaten sowie die Grundmietenkondition zum Stichtag selektiert."
+   ],
+   "Y": [
+    "Es werden Sätze aus vicncn selektiert."
+   ],
+   "Z": [
+    "Es werden Sätze aus vicncn selektiert."
+   ]
+  },
+  {
+   "id": "BM-200-B02",
+   "soll": "Ist kein Vertrag fällig, wird ein Hinweis ausgegeben und der Lauf ohne Anpassung und ohne Protokoll beendet.",
+   "zeilen": [
+    46,
+    47,
+    48
+   ],
+   "code": [
+    "46:   IF sy-subrc <> 0.",
+    "47:     MESSAGE s002 DISPLAY LIKE 'W'.",
+    "48:     RETURN."
+   ],
+   "X": [
+    "Werden keine fälligen Verträge gefunden, wird die Warnung s002 ausgegeben und die Verarbeitung beendet."
+   ],
+   "Y": [
+    "Ohne Treffer wird eine Meldung ausgegeben und der Block verlassen.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "Eine Meldung wird ausgegeben.",
+    "Es wird eine Meldung ausgegeben und der Block verlassen."
+   ],
+   "Z": [
+    "Ohne Treffer wird eine Statusmeldung ausgegeben und der Block verlassen.",
+    "Die Statusmeldung 002 wird ausgegeben, angezeigt wie eine Warnung."
+   ]
+  },
+  {
+   "id": "BM-200-B03",
+   "soll": "Maßgeblich ist der Indexwert des Monats, der zwei Monate vor dem Stichtagsmonat liegt.",
+   "zeilen": [
+    61
+   ],
+   "code": [
+    "61:   gv_period = lv_idxdate(6)."
+   ],
+   "X": [],
+   "Y": [],
+   "Z": []
+  },
+  {
+   "id": "BM-200-B04",
+   "soll": "Der Verbraucherpreisindex der Reihe VPI2020 für diesen Monat wird beim externen Indexdienst abgefragt.",
+   "zeilen": [
+    64,
+    332,
+    333
+   ],
+   "code": [
+    "64:       gv_vpi_act = NEW zcl_re_vpi_client( p_http )->get_value(",
+    "332:     lo_http->send( EXCEPTIONS OTHERS = 1 ).",
+    "333:     lo_http->receive( EXCEPTIONS OTHERS = 2 )."
+   ],
+   "X": [
+    "Über die Methode GET_VALUE der Klasse ZCL_RE_VPI_CLIENT wird der aktuelle Verbraucherpreisindex zur Serie VPI2020 für die berechnete Periode abgerufen.",
+    "Die HTTP-Anfrage wird an die Schnittstelle versendet.",
+    "Die Antwort der HTTP-Schnittstelle wird entgegengenommen."
+   ],
+   "Y": [
+    "Die Methode send von lo_http wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "Die Methode receive von lo_http wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ],
+   "Z": [
+    "Die Methode send von lo_http wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "Die Methode receive von lo_http wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-200-B05",
+   "soll": "Scheitert die Abfrage oder antwortet der Dienst nicht mit Erfolg, bricht der Lauf mit Fehlermeldung ab.",
+   "zeilen": [
+    68,
+    339,
+    340
+   ],
+   "code": [
+    "68:       MESSAGE lx_vpi TYPE 'E'.",
+    "339:     IF lv_rc <> 0 OR lv_code <> 200.",
+    "340:       RAISE EXCEPTION TYPE zcx_re_vpi"
+   ],
+   "X": [
+    "Tritt beim Ermitteln des Verbraucherpreisindex eine Ausnahme der Klasse ZCX_RE_VPI auf, wird eine Fehlermeldung ausgegeben.",
+    "Schlägt die HTTP-Übertragung fehl oder weicht der HTTP-Statuscode von 200 ab, wird die Ausnahme ZCX_RE_VPI ausgelöst."
+   ],
+   "Y": [
+    "Eine Meldung wird ausgegeben."
+   ],
+   "Z": [
+    "Die Fehlermeldung lx_vpi wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-200-B06",
+   "soll": "Akzeptiert wird nur ein endgültig veröffentlichter Indexwert; fehlt er oder ist er vorläufig, bricht der Lauf ebenfalls ab.",
+   "zeilen": [
+    353,
+    357,
+    358
+   ],
+   "code": [
+    "353:     READ TABLE ls_response-points INTO DATA(ls_point)",
+    "357:     IF sy-subrc <> 0 OR ls_point-status <> 'f'.",
+    "358:       RAISE EXCEPTION TYPE zcx_re_vpi"
+   ],
+   "X": [
+    "Wird kein Datensatz zur Periode gefunden oder ist der Status nicht endgültig auf f gesetzt, wird die Ausnahme ZCX_RE_VPI ausgelöst."
+   ],
+   "Y": [
+    "In der Tabelle wird nach einer passenden Zeile gesucht."
+   ],
+   "Z": [
+    "In der Tabelle ls_response-points wird nach einer passenden Zeile gesucht."
+   ]
+  },
+  {
+   "id": "BM-200-B07",
+   "soll": "Je Vertrag wird die prozentuale Veränderung des Index gegenüber dem Basiswert der letzten Anpassung berechnet.",
+   "zeilen": [
+    390
+   ],
+   "code": [
+    "390:     lv_change = COND #( WHEN ls_cn-base_vpi > 0"
+   ],
+   "X": [],
+   "Y": [],
+   "Z": []
+  },
+  {
+   "id": "BM-200-B08",
+   "soll": "Nicht angepasst und mit Grund protokolliert werden Verträge ohne Grundmiete, mit einer Anpassung innerhalb der letzten 365 Tage, ohne Basisindex oder deren Indexveränderung den Schwellwert in keiner Richtung erreicht.",
+   "zeilen": [
+    396,
+    401
+   ],
+   "code": [
+    "396:     lv_msgno = COND #( WHEN ls_cn-unitprice IS INITIAL THEN '010'",
+    "401:     IF lv_msgno IS NOT INITIAL."
+   ],
+   "X": [],
+   "Y": [
+    "Mit einer nicht leeren lv_msgno wird eine Zeile aufgenommen."
+   ],
+   "Z": [
+    "Ist das Feld lv_msgno nicht leer, wird eine Zeile aufgenommen und der Schleifendurchlauf übersprungen."
+   ]
+  },
+  {
+   "id": "BM-200-B09",
+   "soll": "Eine Erhöhung wird auf den vereinbarten Kappungssatz begrenzt; Verträge ohne Kappungssatz und Senkungen werden nicht gekappt.",
+   "zeilen": [
+    408
+   ],
+   "code": [
+    "408:     lv_pct = COND #( WHEN ls_cn-cap_pct > 0 AND lv_change > ls_cn-cap_pct"
+   ],
+   "X": [],
+   "Y": [],
+   "Z": []
+  },
+  {
+   "id": "BM-200-B10",
+   "soll": "Die neue Grundmiete ist die bisherige, um den Satz verändert und auf zwei Nachkommastellen gerundet.",
+   "zeilen": [
+    418
+   ],
+   "code": [
+    "418:     ls_adjust-new_price = round( val = ls_cn-unitprice * ( 100 + lv_pct ) / 100"
+   ],
+   "X": [],
+   "Y": [],
+   "Z": []
+  },
+  {
+   "id": "BM-200-B11",
+   "soll": "Ist keine Anpassung fällig, wird das nur im Protokoll vermerkt.",
+   "zeilen": [
+    73
+   ],
+   "code": [
+    "73:   IF gt_adjust IS INITIAL."
+   ],
+   "X": [
+    "Sind keine Anpassungen vorhanden, wird eine Erfolgsmeldung mit der Nummer 004 in das Protokoll aufgenommen."
+   ],
+   "Y": [
+    "Ohne Treffer wird eine Zeile aufgenommen.",
+    "Ohne Treffer wird eine Zeile aufgenommen, sonst eine Zeile aufgenommen beziehungsweise dispatch_packages aufgerufen und create_letters aufgerufen."
+   ],
+   "Z": [
+    "Ist die Tabelle gt_adjust leer, wird eine Zeile aufgenommen."
+   ]
+  },
+  {
+   "id": "BM-200-B12",
+   "soll": "Im Testlauf wird nur die Zahl der berechneten Anpassungen protokolliert; es wird nichts geändert und kein Schreiben erzeugt.",
+   "zeilen": [
+    75
+   ],
+   "code": [
+    "75:   ELSEIF p_test = abap_true."
+   ],
+   "X": [],
+   "Y": [
+    "Ohne Treffer wird eine Zeile aufgenommen, sonst eine Zeile aufgenommen beziehungsweise dispatch_packages aufgerufen und create_letters aufgerufen.",
+    "Für p_test mit dem Wert abap_true wird eine Zeile aufgenommen."
+   ],
+   "Z": [
+    "Wenn das Feld p_test gesetzt ist, wird eine Zeile aufgenommen."
+   ]
+  },
+  {
+   "id": "BM-200-B13",
+   "soll": "Im Echtlauf werden die Anpassungen in Pakete gleicher Größe geteilt und je Paket parallel in der Servergruppe verarbeitet.",
+   "zeilen": [
+    445,
+    451
+   ],
+   "code": [
+    "445:     CHECK lines( lt_pkg ) >= p_pkg OR lv_idx = lines( gt_adjust ).",
+    "451:       CALL FUNCTION 'Z_RE_INDEX_TASK'"
+   ],
+   "X": [
+    "Erreicht das Paket die angegebene Paketgröße oder den letzten Datensatz der Liste, wird die Verarbeitung fortgesetzt; andernfalls wird der nächste Datensatz gesammelt.",
+    "Für das gesammelte Paket wird der Funktionsbaustein Z_RE_INDEX_TASK asynchron als neuer RFC-Task in der angegebenen Servergruppe aufgerufen."
+   ],
+   "Y": [
+    "Nur lines( lt_pkg ) >= p_pkg OR lv_idx = lines( gt_adjust ) gehen weiter; kleinere werden übersprungen, die Schleife läuft weiter.",
+    "Der Baustein Z_RE_INDEX_TASK wird asynchron in einer eigenen Task gestartet. Ein Ergebnis liegt zu diesem Zeitpunkt nicht vor."
+   ],
+   "Z": [
+    "Nur wenn die Bedingung „lines( lt_pkg ) >= p_pkg OR lv_idx = lines( gt_adjust )“ erfüllt ist, wird der Schleifendurchlauf fortgesetzt; sonst wird er übersprungen, und die Schleife läuft mit dem nächsten Durchlauf weiter.",
+    "Der Baustein Z_RE_INDEX_TASK wird asynchron in einer eigenen Task gestartet. Ein Ergebnis liegt zu diesem Zeitpunkt nicht vor."
+   ]
+  },
+  {
+   "id": "BM-200-B14",
+   "soll": "Sind keine Verarbeitungsressourcen frei, wird kurz gewartet und das Paket erneut gestartet; bei anderen Startfehlern wird das Paket als Fehler protokolliert und nicht verarbeitet.",
+   "zeilen": [
+    463,
+    469
+   ],
+   "code": [
+    "463:       CASE sy-subrc.",
+    "469:           WAIT UNTIL gv_done >= gv_started UP TO 5 SECONDS."
+   ],
+   "X": [
+    "Startet der RFC-Task erfolgreich mit Rückgabecode 0, wird die Anzahl gestarteter Aufgaben erhöht und die Wiederholung beendet.",
+    "Stehen keine freien Systemressourcen zur Verfügung (Rückgabecode 3), wird bis zu 5 Sekunden auf Fertigstellung laufender Prozesse gewartet.",
+    "Tritt beim Starten des Tasks ein sonstiger Fehler auf, wird eine Fehlermeldung mit der Nummer 007 protokolliert und der Versuch beendet."
+   ],
+   "Y": [],
+   "Z": []
+  },
+  {
+   "id": "BM-200-B15",
+   "soll": "Das Programm wartet höchstens 30 Minuten auf die Rückmeldung aller Pakete; fehlen Rückmeldungen, wird ein Fehler protokolliert.",
+   "zeilen": [
+    82,
+    83
+   ],
+   "code": [
+    "82:     WAIT UNTIL gv_done >= gv_started UP TO 1800 SECONDS.",
+    "83:     IF gv_done < gv_started."
+   ],
+   "X": [
+    "Wurden nach Ablauf der Wartezeit nicht alle gestarteten Pakete fertiggestellt, wird eine Fehlermeldung mit der Nummer 006 und der Anzahl ausstehender Pakete protokolliert."
+   ],
+   "Y": [
+    "Ohne Treffer wird eine Zeile aufgenommen, sonst eine Zeile aufgenommen beziehungsweise dispatch_packages aufgerufen und create_letters aufgerufen.",
+    "Für andere p_test wird dispatch_packages aufgerufen und create_letters aufgerufen.",
+    "Für gv_done kleiner gv_started wird eine Zeile aufgenommen."
+   ],
+   "Z": [
+    "Sonst wird dispatch_packages aufgerufen und create_letters aufgerufen.",
+    "Wenn das Feld gv_done kleiner als gv_started ist, wird eine Zeile aufgenommen."
+   ]
+  },
+  {
+   "id": "BM-200-B16",
+   "soll": "Die Ergebnisse jedes Pakets werden eingesammelt, nicht angepasste Verträge als Warnung mit ihrem Status protokolliert.",
+   "zeilen": [
+    492,
+    503
+   ],
+   "code": [
+    "492:   RECEIVE RESULTS FROM FUNCTION 'Z_RE_INDEX_TASK'",
+    "503:   gt_msg = VALUE #( BASE gt_msg"
+   ],
+   "X": [],
+   "Y": [],
+   "Z": []
+  },
+  {
+   "id": "BM-200-B17",
+   "soll": "Je Vertrag wird die Indexvereinbarung gesperrt; ist sie bereits gesperrt, wird der Vertrag als gesperrt zurückgemeldet und übersprungen.",
+   "zeilen": [
+    164,
+    171
+   ],
+   "code": [
+    "164:     CALL FUNCTION 'ENQUEUE_EZRE_IDXAGR'",
+    "171:     IF sy-subrc <> 0."
+   ],
+   "X": [
+    "Über den Funktionsbaustein ENQUEUE_EZRE_IDXAGR wird eine Sperre auf die Indexvereinbarung zur internen Vertragsnummer gesetzt."
+   ],
+   "Y": [
+    "Der Funktionsbaustein ENQUEUE_EZRE_IDXAGR wird aufgerufen.",
+    "Ohne Treffer wird die Status auf LOCKED gesetzt und eine Zeile aufgenommen.",
+    "sy-subrc ungleich 0 setzen die Status auf LOCKED."
+   ],
+   "Z": [
+    "Der Funktionsbaustein ENQUEUE_EZRE_IDXAGR wird aufgerufen.",
+    "Ist die Sperre über ENQUEUE_EZRE_IDXAGR nicht zu erhalten, wird der Status auf LOCKED gesetzt, eine Zeile aufgenommen und der Schleifendurchlauf übersprungen.",
+    "Wenn die Sperre über ENQUEUE_EZRE_IDXAGR nicht zu erhalten ist, wird der Status auf LOCKED gesetzt."
+   ]
+  },
+  {
+   "id": "BM-200-B18",
+   "soll": "Die zum Stichtag gültige Grundmietkondition wird gelesen; fehlt sie, wird der Vertrag ohne Änderung als ohne Kondition zurückgemeldet.",
+   "zeilen": [
+    178,
+    183
+   ],
+   "code": [
+    "178:     SELECT SINGLE * FROM vicdcond INTO ls_cond_old",
+    "183:     IF sy-subrc <> 0."
+   ],
+   "X": [
+    "Aus der Tabelle VICDCOND wird die zum Stichtag gültige Grundmietenkondition zur internen Vertragsnummer gelesen.",
+    "Wird keine passende Grundmietenkondition gefunden, wird der Status NOCOND vermerkt."
+   ],
+   "Y": [
+    "Es werden Sätze aus vicdcond selektiert.",
+    "Ohne Treffer wird die Status auf NOCOND gesetzt.",
+    "Ohne Treffer wird die Status auf NOCOND gesetzt, sonst eine Zeile geändert.",
+    "sy-subrc ungleich 0 setzen die Status auf NOCOND."
+   ],
+   "Z": [
+    "Es werden Sätze aus vicdcond selektiert.",
+    "Ohne Treffer wird der Status auf NOCOND gesetzt, sonst eine Zeile geändert.",
+    "Wenn kein Treffer vorliegt, wird der Status auf NOCOND gesetzt."
+   ]
+  },
+  {
+   "id": "BM-200-B19",
+   "soll": "Die bisherige Grundmiete wird zum Vortag des Stichtags beendet und eine neue Grundmiete mit dem angepassten Betrag ab dem Stichtag angelegt.",
+   "zeilen": [
+    188,
+    197
+   ],
+   "code": [
+    "188:       UPDATE vicdcond SET condvalidto = iv_keydate - 1",
+    "197:       INSERT vicdcond FROM ls_cond_new."
+   ],
+   "X": [
+    "In der Tabelle VICDCOND wird das Gültigkeitsende der bisherigen Kondition auf den Tag vor dem Stichtag geändert.",
+    "In die Tabelle VICDCOND wird ein neuer Konditionssatz mit der berechneten Miete und Gültigkeit ab dem Stichtag eingefügt."
+   ],
+   "Y": [
+    "Ohne Treffer wird die Status auf NOCOND gesetzt, sonst eine Zeile geändert.",
+    "Für andere sy-subrc wird eine Zeile geändert.",
+    "Die condvalidto in vicdcond wird geändert. Ob eine Zeile getroffen wird, garantiert der Code nicht."
+   ],
+   "Z": [
+    "Ohne Treffer wird der Status auf NOCOND gesetzt, sonst eine Zeile geändert.",
+    "Das Feld condvalidto in vicdcond wird geändert. Ob eine Zeile getroffen wird, garantiert der Code nicht."
+   ]
+  },
+  {
+   "id": "BM-200-B20",
+   "soll": "Gelingt die Anlage der neuen Grundmiete nicht, wird die Änderung zurückgenommen und der Vertrag als fehlerhaft zurückgemeldet.",
+   "zeilen": [
+    198,
+    199
+   ],
+   "code": [
+    "198:       IF sy-subrc <> 0.",
+    "199:         ROLLBACK WORK."
+   ],
+   "X": [
+    "Schlägt das Einfügen des neuen Konditionssatzes fehl, werden die Datenbankänderungen zurückgerollt und der Status ERROR gesetzt."
+   ],
+   "Y": [
+    "Ohne Treffer wird ROLLBACK WORK ausgeführt und die Status auf ERROR gesetzt.",
+    "Ohne Treffer wird ROLLBACK WORK ausgeführt und die Status auf ERROR gesetzt, sonst CHANGEDOCUMENT_OPEN aufgerufen, CHANGEDOCUMENT_SINGLE_CASE aufgerufen, CHANGEDOCUMENT_CLOSE aufgerufen, eine Zeile geändert, COMMIT WORK ausgeführt und die Status auf OK gesetzt.",
+    "Mit ROLLBACK WORK wird die Änderung verworfen; nichts ist persistiert.",
+    "Es wird ROLLBACK WORK ausgeführt und die Status auf ERROR gesetzt.",
+    "sy-subrc ungleich 0 setzen die Status auf ERROR."
+   ],
+   "Z": [
+    "Schlägt die Datenbankänderung fehl, wird ROLLBACK WORK ausgeführt und der Status auf ERROR gesetzt, sonst CHANGEDOCUMENT_OPEN aufgerufen, CHANGEDOCUMENT_SINGLE_CASE aufgerufen, CHANGEDOCUMENT_CLOSE aufgerufen, eine Zeile geändert, COMMIT WORK ausgeführt und der Status auf OK gesetzt.",
+    "Mit ROLLBACK WORK werden die noch nicht festgeschriebenen Änderungen verworfen.",
+    "Wenn die Datenbankänderung fehlschlägt, wird der Status auf ERROR gesetzt."
+   ]
+  },
+  {
+   "id": "BM-200-B21",
+   "soll": "Zur neuen Grundmiete wird ein Änderungsbeleg der Objektklasse ZRE_INDEX geschrieben.",
+   "zeilen": [
+    205,
+    214,
+    224
+   ],
+   "code": [
+    "205:         CALL FUNCTION 'CHANGEDOCUMENT_OPEN'",
+    "214:         CALL FUNCTION 'CHANGEDOCUMENT_SINGLE_CASE'",
+    "224:         CALL FUNCTION 'CHANGEDOCUMENT_CLOSE'"
+   ],
+   "X": [
+    "Über den Funktionsbaustein CHANGEDOCUMENT_OPEN wird die Erstellung eines Änderungsbelegs zur Objektklasse ZRE_INDEX geöffnet.",
+    "Über den Funktionsbaustein CHANGEDOCUMENT_SINGLE_CASE wird die Konditionsänderung der Tabelle VICDCOND in den Änderungsbeleg übernommen.",
+    "Über den Funktionsbaustein CHANGEDOCUMENT_CLOSE wird der Änderungsbeleg geschlossen und die Belegnummer vergeben."
+   ],
+   "Y": [
+    "Ohne Treffer wird ROLLBACK WORK ausgeführt und die Status auf ERROR gesetzt, sonst CHANGEDOCUMENT_OPEN aufgerufen, CHANGEDOCUMENT_SINGLE_CASE aufgerufen, CHANGEDOCUMENT_CLOSE aufgerufen, eine Zeile geändert, COMMIT WORK ausgeführt und die Status auf OK gesetzt.",
+    "Für andere sy-subrc wird CHANGEDOCUMENT_OPEN aufgerufen, CHANGEDOCUMENT_SINGLE_CASE aufgerufen, CHANGEDOCUMENT_CLOSE aufgerufen, eine Zeile geändert, COMMIT WORK ausgeführt und die Status auf OK gesetzt.",
+    "Der Funktionsbaustein CHANGEDOCUMENT_OPEN wird aufgerufen.",
+    "Es wird CHANGEDOCUMENT_OPEN aufgerufen, CHANGEDOCUMENT_SINGLE_CASE aufgerufen, CHANGEDOCUMENT_CLOSE aufgerufen, eine Zeile geändert, COMMIT WORK ausgeführt und die Status auf OK gesetzt.",
+    "Der Funktionsbaustein CHANGEDOCUMENT_SINGLE_CASE wird aufgerufen.",
+    "Der Code übergibt 'ZRE_INDEX' an CHANGEDOCUMENT_CLOSE und übernimmt dessen Ausgabe nach lv_changenr.",
+    "Das konvertierte Ergebnis wird in lv_changenr übernommen."
+   ],
+   "Z": [
+    "Schlägt die Datenbankänderung fehl, wird ROLLBACK WORK ausgeführt und der Status auf ERROR gesetzt, sonst CHANGEDOCUMENT_OPEN aufgerufen, CHANGEDOCUMENT_SINGLE_CASE aufgerufen, CHANGEDOCUMENT_CLOSE aufgerufen, eine Zeile geändert, COMMIT WORK ausgeführt und der Status auf OK gesetzt.",
+    "Der Funktionsbaustein CHANGEDOCUMENT_OPEN wird aufgerufen.",
+    "Der Funktionsbaustein CHANGEDOCUMENT_SINGLE_CASE wird aufgerufen.",
+    "Der Code übergibt 'ZRE_INDEX' an CHANGEDOCUMENT_CLOSE und übernimmt dessen Ausgabe nach lv_changenr."
+   ]
+  },
+  {
+   "id": "BM-200-B22",
+   "soll": "In der Indexvereinbarung werden der neue Basisindex und -monat, das Datum der Anpassung und die nächste Prüfung ein Jahr nach dem Stichtag festgehalten.",
+   "zeilen": [
+    239
+   ],
+   "code": [
+    "239:         UPDATE zre_idxagr SET base_vpi   = ls_adj-new_vpi"
+   ],
+   "X": [
+    "In der Tabelle ZRE_IDXAGR werden der neue Basis-VPI, die neue Basisperiode, das Datum der letzten Anpassung sowie das nächste Prüfdatum zum Vertrag aktualisiert."
+   ],
+   "Y": [
+    "Ohne Treffer wird ROLLBACK WORK ausgeführt und die Status auf ERROR gesetzt, sonst CHANGEDOCUMENT_OPEN aufgerufen, CHANGEDOCUMENT_SINGLE_CASE aufgerufen, CHANGEDOCUMENT_CLOSE aufgerufen, eine Zeile geändert, COMMIT WORK ausgeführt und die Status auf OK gesetzt.",
+    "Für andere sy-subrc wird CHANGEDOCUMENT_OPEN aufgerufen, CHANGEDOCUMENT_SINGLE_CASE aufgerufen, CHANGEDOCUMENT_CLOSE aufgerufen, eine Zeile geändert, COMMIT WORK ausgeführt und die Status auf OK gesetzt.",
+    "Es wird CHANGEDOCUMENT_OPEN aufgerufen, CHANGEDOCUMENT_SINGLE_CASE aufgerufen, CHANGEDOCUMENT_CLOSE aufgerufen, eine Zeile geändert, COMMIT WORK ausgeführt und die Status auf OK gesetzt.",
+    "Die base_vpi in zre_idxagr wird geändert. Ob eine Zeile getroffen wird, garantiert der Code nicht."
+   ],
+   "Z": [
+    "Schlägt die Datenbankänderung fehl, wird ROLLBACK WORK ausgeführt und der Status auf ERROR gesetzt, sonst CHANGEDOCUMENT_OPEN aufgerufen, CHANGEDOCUMENT_SINGLE_CASE aufgerufen, CHANGEDOCUMENT_CLOSE aufgerufen, eine Zeile geändert, COMMIT WORK ausgeführt und der Status auf OK gesetzt.",
+    "Das Feld base_vpi in zre_idxagr wird geändert. Ob eine Zeile getroffen wird, garantiert der Code nicht."
+   ]
+  },
+  {
+   "id": "BM-200-B23",
+   "soll": "Jeder angepasste Vertrag wird einzeln festgeschrieben und mit der Änderungsnummer als erfolgreich zurückgemeldet; die Sperre wird in jedem Fall wieder aufgehoben.",
+   "zeilen": [
+    245,
+    251
+   ],
+   "code": [
+    "245:         COMMIT WORK.",
+    "251:     CALL FUNCTION 'DEQUEUE_EZRE_IDXAGR'"
+   ],
+   "X": [
+    "Über den Funktionsbaustein DEQUEUE_EZRE_IDXAGR wird die Sperre der Indexvereinbarung aufgehoben."
+   ],
+   "Y": [
+    "Ohne Treffer wird ROLLBACK WORK ausgeführt und die Status auf ERROR gesetzt, sonst CHANGEDOCUMENT_OPEN aufgerufen, CHANGEDOCUMENT_SINGLE_CASE aufgerufen, CHANGEDOCUMENT_CLOSE aufgerufen, eine Zeile geändert, COMMIT WORK ausgeführt und die Status auf OK gesetzt.",
+    "Für andere sy-subrc wird CHANGEDOCUMENT_OPEN aufgerufen, CHANGEDOCUMENT_SINGLE_CASE aufgerufen, CHANGEDOCUMENT_CLOSE aufgerufen, eine Zeile geändert, COMMIT WORK ausgeführt und die Status auf OK gesetzt.",
+    "Es wird CHANGEDOCUMENT_OPEN aufgerufen, CHANGEDOCUMENT_SINGLE_CASE aufgerufen, CHANGEDOCUMENT_CLOSE aufgerufen, eine Zeile geändert, COMMIT WORK ausgeführt und die Status auf OK gesetzt.",
+    "Mit COMMIT WORK wird die Änderung persistiert.",
+    "Der Funktionsbaustein DEQUEUE_EZRE_IDXAGR wird aufgerufen.",
+    "Es wird DEQUEUE_EZRE_IDXAGR aufgerufen und eine Zeile aufgenommen."
+   ],
+   "Z": [
+    "Schlägt die Datenbankänderung fehl, wird ROLLBACK WORK ausgeführt und der Status auf ERROR gesetzt, sonst CHANGEDOCUMENT_OPEN aufgerufen, CHANGEDOCUMENT_SINGLE_CASE aufgerufen, CHANGEDOCUMENT_CLOSE aufgerufen, eine Zeile geändert, COMMIT WORK ausgeführt und der Status auf OK gesetzt.",
+    "Mit COMMIT WORK wird die Änderung persistiert.",
+    "Der Funktionsbaustein DEQUEUE_EZRE_IDXAGR wird aufgerufen.",
+    "Es wird DEQUEUE_EZRE_IDXAGR aufgerufen und eine Zeile aufgenommen."
+   ]
+  },
+  {
+   "id": "BM-200-B24",
+   "soll": "Für jeden erfolgreich angepassten Vertrag wird ein Mieteranschreiben mit dem Formular ZRE_INDEX_LETTER als PDF erzeugt; lässt sich die Formularausgabe nicht öffnen, wird ein Fehler protokolliert und kein Schreiben erzeugt.",
+   "zeilen": [
+    543,
+    552,
+    558,
+    581
+   ],
+   "code": [
+    "543:   CALL FUNCTION 'FP_JOB_OPEN'",
+    "552:   IF sy-subrc <> 0.",
+    "558:   CALL FUNCTION 'FP_FUNCTION_MODULE_NAME'",
+    "581:     CALL FUNCTION lv_fm"
+   ],
+   "X": [
+    "Über den Funktionsbaustein FP_JOB_OPEN wird die Formularverarbeitung zur PDF-Generierung ohne Benutzerdialog geöffnet.",
+    "Über den Funktionsbaustein FP_FUNCTION_MODULE_NAME wird der generierte Funktionsbausteinname zum Formular ZRE_INDEX_LETTER ermittelt.",
+    "Über den generierten Formularfunktionsbaustein wird das Mieteranschreiben als PDF-Dokument erzeugt."
+   ],
+   "Y": [
+    "Der Funktionsbaustein FP_JOB_OPEN wird aufgerufen.",
+    "Ohne Treffer wird eine Zeile aufgenommen und der Block verlassen.",
+    "Ohne Treffer wird der Block verlassen.",
+    "Der Code übergibt gc_form an FP_FUNCTION_MODULE_NAME und übernimmt dessen Ausgabe nach lv_fm.",
+    "Das konvertierte Ergebnis wird in lv_fm übernommen.",
+    "Es wird FP_FUNCTION_MODULE_NAME aufgerufen, die ls_docpar-langu auf D gesetzt und die Länderschlüssel auf DE gesetzt.",
+    "Der Funktionsbaustein lv_fm wird aufgerufen. Welcher Baustein das ist, entscheidet die Eingabe zur Laufzeit."
+   ],
+   "Z": [
+    "Der Funktionsbaustein FP_JOB_OPEN wird aufgerufen.",
+    "Scheitert der Aufruf von FP_JOB_OPEN, wird eine Zeile aufgenommen und der Block verlassen.",
+    "Der Code übergibt gc_form an FP_FUNCTION_MODULE_NAME und übernimmt dessen Ausgabe nach lv_fm.",
+    "Es wird FP_FUNCTION_MODULE_NAME aufgerufen, das Feld ls_docpar-langu auf D gesetzt und der Länderschlüssel auf DE gesetzt.",
+    "Der Funktionsbaustein lv_fm wird aufgerufen. Welcher Baustein das ist, steht erst zur Laufzeit in lv_fm fest."
+   ]
+  },
+  {
+   "id": "BM-200-B25",
+   "soll": "Das Anschreiben richtet sich an den zum Stichtag gültigen Hauptmieter; ohne Hauptmieter oder bei fehlgeschlagener Formularausgabe wird ein Fehler protokolliert und der Vertrag übersprungen.",
+   "zeilen": [
+    570,
+    576,
+    594
+   ],
+   "code": [
+    "570:     SELECT SINGLE partner FROM vibpobjrel",
+    "576:     IF sy-subrc <> 0.",
+    "594:     IF sy-subrc <> 0."
+   ],
+   "X": [
+    "Aus der Tabelle VIBPOBJREL wird der zum Stichtag gültige Hauptmieter mit der Rolle TR0600 zum Vertrag gelesen.",
+    "Wird kein aktiver Hauptmieter gefunden, wird die Fehlermeldung 020 ins Protokoll geschrieben und der Vertrag übersprungen."
+   ],
+   "Y": [
+    "partner des Satzes wird gelesen.",
+    "Ohne Treffer wird eine Zeile aufgenommen.",
+    "Ohne Treffer wird eine Zeile aufgenommen."
+   ],
+   "Z": [
+    "Das Feld partner aus vibpobjrel wird gelesen.",
+    "Ohne Treffer wird eine Zeile aufgenommen und der Schleifendurchlauf übersprungen.",
+    "Scheitert der Aufruf von lv_fm, wird eine Zeile aufgenommen und der Schleifendurchlauf übersprungen."
+   ]
+  },
+  {
+   "id": "BM-200-B26",
+   "soll": "Ist der Mailversand gewählt, wird das PDF mit Betreff und Begleittext als Anhang an die Standard-Mailadresse des Hauptmieters gesendet.",
+   "zeilen": [
+    601,
+    646,
+    651,
+    657,
+    659
+   ],
+   "code": [
+    "601:     IF p_mail = abap_true.",
+    "646:       DATA(lo_doc) = cl_document_bcs=>create_document(",
+    "651:       lo_doc->add_attachment(",
+    "657:       lo_send->add_recipient( cl_cam_address_bcs=>create_internet_address( lv_mail ) ).",
+    "659:       lo_send->send( )."
+   ],
+   "X": [
+    "Ist die Option für Mailversand aktiviert, wird das Unterprogramm SEND_MAIL für den Versand des erstellten Schreibens aufgerufen.",
+    "Über die Methode ADD_ATTACHMENT wird das PDF-Dokument als Anhang an das E-Mail-Dokument angefügt.",
+    "Über die Methode ADD_RECIPIENT wird die E-Mail-Adresse des Mieters als Empfänger zum Sendeauftrag hinzugefügt.",
+    "Über die Methode SEND wird der E-Mail-Versand ausgeführt."
+   ],
+   "Y": [
+    "Für p_mail mit dem Wert abap_true wird send_mail aufgerufen.",
+    "Der Rückgabewert der Methode create_document von cl_document_bcs wird nach lo_doc übernommen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "Die Methode add_attachment von lo_doc wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "Die Methode add_recipient von lo_send wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "Die Methode send von lo_send wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ],
+   "Z": [
+    "Wenn das Feld p_mail gesetzt ist, wird send_mail aufgerufen.",
+    "Der Rückgabewert der Methode create_document von cl_document_bcs wird nach lo_doc übernommen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "Die Methode add_attachment von lo_doc wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "Die Methode add_recipient von lo_send wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "Die Methode send von lo_send wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-200-B27",
+   "soll": "Hat der Hauptmieter keine Mailadresse, wird als Warnung vermerkt, dass das Schreiben per Post zu versenden ist.",
+   "zeilen": [
+    631,
+    633
+   ],
+   "code": [
+    "631:   IF sy-subrc <> 0 OR lv_mail IS INITIAL.",
+    "633:     APPEND VALUE #( msgty = 'W' msgno = '021' msgv1 = us_res-recnnr"
+   ],
+   "X": [
+    "Wird keine Standard-E-Mail-Adresse für den Partner gefunden, wird die Warnung 021 protokolliert und der Versand abgebrochen."
+   ],
+   "Y": [
+    "Für sy-subrc <> 0 OR lv_mail IS INITIAL wird eine Zeile aufgenommen und der Block verlassen.",
+    "Eine Zeile wird in gt_msg aufgenommen.",
+    "Es wird eine Zeile aufgenommen und der Block verlassen."
+   ],
+   "Z": [
+    "Wenn kein Treffer vorliegt oder das Feld lv_mail leer ist, wird eine Zeile aufgenommen und der Block verlassen.",
+    "Eine Zeile wird in gt_msg aufgenommen."
+   ]
+  },
+  {
+   "id": "BM-200-B28",
+   "soll": "Alle Meldungen des Laufs werden als Anwendungsprotokoll ZRE/ZRE_INDEX gespeichert und die Zahl fälliger Verträge, berechneter Anpassungen, erzeugter Schreiben und versendeter Mails ausgegeben.",
+   "zeilen": [
+    97,
+    110,
+    118,
+    130
+   ],
+   "code": [
+    "97:   CALL FUNCTION 'BAL_LOG_CREATE'",
+    "110:     CALL FUNCTION 'BAL_LOG_MSG_ADD'",
+    "118:   CALL FUNCTION 'BAL_DB_SAVE'",
+    "130:   WRITE: / 'Vertraege faellig:'(t04),     gv_cnt_cn,"
+   ],
+   "X": [
+    "Über den Funktionsbaustein BAL_LOG_CREATE wird ein Anwendungsprotokoll für das Objekt ZRE und das Unterobjekt ZRE_INDEX initialisiert.",
+    "Für jede aufgelaufene Meldung wird über den Funktionsbaustein BAL_LOG_MSG_ADD ein Eintrag im Anwendungsprotokoll erfasst.",
+    "Über den Funktionsbaustein BAL_DB_SAVE werden die erfassten Protokolleinträge auf der Datenbank gesichert.",
+    "Die Anzahl fälliger Verträge, berechneter Anpassungen, erzeugter Anschreiben und versendeter E-Mails wird zur Ausgabe aufbereitet."
+   ],
+   "Y": [
+    "Der Code übergibt gs_log an BAL_LOG_CREATE und übernimmt dessen Ausgabe nach gv_log.",
+    "Das konvertierte Ergebnis wird in gv_log übernommen.",
+    "Der Funktionsbaustein BAL_LOG_MSG_ADD wird aufgerufen.",
+    "Der Funktionsbaustein BAL_DB_SAVE wird aufgerufen.",
+    "Bei Treffern werden 'Vertraege faellig:'(t04), gv_cnt_cn, 'Anpassungen berechnet:'(t05), gv_cnt_adj, 'Anschreiben erzeugt:'(t06), gv_letters, 'Mails versendet:'(t07) und gv_mails als Liste ausgegeben.",
+    "'Vertraege faellig:'(t04) wird ausgegeben.",
+    "gv_cnt_cn wird ausgegeben."
+   ],
+   "Z": [
+    "Der Code übergibt gs_log an BAL_LOG_CREATE und übernimmt dessen Ausgabe nach gv_log.",
+    "Der Funktionsbaustein BAL_LOG_MSG_ADD wird aufgerufen.",
+    "Der Funktionsbaustein BAL_DB_SAVE wird aufgerufen.",
+    "Vertraege faellig:, gv_cnt_cn, Anpassungen berechnet:, gv_cnt_adj, Anschreiben erzeugt:, gv_letters, Mails versendet: und gv_mails werden ausgegeben.",
+    "Vertraege faellig: wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code."
+   ]
+  }
+ ]
+}

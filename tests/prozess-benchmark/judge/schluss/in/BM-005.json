@@ -1,0 +1,83 @@
+{
+ "id": "BM-005",
+ "titel": "Sichern-Exit: Streckenauftrag ohne Bestellnummer abweisen, Großmengen melden",
+ "prozess": "Der Exit läuft im Standard-Kundenauftrag unmittelbar vor dem Sichern. Hat ein Streckenauftrag (Auftragsart ZTAS) keine Kundenbestellnummer, gibt er eine Fehlermeldung aus; das Sichern wird abgebrochen und der Erfasser bleibt im Beleg. Andernfalls durchläuft er alle Positionen, die nicht zum Löschen markiert sind. Für jede Position mit einer Auftragsmenge über 9999 erscheint eine Warnung mit Positionsnummer und Menge, die das Sichern nicht verhindert. Danach setzt der Standard das Sichern fort.",
+ "verboten": [
+  "source.abap:13 — kein Fachsatz „die Disposition wird informiert“: es gibt nur eine Warnung an den Erfasser, keine Nachricht an Dritte",
+  "source.abap:6 — kein Fachsatz „jeder Auftrag braucht eine Bestellnummer“: die Pflicht gilt nur für Auftragsart ZTAS"
+ ],
+ "saetze": [
+  {
+   "id": "BM-005-B01",
+   "soll": "Ein Streckenauftrag (Auftragsart ZTAS) ohne Kundenbestellnummer wird mit einer Fehlermeldung am Sichern gehindert.",
+   "zeilen": [
+    6,
+    7
+   ],
+   "code": [
+    "6:   IF vbak-auart = 'ZTAS' AND vbkd-bstkd IS INITIAL.",
+    "7:     MESSAGE e104(zsd) WITH vbak-vbeln."
+   ],
+   "X": [
+    "Wenn die Auftragsart gleich ZTAS ist und das Feld vbkd-bstkd leer ist, wird eine Fehlermeldung ausgegeben.",
+    "Die Fehlermeldung 104(ZSD) wird ausgegeben."
+   ],
+   "Y": [
+    "Ist die Verkaufsbelegart VBAK-AUART gleich 'ZTAS' und die Kundenbestellnummer VBKD-BSTKD nicht gepflegt, wird die Fehlermeldung E104(zsd) mit der Verkaufsbelegnummer VBAK-VBELN ausgegeben; andernfalls wird die Verarbeitung fortgesetzt."
+   ],
+   "Z": [
+    "Für vbak-auart = 'ZTAS' AND vbkd-bstkd IS INITIAL wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-005-B02",
+   "soll": "Für jede nicht gelöschte Position mit einer Auftragsmenge über 9999 erhält der Erfasser eine Warnung mit Positionsnummer und Menge.",
+   "zeilen": [
+    11,
+    12,
+    13
+   ],
+   "code": [
+    "11:   LOOP AT xvbap WHERE updkz <> 'D'.",
+    "12:     IF xvbap-kwmeng > 9999.",
+    "13:       MESSAGE w105(zsd) WITH xvbap-posnr xvbap-kwmeng."
+   ],
+   "X": [
+    "Die Zeilen aus xvbap, bei denen das Feld updkz ungleich D ist, werden einzeln verarbeitet.",
+    "Für Auftragsmengen größer 9999 wird eine Warnung ausgegeben.",
+    "Die Warnung 105(ZSD) wird ausgegeben."
+   ],
+   "Y": [
+    "Alle Belegpositionen der Tabelle XVBAP mit einem Änderungskennzeichen UPDKZ ungleich 'D' werden nacheinander verarbeitet.",
+    "Ist die Auftragsmenge XVBAP-KWMENG größer als 9999, wird die Warnmeldung W105(zsd) mit der Positionsnummer XVBAP-POSNR und der Auftragsmenge ausgegeben; andernfalls erfolgt keine Meldung."
+   ],
+   "Z": [
+    "Jede Zeile aus xvbap wird einzeln verarbeitet.",
+    "Für xvbap-kwmeng größer 9999 wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-005-B03",
+   "soll": "Die Großmengenwarnung hält das Sichern nicht auf.",
+   "zeilen": [
+    13
+   ],
+   "code": [
+    "13:       MESSAGE w105(zsd) WITH xvbap-posnr xvbap-kwmeng."
+   ],
+   "X": [
+    "Für Auftragsmengen größer 9999 wird eine Warnung ausgegeben.",
+    "Die Warnung 105(ZSD) wird ausgegeben."
+   ],
+   "Y": [
+    "Ist die Auftragsmenge XVBAP-KWMENG größer als 9999, wird die Warnmeldung W105(zsd) mit der Positionsnummer XVBAP-POSNR und der Auftragsmenge ausgegeben; andernfalls erfolgt keine Meldung."
+   ],
+   "Z": [
+    "Für xvbap-kwmeng größer 9999 wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  }
+ ]
+}

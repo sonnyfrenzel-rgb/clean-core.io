@@ -1,0 +1,108 @@
+{
+ "id": "BM-163",
+ "urteile": [
+  {
+   "id": "BM-163-B01",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "kurz": "X nennt Liefernummer und Packobjekt fachlich, Y/Z nur „vpobjkey“."
+  },
+  {
+   "id": "BM-163-B02",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "zu_allgemein",
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Keine Variante nennt, dass bei ungepackter Lieferung alle Packpositionen gelesen werden; X und Z behaupten die Einschränkung auf die HUs."
+  },
+  {
+   "id": "BM-163-B03",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "kurz": "X nennt HU-Nummer, Packmittel, Gewicht fachlich; Y/Z nur Feldnamen."
+  },
+  {
+   "id": "BM-163-B04",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Y": {
+    "urteil": "abweichend",
+    "mangel": [
+     "falsch",
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "kurz": "Keine Variante sagt „nur Materialpositionen“; X und Z nennen velin = 1 technisch, Y verschweigt den Filter und behauptet, jede Zeile werde verarbeitet."
+  }
+ ],
+ "verboten_verletzt": [
+  {
+   "variante": "X",
+   "satz": "Aus der Tabelle VEPO werden alle Datensätze gelesen, deren interne Handling-Unit-Nummer VENUM mit einer der zuvor ermittelten Handling-Unit-Nummern übereinstimmt.",
+   "grund": "Behauptet die Einschränkung auf die HUs der Lieferung; bei leerer Treibertabelle entfällt die WHERE-Bedingung."
+  },
+  {
+   "variante": "Z",
+   "satz": "Es werden Sätze aus vepo zu den Einträgen aus lt_vekp selektiert.",
+   "grund": "Behauptet (technisch) die Einschränkung auf die HU-Einträge; bei leerer lt_vekp werden alle Sätze gelesen."
+  }
+ ],
+ "soll_zweifel": []
+}

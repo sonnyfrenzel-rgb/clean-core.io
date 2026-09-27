@@ -1,0 +1,528 @@
+{
+ "id": "BM-193",
+ "titel": "Arbeitsunfallmeldung als Web-Dynpro-Anwendung: Pflichtfelder, Nummernvergabe, Änderungsbeleg und Mail an die Sicherheitsfachkraft",
+ "prozess": "Eine Unfallmeldung wird im Portal geöffnet, entweder leer zum Anlegen oder mit der Meldungsnummer als URL-Parameter zum Ändern. Ohne Nummer legt die Anwendung eine neue Meldung mit Erfasser, Tagesdatum und Status „in Erfassung“ an; mit Nummer liest sie die Meldung aus der Unfalltabelle und merkt sich den Stand als Vergleichsbasis, bei unbekannter Nummer gibt sie eine Fehlermeldung aus. Beim Sichern prüft die View zuerst die Pflichtfelder Personalnummer, Werk, Unfalldatum, Unfallzeit, Unfallort, Hergang und Verletzung dynamisch über ihre Feldnamen; leere Felder werden am Feld markiert, ein Feldname, den es in der Maske nicht gibt, wird stillschweigend übergangen, und bei einem Fehler wird nicht gesichert. Eine neue Meldung erhält dann ihre Nummer aus dem Nummernkreis ZEHS_UNF; gelingt das nicht, bricht das Sichern mit Hinweis ab. Die Anwendung kennzeichnet Unfälle mit mehr als drei Ausfalltagen als meldepflichtig, setzt den Status von 01 („in Erfassung“) auf 02 und schreibt die Meldung. Scheitert das Schreiben, wird zurückgerollt und eine Fehlermeldung ausgegeben. Andernfalls wird ein Änderungsbeleg mit altem und neuem Stand über die Verbuchung vorgemerkt und mit der Meldung festgeschrieben. Wird der Unfall mit diesem Sichern erstmals meldepflichtig und ist der Mailversand im Schalter ZEHS_UNFALL_MAIL eingeschaltet, erhält die Sicherheitsfachkraft des Werks, ersatzweise das Sammelpostfach, eine Mail mit den Eckdaten und dem Hinweis auf die Unfallanzeige an die Berufsgenossenschaft; ein Fehler beim Versand führt nur zu einer Warnung. Nach erfolgreichem Sichern wird die Maske schreibgeschützt und die Bestätigungsseite angezeigt, sonst bleibt der Benutzer mit den Meldungen in der Maske. Zeugen werden nicht mehr gespeichert, und ein Formulardruck der Unfallanzeige ist zwar implementiert, wird aber nirgends aufgerufen.",
+ "verboten": [
+  "zwd_ehs_unfall_compctrl.abap:177 — kein Fachsatz „die Unfallanzeige an die Berufsgenossenschaft wird als Formular gedruckt“: die Methode wird von keiner Stelle im Fall aufgerufen, der Button wurde laut Kommentar entfernt",
+  "zwd_ehs_unfall_compctrl.abap:84 — kein Fachsatz „die Zeugen des Unfalls werden gespeichert“: das Schreiben von ZEHS_UNF_ZEUGE ist auskommentiert, gesichert wird nur der Unfallkopf",
+  "zwd_ehs_unfall_compctrl.abap:165 — kein Fachsatz „die Unfallanzeige wird an die Berufsgenossenschaft übermittelt“: die Mail geht nur intern an die Sicherheitsfachkraft bzw. das Sammelpostfach und erinnert an die Anzeige",
+  "zwd_ehs_unfall_compctrl.abap:167 — kein Fachsatz „scheitert die Benachrichtigung, wird das Sichern der Meldung zurückgenommen“: die Meldung ist zu diesem Zeitpunkt bereits festgeschrieben, der Fehler erzeugt nur eine Warnung; der CLEANUP-Block räumt nur bei nicht gefangenen Ausnahmen den Sendeauftrag weg",
+  "gesamte Scheibe — kein Fachsatz „die Berechtigung zum Erfassen oder Ändern von Unfallmeldungen wird geprüft“: die Anwendung prüft keine Berechtigung, der Kommentar verweist nur auf das Portal-Rollenmenü"
+ ],
+ "saetze": [
+  {
+   "id": "BM-193-B01",
+   "soll": "Beim Öffnen der Unfallmeldung wird die Meldungsnummer aus dem Aufruf übernommen und die Meldung geladen.",
+   "zeilen": [
+    212,
+    216
+   ],
+   "code": [
+    "212:   lv_unfall_nr = wdr_task=>client_window->get_parameter( 'UNFALL_NR' ).",
+    "216:   wd_comp_controller->load_unfall( iv_unfall_nr = lv_unfall_nr )."
+   ],
+   "X": [
+    "Der Rückgabewert der Methode get_parameter von >client_window wird nach lv_unfall_nr übernommen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "Die Methode load_unfall von wd_comp_controller wird aufgerufen; sie liest ZEHS_UNFALL."
+   ],
+   "Y": [
+    "Der URL-Parameter UNFALL_NR wird aus dem Browserfenster ermittelt.",
+    "Das Laden der Unfallmeldung wird mit der ermittelten Unfallnummer aufgerufen."
+   ],
+   "Z": [
+    "Der Rückgabewert der Methode get_parameter von >client_window wird nach lv_unfall_nr übernommen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "Die Methode load_unfall von wd_comp_controller wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-193-B02",
+   "soll": "Ohne Meldungsnummer wird eine neue Meldung angelegt und mit dem erfassenden Benutzer, dem Tagesdatum und dem Status „in Erfassung“ vorbelegt.",
+   "zeilen": [
+    18,
+    23
+   ],
+   "code": [
+    "18:   IF iv_unfall_nr IS INITIAL.",
+    "23:     lo_nd_unfall->bind_structure( new_item = ls_unfall set_initial_elements = abap_true )."
+   ],
+   "X": [
+    "Ist das Feld iv_unfall_nr leer, wird der Status auf 01 gesetzt und der Block verlassen.",
+    "Wenn das Feld iv_unfall_nr leer ist, wird der Status auf 01 gesetzt.",
+    "Die Methode bind_structure von lo_nd_unfall wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ],
+   "Y": [
+    "Ist keine Unfallnummer übergeben, werden der Erfasser mit dem aktuellen Benutzernamen, das Erfassungsdatum mit dem Tagesdatum sowie der Status mit 01 vorbelegt, die Daten an den Erfassungsknoten gebunden, der bisherige Unfallstand zurückgesetzt und die Bearbeitung beendet."
+   ],
+   "Z": [
+    "Ohne iv_unfall_nr wird die Status auf 01 gesetzt und der Block verlassen.",
+    "Eine leere iv_unfall_nr setzen die Status auf 01.",
+    "Die Methode bind_structure von lo_nd_unfall wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-193-B03",
+   "soll": "Mit Meldungsnummer wird die vorhandene Unfallmeldung gelesen und als Vergleichsstand für den Änderungsbeleg gemerkt.",
+   "zeilen": [
+    28,
+    37
+   ],
+   "code": [
+    "28:   SELECT SINGLE * FROM zehs_unfall INTO ls_unfall",
+    "37:   wd_this->ms_unfall_alt = ls_unfall."
+   ],
+   "X": [
+    "Es werden Sätze aus zehs_unfall selektiert."
+   ],
+   "Y": [
+    "Zur übergebenen Unfallnummer wird der Datensatz aus der Tabelle ZEHS_UNFALL gelesen.",
+    "Wurde die Unfallmeldung gefunden, wird sie als bisheriger Stand zwischengespeichert und an den Erfassungsknoten übergeben."
+   ],
+   "Z": [
+    "Es werden Sätze aus zehs_unfall selektiert."
+   ]
+  },
+  {
+   "id": "BM-193-B04",
+   "soll": "Gibt es die Meldung nicht, erhält der Benutzer die Fehlermeldung, dass sie nicht gefunden wurde, und die Maske bleibt leer.",
+   "zeilen": [
+    30,
+    31
+   ],
+   "code": [
+    "30:   IF sy-subrc <> 0.",
+    "31:     wd_this->wd_get_api( )->get_message_manager( )->report_error_message("
+   ],
+   "X": [
+    "Ohne Treffer wird der Block verlassen.",
+    "Die Methode wd_get_api von wd_this wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ],
+   "Y": [
+    "Wird zur Unfallnummer kein Datensatz in der Tabelle ZEHS_UNFALL gefunden, wird eine Fehlermeldung ausgegeben und die Verarbeitung beendet."
+   ],
+   "Z": [
+    "Ohne Treffer wird der Block verlassen.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "Die Methode wd_get_api von wd_this wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-193-B05",
+   "soll": "Beim Sichern wird zuerst geprüft, ob Personalnummer, Werk, Unfalldatum, Unfallzeit, Unfallort, Hergang und Verletzung gefüllt sind.",
+   "zeilen": [
+    225,
+    258
+   ],
+   "code": [
+    "225:   lv_fehler = wd_this->check_mandatory( ).",
+    "258:   LOOP AT lt_pflicht INTO lv_feld."
+   ],
+   "X": [
+    "Der Rückgabewert der Methode check_mandatory von wd_this wird nach lv_fehler übernommen.",
+    "Jede Zeile aus lt_pflicht wird einzeln verarbeitet."
+   ],
+   "Y": [
+    "Die Pflichtfeldprüfung wird durchgeführt; liefert sie einen Fehler, wird der Speichervorgang abgebrochen.",
+    "Für jedes der Felder Personalnummer, Werk, Unfalldatum, Unfallzeit, Unfallort, Unfallhergang und Verletzung wird geprüft, ob es gefüllt ist; ist ein Feld leer, wird eine Fehlermeldung am Feld ausgegeben und ein Fehler gemeldet."
+   ],
+   "Z": [
+    "Der Rückgabewert der Methode check_mandatory von wd_this wird nach lv_fehler übernommen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "Jede Zeile aus lt_pflicht wird einzeln verarbeitet."
+   ]
+  },
+  {
+   "id": "BM-193-B06",
+   "soll": "Jedes leere Pflichtfeld wird am Feld als Fehler markiert; ein Feld, das es in der Maske nicht gibt, wird ohne Meldung übergangen.",
+   "zeilen": [
+    259,
+    260,
+    262
+   ],
+   "code": [
+    "259:     ASSIGN COMPONENT lv_feld OF STRUCTURE ls_unfall TO FIELD-SYMBOL(<lv_wert>).",
+    "260:     CHECK sy-subrc = 0.",
+    "262:       wd_this->mo_msg_mgr->report_attribute_error_message("
+   ],
+   "X": [
+    "Eine Komponente der Struktur wird an das Feldsymbol gebunden.",
+    "Nur wenn das Feld zugewiesen ist, wird der Schleifendurchlauf fortgesetzt; sonst wird er übersprungen, und die Schleife läuft mit dem nächsten Durchlauf weiter.",
+    "Die Methode report_attribute_error_message von >mo_msg_mgr wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ],
+   "Y": [
+    "Für jedes der Felder Personalnummer, Werk, Unfalldatum, Unfallzeit, Unfallort, Unfallhergang und Verletzung wird geprüft, ob es gefüllt ist; ist ein Feld leer, wird eine Fehlermeldung am Feld ausgegeben und ein Fehler gemeldet."
+   ],
+   "Z": [
+    "Eine Komponente der Struktur wird an das Feldsymbol gebunden.",
+    "Nur sy-subrc mit dem Wert 0 gehen weiter; kleinere werden übersprungen, die Schleife läuft weiter.",
+    "Die Methode report_attribute_error_message von >mo_msg_mgr wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-193-B07",
+   "soll": "Fehlt mindestens ein Pflichtfeld, wird nicht gesichert.",
+   "zeilen": [
+    226,
+    227
+   ],
+   "code": [
+    "226:   IF lv_fehler = abap_true.",
+    "227:     RETURN."
+   ],
+   "X": [
+    "Wenn das Feld lv_fehler gesetzt ist, wird der Block verlassen."
+   ],
+   "Y": [
+    "Die Pflichtfeldprüfung wird durchgeführt; liefert sie einen Fehler, wird der Speichervorgang abgebrochen."
+   ],
+   "Z": [
+    "Für lv_fehler mit dem Wert abap_true wird der Block verlassen.",
+    "Bei lv_fehler gleich abap_true wird der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-193-B08",
+   "soll": "Eine neue Unfallmeldung erhält ihre Nummer aus dem Nummernkreis ZEHS_UNF.",
+   "zeilen": [
+    57,
+    58
+   ],
+   "code": [
+    "57:   IF ls_unfall-unfall_nr IS INITIAL.",
+    "58:     CALL FUNCTION 'NUMBER_GET_NEXT'"
+   ],
+   "X": [
+    "Ist das Feld ls_unfall-unfall_nr leer, wird NUMBER_GET_NEXT aufgerufen und das Feld lv_chngind auf I gesetzt, sonst das Feld lv_chngind auf U gesetzt.",
+    "Der Code übergibt '01' an NUMBER_GET_NEXT und übernimmt dessen Ausgabe nach ls_unfall-unfall_nr.",
+    "Wenn das Feld ls_unfall-unfall_nr leer ist, wird das Feld lv_chngind auf I gesetzt."
+   ],
+   "Y": [
+    "Ist im Datensatz noch keine Unfallnummer vorhanden, wird die nächste Nummer aus dem Nummernkreisobjekt ZEHS_UNF zum Intervall 01 gezogen und das Änderungskennzeichen auf I gesetzt."
+   ],
+   "Z": [
+    "Ohne ls_unfall-unfall_nr wird NUMBER_GET_NEXT aufgerufen und die lv_chngind auf I gesetzt.",
+    "Ohne ls_unfall-unfall_nr wird NUMBER_GET_NEXT aufgerufen und die lv_chngind auf I gesetzt, sonst die lv_chngind auf U gesetzt.",
+    "Ohne ls_unfall-unfall_nr wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "Der Code übergibt '01' an NUMBER_GET_NEXT und übernimmt dessen Ausgabe nach ls_unfall-unfall_nr.",
+    "Das konvertierte Ergebnis wird in ls_unfall-unfall_nr übernommen.",
+    "Eine leere ls_unfall-unfall_nr setzen die lv_chngind auf I."
+   ]
+  },
+  {
+   "id": "BM-193-B09",
+   "soll": "Kann keine Nummer vergeben werden, wird der Benutzer auf den Nummernkreis hingewiesen und nicht gesichert.",
+   "zeilen": [
+    66,
+    67,
+    70
+   ],
+   "code": [
+    "66:     IF sy-subrc <> 0.",
+    "67:       lo_msg->report_error_message(",
+    "70:       RETURN."
+   ],
+   "X": [
+    "Scheitert der Aufruf von NUMBER_GET_NEXT, wird vor der Datenbankoperation zurückgekehrt.",
+    "Die Methode report_error_message von lo_msg wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ],
+   "Y": [
+    "Schlägt die Ziehung der nächsten Unfallnummer fehl, wird eine Fehlermeldung ausgegeben und die Sicherung abgebrochen."
+   ],
+   "Z": [
+    "Ohne ls_unfall-unfall_nr wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "Ohne Treffer wird der Block verlassen.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "Die Methode report_error_message von lo_msg wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-193-B10",
+   "soll": "Ein Unfall mit mehr als drei Ausfalltagen wird als meldepflichtig gekennzeichnet, sonst als nicht meldepflichtig.",
+   "zeilen": [
+    78
+   ],
+   "code": [
+    "78:   ls_unfall-meldepflichtig = COND #( WHEN ls_unfall-ausfalltage > 3 THEN abap_true"
+   ],
+   "X": [],
+   "Y": [
+    "Sind mehr als drei Ausfalltage erfasst, wird das Kennzeichen meldepflichtig gesetzt; andernfalls wird es nicht gesetzt."
+   ],
+   "Z": []
+  },
+  {
+   "id": "BM-193-B11",
+   "soll": "Eine Meldung im Status 01 („in Erfassung“) wird beim Sichern auf Status 02 gesetzt, und der ändernde Benutzer mit Datum wird festgehalten.",
+   "zeilen": [
+    80
+   ],
+   "code": [
+    "80:   ls_unfall-status = COND #( WHEN ls_unfall-status = '01' THEN '02' ELSE ls_unfall-status )."
+   ],
+   "X": [],
+   "Y": [
+    "Steht die Unfallmeldung im Status 01, wird der Status auf 02 geändert; andernfalls bleibt der bisherige Status unverändert."
+   ],
+   "Z": []
+  },
+  {
+   "id": "BM-193-B12",
+   "soll": "Die Unfallmeldung wird in der Unfalltabelle angelegt oder überschrieben.",
+   "zeilen": [
+    84
+   ],
+   "code": [
+    "84:   MODIFY zehs_unfall FROM ls_unfall."
+   ],
+   "X": [
+    "Eine Zeile in zehs_unfall wird eingefügt oder überschrieben."
+   ],
+   "Y": [
+    "Die Unfalldaten werden auf der Datenbanktabelle ZEHS_UNFALL eingefügt oder aktualisiert."
+   ],
+   "Z": [
+    "Eine Zeile in zehs_unfall wird eingefügt oder überschrieben."
+   ]
+  },
+  {
+   "id": "BM-193-B13",
+   "soll": "Schlägt das Schreiben fehl, wird alles zurückgenommen und der Benutzer erhält eine Fehlermeldung.",
+   "zeilen": [
+    85,
+    86,
+    87
+   ],
+   "code": [
+    "85:   IF sy-subrc <> 0.",
+    "86:     ROLLBACK WORK.",
+    "87:     lo_msg->report_error_message( message_text = 'Fehler beim Sichern der Unfallmeldung' )."
+   ],
+   "X": [
+    "Schlägt die Datenbankänderung fehl, wird ROLLBACK WORK ausgeführt und vor der Datenbankoperation zurückgekehrt.",
+    "Mit ROLLBACK WORK werden die noch nicht festgeschriebenen Änderungen verworfen.",
+    "Die Methode report_error_message von lo_msg wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ],
+   "Y": [
+    "Schlägt das Sichern auf der Tabelle ZEHS_UNFALL fehl, werden die Datenbankänderungen zurückgerollt, eine Fehlermeldung ausgegeben und die Sicherung abgebrochen."
+   ],
+   "Z": [
+    "Ohne Treffer wird ROLLBACK WORK ausgeführt und der Block verlassen.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "Mit ROLLBACK WORK wird die Änderung verworfen; nichts ist persistiert.",
+    "Die Methode report_error_message von lo_msg wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-193-B14",
+   "soll": "Für die Meldung wird ein Änderungsbeleg mit altem und neuem Stand fortgeschrieben, als Neuanlage oder als Änderung.",
+   "zeilen": [
+    97
+   ],
+   "code": [
+    "97:   CALL FUNCTION 'ZEHS_UNF_WRITE_DOCUMENT' IN UPDATE TASK"
+   ],
+   "X": [
+    "Der Baustein ZEHS_UNF_WRITE_DOCUMENT wird zur Verbuchung registriert. An der Aufrufstelle wird nichts geändert. Angestoßen wird er erst mit dem COMMIT WORK in Zeile 108.",
+    "Es wird ZEHS_UNF_WRITE_DOCUMENT aufgerufen und COMMIT WORK ausgeführt."
+   ],
+   "Y": [
+    "Für die Unfallnummer wird die Verbuchung eines Änderungsbelegs mit dem alten und neuen Datenstand über den Funktionsbaustein ZEHS_UNF_WRITE_DOCUMENT im Verbucher registriert."
+   ],
+   "Z": [
+    "Der Baustein ZEHS_UNF_WRITE_DOCUMENT wird zur Verbuchung registriert. An der Aufrufstelle wird nichts geändert. Angestoßen wird er erst mit dem COMMIT WORK in Zeile 108.",
+    "Es wird ZEHS_UNF_WRITE_DOCUMENT aufgerufen und COMMIT WORK ausgeführt."
+   ]
+  },
+  {
+   "id": "BM-193-B15",
+   "soll": "Meldung und Änderungsbeleg werden gemeinsam festgeschrieben, und die vergebene Nummer wird in der Maske angezeigt.",
+   "zeilen": [
+    108,
+    111
+   ],
+   "code": [
+    "108:   COMMIT WORK.",
+    "111:   lo_nd_unfall->set_attribute( name = 'UNFALL_NR' value = ls_unfall-unfall_nr )."
+   ],
+   "X": [
+    "Es wird ZEHS_UNF_WRITE_DOCUMENT aufgerufen und COMMIT WORK ausgeführt.",
+    "Mit COMMIT WORK wird die Verbuchung der zuvor registrierten Bausteine angestoßen. Ohne AND WAIT wartet der Code das Verbuchungsergebnis nicht ab; ausgeführt oder persistiert ist damit nicht belegt.",
+    "Die Methode set_attribute von lo_nd_unfall wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ],
+   "Y": [
+    "Die Datenbankänderungen werden festgeschrieben.",
+    "Der aktuelle Stand der Unfallmeldung wird als bisheriger Stand gemerkt und die Unfallnummer an den Erfassungsknoten zurückgemeldet."
+   ],
+   "Z": [
+    "Es wird ZEHS_UNF_WRITE_DOCUMENT aufgerufen und COMMIT WORK ausgeführt.",
+    "Mit COMMIT WORK wird die Verbuchung der zuvor registrierten Bausteine angestoßen. Ohne AND WAIT wartet der Code das Verbuchungsergebnis nicht ab; ausgeführt oder persistiert ist damit nicht belegt.",
+    "Die Methode set_attribute von lo_nd_unfall wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-193-B16",
+   "soll": "Nur wenn ein Unfall mit diesem Sichern erstmals meldepflichtig wird, wird die Sicherheitsfachkraft benachrichtigt.",
+   "zeilen": [
+    114,
+    115
+   ],
+   "code": [
+    "114:   IF ls_unfall-meldepflichtig = abap_true AND ls_alt-meldepflichtig = abap_false.",
+    "115:     wd_this->send_sifa_mail( is_unfall = ls_unfall )."
+   ],
+   "X": [
+    "Die Methode send_sifa_mail von wd_this wird aufgerufen; sie schreibt mit COMMIT WORK fest und liest Variableneinträge und ZEHS_SIFA."
+   ],
+   "Y": [
+    "Ist die Unfallmeldung neu meldepflichtig geworden und war es im bisherigen Stand noch nicht, wird der E-Mail-Versand an die Sicherheitsfachkraft aufgerufen."
+   ],
+   "Z": [
+    "Die Methode send_sifa_mail von wd_this wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-193-B17",
+   "soll": "Die Benachrichtigung wird nur verschickt, wenn der Mailversand über den Schalter ZEHS_UNFALL_MAIL eingeschaltet ist.",
+   "zeilen": [
+    135,
+    139
+   ],
+   "code": [
+    "135:   SELECT SINGLE low FROM tvarvc INTO lv_aktiv",
+    "139:   IF lv_aktiv <> 'X'."
+   ],
+   "X": [
+    "Das Feld low des Variableneintrags wird gelesen.",
+    "Ohne gesetztes lv_aktiv wird der Block verlassen."
+   ],
+   "Y": [
+    "Aus der Tabelle TVARVC wird der Schalterwert zum Parameter ZEHS_UNFALL_MAIL gelesen.",
+    "Ist der Schalterwert in der Tabelle TVARVC nicht gleich X, wird der E-Mail-Versand beendet."
+   ],
+   "Z": [
+    "low des Satzes wird gelesen.",
+    "Ohne gesetztes lv_aktiv wird der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-193-B18",
+   "soll": "Empfänger ist die Sicherheitsfachkraft des Werks, ohne Eintrag das Sammelpostfach der Arbeitssicherheit.",
+   "zeilen": [
+    144,
+    147
+   ],
+   "code": [
+    "144:   SELECT SINGLE smtp_addr FROM zehs_sifa INTO lv_sifa_mail",
+    "147:     lv_sifa_mail = 'arbeitssicherheit@kunde.example'."
+   ],
+   "X": [
+    "Das Feld smtp_addr aus zehs_sifa wird gelesen.",
+    "Ohne Treffer wird das Feld lv_sifa_mail auf arbeitssicherheit@kunde.example gesetzt.",
+    "Wenn kein Treffer vorliegt, wird das Feld lv_sifa_mail auf arbeitssicherheit@kunde.example gesetzt."
+   ],
+   "Y": [
+    "Aus der Tabelle ZEHS_SIFA wird die E-Mail-Adresse der Sicherheitsfachkraft zum Werk des Unfalls gelesen.",
+    "Wird für das Werk keine Sicherheitsfachkraft in der Tabelle ZEHS_SIFA gefunden, wird als E-Mail-Adresse arbeitssicherheit@kunde.example gesetzt."
+   ],
+   "Z": [
+    "smtp_addr des Satzes wird gelesen.",
+    "Ohne Treffer wird die lv_sifa_mail auf arbeitssicherheit@kunde.example gesetzt.",
+    "sy-subrc ungleich 0 setzen die lv_sifa_mail auf arbeitssicherheit@kunde.example."
+   ]
+  },
+  {
+   "id": "BM-193-B19",
+   "soll": "Die Mail nennt Meldungsnummer, Werk, Unfalldatum und Ausfalltage und erinnert an die Unfallanzeige an die Berufsgenossenschaft binnen drei Tagen.",
+   "zeilen": [
+    150,
+    165
+   ],
+   "code": [
+    "150:   APPEND |Meldepflichtiger Arbeitsunfall { is_unfall-unfall_nr }| TO lt_text.",
+    "165:       lo_send_request->send( )."
+   ],
+   "X": [
+    "Eine Zeile wird in lt_text aufgenommen.",
+    "Es wird eine Zeile aufgenommen.",
+    "Die Methode send von lo_send_request wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ],
+   "Y": [
+    "Eine Benachrichtigungs-E-Mail über den meldepflichtigen Arbeitsunfall mit Werk, Unfalldatum und voraussichtlichen Ausfalltagen wird erstellt, an die ermittelte E-Mail-Adresse versendet und die Übertragung festgeschrieben."
+   ],
+   "Z": [
+    "Eine Zeile wird in lt_text aufgenommen.",
+    "Es wird eine Zeile aufgenommen.",
+    "Die Methode send von lo_send_request wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-193-B20",
+   "soll": "Scheitert der Mailversand, erhält der Benutzer nur eine Warnung; die gesicherte Meldung bleibt bestehen.",
+   "zeilen": [
+    167,
+    168
+   ],
+   "code": [
+    "167:     CATCH cx_bcs INTO lx_bcs.",
+    "168:       wd_this->wd_get_api( )->get_message_manager( )->report_warning("
+   ],
+   "X": [
+    "Die Methode wd_get_api von wd_this wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ],
+   "Y": [
+    "Tritt beim Versenden der E-Mail ein Fehler auf, wird eine Warnung mit dem Fehlertext ausgegeben und der Sendeauftrag verworfen."
+   ],
+   "Z": [
+    "Die Methode wd_get_api von wd_this wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-193-B21",
+   "soll": "Nach erfolgreichem Sichern wird die Meldung bestätigt, die Maske schreibgeschützt und zur Bestätigungsseite gewechselt.",
+   "zeilen": [
+    118,
+    236,
+    237
+   ],
+   "code": [
+    "118:   lo_msg->report_success( message_text = |Unfallmeldung { ls_unfall-unfall_nr } gesichert| ).",
+    "236:   wd_context->set_attribute( name = 'READ_ONLY' value = abap_true ).",
+    "237:   wd_this->fire_to_confirm_plg( )."
+   ],
+   "X": [
+    "Die Methode report_success von lo_msg wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "Die Methode set_attribute von wd_context wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "Die Methode fire_to_confirm_plg von wd_this wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ],
+   "Y": [
+    "Es wird eine Erfolgsmeldung mit der gesicherten Unfallnummer ausgegeben und die erfolgreiche Sicherung signalisiert.",
+    "Die Erfassungsmaske wird auf schreibgeschützt gesetzt und die Navigation zur Bestätigungsseite angestoßen."
+   ],
+   "Z": [
+    "Die Methode report_success von lo_msg wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "Die Methode set_attribute von wd_context wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "Die Methode fire_to_confirm_plg von wd_this wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-193-B22",
+   "soll": "Ist das Sichern gescheitert, bleibt der Benutzer mit den Meldungen in der Erfassungsmaske.",
+   "zeilen": [
+    231,
+    233
+   ],
+   "code": [
+    "231:   IF lv_ok = abap_false.",
+    "233:     RETURN."
+   ],
+   "X": [
+    "Wenn das Feld lv_ok nicht gesetzt ist, wird der Block verlassen."
+   ],
+   "Y": [
+    "Das Sichern der Unfallmeldung wird ausgeführt; schlägt dieses fehl, wird der Speichervorgang abgebrochen."
+   ],
+   "Z": [
+    "Für lv_ok mit dem Wert abap_false wird der Block verlassen.",
+    "Bei lv_ok gleich abap_false wird der Block verlassen."
+   ]
+  }
+ ]
+}

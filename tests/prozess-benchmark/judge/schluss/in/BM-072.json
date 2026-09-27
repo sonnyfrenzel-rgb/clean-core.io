@@ -1,0 +1,332 @@
+{
+ "id": "BM-072",
+ "titel": "Planaufträge mit Material- und Fehlteilprüfung in Fertigungsaufträge umsetzen",
+ "prozess": "Der Report läuft täglich als Job je Werk und ersetzt die Sammelumsetzung CO41. Beim Start prüft er die Berechtigung für Werk und Auftragsart. Er liest die eigengefertigten Lager-Planaufträge des Werks bis zum Horizont, verwirft auf Wunsch nicht fixierte und sortiert nach Eckstart; gibt es keine, endet er mit einem Hinweis. Für jeden Planauftrag prüft er zuerst den werksspezifischen Materialstatus – Z1 heißt Fertigung gesperrt, der Planauftrag wird rot protokolliert und übersprungen. Dann vergleicht er jeden Sekundärbedarf mit dem frei verwendbaren Lagerbestand der Komponente im Werk; beim ersten Fehlteil protokolliert er gelb und überspringt den Planauftrag. Besteht der Planauftrag beide Prüfungen, setzt er ihn in einen Fertigungsauftrag der gewählten Art um, rollt bei Fehler zurück oder schreibt fest und protokolliert das Ergebnis. Auf Wunsch gibt er den neuen Auftrag sofort frei; eine gescheiterte Freigabe wird zurückgerollt und gelb vermerkt. Zum Schluss zeigt er das Protokoll mit Ampeln als ALV-Liste.",
+ "verboten": [
+  "zpp_plaf_umsetzen_f01.abap:33 — kein Fachsatz „Planaufträge für Materialien ohne Werksdaten werden abgelehnt“ (der Kopfkommentar sagt „vorhanden“, aber sy-subrc wird nicht geprüft; ohne Treffer ist der Status leer und die Prüfung besteht)",
+  "zpp_plaf_umsetzen_f01.abap:70 — kein Fachsatz „Die Verfügbarkeit wird per ATP geprüft“ (nur Summe des frei verwendbaren Lagerbestands, ohne Reservierungen anderer Aufträge)",
+  "zpp_plaf_umsetzen_f01.abap:37 — kein Fachsatz „Auslaufmaterial (Z2) wird nicht umgesetzt“ (laut Kommentar und Code ist nur Z1 gesperrt)",
+  "gesamte Scheibe — kein Fachsatz „Es gibt einen Testlauf“ (jede Umsetzung wird sofort gebucht)"
+ ],
+ "saetze": [
+  {
+   "id": "BM-072-B01",
+   "soll": "Beim Ausführen wird geprüft, ob der Benutzer für Werk und Auftragsart berechtigt ist; ohne Berechtigung bleibt er mit einer Fehlermeldung im Selektionsbild.",
+   "zeilen": [
+    14,
+    17,
+    18
+   ],
+   "code": [
+    "14:   AUTHORITY-CHECK OBJECT 'C_AFKO_AWK'",
+    "17:   IF sy-subrc <> 0.",
+    "18:     MESSAGE e010 WITH p_werks p_auart."
+   ],
+   "X": [
+    "Die Berechtigung auf C_AFKO_AWK wird geprüft.",
+    "Ohne Berechtigung auf C_AFKO_AWK für den eingegebenen Werk wird eine Fehlermeldung ausgegeben.",
+    "Die Fehlermeldung 010 wird ausgegeben."
+   ],
+   "Y": [
+    "Die Berechtigung auf C_AFKO_AWK wird geprüft.",
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ],
+   "Z": [
+    "Für das Werk p_werks und die Auftragsart p_auart wird eine Berechtigungsprüfung gegen das Berechtigungsobjekt C_AFKO_AWK durchgeführt.",
+    "Ist das Ergebnis der Berechtigungsprüfung ungleich 0 (sy-subrc <> 0), wird die Fehlermeldung E010 mit dem Werk p_werks und der Auftragsart p_auart ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-072-B02",
+   "soll": "Es werden Planaufträge des Werks zu den gewählten Disponenten und Materialien selektiert, deren Eckstarttermin bis zum Horizont reicht und die Lageraufträge (LA) für Eigenfertigung (E) sind.",
+   "zeilen": [
+    52
+   ],
+   "code": [
+    "52:   SELECT plnum matnr plwrk gsmng psttr auffx"
+   ],
+   "X": [
+    "Das Ergebnis enthält plnum, Materialnummer, plwrk, gsmng, psttr und auffx.",
+    "Es werden Sätze aus plaf mit dem eingegebenen plwrk selektiert."
+   ],
+   "Y": [
+    "Es werden Sätze aus plaf mit dem eingegebenen plwrk selektiert."
+   ],
+   "Z": [
+    "Aus der Tabelle PLAF werden Planauftragsnummer (plnum), Materialnummer (matnr), Planungswerk (plwrk), Gesamtauftragsmenge (gsmng), Eckstarttermin (psttr) und Fixierungskennzeichen (auffx) für das Werk p_werks, die Disponenten s_dispo, die Materialien s_matnr, Eckstarttermine bis einschließlich p_bis sowie paart gleich LA und beskz gleich E in die Tabelle gt_plaf gelesen."
+   ]
+  },
+  {
+   "id": "BM-072-B03",
+   "soll": "Ist der Schalter „nur fixierte“ gesetzt (Vorschlag), werden nicht fixierte Planaufträge verworfen; die übrigen werden nach Eckstarttermin sortiert.",
+   "zeilen": [
+    62,
+    63,
+    65
+   ],
+   "code": [
+    "62:   IF p_fix = abap_true.",
+    "63:     DELETE gt_plaf WHERE auffx = space.",
+    "65:   SORT gt_plaf BY psttr plnum."
+   ],
+   "X": [],
+   "Y": [],
+   "Z": [
+    "Ist der Parameter p_fix gleich abap_true, werden alle Datensätze mit nicht fixiertem Planauftrag (auffx gleich Leerzeichen) aus der Tabelle gt_plaf gelöscht.",
+    "Die Tabelle gt_plaf wird aufsteigend nach dem Eckstarttermin psttr und der Planauftragsnummer plnum sortiert."
+   ]
+  },
+  {
+   "id": "BM-072-B04",
+   "soll": "Bleibt kein Planauftrag übrig, wird ein Hinweis ausgegeben und der Lauf beendet.",
+   "zeilen": [
+    23,
+    24,
+    25
+   ],
+   "code": [
+    "23:   IF gt_plaf IS INITIAL.",
+    "24:     MESSAGE s011.",
+    "25:     RETURN."
+   ],
+   "X": [
+    "Ist die Tabelle gt_plaf leer, wird eine Statusmeldung ausgegeben und der Block verlassen.",
+    "Die Statusmeldung 011 wird ausgegeben."
+   ],
+   "Y": [
+    "Ohne Treffer wird eine Meldung ausgegeben und der Block verlassen.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "Eine Meldung wird ausgegeben.",
+    "Es wird eine Meldung ausgegeben und der Block verlassen."
+   ],
+   "Z": [
+    "Ist die Tabelle gt_plaf initial, wird die Erfolgsmeldung S011 ausgegeben und die Verarbeitung beendet."
+   ]
+  },
+  {
+   "id": "BM-072-B05",
+   "soll": "Ist das Material im Werk für die Fertigung gesperrt (Status Z1), wird der Planauftrag rot protokolliert und nicht umgesetzt.",
+   "zeilen": [
+    30,
+    76,
+    80
+   ],
+   "code": [
+    "30:     IF gv_ok = abap_false.",
+    "76:   SELECT SINGLE mmsta FROM marc INTO lv_mmsta",
+    "80:   IF lv_mmsta = 'Z1'."
+   ],
+   "X": [
+    "Wenn das Feld gv_ok nicht gesetzt ist, wird der Schleifendurchlauf übersprungen.",
+    "Das Feld mmsta des Werksdatensatzes zum Material wird gelesen.",
+    "Wenn das Feld lv_mmsta gleich Z1 ist, wird eine Zeile aufgenommen und der Block verlassen."
+   ],
+   "Y": [
+    "mmsta des Satzes wird gelesen.",
+    "Für lv_mmsta mit dem Wert Z1 wird eine Zeile aufgenommen und der Block verlassen.",
+    "Bei lv_mmsta gleich Z1 wird der Block verlassen."
+   ],
+   "Z": [
+    "Ist das Prüfergebnis gv_ok gleich abap_false, wird die Bearbeitung des aktuellen Planauftrags abgebrochen und mit dem nächsten Schleifendurchlauf fortgefahren.",
+    "Aus der Tabelle MARC wird der werkspezifische Materialstatus mmsta für die Materialnummer matnr und das Planungswerk plwrk des Planauftrags gelesen.",
+    "Ist der Materialstatus mmsta gleich Z1, wird ein Eintrag mit Planauftragsnummer, Materialnummer, roter Ampel und dem Text Material fuer Fertigung gesperrt (Z1) an die Protokolltabelle gt_log angefügt und das Unterprogramm beendet."
+   ]
+  },
+  {
+   "id": "BM-072-B06",
+   "soll": "Für jeden nicht gelöschten Sekundärbedarf des Planauftrags wird der frei verwendbare Bestand der Komponente über alle Lagerorte des Werks summiert.",
+   "zeilen": [
+    106,
+    111,
+    113
+   ],
+   "code": [
+    "106:   SELECT matnr werks bdmng FROM resb",
+    "111:   LOOP AT lt_resb INTO ls_resb.",
+    "113:     SELECT SUM( labst ) FROM mard INTO lv_bestand"
+   ],
+   "X": [
+    "Das Ergebnis enthält Materialnummer, Werk und bdmng.",
+    "Es werden Reservierungspositionen selektiert.",
+    "Jede Zeile aus lt_resb wird einzeln verarbeitet.",
+    "Das Ergebnis enthält SUM( und labst.",
+    "Es werden Lagerortbestände selektiert."
+   ],
+   "Y": [
+    "Es werden Sätze aus resb selektiert.",
+    "Jede Zeile aus lt_resb wird einzeln verarbeitet.",
+    "Es werden Sätze aus mard selektiert."
+   ],
+   "Z": [
+    "Aus der Tabelle RESB werden Materialnummer (matnr), Werk (werks) und Bedarfsmenge (bdmng) für die Planauftragsnummer plnum ohne Löschvormerkung (xloek gleich Leerzeichen) in die Tabelle lt_resb gelesen.",
+    "Die Komponenten der Tabelle lt_resb werden satzweise in einer Schleife verarbeitet.",
+    "Aus der Tabelle MARD wird die Summe des frei verwendbaren Lagerbestands labst für die Materialnummer matnr und das Werk werks der aktuellen Komponente ermittelt."
+   ]
+  },
+  {
+   "id": "BM-072-B07",
+   "soll": "Reicht der Bestand einer Komponente nicht für den Bedarf, wird der Planauftrag gelb mit „Fehlteil“ und der Komponente protokolliert, die Prüfung abgebrochen und nicht umgesetzt.",
+   "zeilen": [
+    35,
+    116,
+    120
+   ],
+   "code": [
+    "35:     IF gv_ok = abap_false.",
+    "116:     IF lv_bestand < ls_resb-bdmng.",
+    "120:       EXIT."
+   ],
+   "X": [
+    "Wenn das Feld gv_ok nicht gesetzt ist, wird der Schleifendurchlauf übersprungen.",
+    "Wenn das Feld lv_bestand kleiner als ls_resb-bdmng ist, wird eine Zeile aufgenommen und die Schleife verlassen."
+   ],
+   "Y": [
+    "Für lv_bestand kleiner ls_resb-bdmng wird eine Zeile aufgenommen und der Block verlassen.",
+    "Es wird eine Zeile aufgenommen und der Block verlassen."
+   ],
+   "Z": [
+    "Ist das Prüfergebnis gv_ok gleich abap_false, wird die weitere Verarbeitung des Planauftrags übersprungen und mit dem nächsten Schleifendurchlauf fortgefahren.",
+    "Ist der ermittelte Lagerbestand kleiner als die Bedarfsmenge bdmng, wird das Kennzeichen cv_ok auf abap_false gesetzt, ein Protokolleintrag mit gelber Ampel und Fehlteiltext an gt_log angefügt und die Schleife abgebrochen."
+   ]
+  },
+  {
+   "id": "BM-072-B08",
+   "soll": "Sonst wird aus dem Planauftrag ein Fertigungsauftrag der gewählten Auftragsart erzeugt.",
+   "zeilen": [
+    39,
+    135
+   ],
+   "code": [
+    "39:     PERFORM umsetzen USING gs_plaf.",
+    "135:   CALL FUNCTION 'BAPI_PRODORD_CREATE_FROM_PLORD'"
+   ],
+   "X": [
+    "Das Unterprogramm umsetzen wird aufgerufen; es ruft BAPI_PRODORD_CREATE_FROM_PLORD, BAPI_TRANSACTION_ROLLBACK und BAPI_PRODORD_RELEASE auf und schreibt mit BAPI_TRANSACTION_COMMIT fest.",
+    "Der Code übergibt is_plaf-plnum an BAPI_PRODORD_CREATE_FROM_PLORD und übernimmt dessen Ausgabe nach lv_aufnr."
+   ],
+   "Y": [
+    "Das Unterprogramm umsetzen wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Der Code übergibt is_plaf-plnum an BAPI_PRODORD_CREATE_FROM_PLORD und übernimmt dessen Ausgabe nach lv_aufnr.",
+    "Das konvertierte Ergebnis wird in lv_aufnr übernommen."
+   ],
+   "Z": [
+    "Das Unterprogramm umsetzen zur Umsetzung des aktuellen Planauftrags wird aufgerufen.",
+    "Über den Funktionsbaustein BAPI_PRODORD_CREATE_FROM_PLORD wird aus dem Planauftrag mit der Auftragsart p_auart ein Fertigungsauftrag angelegt."
+   ]
+  },
+  {
+   "id": "BM-072-B09",
+   "soll": "Scheitert die Umsetzung, wird zurückgerollt und der Planauftrag rot mit dem Fehlertext protokolliert.",
+   "zeilen": [
+    143,
+    144
+   ],
+   "code": [
+    "143:   IF ls_return-type CA 'EAX' OR lv_aufnr IS INITIAL.",
+    "144:     CALL FUNCTION 'BAPI_TRANSACTION_ROLLBACK'."
+   ],
+   "X": [
+    "Wenn die Bedingung „ls_return-type CA 'EAX' OR lv_aufnr IS INITIAL“ erfüllt ist, wird BAPI_TRANSACTION_ROLLBACK aufgerufen, eine Zeile aufgenommen und der Block verlassen.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_ROLLBACK wird aufgerufen."
+   ],
+   "Y": [
+    "Für ls_return-type CA 'EAX' OR lv_aufnr IS INITIAL wird BAPI_TRANSACTION_ROLLBACK aufgerufen, eine Zeile aufgenommen und der Block verlassen.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_ROLLBACK wird aufgerufen.",
+    "Es wird BAPI_TRANSACTION_ROLLBACK aufgerufen, eine Zeile aufgenommen und der Block verlassen."
+   ],
+   "Z": [
+    "Enthält der Rückgabetyp die Zeichen E, A oder X oder ist die Auftragsnummer initial, wird ein Rollback über BAPI_TRANSACTION_ROLLBACK ausgeführt, ein roter Eintrag mit der Rückmeldung an gt_log angehängt und das Unterprogramm beendet."
+   ]
+  },
+  {
+   "id": "BM-072-B10",
+   "soll": "Gelingt sie, wird festgeschrieben und der Planauftrag mit der neuen Auftragsnummer grün als „umgesetzt“ protokolliert.",
+   "zeilen": [
+    150
+   ],
+   "code": [
+    "150:   CALL FUNCTION 'BAPI_TRANSACTION_COMMIT'"
+   ],
+   "X": [
+    "Der Funktionsbaustein BAPI_TRANSACTION_COMMIT wird aufgerufen.",
+    "Es wird BAPI_TRANSACTION_COMMIT aufgerufen und eine Zeile aufgenommen."
+   ],
+   "Y": [
+    "Der Funktionsbaustein BAPI_TRANSACTION_COMMIT wird aufgerufen.",
+    "Es wird BAPI_TRANSACTION_COMMIT aufgerufen und eine Zeile aufgenommen."
+   ],
+   "Z": [
+    "Bei erfolgreicher Auftragserzeugung wird die Transaktion über BAPI_TRANSACTION_COMMIT mit Warteoption bestätigt und ein Eintrag mit Auftragsnummer, grüner Ampel und dem Text umgesetzt an gt_log angefügt."
+   ]
+  },
+  {
+   "id": "BM-072-B11",
+   "soll": "Ist Sofortfreigabe gewählt, wird der neue Fertigungsauftrag freigegeben; scheitert die Freigabe, wird sie zurückgerollt und „umgesetzt, Freigabe fehlgeschlagen“ gelb protokolliert, sonst festgeschrieben.",
+   "zeilen": [
+    156,
+    158,
+    164,
+    165,
+    169
+   ],
+   "code": [
+    "156:   IF p_frei = abap_true.",
+    "158:     CALL FUNCTION 'BAPI_PRODORD_RELEASE'",
+    "164:     IF ls_ret_fr-type CA 'EA'.",
+    "165:       CALL FUNCTION 'BAPI_TRANSACTION_ROLLBACK'.",
+    "169:       CALL FUNCTION 'BAPI_TRANSACTION_COMMIT'"
+   ],
+   "X": [
+    "Wenn das Feld p_frei gesetzt ist, wird eine Zeile aufgenommen und BAPI_PRODORD_RELEASE aufgerufen.",
+    "Der Funktionsbaustein BAPI_PRODORD_RELEASE wird aufgerufen.",
+    "Das Ergebnis von BAPI_PRODORD_RELEASE wird in ls_ret_fr übernommen.",
+    "Wenn die Bedingung „ls_ret_fr-type CA 'EA'“ erfüllt ist, wird BAPI_TRANSACTION_ROLLBACK aufgerufen und eine Zeile aufgenommen, sonst BAPI_TRANSACTION_COMMIT aufgerufen.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_ROLLBACK wird aufgerufen.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_COMMIT wird aufgerufen."
+   ],
+   "Y": [
+    "Für p_frei mit dem Wert abap_true wird eine Zeile aufgenommen und BAPI_PRODORD_RELEASE aufgerufen.",
+    "Es wird eine Zeile aufgenommen und BAPI_PRODORD_RELEASE aufgerufen.",
+    "Der Funktionsbaustein BAPI_PRODORD_RELEASE wird aufgerufen.",
+    "Das konvertierte Ergebnis wird in ls_ret_fr übernommen.",
+    "Für ls_ret_fr-type CA 'EA' wird BAPI_TRANSACTION_ROLLBACK aufgerufen und eine Zeile aufgenommen.",
+    "Für ls_ret_fr-type CA 'EA' wird BAPI_TRANSACTION_ROLLBACK aufgerufen und eine Zeile aufgenommen, sonst BAPI_TRANSACTION_COMMIT aufgerufen.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_ROLLBACK wird aufgerufen.",
+    "Es wird BAPI_TRANSACTION_ROLLBACK aufgerufen und eine Zeile aufgenommen.",
+    "Sonst wird BAPI_TRANSACTION_COMMIT aufgerufen.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_COMMIT wird aufgerufen."
+   ],
+   "Z": [
+    "Ist der Parameter p_frei gleich abap_true, wird die erzeugte Auftragsnummer in die Tabelle lt_orders eingefügt.",
+    "Der Funktionsbaustein BAPI_PRODORD_RELEASE wird aufgerufen, um die Aufträge aus lt_orders freizugeben.",
+    "Enthält der Rückgabetyp der Freigabe die Zeichen E oder A, wird die Freigabe über BAPI_TRANSACTION_ROLLBACK zurückgesetzt und ein Protokollsatz mit gelber Ampel sowie dem Text umgesetzt, Freigabe fehlgeschlagen an gt_log angehängt.",
+    "War die Freigabe erfolgreich, wird die Transaktion über BAPI_TRANSACTION_COMMIT mit Warteoption auf der Datenbank festgeschrieben."
+   ]
+  },
+  {
+   "id": "BM-072-B12",
+   "soll": "Am Ende wird das Protokoll mit Ampel, Planauftrag, Material, Auftrag und Ergebnistext als ALV-Liste ausgegeben.",
+   "zeilen": [
+    43,
+    190
+   ],
+   "code": [
+    "43:   PERFORM ausgabe.",
+    "190:   CALL FUNCTION 'REUSE_ALV_GRID_DISPLAY'"
+   ],
+   "X": [
+    "Das Unterprogramm ausgabe wird aufgerufen; es ruft REUSE_ALV_GRID_DISPLAY auf.",
+    "Der Funktionsbaustein REUSE_ALV_GRID_DISPLAY wird aufgerufen."
+   ],
+   "Y": [
+    "Das Unterprogramm ausgabe wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Der Funktionsbaustein REUSE_ALV_GRID_DISPLAY wird aufgerufen."
+   ],
+   "Z": [
+    "Das Unterprogramm ausgabe zur Protokollausgabe wird aufgerufen.",
+    "Über den Funktionsbaustein REUSE_ALV_GRID_DISPLAY wird die Protokolltabelle gt_log als ALV-Grid zur Anzeige gebracht."
+   ]
+  }
+ ]
+}

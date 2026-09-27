@@ -1,0 +1,98 @@
+{
+ "id": "BM-045",
+ "titel": "Ist-Kosten einer Kostenstelle je Kostenart für ein Geschäftsjahr",
+ "prozess": "Der Kostenstellenverantwortliche startet den Report mit Kostenrechnungskreis, Kostenstelle und Geschäftsjahr (vorbelegt mit dem aktuellen Jahr). Aus Kostenrechnungskreis und Kostenstelle wird die Objektnummer gebildet, und die primären Ist-Summensätze der Version 000 werden gelesen. Gibt es keine, erscheint ein Hinweis und die Auswertung endet. Sonst wird je Kostenart die Summe der Perioden 1 bis 12 gebildet und als Liste ausgegeben. Es wird nichts geändert.",
+ "verboten": [
+  "source.abap:28 — kein Fachsatz „Sonderperioden werden berücksichtigt“ (nur WKG001 bis WKG012)",
+  "source.abap:17 — kein Fachsatz „Plankosten werden mit Istkosten verglichen“ (nur Werttyp 04)",
+  "source.abap:17 — kein Fachsatz „sekundäre Kosten werden einbezogen“ (COSS wird nicht gelesen)"
+ ],
+ "saetze": [
+  {
+   "id": "BM-045-B01",
+   "soll": "Die Kostenstelle wird über ihre Objektnummer aus Kostenrechnungskreis und Kostenstellennummer angesprochen.",
+   "zeilen": [
+    16
+   ],
+   "code": [
+    "16:   CONCATENATE 'KS' p_kokrs p_kostl INTO lv_objnr."
+   ],
+   "X": [],
+   "Y": [
+    "Die Objektnummer wird aus dem Präfix KS, dem Kostenrechnungskreis und der Kostenstelle zusammengesetzt."
+   ],
+   "Z": []
+  },
+  {
+   "id": "BM-045-B02",
+   "soll": "Es werden die Ist-Summensätze (Werttyp 04, Version 000) der Kostenstelle für das gewählte Geschäftsjahr gelesen.",
+   "zeilen": [
+    17
+   ],
+   "code": [
+    "17:   SELECT * FROM cosp INTO TABLE lt_cosp"
+   ],
+   "X": [
+    "Es werden Sätze aus cosp mit dem eingegebenen gjahr selektiert."
+   ],
+   "Y": [
+    "Aus der Tabelle COSP werden alle Datensätze für die ermittelte Objektnummer, das angegebene Geschäftsjahr, den Werttyp 04 und die Version 000 gelesen."
+   ],
+   "Z": [
+    "Es werden Sätze aus cosp mit dem eingegebenen Geschäftsjahr selektiert."
+   ]
+  },
+  {
+   "id": "BM-045-B03",
+   "soll": "Ohne Istkosten erhält der Anwender einen Hinweis und die Auswertung endet.",
+   "zeilen": [
+    22,
+    23,
+    24
+   ],
+   "code": [
+    "22:   IF sy-subrc <> 0.",
+    "23:     MESSAGE s398(00) WITH 'Keine Istkosten fuer' p_kostl.",
+    "24:     RETURN."
+   ],
+   "X": [
+    "Ohne Treffer wird eine Meldung ausgegeben und der Block verlassen.",
+    "Ohne Treffer wird der Block verlassen.",
+    "Eine Meldung wird ausgegeben.",
+    "Es wird eine Meldung ausgegeben und der Block verlassen."
+   ],
+   "Y": [
+    "Werden keine Datensätze in der Tabelle COSP gefunden, wird eine Erfolgsmeldung mit dem Hinweis auf fehlende Istkosten für die Kostenstelle ausgegeben und die Verarbeitung beendet."
+   ],
+   "Z": [
+    "Ohne Treffer wird eine Statusmeldung ausgegeben und der Block verlassen.",
+    "Die Statusmeldung 398(00) wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-045-B04",
+   "soll": "Je Kostenart wird der Jahreswert als Summe der Perioden 1 bis 12 in Kostenrechnungskreiswährung gebildet und mit dem Soll/Haben-Kennzeichen ausgegeben.",
+   "zeilen": [
+    28,
+    32
+   ],
+   "code": [
+    "28:     lv_jahr = ls_cosp-wkg001 + ls_cosp-wkg002 + ls_cosp-wkg003",
+    "32:     WRITE: / ls_cosp-kstar, ls_cosp-beknz, lv_jahr."
+   ],
+   "X": [
+    "Bei Treffern werden ls_cosp-kstar, ls_cosp-beknz und lv_jahr als Liste ausgegeben.",
+    "ls_cosp-kstar wird ausgegeben.",
+    "ls_cosp-beknz wird ausgegeben.",
+    "lv_jahr wird ausgegeben."
+   ],
+   "Y": [
+    "Für jeden gefundenen Datensatz der Tabelle COSP werden die Beträge in Kostenrechnungskreiswährung der Perioden 1 bis 12 summiert.",
+    "Die Kostenart, das Soll-/Haben-Kennzeichen und der summierte Jahresbetrag werden zeilenweise ausgegeben."
+   ],
+   "Z": [
+    "Bei Treffern werden ls_cosp-kstar, ls_cosp-beknz und lv_jahr als Liste ausgegeben."
+   ]
+  }
+ ]
+}

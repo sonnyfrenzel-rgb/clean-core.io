@@ -1,0 +1,94 @@
+{
+ "id": "BM-161",
+ "urteile": [
+  {
+   "id": "BM-161-B01",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig",
+     "zu_allgemein"
+    ]
+   },
+   "kurz": "Y nennt Tabelle und Selektionskriterien, X und Z nur generische Selektion; keine Variante nennt die Sortierung je Zähler und Datum."
+  },
+  {
+   "id": "BM-161-B02",
+   "X": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "kurz": "Nur Y sagt, dass beim Zählerwechsel die Vorablesung verworfen wird."
+  },
+  {
+   "id": "BM-161-B03",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "falsch"
+    ]
+   },
+   "kurz": "Y nennt den Ablesestatus 1 fachlich; X bleibt bei Feldnamen, Z behauptet fälschlich, nur kleinere Werte würden übersprungen."
+  },
+  {
+   "id": "BM-161-B04",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Nur Y nennt die Verbrauchsberechnung als Differenz; X und Z listen nur die Ausgabefelder."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

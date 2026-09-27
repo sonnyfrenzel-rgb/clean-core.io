@@ -1,0 +1,531 @@
+{
+ "id": "BM-099",
+ "titel": "Modulpool Lieferantenzertifikate: Einstieg, Detailbild, Sperre, Berechtigung, Sichern und Löschen",
+ "prozess": "Einkauf und Qualitätssicherung pflegen in der Transaktion ZVCERT Lieferantenzertifikate. Im Einstiegsbild geben sie Kreditor und Zertifikatsart ein und wählen Anzeigen, Anlegen oder Ändern. Der Kreditor muss existieren und darf nicht gesperrt oder zum Löschen vorgemerkt sein; die Berechtigung wird je Zertifikatsart mit der zum Modus passenden Aktivität geprüft. Beim Anlegen darf das Zertifikat noch nicht existieren, sonst muss es existieren. In Anlage und Änderung wird es gesperrt, dann erscheint das Detailbild – im Anzeigemodus ohne eingabebereite Felder. Beim Sichern werden der Gültigkeitszeitraum und die Zertifikatsart geprüft, der Status abhängig vom heutigen Datum auf abgelaufen oder gültig gesetzt, das Zertifikat gespeichert, die Änderung mit alten und neuen Werten protokolliert und festgeschrieben. Beim Löschen fragt das Programm nach und löscht nach Bestätigung ohne Protokoll. Nach Sichern, Löschen, Zurück oder Abbrechen wird die Sperre gelöst und das Einstiegsbild erscheint; die Abbruchfunktion verlässt die Transaktion. Löschen ist auch im Anzeigemodus möglich.",
+ "verboten": [
+  "mzvcerti01.abap:79 — kein Fachsatz „Löschen ist nur im Änderungsmodus und mit Löschberechtigung möglich“ (DELE läuft auch im Anzeigemodus, geprüft wurde dort nur Aktivität 03, eine Aktivität 06 wird nie geprüft, und es besteht keine Sperre).",
+  "mzvcertf01.abap:182 — kein Fachsatz „die Löschung wird protokolliert oder QM per Mail informiert“ (nur Sicherungen schreiben ZVCERT_LOG; die Mail ist auskommentiert).",
+  "gesamte Scheibe — kein Fachsatz „Änderungen erzeugen Änderungsbelege“ (CHANGEDOCUMENT_* nur auskommentiert).",
+  "mzvcertf01.abap:89 — kein Fachsatz „die maximale Gültigkeitsdauer der Zertifikatsart wird geprüft“ (MAXYEARS wird nicht gelesen; die ISO-Prüfung ist auskommentiert)."
+ ],
+ "saetze": [
+  {
+   "id": "BM-099-B01",
+   "soll": "Im Einstiegsbild wählt der Benutzer Anzeigen, Anlegen oder Ändern; andere Funktionen bewirken nichts.",
+   "zeilen": [
+    299,
+    307
+   ],
+   "code": [
+    "299:   CASE gv_ucomm.",
+    "307:       RETURN."
+   ],
+   "X": [
+    "Anhand des Funktionscodes wird der Bearbeitungsmodus auf Anzeigen ('A'), Anlegen ('C') oder Ändern ('U') gesetzt; bei unbekanntem Code wird die Verarbeitung abgebrochen."
+   ],
+   "Y": [],
+   "Z": []
+  },
+  {
+   "id": "BM-099-B02",
+   "soll": "Der Kreditor muss existieren; ist er zentral gesperrt oder zum Löschen vorgemerkt, wird die Pflege mit Fehlermeldung verweigert.",
+   "zeilen": [
+    98,
+    101,
+    103,
+    104
+   ],
+   "code": [
+    "98:   SELECT SINGLE * FROM lfa1",
+    "101:     MESSAGE e001 WITH zvcert-lifnr.",
+    "103:   IF lfa1-sperr = 'X' OR lfa1-loevm = 'X'.",
+    "104:     MESSAGE e002 WITH zvcert-lifnr."
+   ],
+   "X": [
+    "Zur Kreditorennummer aus dem Dynpro wird der Lieferantenstammsatz aus Tabelle LFA1 gelesen.",
+    "Wird kein Lieferantenstammsatz in LFA1 gefunden, wird die Fehlermeldung E001 mit der Kreditorennummer ausgegeben.",
+    "Ist der Kreditor zentral gesperrt (LFA1-SPERR = 'X') oder zum Löschen vorgemerkt (LFA1-LOEVM = 'X'), wird die Fehlermeldung E002 mit der Kreditorennummer ausgegeben."
+   ],
+   "Y": [
+    "Es werden Sätze aus lfa1 selektiert.",
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben.",
+    "Für lfa1-sperr = 'X' OR lfa1-loevm = 'X' wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ],
+   "Z": [
+    "Es werden Lieferanten selektiert.",
+    "Ohne Treffer wird eine Fehlermeldung ausgegeben.",
+    "Die Fehlermeldung 001 wird ausgegeben.",
+    "Wenn das Feld lfa1-sperr gesetzt ist oder die Löschvormerkung gesetzt ist, wird eine Fehlermeldung ausgegeben.",
+    "Die Fehlermeldung 002 wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-099-B03",
+   "soll": "Die Berechtigung wird für die Zertifikatsart mit der Aktivität des Modus geprüft: Anzeigen 03, Anlegen 01, Ändern 02; ohne Berechtigung wird abgelehnt.",
+   "zeilen": [
+    116,
+    125,
+    129
+   ],
+   "code": [
+    "116:   CASE pv_mode.",
+    "125:   AUTHORITY-CHECK OBJECT 'Z_VCERT'",
+    "129:     MESSAGE e005 WITH zvcert-ctype."
+   ],
+   "X": [
+    "Im Anzeigemodus wird für das Berechtigungsobjekt Z_VCERT die Aktivität 03 und die Zertifikatsart geprüft; im Anlegemodus Aktivität 01, sonst Aktivität 02.",
+    "Fehlt die Berechtigung für das Berechtigungsobjekt Z_VCERT, wird die Fehlermeldung E005 mit der Zertifikatsart ausgegeben."
+   ],
+   "Y": [
+    "Die Berechtigung auf Z_VCERT wird geprüft.",
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ],
+   "Z": [
+    "Die Berechtigung auf Z_VCERT wird geprüft.",
+    "Ohne Berechtigung auf Z_VCERT wird eine Fehlermeldung ausgegeben.",
+    "Die Fehlermeldung 005 wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-099-B04",
+   "soll": "Beim Anlegen darf das Zertifikat für Kreditor und Art noch nicht existieren, beim Anzeigen und Ändern muss es existieren.",
+   "zeilen": [
+    313,
+    316,
+    317,
+    319
+   ],
+   "code": [
+    "313:   SELECT SINGLE * FROM zvcert INTO gs_old",
+    "316:   IF sy-subrc = 0 AND gv_mode = gc_create.",
+    "317:     MESSAGE e003 WITH zvcert-lifnr zvcert-ctype.",
+    "319:     MESSAGE e004 WITH zvcert-lifnr zvcert-ctype."
+   ],
+   "X": [
+    "Zu Kreditor und Zertifikatsart wird der vorhandene Datensatz aus der Tabelle ZVCERT gelesen.",
+    "Existiert das Zertifikat bereits und ist der Modus 'Anlegen' gewählt, wird die Fehlermeldung E003 ausgegeben.",
+    "Existiert das Zertifikat nicht und ist ein anderer Modus als 'Anlegen' gewählt, wird die Fehlermeldung E004 ausgegeben."
+   ],
+   "Y": [
+    "Es werden Sätze aus zvcert selektiert.",
+    "Für sy-subrc = 0 AND gv_mode = gc_create wird eine Meldung ausgegeben.",
+    "Für sy-subrc = 0 AND gv_mode = gc_create wird eine Meldung ausgegeben, sonst eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben.",
+    "Für sy-subrc <> 0 AND gv_mode <> gc_create wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ],
+   "Z": [
+    "Es werden Sätze aus zvcert selektiert.",
+    "Wenn ein Treffer vorliegt und das Feld gv_mode gleich gc_create ist, wird eine Fehlermeldung ausgegeben.",
+    "Die Fehlermeldung 003 wird ausgegeben.",
+    "Wenn kein Treffer vorliegt und das Feld gv_mode ungleich gc_create ist, wird eine Fehlermeldung ausgegeben.",
+    "Die Fehlermeldung 004 wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-099-B05",
+   "soll": "In Anlage und Änderung wird das Zertifikat für andere Benutzer gesperrt; bearbeitet es bereits jemand, wird mit dessen Namen abgelehnt.",
+   "zeilen": [
+    137,
+    146,
+    322
+   ],
+   "code": [
+    "137:   CALL FUNCTION 'ENQUEUE_EZVCERT'",
+    "146:     MESSAGE e006 WITH sy-msgv1.",
+    "322:   IF gv_mode <> gc_display."
+   ],
+   "X": [
+    "Für die Kreditorennummer und die Zertifikatsart wird eine Enqueue-Sperre über den Funktionsbaustein ENQUEUE_EZVCERT gesetzt.",
+    "Kann das Zertifikat nicht gesperrt werden, wird die Fehlermeldung E006 mit dem Namen des sperrenden Benutzers ausgegeben.",
+    "Liegt kein Anzeigemodus vor, wird das Zertifikat gesperrt."
+   ],
+   "Y": [
+    "Der Funktionsbaustein ENQUEUE_EZVCERT wird aufgerufen.",
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben.",
+    "Für gv_mode ungleich gc_display wird lock_cert aufgerufen."
+   ],
+   "Z": [
+    "Der Funktionsbaustein ENQUEUE_EZVCERT wird aufgerufen.",
+    "Ist die Sperre über ENQUEUE_EZVCERT nicht zu erhalten, wird eine Fehlermeldung ausgegeben.",
+    "Die Fehlermeldung 006 wird ausgegeben.",
+    "Wenn das Feld gv_mode ungleich gc_display ist, wird lock_cert aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-099-B06",
+   "soll": "Beim Anzeigen und Ändern werden die gespeicherten Daten ins Detailbild übernommen, danach wird das Detailbild gerufen.",
+   "zeilen": [
+    325,
+    326,
+    328
+   ],
+   "code": [
+    "325:   IF gv_mode <> gc_create.",
+    "326:     zvcert = gs_old.",
+    "328:   CALL SCREEN 200."
+   ],
+   "X": [
+    "Im Nicht-Anlegemodus werden die gelesenen Daten in den Arbeitsbereich ZVCERT übernommen, und das Dynpro 200 wird aufgerufen."
+   ],
+   "Y": [
+    "Das Programm ruft eine Screenfolge ab 200 auf."
+   ],
+   "Z": [
+    "Das Programm ruft eine Screenfolge ab 200 auf."
+   ]
+  },
+  {
+   "id": "BM-099-B07",
+   "soll": "Das Detailbild zeigt Name und Ort des Lieferanten, den Text der Zertifikatsart und die Restlaufzeit in Tagen bis Gültig-bis.",
+   "zeilen": [
+    385,
+    387,
+    390
+   ],
+   "code": [
+    "385:   gv_name1 = lfa1-name1.",
+    "387:   SELECT SINGLE ctext FROM zvcert_typet INTO gv_ctext",
+    "390:   gv_days = zvcert-valid_to - sy-datum."
+   ],
+   "X": [
+    "Auf Dynpro 0200 werden Name, Ort, Text der Zertifikatsart aus ZVCERT_TYPET und die Restlaufzeit in Tagen ermittelt."
+   ],
+   "Y": [
+    "ctext des Satzes wird gelesen."
+   ],
+   "Z": [
+    "Das Feld ctext aus zvcert_typet wird gelesen."
+   ]
+  },
+  {
+   "id": "BM-099-B08",
+   "soll": "Im Anzeigemodus sind die Pflegefelder des Detailbilds nicht eingabebereit.",
+   "zeilen": [
+    392,
+    394,
+    396
+   ],
+   "code": [
+    "392:   IF gv_mode = gc_display.",
+    "394:       IF screen-group1 = 'EDT'.",
+    "396:         MODIFY SCREEN."
+   ],
+   "X": [
+    "Befindet sich die Anwendung im Anzeigemodus, werden alle Dynprofelder der Gruppe EDT auf nicht eingabebereit gesetzt."
+   ],
+   "Y": [
+    "Für screen-group1 mit dem Wert EDT wird die screen-input auf 0 gesetzt und eine Zeile eingefügt oder überschrieben.",
+    "screen-group1 mit dem Wert EDT setzen die screen-input auf 0.",
+    "Es wird die screen-input auf 0 gesetzt und eine Zeile eingefügt oder überschrieben.",
+    "Eine Zeile in SCREEN wird eingefügt oder überschrieben. sy-subrc wird danach nicht ausgewertet."
+   ],
+   "Z": [
+    "Wenn das Feld screen-group1 gleich EDT ist, wird das Feld screen-input auf 0 gesetzt und eine Zeile eingefügt oder überschrieben.",
+    "Wenn das Feld screen-group1 gleich EDT ist, wird das Feld screen-input auf 0 gesetzt.",
+    "Die geänderten Attribute des Bildelements werden übernommen."
+   ]
+  },
+  {
+   "id": "BM-099-B09",
+   "soll": "Sichern im Anzeigemodus bewirkt nur einen Hinweis.",
+   "zeilen": [
+    344,
+    345
+   ],
+   "code": [
+    "344:       IF gv_mode = gc_display.",
+    "345:         MESSAGE s010."
+   ],
+   "X": [
+    "Wird im Anzeigemodus 'SAVE' gewählt, wird die Meldung S010 ausgegeben und die Verarbeitung beendet."
+   ],
+   "Y": [
+    "Für gv_mode mit dem Wert gc_display wird eine Meldung ausgegeben und der Block verlassen.",
+    "Bei gv_mode gleich gc_display wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "Eine Meldung wird ausgegeben.",
+    "Es wird eine Meldung ausgegeben und der Block verlassen."
+   ],
+   "Z": [
+    "Wenn das Feld gv_mode gleich gc_display ist, wird eine Statusmeldung ausgegeben und der Block verlassen.",
+    "Die Statusmeldung 010 wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-099-B10",
+   "soll": "Vor dem Sichern muss Gültig-bis am oder nach Gültig-ab liegen und die Zertifikatsart im Customizing definiert sein.",
+   "zeilen": [
+    171,
+    172,
+    175,
+    178
+   ],
+   "code": [
+    "171:   IF zvcert-valid_to < zvcert-valid_from.",
+    "172:     MESSAGE e007.",
+    "175:   SELECT SINGLE ctype FROM zvcert_type INTO lv_ctype",
+    "178:     MESSAGE e008 WITH zvcert-ctype."
+   ],
+   "X": [
+    "Liegt das Gültig-bis-Datum vor dem Gültig-ab-Datum, wird die Fehlermeldung E007 ausgegeben.",
+    "Aus der Customizing-Tabelle ZVCERT_TYPE wird geprüft, ob die eingegebene Zertifikatsart definiert ist.",
+    "Ist die Zertifikatsart in Tabelle ZVCERT_TYPE nicht vorhanden, wird die Fehlermeldung E008 ausgegeben."
+   ],
+   "Y": [
+    "Für zvcert-valid_to kleiner zvcert-valid_from wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben.",
+    "ctype des Satzes wird gelesen.",
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ],
+   "Z": [
+    "Wenn das Feld zvcert-valid_to kleiner als zvcert-valid_from ist, wird eine Fehlermeldung ausgegeben.",
+    "Die Fehlermeldung 007 wird ausgegeben.",
+    "Das Feld ctype aus zvcert_type wird gelesen.",
+    "Ohne Treffer wird eine Fehlermeldung ausgegeben.",
+    "Die Fehlermeldung 008 wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-099-B11",
+   "soll": "Beim Sichern erhält das Zertifikat den Status E, wenn Gültig-bis vor heute liegt, sonst G.",
+   "zeilen": [
+    200,
+    201,
+    203
+   ],
+   "code": [
+    "200:   IF zvcert-valid_to < sy-datum.",
+    "201:     zvcert-status = 'E'.",
+    "203:     zvcert-status = 'G'."
+   ],
+   "X": [
+    "Liegt das Gültig-bis-Datum vor dem Tagesdatum, wird der Status auf 'E' (abgelaufen) gesetzt; andernfalls auf 'G' (gültig)."
+   ],
+   "Y": [
+    "Für zvcert-valid_to kleiner sy-datum wird die Status auf E gesetzt.",
+    "Für zvcert-valid_to kleiner sy-datum wird die Status auf E gesetzt, sonst die Status auf G gesetzt.",
+    "zvcert-valid_to kleiner sy-datum setzen die Status auf E.",
+    "Für größere zvcert-valid_to wird die Status auf G gesetzt.",
+    "Größere zvcert-valid_to setzen die Status auf G."
+   ],
+   "Z": [
+    "Wenn das Feld zvcert-valid_to kleiner als sy-datum ist, wird der Status auf E gesetzt, sonst der Status auf G gesetzt.",
+    "Wenn das Feld zvcert-valid_to kleiner als sy-datum ist, wird der Status auf E gesetzt.",
+    "Sonst wird der Status auf G gesetzt."
+   ]
+  },
+  {
+   "id": "BM-099-B12",
+   "soll": "Das Zertifikat wird mit Änderer und Änderungsdatum gespeichert.",
+   "zeilen": [
+    205
+   ],
+   "code": [
+    "205:   MODIFY zvcert."
+   ],
+   "X": [
+    "Das Zertifikat wird mit geändertem Status, Bearbeiter und Tagesdatum in die Tabelle ZVCERT geschrieben."
+   ],
+   "Y": [
+    "Eine Zeile in zvcert wird eingefügt oder überschrieben."
+   ],
+   "Z": [
+    "Eine Zeile in zvcert wird eingefügt oder überschrieben."
+   ]
+  },
+  {
+   "id": "BM-099-B13",
+   "soll": "Jede Sicherung wird mit Modus, Benutzer, Zeitpunkt sowie alter und neuer Gültigkeit und Zertifikatsnummer protokolliert, festgeschrieben und bestätigt.",
+   "zeilen": [
+    217,
+    241,
+    242
+   ],
+   "code": [
+    "217:   INSERT zvcert_log FROM ls_log.",
+    "241:   COMMIT WORK.",
+    "242:   MESSAGE s011 WITH zvcert-lifnr zvcert-ctype."
+   ],
+   "X": [
+    "In die Protokolltabelle ZVCERT_LOG wird ein Datensatz mit Datum, Uhrzeit, Benutzer, Modus, alten und neuen Gültigkeitsdaten sowie Zertifikatsnummern eingefügt."
+   ],
+   "Y": [
+    "Mit COMMIT WORK wird die Änderung persistiert.",
+    "Es wird COMMIT WORK ausgeführt und eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ],
+   "Z": [
+    "Mit COMMIT WORK wird die Änderung persistiert.",
+    "Es wird COMMIT WORK ausgeführt und eine Statusmeldung ausgegeben.",
+    "Die Statusmeldung 011 wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-099-B14",
+   "soll": "Nach dem Sichern wird die Sperre freigegeben und zum Einstiegsbild zurückgekehrt.",
+   "zeilen": [
+    350,
+    351
+   ],
+   "code": [
+    "350:       PERFORM unlock_cert.",
+    "351:       LEAVE TO SCREEN 100."
+   ],
+   "X": [
+    "Beim Sichern im Pflege- oder Neuanlagemodus wird das Zertifikat validiert, gespeichert, entsperrt und zu Dynpro 100 zurückgekehrt."
+   ],
+   "Y": [
+    "Es wird validate_cert aufgerufen, save_cert aufgerufen, unlock_cert aufgerufen und die Screenfolge beendet.",
+    "Das Unterprogramm unlock_cert wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Die Screenfolge wird beendet."
+   ],
+   "Z": [
+    "Es wird validate_cert aufgerufen, save_cert aufgerufen, unlock_cert aufgerufen und zu Bild 100 gewechselt.",
+    "Das Unterprogramm unlock_cert wird aufgerufen; es ruft DEQUEUE_EZVCERT auf.",
+    "Es geht weiter mit Bild 100."
+   ]
+  },
+  {
+   "id": "BM-099-B15",
+   "soll": "Beim Löschen wird eine Sicherheitsabfrage mit Vorschlag Nein gestellt; ohne Bestätigung wird nichts gelöscht.",
+   "zeilen": [
+    252,
+    264,
+    265
+   ],
+   "code": [
+    "252:   CALL FUNCTION 'POPUP_TO_CONFIRM'",
+    "264:   IF gv_answer <> '1'.",
+    "265:     RETURN."
+   ],
+   "X": [
+    "Vor dem Löschen wird über POPUP_TO_CONFIRM eine Bestätigung vom Benutzer abgefragt.",
+    "Wird das Löschen nicht mit 'Ja' bestätigt (Antwort ungleich '1'), wird der Löschvorgang abgebrochen."
+   ],
+   "Y": [
+    "Der Code übergibt 'Zertifikat an POPUP_TO_CONFIRM und übernimmt dessen Ausgabe nach gv_answer.",
+    "Das konvertierte Ergebnis wird in gv_answer übernommen.",
+    "Für gv_answer ungleich 1 wird der Block verlassen.",
+    "Bei gv_answer ungleich 1 wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben."
+   ],
+   "Z": [
+    "Der Code übergibt 'Zertifikat an POPUP_TO_CONFIRM und übernimmt dessen Ausgabe nach gv_answer.",
+    "Wenn das Feld gv_answer ungleich 1 ist, wird vor der Datenbankoperation zurückgekehrt."
+   ]
+  },
+  {
+   "id": "BM-099-B16",
+   "soll": "Nach Bestätigung wird das Zertifikat gelöscht, festgeschrieben und die Löschung gemeldet.",
+   "zeilen": [
+    268,
+    272,
+    273
+   ],
+   "code": [
+    "268:   DELETE zvcert.",
+    "272:   COMMIT WORK.",
+    "273:   MESSAGE s012 WITH zvcert-lifnr zvcert-ctype."
+   ],
+   "X": [
+    "Wird das Löschen bestätigt, wird der Datensatz aus Tabelle ZVCERT gelöscht, die Änderung bestätigt und die Erfolgsmeldung S012 ausgegeben."
+   ],
+   "Y": [
+    "Mit COMMIT WORK wird die Änderung persistiert.",
+    "Es wird COMMIT WORK ausgeführt und eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ],
+   "Z": [
+    "Mit COMMIT WORK wird die Änderung persistiert.",
+    "Es wird COMMIT WORK ausgeführt und eine Statusmeldung ausgegeben.",
+    "Die Statusmeldung 012 wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-099-B17",
+   "soll": "Nach Löschen, Zurück oder Abbrechen wird die Sperre freigegeben und zum Einstiegsbild zurückgekehrt.",
+   "zeilen": [
+    354,
+    357,
+    358
+   ],
+   "code": [
+    "354:       PERFORM unlock_cert.",
+    "357:       PERFORM unlock_cert.",
+    "358:       LEAVE TO SCREEN 100."
+   ],
+   "X": [
+    "Beim Löschen ('DELE') wird die Löschroutine aufgerufen, das Zertifikat entsperrt und zu Dynpro 100 verzweigt.",
+    "Bei Abbruch oder Zurück ('BACK' oder 'CANC') wird das Zertifikat entsperrt und zu Dynpro 100 gewechselt."
+   ],
+   "Y": [
+    "Es wird delete_cert aufgerufen, unlock_cert aufgerufen und die Screenfolge beendet.",
+    "Das Unterprogramm unlock_cert wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Das Unterprogramm unlock_cert wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Es wird unlock_cert aufgerufen und die Screenfolge beendet.",
+    "Die Screenfolge wird beendet."
+   ],
+   "Z": [
+    "Es wird delete_cert aufgerufen, unlock_cert aufgerufen und zu Bild 100 gewechselt.",
+    "Das Unterprogramm unlock_cert wird aufgerufen; es ruft DEQUEUE_EZVCERT auf.",
+    "Das Unterprogramm unlock_cert wird aufgerufen; es ruft DEQUEUE_EZVCERT auf.",
+    "Es wird unlock_cert aufgerufen und zu Bild 100 gewechselt.",
+    "Es geht weiter mit Bild 100."
+   ]
+  },
+  {
+   "id": "BM-099-B18",
+   "soll": "Eine Sperre wird nur freigegeben, wenn sie gesetzt wurde.",
+   "zeilen": [
+    155,
+    156
+   ],
+   "code": [
+    "155:   CHECK gv_locked = 'X'.",
+    "156:   CALL FUNCTION 'DEQUEUE_EZVCERT'"
+   ],
+   "X": [
+    "Ist das Zertifikat gesperrt (GV_LOCKED = 'X'), wird die Enqueue-Sperre über den Baustein DEQUEUE_EZVCERT für Kreditor und Zertifikatsart aufgehoben."
+   ],
+   "Y": [
+    "Nur gv_locked mit dem Wert X gehen weiter; kleinere werden übersprungen, die Schleife läuft weiter.",
+    "Der Funktionsbaustein DEQUEUE_EZVCERT wird aufgerufen."
+   ],
+   "Z": [
+    "Nur wenn das Feld gv_locked gesetzt ist, geht es weiter; sonst wird das Unterprogramm unlock_cert an dieser Stelle verlassen.",
+    "Der Funktionsbaustein DEQUEUE_EZVCERT wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-099-B19",
+   "soll": "Mit der Abbruchfunktion wird eine gesetzte Sperre freigegeben und die Transaktion verlassen.",
+   "zeilen": [
+    283,
+    284,
+    286
+   ],
+   "code": [
+    "283:   IF gv_locked = 'X'.",
+    "284:     PERFORM unlock_cert.",
+    "286:   LEAVE PROGRAM."
+   ],
+   "X": [
+    "Beim Verlassen des Programms wird die Zertifikatssperre aufgehoben, sofern sie gesetzt war, und das Programm beendet."
+   ],
+   "Y": [
+    "Mit gesetztem gv_locked wird unlock_cert aufgerufen.",
+    "Das Unterprogramm unlock_cert wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Die Screenfolge wird beendet."
+   ],
+   "Z": [
+    "Mit gesetztem gv_locked wird unlock_cert aufgerufen.",
+    "Das Unterprogramm unlock_cert wird aufgerufen; es ruft DEQUEUE_EZVCERT auf.",
+    "Das Programm wird beendet."
+   ]
+  }
+ ]
+}

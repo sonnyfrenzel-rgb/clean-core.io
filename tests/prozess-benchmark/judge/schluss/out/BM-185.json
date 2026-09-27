@@ -1,0 +1,106 @@
+{
+ "id": "BM-185",
+ "urteile": [
+  {
+   "id": "BM-185-B01",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Nur Y nennt Objekt, Vertrag, Datum und Konditionstabelle."
+  },
+  {
+   "id": "BM-185-B02",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Alle nennen nur die Schleife, keine die Sortierung."
+  },
+  {
+   "id": "BM-185-B03",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "falsch"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Y nennt Kopfzeile je Änderungsnummer, behauptet aber Ausgabe von Datum und Benutzer (dort leer); X/Z technisch ohne Gruppenwechsel."
+  },
+  {
+   "id": "BM-185-B04",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "kurz": "Y fachlich; X/Z Feldnamen."
+  }
+ ],
+ "verboten_verletzt": [
+  {
+   "variante": "Y",
+   "satz": "Liegt eine neue Änderungsbelegnummer vor, werden die Änderungsbelegnummer, das Änderungsdatum und der Benutzername ausgegeben.",
+   "grund": "Im AT-NEW-Block sind Datum und Benutzer initial; der Satz behauptet deren Ausgabe je Änderung."
+  }
+ ],
+ "soll_zweifel": []
+}

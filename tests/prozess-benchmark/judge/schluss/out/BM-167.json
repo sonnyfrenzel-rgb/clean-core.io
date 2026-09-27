@@ -1,0 +1,161 @@
+{
+ "id": "BM-167",
+ "urteile": [
+  {
+   "id": "BM-167-B01",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "kurz": "Nur X nennt Nachrichtentypprüfung und Ausnahme."
+  },
+  {
+   "id": "BM-167-B02",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "zu_allgemein",
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "X nennt Kopf- und Positionssegment; Y nur Schleife je Belegnummer, Z nur „jede Zeile“."
+  },
+  {
+   "id": "BM-167-B03",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "zu_allgemein",
+     "technisch"
+    ]
+   },
+   "kurz": "X nennt Kundenmaterial über KNMT; Y/Z nur Materialnummer gelesen."
+  },
+  {
+   "id": "BM-167-B04",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "grammatik"
+    ]
+   },
+   "kurz": "X nennt beide Fehlerfälle fachlich; Y/Z nur lv_msgno 110/111."
+  },
+  {
+   "id": "BM-167-B05",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "fehlt",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Z": {
+    "urteil": "fehlt",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "grammatik"
+    ]
+   },
+   "kurz": "X nennt das Einfügen, aber nicht, dass vorhandene Positionen übergangen werden; Y/Z sagen nur etwas zum Status."
+  },
+  {
+   "id": "BM-167-B06",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "grammatik"
+    ]
+   },
+   "kurz": "X fachlich mit Status 53/51 und Workflow-Fehler; Y/Z nur Feldzuweisungen."
+  },
+  {
+   "id": "BM-167-B07",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant",
+     "grammatik"
+    ]
+   },
+   "kurz": "X nennt Rückmeldung aller IDocs bei fehlerfreiem Paket; Y/Z nur wf_param-Zuweisung."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

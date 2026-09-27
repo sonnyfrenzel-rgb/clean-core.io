@@ -1,0 +1,67 @@
+{
+ "id": "BM-083",
+ "urteile": [
+  {
+   "id": "BM-083-B01",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "X und Z nennen nur den Bausteinaufruf, Y das Lesen von Infotyp 0001 zum Datum."
+  },
+  {
+   "id": "BM-083-B02",
+   "X": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Z": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "kurz": "Nur Y beschreibt die Ausnahme NOT_ASSIGNED."
+  },
+  {
+   "id": "BM-083-B03",
+   "X": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Z": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "kurz": "Nur Y beschreibt die Rückgabe von Organisationseinheit und Kostenstelle."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

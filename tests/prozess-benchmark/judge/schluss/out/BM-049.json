@@ -1,0 +1,137 @@
+{
+ "id": "BM-049",
+ "urteile": [
+  {
+   "id": "BM-049-B01",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch"
+    ]
+   },
+   "Z": {
+    "urteil": "abweichend",
+    "mangel": [
+     "falsch",
+     "zu_allgemein",
+     "technisch"
+    ]
+   },
+   "kurz": "X nennt Belegarten KR/RE fachlich, Y nur über Feldnamen, Z behauptet jede Zeile ohne Filter."
+  },
+  {
+   "id": "BM-049-B02",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "zu_allgemein",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Nur X nennt Kreditorenzeile und Abbruch fachlich."
+  },
+  {
+   "id": "BM-049-B03",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein",
+     "grammatik"
+    ]
+   },
+   "kurz": "X erklärt Land, USt-IdNr., EU-Kennzeichen und Buchungskreisland; Y und Z nur Feldnamen."
+  },
+  {
+   "id": "BM-049-B04",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "fehlt",
+    "mangel": []
+   },
+   "kurz": "Nur X nennt die Bedingung anderes EU-Land."
+  },
+  {
+   "id": "BM-049-B05",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein",
+     "redundant"
+    ]
+   },
+   "kurz": "X fachlich mit USt-IdNr.; Y über lv_stceg, Z nur 'eine Meldung'."
+  },
+  {
+   "id": "BM-049-B06",
+   "X": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "redundant"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein",
+     "redundant",
+     "falsch"
+    ]
+   },
+   "kurz": "X vollständig; Y technisch; Z pauschal über jede Zeile und 'eine Meldung'."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

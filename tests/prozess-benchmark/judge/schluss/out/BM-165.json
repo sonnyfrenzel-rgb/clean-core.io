@@ -1,0 +1,98 @@
+{
+ "id": "BM-165",
+ "urteile": [
+  {
+   "id": "BM-165-B01",
+   "X": {
+    "urteil": "abweichend",
+    "mangel": [
+     "falsch",
+     "technisch",
+     "grammatik"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig"
+    ]
+   },
+   "kurz": "Y nennt Schalter und Abbruch; X spricht fälschlich von Schleife und „kleineren“ Werten, Z nennt den Schalter nicht."
+  },
+  {
+   "id": "BM-165-B02",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "zu_allgemein",
+     "unvollstaendig"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "zu_allgemein",
+     "technisch"
+    ]
+   },
+   "kurz": "Nur Y nennt Warenempfänger auf Kopfebene; X/Z nur „passende Zeile gesucht“."
+  },
+  {
+   "id": "BM-165-B03",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "zu_allgemein"
+    ]
+   },
+   "Y": {
+    "urteil": "gleich",
+    "mangel": []
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "zu_allgemein"
+    ]
+   },
+   "kurz": "Nur Y nennt Sanktionsliste mit Land- oder Namensvergleich."
+  },
+  {
+   "id": "BM-165-B04",
+   "X": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "zu_allgemein",
+     "redundant"
+    ]
+   },
+   "Y": {
+    "urteil": "teilweise",
+    "mangel": [
+     "unvollstaendig"
+    ]
+   },
+   "Z": {
+    "urteil": "teilweise",
+    "mangel": [
+     "technisch",
+     "unvollstaendig",
+     "redundant"
+    ]
+   },
+   "kurz": "Y nennt Fehlermeldung mit Kunde und Land, aber keine Variante sagt, dass das Sichern verhindert wird."
+  }
+ ],
+ "verboten_verletzt": [],
+ "soll_zweifel": []
+}

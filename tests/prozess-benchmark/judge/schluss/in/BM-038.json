@@ -1,0 +1,505 @@
+{
+ "id": "BM-038",
+ "titel": "WM-Kommissionierwelle: Transportaufträge zu Lieferungen, Fixplatz-Quittierung und paralleler TA-Druck",
+ "prozess": "Die Versandleitung oder ein Job startet die Kommissionierwelle mit Lagernummer, Versandstelle, Routen, Warenausgangsdaten, Wellengröße und den Schaltern für Sofortquittierung und Druck. Der Lauf legt ein Anwendungsprotokoll an und liest die noch nicht kommissionierten, WM-offenen und nicht gesperrten Lieferungen; ohne Treffer protokolliert er eine Warnung und endet. Die Lieferungen werden nach Priorität, Route und Warenausgangsdatum sortiert und auf die Wellengröße gekappt. Je Lieferung wird gesperrt (gesperrte werden übersprungen), ein Transportauftrag angelegt und festgeschrieben, bei Fehler protokolliert, und die Lieferung wieder entsperrt. Stammen bei gewählter Sofortquittierung alle TA-Positionen aus dem Fixplatz-Lagertyp 005, wird der TA sofort quittiert. Ist Druck gewählt, startet der Lauf für jeden angelegten, nicht quittierten TA einen asynchronen Druckauftrag mit höchstens fünf parallel; der Druckbaustein liest den TA, bestimmt das Formular je Lagernummer (Standard ZWM_PICKLIST), druckt es sofort und setzt am TA-Kopf direkt das Druckkennzeichen. Rückmeldungen werden gesammelt, Fehler protokolliert; nach spätestens 120 Sekunden Wartezeit geht der Lauf weiter. Zum Schluss wird das Protokoll gesichert und im Dialog angezeigt, im Hintergrund eine Zusammenfassung nach Status ausgegeben.",
+ "verboten": [
+  "zwm_pick_wave_f01.abap:133 — kein Fachsatz „Für jeden Transportauftrag wird eine Kommissionierliste gedruckt“ (sofort quittierte TAs mit Status Q werden nicht gedruckt)",
+  "zwm_pick_wave_f01.abap:99 — kein Fachsatz „Der Warenausgang wird gebucht“ (es wird nur der TA quittiert; die Warenausgangsbuchung ist nicht Teil des Codes)",
+  "z_wm_print_to.abap:82 — kein Fachsatz „Der TA wird als erledigt markiert“ (es wird nur das Druckkennzeichen gesetzt)",
+  "zwm_pick_wave_f01.abap:156 — kein Fachsatz „Der Lauf wartet, bis alle Drucke erfolgreich sind“ (nach 120 Sekunden geht er weiter, ohne Fehler zu melden)"
+ ],
+ "saetze": [
+  {
+   "id": "BM-038-B01",
+   "soll": "Für jeden Lauf wird ein Anwendungsprotokoll ZWM/WAVE mit Lagernummer, Versandstelle und Datum als externer Nummer und 30 Tagen Aufbewahrung angelegt.",
+   "zeilen": [
+    19,
+    161,
+    162
+   ],
+   "code": [
+    "19:   go_log = NEW zcl_wm_pick_log( iv_extnumber = |{ p_lgnum }/{ p_vstel }/{ sy-datum }| ).",
+    "161:     ls_log-aldate_del = sy-datum + 30.",
+    "162:     CALL FUNCTION 'BAL_LOG_CREATE'"
+   ],
+   "X": [
+    "Der Code übergibt ls_log an BAL_LOG_CREATE und übernimmt dessen Ausgabe nach mv_handle.",
+    "Das konvertierte Ergebnis wird in mv_handle übernommen."
+   ],
+   "Y": [
+    "Ein neues Anwendungslog für die Lagernummer, die Versandstelle und das Tagesdatum wird instanziiert.",
+    "Über den Funktionsbaustein BAL_LOG_CREATE wird ein Anwendungslog für das Objekt ZWM und das Unterobjekt WAVE angelegt."
+   ],
+   "Z": [
+    "Der Code übergibt ls_log an BAL_LOG_CREATE und übernimmt dessen Ausgabe nach mv_handle."
+   ]
+  },
+  {
+   "id": "BM-038-B02",
+   "soll": "Es werden die Auslieferungen der Versandstelle und Lagernummer in den gewählten Routen und Warenausgangsdaten gelesen, die noch nicht kommissioniert, WM-seitig noch offen und nicht gesperrt sind.",
+   "zeilen": [
+    231
+   ],
+   "code": [
+    "231:   SELECT k~vbeln k~route k~lprio k~wadat"
+   ],
+   "X": [
+    "Es werden Sätze aus likp mit dem eingegebenen k~vstel und dem eingegebenen k~lgnum selektiert."
+   ],
+   "Y": [
+    "Aus den Tabellen LIKP und VBUK werden Lieferungsnummer, Route, Lieferpriorität und Warenausgangsdatum für die angegebene Versandstelle und Lagernummer gelesen, bei denen Kommissionier- und WM-Status A sind und keine Gesamtsperre vorliegt."
+   ],
+   "Z": [
+    "Das Ergebnis enthält Belegnummer, Route, lprio und wadat.",
+    "Es werden Lieferungen mit dem eingegebenen Versandstelle und dem eingegebenen k~lgnum selektiert."
+   ]
+  },
+  {
+   "id": "BM-038-B03",
+   "soll": "Gibt es keine, wird eine Warnung protokolliert, das Protokoll gesichert, ein Hinweis ausgegeben und die Welle beendet.",
+   "zeilen": [
+    22,
+    23,
+    24,
+    25,
+    26
+   ],
+   "code": [
+    "22:   IF gt_lief IS INITIAL.",
+    "23:     go_log->add( iv_type = 'W' iv_text = 'Keine offenen Lieferungen' ).",
+    "24:     go_log->save( ).",
+    "25:     MESSAGE s001.",
+    "26:     RETURN."
+   ],
+   "X": [
+    "Ohne Treffer wird eine Meldung ausgegeben und der Block verlassen.",
+    "Ohne Treffer wird vor der Datenbankoperation zurückgekehrt; es wird nichts geschrieben.",
+    "Die Methode add von go_log wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "Die Methode save von go_log wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "Eine Meldung wird ausgegeben.",
+    "Es wird eine Meldung ausgegeben und der Block verlassen."
+   ],
+   "Y": [
+    "Sind keine offenen Lieferungen vorhanden, wird eine Warnmeldung in das Anwendungslog eingetragen.",
+    "Liegen keine offenen Lieferungen vor, wird das Anwendungslog gespeichert.",
+    "Liegen keine offenen Lieferungen vor, wird die Erfolgsmeldung 001 ausgegeben und die Programmausführung beendet."
+   ],
+   "Z": [
+    "Ist die Tabelle gt_lief leer, wird eine Statusmeldung ausgegeben und der Block verlassen.",
+    "Die Methode add von go_log wird aufgerufen; sie ruft BAL_LOG_MSG_ADD_FREE_TEXT auf.",
+    "Die Methode save von go_log wird aufgerufen; sie ruft BAL_DB_SAVE auf und schreibt mit COMMIT WORK fest.",
+    "Die Statusmeldung 001 wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-038-B04",
+   "soll": "Die Lieferungen werden nach Lieferpriorität, Route und Warenausgangsdatum sortiert und die Welle auf die eingegebene Höchstzahl gekappt; die Kappung wird protokolliert.",
+   "zeilen": [
+    247,
+    249,
+    250
+   ],
+   "code": [
+    "247:   SORT gt_lief BY lprio route wadat vbeln.",
+    "249:   IF lv_anz > p_max.",
+    "250:     DELETE gt_lief FROM p_max + 1."
+   ],
+   "X": [],
+   "Y": [
+    "Die ermittelten Lieferungen werden aufsteigend nach Lieferpriorität, Route, Warenausgangsdatum und Lieferungsnummer sortiert.",
+    "Übersteigt die Anzahl der Lieferungen die vorgegebene Maximalanzahl, werden alle überzähligen Lieferungen aus der Liste gelöscht.",
+    "Übersteigt die Anzahl der Lieferungen die vorgegebene Maximalanzahl, wird ein Informationshinweis über die Wellenbegrenzung in das Protokoll eingetragen."
+   ],
+   "Z": []
+  },
+  {
+   "id": "BM-038-B05",
+   "soll": "Jede Lieferung der Welle wird gesperrt; ist sie von anderer Seite gesperrt, wird sie mit Warnung übersprungen.",
+   "zeilen": [
+    262,
+    269,
+    270,
+    272
+   ],
+   "code": [
+    "262:   CALL FUNCTION 'ENQUEUE_EVVBLKE'",
+    "269:   IF sy-subrc <> 0.",
+    "270:     ps_lief-status = 'L'.",
+    "272:     RETURN."
+   ],
+   "X": [
+    "Der Funktionsbaustein ENQUEUE_EVVBLKE wird aufgerufen.",
+    "Ohne Treffer wird die Status auf L gesetzt und der Block verlassen.",
+    "Ohne Treffer wird der Block verlassen.",
+    "sy-subrc ungleich 0 setzen die Status auf L."
+   ],
+   "Y": [
+    "Über den Funktionsbaustein ENQUEUE_EVVBLKE wird die Auslieferung gesperrt.",
+    "Schlägt die Sperrung der Lieferung fehl, wird ihr Status auf L gesetzt, eine Warnmeldung protokolliert und die Bearbeitung dieser Lieferung abgebrochen."
+   ],
+   "Z": [
+    "Der Funktionsbaustein ENQUEUE_EVVBLKE wird aufgerufen.",
+    "Ist die Sperre über ENQUEUE_EVVBLKE nicht zu erhalten, wird der Status auf L gesetzt und der Block verlassen.",
+    "Wenn die Sperre über ENQUEUE_EVVBLKE nicht zu erhalten ist, wird der Status auf L gesetzt."
+   ]
+  },
+  {
+   "id": "BM-038-B06",
+   "soll": "Zur Lieferung wird ein Transportauftrag angelegt und sofort festgeschrieben.",
+   "zeilen": [
+    275
+   ],
+   "code": [
+    "275:   CALL FUNCTION 'L_TO_CREATE_DN'"
+   ],
+   "X": [
+    "Der Code übergibt p_lgnum an L_TO_CREATE_DN und übernimmt dessen Ausgabe nach lv_tanum.",
+    "Das konvertierte Ergebnis wird in lv_tanum übernommen."
+   ],
+   "Y": [
+    "Über den Funktionsbaustein L_TO_CREATE_DN wird ein Transportauftrag zur Auslieferung mit sofortigem Verbuchungsanstoß erzeugt."
+   ],
+   "Z": [
+    "Der Code übergibt p_lgnum an L_TO_CREATE_DN und übernimmt dessen Ausgabe nach lv_tanum."
+   ]
+  },
+  {
+   "id": "BM-038-B07",
+   "soll": "Scheitert die Anlage, wird die Systemmeldung protokolliert, die Lieferung entsperrt und als fehlerhaft markiert.",
+   "zeilen": [
+    302,
+    303,
+    304,
+    305
+   ],
+   "code": [
+    "302:   IF sy-subrc <> 0.",
+    "303:     ps_lief-status = 'E'.",
+    "304:     go_log->add_sy( ).",
+    "305:     PERFORM entsperren USING ps_lief-vbeln."
+   ],
+   "X": [
+    "Ohne Treffer wird die Status auf E gesetzt, entsperren aufgerufen und der Block verlassen.",
+    "Ohne Treffer wird der Block verlassen.",
+    "sy-subrc ungleich 0 setzen die Status auf E.",
+    "Die Methode add_sy von go_log wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "Das Unterprogramm entsperren wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Es wird entsperren aufgerufen und der Block verlassen."
+   ],
+   "Y": [
+    "Kann kein Transportauftrag zur Lieferung erzeugt werden, wird der Lieferungsstatus auf E gesetzt und die Systemnachricht im Protokoll erfasst.",
+    "Kann kein Transportauftrag zur Lieferung erzeugt werden, wird die Liefersperre aufgehoben und die Bearbeitung der Lieferung beendet."
+   ],
+   "Z": [
+    "Scheitert der Aufruf von L_TO_CREATE_DN, wird der Status auf E gesetzt, entsperren aufgerufen und der Block verlassen.",
+    "Wenn der Aufruf von L_TO_CREATE_DN scheitert, wird der Status auf E gesetzt.",
+    "Die Methode add_sy von go_log wird aufgerufen; sie ruft BAL_LOG_MSG_ADD auf.",
+    "Das Unterprogramm entsperren wird aufgerufen; es ruft DEQUEUE_EVVBLKE auf."
+   ]
+  },
+  {
+   "id": "BM-038-B08",
+   "soll": "Gelingt sie, werden TA-Nummer und Erfolg protokolliert.",
+   "zeilen": [
+    310,
+    311
+   ],
+   "code": [
+    "310:   ps_lief-status = 'S'.",
+    "311:   go_log->add( iv_type = 'S' iv_text = |TA { lv_tanum } zu Lieferung { ps_lief-vbeln }| )."
+   ],
+   "X": [
+    "Die Status wird auf S gesetzt.",
+    "Die Methode add von go_log wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ],
+   "Y": [
+    "Wurde der Transportauftrag erfolgreich erzeugt, werden seine Nummer vermerkt, der Status auf S gesetzt und eine Erfolgsmeldung in das Protokoll eingetragen."
+   ],
+   "Z": [
+    "Der Status wird auf S gesetzt.",
+    "Die Methode add von go_log wird aufgerufen; sie ruft BAL_LOG_MSG_ADD_FREE_TEXT auf."
+   ]
+  },
+  {
+   "id": "BM-038-B09",
+   "soll": "Ist Sofortquittierung gewählt und stammen alle TA-Positionen aus dem Fixplatz-Lagertyp 005, wird der Transportauftrag sofort quittiert; bei Erfolg gilt die Lieferung als quittiert, sonst wird die Meldung protokolliert.",
+   "zeilen": [
+    314,
+    317,
+    322,
+    323,
+    334,
+    335
+   ],
+   "code": [
+    "314:   IF p_conf = abap_true.",
+    "317:       IF ls_ltap-vltyp <> gc_fixplatz.",
+    "322:     IF lv_fix = abap_true.",
+    "323:       CALL FUNCTION 'L_TO_CONFIRM'",
+    "334:       IF sy-subrc = 0.",
+    "335:         ps_lief-status = 'Q'."
+   ],
+   "X": [
+    "Bei p_conf gleich abap_true wird der Block verlassen.",
+    "Für ls_ltap-vltyp ungleich gc_fixplatz wird der Block verlassen.",
+    "Bei ls_ltap-vltyp ungleich gc_fixplatz wird der Block verlassen.",
+    "Für lv_fix mit dem Wert abap_true wird L_TO_CONFIRM aufgerufen.",
+    "Der Funktionsbaustein L_TO_CONFIRM wird aufgerufen.",
+    "Bei Treffer wird die Status auf Q gesetzt.",
+    "sy-subrc mit dem Wert 0 setzen die Status auf Q."
+   ],
+   "Y": [
+    "Ist die automatische Quittierung aktiviert und weicht mindestens eine Position vom Fixplatz-Lagertyp 005 ab, wird die Quittierungskennzeichnung zurückgenommen.",
+    "Stammen alle Positionen aus dem Fixplatz-Lagertyp 005, wird der Transportauftrag über den Funktionsbaustein L_TO_CONFIRM sofort quittiert.",
+    "Wurde der Transportauftrag erfolgreich quittiert, wird der Lieferungsstatus auf Q gesetzt.",
+    "Schlägt die Quittierung des Transportauftrags fehl, wird die Systemnachricht in das Protokoll aufgenommen."
+   ],
+   "Z": [
+    "Wenn das Feld ls_ltap-vltyp ungleich gc_fixplatz ist, wird die Schleife verlassen.",
+    "Wenn das Feld lv_fix gesetzt ist, wird L_TO_CONFIRM aufgerufen.",
+    "Der Funktionsbaustein L_TO_CONFIRM wird aufgerufen.",
+    "Gelingt der Aufruf von L_TO_CONFIRM, wird der Status auf Q gesetzt.",
+    "Wenn der Aufruf von L_TO_CONFIRM gelingt, wird der Status auf Q gesetzt."
+   ]
+  },
+  {
+   "id": "BM-038-B10",
+   "soll": "Danach wird die Lieferung wieder entsperrt.",
+   "zeilen": [
+    342,
+    347
+   ],
+   "code": [
+    "342:   PERFORM entsperren USING ps_lief-vbeln.",
+    "347:   CALL FUNCTION 'DEQUEUE_EVVBLKE'"
+   ],
+   "X": [
+    "Das Unterprogramm entsperren wird aufgerufen. Seine Wirkung ist im gelieferten Code nicht belegt.",
+    "Der Funktionsbaustein DEQUEUE_EVVBLKE wird aufgerufen."
+   ],
+   "Y": [
+    "Nach Abschluss der Transportauftragsbearbeitung wird die Liefersperre für die Auslieferung aufgehoben.",
+    "Über den Funktionsbaustein DEQUEUE_EVVBLKE wird die Sperre für die übergebene Lieferung gelöscht."
+   ],
+   "Z": [
+    "Das Unterprogramm entsperren wird aufgerufen; es ruft DEQUEUE_EVVBLKE auf.",
+    "Der Funktionsbaustein DEQUEUE_EVVBLKE wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-038-B11",
+   "soll": "Ist Drucken gewählt, wird für jeden angelegten, nicht sofort quittierten Transportauftrag die Kommissionierliste als asynchroner Druckauftrag gestartet, höchstens fünf gleichzeitig.",
+   "zeilen": [
+    35,
+    357,
+    359,
+    362
+   ],
+   "code": [
+    "35:   IF p_print = abap_true.",
+    "357:   LOOP AT gt_lief INTO DATA(ls_lief) WHERE status = 'S'.",
+    "359:     WAIT UNTIL gv_open < gc_max_par UP TO 30 SECONDS.",
+    "362:     CALL FUNCTION 'Z_WM_PRINT_TO'"
+   ],
+   "X": [
+    "Für p_print mit dem Wert abap_true wird ta_drucken aufgerufen.",
+    "Jede Zeile aus gt_lief wird einzeln verarbeitet.",
+    "Der Baustein Z_WM_PRINT_TO wird asynchron in einer eigenen Task gestartet. Ein Ergebnis liegt zu diesem Zeitpunkt nicht vor."
+   ],
+   "Y": [
+    "Ist der Druckparameter aktiv, wird das Unterprogramm zum Drucken der Transportaufträge aufgerufen.",
+    "Für jede Lieferung mit Status S wird gewartet, bis weniger als 5 parallele Druckprozesse laufen.",
+    "Über den Funktionsbaustein Z_WM_PRINT_TO wird der Formulardruck für den Transportauftrag parallel in einem eigenen Hintergrund-Task gestartet."
+   ],
+   "Z": [
+    "Wenn das Feld p_print gesetzt ist, wird ta_drucken aufgerufen.",
+    "Die Zeilen aus gt_lief, bei denen der Status gleich S ist, werden einzeln verarbeitet.",
+    "Der Baustein Z_WM_PRINT_TO wird asynchron in einer eigenen Task gestartet. Ein Ergebnis liegt zu diesem Zeitpunkt nicht vor."
+   ]
+  },
+  {
+   "id": "BM-038-B12",
+   "soll": "Kann ein Druckauftrag nicht gestartet werden, wird das protokolliert; am Ende wartet der Lauf höchstens 120 Sekunden auf alle Druckaufträge.",
+   "zeilen": [
+    374,
+    377,
+    380
+   ],
+   "code": [
+    "374:     IF sy-subrc = 0.",
+    "377:       go_log->add( iv_type = 'E' iv_text = |Druck TA { ls_lief-tanum } nicht gestartet: { lv_msg }| ).",
+    "380:   WAIT UNTIL gv_open = 0 UP TO 120 SECONDS."
+   ],
+   "X": [
+    "Die Methode add von go_log wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ],
+   "Y": [
+    "Konnte der parallele Druckprozess gestartet werden, wird der Zähler für aktive Prozesse um 1 erhöht.",
+    "Konnte der Druckprozess nicht gestartet werden, wird eine Fehlermeldung mit der Ursache in das Anwendungslog eingetragen.",
+    "Es wird bis zu 120 Sekunden gewartet, bis alle gestarteten parallelen Druckprozesse beendet sind."
+   ],
+   "Z": [
+    "Die Methode add von go_log wird aufgerufen; sie ruft BAL_LOG_MSG_ADD_FREE_TEXT auf."
+   ]
+  },
+  {
+   "id": "BM-038-B13",
+   "soll": "Der Druckbaustein liest Kopf und Positionen des Transportauftrags; fehlt der Kopf, meldet er einen Druckfehler.",
+   "zeilen": [
+    69,
+    72,
+    75
+   ],
+   "code": [
+    "69:   SELECT SINGLE * FROM ltak INTO ls_ltak",
+    "72:   IF sy-subrc <> 0.",
+    "75:   SELECT * FROM ltap INTO TABLE lt_ltap"
+   ],
+   "X": [
+    "Es werden Sätze aus ltak selektiert.",
+    "Es werden Sätze aus ltap selektiert."
+   ],
+   "Y": [
+    "Aus Tabelle LTAK wird der Transportauftragskopf zur angegebenen Lagernummer und Transportauftragsnummer gelesen.",
+    "Wird kein Transportauftragskopf in Tabelle LTAK gefunden, wird die Ausnahme PRINT_ERROR ausgelöst.",
+    "Aus Tabelle LTAP werden alle Positionen zum Transportauftrag und zur Lagernummer sortiert nach von-Lagertyp und von-Lagerplatz gelesen."
+   ],
+   "Z": [
+    "Es werden Transportaufträge selektiert.",
+    "Es werden Transportauftragspositionen selektiert."
+   ]
+  },
+  {
+   "id": "BM-038-B14",
+   "soll": "Das Formular kommt aus der Lagernummern-Zuordnung, sonst gilt ZWM_PICKLIST; die Liste wird ohne Dialog sofort auf dem gewählten Drucker ausgegeben.",
+   "zeilen": [
+    80,
+    83,
+    86,
+    105
+   ],
+   "code": [
+    "80:   SELECT SINGLE formname FROM zwm_form INTO lv_form",
+    "83:     lv_form = 'ZWM_PICKLIST'.",
+    "86:   CALL FUNCTION 'SSF_FUNCTION_MODULE_NAME'",
+    "105:   CALL FUNCTION lv_fm"
+   ],
+   "X": [
+    "formname des Satzes wird gelesen.",
+    "Ohne Treffer wird die Unterprogramm auf ZWM_PICKLIST gesetzt.",
+    "sy-subrc ungleich 0 setzen die Unterprogramm auf ZWM_PICKLIST.",
+    "Der Code übergibt lv_form an SSF_FUNCTION_MODULE_NAME und übernimmt dessen Ausgabe nach lv_fm.",
+    "Das konvertierte Ergebnis wird in lv_fm übernommen.",
+    "Der Code übergibt ls_ctrl an lv_fm und übernimmt dessen Ausgabe nach ls_jobinfo. Welcher Baustein das ist, entscheidet die Eingabe zur Laufzeit.",
+    "Das konvertierte Ergebnis wird in ls_jobinfo übernommen."
+   ],
+   "Y": [
+    "Aus Tabelle ZWM_FORM wird der Formularname zur Lagernummer gelesen.",
+    "Wird in Tabelle ZWM_FORM kein Formularname gefunden, wird als Formularname der Standardwert ZWM_PICKLIST gesetzt.",
+    "Der ermittelte Formularfunktionsbaustein wird mit den Transportauftragsdaten und den Druckoptionen für das Ausgabegerät ohne Benutzerdialog aufgerufen."
+   ],
+   "Z": [
+    "Das Feld formname aus zwm_form wird gelesen.",
+    "Ohne Treffer wird das Unterprogramm auf ZWM_PICKLIST gesetzt.",
+    "Wenn kein Treffer vorliegt, wird das Unterprogramm auf ZWM_PICKLIST gesetzt.",
+    "Der Code übergibt lv_form an SSF_FUNCTION_MODULE_NAME und übernimmt dessen Ausgabe nach lv_fm.",
+    "Der Code übergibt ls_ctrl an lv_fm und übernimmt dessen Ausgabe nach ls_jobinfo. Welcher Baustein das ist, steht erst zur Laufzeit in lv_fm fest."
+   ]
+  },
+  {
+   "id": "BM-038-B15",
+   "soll": "Nach erfolgreichem Druck wird am TA-Kopf das Druckkennzeichen direkt in der Datenbank gesetzt und festgeschrieben.",
+   "zeilen": [
+    128,
+    131
+   ],
+   "code": [
+    "128:   UPDATE ltak SET drukz = 'X'",
+    "131:   COMMIT WORK."
+   ],
+   "X": [
+    "Es wird eine Zeile geändert und COMMIT WORK ausgeführt.",
+    "Die drukz in ltak wird geändert. Ob eine Zeile getroffen wird, garantiert der Code nicht.",
+    "Mit COMMIT WORK wird die Änderung persistiert."
+   ],
+   "Y": [
+    "In Tabelle LTAK wird das Druckkennzeichen für den Transportauftrag auf X gesetzt und die Änderung auf der Datenbank festgeschrieben."
+   ],
+   "Z": [
+    "Es wird eine Zeile geändert und COMMIT WORK ausgeführt.",
+    "Das Feld drukz des Transportauftrags wird geändert. Ob eine Zeile getroffen wird, garantiert der Code nicht.",
+    "Mit COMMIT WORK wird die Änderung persistiert."
+   ]
+  },
+  {
+   "id": "BM-038-B16",
+   "soll": "Die Rückmeldung jedes Druckauftrags wird empfangen; Spoolnummern werden gesammelt, Fehler protokolliert.",
+   "zeilen": [
+    388,
+    396,
+    397,
+    399
+   ],
+   "code": [
+    "388:   RECEIVE RESULTS FROM FUNCTION 'Z_WM_PRINT_TO'",
+    "396:   IF sy-subrc = 0.",
+    "397:     APPEND lv_spool TO gt_spool.",
+    "399:     go_log->add( iv_type = 'E' iv_text = |Druckauftrag { pv_task } fehlgeschlagen { lv_msg }| )."
+   ],
+   "X": [
+    "Bei Treffer wird eine Zeile aufgenommen.",
+    "Eine Zeile wird in gt_spool aufgenommen.",
+    "Die Methode add von go_log wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ],
+   "Y": [
+    "Die Druckergebnisse des Hintergrund-Tasks werden entgegengenommen und der Zähler für offene Prozesse um 1 vermindert.",
+    "Wurde der Druck fehlerfrei durchgeführt, wird die Spool-Nummer in die Spool-Liste übernommen.",
+    "Trat beim Druck ein Fehler auf, wird eine Fehlermeldung für den Task in das Anwendungslog aufgenommen."
+   ],
+   "Z": [
+    "Liegt die Rückmeldung der parallelen Task vor, wird eine Zeile aufgenommen.",
+    "Eine Zeile wird in gt_spool aufgenommen.",
+    "Die Methode add von go_log wird aufgerufen; sie ruft BAL_LOG_MSG_ADD_FREE_TEXT auf."
+   ]
+  },
+  {
+   "id": "BM-038-B17",
+   "soll": "Das Protokoll wird gesichert; im Dialog wird es angezeigt, im Hintergrund werden die Zähler je Status und die Zahl der Druckaufträge ausgegeben.",
+   "zeilen": [
+    39,
+    42,
+    217,
+    414
+   ],
+   "code": [
+    "39:   go_log->save( ).",
+    "42:   IF sy-batch = abap_false.",
+    "217:     CALL FUNCTION 'BAL_DSP_LOG_DISPLAY'",
+    "414:   WRITE: / 'Lagernummer', p_lgnum, 'Versandstelle', p_vstel."
+   ],
+   "X": [
+    "Die Methode save von go_log wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt.",
+    "Der Funktionsbaustein BAL_DSP_LOG_DISPLAY wird aufgerufen.",
+    "Lagernummer, p_lgnum, Versandstelle, p_vstel, TA erzeugt :, lv_s, TA sofort quittiert :, lv_q, Fehler :, lv_e, Lieferung gesperrt :, lv_l, Druckauftraege : und lines( gt_spool ) werden ausgegeben.",
+    "Lagernummer wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "p_lgnum wird ausgegeben.",
+    "Versandstelle wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "p_vstel wird ausgegeben."
+   ],
+   "Y": [
+    "Das Anwendungslog wird abschließend auf der Datenbank gesichert.",
+    "Wird das Programm im Dialog ausgeführt, wird das Anwendungslog am Bildschirm angezeigt.",
+    "Wird das Programm im Hintergrund ausgeführt, wird das Unterprogramm zur Ausgabe der Zusammenfassung aufgerufen.",
+    "Über den Funktionsbaustein BAL_DSP_LOG_DISPLAY wird das Protokoll am Bildschirm zur Anzeige gebracht.",
+    "Die statistischen Kennzahlen zur Lagernummer, Versandstelle, Anzahl erzeugter, quittierter, fehlerhafter und gesperrter Transportaufträge sowie der Spool-Aufträge werden ausgegeben."
+   ],
+   "Z": [
+    "Die Methode save von go_log wird aufgerufen; sie ruft BAL_DB_SAVE auf und schreibt mit COMMIT WORK fest.",
+    "Der Funktionsbaustein BAL_DSP_LOG_DISPLAY wird aufgerufen.",
+    "Lagernummer, p_lgnum, Versandstelle, TA erzeugt :, lv_s, TA sofort quittiert :, lv_q, Fehler :, lv_e, Lieferung gesperrt :, lv_l, Druckauftraege : und lines( gt_spool ) werden ausgegeben.",
+    "Lagernummer wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code.",
+    "Versandstelle wird ausgegeben. Die Ausgabe belegt nur das Erreichen dieser Stelle im Code."
+   ]
+  }
+ ]
+}

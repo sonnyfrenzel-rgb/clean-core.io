@@ -1,0 +1,479 @@
+{
+ "id": "BM-178",
+ "titel": "Variantenkonfiguration Kabel: Variantenfunktion für Trommel und Gewicht, Nachprüfung offener Aufträge mit Liefersperre",
+ "prozess": "Beim Konfigurieren eines Kabels ruft das Beziehungswissen die Variantenfunktion auf. Sie liest Länge und Querschnitt und endet ohne diese mit einem internen Fehler; fehlt die Verlegeart, gilt Erdverlegung. Über eine Kabelklasse wird der Kabeltyp zum Querschnitt geladen, das Gewicht als Länge mal Metergewicht (bei Erdverlegung plus 12 %) berechnet und die kleinste zugelassene Trommel gesucht, die Länge und Gewicht aufnimmt; ist der Typ unbekannt oder passt keine Trommel, meldet die Funktion die Konfiguration als inkonsistent. Sonst schreibt sie Trommel und Gewicht als Merkmalwerte zurück. Nach Stammdatenänderungen startet der Innendienst den Nachprüfreport; mit Sperrkennzeichen braucht er die Änderungsberechtigung für Aufträge. Der Report liest alle konfigurierten, nicht voll gelieferten Positionen der Auswahl, liest je Position die Konfiguration und prüft, ob die konfigurierte Trommel noch der erforderlichen entspricht und die Länge die Fertigungsgrenze einhält. Nicht lesbare oder nicht numerische Konfigurationen werden ohne Sperrvorschlag gemeldet, Abweichungen und unbekannte Kabeltypen mit Sperrvorschlag. Mit Sperrkennzeichen wird je betroffenem Auftrag, sofern noch nicht gesperrt, die Liefersperre am Kopf per BAPI gesetzt und festgeschrieben, Fehler werden zurückgerollt und protokolliert. Zum Schluss erscheinen das Sperrprotokoll als Liste und die Abweichungen als ALV.",
+ "verboten": [
+  "zvc_konfig_pruefung_f01.abap:113 — kein Fachsatz „die Konfiguration des Auftrags wird korrigiert“: gesetzt wird nur die Liefersperre am Auftragskopf, für den ganzen Auftrag",
+  "zvc_konfig_pruefung_f01.abap:74 — kein Fachsatz „Positionen mit unbekanntem Kabeltyp werden nur gemeldet“: die Meldung wird wie jede Abweichung als sperrrelevant vorgemerkt",
+  "z_vf_kabellaenge.abap:61 — kein Fachsatz „ohne Verlegeart ist die Konfiguration unvollständig“: es gilt Erdverlegung mit 12 % Gewichtszuschlag",
+  "gesamte Scheibe — kein Fachsatz „die Nachprüfung vergleicht auch das konfigurierte Gewicht“: geprüft werden nur Trommel und Fertigungslänge"
+ ],
+ "saetze": [
+  {
+   "id": "BM-178-B01",
+   "soll": "Die Variantenfunktion liest Kabellänge und Querschnitt aus der Konfiguration; fehlt eines davon, endet sie mit einem internen Fehler.",
+   "zeilen": [
+    70,
+    79,
+    80,
+    83,
+    92
+   ],
+   "code": [
+    "70:   CALL FUNCTION 'CUOV_GET_FUNCTION_ARGUMENT'",
+    "79:   IF sy-subrc <> 0.",
+    "80:     RAISE internal_error.",
+    "83:   CALL FUNCTION 'CUOV_GET_FUNCTION_ARGUMENT'",
+    "92:   IF sy-subrc <> 0."
+   ],
+   "X": [
+    "Der Code übergibt 'Z_LAENGE_M' an CUOV_GET_FUNCTION_ARGUMENT und übernimmt dessen Ausgabe nach lv_laenge.",
+    "Der Code übergibt 'Z_QUERSCHNITT' an CUOV_GET_FUNCTION_ARGUMENT und übernimmt dessen Ausgabe nach lv_qs."
+   ],
+   "Y": [
+    "Der Merkmalwert Z_LAENGE_M wird über den Funktionsbaustein CUOV_GET_FUNCTION_ARGUMENT aus der Tabelle query gelesen.",
+    "Wird das Merkmal Z_LAENGE_M nicht gefunden, wird der Fehler INTERNAL_ERROR ausgelöst.",
+    "Der Merkmalwert Z_QUERSCHNITT wird über den Funktionsbaustein CUOV_GET_FUNCTION_ARGUMENT aus der Tabelle query gelesen.",
+    "Wird das Merkmal Z_QUERSCHNITT nicht gefunden, wird der Fehler INTERNAL_ERROR ausgelöst."
+   ],
+   "Z": [
+    "Der Code übergibt 'Z_LAENGE_M' an CUOV_GET_FUNCTION_ARGUMENT und übernimmt dessen Ausgabe nach lv_laenge.",
+    "Das konvertierte Ergebnis wird in lv_laenge übernommen.",
+    "Der Code übergibt 'Z_QUERSCHNITT' an CUOV_GET_FUNCTION_ARGUMENT und übernimmt dessen Ausgabe nach lv_qs.",
+    "Das konvertierte Ergebnis wird in lv_qs übernommen."
+   ]
+  },
+  {
+   "id": "BM-178-B02",
+   "soll": "Ist keine Verlegeart bewertet, gilt Erdverlegung.",
+   "zeilen": [
+    96,
+    106
+   ],
+   "code": [
+    "96:   CALL FUNCTION 'CUOV_GET_FUNCTION_ARGUMENT'",
+    "106:   lv_art = COND #( WHEN sy-subrc = 0 THEN lv_art ELSE 'ERDE' )."
+   ],
+   "X": [
+    "Der Code übergibt 'Z_VERLEGEART' an CUOV_GET_FUNCTION_ARGUMENT und übernimmt dessen Ausgabe nach lv_art."
+   ],
+   "Y": [
+    "Der Merkmalwert Z_VERLEGEART wird über den Funktionsbaustein CUOV_GET_FUNCTION_ARGUMENT aus der Tabelle query gelesen.",
+    "Wurde keine Verlegeart übergeben, wird standardmäßig der Wert ERDE verwendet; andernfalls bleibt der übergebene Wert erhalten."
+   ],
+   "Z": [
+    "Der Code übergibt 'Z_VERLEGEART' an CUOV_GET_FUNCTION_ARGUMENT und übernimmt dessen Ausgabe nach lv_art.",
+    "Das konvertierte Ergebnis wird in lv_art übernommen."
+   ]
+  },
+  {
+   "id": "BM-178-B03",
+   "soll": "Zum Querschnitt wird der Kabeltyp gelesen; ist er unbekannt, gilt die Konfiguration als inkonsistent.",
+   "zeilen": [
+    109,
+    115,
+    177,
+    180
+   ],
+   "code": [
+    "109:       DATA(lo_kabel) = NEW zcl_vc_kabel( iv_querschnitt = lv_qs",
+    "115:       RAISE fail.",
+    "177:     SELECT SINGLE * FROM zvc_kabeltyp INTO @ms_typ",
+    "180:       RAISE EXCEPTION TYPE zcx_vc_kabel"
+   ],
+   "X": [
+    "Es werden Sätze aus zvc_kabeltyp selektiert."
+   ],
+   "Y": [
+    "Mit dem übergebenen Querschnitt und der Verlegeart wird ein Kabelobjekt der Klasse ZCL_VC_KABEL instanziiert.",
+    "Tritt bei der Gewichts- oder Trommelermittlung eine Ausnahme vom Typ ZCX_VC_KABEL auf, wird die Ausnahme FAIL ausgelöst.",
+    "Aus der Tabelle ZVC_KABELTYP wird der Datensatz zum übergebenen Querschnitt gelesen.",
+    "Wird kein passender Datensatz in der Tabelle ZVC_KABELTYP gefunden, wird die Ausnahme ZCX_VC_KABEL mit dem Text typ_unbekannt ausgelöst."
+   ],
+   "Z": [
+    "Es werden Sätze aus zvc_kabeltyp selektiert."
+   ]
+  },
+  {
+   "id": "BM-178-B04",
+   "soll": "Das Kabelgewicht ist Länge mal Metergewicht des Typs, bei Erdverlegung zuzüglich 12 % für die Armierung.",
+   "zeilen": [
+    188,
+    190,
+    191
+   ],
+   "code": [
+    "188:     rv_kg = iv_laenge * ms_typ-kg_je_m.",
+    "190:     IF mv_verlegeart = 'ERDE'.",
+    "191:       rv_kg = rv_kg * '1.12'."
+   ],
+   "X": [],
+   "Y": [
+    "Das Kabelgewicht wird als Produkt aus der übergebenen Länge und dem Metergewicht kg_je_m des Kabeltyps berechnet.",
+    "Ist als Verlegeart der Wert ERDE gesetzt, wird das berechnete Gewicht um 12 Prozent erhöht."
+   ],
+   "Z": []
+  },
+  {
+   "id": "BM-178-B05",
+   "soll": "Als Trommel wird die kleinste für den Querschnitt zugelassene Trommel gewählt, die Länge und Gewicht aufnimmt; passt keine, gilt die Konfiguration als inkonsistent.",
+   "zeilen": [
+    198,
+    205,
+    211
+   ],
+   "code": [
+    "198:     SELECT trommel, max_laenge, max_gewicht",
+    "205:       IF ls_trommel-max_laenge >= iv_laenge AND ls_trommel-max_gewicht >= iv_gewicht.",
+    "211:     RAISE EXCEPTION TYPE zcx_vc_kabel"
+   ],
+   "X": [
+    "Das Ergebnis enthält trommel, max_laenge und max_gewicht.",
+    "Es werden Sätze aus zvc_trommel selektiert.",
+    "Wenn das Feld ls_trommel-max_laenge mindestens iv_laenge ist und das Feld ls_trommel-max_gewicht mindestens iv_gewicht ist, wird der Block verlassen."
+   ],
+   "Y": [
+    "Aus der Tabelle ZVC_TROMMEL werden alle Trommeln mit ausreichendem Querschnitt aufsteigend nach maximaler Länge selektiert.",
+    "Reichen Maximallänge und Maximalgewicht der Trommel für Länge und Gewicht aus, wird diese Trommel zurückgegeben und die Ermittlung beendet.",
+    "Wurde keine passende Trommel gefunden, wird die Ausnahme ZCX_VC_KABEL mit dem Text keine_trommel ausgelöst."
+   ],
+   "Z": [
+    "Das Ergebnis enthält trommel, max_laenge und max_gewicht.",
+    "Es werden Sätze aus zvc_trommel selektiert.",
+    "Für ls_trommel-max_laenge >= iv_laenge AND ls_trommel-max_gewicht >= iv_gewicht wird der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-178-B06",
+   "soll": "Trommel und Gewicht werden als Merkmalwerte in die Konfiguration zurückgeschrieben.",
+   "zeilen": [
+    118,
+    129
+   ],
+   "code": [
+    "118:   CALL FUNCTION 'CUOV_SET_FUNCTION_ARGUMENT'",
+    "129:   CALL FUNCTION 'CUOV_SET_FUNCTION_ARGUMENT'"
+   ],
+   "X": [
+    "Der Funktionsbaustein CUOV_SET_FUNCTION_ARGUMENT wird aufgerufen.",
+    "Es wird CUOV_SET_FUNCTION_ARGUMENT aufgerufen.",
+    "Der Funktionsbaustein CUOV_SET_FUNCTION_ARGUMENT wird aufgerufen."
+   ],
+   "Y": [
+    "Die ermittelte Trommel wird über den Funktionsbaustein CUOV_SET_FUNCTION_ARGUMENT in das Merkmal Z_TROMMEL zurückgeschrieben.",
+    "Das berechnete Gewicht wird über den Funktionsbaustein CUOV_SET_FUNCTION_ARGUMENT in das Merkmal Z_GEWICHT_KG zurückgeschrieben."
+   ],
+   "Z": [
+    "Der Funktionsbaustein CUOV_SET_FUNCTION_ARGUMENT wird aufgerufen.",
+    "Es wird CUOV_SET_FUNCTION_ARGUMENT aufgerufen.",
+    "Der Funktionsbaustein CUOV_SET_FUNCTION_ARGUMENT wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-178-B07",
+   "soll": "Die Nachprüfung mit Liefersperre setzt die Änderungsberechtigung für Kundenaufträge voraus; ohne sie wird die Eingabe abgewiesen.",
+   "zeilen": [
+    18,
+    19,
+    25
+   ],
+   "code": [
+    "18:   IF p_sperr = abap_true.",
+    "19:     AUTHORITY-CHECK OBJECT 'V_VBAK_VKO'",
+    "25:       MESSAGE e010.                \"keine Aenderungsberechtigung Auftraege"
+   ],
+   "X": [
+    "Die Berechtigung auf V_VBAK_VKO wird geprüft.",
+    "Ohne Berechtigung auf V_VBAK_VKO wird eine Fehlermeldung ausgegeben.",
+    "Die Fehlermeldung 010 wird ausgegeben."
+   ],
+   "Y": [
+    "Ist das Sperrkennzeichen p_sperr gesetzt, wird die Änderungsberechtigung für das Berechtigungsobjekt V_VBAK_VKO mit der Aktivität 02 geprüft.",
+    "Fehlt die Änderungsberechtigung, wird die Fehlermeldung E010 ausgegeben."
+   ],
+   "Z": [
+    "Die Berechtigung auf V_VBAK_VKO wird geprüft.",
+    "Ohne Treffer wird eine Meldung ausgegeben.",
+    "Eine Meldung wird ausgegeben."
+   ]
+  },
+  {
+   "id": "BM-178-B08",
+   "soll": "Es werden die konfigurierten, noch nicht voll gelieferten Positionen der gewählten Aufträge, Verkaufsorganisationen und Materialien gelesen; gibt es keine, endet der Lauf mit Hinweis.",
+   "zeilen": [
+    31,
+    32,
+    33,
+    246
+   ],
+   "code": [
+    "31:   IF gt_pos IS INITIAL.",
+    "32:     MESSAGE s001.",
+    "33:     RETURN.",
+    "246:   SELECT a~vbeln, p~posnr, p~matnr, p~cuobj, a~kunnr, a~lifsk"
+   ],
+   "X": [
+    "Ist die Tabelle gt_pos leer, wird eine Statusmeldung ausgegeben und der Block verlassen.",
+    "Die Statusmeldung 001 wird ausgegeben.",
+    "Das Ergebnis enthält Belegnummer, Positionsnummer, Materialnummer, cuobj, Kundennummer und Sperrkennzeichen.",
+    "Es werden Aufträge selektiert."
+   ],
+   "Y": [
+    "Werden keine Auftragspositionen gefunden, wird die Erfolgsmeldung S001 ausgegeben und die Verarbeitung beendet.",
+    "Aus den Tabellen VBAK, VBAP und VBUP werden Belegnummer, Positionsnummer, Materialnummer, Konfigurationsobjekt, Kundennummer und Liefersperre für offene Positionen mit Lieferstatus ungleich C gelesen."
+   ],
+   "Z": [
+    "Ohne Treffer wird eine Meldung ausgegeben und der Block verlassen.",
+    "Ohne Treffer wird der Block verlassen.",
+    "Eine Meldung wird ausgegeben.",
+    "Es wird eine Meldung ausgegeben und der Block verlassen.",
+    "Das Ergebnis enthält Belegnummer, p~posnr, p~matnr, p~cuobj, Kundennummer und Sperrkennzeichen.",
+    "Es werden Aufträge selektiert."
+   ]
+  },
+  {
+   "id": "BM-178-B09",
+   "soll": "Für jede Position wird die Konfiguration gelesen; ist sie nicht lesbar, wird das ohne Sperrvorschlag gemeldet.",
+   "zeilen": [
+    272,
+    279
+   ],
+   "code": [
+    "272:   CALL FUNCTION 'VC_I_GET_CONFIGURATION'",
+    "279:   IF sy-subrc <> 0."
+   ],
+   "X": [
+    "Der Funktionsbaustein VC_I_GET_CONFIGURATION wird aufgerufen.",
+    "Scheitert der Aufruf von VC_I_GET_CONFIGURATION, wird eine Zeile aufgenommen und der Block verlassen."
+   ],
+   "Y": [
+    "Über den Funktionsbaustein VC_I_GET_CONFIGURATION wird die Konfiguration zur Konfigurationsnummer der Position gelesen.",
+    "Kann die Konfiguration nicht gelesen werden, wird ein Ergebniseintrag mit der Meldung Konfiguration nicht lesbar und ungesetzter Sperre erfasst und die Prüfung beendet."
+   ],
+   "Z": [
+    "Der Funktionsbaustein VC_I_GET_CONFIGURATION wird aufgerufen.",
+    "Ohne Treffer wird eine Zeile aufgenommen und der Block verlassen.",
+    "Ohne Treffer wird der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-178-B10",
+   "soll": "Sind Länge oder Querschnitt nicht numerisch, wird das ohne Sperrvorschlag gemeldet.",
+   "zeilen": [
+    289,
+    293
+   ],
+   "code": [
+    "289:   CATCH SYSTEM-EXCEPTIONS conversion_errors = 4.",
+    "293:   IF sy-subrc = 4."
+   ],
+   "X": [
+    "Bei Rückgabewert 4 wird eine Zeile aufgenommen und der Block verlassen."
+   ],
+   "Y": [
+    "Aus der gelesenen Konfiguration werden die Merkmalwerte Z_LAENGE_M und Z_QUERSCHNITT in numerische Felder umgewandelt.",
+    "Schlägt die Konvertierung von Länge oder Querschnitt fehl, wird ein Ergebniseintrag mit der Meldung Laenge/Querschnitt nicht numerisch und ungesetzter Sperre erfasst und die Prüfung beendet."
+   ],
+   "Z": [
+    "Für sy-subrc mit dem Wert 4 wird eine Zeile aufgenommen und der Block verlassen.",
+    "Bei sy-subrc gleich 4 wird der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-178-B11",
+   "soll": "Fehlt die Verlegeart, gilt auch in der Nachprüfung Erdverlegung.",
+   "zeilen": [
+    302
+   ],
+   "code": [
+    "302:   lv_art     = VALUE #( gt_conf[ atnam = 'Z_VERLEGEART' ]-atwrt DEFAULT 'ERDE' )."
+   ],
+   "X": [],
+   "Y": [
+    "Aus der Konfiguration wird der Trommelwert gelesen und für das Merkmal Z_VERLEGEART der gelesene Wert oder als Standardwert ERDE verwendet."
+   ],
+   "Z": []
+  },
+  {
+   "id": "BM-178-B12",
+   "soll": "Die konfigurierte Trommel wird gegen die aktuell erforderliche Trommel geprüft; ebenso, ob die Länge die Fertigungsgrenze des Kabeltyps überschreitet.",
+   "zeilen": [
+    226,
+    230,
+    307
+   ],
+   "code": [
+    "226:     IF lv_soll <> iv_trommel.",
+    "230:     IF iv_laenge > ms_typ-max_fertigungslaenge.",
+    "307:       lt_meld = lo_kabel->pruefen( iv_laenge  = lv_laenge"
+   ],
+   "X": [
+    "Wenn das Feld lv_soll ungleich iv_trommel ist, wird eine Zeile aufgenommen.",
+    "Wenn das Feld iv_laenge größer als ms_typ-max_fertigungslaenge ist, wird eine Zeile aufgenommen.",
+    "Der Rückgabewert der Methode pruefen von lo_kabel wird nach lt_meld übernommen."
+   ],
+   "Y": [
+    "Weicht die ermittelte Solltrommel von der konfigurierten Trommel ab, wird eine Abweichungsmeldung in die Meldungstabelle aufgenommen.",
+    "Überschreitet die Kabellänge die maximale Fertigungslänge des Kabeltyps, wird eine Meldung zur Fertigungsgrenzenüberschreitung hinzugefügt.",
+    "Die konfigurierte Länge und Trommel werden über die Methode pruefen des Kabelobjekts gegen die Stammdaten geprüft."
+   ],
+   "Z": [
+    "Für lv_soll ungleich iv_trommel wird eine Zeile aufgenommen.",
+    "Für iv_laenge größer ms_typ-max_fertigungslaenge wird eine Zeile aufgenommen.",
+    "Der Rückgabewert der Methode pruefen von lo_kabel wird nach lt_meld übernommen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ]
+  },
+  {
+   "id": "BM-178-B13",
+   "soll": "Passt keine Trommel mehr, wird das als einzige Abweichung gemeldet.",
+   "zeilen": [
+    219,
+    223
+   ],
+   "code": [
+    "219:         DATA(lv_soll) = trommel_ermitteln( iv_laenge  = iv_laenge",
+    "223:         RETURN."
+   ],
+   "X": [
+    "Es wird eine Zeile aufgenommen und der Block verlassen."
+   ],
+   "Y": [
+    "Über die Methode trommel_ermitteln wird die erforderliche Solltrommel für Länge und berechnetes Gewicht ermittelt.",
+    "Kann keine Solltrommel ermittelt werden, wird eine Meldung über die fehlende Trommel zur Meldungstabelle hinzugefügt und die Prüfung beendet."
+   ],
+   "Z": [
+    "Es wird eine Zeile aufgenommen und der Block verlassen."
+   ]
+  },
+  {
+   "id": "BM-178-B14",
+   "soll": "Ein unbekannter Kabeltyp wird als Abweichung übernommen.",
+   "zeilen": [
+    309
+   ],
+   "code": [
+    "309:     CATCH zcx_vc_kabel INTO DATA(lx_kabel)."
+   ],
+   "X": [],
+   "Y": [
+    "Wird bei der Prüfung eine Ausnahme ausgelöst, wird deren Fehlertext in die Meldungsliste aufgenommen."
+   ],
+   "Z": []
+  },
+  {
+   "id": "BM-178-B15",
+   "soll": "Jede Abweichung wird mit Auftrag, Position und Material als sperrrelevant vorgemerkt; Positionen ohne Abweichung erscheinen nicht.",
+   "zeilen": [
+    313,
+    317
+   ],
+   "code": [
+    "313:   IF lt_meld IS INITIAL.",
+    "317:   LOOP AT lt_meld INTO DATA(lv_meld)."
+   ],
+   "X": [
+    "Ist die Tabelle lt_meld leer, wird der Block verlassen.",
+    "Jede Zeile aus lt_meld wird einzeln verarbeitet."
+   ],
+   "Y": [
+    "Liegen keine Prüfmeldungen vor, wird die Routine ohne Ergebniseintrag verlassen.",
+    "Für jede festgestellte Meldung wird ein Ergebniseintrag zur Auftragsposition mit gesetzter Sperrmarkierung gespeichert."
+   ],
+   "Z": [
+    "Ohne Treffer wird der Block verlassen.",
+    "Jede Zeile aus lt_meld wird einzeln verarbeitet."
+   ]
+  },
+  {
+   "id": "BM-178-B16",
+   "soll": "Nur mit Sperrkennzeichen wird je betroffenem Auftrag die Liefersperre am Auftragskopf gesetzt, sofern sie nicht schon gesetzt ist.",
+   "zeilen": [
+    40,
+    336,
+    340,
+    348
+   ],
+   "code": [
+    "40:   IF p_sperr = abap_true.",
+    "336:   LOOP AT gt_erg INTO DATA(ls_erg) WHERE sperren = abap_true",
+    "340:     IF ls_pos-lifsk = p_lifsk.",
+    "348:     CALL FUNCTION 'BAPI_SALESORDER_CHANGE'"
+   ],
+   "X": [
+    "Wenn das Feld p_sperr gesetzt ist, wird sperren aufgerufen.",
+    "Die Zeilen aus gt_erg, bei denen das Feld sperren gesetzt ist, werden einzeln verarbeitet.",
+    "Für Sperrkennzeichen mit dem Wert p_lifsk wird der Schleifendurchlauf übersprungen.",
+    "Der Funktionsbaustein BAPI_SALESORDER_CHANGE wird aufgerufen."
+   ],
+   "Y": [
+    "Ist das Sperrkennzeichen p_sperr gesetzt, wird die Routine sperren aufgerufen.",
+    "Über alle zu sperrenden Prüfungsergebnisse wird gruppiert nach Verkaufsbelegnummer eine Schleife durchlaufen.",
+    "Entspricht die Liefersperre des Verkaufsbelegs bereits dem Parameter p_lifsk, wird der Beleg übersprungen.",
+    "Über den Funktionsbaustein BAPI_SALESORDER_CHANGE wird die Liefersperre p_lifsk im Belegkopf eingetragen."
+   ],
+   "Z": [
+    "Für p_sperr mit dem Wert abap_true wird sperren aufgerufen.",
+    "Jede Zeile aus gt_erg wird einzeln verarbeitet.",
+    "Der Funktionsbaustein BAPI_SALESORDER_CHANGE wird aufgerufen."
+   ]
+  },
+  {
+   "id": "BM-178-B17",
+   "soll": "Scheitert die Sperre, wird zurückgerollt und der Fehler protokolliert, sonst festgeschrieben und protokolliert.",
+   "zeilen": [
+    356,
+    357,
+    361
+   ],
+   "code": [
+    "356:     IF line_exists( lt_ret[ type = 'E' ] ).",
+    "357:       CALL FUNCTION 'BAPI_TRANSACTION_ROLLBACK'.",
+    "361:       CALL FUNCTION 'BAPI_TRANSACTION_COMMIT'"
+   ],
+   "X": [
+    "Wenn in lt_ret eine passende Zeile existiert, wird BAPI_TRANSACTION_ROLLBACK aufgerufen und eine Zeile aufgenommen, sonst BAPI_TRANSACTION_COMMIT aufgerufen und eine Zeile aufgenommen.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_ROLLBACK wird aufgerufen.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_COMMIT wird aufgerufen."
+   ],
+   "Y": [
+    "Enthält die Rückmeldung des Änderungs-BAPIs Fehler vom Typ E, wird ein Transaktions-Rollback ausgeführt und die Fehlermeldung im Protokoll erfasst.",
+    "Verläuft die Belegänderung ohne Fehler, wird die Transaktion per Commit festgeschrieben und ein Erfolgsvermerk im Protokoll eingetragen."
+   ],
+   "Z": [
+    "Für line_exists( lt_ret[ type = 'E' ] ) wird BAPI_TRANSACTION_ROLLBACK aufgerufen und eine Zeile aufgenommen.",
+    "Für line_exists( lt_ret[ type = 'E' ] ) wird BAPI_TRANSACTION_ROLLBACK aufgerufen und eine Zeile aufgenommen, sonst BAPI_TRANSACTION_COMMIT aufgerufen und eine Zeile aufgenommen.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_ROLLBACK wird aufgerufen.",
+    "Es wird BAPI_TRANSACTION_ROLLBACK aufgerufen und eine Zeile aufgenommen.",
+    "Sonst wird BAPI_TRANSACTION_COMMIT aufgerufen und eine Zeile aufgenommen.",
+    "Der Funktionsbaustein BAPI_TRANSACTION_COMMIT wird aufgerufen.",
+    "Es wird BAPI_TRANSACTION_COMMIT aufgerufen und eine Zeile aufgenommen."
+   ]
+  },
+  {
+   "id": "BM-178-B18",
+   "soll": "Am Ende werden die Sperrprotokolle als Liste und die Abweichungen als ALV ausgegeben.",
+   "zeilen": [
+    377,
+    383
+   ],
+   "code": [
+    "377:     WRITE: / ls_log-vbeln, ls_log-text.",
+    "383:       lo_alv->display( )."
+   ],
+   "X": [
+    "Bei Treffern werden Belegnummer und Text als Liste ausgegeben.",
+    "Die Methode display von lo_alv wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ],
+   "Y": [
+    "Über alle Protokolleinträge wird eine Schleife durchlaufen und jede Belegnummer mit Textzeile ausgegeben.",
+    "Über CL_SALV_TABLE wird eine ALV-Tabelle für die Prüfergebnisse erzeugt und zur Anzeige gebracht."
+   ],
+   "Z": [
+    "Bei Treffern werden Belegnummer und Text als Liste ausgegeben.",
+    "Belegnummer wird ausgegeben.",
+    "Text wird ausgegeben.",
+    "Die Methode display von lo_alv wird aufgerufen. Ihr fachliches Verhalten ist im gelieferten Code nicht belegt."
+   ]
+  }
+ ]
+}
